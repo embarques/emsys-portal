@@ -96,6 +96,12 @@
     }
   },
   "form": {
+    "design": {
+      "employee": "Confirma el nombre, departamento, cargo y datos laborales del empleado.",
+      "branch": "Elige la sucursal donde trabaja este empleado.",
+      "address": "Busca una dirección o cambia al ingreso manual.",
+      "contact": "Agrega teléfonos y correo. Usa la estrella para elegir el teléfono principal."
+    },
     "addTitle": "Agregar empleado",
     "editTitle": "Editar empleado",
     "addDescription": "Cree un nuevo registro de empleado.",

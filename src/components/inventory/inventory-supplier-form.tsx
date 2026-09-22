@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
+import { FormBody, FormFooter, FormSection, FormWorkflowHints } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,76 +148,115 @@ export function InventorySupplierForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-        <FormSection icon={Building2} title={t("inventory.form.sections.supplier")}>
-          <div className="space-y-1">
-            <Label htmlFor="companyName">
-              {t("inventory.form.fields.companyName")} <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="companyName"
-              value={values.companyName}
-              onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
-              onFocus={selectFormFieldTextOnFocus}
-              required
-            />
+      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+        <FormWorkflowHints requiredHint={t("inventory.form.workflow.requiredHint")} keyboardHint={t("inventory.form.workflow.keyboardHint")} />
+        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+          <div className="min-w-0 space-y-5">
+            <FormSection
+              icon={Building2}
+              title={`01 · ${t("inventory.form.sections.supplier")}`}
+              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            >
+              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.supplierDetailsHint")}</p>
+              <div className="space-y-1">
+                <Label htmlFor="companyName">
+                  {t("inventory.form.fields.companyName")} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="companyName"
+                  autoComplete="organization"
+                  autoFocus
+                  value={values.companyName}
+                  onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
+                  onFocus={selectFormFieldTextOnFocus}
+                  required
+                />
+              </div>
+            </FormSection>
+
+            <FormSection
+              icon={User}
+              title={`02 · ${t("inventory.form.sections.contacts")}`}
+              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+              action={<span className="text-xs text-muted-foreground"
+            >{t("inventory.form.workflow.optional")}</span>}>
+              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.contactsDetailsHint")}</p>
+              <RepeatableTextList
+                id="contactName"
+                label={t("inventory.form.fields.contactNames")}
+                addLabel={t("inventory.form.addContact")}
+                removeLabel={t("inventory.form.removeContact")}
+                values={values.contactNames}
+                placeholder={t("inventory.form.placeholders.contactName")}
+                onChange={(contactNames) => setValues((current) => ({ ...current, contactNames }))}
+              />
+            </FormSection>
+
+            <FormSection
+              icon={MapPin}
+              title={`03 · ${t("inventory.form.sections.addresses")}`}
+              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+              action={<span className="text-xs text-muted-foreground"
+            >{t("inventory.form.workflow.optional")}</span>}>
+              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.addressesDetailsHint")}</p>
+              <Label htmlFor="supplier-address">{t("inventory.form.fields.address")}</Label>
+              <AddressAutocompleteInput
+                id="supplier-address"
+                value={values.addresses[0] ?? ""}
+                placeholder={t("inventory.form.placeholders.address")}
+                allowManualEntry
+                className="w-full"
+                manualEntryTogglePosition="label"
+                onValueChange={(address) => setValues((current) => ({ ...current, addresses: [address] }))}
+                onPlaceSelected={(place) =>
+                  setValues((current) => ({
+                    ...current,
+                    addresses: [formatSelectedAddress(place)],
+                  }))
+                }
+              />
+            </FormSection>
+
           </div>
-        </FormSection>
+          <div className="min-w-0 space-y-5">
+            <FormSection
+              icon={Phone}
+              title={`04 · ${t("inventory.form.sections.phones")}`}
+              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+              action={<span className="text-xs text-muted-foreground"
+            >{t("inventory.form.workflow.optional")}</span>}>
+              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.phonesDetailsHint")}</p>
+              <PhoneListEditor
+                idPrefix="supplier-phone"
+                phones={values.phones}
+                compact
+                onChange={(phones) => setValues((current) => ({ ...current, phones }))}
+              />
+            </FormSection>
 
-        <FormSection icon={User} title={t("inventory.form.sections.contacts")}>
-          <RepeatableTextList
-            id="contactName"
-            label={t("inventory.form.fields.contactNames")}
-            addLabel={t("inventory.form.addContact")}
-            removeLabel={t("inventory.form.removeContact")}
-            values={values.contactNames}
-            placeholder={t("inventory.form.placeholders.contactName")}
-            onChange={(contactNames) => setValues((current) => ({ ...current, contactNames }))}
-          />
-        </FormSection>
-
-        <FormSection icon={MapPin} title={t("inventory.form.sections.addresses")}>
-          <AddressAutocompleteInput
-            id="supplier-address"
-            value={values.addresses[0] ?? ""}
-            placeholder={t("inventory.form.placeholders.address")}
-            allowManualEntry
-            className="w-full"
-            manualEntryTogglePosition="label"
-            onValueChange={(address) => setValues((current) => ({ ...current, addresses: [address] }))}
-            onPlaceSelected={(place) =>
-              setValues((current) => ({
-                ...current,
-                addresses: [formatSelectedAddress(place)],
-              }))
-            }
-          />
-        </FormSection>
-
-        <FormSection icon={Phone} title={t("inventory.form.sections.phones")}>
-          <PhoneListEditor
-            idPrefix="supplier-phone"
-            phones={values.phones}
-            compact
-            onChange={(phones) => setValues((current) => ({ ...current, phones }))}
-          />
-        </FormSection>
-
-        <FormSection icon={Mail} title={t("inventory.form.sections.emails")}>
-          <RepeatableTextList
-            id="email"
-            label={t("inventory.form.fields.emails")}
-            addLabel={t("inventory.form.addEmail")}
-            removeLabel={t("inventory.form.removeEmail")}
-            values={values.emails}
-            placeholder={t("inventory.form.placeholders.email")}
-            type="email"
-            onChange={(emails) => setValues((current) => ({ ...current, emails }))}
-          />
-        </FormSection>
+            <FormSection
+              icon={Mail}
+              title={`05 · ${t("inventory.form.sections.emails")}`}
+              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+              action={<span className="text-xs text-muted-foreground"
+            >{t("inventory.form.workflow.optional")}</span>}>
+              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.emailsDetailsHint")}</p>
+              <RepeatableTextList
+                id="email"
+                label={t("inventory.form.fields.emails")}
+                addLabel={t("inventory.form.addEmail")}
+                removeLabel={t("inventory.form.removeEmail")}
+                values={values.emails}
+                placeholder={t("inventory.form.placeholders.email")}
+                type="email"
+                onChange={(emails) => setValues((current) => ({ ...current, emails }))}
+              />
+            </FormSection>
+          </div>
+        </div>
       </FormBody>
 
-      <FormFooter error={validationError} submitLabel={submitLabel} onCancel={onCancel} isSubmitting={isSubmitting} />
+      <FormFooter error={validationError} warning={!values.companyName.trim() ? t("inventory.form.validation.companyNameRequired") : null} submitLabel={submitLabel} onCancel={onCancel} isSubmitting={isSubmitting} />
     </form>
   );
 }

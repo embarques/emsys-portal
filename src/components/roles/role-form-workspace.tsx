@@ -130,6 +130,7 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   return (
     <FormTabShell
+      className="max-w-6xl"
       title={isEditing ? t("roles.form.editTitle") : t("roles.form.addTitle")}
       description={
         isEditing && editing ? editing.name : t("roles.form.addDescription")

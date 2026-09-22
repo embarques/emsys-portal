@@ -96,6 +96,12 @@
     }
   },
   "form": {
+    "design": {
+      "employee": "Confirm the employee’s name, department, title, and employment details.",
+      "branch": "Choose the branch where this employee works.",
+      "address": "Search for an address or switch to manual entry.",
+      "contact": "Add contact numbers and email. Use the star to choose the main phone number."
+    },
     "addTitle": "Add employee",
     "editTitle": "Edit employee",
     "addDescription": "Create a new employee record.",

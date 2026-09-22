@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
-import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
+import { FormBody, FormFooter, FormSection, FormWorkflowHints } from "@/components/forms/form-shell";
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -197,101 +197,119 @@ export function InventoryReceiptForm({
   return (
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <FormBody isBusy={isSubmitting}>
-          <FormSection icon={PackagePlus} title={t("inventory.form.sections.received")}>
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1 sm:col-span-2">
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="itemId">{t("inventory.form.fields.item")}</Label>
-                  <FieldEntityActions
-                    hasSelection={Boolean(values.itemId)}
-                    onAdd={openAddItem}
-                    onEdit={openEditItem}
-                    addIcon={PackagePlus}
+        <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+          <FormWorkflowHints requiredHint={t("inventory.form.workflow.requiredHint")} keyboardHint={t("inventory.form.workflow.keyboardHint")} />
+          <div className="grid items-start gap-5 @3xl:grid-cols-2">
+            <FormSection
+              icon={PackagePlus}
+              title={`01 · ${t("inventory.form.sections.received")}`}
+              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            >
+              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.receiptHint")}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="itemId">{t("inventory.form.fields.item")} <span className="text-destructive">*</span></Label>
+                    <FieldEntityActions
+                      hasSelection={Boolean(values.itemId)}
+                      onAdd={openAddItem}
+                      onEdit={openEditItem}
+                      addIcon={PackagePlus}
+                    />
+                  </div>
+                  <SearchableSelect
+                    id="itemId"
+                    value={values.itemId}
+                    onValueChange={(next) => {
+                      const item = items.find((entry) => entry.id === next);
+                      setPinnedItemLabel(item ? getInventoryItemLabel(item) : "");
+                      setValues((current) => ({ ...current, itemId: next }));
+                    }}
+                    placeholder={t("inventory.form.placeholders.item")}
+                    searchPlaceholder={t("inventory.search.items")}
+                    options={itemOptions}
+                    selectAllOnFocus
+                    required
+                    mobileSheet
                   />
                 </div>
-                <SearchableSelect
-                  id="itemId"
-                  value={values.itemId}
-                  onValueChange={(next) => {
-                    const item = items.find((entry) => entry.id === next);
-                    setPinnedItemLabel(item ? getInventoryItemLabel(item) : "");
-                    setValues((current) => ({ ...current, itemId: next }));
-                  }}
-                  placeholder={t("inventory.form.placeholders.item")}
-                  searchPlaceholder={t("inventory.search.items")}
-                  options={itemOptions}
-                  selectAllOnFocus
-                  required
-                  mobileSheet
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="quantity">{t("inventory.form.fields.quantityReceived")}</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min={0}
-                  value={values.quantity}
-                  onChange={(event) => setValues((current) => ({ ...current, quantity: event.target.value }))}
-                  onFocus={selectFormFieldTextOnFocus}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="averageCost">{t("inventory.form.fields.averageCost")}</Label>
-                <Input
-                  id="averageCost"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={values.averageCost}
-                  onChange={(event) => setValues((current) => ({ ...current, averageCost: event.target.value }))}
-                  onFocus={selectFormFieldTextOnFocus}
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="supplierId">{t("inventory.form.fields.supplier")}</Label>
-                  <FieldEntityActions
-                    hasSelection={Boolean(values.supplierId)}
-                    onAdd={openAddSupplier}
-                    onEdit={openEditSupplier}
-                    addIcon={Building2}
+                <div className="space-y-1">
+                  <Label htmlFor="quantity">{t("inventory.form.fields.quantityReceived")} <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min={0}
+                    value={values.quantity}
+                    onChange={(event) => setValues((current) => ({ ...current, quantity: event.target.value }))}
+                    onFocus={selectFormFieldTextOnFocus}
+                    required
                   />
                 </div>
-                <SearchableSelect
-                  id="supplierId"
-                  value={values.supplierId}
-                  onValueChange={(next) => {
-                    const supplier = suppliers.find((entry) => entry.id === next);
-                    setPinnedSupplierLabel(supplier?.companyName ?? "");
-                    setValues((current) => ({ ...current, supplierId: next }));
-                  }}
-                  placeholder={t("inventory.form.placeholders.supplier")}
-                  searchPlaceholder={t("inventory.search.suppliers")}
-                  options={supplierOptions}
-                  selectAllOnFocus
-                  required
-                  mobileSheet
-                />
+                <div className="space-y-1">
+                  <Label htmlFor="averageCost">{t("inventory.form.fields.averageCost")}</Label>
+                  <Input
+                    id="averageCost"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={values.averageCost}
+                    onChange={(event) => setValues((current) => ({ ...current, averageCost: event.target.value }))}
+                    onFocus={selectFormFieldTextOnFocus}
+                  />
+                  <p className="text-xs text-muted-foreground">{t("inventory.form.workflow.costHint")}</p>
+                </div>
               </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="receivedAt">{t("inventory.form.fields.receivedAt")}</Label>
-                <Input
-                  id="receivedAt"
-                  type="date"
-                  value={values.receivedAt}
-                  onChange={(event) => setValues((current) => ({ ...current, receivedAt: event.target.value }))}
-                  onFocus={selectFormFieldTextOnFocus}
-                  required
-                />
+            </FormSection>
+            <FormSection
+              icon={Building2}
+              title={`02 · ${t("inventory.form.sections.supplier")}`}
+              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            >
+              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.supplierHint")}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="supplierId">{t("inventory.form.fields.supplier")} <span className="text-destructive">*</span></Label>
+                    <FieldEntityActions
+                      hasSelection={Boolean(values.supplierId)}
+                      onAdd={openAddSupplier}
+                      onEdit={openEditSupplier}
+                      addIcon={Building2}
+                    />
+                  </div>
+                  <SearchableSelect
+                    id="supplierId"
+                    value={values.supplierId}
+                    onValueChange={(next) => {
+                      const supplier = suppliers.find((entry) => entry.id === next);
+                      setPinnedSupplierLabel(supplier?.companyName ?? "");
+                      setValues((current) => ({ ...current, supplierId: next }));
+                    }}
+                    placeholder={t("inventory.form.placeholders.supplier")}
+                    searchPlaceholder={t("inventory.search.suppliers")}
+                    options={supplierOptions}
+                    selectAllOnFocus
+                    required
+                    mobileSheet
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="receivedAt">{t("inventory.form.fields.receivedAt")} <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="receivedAt"
+                    type="date"
+                    value={values.receivedAt}
+                    onChange={(event) => setValues((current) => ({ ...current, receivedAt: event.target.value }))}
+                    onFocus={selectFormFieldTextOnFocus}
+                    required
+                  />
+                </div>
               </div>
-            </div>
-          </FormSection>
+            </FormSection>
+          </div>
         </FormBody>
 
-        <FormFooter error={validationError} submitLabel={submitLabel} onCancel={onCancel} isSubmitting={isSubmitting} />
+        <FormFooter error={validationError} warning={getValidationError()} submitLabel={submitLabel} onCancel={onCancel} isSubmitting={isSubmitting} />
       </form>
 
       <Dialog open={entityDialog === "item"} onOpenChange={(open) => !open && setEntityDialog(null)}>
@@ -305,6 +323,7 @@ export function InventoryReceiptForm({
             key={editingItem?.id ?? "new"}
             initialValues={editingItem ? inventoryItemToFormValues(editingItem) : createEmptyInventoryForm()}
             quantityLeft={editingItem?.quantity ?? 0}
+            isSubmitting={createItem.isPending || updateItem.isPending}
             submitLabel={editingItem ? t("common.actions.saveChanges") : t("inventory.actions.addItem")}
             onSubmit={saveItem}
             onCancel={() => setEntityDialog(null)}
@@ -314,7 +333,7 @@ export function InventoryReceiptForm({
       </Dialog>
 
       <Dialog open={entityDialog === "supplier"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>
               {editingSupplier ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}

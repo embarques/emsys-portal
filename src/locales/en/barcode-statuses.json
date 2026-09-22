@@ -16,6 +16,8 @@
   "form": {
     "addTitle": "Add barcode status",
     "editTitle": "Edit barcode status",
-    "description": "Create or update a status in the barcode catalog."
+    "description": "Create or update a status in the barcode catalog.",
+    "details": "01 · Status details",
+    "optional": "Optional"
   }
 }

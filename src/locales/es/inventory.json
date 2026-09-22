@@ -268,7 +268,26 @@
     "removeContact": "Quitar contacto",
     "removeAddress": "Quitar dirección",
     "removeEmail": "Quitar correo",
-    "readOnlyStockHint": "El stock se calcula a partir de ingresos y despachos."
+    "readOnlyStockHint": "El stock se calcula a partir de ingresos y despachos.",
+    "workflow": {
+      "requiredHint": "* Campos obligatorios",
+      "keyboardHint": "Tab recorre los controles · Enter avanza entre campos",
+      "optional": "Opcional",
+      "itemHint": "Nombra el suministro o material interno para encontrarlo en las entradas y salidas.",
+      "reorderHint": "Define el nivel de existencias a partir del cual se debe reponer este artículo.",
+      "receiptHint": "Elige el suministro recibido e ingresa su cantidad y costo por unidad.",
+      "dispatchHint": "Elige el suministro que sale del inventario y confirma la cantidad disponible.",
+      "supplierHint": "Elige quién suministró estos artículos y la fecha de recepción.",
+      "recipientHint": "Confirma la fecha de salida y elige el empleado o la ruta diaria que recibe los suministros.",
+      "costHint": "Costo por unidad de esta entrada.",
+      "incomeHint": "Ingreso total de esta salida, si corresponde.",
+      "availableHint": "Existencias actuales antes de guardar esta salida.",
+      "supplierDetailsHint": "Usa el nombre de la empresa para encontrarla al registrar una entrada.",
+      "contactsDetailsHint": "Agrega las personas de contacto para pedidos o consultas.",
+      "addressesDetailsHint": "Busca la dirección del proveedor o ingrésala manualmente.",
+      "phonesDetailsHint": "Agrega teléfonos de contacto y usa la estrella para elegir el principal.",
+      "emailsDetailsHint": "Agrega correos para comunicarte con el proveedor."
+    }
   },
   "view": {
     "stock": "Stock",

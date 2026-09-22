@@ -64,8 +64,8 @@ export function RoleForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-        <FormSection icon={Shield} title={t("roles.form.sections.role")}>
+      <FormBody workflow isBusy={isSubmitting}>
+        <FormSection variant="card" icon={Shield} title={`01 · ${t("roles.form.sections.role")}`} description={t("roles.form.design.role")}>
           <div className="space-y-1">
             <Label htmlFor="name">
               {t("roles.form.fields.name")} <span className="text-destructive">*</span>
@@ -81,21 +81,23 @@ export function RoleForm({
           </div>
         </FormSection>
 
-        <Controller
-          control={control}
-          name="permissions"
-          render={({ field }) => (
-            <RolePermissionsEditor
-              permissions={field.value}
-              catalog={permissionCatalog}
-              onChange={field.onChange}
-            />
-          )}
-        />
+        <FormSection variant="card" icon={Shield} title={t("roles.form.design.permissionsTitle")} description={t("roles.form.design.permissions")}>
+          <Controller
+            control={control}
+            name="permissions"
+            render={({ field }) => (
+              <RolePermissionsEditor
+                permissions={field.value}
+                catalog={permissionCatalog}
+                onChange={field.onChange}
+              />
+            )}
+          />
 
-        {errors.permissions?.message ? (
-          <p className="text-sm text-destructive">{errors.permissions.message}</p>
-        ) : null}
+          {errors.permissions?.message ? (
+            <p className="text-sm text-destructive">{errors.permissions.message}</p>
+          ) : null}
+        </FormSection>
       </FormBody>
 
       <FormFooter

@@ -70,6 +70,11 @@
     "validation": {
       "nameRequired": "El nombre del rol es obligatorio.",
       "permissionsRequired": "Seleccione al menos un permiso."
+    },
+    "design": {
+      "role": "Asigna un nombre claro que describa las responsabilidades del rol.",
+      "permissionsTitle": "02 · Permisos",
+      "permissions": "Busca por módulo o acción y revisa los permisos que otorga este rol."
     }
   },
   "permissions": {

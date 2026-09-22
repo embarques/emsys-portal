@@ -72,6 +72,7 @@ export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: Act
 
   return (
     <FormTabShell
+      className="max-w-6xl"
       title={isEditing ? t(`routes.${copyPrefix}.editTitle`) : t(`routes.${copyPrefix}.title`)}
       description={t(`routes.${copyPrefix}.description`)}
     >

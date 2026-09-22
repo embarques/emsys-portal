@@ -64,6 +64,11 @@
     }
   },
   "form": {
+    "design": {
+      "profile": "Confirm the user’s identity and sign-in details.",
+      "access": "Review the role and access settings before saving.",
+      "loginHours": "Set a login schedule only when this user needs restricted access hours."
+    },
     "addTitle": "Add user",
     "editTitle": "Edit user",
     "addDescription": "Create a new user account.",

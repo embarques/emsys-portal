@@ -16,6 +16,8 @@
   "form": {
     "addTitle": "Agregar estado de código de barras",
     "editTitle": "Editar estado de código de barras",
-    "description": "Cree o actualice un estado del catálogo de códigos de barras."
+    "description": "Cree o actualice un estado del catálogo de códigos de barras.",
+    "details": "01 · Datos del estado",
+    "optional": "Opcional"
   }
 }

@@ -23,7 +23,9 @@
     "fieldActions": {
       "new": "New",
       "edit": "Edit"
-    }
+    },
+    "requiredHint": "* Required fields",
+    "keyboardHint": "Tab moves between controls · Enter advances through fields"
   },
   "address": {
     "useManual": "Enter address manually",

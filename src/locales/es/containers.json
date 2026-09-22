@@ -97,6 +97,10 @@
       "nameRequired": "Ingrese un nombre de contenedor (p. ej. 01-26).",
       "bookingRequired": "Ingrese un número de reserva.",
       "costInvalid": "El costo debe ser un número válido mayor o igual a 0."
+    },
+    "design": {
+      "container": "Confirma el nombre del contenedor, la reserva y los números de identificación.",
+      "logistics": "Registra los contactos de transporte, el costo y las fechas previstas de salida y llegada."
     }
   },
   "view": {

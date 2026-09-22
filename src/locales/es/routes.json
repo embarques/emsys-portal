@@ -35,7 +35,13 @@
       "loadPrevious": "Cargar ruta diaria anterior",
       "loadPreviousPlaceholder": "Copiar una configuración anterior…",
       "loadPreviousSearch": "Buscar rutas diarias anteriores…",
-      "loadPreviousEmpty": "No hay rutas diarias anteriores para copiar."
+      "loadPreviousEmpty": "No hay rutas diarias anteriores para copiar.",
+      "design": {
+        "date": "Elige el día en que trabajarán este vehículo y equipo.",
+        "branch": "Elige primero la sucursal para ver los vehículos y equipos disponibles.",
+        "previous": "Parte de una ruta diaria existente y confirma la fecha y las asignaciones.",
+        "roles": "Asigna las funciones de chofer, tasador y ayudante a los miembros del equipo."
+      }
     },
     "view": {
       "editLabel": "Editar ruta diaria",
@@ -459,6 +465,10 @@
     "validation": {
       "branchRequired": "La sucursal es obligatoria.",
       "vehicleRequired": "El vehículo es obligatorio."
+    },
+    "design": {
+      "branch": "Elige la sucursal de este equipo reutilizable.",
+      "crew": "Selecciona los empleados del equipo. Asigna sus funciones al crear una ruta diaria."
     }
   }
 }

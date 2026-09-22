@@ -9,5 +9,9 @@
   "inactive": "Inactivo",
   "empty": "No se encontraron cargos.",
   "confirmDelete": "¿Eliminar el cargo {name}?",
-  "retry": "Reintentar"
+  "retry": "Reintentar",
+  "form": {
+    "details": "01 · Datos del cargo",
+    "hint": "Usa un nombre claro que se pueda seleccionar al crear o editar un empleado."
+  }
 }

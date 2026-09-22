@@ -268,7 +268,26 @@
     "removeContact": "Remove contact",
     "removeAddress": "Remove address",
     "removeEmail": "Remove email",
-    "readOnlyStockHint": "Stock is calculated from receipts and dispatches."
+    "readOnlyStockHint": "Stock is calculated from receipts and dispatches.",
+    "workflow": {
+      "requiredHint": "* Required fields",
+      "keyboardHint": "Tab moves between controls · Enter advances through fields",
+      "optional": "Optional",
+      "itemHint": "Name the internal supply or material so staff can find it in receipts and dispatches.",
+      "reorderHint": "Set the stock level at which this item needs reordering.",
+      "receiptHint": "Choose the supply received, then enter its quantity and cost per unit.",
+      "dispatchHint": "Choose the supply leaving stock and confirm the quantity available.",
+      "supplierHint": "Choose who supplied these items and the date they were received.",
+      "recipientHint": "Confirm the dispatch date, then choose the employee or daily route receiving the supplies.",
+      "costHint": "Cost per unit for this receipt.",
+      "incomeHint": "Total income from this dispatch, if any.",
+      "availableHint": "Current stock balance before saving this dispatch.",
+      "supplierDetailsHint": "Use the supplier’s company name so staff can find it when recording a receipt.",
+      "contactsDetailsHint": "Add the people to contact for orders or questions.",
+      "addressesDetailsHint": "Search for the supplier’s address or enter it manually.",
+      "phonesDetailsHint": "Add contact numbers and use the star to choose the main number.",
+      "emailsDetailsHint": "Add email addresses for supplier correspondence."
+    }
   },
   "view": {
     "stock": "Stock",

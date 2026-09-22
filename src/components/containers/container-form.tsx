@@ -88,123 +88,125 @@ export function ContainerForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-        <FormSection icon={Container} title={t("containers.form.sections.container")}>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="name">
-                {t("containers.form.fields.name")} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={values.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder={t("containers.form.placeholders.name")}
-                required
-              />
-            </div>
+      <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+          <FormSection variant="card" icon={Container} title={`01 · ${t("containers.form.sections.container")}`} description={t("containers.form.design.container")}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="name">
+                  {t("containers.form.fields.name")} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={values.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  placeholder={t("containers.form.placeholders.name")}
+                  required
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="containerNumber">{t("containers.form.fields.containerNumber")}</Label>
-              <Input
-                id="containerNumber"
-                value={values.containerNumber}
-                onChange={(event) => updateField("containerNumber", event.target.value.toUpperCase())}
-                placeholder={t("containers.form.placeholders.containerNumber")}
-                className="font-mono text-xs"
-              />
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="containerNumber">{t("containers.form.fields.containerNumber")}</Label>
+                <Input
+                  id="containerNumber"
+                  value={values.containerNumber}
+                  onChange={(event) => updateField("containerNumber", event.target.value.toUpperCase())}
+                  placeholder={t("containers.form.placeholders.containerNumber")}
+                  className="font-mono text-xs"
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="booking">
-                {t("containers.form.fields.booking")} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="booking"
-                value={values.booking}
-                onChange={(event) => updateField("booking", event.target.value)}
-                placeholder={t("containers.form.placeholders.booking")}
-                required
-              />
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="booking">
+                  {t("containers.form.fields.booking")} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="booking"
+                  value={values.booking}
+                  onChange={(event) => updateField("booking", event.target.value)}
+                  placeholder={t("containers.form.placeholders.booking")}
+                  required
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="sealNumber">{t("containers.form.fields.sealNumber")}</Label>
-              <Input
-                id="sealNumber"
-                value={values.sealNumber}
-                onChange={(event) => updateField("sealNumber", event.target.value)}
-                placeholder={t("containers.form.placeholders.sealNumber")}
-              />
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="sealNumber">{t("containers.form.fields.sealNumber")}</Label>
+                <Input
+                  id="sealNumber"
+                  value={values.sealNumber}
+                  onChange={(event) => updateField("sealNumber", event.target.value)}
+                  placeholder={t("containers.form.placeholders.sealNumber")}
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="itn">{t("containers.form.fields.itn")}</Label>
-              <Input
-                id="itn"
-                value={values.itn}
-                onChange={(event) => updateField("itn", event.target.value)}
-                placeholder={t("containers.form.placeholders.itn")}
-                className="font-mono text-xs"
-              />
+              <div className="space-y-1">
+                <Label htmlFor="itn">{t("containers.form.fields.itn")}</Label>
+                <Input
+                  id="itn"
+                  value={values.itn}
+                  onChange={(event) => updateField("itn", event.target.value)}
+                  placeholder={t("containers.form.placeholders.itn")}
+                  className="font-mono text-xs"
+                />
+              </div>
             </div>
-          </div>
-        </FormSection>
+          </FormSection>
 
-        <FormSection icon={Ship} title={t("containers.form.sections.logistics")}>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="broker">{t("containers.form.fields.broker")}</Label>
-              <Input
-                id="broker"
-                value={values.broker}
-                onChange={(event) => updateField("broker", event.target.value)}
-                placeholder={t("containers.form.placeholders.broker")}
-              />
-            </div>
+          <FormSection variant="card" icon={Ship} title={`02 · ${t("containers.form.sections.logistics")}`} description={t("containers.form.design.logistics")}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="broker">{t("containers.form.fields.broker")}</Label>
+                <Input
+                  id="broker"
+                  value={values.broker}
+                  onChange={(event) => updateField("broker", event.target.value)}
+                  placeholder={t("containers.form.placeholders.broker")}
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="company">{t("containers.form.fields.company")}</Label>
-              <Input
-                id="company"
-                value={values.company}
-                onChange={(event) => updateField("company", event.target.value)}
-                placeholder={t("containers.form.placeholders.company")}
-              />
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="company">{t("containers.form.fields.company")}</Label>
+                <Input
+                  id="company"
+                  value={values.company}
+                  onChange={(event) => updateField("company", event.target.value)}
+                  placeholder={t("containers.form.placeholders.company")}
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="cost">{t("containers.form.fields.cost")}</Label>
-              <Input
-                id="cost"
-                type="number"
-                min={0}
-                step="0.01"
-                value={values.cost}
-                onChange={(event) => updateField("cost", event.target.value)}
-                placeholder={t("containers.form.placeholders.cost")}
-              />
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="cost">{t("containers.form.fields.cost")}</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={values.cost}
+                  onChange={(event) => updateField("cost", event.target.value)}
+                  placeholder={t("containers.form.placeholders.cost")}
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="departureDate">{t("containers.form.fields.departureDate")}</Label>
-              <DateInput
-                id="departureDate"
-                value={values.departureDate}
-                onChange={(event) => updateField("departureDate", event.target.value)}
-              />
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="departureDate">{t("containers.form.fields.departureDate")}</Label>
+                <DateInput
+                  id="departureDate"
+                  value={values.departureDate}
+                  onChange={(event) => updateField("departureDate", event.target.value)}
+                />
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="arrivalDate">{t("containers.form.fields.arrivalDate")}</Label>
-              <DateInput
-                id="arrivalDate"
-                value={values.arrivalDate}
-                onChange={(event) => updateField("arrivalDate", event.target.value)}
-              />
+              <div className="space-y-1">
+                <Label htmlFor="arrivalDate">{t("containers.form.fields.arrivalDate")}</Label>
+                <DateInput
+                  id="arrivalDate"
+                  value={values.arrivalDate}
+                  onChange={(event) => updateField("arrivalDate", event.target.value)}
+                />
+              </div>
             </div>
-          </div>
-        </FormSection>
+          </FormSection>
+        </div>
       </FormBody>
 
       <FormFooter

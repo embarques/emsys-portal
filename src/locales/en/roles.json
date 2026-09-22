@@ -70,6 +70,11 @@
     "validation": {
       "nameRequired": "Role name is required.",
       "permissionsRequired": "Select at least one permission."
+    },
+    "design": {
+      "role": "Give this role a clear name that describes its responsibilities.",
+      "permissionsTitle": "02 · Permissions",
+      "permissions": "Search by module or action and review the permissions granted to this role."
     }
   },
   "permissions": {

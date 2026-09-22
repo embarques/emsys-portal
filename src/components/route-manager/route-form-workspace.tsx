@@ -107,6 +107,7 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
   return (
     <FormTabShell
+      className="max-w-6xl"
       title={isEditing ? t("routes.form.editTitle") : t("routes.form.addTitle")}
       description={
         isEditing && editingLabel

@@ -113,6 +113,7 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
 
   return (
     <FormTabShell
+      className="max-w-6xl"
       title={isEditing ? t("containers.form.editTitle") : t("containers.form.addTitle")}
       description={isEditing && editing ? editing.name : t("containers.form.addDescription")}
     >

@@ -247,319 +247,322 @@ export function EmployeeForm({
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <FormBody isBusy={isSubmitting}>
-          {departmentsQuery.isError || titlesQuery.isError || branchesQuery.isError ? (
-            <p role="alert" className="text-sm text-destructive">{normalizeApiError(departmentsQuery.error || titlesQuery.error || branchesQuery.error).message}</p>
-          ) : null}
-          <FormSection icon={UserIcon} title={t("employees.form.sections.employee")}>
-            <div className="space-y-2.5">
-              <div className="space-y-1">
-                <Label htmlFor="name">
-                  {t("employees.form.fields.name")} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={values.name}
-                  onChange={(event) => updateField("name", event.target.value)}
-                  placeholder={t("employees.form.placeholders.name")}
-                  required
-                />
-              </div>
-
-              <div className="grid gap-2.5 sm:grid-cols-2">
+        <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+            {departmentsQuery.isError || titlesQuery.isError || branchesQuery.isError ? (
+              <p role="alert" className="text-sm text-destructive @4xl:col-span-2">{normalizeApiError(departmentsQuery.error || titlesQuery.error || branchesQuery.error).message}</p>
+            ) : null}
+            <FormSection variant="card" className="@4xl:row-span-3" icon={UserIcon} title={`01 · ${t("employees.form.sections.employee")}`} description={t("employees.form.design.employee")}>
+              <div className="space-y-2.5">
                 <div className="space-y-1">
-                  <div className="flex flex-wrap items-center justify-between gap-1">
-                    <Label htmlFor="department">
-                      {t("employees.form.fields.department")} <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="flex items-center gap-1">
-                      <PermissionGuard permission={PERMISSIONS.employeeDepartmentsCreate}>
-                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
-                          disabled={isSubmitting || departmentEditor.busy} onClick={() => departmentEditor.edit(null)}>
-                          <Plus className="size-3.5" />{t("common.actions.add")}
-                        </Button>
-                      </PermissionGuard>
-                      <PermissionGuard permission={PERMISSIONS.employeeDepartmentsUpdate}>
-                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
-                          disabled={isSubmitting || departmentEditor.busy || departmentsQuery.isFetching || departmentsQuery.isError || selectedDepartments.length !== 1}
-                          onClick={() => { if (selectedDepartments.length === 1) departmentEditor.edit(selectedDepartments[0]); }}>
-                          <Pencil className="size-3.5" />{t("common.actions.edit")}
-                        </Button>
-                      </PermissionGuard>
-                    </div>
-                  </div>
-                  <SearchableSelect
-                    id="department"
-                    value={values.department}
-                    onValueChange={(next) => updateField("department", next)}
-                    searchPlaceholder={t("employees.form.placeholders.departmentSearch")}
+                  <Label htmlFor="name">
+                    {t("employees.form.fields.name")} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    value={values.name}
+                    onChange={(event) => updateField("name", event.target.value)}
+                    placeholder={t("employees.form.placeholders.name")}
                     required
-                    options={departmentOptions}
-                    disabled={departmentsQuery.isLoading}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <Label htmlFor="department">
+                        {t("employees.form.fields.department")} <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="flex items-center gap-1">
+                        <PermissionGuard permission={PERMISSIONS.employeeDepartmentsCreate}>
+                          <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                            disabled={isSubmitting || departmentEditor.busy} onClick={() => departmentEditor.edit(null)}>
+                            <Plus className="size-3.5" />{t("common.actions.add")}
+                          </Button>
+                        </PermissionGuard>
+                        <PermissionGuard permission={PERMISSIONS.employeeDepartmentsUpdate}>
+                          <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                            disabled={isSubmitting || departmentEditor.busy || departmentsQuery.isFetching || departmentsQuery.isError || selectedDepartments.length !== 1}
+                            onClick={() => { if (selectedDepartments.length === 1) departmentEditor.edit(selectedDepartments[0]); }}>
+                            <Pencil className="size-3.5" />{t("common.actions.edit")}
+                          </Button>
+                        </PermissionGuard>
+                      </div>
+                    </div>
+                    <SearchableSelect
+                      id="department"
+                      value={values.department}
+                      onValueChange={(next) => updateField("department", next)}
+                      searchPlaceholder={t("employees.form.placeholders.departmentSearch")}
+                      required
+                      options={departmentOptions}
+                      disabled={departmentsQuery.isLoading}
+                      mobileSheet
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <Label htmlFor="title">
+                        {t("employees.form.fields.title")} <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="flex items-center gap-1">
+                        <PermissionGuard permission={PERMISSIONS.employeeTitlesCreate}>
+                          <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                            disabled={isSubmitting || titleEditor.busy} onClick={() => titleEditor.edit(null)}>
+                            <Plus className="size-3.5" />{t("common.actions.add")}
+                          </Button>
+                        </PermissionGuard>
+                        <PermissionGuard permission={PERMISSIONS.employeeTitlesUpdate}>
+                          <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                            disabled={isSubmitting || titleEditor.busy || titlesQuery.isFetching || titlesQuery.isError || selectedTitles.length !== 1}
+                            onClick={() => { if (selectedTitles.length === 1) titleEditor.edit(selectedTitles[0]); }}>
+                            <Pencil className="size-3.5" />{t("common.actions.edit")}
+                          </Button>
+                        </PermissionGuard>
+                      </div>
+                    </div>
+                    <SearchableSelect
+                      id="title"
+                      value={values.title}
+                      onValueChange={(next) => updateField("title", next)}
+                      searchPlaceholder={t("employees.form.placeholders.titleSearch")}
+                      required
+                      options={titleOptions}
+                      disabled={titlesQuery.isLoading}
+                      mobileSheet
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="active">
+                    {t("employees.form.fields.active")} <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="active"
+                    value={values.active ? "true" : "false"}
+                    onValueChange={(next) => updateField("active", next === "true")}
+                    required
+                    options={activeOptions}
                     mobileSheet
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center justify-between gap-1">
-                    <Label htmlFor="title">
-                      {t("employees.form.fields.title")} <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="flex items-center gap-1">
-                      <PermissionGuard permission={PERMISSIONS.employeeTitlesCreate}>
-                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
-                          disabled={isSubmitting || titleEditor.busy} onClick={() => titleEditor.edit(null)}>
-                          <Plus className="size-3.5" />{t("common.actions.add")}
-                        </Button>
-                      </PermissionGuard>
-                      <PermissionGuard permission={PERMISSIONS.employeeTitlesUpdate}>
-                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
-                          disabled={isSubmitting || titleEditor.busy || titlesQuery.isFetching || titlesQuery.isError || selectedTitles.length !== 1}
-                          onClick={() => { if (selectedTitles.length === 1) titleEditor.edit(selectedTitles[0]); }}>
-                          <Pencil className="size-3.5" />{t("common.actions.edit")}
-                        </Button>
-                      </PermissionGuard>
-                    </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="startDate">{t("employees.form.fields.startDate")}</Label>
+                    <DateInput
+                      id="startDate"
+                      value={employeeDateToInputValue(values.startDate)}
+                      onChange={(event) => updateField("startDate", event.target.value)}
+                      aria-invalid={Boolean(errors.startDate)}
+                    />
                   </div>
-                  <SearchableSelect
-                    id="title"
-                    value={values.title}
-                    onValueChange={(next) => updateField("title", next)}
-                    searchPlaceholder={t("employees.form.placeholders.titleSearch")}
-                    required
-                    options={titleOptions}
-                    disabled={titlesQuery.isLoading}
-                    mobileSheet
+
+                  <div className="space-y-1">
+                    <Label htmlFor="endDate">{t("employees.form.fields.endDate")}</Label>
+                    <DateInput
+                      id="endDate"
+                      value={employeeDateToInputValue(values.endDate)}
+                      onChange={(event) => updateEndDate(event.target.value)}
+                      aria-invalid={Boolean(errors.endDate)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="cost">{t("employees.form.fields.cost")}</Label>
+                  <Input
+                    id="cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={values.cost}
+                    onChange={(event) => updateField("cost", Number(event.target.value) || 0)}
                   />
                 </div>
-              </div>
 
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="userId">{t("employees.form.fields.user")}</Label>
+                    <FieldEntityActions
+                      hasSelection={Boolean(values.user)}
+                      onAdd={openCreateUser}
+                      onEdit={openEditUser}
+                      disabled={usersQuery.isLoading}
+                    />
+                  </div>
+                  <div className="min-w-0 w-full">
+                    <SearchableSelect
+                      id="userId"
+                      value={values.user ? String(values.user.id) : ""}
+                      onValueChange={updateUser}
+                      placeholder={t("employees.form.fields.noUser")}
+                      searchPlaceholder={t("employees.form.placeholders.userSearch")}
+                      options={userOptions}
+                      disabled={usersQuery.isLoading}
+                      className="w-full"
+                      mobileSheet
+                    />
+                  </div>
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection variant="card" icon={Building2} title={`02 · ${t("employees.form.sections.branch")}`} description={t("employees.form.design.branch")}>
               <div className="space-y-1">
-                <Label htmlFor="active">
-                  {t("employees.form.fields.active")} <span className="text-destructive">*</span>
+                <Label htmlFor="branch-portal">
+                  {t("employees.form.fields.branch")} <span className="text-destructive">*</span>
                 </Label>
                 <SearchableSelect
-                  id="active"
-                  value={values.active ? "true" : "false"}
-                  onValueChange={(next) => updateField("active", next === "true")}
+                  id="branch-portal"
+                  value={values.branch.id ? String(values.branch.id) : ""}
+                  onValueChange={updateBranch}
+                  searchPlaceholder={t("employees.form.placeholders.branchSearch")}
                   required
-                  options={activeOptions}
+                  options={branchOptions}
+                  disabled={branchesQuery.isLoading}
                   mobileSheet
                 />
               </div>
+            </FormSection>
 
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="startDate">{t("employees.form.fields.startDate")}</Label>
-                  <DateInput
-                    id="startDate"
-                    value={employeeDateToInputValue(values.startDate)}
-                    onChange={(event) => updateField("startDate", event.target.value)}
-                    aria-invalid={Boolean(errors.startDate)}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="endDate">{t("employees.form.fields.endDate")}</Label>
-                  <DateInput
-                    id="endDate"
-                    value={employeeDateToInputValue(values.endDate)}
-                    onChange={(event) => updateEndDate(event.target.value)}
-                    aria-invalid={Boolean(errors.endDate)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="cost">{t("employees.form.fields.cost")}</Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={values.cost}
-                  onChange={(event) => updateField("cost", Number(event.target.value) || 0)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="userId">{t("employees.form.fields.user")}</Label>
-                  <FieldEntityActions
-                    hasSelection={Boolean(values.user)}
-                    onAdd={openCreateUser}
-                    onEdit={openEditUser}
-                    disabled={usersQuery.isLoading}
-                  />
-                </div>
-                <div className="min-w-0 w-full">
-                  <SearchableSelect
-                    id="userId"
-                    value={values.user ? String(values.user.id) : ""}
-                    onValueChange={updateUser}
-                    placeholder={t("employees.form.fields.noUser")}
-                    searchPlaceholder={t("employees.form.placeholders.userSearch")}
-                    options={userOptions}
-                    disabled={usersQuery.isLoading}
+          <FormSection
+            variant="card"
+            icon={MapPin}
+            title={`03 · ${t("employees.form.sections.address")}`} description={t("employees.form.design.address")}
+            action={
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                onClick={() => setManualAddressEntry((current) => !current)}
+              >
+                {manualAddressEntry ? t("common.address.useGoogle") : t("common.address.useManual")}
+              </button>
+            }
+          >
+            <div className="space-y-2.5">
+              <div className="flex items-end gap-2">
+                <div className="min-w-0 w-full flex-1 space-y-1">
+                  <Label htmlFor="address-address1" className="text-xs text-muted-foreground">
+                    {t("employees.form.fields.address1")}
+                  </Label>
+                  <AddressAutocompleteInput
+                    id="address-address1"
+                    value={values.address.address1}
+                    onValueChange={(value) => updateAddressField("address1", value)}
+                    onPlaceSelected={applyPlaceToAddress}
+                    placeholder={t("employees.form.placeholders.address1")}
+                    allowManualEntry
                     className="w-full"
-                    mobileSheet
+                    manualEntry={manualAddressEntry}
+                    onManualEntryChange={setManualAddressEntry}
+                    manualEntryTogglePosition="none"
+                  />
+                </div>
+                <div className="w-24 shrink-0 space-y-1 sm:w-32">
+                  <Label htmlFor="address-apartment" className="text-xs text-muted-foreground">
+                    {t("employees.form.fields.apartment")}
+                  </Label>
+                  <Input
+                    id="address-apartment"
+                    value={values.address.apartment}
+                    onChange={(event) => updateAddressField("apartment", event.target.value)}
+                    placeholder={t("employees.form.placeholders.apartment")}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Input
+                  id="address-address2"
+                  value={values.address.address2}
+                  onChange={(event) => updateAddressField("address2", event.target.value)}
+                  placeholder={t("employees.form.placeholders.address2")}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <div className="space-y-1">
+                  <Label htmlFor="address-city" className="text-xs text-muted-foreground">
+                    {t("employees.form.fields.city")}
+                  </Label>
+                  <Input
+                    id="address-city"
+                    value={values.address.city}
+                    onChange={(event) => updateAddressField("city", event.target.value)}
+                    placeholder={t("employees.form.placeholders.city")}
+                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="address-state" className="text-xs text-muted-foreground">
+                    {t("employees.form.fields.state")}
+                  </Label>
+                  <Input
+                    id="address-state"
+                    value={values.address.state}
+                    onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
+                    placeholder={t("employees.form.placeholders.state")}
+                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="address-zipcode" className="text-xs text-muted-foreground">
+                    {t("employees.form.fields.zipcode")}
+                  </Label>
+                  <Input
+                    id="address-zipcode"
+                    value={values.address.zipcode}
+                    onChange={(event) => updateAddressField("zipcode", event.target.value)}
+                    placeholder={t("employees.form.placeholders.zipcode")}
+                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="address-country" className="text-xs text-muted-foreground">
+                    {t("employees.form.fields.country")}
+                  </Label>
+                  <Input
+                    id="address-country"
+                    value={values.address.country}
+                    onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
+                    placeholder={t("employees.form.placeholders.country")}
+                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                   />
                 </div>
               </div>
             </div>
           </FormSection>
 
-          <FormSection icon={Building2} title={t("employees.form.sections.branch")}>
-            <div className="space-y-1">
-              <Label htmlFor="branch-portal">
-                {t("employees.form.fields.branch")} <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                id="branch-portal"
-                value={values.branch.id ? String(values.branch.id) : ""}
-                onValueChange={updateBranch}
-                searchPlaceholder={t("employees.form.placeholders.branchSearch")}
-                required
-                options={branchOptions}
-                disabled={branchesQuery.isLoading}
-                mobileSheet
+          <FormSection variant="card" icon={Phone} title={`04 · ${t("employees.form.sections.contact")}`} description={t("employees.form.design.contact")}>
+            <div className="space-y-2.5">
+              <PhoneListEditor
+                idPrefix="employee-phone"
+                phones={values.phones}
+                compact
+                onChange={(phones) => updateField("phones", phones)}
               />
+
+              <div className="space-y-1">
+                <Label htmlFor="email">{t("employees.form.fields.email")}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={values.email}
+                  onChange={(event) => updateField("email", event.target.value)}
+                  placeholder={t("employees.form.placeholders.email")}
+                />
+              </div>
             </div>
           </FormSection>
-
-        <FormSection
-          icon={MapPin}
-          title={t("employees.form.sections.address")}
-          action={
-            <button
-              type="button"
-              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              onClick={() => setManualAddressEntry((current) => !current)}
-            >
-              {manualAddressEntry ? t("common.address.useGoogle") : t("common.address.useManual")}
-            </button>
-          }
-        >
-          <div className="space-y-2.5">
-            <div className="flex items-end gap-2">
-              <div className="min-w-0 w-full flex-1 space-y-1">
-                <Label htmlFor="address-address1" className="text-xs text-muted-foreground">
-                  {t("employees.form.fields.address1")}
-                </Label>
-                <AddressAutocompleteInput
-                  id="address-address1"
-                  value={values.address.address1}
-                  onValueChange={(value) => updateAddressField("address1", value)}
-                  onPlaceSelected={applyPlaceToAddress}
-                  placeholder={t("employees.form.placeholders.address1")}
-                  allowManualEntry
-                  className="w-full"
-                  manualEntry={manualAddressEntry}
-                  onManualEntryChange={setManualAddressEntry}
-                  manualEntryTogglePosition="none"
-                />
-              </div>
-              <div className="w-24 shrink-0 space-y-1 sm:w-32">
-                <Label htmlFor="address-apartment" className="text-xs text-muted-foreground">
-                  {t("employees.form.fields.apartment")}
-                </Label>
-                <Input
-                  id="address-apartment"
-                  value={values.address.apartment}
-                  onChange={(event) => updateAddressField("apartment", event.target.value)}
-                  placeholder={t("employees.form.placeholders.apartment")}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Input
-                id="address-address2"
-                value={values.address.address2}
-                onChange={(event) => updateAddressField("address2", event.target.value)}
-                placeholder={t("employees.form.placeholders.address2")}
-                autoComplete="off"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              <div className="space-y-1">
-                <Label htmlFor="address-city" className="text-xs text-muted-foreground">
-                  {t("employees.form.fields.city")}
-                </Label>
-                <Input
-                  id="address-city"
-                  value={values.address.city}
-                  onChange={(event) => updateAddressField("city", event.target.value)}
-                  placeholder={t("employees.form.placeholders.city")}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="address-state" className="text-xs text-muted-foreground">
-                  {t("employees.form.fields.state")}
-                </Label>
-                <Input
-                  id="address-state"
-                  value={values.address.state}
-                  onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
-                  placeholder={t("employees.form.placeholders.state")}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="address-zipcode" className="text-xs text-muted-foreground">
-                  {t("employees.form.fields.zipcode")}
-                </Label>
-                <Input
-                  id="address-zipcode"
-                  value={values.address.zipcode}
-                  onChange={(event) => updateAddressField("zipcode", event.target.value)}
-                  placeholder={t("employees.form.placeholders.zipcode")}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="address-country" className="text-xs text-muted-foreground">
-                  {t("employees.form.fields.country")}
-                </Label>
-                <Input
-                  id="address-country"
-                  value={values.address.country}
-                  onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
-                  placeholder={t("employees.form.placeholders.country")}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
-                />
-              </div>
-            </div>
-          </div>
-        </FormSection>
-
-        <FormSection icon={Phone} title={t("employees.form.sections.contact")}>
-          <div className="space-y-2.5">
-            <PhoneListEditor
-              idPrefix="employee-phone"
-              phones={values.phones}
-              compact
-              onChange={(phones) => updateField("phones", phones)}
-            />
-
-            <div className="space-y-1">
-              <Label htmlFor="email">{t("employees.form.fields.email")}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={values.email}
-                onChange={(event) => updateField("email", event.target.value)}
-                placeholder={t("employees.form.placeholders.email")}
-              />
-            </div>
-          </div>
-        </FormSection>
+        </div>
       </FormBody>
 
         <FormFooter

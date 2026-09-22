@@ -120,181 +120,185 @@ export function ActiveRouteForm({
       onKeyDown={handleEnterNavigation}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <FormBody isBusy={isSubmitting}>
-        {showPreviousRouteField ? (
-          <FormSection icon={History} title={t("routes.dailyRoutes.form.loadPrevious")}>
-            <SearchableSelect
-              id="daily-route-previous"
-              aria-label={t("routes.dailyRoutes.form.loadPrevious")}
-              value={previousRouteId}
-              onValueChange={(value) => onPreviousRouteChange?.(value)}
-              placeholder={t("routes.dailyRoutes.form.loadPreviousPlaceholder")}
-              searchPlaceholder={t("routes.dailyRoutes.form.loadPreviousSearch")}
-              loading={previousRoutesLoading}
-              loadingMessage={t("common.loading")}
-              emptyMessage={t("routes.dailyRoutes.form.loadPreviousEmpty")}
-              options={previousRouteOptions}
-            />
-          </FormSection>
-        ) : null}
-
-        <FormSection icon={Building2} title={t("routes.activeRoute.branch")} required>
-          <SearchableSelect
-            id="active-route-branch"
-            aria-label={t("routes.activeRoute.branch")}
-            value={branchCode}
-            onValueChange={onBranchChange}
-            placeholder={t("routes.activeRoute.branchPlaceholder")}
-            searchPlaceholder={t("routes.activeRoute.branchSearch")}
-            loading={branchesLoading}
-            loadingMessage={t("common.loading")}
-            options={branchOptions}
-          />
-        </FormSection>
-
-        <FormSection icon={CalendarRange} title={t("routes.activeRoute.date")} required>
-          <DateInput
-            id="active-route-date"
-            aria-label={t("routes.activeRoute.date")}
-            value={values.date}
-            onChange={(event) => onDateChange(event.target.value)}
-            required
-          />
-        </FormSection>
-
-        <FormSection
-          icon={Car}
-          title={t("routes.activeRoute.vehicle")}
-          required
-          action={
-            <FieldEntityActions
-              onAdd={onCreateVehicleClick}
-              onEdit={onEditVehicleClick}
-              hasSelection={Boolean(values.vehicle.id)}
-              addIcon={Plus}
-              newLabel={t("routes.activeRoute.createVehicle")}
-            />
-          }
-        >
-          <SearchableSelect
-            id="active-route-vehicle"
-            aria-label={t("routes.activeRoute.vehicle")}
-            value={values.vehicle.id}
-            onValueChange={onVehicleChange}
-            placeholder={
-              hasBranch
-                ? t("routes.activeRoute.vehiclePlaceholder")
-                : t("routes.activeRoute.selectBranchFirstVehicle")
-            }
-            searchPlaceholder={t("routes.activeRoute.vehicleSearch")}
-            loading={vehiclesLoading}
-            loadingMessage={t("common.loading")}
-            emptyMessage={
-              hasBranch
-                ? t("routes.activeRoute.vehicleEmpty")
-                : t("routes.activeRoute.selectBranchFirstVehicle")
-            }
-            options={vehicleOptions}
-            required
-          />
-        </FormSection>
-
-        <FormSection
-          icon={RouteIcon}
-          title={t("routes.activeRoute.route")}
-          required
-          action={
-            <FieldEntityActions
-              onAdd={onCreateRouteClick}
-              onEdit={onEditRouteClick}
-              hasSelection={Boolean(values.routeRecordId)}
-              addIcon={Plus}
-              newLabel={t("routes.activeRoute.createRoute")}
-            />
-          }
-        >
-          <SearchableSelect
-            id="active-route-route"
-            aria-label={t("routes.activeRoute.route")}
-            value={values.routeRecordId}
-            onValueChange={onRouteRecordChange}
-            placeholder={
-              hasBranch
-                ? t("routes.activeRoute.routePlaceholder")
-                : t("routes.activeRoute.selectBranchFirst")
-            }
-            searchPlaceholder={t("routes.activeRoute.routeSearch")}
-            loading={routesLoading}
-            loadingMessage={t("common.loading")}
-            emptyMessage={
-              hasBranch
-                ? t("routes.activeRoute.routeEmpty")
-                : t("routes.activeRoute.selectBranchFirst")
-            }
-            options={routeOptions}
-            required
-          />
-        </FormSection>
-
-        {values.routeRecordId ? (
-          <FormSection icon={Users} title={t("routes.activeRoute.crewRoles")}>
-            <CrewRolePicker
-              employees={values.employees}
-              onRoleChange={onRoleChange}
-              roles={crewRoles}
-              toggleLeadRoles
-              loading={selectedRouteLoading}
-            />
-          </FormSection>
-        ) : null}
-
-        {isDeliveryBranch ? (
-          <>
-            <FormSection icon={Container} title={t("routes.activeRoute.container")} required>
+      <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+          {showPreviousRouteField ? (
+            <FormSection variant="card" className="@4xl:col-span-2" description={t("routes.dailyRoutes.form.design.previous")} icon={History} title={t("routes.dailyRoutes.form.loadPrevious")}>
               <SearchableSelect
-                id="active-route-container"
-                aria-label={t("routes.activeRoute.container")}
-                value={values.container ? String(values.container.id) : ""}
-                onValueChange={onContainerChange}
-                placeholder={t("routes.activeRoute.containerPlaceholder")}
-                searchPlaceholder={t("routes.activeRoute.containerSearch")}
-                options={containerOptions}
-                required
+                id="daily-route-previous"
+                aria-label={t("routes.dailyRoutes.form.loadPrevious")}
+                value={previousRouteId}
+                onValueChange={(value) => onPreviousRouteChange?.(value)}
+                placeholder={t("routes.dailyRoutes.form.loadPreviousPlaceholder")}
+                searchPlaceholder={t("routes.dailyRoutes.form.loadPreviousSearch")}
+                loading={previousRoutesLoading}
+                loadingMessage={t("common.loading")}
+                emptyMessage={t("routes.dailyRoutes.form.loadPreviousEmpty")}
+                options={previousRouteOptions}
               />
             </FormSection>
+          ) : null}
 
-            <FormSection icon={DollarSign} title={t("routes.activeRoute.rate")}>
-              <div className="space-y-1.5">
-                <Input
-                  id="active-route-rate"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  inputMode="decimal"
-                  value={values.rate}
-                  onChange={(event) => onRateChange(event.target.value)}
-                  placeholder={t("routes.activeRoute.ratePlaceholder")}
-                  aria-describedby="active-route-rate-hint"
-                />
-                <p id="active-route-rate-hint" className="text-xs text-muted-foreground">
-                  {t("routes.activeRoute.rateHint")}
-                </p>
-              </div>
-            </FormSection>
-          </>
-        ) : null}
-
-        {isEditing && !isDeliveryBranch && vehicleRouteId ? (
-          <FormSection icon={Package} title={t("routes.pickupRoutes.view.sections.orders")}>
-            <PickupRouteOrdersSection routeId={vehicleRouteId} editable />
+          <FormSection variant="card" description={t("routes.dailyRoutes.form.design.branch")} icon={Building2} title={t("routes.activeRoute.branch")} required>
+            <SearchableSelect
+              id="active-route-branch"
+              aria-label={t("routes.activeRoute.branch")}
+              value={branchCode}
+              onValueChange={onBranchChange}
+              placeholder={t("routes.activeRoute.branchPlaceholder")}
+              searchPlaceholder={t("routes.activeRoute.branchSearch")}
+              loading={branchesLoading}
+              loadingMessage={t("common.loading")}
+              options={branchOptions}
+            />
           </FormSection>
-        ) : null}
 
-        {isEditing ? (
-          <p className="text-xs text-muted-foreground">
-            {t(`routes.${copyPrefix}.form.editHint`)}
-          </p>
-        ) : null}
+          <FormSection variant="card" description={t("routes.dailyRoutes.form.design.date")} icon={CalendarRange} title={t("routes.activeRoute.date")} required>
+            <DateInput
+              id="active-route-date"
+              aria-label={t("routes.activeRoute.date")}
+              value={values.date}
+              onChange={(event) => onDateChange(event.target.value)}
+              required
+            />
+          </FormSection>
+
+          <FormSection
+            variant="card"
+            icon={Car}
+            title={t("routes.activeRoute.vehicle")}
+            required
+            action={
+              <FieldEntityActions
+                onAdd={onCreateVehicleClick}
+                onEdit={onEditVehicleClick}
+                hasSelection={Boolean(values.vehicle.id)}
+                addIcon={Plus}
+                newLabel={t("routes.activeRoute.createVehicle")}
+              />
+            }
+          >
+            <SearchableSelect
+              id="active-route-vehicle"
+              aria-label={t("routes.activeRoute.vehicle")}
+              value={values.vehicle.id}
+              onValueChange={onVehicleChange}
+              placeholder={
+                hasBranch
+                  ? t("routes.activeRoute.vehiclePlaceholder")
+                  : t("routes.activeRoute.selectBranchFirstVehicle")
+              }
+              searchPlaceholder={t("routes.activeRoute.vehicleSearch")}
+              loading={vehiclesLoading}
+              loadingMessage={t("common.loading")}
+              emptyMessage={
+                hasBranch
+                  ? t("routes.activeRoute.vehicleEmpty")
+                  : t("routes.activeRoute.selectBranchFirstVehicle")
+              }
+              options={vehicleOptions}
+              required
+            />
+          </FormSection>
+
+          <FormSection
+            variant="card"
+            icon={RouteIcon}
+            title={t("routes.activeRoute.route")}
+            required
+            action={
+              <FieldEntityActions
+                onAdd={onCreateRouteClick}
+                onEdit={onEditRouteClick}
+                hasSelection={Boolean(values.routeRecordId)}
+                addIcon={Plus}
+                newLabel={t("routes.activeRoute.createRoute")}
+              />
+            }
+          >
+            <SearchableSelect
+              id="active-route-route"
+              aria-label={t("routes.activeRoute.route")}
+              value={values.routeRecordId}
+              onValueChange={onRouteRecordChange}
+              placeholder={
+                hasBranch
+                  ? t("routes.activeRoute.routePlaceholder")
+                  : t("routes.activeRoute.selectBranchFirst")
+              }
+              searchPlaceholder={t("routes.activeRoute.routeSearch")}
+              loading={routesLoading}
+              loadingMessage={t("common.loading")}
+              emptyMessage={
+                hasBranch
+                  ? t("routes.activeRoute.routeEmpty")
+                  : t("routes.activeRoute.selectBranchFirst")
+              }
+              options={routeOptions}
+              required
+            />
+          </FormSection>
+
+          {values.routeRecordId ? (
+            <FormSection variant="card" className="@4xl:col-span-2" description={t("routes.dailyRoutes.form.design.roles")} icon={Users} title={t("routes.activeRoute.crewRoles")}>
+              <CrewRolePicker
+                employees={values.employees}
+                onRoleChange={onRoleChange}
+                roles={crewRoles}
+                toggleLeadRoles
+                loading={selectedRouteLoading}
+              />
+            </FormSection>
+          ) : null}
+
+          {isDeliveryBranch ? (
+            <>
+              <FormSection variant="card" icon={Container} title={t("routes.activeRoute.container")} required>
+                <SearchableSelect
+                  id="active-route-container"
+                  aria-label={t("routes.activeRoute.container")}
+                  value={values.container ? String(values.container.id) : ""}
+                  onValueChange={onContainerChange}
+                  placeholder={t("routes.activeRoute.containerPlaceholder")}
+                  searchPlaceholder={t("routes.activeRoute.containerSearch")}
+                  options={containerOptions}
+                  required
+                />
+              </FormSection>
+
+              <FormSection variant="card" icon={DollarSign} title={t("routes.activeRoute.rate")}>
+                <div className="space-y-1.5">
+                  <Input
+                    id="active-route-rate"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    inputMode="decimal"
+                    value={values.rate}
+                    onChange={(event) => onRateChange(event.target.value)}
+                    placeholder={t("routes.activeRoute.ratePlaceholder")}
+                    aria-describedby="active-route-rate-hint"
+                  />
+                  <p id="active-route-rate-hint" className="text-xs text-muted-foreground">
+                    {t("routes.activeRoute.rateHint")}
+                  </p>
+                </div>
+              </FormSection>
+            </>
+          ) : null}
+
+          {isEditing && !isDeliveryBranch && vehicleRouteId ? (
+            <FormSection variant="card" className="@4xl:col-span-2" icon={Package} title={t("routes.pickupRoutes.view.sections.orders")}>
+              <PickupRouteOrdersSection routeId={vehicleRouteId} editable />
+            </FormSection>
+          ) : null}
+
+          {isEditing ? (
+            <p className="text-xs text-muted-foreground @4xl:col-span-2">
+              {t(`routes.${copyPrefix}.form.editHint`)}
+            </p>
+          ) : null}
+        </div>
       </FormBody>
 
       <FormFooter

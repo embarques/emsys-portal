@@ -9,5 +9,9 @@
   "inactive": "Inactive",
   "empty": "No titles found.",
   "confirmDelete": "Delete title {name}?",
-  "retry": "Retry"
+  "retry": "Retry",
+  "form": {
+    "details": "01 · Title details",
+    "hint": "Use a clear name that staff can select when creating or editing an employee."
+  }
 }

@@ -35,7 +35,13 @@
       "loadPrevious": "Load previous daily route",
       "loadPreviousPlaceholder": "Copy a previous configuration…",
       "loadPreviousSearch": "Search previous daily routes…",
-      "loadPreviousEmpty": "No previous daily routes to copy."
+      "loadPreviousEmpty": "No previous daily routes to copy.",
+      "design": {
+        "date": "Choose the day this vehicle and crew will operate.",
+        "branch": "Choose the branch first to see the available vehicles and crews.",
+        "previous": "Start with an existing daily route, then confirm the date and assignments.",
+        "roles": "Assign driver, appraiser, and helper roles to the selected crew members."
+      }
     },
     "view": {
       "editLabel": "Edit daily route",
@@ -459,6 +465,10 @@
     "validation": {
       "branchRequired": "Branch is required.",
       "vehicleRequired": "Vehicle is required."
+    },
+    "design": {
+      "branch": "Choose the branch this reusable crew belongs to.",
+      "crew": "Select the employees in this crew. Assign their working roles when creating a daily route."
     }
   }
 }

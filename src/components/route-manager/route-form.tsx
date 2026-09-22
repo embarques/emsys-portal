@@ -154,91 +154,93 @@ export function RouteForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-        {isEditing && (values.routeId.trim() || values.name.trim()) ? (
-          <FormSection icon={ClipboardList} title={t("routes.form.sections.details")}>
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              {values.routeId.trim() ? (
-                <div className="space-y-1 sm:col-span-2">
-                  <Label htmlFor="route-display-id">{t("routes.routeDetails.routeId")}</Label>
-                  <p id="route-display-id" className="font-mono text-sm">
-                    {values.routeId}
-                  </p>
-                </div>
-              ) : null}
+      <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+          {isEditing && (values.routeId.trim() || values.name.trim()) ? (
+            <FormSection variant="card" className="@4xl:col-span-2" icon={ClipboardList} title={t("routes.form.sections.details")}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {values.routeId.trim() ? (
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label htmlFor="route-display-id">{t("routes.routeDetails.routeId")}</Label>
+                    <p id="route-display-id" className="font-mono text-sm">
+                      {values.routeId}
+                    </p>
+                  </div>
+                ) : null}
 
-              {values.name.trim() ? (
-                <div className="space-y-1 sm:col-span-2">
-                  <Label htmlFor="route-display-name">{t("routes.routeDetails.name")}</Label>
-                  <p id="route-display-name" className="text-sm font-medium">
-                    {values.name}
-                  </p>
-                </div>
-              ) : null}
+                {values.name.trim() ? (
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label htmlFor="route-display-name">{t("routes.routeDetails.name")}</Label>
+                    <p id="route-display-name" className="text-sm font-medium">
+                      {values.name}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </FormSection>
+          ) : null}
+
+          <FormSection variant="card" icon={CircleCheck} title={t("routes.activeRoute.status")}>
+            <div
+              className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
+              role="radiogroup"
+              aria-label={t("routes.activeRoute.status")}
+            >
+              {[
+                { value: true, label: t("routes.activeRoute.active") },
+                { value: false, label: t("routes.activeRoute.inactive") },
+              ].map((option) => {
+                const selected = values.active === option.value;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => updateField("active", option.value)}
+                    className={cn(
+                      "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      selected && option.value
+                        ? "bg-emerald-600 text-white shadow-sm"
+                        : selected
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </FormSection>
-        ) : null}
 
-        <FormSection icon={CircleCheck} title={t("routes.activeRoute.status")}>
-          <div
-            className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
-            role="radiogroup"
-            aria-label={t("routes.activeRoute.status")}
-          >
-            {[
-              { value: true, label: t("routes.activeRoute.active") },
-              { value: false, label: t("routes.activeRoute.inactive") },
-            ].map((option) => {
-              const selected = values.active === option.value;
-              return (
-                <button
-                  key={option.label}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => updateField("active", option.value)}
-                  className={cn(
-                    "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                    selected && option.value
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : selected
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </FormSection>
-
-        <FormSection icon={Building2} title={t("routes.form.sections.branch")} required>
-          <SearchableSelect
-            id="routeBranch"
-            aria-label={t("routes.form.sections.branch")}
-            value={selectBranchCode}
-            onValueChange={handleBranchChange}
-            placeholder={t("routes.form.branchPlaceholder")}
-            searchPlaceholder={t("routes.form.branchSearch")}
-            loading={branchesQuery.isLoading}
-            required
-            options={branchOptions}
-          />
-        </FormSection>
-
-        <FormSection icon={Users} title={t("routes.form.sections.crew")} required>
-          {hasBranch ? (
-            <RouteEmployeeSelect
-              value={values.employees}
-              onChange={handleEmployeesChange}
-              error={employeeError}
-              branchCode={values.branch.code}
+          <FormSection variant="card" description={t("routes.form.design.branch")} icon={Building2} title={t("routes.form.sections.branch")} required>
+            <SearchableSelect
+              id="routeBranch"
+              aria-label={t("routes.form.sections.branch")}
+              value={selectBranchCode}
+              onValueChange={handleBranchChange}
+              placeholder={t("routes.form.branchPlaceholder")}
+              searchPlaceholder={t("routes.form.branchSearch")}
+              loading={branchesQuery.isLoading}
+              required
+              options={branchOptions}
             />
-          ) : (
-            <p className="text-xs text-muted-foreground">{t("routes.form.selectBranchFirst")}</p>
-          )}
-        </FormSection>
+          </FormSection>
+
+          <FormSection variant="card" className="@4xl:col-span-2" description={t("routes.form.design.crew")} icon={Users} title={t("routes.form.sections.crew")} required>
+            {hasBranch ? (
+              <RouteEmployeeSelect
+                value={values.employees}
+                onChange={handleEmployeesChange}
+                error={employeeError}
+                branchCode={values.branch.code}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">{t("routes.form.selectBranchFirst")}</p>
+            )}
+          </FormSection>
+        </div>
       </FormBody>
 
       <FormFooter

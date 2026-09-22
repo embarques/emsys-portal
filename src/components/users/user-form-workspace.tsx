@@ -106,6 +106,7 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   return (
     <FormTabShell
+      className="max-w-6xl"
       title={isEditing ? t("users.form.editTitle") : t("users.form.addTitle")}
       description={isEditing && editing ? editing.name : t("users.form.addDescription")}
     >

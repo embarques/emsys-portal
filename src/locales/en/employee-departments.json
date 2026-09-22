@@ -9,5 +9,9 @@
   "inactive": "Inactive",
   "empty": "No departments found.",
   "confirmDelete": "Delete department {name}?",
-  "retry": "Retry"
+  "retry": "Retry",
+  "form": {
+    "details": "01 · Department details",
+    "hint": "Use a clear name that staff can select when creating or editing an employee."
+  }
 }

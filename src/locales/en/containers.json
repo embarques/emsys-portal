@@ -97,6 +97,10 @@
       "nameRequired": "Enter a container name (e.g. 01-26).",
       "bookingRequired": "Enter a booking number.",
       "costInvalid": "Cost must be a valid number greater than or equal to 0."
+    },
+    "design": {
+      "container": "Confirm the container name, booking reference, and identification numbers.",
+      "logistics": "Record the shipping contacts, cost, and planned departure and arrival dates."
     }
   },
   "view": {

@@ -134,7 +134,7 @@ export function InventoryDispatchToSelect({
       {source === "route" ? (
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="dispatchedTo-route">{t("inventory.form.fields.route")}</Label>
+            <Label htmlFor="dispatchedTo-route">{t("inventory.form.fields.route")} <span className="text-destructive">*</span></Label>
             {onAddRoute ? (
               <FieldEntityActions
                 hasSelection={Boolean(values.routeId)}
@@ -159,7 +159,7 @@ export function InventoryDispatchToSelect({
       ) : (
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="dispatchedTo-employee">{t("inventory.form.fields.employee")}</Label>
+            <Label htmlFor="dispatchedTo-employee">{t("inventory.form.fields.employee")} <span className="text-destructive">*</span></Label>
             {onAddEmployee ? (
               <FieldEntityActions
                 hasSelection={Boolean(values.employeeId)}

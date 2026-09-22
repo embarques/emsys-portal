@@ -64,6 +64,11 @@
     }
   },
   "form": {
+    "design": {
+      "profile": "Confirma la identidad y los datos de acceso del usuario.",
+      "access": "Revisa el rol y la configuración de acceso antes de guardar.",
+      "loginHours": "Define un horario solo si este usuario necesita horas de acceso restringidas."
+    },
     "addTitle": "Agregar usuario",
     "editTitle": "Editar usuario",
     "addDescription": "Cree una nueva cuenta de usuario.",

@@ -106,6 +106,7 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   return (
     <FormTabShell
+      className="max-w-6xl"
       title={isEditing ? t("employees.form.editTitle") : t("employees.form.addTitle")}
       description={isEditing && editing ? editing.name : t("employees.form.addDescription")}
     >

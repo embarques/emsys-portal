@@ -389,6 +389,7 @@ export function InventoryItemsWorkspace() {
             key={editingItem?.id ?? "new"}
             initialValues={editingItem ? inventoryItemToFormValues(editingItem) : undefined}
             quantityLeft={editingItem?.quantity ?? 0}
+            isSubmitting={createItem.isPending || updateItem.isPending}
             submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.addItem")}
             onSubmit={saveItem}
             onCancel={() => setFormMode(null)}
@@ -416,7 +417,7 @@ export function InventoryItemsWorkspace() {
       </Dialog>
 
       <Dialog open={documentDialog === "receipt"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.newReceiptTitle")}</DialogTitle>
           </DialogHeader>
@@ -441,7 +442,7 @@ export function InventoryItemsWorkspace() {
       </Dialog>
 
       <Dialog open={documentDialog === "dispatch"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.newDispatchTitle")}</DialogTitle>
           </DialogHeader>

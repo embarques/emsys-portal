@@ -131,8 +131,8 @@ export function UserForm({
       onKeyDown={handleEnterNavigation}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <FormBody isBusy={isSubmitting}>
-        <FormSection icon={KeyRound} title={t("users.form.sections.profile")}>
+      <FormBody workflow isBusy={isSubmitting}>
+        <FormSection variant="card" icon={KeyRound} title={`01 · ${t("users.form.sections.profile")}`} description={t("users.form.design.profile")}>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t("users.form.fields.email")} required error={errors.email?.message}>
               <Input
@@ -210,7 +210,7 @@ export function UserForm({
           ) : null}
         </FormSection>
 
-        <FormSection icon={ShieldCheck} title={t("users.form.sections.access")}>
+        <FormSection variant="card" icon={ShieldCheck} title={`02 · ${t("users.form.sections.access")}`} description={t("users.form.design.access")}>
           <div className="grid gap-3 sm:grid-cols-3">
             <Controller
               control={control}
@@ -293,7 +293,7 @@ export function UserForm({
           ) : null}
         </FormSection>
 
-        <FormSection icon={Clock} title={t("users.form.sections.loginHours")}>
+        <FormSection variant="card" icon={Clock} title={`03 · ${t("users.form.sections.loginHours")}`} description={t("users.form.design.loginHours")}>
           <Controller
             control={control}
             name="restrictLoginHours"

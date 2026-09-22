@@ -1,11 +1,24 @@
 "use client";
 
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Keyboard, Loader2 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+/** Compact instructions shared by desktop-first entry forms. */
+export function FormWorkflowHints({ requiredHint, keyboardHint }: { requiredHint: string; keyboardHint: string }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+      <p>{requiredHint}</p>
+      <p className="flex items-center gap-1.5">
+        <Keyboard className="size-3.5 shrink-0" aria-hidden="true" />
+        {keyboardHint}
+      </p>
+    </div>
+  );
+}
 
 /**
  * Shared form layout primitives that give every add/edit form the same look and
@@ -17,6 +30,8 @@ type FormSectionProps = {
   /** Optional leading icon rendered in the primary color. */
   icon?: React.ComponentType<{ className?: string }>;
   title: string;
+  variant?: "plain" | "card";
+  description?: string;
   /** Append a required asterisk to the title. */
   required?: boolean;
   /** Optional control rendered on the right of the section header (e.g. an add button). */
@@ -28,13 +43,15 @@ type FormSectionProps = {
 export function FormSection({
   icon: Icon,
   title,
+  variant = "plain",
+  description,
   required = false,
   action,
   className,
   children,
 }: FormSectionProps) {
   return (
-    <section className={cn("space-y-2.5", className)}>
+    <section className={cn("space-y-2.5", variant === "card" && "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm", className)}>
       <div className="flex min-h-7 items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {Icon ? <Icon className="size-4 shrink-0 text-primary" /> : null}
@@ -45,6 +62,7 @@ export function FormSection({
         </div>
         {action}
       </div>
+      {description ? <p className="text-sm leading-relaxed text-muted-foreground">{description}</p> : null}
       {children}
     </section>
   );
@@ -52,6 +70,7 @@ export function FormSection({
 
 type FormBodyProps = {
   className?: string;
+  workflow?: boolean;
   /** When true, shows a saving overlay so the wait is obvious during CRUD. */
   isBusy?: boolean;
   /** Optional busy message (defaults to common.actions.saving). */
@@ -60,11 +79,12 @@ type FormBodyProps = {
 };
 
 /** Scrollable form body with the shared muted background and padding. */
-export function FormBody({ className, isBusy = false, busyLabel, children }: FormBodyProps) {
+export function FormBody({ className, workflow = false, isBusy = false, busyLabel, children }: FormBodyProps) {
   const { t } = useTranslation();
 
   return (
-    <div className={cn("relative flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>
+    <div className={cn("relative flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", workflow && "@container min-h-0 space-y-5 p-4 sm:p-6", className)}>
+      {workflow ? <FormWorkflowHints requiredHint={t("common.form.requiredHint")} keyboardHint={t("common.form.keyboardHint")} /> : null}
       {children}
       {isBusy ? (
         <div

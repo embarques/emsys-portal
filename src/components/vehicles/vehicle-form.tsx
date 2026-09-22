@@ -129,145 +129,147 @@ export function VehicleForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-        <FormSection icon={Car} title={t("vehicles.form.sections.vehicle")}>
-          <div className="space-y-2.5">
-            <div className="space-y-1">
-              <Label htmlFor="status">{t("vehicles.form.fields.status")}</Label>
-              <div
-                id="status"
-                className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
-                role="radiogroup"
-                aria-label={t("vehicles.form.fields.status")}
-              >
-                {statusOptions.map((option) => {
-                  const selected = values.active === option.value;
-                  return (
-                    <button
-                      key={option.label}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => updateField("active", option.value)}
-                      className={cn(
-                        "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                        selected && option.value
-                          ? "bg-emerald-600 text-white shadow-sm"
-                          : selected
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
+      <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+          <FormSection variant="card" className="@4xl:row-span-3" icon={Car} title={`01 · ${t("vehicles.form.sections.vehicle")}`} description={t("vehicles.form.design.vehicle")}>
+            <div className="space-y-2.5">
+              <div className="space-y-1">
+                <Label htmlFor="status">{t("vehicles.form.fields.status")}</Label>
+                <div
+                  id="status"
+                  className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
+                  role="radiogroup"
+                  aria-label={t("vehicles.form.fields.status")}
+                >
+                  {statusOptions.map((option) => {
+                    const selected = values.active === option.value;
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => updateField("active", option.value)}
+                        className={cn(
+                          "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                          selected && option.value
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : selected
+                              ? "bg-background text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="name">
+                  {t("vehicles.form.fields.name")} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={values.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  placeholder={t("vehicles.form.placeholders.name")}
+                  required
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="vin">{t("vehicles.form.fields.vin")}</Label>
+                  <Input
+                    id="vin"
+                    value={values.vin}
+                    onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
+                    placeholder={t("vehicles.form.placeholders.vin")}
+                    className="font-mono text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="licensePlate">{t("vehicles.form.fields.licensePlate")}</Label>
+                  <Input
+                    id="licensePlate"
+                    value={values.licensePlate}
+                    onChange={(event) => updateField("licensePlate", event.target.value.toUpperCase())}
+                    placeholder={t("vehicles.form.placeholders.licensePlate")}
+                    className="font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="year">{t("vehicles.form.fields.year")}</Label>
+                  <Input
+                    id="year"
+                    type="number"
+                    min={1980}
+                    max={new Date().getFullYear() + 1}
+                    value={values.year}
+                    onChange={(event) => updateField("year", event.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="fuelType">{t("vehicles.form.fields.fuelType")}</Label>
+                  <SearchableSelect
+                    id="fuelType"
+                    value={values.fuelType}
+                    onValueChange={(next) => updateField("fuelType", next)}
+                    placeholder={t("vehicles.form.placeholders.fuelType")}
+                    searchPlaceholder={t("vehicles.form.placeholders.fuelTypeSearch")}
+                    options={fuelTypeOptions}
+                  />
+                </div>
               </div>
             </div>
+          </FormSection>
 
+          <FormSection variant="card" icon={CalendarCheck} title={`02 · ${t("vehicles.form.sections.compliance")}`} description={t("vehicles.form.design.compliance")}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="inspectionDate">{t("vehicles.form.fields.inspectionDate")}</Label>
+                <DateInput
+                  id="inspectionDate"
+                  value={values.inspectionDate}
+                  onChange={(event) => updateField("inspectionDate", event.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="registrationDate">{t("vehicles.form.fields.registrationDate")}</Label>
+                <DateInput
+                  id="registrationDate"
+                  value={values.registrationDate}
+                  onChange={(event) => updateField("registrationDate", event.target.value)}
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          <FormSection variant="card" icon={Building2} title={`03 · ${t("vehicles.form.sections.branch")}`} description={t("vehicles.form.design.branch")}>
             <div className="space-y-1">
-              <Label htmlFor="name">
-                {t("vehicles.form.fields.name")} <span className="text-destructive">*</span>
+              <Label htmlFor="branch">
+                {t("vehicles.form.fields.branch")} <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="name"
-                value={values.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder={t("vehicles.form.placeholders.name")}
-                required
+              <SearchableSelect
+                id="branch"
+                value={values.branch.id > 0 ? String(values.branch.id) : ""}
+                onValueChange={handleBranchChange}
+                placeholder={t("vehicles.form.placeholders.branch")}
+                searchPlaceholder={t("vehicles.form.placeholders.branchSearch")}
+                loading={branchesQuery.isLoading}
+                options={branchOptions}
               />
             </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="vin">{t("vehicles.form.fields.vin")}</Label>
-                <Input
-                  id="vin"
-                  value={values.vin}
-                  onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
-                  placeholder={t("vehicles.form.placeholders.vin")}
-                  className="font-mono text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="licensePlate">{t("vehicles.form.fields.licensePlate")}</Label>
-                <Input
-                  id="licensePlate"
-                  value={values.licensePlate}
-                  onChange={(event) => updateField("licensePlate", event.target.value.toUpperCase())}
-                  placeholder={t("vehicles.form.placeholders.licensePlate")}
-                  className="font-mono text-xs"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="year">{t("vehicles.form.fields.year")}</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  min={1980}
-                  max={new Date().getFullYear() + 1}
-                  value={values.year}
-                  onChange={(event) => updateField("year", event.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="fuelType">{t("vehicles.form.fields.fuelType")}</Label>
-                <SearchableSelect
-                  id="fuelType"
-                  value={values.fuelType}
-                  onValueChange={(next) => updateField("fuelType", next)}
-                  placeholder={t("vehicles.form.placeholders.fuelType")}
-                  searchPlaceholder={t("vehicles.form.placeholders.fuelTypeSearch")}
-                  options={fuelTypeOptions}
-                />
-              </div>
-            </div>
-          </div>
-        </FormSection>
-
-        <FormSection icon={CalendarCheck} title={t("vehicles.form.sections.compliance")}>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="inspectionDate">{t("vehicles.form.fields.inspectionDate")}</Label>
-              <DateInput
-                id="inspectionDate"
-                value={values.inspectionDate}
-                onChange={(event) => updateField("inspectionDate", event.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="registrationDate">{t("vehicles.form.fields.registrationDate")}</Label>
-              <DateInput
-                id="registrationDate"
-                value={values.registrationDate}
-                onChange={(event) => updateField("registrationDate", event.target.value)}
-              />
-            </div>
-          </div>
-        </FormSection>
-
-        <FormSection icon={Building2} title={t("vehicles.form.sections.branch")}>
-          <div className="space-y-1">
-            <Label htmlFor="branch">
-              {t("vehicles.form.fields.branch")} <span className="text-destructive">*</span>
-            </Label>
-            <SearchableSelect
-              id="branch"
-              value={values.branch.id > 0 ? String(values.branch.id) : ""}
-              onValueChange={handleBranchChange}
-              placeholder={t("vehicles.form.placeholders.branch")}
-              searchPlaceholder={t("vehicles.form.placeholders.branchSearch")}
-              loading={branchesQuery.isLoading}
-              options={branchOptions}
-            />
-          </div>
-        </FormSection>
+          </FormSection>
+        </div>
       </FormBody>
 
       <FormFooter
