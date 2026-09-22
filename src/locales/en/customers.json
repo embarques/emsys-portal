@@ -115,11 +115,19 @@
     "notFound": "This customer could not be found.",
     "workflow": {
       "requiredHint": "* Required fields",
-      "keyboardHint": "Enter advances to the next field · Tab moves between controls",
+      "keyboardHint": "Tab moves between controls · Enter advances through fields",
       "contactTitle": "Customer & contact",
       "contactHint": "Confirm the customer’s name and best phone number.",
-      "addressHint": "Add an address when needed. Mark the main address with the star.",
-      "additionalTitle": "Additional details · Optional"
+      "addressHint": "Add pickup or delivery locations and use the star to choose the primary address.",
+      "additionalTitle": "Additional details · Optional",
+      "optional": "Optional",
+      "senderHint": "Sender · Customer sending merchandise from the U.S.",
+      "receiverHint": "Receiver · Customer receiving merchandise in the Dominican Republic.",
+      "typeChangeHint": "Changing the customer type clears the addresses entered here.",
+      "phoneHint": "Enter at least one 10-digit number. Use the star to choose the main contact number.",
+      "addressEmptyTitle": "No address added yet",
+      "addressEmptyHint": "You can save this customer without an address. Add one now if you have the pickup or delivery details.",
+      "notesHint": "Include customer preferences or useful contact instructions. Enter adds a new line."
     },
     "sections": {
       "general": "General",

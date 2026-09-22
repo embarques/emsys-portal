@@ -186,15 +186,8 @@ function AddressFieldGrid({
   // as read-only text instead of editable fields.
   const senderAutoFill = mode === "sender" && googleEnabled;
 
-  const hasLocation = Boolean(
-    address.city?.trim() ||
-      address.state?.trim() ||
-      address.zipcode?.trim() ||
-      address.country?.trim(),
-  );
-
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {/* Address line 1 + apartment, side by side like the phone rows. */}
       <div className="flex items-end gap-2">
         <div className="min-w-0 flex-1 space-y-1">
@@ -298,7 +291,7 @@ function AddressFieldGrid({
               />
             </div>
           </div>
-          {!hasLocation ? (
+          {!isAddressVerified(address) ? (
             <p className="text-xs text-muted-foreground">
               {t("customers.form.address.googleHint")}
             </p>
@@ -768,9 +761,9 @@ export function CustomerForm({
             {t("customers.form.workflow.keyboardHint")}
           </p>
         </div>
-        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+        <div className="grid items-start gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
           <div className="min-w-0 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm">
-            <FormSection icon={User} title={t("customers.form.workflow.contactTitle")}>
+            <FormSection icon={User} title={`01 · ${t("customers.form.workflow.contactTitle")}`}>
               <p className="text-sm text-muted-foreground">{t("customers.form.workflow.contactHint")}</p>
               <div className="space-y-2.5">
                 <div className="space-y-1">
@@ -790,9 +783,16 @@ export function CustomerForm({
                     }))}
                     disabled={lockCustomerType}
                     autoFocus={!isEditing && !lockCustomerType}
+                    aria-describedby="customer-type-hint"
                     required
                     mobileSheet
                   />
+                  <p id="customer-type-hint" className="text-xs leading-relaxed text-muted-foreground">
+                    {t(isSender ? "customers.form.workflow.senderHint" : "customers.form.workflow.receiverHint")}
+                  </p>
+                  {!lockCustomerType && showAddresses ? (
+                    <p className="text-xs text-muted-foreground">{t("customers.form.workflow.typeChangeHint")}</p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-1">
@@ -801,6 +801,7 @@ export function CustomerForm({
                   </Label>
                   <Input
                     id="name"
+                    autoComplete="name"
                     value={values.name}
                     onChange={(event) => updateField("name", capitalizeWords(event.target.value))}
                     placeholder={t("customers.form.placeholders.name")}
@@ -812,6 +813,7 @@ export function CustomerForm({
             </FormSection>
 
             <FormSection icon={PhoneIcon} title={t("customers.form.sections.phones")} required className="border-t border-border pt-4">
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("customers.form.workflow.phoneHint")}</p>
               <PhoneListEditor
                 idPrefix="customer-phone"
                 phones={values.phones}
@@ -822,9 +824,25 @@ export function CustomerForm({
             </FormSection>
 
           </div>
-          <FormSection icon={MapPin} title={t("customers.form.sections.addresses")} className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm">
+          <FormSection
+            icon={MapPin}
+            title={`02 · ${t("customers.form.sections.addresses")}`}
+            action={
+              <span className="text-xs text-muted-foreground">
+                {t("customers.form.workflow.optional")}
+              </span>
+            }
+            className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+          >
             <p className="text-sm text-muted-foreground">{t("customers.form.workflow.addressHint")}</p>
             <div className="space-y-3">
+              {!showAddresses ? (
+                <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed border-border bg-muted/20 p-5">
+                  <MapPin className="size-5 text-muted-foreground" aria-hidden="true" />
+                  <p className="text-sm font-medium">{t("customers.form.workflow.addressEmptyTitle")}</p>
+                  <p className="max-w-md text-sm leading-relaxed text-muted-foreground">{t("customers.form.workflow.addressEmptyHint")}</p>
+                </div>
+              ) : null}
               {showAddresses && values.addresses.map((address, index) => {
                 const isPrimary = address.isPrimary;
 
@@ -907,7 +925,7 @@ export function CustomerForm({
 
         </div>
 
-        <FormSection icon={StickyNote} title={t("customers.form.workflow.additionalTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <FormSection icon={StickyNote} title={`03 · ${t("customers.form.workflow.additionalTitle")}`} className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="grid gap-4 @2xl:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="IDNumber">{t("customers.form.fields.idNumber")}</Label>
@@ -925,6 +943,7 @@ export function CustomerForm({
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 value={values.email}
                 onChange={(event) => updateField("email", event.target.value)}
                 placeholder={t("customers.form.placeholders.email")}
@@ -932,12 +951,16 @@ export function CustomerForm({
             </div>
             <div className="space-y-1 @2xl:col-span-2">
               <Label htmlFor="notes">{t("customers.form.fields.notes")}</Label>
-              <Input
+              <textarea
                 id="notes"
+                rows={3}
+                aria-describedby="customer-notes-hint"
+                className="flex min-h-20 w-full resize-y rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 max-md:text-base"
                 value={values.notes}
                 onChange={(event) => updateField("notes", event.target.value)}
                 placeholder={t("customers.form.placeholders.notes")}
               />
+              <p id="customer-notes-hint" className="text-xs text-muted-foreground">{t("customers.form.workflow.notesHint")}</p>
             </div>
           </div>
         </FormSection>
@@ -945,6 +968,7 @@ export function CustomerForm({
 
       <FormFooter
         error={errorMessage}
+        warning={blockReason}
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         onCancel={onCancel}
