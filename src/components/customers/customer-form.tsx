@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Keyboard,
   MapPin,
   Phone as PhoneIcon,
   Plus,
@@ -231,6 +232,9 @@ function AddressFieldGrid({
 
       {/* Cross street sits below address line 1 + apartment for both senders and receivers. */}
       <div className="space-y-1">
+        <Label htmlFor={`${idPrefix}-cross-street`} className="text-xs text-muted-foreground">
+          {t("customers.form.placeholders.crossStreet")}
+        </Label>
         <Input
           id={`${idPrefix}-cross-street`}
           value={address.address2}
@@ -736,44 +740,155 @@ export function CustomerForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-        <FormSection icon={User} title={t("customers.form.sections.general")}>
-          <div className="space-y-2.5">
-            <div className="space-y-1">
-              <Label htmlFor="customerType">
-                {t("customers.form.fields.customerType")} <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                id="customerType"
-                value={String(selectedType)}
-                onValueChange={(next) => handleCustomerTypeChange(Number(next))}
-                options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
-                  value: String(option.value),
-                  label:
-                    option.value === CUSTOMER_TYPE_SENDER
-                      ? t("customers.types.sender")
-                      : t("customers.types.receiver"),
-                }))}
-                disabled={lockCustomerType}
-                required
-                mobileSheet
-              />
-            </div>
+      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <p>{t("customers.form.workflow.requiredHint")}</p>
+          <p className="flex items-center gap-1.5">
+            <Keyboard className="size-3.5" aria-hidden="true" />
+            {t("customers.form.workflow.keyboardHint")}
+          </p>
+        </div>
+        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+          <div className="min-w-0 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <FormSection icon={User} title={t("customers.form.workflow.contactTitle")}>
+              <p className="text-sm text-muted-foreground">{t("customers.form.workflow.contactHint")}</p>
+              <div className="space-y-2.5">
+                <div className="space-y-1">
+                  <Label htmlFor="customerType">
+                    {t("customers.form.fields.customerType")} <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="customerType"
+                    value={String(selectedType)}
+                    onValueChange={(next) => handleCustomerTypeChange(Number(next))}
+                    options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
+                      value: String(option.value),
+                      label:
+                        option.value === CUSTOMER_TYPE_SENDER
+                          ? t("customers.types.sender")
+                          : t("customers.types.receiver"),
+                    }))}
+                    disabled={lockCustomerType}
+                    autoFocus={!isEditing && !lockCustomerType}
+                    required
+                    mobileSheet
+                  />
+                </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="name">
-                {t("customers.form.fields.name")} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={values.name}
-                onChange={(event) => updateField("name", capitalizeWords(event.target.value))}
-                placeholder={t("customers.form.placeholders.name")}
-                autoFocus={!isEditing}
-                required
-              />
-            </div>
+                <div className="space-y-1">
+                  <Label htmlFor="name">
+                    {t("customers.form.fields.name")} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    value={values.name}
+                    onChange={(event) => updateField("name", capitalizeWords(event.target.value))}
+                    placeholder={t("customers.form.placeholders.name")}
+                    autoFocus={!isEditing && lockCustomerType}
+                    required
+                  />
+                </div>
+              </div>
+            </FormSection>
 
+            <FormSection icon={PhoneIcon} title={t("customers.form.sections.phones")} required className="border-t border-border pt-4">
+              <PhoneListEditor
+                idPrefix="customer-phone"
+                phones={values.phones}
+                required
+                compact
+                onChange={(phones) => updateField("phones", phones)}
+              />
+            </FormSection>
+
+          </div>
+          <FormSection icon={MapPin} title={t("customers.form.sections.addresses")} className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-sm text-muted-foreground">{t("customers.form.workflow.addressHint")}</p>
+            <div className="space-y-3">
+              {showAddresses && values.addresses.map((address, index) => {
+                const isPrimary = address.isPrimary;
+
+                return (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-border/60 bg-muted/20 p-3"
+                  >
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {t("customers.form.address.label", { index: index + 1 })}
+                        </p>
+                        {isPrimary ? (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            {t("customers.form.address.primaryBadge")}
+                          </span>
+                        ) : null}
+                        {isSender ? <AddressVerificationBadge address={address} /> : null}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-pressed={isPrimary}
+                          aria-label={isPrimary ? t("customers.form.address.primary") : t("customers.form.address.setPrimary")}
+                          title={
+                            isPrimary
+                              ? t("customers.form.address.primary")
+                              : t("customers.form.address.setPrimary")
+                          }
+                          className={cn(
+                            "size-7 shrink-0",
+                            isPrimary
+                              ? "text-amber-500 hover:text-amber-500"
+                              : "text-muted-foreground",
+                          )}
+                          onClick={() => setPrimaryAddress(index)}
+                        >
+                          <Star className={cn("size-4", isPrimary && "fill-current")} />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={t("customers.form.address.remove")}
+                          title={t("customers.form.address.remove")}
+                          className="size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => removeAddress(index)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <AddressFieldGrid
+                      idPrefix={`address-${index}`}
+                      address={address}
+                      mode={addressMode}
+                      onChange={(field, value) => updateAddressField(index, field, value)}
+                      onPlaceSelected={(place) => applyPlaceToAddress(index, place)}
+                      onCitySelected={(city) => applyCityToAddress(index, city)}
+                    />
+                  </div>
+                );
+              })}
+
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={handleAddAddressClick}
+              >
+                <Plus className="size-4" />
+                {t("customers.form.address.add")}
+              </Button>
+            </div>
+          </FormSection>
+
+        </div>
+
+        <FormSection icon={StickyNote} title={t("customers.form.workflow.additionalTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid gap-4 @2xl:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="IDNumber">{t("customers.form.fields.idNumber")}</Label>
               <Input
@@ -795,101 +910,16 @@ export function CustomerForm({
                 placeholder={t("customers.form.placeholders.email")}
               />
             </div>
+            <div className="space-y-1 @2xl:col-span-2">
+              <Label htmlFor="notes">{t("customers.form.fields.notes")}</Label>
+              <Input
+                id="notes"
+                value={values.notes}
+                onChange={(event) => updateField("notes", event.target.value)}
+                placeholder={t("customers.form.placeholders.notes")}
+              />
+            </div>
           </div>
-        </FormSection>
-
-        <FormSection icon={PhoneIcon} title={t("customers.form.sections.phones")}>
-          <PhoneListEditor
-            idPrefix="customer-phone"
-            phones={values.phones}
-            required
-            compact
-            onChange={(phones) => updateField("phones", phones)}
-          />
-        </FormSection>
-
-        <FormSection icon={MapPin} title={t("customers.form.sections.addresses")}>
-          <div className="space-y-2.5">
-            {showAddresses && values.addresses.map((address, index) => {
-              const isPrimary = address.isPrimary;
-
-              return (
-                <div
-                  key={index}
-                  className="rounded-lg border border-border/60 bg-muted/20 p-3"
-                >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        {t("customers.form.address.label", { index: index + 1 })}
-                      </p>
-                      {isSender ? <AddressVerificationBadge address={address} /> : null}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-pressed={isPrimary}
-                        title={
-                          isPrimary
-                            ? t("customers.form.address.primary")
-                            : t("customers.form.address.setPrimary")
-                        }
-                        className={cn(
-                          "size-7 shrink-0",
-                          isPrimary
-                            ? "text-amber-500 hover:text-amber-500"
-                            : "text-muted-foreground",
-                        )}
-                        onClick={() => setPrimaryAddress(index)}
-                      >
-                        <Star className={cn("size-4", isPrimary && "fill-current")} />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        title={t("customers.form.address.remove")}
-                        className="size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => removeAddress(index)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <AddressFieldGrid
-                    idPrefix={`address-${index}`}
-                    address={address}
-                    mode={addressMode}
-                    onChange={(field, value) => updateAddressField(index, field, value)}
-                    onPlaceSelected={(place) => applyPlaceToAddress(index, place)}
-                    onCitySelected={(city) => applyCityToAddress(index, city)}
-                  />
-                </div>
-              );
-            })}
-
-            <Button
-              type="button"
-              variant="outline"
-              className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
-              onClick={handleAddAddressClick}
-            >
-              <Plus className="size-4" />
-              {t("customers.form.address.add")}
-            </Button>
-          </div>
-        </FormSection>
-
-        <FormSection icon={StickyNote} title={t("customers.form.sections.notes")}>
-          <Input
-            id="notes"
-            value={values.notes}
-            onChange={(event) => updateField("notes", event.target.value)}
-            placeholder={t("customers.form.placeholders.notes")}
-          />
         </FormSection>
       </FormBody>
 

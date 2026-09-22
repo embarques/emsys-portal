@@ -113,6 +113,14 @@
     "addDescription": "Create a new customer record.",
     "noChanges": "No customer changes to save.",
     "notFound": "This customer could not be found.",
+    "workflow": {
+      "requiredHint": "* Required fields",
+      "keyboardHint": "Enter advances to the next field · Tab moves between controls",
+      "contactTitle": "Customer & contact",
+      "contactHint": "Confirm the customer’s name and best phone number.",
+      "addressHint": "Add an address when needed. Mark the main address with the star.",
+      "additionalTitle": "Additional details · Optional"
+    },
     "sections": {
       "general": "General",
       "phones": "Phones",
