@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Suspense } from "react";
 
+import { MobileCustomerFormWorkspace } from "@/components/customers/mobile-customer-form-workspace";
 import { ConfigurationBootstrap } from "@/components/configuration/configuration-bootstrap";
 import { FloatingCalculator } from "@/components/app-shell/floating-calculator";
 import { FloatingMemoPad } from "@/components/app-shell/floating-memo-pad";
@@ -76,7 +77,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <WorkspaceTabPanels />
             </Suspense>
           ) : (
-            <div className={workspaceContentFrameClassName}>{children}</div>
+            <div className={workspaceContentFrameClassName}>
+              <Suspense>
+                <MobileCustomerFormWorkspace>{children}</MobileCustomerFormWorkspace>
+              </Suspense>
+            </div>
           )}
         </main>
       </div>

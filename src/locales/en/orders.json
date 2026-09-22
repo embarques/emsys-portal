@@ -127,6 +127,19 @@
     "editTitle": "Edit appointment",
     "addDescription": "Create a new appointment.",
     "notFound": "This appointment could not be found.",
+    "workflow": {
+      "requiredHint": "* Required fields",
+      "keyboardHint": "Tab moves between controls · Enter advances through fields",
+      "scheduleTitle": "01 · Schedule the visit",
+      "scheduleHint": "Confirm the appointment date with the caller.",
+      "customersTitle": "02 · Confirm customer details",
+      "senderHint": "Search by name or phone, then confirm the visit address.",
+      "receiverHint": "Add a receiver if this visit needs one.",
+      "optional": "Optional",
+      "visitTitle": "03 · Visit details",
+      "visitHint": "Record the purpose of the visit, items, quantities, and any instructions.",
+      "commentsEmpty": "Add at least one comment to describe what the customer needs."
+    },
     "sections": {
       "pickupDate": "Appointment date",
       "senderReceiver": "Sender & receiver"

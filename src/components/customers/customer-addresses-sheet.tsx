@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, MapPin, Plus } from "lucide-react";
 
 import { AddressActionRow } from "@/components/addresses/address-action-row";
-import { useFeedback } from "@/components/app-shell/feedback-provider";
+
 import {
   RecordViewSheet,
   RecordViewSheetBody,
@@ -12,29 +12,15 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { CustomerForm } from "@/components/customers/customer-form";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
-import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
-import {
-  useCustomer,
-  useEnsureCustomerDetail,
-  useUpdateCustomer,
-} from "@/lib/customers/hooks/use-customers";
-import {
-  areCustomerFormValuesEquivalent,
-  customerToFormValues,
-  type Customer,
-  type CustomerFormValues,
-} from "@/lib/customers/types";
+
+import { useCustomer } from "@/lib/customers/hooks/use-customers";
+import type { Customer } from "@/lib/customers/types";
 import {
   formatCoreAddressLines,
   getAddressLabelKey,
@@ -44,6 +30,7 @@ import {
   resolveCustomerAddressCount,
 } from "@/lib/customers/utils/address-utils";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -60,68 +47,26 @@ export function CustomerAddressesSheet({
 }: CustomerAddressesSheetProps) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
-  const { notifyError, notifySuccess, notifyUpdated } = useFeedback();
+  const { openFormTab } = useWorkspaceTabs();
   const canUpdateCustomers = hasPermission(
     PERMISSIONS.clientsUpdate.name,
     PERMISSIONS.clientsUpdate.resourceType,
   );
   const detailQuery = useCustomer(customer?.id ?? null, open);
-  const ensureCustomerDetail = useEnsureCustomerDetail();
-  const updateCustomerMutation = useUpdateCustomer();
-
-  const [formCustomer, setFormCustomer] = useState<Customer | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [isLoadingForm, setIsLoadingForm] = useState(false);
 
   const resolvedCustomer = detailQuery.data ?? customer;
-  const formOpen = formCustomer !== null;
 
-  async function openAddAddress() {
+  function openAddAddress() {
     if (!customer?.id || !canUpdateCustomers) return;
-
-    setFormError(null);
-    setIsLoadingForm(true);
-
-    try {
-      const fullCustomer = await ensureCustomerDetail(customer.id);
-      setFormCustomer(fullCustomer);
-    } catch {
-      notifyError(t("common.errors.fallback"));
-    } finally {
-      setIsLoadingForm(false);
-    }
-  }
-
-  function closeAddAddressForm() {
-    setFormCustomer(null);
-    setFormError(null);
-  }
-
-  async function handleCustomerSubmit(formValues: CustomerFormValues) {
-    if (!formCustomer) return;
-
-    setFormError(null);
-
-    try {
-      if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(formCustomer))) {
-        notifySuccess(t("common.form.noChanges"));
-        closeAddAddressForm();
-        return;
-      }
-
-      const nextCustomer = await updateCustomerMutation.mutateAsync({
-        customerId: formCustomer.id,
-        values: formValues,
-      });
-      notifyUpdated(t("customers.entity"), nextCustomer.name);
-      closeAddAddressForm();
-    } catch (mutationError) {
-      setFormError(
-        formatCustomerMutationError(mutationError, t, {
-          mode: "edit",
-        }),
-      );
-    }
+    onOpenChange(false);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "edit",
+      entityId: customer.id,
+      customerFormIntent: "address",
+      label: t("customers.actions.editNamed", { name: customer.name }),
+    });
   }
 
   if (!customer) return null;
@@ -183,14 +128,9 @@ export function CustomerAddressesSheet({
                 type="button"
                 variant="outline"
                 className="w-full"
-                disabled={isLoadingForm || updateCustomerMutation.isPending}
-                onClick={() => void openAddAddress()}
+                onClick={openAddAddress}
               >
-                {isLoadingForm ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
+                <Plus className="size-4" />
                 {t("customers.addresses.addAddress")}
               </Button>
             </div>
@@ -198,31 +138,6 @@ export function CustomerAddressesSheet({
         </RecordViewSheetContent>
       </RecordViewSheet>
 
-      <Dialog
-        open={formOpen}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) closeAddAddressForm();
-        }}
-      >
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{t("customers.form.editTitle")}</DialogTitle>
-          </DialogHeader>
-          {formCustomer ? (
-            <CustomerForm
-              key={`${formCustomer.id}-new-address`}
-              initialValues={customerToFormValues(formCustomer)}
-              isEditing
-              submitLabel={t("common.actions.saveChanges")}
-              isSubmitting={updateCustomerMutation.isPending}
-              externalError={formError}
-              startWithNewAddress
-              onSubmit={handleCustomerSubmit}
-              onCancel={closeAddAddressForm}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -23,6 +23,9 @@ export type WorkspaceTabForm = {
    * the tab is opened from the order form's "New" party actions.
    */
   customerType?: number;
+  customerFormIntent?: "address" | "phone";
+  /** Original mobile location; the customer form replaces its content temporarily. */
+  mobileReturnHref?: string;
   /**
    * Invoice wizard step to open on (1 details, 2 parties, 3 line items, …).
    * Used when deep-linking from barcodes into the line-items step.

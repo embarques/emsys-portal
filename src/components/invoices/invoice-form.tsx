@@ -6,14 +6,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFormEnterNavigation, selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import { ContainerForm } from "@/components/containers/container-form";
-import { CustomerForm } from "@/components/customers/customer-form";
+
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
-import { useFeedback } from "@/components/app-shell/feedback-provider";
+
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
-import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ import {
   wizardSelectFieldProps,
 } from "@/components/invoices/invoice-wizard-styles";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
-import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
+
 import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -49,22 +49,8 @@ import {
   createEmptyContainerForm,
   type ContainerFormValues,
 } from "@/lib/containers/types";
-import {
-  useCreateCustomer,
-  useEnsureCustomerDetail,
-  useUpdateCustomer,
-} from "@/lib/customers/hooks/use-customers";
-import {
-  CUSTOMER_TYPE_RECEIVER,
-  CUSTOMER_TYPE_SENDER,
-  areCustomerFormValuesEquivalent,
-  createEmptyCustomerForm,
-  customerHasUnverifiedPrimaryAddress,
-  customerToFormValues,
-  getCustomerPrimaryCoreAddress,
-  type Customer,
-  type CustomerFormValues,
-} from "@/lib/customers/types";
+import { useEnsureCustomerDetail } from "@/lib/customers/hooks/use-customers";
+import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, customerHasUnverifiedPrimaryAddress, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
@@ -129,12 +115,6 @@ type InvoiceFormProps = {
 };
 
 type PartySide = "sender" | "receiver";
-
-type CustomerDialogState = {
-  side: PartySide;
-  mode: "add" | "edit";
-  startWithNewAddress?: boolean;
-};
 
 /** Sender name, phone, and street let users find a pickup without knowing the order id. */
 function buildPickupSearchKeywords(order: Order): string[] {
@@ -239,10 +219,7 @@ export function InvoiceForm({
   const isWizard = appearance === "wizard" || isPhoneWizard;
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders(DEFAULT_ORDER_LIST_PARAMS);
-  const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
-  const { isDesktopTabs, openFormTab } = useWorkspaceTabs();
-  const createCustomerMutation = useCreateCustomer();
-  const updateCustomerMutation = useUpdateCustomer();
+  const { openFormTab } = useWorkspaceTabs();
   const ensureCustomerDetail = useEnsureCustomerDetail();
 
   const { data: itemsData } = useItemPicker();
@@ -254,10 +231,6 @@ export function InvoiceForm({
     () => initialValues ?? createEmptyInvoiceForm(),
   );
   const [formError, setFormError] = useState<string | null>(null);
-  const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
-  const [customerFormError, setCustomerFormError] = useState<string | null>(null);
-  const [isLoadingEditCustomer, setIsLoadingEditCustomer] = useState(false);
-  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [entityDialog, setEntityDialog] = useState<"container" | "employee" | "route" | null>(null);
   const [entityError, setEntityError] = useState<string | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
@@ -289,10 +262,6 @@ export function InvoiceForm({
     },
     [navigateOnEnter, onContinue],
   );
-  const isSavingCustomer =
-    createCustomerMutation.isPending ||
-    updateCustomerMutation.isPending ||
-    isLoadingEditCustomer;
   const createContainerMutation = useCreateContainer();
   const createEmployeeMutation = useCreateEmployee();
 
@@ -392,7 +361,7 @@ export function InvoiceForm({
     });
   }, [commitValues, pickupRoutes, values.pickupSource, values.routeCrewId, values.routeId]);
 
-  const { markPendingPartyEdit } = useApplyCustomerOnTabReturn((side, customer, { mode }) => {
+  const { markPendingPartyEdit, markPendingPartyAdd } = useApplyCustomerOnTabReturn((side, customer, { mode }) => {
     if (side === "sender") {
       commitValues((current) => {
         const currentId = current.senderId?.trim() || current.sender?.id?.trim() || "";
@@ -638,123 +607,48 @@ export function InvoiceForm({
     setFormError(null);
   }
 
-  const dialogCustomer =
-    customerDialog?.side === "sender"
-      ? values.sender
-      : customerDialog?.side === "receiver"
-        ? values.receiver
-        : null;
-
   function openAddCustomer(side: PartySide) {
-    setCustomerFormError(null);
-    setCustomerDialog({ side, mode: "add" });
+    const customerType = side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER;
+    markPendingPartyAdd(side, customerType);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "add",
+      customerType,
+      label: t(side === "receiver" ? "invoices.form.partyActions.addReceiver" : "invoices.form.partyActions.addSender"),
+    });
   }
 
-  async function openEditCustomer(side: PartySide) {
+  function openEditCustomer(side: PartySide) {
     const current = side === "sender" ? values.sender : values.receiver;
     if (!current?.id) return;
 
-    if (isDesktopTabs) {
-      markPendingPartyEdit(side, current.id);
-      openFormTab({
-        feature: "customers",
-        baseHref: "/customers",
-        mode: "edit",
-        entityId: current.id,
-        customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
-        label:
-          side === "receiver"
-            ? t("invoices.form.partyActions.editReceiver")
-            : t("invoices.form.partyActions.editSender"),
-      });
-      return;
-    }
-
-    setCustomerFormError(null);
-    setIsLoadingEditCustomer(true);
-
-    try {
-      // Invoice parties are often a single `party.address` snapshot (marked primary).
-      // Reload GET /customers/{id} so Edit shows the full address book — same as orders.
-      const fullCustomer = await ensureCustomerDetail(current.id);
-      applyCustomerToSide(side, fullCustomer);
-      setEditCustomer(fullCustomer);
-      setCustomerDialog({ side, mode: "edit" });
-    } catch {
-      setEditCustomer(null);
-      setCustomerFormError(t("common.errors.fallback"));
-    } finally {
-      setIsLoadingEditCustomer(false);
-    }
+    markPendingPartyEdit(side, current.id);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "edit",
+      entityId: current.id,
+      customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+      label:
+        side === "receiver"
+          ? t("invoices.form.partyActions.editReceiver")
+          : t("invoices.form.partyActions.editSender"),
+    });
   }
 
-  async function openAddAddress(side: PartySide, customer: Customer) {
+  function openAddAddress(side: PartySide, customer: Customer) {
     if (!customer.id) return;
-
-    setCustomerFormError(null);
-    setIsLoadingEditCustomer(true);
-
-    try {
-      const fullCustomer = await ensureCustomerDetail(customer.id);
-      setEditCustomer(fullCustomer);
-      setCustomerDialog({ side, mode: "edit", startWithNewAddress: true });
-    } catch {
-      setEditCustomer(null);
-      setCustomerFormError(t("common.errors.fallback"));
-    } finally {
-      setIsLoadingEditCustomer(false);
-    }
-  }
-
-  function closeCustomerDialog() {
-    setCustomerDialog(null);
-    setEditCustomer(null);
-    setCustomerFormError(null);
-  }
-
-  function applyCustomerToSide(side: PartySide, customer: Customer) {
-    if (side === "sender") {
-      commitValues((current) => ({ ...current, senderId: customer.id, sender: customer }));
-    } else {
-      commitValues((current) => ({ ...current, receiverId: customer.id, receiver: customer }));
-    }
-    setFormError(null);
-  }
-
-  async function handleCustomerSubmit(formValues: CustomerFormValues) {
-    if (!customerDialog) return;
-    setCustomerFormError(null);
-
-    try {
-      let customer: Customer;
-      const customerBeingEdited = editCustomer ?? dialogCustomer;
-
-      if (customerDialog.mode === "edit" && customerBeingEdited) {
-        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(customerBeingEdited))) {
-          notifySuccess(t("common.form.noChanges"));
-          closeCustomerDialog();
-          return;
-        }
-
-        customer = await updateCustomerMutation.mutateAsync({
-          customerId: customerBeingEdited.id,
-          values: formValues,
-        });
-        notifyUpdated(t("customers.entity"), customer.name);
-      } else {
-        customer = await createCustomerMutation.mutateAsync(formValues);
-        notifyAdded(t("customers.entity"), customer.name);
-      }
-
-      applyCustomerToSide(customerDialog.side, customer);
-      closeCustomerDialog();
-    } catch (mutationError) {
-      setCustomerFormError(
-        formatCustomerMutationError(mutationError, t, {
-          mode: customerDialog.mode === "edit" ? "edit" : "create",
-        }),
-      );
-    }
+    markPendingPartyEdit(side, customer.id);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "edit",
+      entityId: customer.id,
+      customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+      customerFormIntent: "address",
+      label: t("customers.actions.editNamed", { name: customer.name }),
+    });
   }
 
   const subtotal = useMemo(
@@ -1241,55 +1135,6 @@ export function InvoiceForm({
         />
         ) : null}
       </form>
-
-      <Dialog
-        open={customerDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) closeCustomerDialog();
-        }}
-      >
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
-              {customerDialog?.mode === "edit"
-                ? customerDialog.side === "receiver"
-                  ? t("invoices.form.partyActions.editReceiver")
-                  : t("invoices.form.partyActions.editSender")
-                : customerDialog?.side === "receiver"
-                  ? t("invoices.form.partyActions.addReceiver")
-                  : t("invoices.form.partyActions.addSender")}
-            </DialogTitle>
-          </DialogHeader>
-          {customerDialog ? (
-            <CustomerForm
-              key={`${customerDialog.side}-${customerDialog.mode}-${editCustomer?.id ?? dialogCustomer?.id ?? "new"}-${editCustomer?.addresses.length ?? 0}-${customerDialog.startWithNewAddress ? "new-address" : "edit"}`}
-              initialValues={
-                customerDialog.mode === "edit" && editCustomer
-                  ? customerToFormValues(editCustomer)
-                  : {
-                      ...createEmptyCustomerForm(),
-                      customerType:
-                        customerDialog.side === "receiver"
-                          ? CUSTOMER_TYPE_RECEIVER
-                          : CUSTOMER_TYPE_SENDER,
-                    }
-              }
-              isEditing={customerDialog.mode === "edit"}
-              submitLabel={
-                customerDialog.mode === "edit"
-                  ? t("common.actions.saveChanges")
-                  : t("customers.actions.add")
-              }
-              isSubmitting={isSavingCustomer}
-              externalError={customerFormError}
-              lockCustomerType
-              startWithNewAddress={customerDialog.startWithNewAddress}
-              onSubmit={handleCustomerSubmit}
-              onCancel={closeCustomerDialog}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={entityDialog === "container"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">

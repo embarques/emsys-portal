@@ -8,7 +8,6 @@ import {
   Users,
 } from "lucide-react";
 
-import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerMobileList } from "@/components/customers/customer-mobile-list";
 import { CustomerTableAddressCell } from "@/components/customers/customer-addresses-sheet";
 import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
@@ -57,36 +56,17 @@ import {
   formatCustomerAuditActor,
   getClientTypeBadgeClass,
 } from "@/lib/customers/display";
-import {
-  useCreateCustomer,
-  useCustomerStats,
-  useCustomers,
-  useDeleteCustomers,
-  useUpdateCustomer,
-} from "@/lib/customers/hooks/use-customers";
+import { useCustomerStats, useCustomers, useDeleteCustomers } from "@/lib/customers/hooks/use-customers";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
-import {
-  DEFAULT_CUSTOMER_LIST_PARAMS,
-  buildCustomerListParams,
-  createEmptyCustomerForm,
-  areCustomerFormValuesEquivalent,
-  customerToFormValues,
-  CUSTOMER_TYPE_OPTIONS,
-  CUSTOMER_TYPE_RECEIVER,
-  CUSTOMER_TYPE_SENDER,
-  getCustomerClientType,
-  type Customer,
-  type CustomerFilterState,
-  type CustomerFormValues,
-} from "@/lib/customers/types";
+import { DEFAULT_CUSTOMER_LIST_PARAMS, buildCustomerListParams, CUSTOMER_TYPE_OPTIONS, CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, getCustomerClientType, type Customer, type CustomerFilterState } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
-import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
+
 import { useUserError } from "@/lib/errors";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
@@ -111,8 +91,8 @@ export function CustomersWorkspace() {
   const { toErrorMessage, formatError } = useUserError();
   const customerFilterFields = useCustomerFilterFields();
   const { hasPermission } = useAuth();
-  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifyError, notifySuccess } = useFeedback();
+  const { openFormTab } = useWorkspaceTabs();
+  const { notifyDeleted, notifyError, notifySuccess } = useFeedback();
   const canCreateCustomers = hasPermission(
     PERMISSIONS.clientsCreate.name,
     PERMISSIONS.clientsCreate.resourceType,
@@ -133,11 +113,8 @@ export function CustomersWorkspace() {
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CUSTOMER_LIST_PARAMS.sort, () => setPage(1));
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
-  const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CustomerDeleteTarget | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
 
   function openDeleteTarget(target: CustomerDeleteTarget) {
     setDeleteError(null);
@@ -166,8 +143,6 @@ export function CustomersWorkspace() {
     enabled: filtersOpen,
   });
   const stats = useCustomerStats();
-  const createCustomerMutation = useCreateCustomer();
-  const updateCustomerMutation = useUpdateCustomer();
   const deleteCustomersMutation = useDeleteCustomers();
 
   const customers = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
@@ -178,10 +153,7 @@ export function CustomersWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     customers.length > 0 && customers.every((customer) => selectedIds.includes(customer.id));
-  const isSaving =
-    createCustomerMutation.isPending ||
-    updateCustomerMutation.isPending ||
-    deleteCustomersMutation.isPending;
+  const isSaving = deleteCustomersMutation.isPending;
 
   useTableSelectionReset(
     buildTableSelectionResetKey(debouncedQuery, filters.rows),
@@ -189,81 +161,27 @@ export function CustomersWorkspace() {
   );
 
   function openAddForm() {
-    if (isDesktopTabs) {
-      openFormTab({
-        feature: "customers",
-        baseHref: "/customers",
-        mode: "add",
-        label: t("customers.actions.add"),
-      });
-      return;
-    }
-    setEditingCustomer(null);
-    setFormMode("add");
-    setFormError(null);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "add",
+      label: t("customers.actions.add"),
+    });
   }
 
   function openEditForm(customer: Customer) {
-    if (isDesktopTabs) {
-      setViewCustomer(null);
-      openFormTab({
-        feature: "customers",
-        baseHref: "/customers",
-        mode: "edit",
-        entityId: customer.id,
-        label: t("customers.actions.editNamed", { name: customer.name }),
-      });
-      return;
-    }
-    setEditingCustomer(customer);
-    setFormMode("edit");
     setViewCustomer(null);
-    setFormError(null);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "edit",
+      entityId: customer.id,
+      label: t("customers.actions.editNamed", { name: customer.name }),
+    });
   }
 
   function openViewCustomer(customer: Customer) {
     setViewCustomer(customer);
-  }
-
-  async function saveCustomer(values: CustomerFormValues) {
-    setFormError(null);
-
-    try {
-      if (formMode === "edit" && editingCustomer) {
-        if (areCustomerFormValuesEquivalent(values, customerToFormValues(editingCustomer))) {
-          notifySuccess(t("common.form.noChanges"));
-          setFormMode(null);
-          setEditingCustomer(null);
-          return;
-        }
-
-        const nextCustomer = await updateCustomerMutation.mutateAsync({
-          customerId: editingCustomer.id,
-          values,
-        });
-        notifyUpdated(t("customers.entity"), nextCustomer.name);
-      } else {
-        const nextCustomer = await createCustomerMutation.mutateAsync(values);
-        notifyAdded(t("customers.entity"), nextCustomer.name);
-      }
-
-      setFormMode(null);
-      setEditingCustomer(null);
-      setPage(1);
-    } catch (mutationError) {
-      const { status, category } = formatError(mutationError);
-      setFormError(
-        formatCustomerMutationError(mutationError, t, {
-          mode: formMode === "edit" ? "edit" : "create",
-          hint:
-            status === 403 || category === "forbidden"
-              ? formMode === "edit"
-                ? t("customers.form.errors.updateForbidden")
-                : t("customers.form.errors.createForbidden")
-              : undefined,
-        }),
-      );
-    }
   }
 
   async function confirmDelete() {
@@ -734,48 +652,6 @@ export function CustomersWorkspace() {
           openDeleteTarget({ mode: "single", customer });
         }}
       />
-
-      <Dialog
-        open={formMode !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setFormMode(null);
-            setFormError(null);
-          }
-        }}
-      >
-        <DialogContent
-          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0"
-          onOpenAutoFocus={
-            formMode === "edit" ? (event) => event.preventDefault() : undefined
-          }
-        >
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-3 max-md:border-primary/70 max-md:bg-primary max-md:px-6 max-md:py-6">
-            <DialogTitle className="max-md:text-3xl max-md:font-bold max-md:text-primary-foreground">
-              {formMode === "edit" ? t("customers.form.editTitle") : t("customers.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
-          <CustomerForm
-            key={editingCustomer?.id ?? "new"}
-            initialValues={
-              formMode === "edit" && editingCustomer
-                ? customerToFormValues(editingCustomer)
-                : createEmptyCustomerForm()
-            }
-            isEditing={formMode === "edit"}
-            submitLabel={
-              formMode === "edit" ? t("common.actions.saveChanges") : t("customers.actions.add")
-            }
-            isSubmitting={isSaving}
-            externalError={formError}
-            onSubmit={saveCustomer}
-            onCancel={() => {
-              setFormMode(null);
-              setFormError(null);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && closeDeleteDialog()}>
         <DialogContent className="z-[60]">

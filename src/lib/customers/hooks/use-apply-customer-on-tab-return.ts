@@ -17,6 +17,7 @@ type PendingPartyReturn =
       side: PartySide;
       mode: "edit";
       customerId: string;
+      previousCustomer?: Customer;
     }
   | {
       side: PartySide;
@@ -26,6 +27,7 @@ type PendingPartyReturn =
 
 export type ApplyCustomerOnTabReturnMeta = {
   mode: "add" | "edit";
+  previousCustomer?: Customer;
 };
 
 /**
@@ -42,10 +44,10 @@ export function useApplyCustomerOnTabReturn(
   const applyRef = useRef(apply);
   applyRef.current = apply;
 
-  const markPendingPartyEdit = useCallback((side: PartySide, customerId: string) => {
+  const markPendingPartyEdit = useCallback((side: PartySide, customerId: string, previousCustomer?: Customer) => {
     pendingRef.current = [
       ...pendingRef.current.filter((entry) => entry.side !== side),
-      { side, mode: "edit", customerId },
+      { side, mode: "edit", customerId, previousCustomer },
     ];
   }, []);
 
@@ -99,7 +101,10 @@ export function useApplyCustomerOnTabReturn(
           queryKey: queryKeys.customers.detail(customerId),
           queryFn: () => fetchCustomerById(customerId),
         });
-        applyRef.current(pending.side, customer, { mode: pending.mode });
+        applyRef.current(pending.side, customer, {
+          mode: pending.mode,
+          previousCustomer: pending.mode === "edit" ? pending.previousCustomer : undefined,
+        });
       }),
     ).catch(() => undefined);
   }, [isActive, queryClient, tabs]);

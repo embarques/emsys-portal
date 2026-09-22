@@ -1,20 +1,13 @@
 "use client";
 
-import { CalendarDays, UserPlus, Users } from "lucide-react";
+import { CalendarDays, Keyboard, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { CustomerForm } from "@/components/customers/customer-form";
+
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
-import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,23 +18,11 @@ import { UnverifiedAddressNotice } from "@/components/addresses/unverified-addre
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
-import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
+
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
-import {
-  useCreateCustomer,
-  useEnsureCustomerDetail,
-  useUpdateCustomer,
-} from "@/lib/customers/hooks/use-customers";
-import {
-  CUSTOMER_TYPE_RECEIVER,
-  CUSTOMER_TYPE_SENDER,
-  areCustomerFormValuesEquivalent,
-  createEmptyCustomerForm,
-  customerToFormValues,
-  type Customer,
-  type CustomerFormValues,
-} from "@/lib/customers/types";
+
+import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, type Customer } from "@/lib/customers/types";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -73,13 +54,6 @@ type OrderFormProps = {
 };
 
 type PartySide = "sender" | "receiver";
-
-type CustomerDialogState = {
-  side: PartySide;
-  mode: "add" | "edit";
-  customer: Customer | null;
-  startWithNewAddress?: boolean;
-};
 
 function resolveAddedAddressIndex(
   previous: Pick<Customer, "addresses">,
@@ -132,11 +106,7 @@ export function OrderForm({
   const { t } = useTranslation();
   const { data: branchesData } = useBranchPicker();
   const employeesQuery = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
-  const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
-  const { isDesktopTabs, openFormTab } = useWorkspaceTabs();
-  const createCustomerMutation = useCreateCustomer();
-  const updateCustomerMutation = useUpdateCustomer();
-  const ensureCustomerDetail = useEnsureCustomerDetail();
+  const { openFormTab } = useWorkspaceTabs();
 
   const branches = branchesData?.items ?? [];
   const employees = employeesQuery.data?.items ?? [];
@@ -144,12 +114,13 @@ export function OrderForm({
   const [values, setValues] = useState<OrderFormValues>(initialValues ?? createEmptyOrderForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
-  const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
-  const [customerFormError, setCustomerFormError] = useState<string | null>(null);
-  const [isLoadingEditCustomer, setIsLoadingEditCustomer] = useState(false);
   const handleEnterNavigation = useFormEnterNavigation();
   const { markPendingPartyEdit, markPendingPartyAdd } = useApplyCustomerOnTabReturn(
-    (side, customer, { mode }) => {
+    (side, customer, { mode, previousCustomer }) => {
+      const addedAddressIndex =
+        previousCustomer && customer.addresses.length > previousCustomer.addresses.length
+          ? resolveAddedAddressIndex(previousCustomer, customer)
+          : undefined;
       setValues((current) => {
         if (side === "sender") {
           const currentId = current.senderId?.trim() || current.sender?.id?.trim() || "";
@@ -164,13 +135,14 @@ export function OrderForm({
             senderId: customer.id,
             sender: customer,
             senderAddressIndex:
-              mode === "edit"
+              addedAddressIndex ??
+              (mode === "edit"
                 ? rematchOrderPartyAddressIndex(
                     current.sender,
                     current.senderAddressIndex,
                     customer,
                   )
-                : getInitialOrderPartyAddressIndex(customer),
+                : getInitialOrderPartyAddressIndex(customer)),
           };
         }
         const currentId = current.receiverId?.trim() || current.receiver?.id?.trim() || "";
@@ -182,22 +154,19 @@ export function OrderForm({
           receiverId: customer.id,
           receiver: customer,
           receiverAddressIndex:
-            mode === "edit"
+            addedAddressIndex ??
+            (mode === "edit"
               ? rematchOrderPartyAddressIndex(
                   current.receiver,
                   current.receiverAddressIndex,
                   customer,
                 )
-              : getInitialOrderPartyAddressIndex(customer),
+              : getInitialOrderPartyAddressIndex(customer)),
         };
       });
       setFormError(null);
     },
   );
-  const isSavingCustomer =
-    createCustomerMutation.isPending ||
-    updateCustomerMutation.isPending ||
-    isLoadingEditCustomer;
   const isSubmitting = isSubmittingProp || isLocalSubmitting;
 
   useEffect(() => {
@@ -232,194 +201,51 @@ export function OrderForm({
     setFormError(null);
   }
 
-  const dialogCustomer = customerDialog?.customer ?? null;
-
   function openAddCustomer(side: PartySide) {
     const isReceiver = side === "receiver";
     const partyCustomerType = isReceiver ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER;
-    // On desktop, open the customer add form in its own workspace tab (party type locked);
-    // mobile has no tab bar, so keep the inline dialog.
-    if (isDesktopTabs) {
-      markPendingPartyAdd(side, partyCustomerType);
-      openFormTab({
-        feature: "customers",
-        baseHref: "/customers",
-        mode: "add",
-        customerType: partyCustomerType,
-        label: isReceiver
-          ? t("orders.form.partyActions.addReceiver")
-          : t("orders.form.partyActions.addSender"),
-      });
-      return;
-    }
-    setCustomerFormError(null);
-    setCustomerDialog({ side, mode: "add", customer: null });
+    markPendingPartyAdd(side, partyCustomerType);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "add",
+      customerType: partyCustomerType,
+      label: isReceiver
+        ? t("orders.form.partyActions.addReceiver")
+        : t("orders.form.partyActions.addSender"),
+    });
   }
 
-  async function openEditCustomer(side: PartySide) {
+  function openEditCustomer(side: PartySide) {
     const current = side === "sender" ? values.sender : values.receiver;
     if (!current?.id) return;
 
-    if (isDesktopTabs) {
-      markPendingPartyEdit(side, current.id);
-      openFormTab({
-        feature: "customers",
-        baseHref: "/customers",
-        mode: "edit",
-        entityId: current.id,
-        customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
-        label:
-          side === "receiver"
-            ? t("orders.form.partyActions.editReceiver")
-            : t("orders.form.partyActions.editSender"),
-      });
-      return;
-    }
-
-    setCustomerFormError(null);
-    setIsLoadingEditCustomer(true);
-
-    try {
-      // Order parties often hold a single snapshot address (`party.address`), not the
-      // full customer address book. Reload from GET /customers/{id} before editing.
-      const fullCustomer = await ensureCustomerDetail(current.id);
-
-      setValues((currentValues) => {
-        if (side === "sender") {
-          return {
-            ...currentValues,
-            sender: fullCustomer,
-            senderAddressIndex: rematchOrderPartyAddressIndex(
-              currentValues.sender,
-              currentValues.senderAddressIndex,
-              fullCustomer,
-            ),
-          };
-        }
-
-        return {
-          ...currentValues,
-          receiver: fullCustomer,
-          receiverAddressIndex: rematchOrderPartyAddressIndex(
-            currentValues.receiver,
-            currentValues.receiverAddressIndex,
-            fullCustomer,
-          ),
-        };
-      });
-      setCustomerDialog({ side, mode: "edit", customer: fullCustomer });
-    } catch {
-      setCustomerFormError(t("common.errors.fallback"));
-    } finally {
-      setIsLoadingEditCustomer(false);
-    }
+    markPendingPartyEdit(side, current.id);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "edit",
+      entityId: current.id,
+      customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+      label:
+        side === "receiver"
+          ? t("orders.form.partyActions.editReceiver")
+          : t("orders.form.partyActions.editSender"),
+    });
   }
 
-  async function openAddAddress(side: PartySide, customer: Customer) {
+  function openAddAddress(side: PartySide, customer: Customer) {
     if (!customer.id) return;
-
-    setCustomerFormError(null);
-    setIsLoadingEditCustomer(true);
-
-    try {
-      const fullCustomer = await ensureCustomerDetail(customer.id);
-      setCustomerDialog({
-        side,
-        mode: "edit",
-        customer: fullCustomer,
-        startWithNewAddress: true,
-      });
-    } catch {
-      setCustomerFormError(t("common.errors.fallback"));
-    } finally {
-      setIsLoadingEditCustomer(false);
-    }
-  }
-
-  function closeCustomerDialog() {
-    setCustomerDialog(null);
-    setCustomerFormError(null);
-  }
-
-  // Newly added customers behave like a fresh selection (unset when multi-address);
-  // edits rematch the previously chosen address when it is still present.
-  function applyCustomerToSide(
-    side: PartySide,
-    customer: Customer,
-    mode: "add" | "edit",
-    addressIndex?: number,
-  ) {
-    if (side === "sender") {
-      setValues((current) => ({
-        ...current,
-        senderId: customer.id,
-        sender: customer,
-        senderAddressIndex:
-          addressIndex ??
-          (mode === "edit"
-            ? rematchOrderPartyAddressIndex(
-                current.sender,
-                current.senderAddressIndex,
-                customer,
-              )
-            : getInitialOrderPartyAddressIndex(customer)),
-      }));
-    } else {
-      setValues((current) => ({
-        ...current,
-        receiverId: customer.id,
-        receiver: customer,
-        receiverAddressIndex:
-          addressIndex ??
-          (mode === "edit"
-            ? rematchOrderPartyAddressIndex(
-                current.receiver,
-                current.receiverAddressIndex,
-                customer,
-              )
-            : getInitialOrderPartyAddressIndex(customer)),
-      }));
-    }
-    setFormError(null);
-  }
-
-  async function handleCustomerSubmit(formValues: CustomerFormValues) {
-    if (!customerDialog) return;
-    setCustomerFormError(null);
-
-    try {
-      let customer: Customer;
-
-      if (customerDialog.mode === "edit" && dialogCustomer) {
-        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(dialogCustomer))) {
-          notifySuccess(t("common.form.noChanges"));
-          closeCustomerDialog();
-          return;
-        }
-
-        customer = await updateCustomerMutation.mutateAsync({
-          customerId: dialogCustomer.id,
-          values: formValues,
-        });
-        notifyUpdated(t("customers.entity"), customer.name);
-      } else {
-        customer = await createCustomerMutation.mutateAsync(formValues);
-        notifyAdded(t("customers.entity"), customer.name);
-      }
-
-      const addedAddressIndex =
-        customerDialog.startWithNewAddress && dialogCustomer
-          ? resolveAddedAddressIndex(dialogCustomer, customer)
-          : undefined;
-      applyCustomerToSide(customerDialog.side, customer, customerDialog.mode, addedAddressIndex);
-      closeCustomerDialog();
-    } catch (mutationError) {
-      setCustomerFormError(
-        formatCustomerMutationError(mutationError, t, {
-          mode: customerDialog.mode === "edit" ? "edit" : "create",
-        }),
-      );
-    }
+    markPendingPartyEdit(side, customer.id, customer);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "edit",
+      entityId: customer.id,
+      customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+      customerFormIntent: "address",
+      label: t("customers.actions.editNamed", { name: customer.name }),
+    });
   }
 
   const unverifiedPartyMessage = t("orders.form.validation.unverifiedSenderAddress");
@@ -461,7 +287,6 @@ export function OrderForm({
   })();
 
   const isBlocked = blockReason != null;
-  const unverifiedSenderWarning = blockForUnverifiedParty ? unverifiedPartyMessage : null;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -485,221 +310,190 @@ export function OrderForm({
   }
 
   return (
-    <>
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-      <FormSection icon={CalendarDays} title={t("orders.form.sections.pickupDate")} required>
-        <div className="space-y-2.5">
-          <div className="space-y-1">
-            <DateInput
-              id="date"
-              value={values.date}
-              onChange={(event) => updateField("date", event.target.value)}
-              required
-            />
-          </div>
-
-          {isEditing ? (
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="branchId">
-                  {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="branchId"
-                  value={String(values.branchId)}
-                  onValueChange={(next) => updateField("branchId", Number(next))}
-                  searchPlaceholder={t("orders.form.placeholders.searchBranches")}
-                  required
-                  mobileSheet
-                  options={branches.map((branch) => ({
-                    value: String(branch.id),
-                    label: `${branch.name} · ${branch.code}`,
-                  }))}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="employeeId">{t("orders.form.fields.employee")}</Label>
-                <SearchableSelect
-                  id="employeeId"
-                  value={String(values.employeeId)}
-                  onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
-                  placeholder={t("orders.form.fields.noEmployee")}
-                  searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
-                  mobileSheet
-                  options={[
-                    { value: "", label: t("orders.form.fields.noEmployee") },
-                    ...employees.map((employee) => ({
-                      value: String(employee.id),
-                      label: `${employee.name} · ${employee.department}`,
-                    })),
-                  ]}
-                />
-              </div>
-
-              <div className="hidden space-y-1 md:block">
-                <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
-                <Input
-                  id="sectorId"
-                  type="number"
-                  min="0"
-                  value={values.sectorId}
-                  onChange={(event) =>
-                    updateField("sectorId", event.target.value ? Number(event.target.value) : "")
-                  }
-                />
-              </div>
-            </div>
-          ) : null}
+      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <p>{t("orders.form.workflow.requiredHint")}</p>
+          <p className="flex items-center gap-1.5">
+            <Keyboard className="size-3.5" aria-hidden="true" />
+            {t("orders.form.workflow.keyboardHint")}
+          </p>
         </div>
-      </FormSection>
-
-      <FormSection icon={Users} title={t("orders.form.sections.senderReceiver")}>
-        <div className="grid gap-2.5 sm:grid-cols-2">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="senderId">
-                {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
+        <FormSection icon={CalendarDays} title={t("orders.form.workflow.scheduleTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid items-end gap-4 @2xl:grid-cols-2 @4xl:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="date">
+                {t("orders.form.sections.pickupDate")} <span className="text-destructive">*</span>
               </Label>
-              <PartyFieldActions
-                hasSelection={Boolean(values.sender)}
-                onAdd={() => openAddCustomer("sender")}
-                onEdit={() => openEditCustomer("sender")}
+              <DateInput
+                id="date"
+                value={values.date}
+                onChange={(event) => updateField("date", event.target.value)}
+                required
               />
             </div>
-            <CustomerPartySelect
-              id="senderId"
-              partyType="sender"
-              value={values.senderId}
-              selectedCustomer={values.sender}
-              onValueChange={updateSender}
-              onAddAddress={(customer) => void openAddAddress("sender", customer)}
-              placeholder={t("orders.form.placeholders.selectSender")}
-              required
-              showAddressLabels={false}
-            />
-            {values.sender && isOrderPartyAddressChosen(values.sender, values.senderAddressIndex) ? (
+            {isEditing ? (
               <>
-                <CustomerContactSummary
-                  customer={values.sender}
-                  addressIndex={values.senderAddressIndex}
-                />
-                <UnverifiedAddressNotice
-                  customer={values.sender}
-                  addressIndex={values.senderAddressIndex}
-                  onUpdateAddress={() => openEditCustomer("sender")}
-                />
-              </>
-            ) : null}
-          </div>
+                <div className="space-y-1">
+                  <Label htmlFor="branchId">
+                    {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="branchId"
+                    value={String(values.branchId)}
+                    onValueChange={(next) => updateField("branchId", Number(next))}
+                    searchPlaceholder={t("orders.form.placeholders.searchBranches")}
+                    required
+                    mobileSheet
+                    options={branches.map((branch) => ({
+                      value: String(branch.id),
+                      label: `${branch.name} · ${branch.code}`,
+                    }))}
+                  />
+                </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="receiverId">{t("orders.form.fields.receiver")}</Label>
-              <PartyFieldActions
-                hasSelection={Boolean(values.receiver)}
-                onAdd={() => openAddCustomer("receiver")}
-                onEdit={() => openEditCustomer("receiver")}
+                <div className="space-y-1">
+                  <Label htmlFor="employeeId">{t("orders.form.fields.employee")}</Label>
+                  <SearchableSelect
+                    id="employeeId"
+                    value={String(values.employeeId)}
+                    onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
+                    placeholder={t("orders.form.fields.noEmployee")}
+                    searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
+                    mobileSheet
+                    options={[
+                      { value: "", label: t("orders.form.fields.noEmployee") },
+                      ...employees.map((employee) => ({
+                        value: String(employee.id),
+                        label: `${employee.name} · ${employee.department}`,
+                      })),
+                    ]}
+                  />
+                </div>
+
+                <div className="hidden space-y-1 md:block">
+                  <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
+                  <Input
+                    id="sectorId"
+                    type="number"
+                    min="0"
+                    value={values.sectorId}
+                    onChange={(event) =>
+                      updateField("sectorId", event.target.value ? Number(event.target.value) : "")
+                    }
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="self-center text-sm text-muted-foreground @4xl:col-span-3">
+                {t("orders.form.workflow.scheduleHint")}
+              </p>
+            )}
+          </div>
+        </FormSection>
+
+        <FormSection icon={Users} title={t("orders.form.workflow.customersTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid gap-4 @2xl:grid-cols-2">
+            <div className="min-w-0 space-y-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-4">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="senderId">
+                  {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
+                </Label>
+                <PartyFieldActions
+                  hasSelection={Boolean(values.sender)}
+                  onAdd={() => openAddCustomer("sender")}
+                  onEdit={() => openEditCustomer("sender")}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">{t("orders.form.workflow.senderHint")}</p>
+              <CustomerPartySelect
+                id="senderId"
+                partyType="sender"
+                value={values.senderId}
+                selectedCustomer={values.sender}
+                onValueChange={updateSender}
+                onAddAddress={(customer) => void openAddAddress("sender", customer)}
+                placeholder={t("orders.form.placeholders.selectSender")}
+                required
+                showAddressLabels={false}
               />
+              {values.sender && isOrderPartyAddressChosen(values.sender, values.senderAddressIndex) ? (
+                <>
+                  <CustomerContactSummary
+                    customer={values.sender}
+                    addressIndex={values.senderAddressIndex}
+                  />
+                  <UnverifiedAddressNotice
+                    customer={values.sender}
+                    addressIndex={values.senderAddressIndex}
+                    onUpdateAddress={() => openEditCustomer("sender")}
+                  />
+                </>
+              ) : null}
             </div>
-            <CustomerPartySelect
-              id="receiverId"
-              partyType="receiver"
-              value={values.receiverId}
-              selectedCustomer={values.receiver}
-              onValueChange={updateReceiver}
-              onAddAddress={(customer) => void openAddAddress("receiver", customer)}
-              placeholder={t("orders.form.placeholders.noReceiver")}
-              pickerTitle={t("orders.form.placeholders.selectReceiver")}
-              searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
-              showAddressLabels={false}
-            />
-            {values.receiver && isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex) ? (
-              <>
-                <CustomerContactSummary
-                  customer={values.receiver}
-                  addressIndex={values.receiverAddressIndex}
+
+            <div className="min-w-0 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="receiverId">
+                  {t("orders.form.fields.receiver")}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">{t("orders.form.workflow.optional")}</span>
+                </Label>
+                <PartyFieldActions
+                  hasSelection={Boolean(values.receiver)}
+                  onAdd={() => openAddCustomer("receiver")}
+                  onEdit={() => openEditCustomer("receiver")}
                 />
-                <UnverifiedAddressNotice
-                  customer={values.receiver}
-                  addressIndex={values.receiverAddressIndex}
-                  onUpdateAddress={() => openEditCustomer("receiver")}
-                />
-              </>
-            ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("orders.form.workflow.receiverHint")}</p>
+              <CustomerPartySelect
+                id="receiverId"
+                partyType="receiver"
+                value={values.receiverId}
+                selectedCustomer={values.receiver}
+                onValueChange={updateReceiver}
+                onAddAddress={(customer) => void openAddAddress("receiver", customer)}
+                placeholder={t("orders.form.placeholders.noReceiver")}
+                pickerTitle={t("orders.form.placeholders.selectReceiver")}
+                searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
+                showAddressLabels={false}
+              />
+              {values.receiver && isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex) ? (
+                <>
+                  <CustomerContactSummary
+                    customer={values.receiver}
+                    addressIndex={values.receiverAddressIndex}
+                  />
+                  <UnverifiedAddressNotice
+                    customer={values.receiver}
+                    addressIndex={values.receiverAddressIndex}
+                    onUpdateAddress={() => openEditCustomer("receiver")}
+                  />
+                </>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </FormSection>
+        </FormSection>
 
-      {values.sender ? (
-        <SenderOrderHistorySection
-          sender={values.sender}
-          currentOrderId={values.id > 0 ? String(values.id) : undefined}
-        />
-      ) : null}
+        <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
 
-      <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
+        {values.sender ? (
+          <div className="rounded-xl border border-border bg-card p-5">
+            <SenderOrderHistorySection
+              sender={values.sender}
+              currentOrderId={values.id > 0 ? String(values.id) : undefined}
+            />
+          </div>
+        ) : null}
       </FormBody>
 
       <FormFooter
         error={formError}
-        warning={unverifiedSenderWarning}
+        warning={blockReason}
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         submitDisabled={isBlocked}
         onCancel={onCancel}
       />
     </form>
-
-      <Dialog
-        open={customerDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) closeCustomerDialog();
-        }}
-      >
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
-              {customerDialog?.mode === "edit"
-                ? customerDialog.side === "receiver"
-                  ? t("orders.form.partyActions.editReceiver")
-                  : t("orders.form.partyActions.editSender")
-                : customerDialog?.side === "receiver"
-                  ? t("orders.form.partyActions.addReceiver")
-                  : t("orders.form.partyActions.addSender")}
-            </DialogTitle>
-          </DialogHeader>
-          {customerDialog ? (
-            <CustomerForm
-              key={`${customerDialog.side}-${customerDialog.mode}-${dialogCustomer?.id ?? "new"}-${customerDialog.startWithNewAddress ? "new-address" : "edit"}`}
-              initialValues={
-                customerDialog.mode === "edit" && dialogCustomer
-                  ? customerToFormValues(dialogCustomer)
-                  : {
-                      ...createEmptyCustomerForm(),
-                      customerType:
-                        customerDialog.side === "receiver"
-                          ? CUSTOMER_TYPE_RECEIVER
-                          : CUSTOMER_TYPE_SENDER,
-                    }
-              }
-              isEditing={customerDialog.mode === "edit"}
-              submitLabel={
-                customerDialog.mode === "edit"
-                  ? t("common.actions.saveChanges")
-                  : t("customers.actions.add")
-              }
-              isSubmitting={isSavingCustomer}
-              externalError={customerFormError}
-              lockCustomerType
-              startWithNewAddress={customerDialog.startWithNewAddress}
-              onSubmit={handleCustomerSubmit}
-              onCancel={closeCustomerDialog}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
-    </>
   );
 }

@@ -41,6 +41,7 @@ const WorkspaceTabPanel = memo(function WorkspaceTabPanel({ tab, active }: Works
               mode={tab.form.mode}
               entityId={tab.form.entityId}
               customerType={tab.form.customerType}
+              customerFormIntent={tab.form.customerFormIntent}
               initialWizardStep={tab.form.initialWizardStep}
               focusBarcodeId={tab.form.focusBarcodeId}
               formNonce={tab.form.formNonce}

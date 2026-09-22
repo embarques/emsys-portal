@@ -33,6 +33,8 @@ export function CustomerFormWorkspace({
   mode,
   entityId,
   customerType,
+  customerFormIntent,
+  formNonce,
 }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const { formatError, toErrorMessage } = useUserError();
@@ -149,6 +151,9 @@ export function CustomerFormWorkspace({
                 ...(hasPresetCustomerType ? { customerType } : {}),
               }
         }
+        entryNonce={formNonce}
+        startWithNewAddress={customerFormIntent === "address"}
+        startWithNewPhone={customerFormIntent === "phone"}
         isEditing={isEditing}
         lockCustomerType={hasPresetCustomerType}
         submitLabel={

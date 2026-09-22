@@ -211,7 +211,7 @@ const tabsSlice = createSlice({
       state,
       action: PayloadAction<{
         id: string;
-        form: Partial<Pick<WorkspaceTabForm, "initialWizardStep" | "focusBarcodeId" | "formNonce">>;
+        form: Partial<Pick<WorkspaceTabForm, "initialWizardStep" | "focusBarcodeId" | "customerFormIntent" | "formNonce">>;
       }>,
     ) {
       const tab = state.tabs.find((entry) => entry.id === action.payload.id);

@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+import { buildMobileCustomerFormHref } from "@/lib/customers/customer-form-navigation";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
 import { useConfigurationStore } from "@/lib/configuration/use-configuration";
@@ -120,13 +121,33 @@ export function useWorkspaceTabs() {
       label: string;
       /** Preset/locked customer type when opening the customers add form for a party. */
       customerType?: number;
+      customerFormIntent?: "address" | "phone";
       /** Invoice wizard step to land on (e.g. 3 = line items). */
       initialWizardStep?: number;
       /** Focus the line item that owns this barcode id/number when editing an invoice. */
       focusBarcodeId?: string;
     }) => {
       if (!isDesktopTabs) {
-        router.push(params.baseHref);
+        if (params.feature !== "customers") {
+          router.push(params.baseHref);
+          return;
+        }
+        const tabId = createTabId();
+        const mobileReturnHref = `${window.location.pathname}${window.location.search}`;
+        dispatch(openWorkspaceTab({
+          id: tabId,
+          href: params.baseHref,
+          label: params.label,
+          form: {
+            feature: params.feature,
+            mode: params.mode,
+            entityId: params.entityId,
+            customerType: params.customerType,
+            customerFormIntent: params.customerFormIntent,
+            mobileReturnHref,
+          },
+        }));
+        router.push(buildMobileCustomerFormHref(mobileReturnHref, tabId));
         return;
       }
 
@@ -140,6 +161,7 @@ export function useWorkspaceTabs() {
       );
       if (existing) {
         if (
+          params.customerFormIntent != null ||
           params.initialWizardStep != null ||
           params.focusBarcodeId != null
         ) {
@@ -147,6 +169,9 @@ export function useWorkspaceTabs() {
             patchWorkspaceTabForm({
               id: existing.id,
               form: {
+                ...(params.customerFormIntent != null
+                  ? { customerFormIntent: params.customerFormIntent }
+                  : {}),
                 ...(params.initialWizardStep != null
                   ? { initialWizardStep: params.initialWizardStep }
                   : {}),
@@ -177,6 +202,7 @@ export function useWorkspaceTabs() {
             mode: params.mode,
             entityId: params.entityId,
             returnToTabId,
+            customerFormIntent: params.customerFormIntent,
             ...(params.customerType != null ? { customerType: params.customerType } : {}),
             ...(params.initialWizardStep != null
               ? { initialWizardStep: params.initialWizardStep }
@@ -207,6 +233,11 @@ export function useWorkspaceTabs() {
       const returnToTabId = tab?.form?.returnToTabId ?? null;
 
       dispatch(closeWorkspaceTab(tabId));
+
+      if (tab?.form?.mobileReturnHref) {
+        router.replace(tab.form.mobileReturnHref);
+        return;
+      }
 
       const remaining = store.getState().layoutTabs.tabs;
       if (remaining.length === 0) {

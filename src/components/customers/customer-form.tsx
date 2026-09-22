@@ -10,7 +10,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
@@ -90,6 +90,8 @@ type CustomerFormProps = {
   startWithNewAddress?: boolean;
   /** Append an empty phone row so the user can add a new one. */
   startWithNewPhone?: boolean;
+  /** A new navigation request for an already-open customer form. */
+  entryNonce?: number;
   onSubmit: (values: CustomerFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -384,6 +386,7 @@ export function CustomerForm({
   lockCustomerType = false,
   startWithNewAddress = false,
   startWithNewPhone = false,
+  entryNonce,
   onSubmit,
   onCancel,
 }: CustomerFormProps) {
@@ -404,6 +407,7 @@ export function CustomerForm({
   const [pendingPhoneFocusIndex, setPendingPhoneFocusIndex] = useState<number | null>(
     () => initialState.pendingPhoneFocusIndex,
   );
+  const previousEntryNonce = useRef(entryNonce);
   const errorMessage = formError ?? externalError;
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -418,7 +422,23 @@ export function CustomerForm({
     setPendingAddressFocusIndex(next.pendingAddressFocusIndex);
     setPendingPhoneFocusIndex(next.pendingPhoneFocusIndex);
     setFormError(null);
-  }, [initialValues?.id, initialValues?.updatedAt, startWithNewAddress, startWithNewPhone]);
+  }, [initialValues?.id, initialValues?.updatedAt]);
+
+  useEffect(() => {
+    if (previousEntryNonce.current === entryNonce) return;
+    previousEntryNonce.current = entryNonce;
+    // Reopening a tab must retain its unsaved fields.
+    if (startWithNewAddress) {
+      const next = withTrailingEmptyAddress(values);
+      setValues(next);
+      setShowAddresses(true);
+      setPendingAddressFocusIndex(next.addresses.length - 1);
+    } else if (startWithNewPhone) {
+      const next = withTrailingEmptyPhone(values);
+      setValues(next);
+      setPendingPhoneFocusIndex(next.phones.length - 1);
+    }
+  }, [entryNonce, startWithNewAddress, startWithNewPhone, values]);
 
   useEffect(() => {
     if (pendingAddressFocusIndex == null || !showAddresses) return;

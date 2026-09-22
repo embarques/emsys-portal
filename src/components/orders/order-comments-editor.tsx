@@ -389,17 +389,29 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   }
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <MessageSquare className="size-4" />
-        </span>
-        <h3 className="text-sm font-semibold leading-none text-foreground">{t("orders.comments.title")}</h3>
+    <section className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("orders.form.workflow.visitTitle")} <span className="text-destructive">*</span>
+          </h3>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 shrink-0 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+          onClick={addComment}
+        >
+          <Plus className="size-4" />
+          {t("orders.comments.add")}
+        </Button>
       </div>
+      <p className="text-sm text-muted-foreground">{t("orders.form.workflow.visitHint")}</p>
 
       {rows.length === 0 ? (
         <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-          {t("orders.empty.noComments")}
+          {t("orders.form.workflow.commentsEmpty")}
         </p>
       ) : (
         <>
@@ -735,15 +747,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
         </>
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
-        onClick={addComment}
-      >
-        <Plus className="size-4" />
-        {t("orders.comments.add")}
-      </Button>
+
     </section>
   );
 }
