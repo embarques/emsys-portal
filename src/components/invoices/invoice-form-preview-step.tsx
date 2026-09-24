@@ -427,7 +427,7 @@ function InvoiceWizardCheckoutReview({
   return (
     <div
       id="invoice-wizard-print-area"
-      className={isPhoneWizard ? "space-y-4 pb-2" : "divide-y divide-border px-5 py-2 sm:px-8"}
+      className={isPhoneWizard ? "space-y-4 pb-2" : "@container space-y-5 p-4 sm:p-6"}
     >
       {errorMessage ? (
         <div className="py-3 print:hidden">

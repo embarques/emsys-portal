@@ -370,7 +370,7 @@ export function InvoiceWizardSummarySidebar({
     <aside
       data-print-hide
       className={cn(
-        "hidden w-[min(100%,20rem)] shrink-0 flex-col overflow-y-auto bg-background p-4 lg:flex",
+        "hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-border bg-muted/20 p-4 lg:flex",
         className,
       )}
     >

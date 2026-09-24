@@ -648,7 +648,7 @@ export function InvoiceFormWizard({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card">
           <div
             data-print-hide
-            className="shrink-0 space-y-1 border-b border-border px-4 py-3 sm:px-8 sm:py-4"
+            className="shrink-0 space-y-1 border-b border-border bg-card px-5 py-3"
           >
             <p className={cn(invoiceStepEyebrowClassName, "hidden sm:block")}>
               {t("invoices.wizard.stepEyebrow", {
@@ -658,6 +658,7 @@ export function InvoiceFormWizard({
               })}
             </p>
             <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
+            <p className="text-sm text-muted-foreground">{t(step === previewStep ? "invoices.form.design.reviewHint" : step === 4 ? "invoices.form.design.paymentHint" : "invoices.form.design.navigationHint")}</p>
           </div>
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -671,11 +672,11 @@ export function InvoiceFormWizard({
               {formStep}
             </div>
             {requireDailyIncomeRegistration && step === 4 ? (
-              <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-12">
+              <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">
                 {paymentStep}
               </div>
             ) : step === previewStep ? (
-              <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-12">
+              <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">
                 {previewContent}
               </div>
             ) : null}
@@ -699,7 +700,7 @@ export function InvoiceFormWizard({
 
       <div
         data-print-hide
-        className="shrink-0 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-8 sm:pb-3"
+        className="shrink-0 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 sm:pb-3"
       >
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">

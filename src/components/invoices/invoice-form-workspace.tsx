@@ -7,9 +7,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { InvoiceBarcodeDecreaseDialog } from "@/components/invoices/invoice-barcode-decrease-dialog";
 import { InvoiceFormWizard } from "@/components/invoices/invoice-form-wizard";
 import {
-  invoicePageDescriptionClassName,
-  invoicePageEyebrowClassName,
-  invoicePageTitleClassName,
   invoiceWizardTypographyRoot,
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
@@ -98,24 +95,21 @@ function InvoiceWizardShell({
   onPrint,
   isPrinting = false,
 }: InvoiceWizardShellProps) {
+  const { t } = useTranslation();
   return (
     <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-x-hidden md:block", invoiceWizardTypographyRoot)}>
-      <div className="hidden shrink-0 border-b border-border px-4 py-2.5 md:mb-6 md:flex md:flex-row md:items-start md:justify-between md:gap-4 md:border-0 md:px-0 md:py-0">
-        <div className="hidden md:block">
-          <p className={invoicePageEyebrowClassName}>Invoice wizard</p>
-          <h1 className={invoicePageTitleClassName}>{title}</h1>
-          <p className={invoicePageDescriptionClassName}>{description}</p>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Button variant="outline" className="h-9 px-3 md:h-10 md:px-4" onClick={onCancel}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to invoices
-          </Button>
-        </div>
-      </div>
-
       <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden md:block md:max-w-6xl">
-        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden overflow-x-hidden bg-card md:max-h-[calc(100vh-11rem)] md:rounded-xl md:border md:border-border md:shadow-sm">
+        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-card md:max-h-[calc(100dvh-8rem)] md:rounded-xl md:border md:border-border md:shadow-sm">
+          <div className="hidden shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-3 md:flex">
+            <div className="min-w-0">
+              <h1 className="text-base font-semibold leading-tight">{title}</h1>
+              <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">{description}</p>
+            </div>
+            <Button variant="outline" className="h-9 shrink-0" onClick={onCancel}>
+              <ArrowLeft className="size-4" />
+              {t("invoices.form.design.backToInvoices")}
+            </Button>
+          </div>
           <InvoiceFormWizard
             key={`${initialValues.invoiceId || "new"}:${formNonce ?? 0}:${initialWizardStep ?? 1}`}
             initialValues={initialValues}
@@ -299,7 +293,7 @@ export function InvoiceCreateWizard({
   return (
     <InvoiceWizardShell
       title={t("invoices.workspace.addInvoice")}
-      description="Create a new invoice in five steps: enter invoice details, select the sender and receiver, add line items, optionally link Daily Income (Cuadre) and payment, then review totals and save."
+      description={t("invoices.form.design.createDescription")}
       onCancel={onCancel}
       initialValues={initialValues}
       submitLabel={submitLabel}
@@ -484,7 +478,7 @@ export function InvoiceEditWizard({
         title={t("invoices.workspace.editInvoiceNamed", {
           number: formatInvoiceTabLabel(invoiceQuery.data, t("invoices.workspace.untitledTab")),
         })}
-        description="Update invoice details, parties, and line items in four steps. Use Next to move forward, Back to revise a step, and the summary panel to apply an optional discount before saving."
+        description={t("invoices.form.design.editDescription")}
         onCancel={onCancel}
         initialValues={initialValues}
         submitLabel={submitLabel}

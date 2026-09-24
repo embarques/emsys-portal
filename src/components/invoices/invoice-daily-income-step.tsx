@@ -625,7 +625,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
   }
 
   return (
-    <div className="space-y-5 px-5 py-5 sm:px-8">
+    <div className="space-y-5 p-4 sm:p-6">
       {queryError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
           <div className="flex items-start gap-3">
@@ -675,7 +675,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
             </div>
           </div>
 
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="grid flex-1 gap-5 sm:grid-cols-3">
                 {registration.invoice?.cost != null && Number.isFinite(registration.invoice.cost) ? (
@@ -716,7 +716,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
         <div className="space-y-4">
           {statementOpen && statement ? (
             <>
-              <div className="rounded-lg border bg-card p-4">
+              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-1">
                     <p className="text-sm font-semibold">
@@ -754,7 +754,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                   ? t("invoices.wizard.dailyIncome.skipWithCuadreHint", { id: statement.id })
                   : t("invoices.wizard.dailyIncome.recordBeforeContinueHint")}
               </p>
-              <div className="rounded-lg border bg-card p-4">
+              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <label className="flex items-start gap-3">
                   <input
                     type="checkbox"

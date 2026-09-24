@@ -80,6 +80,18 @@
     "invoiceNotFound": "Invoice not found."
   },
   "form": {
+    "design": {
+      "backToInvoices": "Back to invoices",
+      "createDescription": "Enter shipment details, confirm customers and merchandise, then review payment and totals before saving.",
+      "editDescription": "Update the invoice details, customers, and merchandise, then review the changes before saving.",
+      "detailsHint": "Use the shipment record to confirm the date, container, and who received the merchandise.",
+      "partiesHint": "Find customers by name or phone. Confirm their contact details and the pickup or delivery address.",
+      "itemsHint": "Record the merchandise, quantities, and prices. Label counts identify the individual pieces that need tracking.",
+      "totals": "Totals",
+      "navigationHint": "Complete this step, then choose Next. You can return to completed steps to make changes.",
+      "paymentHint": "Review Daily Income and payment details before continuing.",
+      "reviewHint": "Check the customers, merchandise, labels, and totals before saving."
+    },
     "fields": {
       "date": "Date",
       "invoiceNumber": "Invoice number",

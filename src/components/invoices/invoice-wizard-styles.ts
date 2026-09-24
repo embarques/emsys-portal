@@ -2,7 +2,7 @@ import type { FocusEvent } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Underline-style inputs used in the invoice wizard (checkout layout). */
+/** Shared form control styling with larger touch targets on phones. */
 export const wizardInputClassName =
   "h-12 rounded-xl border border-input bg-card px-3 text-base shadow-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:h-9 md:rounded-md md:bg-card md:px-3 md:text-sm";
 
@@ -61,7 +61,7 @@ export function wizardSelectFieldProps(value: string | number | undefined | null
 
 export function wizardLabelClassName(required?: boolean) {
   return cn(
-    "text-sm font-medium text-muted-foreground",
+    "text-sm font-medium",
     required && "[&_.req]:text-destructive",
   );
 }

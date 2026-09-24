@@ -13,4 +13,4 @@ export const invoiceStepEyebrowClassName =
   "text-xs font-medium uppercase tracking-wide text-muted-foreground";
 
 export const invoiceStepTitleClassName =
-  "text-lg font-semibold tracking-tight text-foreground sm:text-2xl";
+  "text-base font-semibold leading-tight text-foreground";

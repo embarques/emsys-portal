@@ -2,6 +2,7 @@
 
 import { Pencil } from "lucide-react";
 
+import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -52,30 +53,19 @@ export function InvoiceWizardReviewSection({
   }
 
   return (
-    <section className={cn("py-6 first:pt-2", className)}>
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <span
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground"
-            aria-hidden
-          >
-            {number}
-          </span>
-          <h3 className="pt-0.5 text-base font-bold text-foreground sm:text-lg">{title}</h3>
-        </div>
-        {onEdit ? (
-          <Button
-            type="button"
-            variant="link"
-            className="h-auto shrink-0 px-0 text-primary"
-            onClick={onEdit}
-          >
-            {resolvedEditLabel}
-          </Button>
-        ) : null}
-      </div>
-      <div className="pl-11">{children}</div>
-    </section>
+    <FormSection
+      variant="card"
+      title={`${String(number).padStart(2, "0")} · ${title}`}
+      className={className}
+      action={onEdit ? (
+        <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
+          <Pencil className="size-4" />
+          {resolvedEditLabel}
+        </Button>
+      ) : undefined}
+    >
+      {children}
+    </FormSection>
   );
 }
 

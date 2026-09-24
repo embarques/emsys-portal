@@ -23,7 +23,7 @@ export function WizardField({
   children,
 }: WizardFieldProps) {
   return (
-    <div className={cn("space-y-2 md:space-y-2", className)}>
+    <div className={cn("min-w-0 space-y-1", className)}>
       <div className="flex items-center justify-between gap-2">
         <Label htmlFor={htmlFor} className={wizardLabelClassName(required)}>
           {label}

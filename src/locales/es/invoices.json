@@ -80,6 +80,18 @@
     "invoiceNotFound": "Factura no encontrada."
   },
   "form": {
+    "design": {
+      "backToInvoices": "Volver a facturas",
+      "createDescription": "Ingresa los datos del envío, confirma los clientes y la mercancía y revisa el pago y los totales antes de guardar.",
+      "editDescription": "Actualiza los datos de la factura, los clientes y la mercancía y revisa los cambios antes de guardar.",
+      "detailsHint": "Confirma la fecha, el contenedor y quién recibió la mercancía según el registro del envío.",
+      "partiesHint": "Busca clientes por nombre o teléfono. Confirma sus datos de contacto y la dirección de recogida o entrega.",
+      "itemsHint": "Registra la mercancía, las cantidades y los precios. Las etiquetas identifican las piezas individuales que necesitan seguimiento.",
+      "totals": "Totales",
+      "navigationHint": "Completa este paso y selecciona Siguiente. Puedes volver a los pasos completados para hacer cambios.",
+      "paymentHint": "Revisa el cuadre y los datos del pago antes de continuar.",
+      "reviewHint": "Verifica los clientes, la mercancía, las etiquetas y los totales antes de guardar."
+    },
     "fields": {
       "date": "Fecha",
       "invoiceNumber": "Número de factura",

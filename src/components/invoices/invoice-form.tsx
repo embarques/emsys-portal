@@ -698,7 +698,7 @@ export function InvoiceForm({
     values.pickupSource === "warehouse"
       ? t("invoices.form.placeholders.selectWarehouseEmployee")
       : t("invoices.form.placeholders.selectOfficeEmployee");
-  const wizardFieldCol = isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined;
+  const wizardFieldCol = isPhoneWizard ? undefined : isWizard ? "@2xl:col-span-1" : undefined;
   const openPickupAssignment = isWizard && pickupAssignmentOpenKey > 0;
 
   function renderField(
@@ -767,9 +767,7 @@ export function InvoiceForm({
         "grid min-w-0",
         isPhoneWizard
           ? "grid-cols-1 gap-4"
-          : isWizard
-            ? "grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5"
-            : "gap-2.5 sm:grid-cols-2",
+          : "grid-cols-1 gap-4 @2xl:grid-cols-2",
       )}
     >
       {renderField(
@@ -923,19 +921,19 @@ export function InvoiceForm({
     <div
       className={cn(
         "grid min-w-0",
-        isPhoneWizard ? "gap-4" : isWizard ? "gap-5 md:grid-cols-2" : "gap-2.5 sm:grid-cols-2",
+        isPhoneWizard ? "gap-4" : "gap-4 @2xl:grid-cols-2",
       )}
     >
-      <div className={isPhoneWizard ? undefined : "sm:col-span-2"}>{pickupReferenceField}</div>
+      <div className={isPhoneWizard ? undefined : "@2xl:col-span-2"}>{pickupReferenceField}</div>
       <div
         className={cn(
           "space-y-2",
-          isPhoneWizard && "border-b border-border/70 px-1 pb-4",
+          isPhoneWizard ? "border-b border-border/70 px-1 pb-4" : "min-w-0 rounded-lg border border-border bg-muted/20 p-4",
         )}
       >
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
-            <Label htmlFor="senderId" className="text-xs font-normal text-muted-foreground">
+            <Label htmlFor="senderId" className="text-sm font-medium">
               {t("invoices.form.fields.sender")} <span className="text-destructive">*</span>
             </Label>
           ) : (
@@ -975,12 +973,12 @@ export function InvoiceForm({
       <div
         className={cn(
           "space-y-2",
-          isPhoneWizard && "border-b border-border/70 px-1 pb-4",
+          isPhoneWizard ? "border-b border-border/70 px-1 pb-4" : "min-w-0 rounded-lg border border-border bg-muted/20 p-4",
         )}
       >
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
-            <Label htmlFor="receiverId" className="text-xs font-normal text-muted-foreground">
+            <Label htmlFor="receiverId" className="text-sm font-medium">
               {t("invoices.form.fields.receiver")}
             </Label>
           ) : (
@@ -1022,11 +1020,12 @@ export function InvoiceForm({
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
         <FormBody
+          workflow={!isPhoneWizard}
           className={
             isPhoneWizard
               ? "min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto bg-background px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))]"
               : isWizard
-              ? "flex-1 space-y-6 overflow-y-auto bg-muted/25 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:bg-card md:px-8 md:pb-12"
+              ? "min-w-0 flex-1 space-y-5 overflow-y-auto bg-muted/35 p-4 sm:p-6"
               : undefined
           }
         >
@@ -1035,10 +1034,8 @@ export function InvoiceForm({
               <section className="min-w-0 space-y-5">
                 {detailsFields}
               </section>
-            ) : isWizard ? (
-              detailsFields
             ) : (
-              <FormSection icon={Receipt} title={t("invoices.form.sections.invoiceDetails")} required>
+              <FormSection variant="card" icon={Receipt} title={`01 · ${t("invoices.form.sections.invoiceDetails")}`} description={t("invoices.form.design.detailsHint")}>
                 {detailsFields}
               </FormSection>
             )
@@ -1049,10 +1046,8 @@ export function InvoiceForm({
               <section className="min-w-0 space-y-4">
                 {partiesFields}
               </section>
-            ) : isWizard ? (
-              partiesFields
             ) : (
-              <FormSection icon={Users} title={t("invoices.form.sections.senderReceiver")}>
+              <FormSection variant="card" icon={Users} title={`02 · ${t("invoices.form.sections.senderReceiver")}`} description={t("invoices.form.design.partiesHint")}>
                 {partiesFields}
               </FormSection>
             )
@@ -1060,18 +1055,21 @@ export function InvoiceForm({
 
           {showLineItemsSection ? (
             isWizard ? (
-              <InvoiceLineItemsEditor
-                lineItems={values.lineItems}
-                catalogItems={catalogItems}
-                appearance={isPhoneWizard ? "phoneWizard" : "wizard"}
-                onChange={(lineItems) => updateField("lineItems", lineItems)}
-                requestFocusKey={
-                  focusFieldId === INVOICE_WIZARD_FIELDS.lineItems ? focusFieldKey : 0
-                }
-                requestEditLineItemId={requestEditLineItemId}
-              />
+              <div className={isPhoneWizard ? undefined : "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"}>
+                {!isPhoneWizard ? <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{t("invoices.form.design.itemsHint")}</p> : null}
+                <InvoiceLineItemsEditor
+                  lineItems={values.lineItems}
+                  catalogItems={catalogItems}
+                  appearance={isPhoneWizard ? "phoneWizard" : "wizard"}
+                  onChange={(lineItems) => updateField("lineItems", lineItems)}
+                  requestFocusKey={
+                    focusFieldId === INVOICE_WIZARD_FIELDS.lineItems ? focusFieldKey : 0
+                  }
+                  requestEditLineItemId={requestEditLineItemId}
+                />
+              </div>
             ) : (
-              <FormSection icon={ClipboardList} title={t("invoices.form.sections.description")}>
+              <FormSection variant="card" description={t("invoices.form.design.itemsHint")} icon={ClipboardList} title={t("invoices.form.sections.description")}>
                 <InvoiceLineItemsEditor
                   lineItems={values.lineItems}
                   catalogItems={catalogItems}
@@ -1082,7 +1080,7 @@ export function InvoiceForm({
           ) : null}
 
           {showTotalsSection ? (
-          <FormSection icon={Wallet} title="Totals">
+          <FormSection variant="card" icon={Wallet} title={t("invoices.form.design.totals")}>
             <div className="space-y-2.5">
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
