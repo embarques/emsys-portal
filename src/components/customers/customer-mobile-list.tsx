@@ -5,14 +5,10 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Filter,
   MapPin,
-  Pencil,
   Phone,
   Plus,
-  Trash2,
-  X,
   Users,
 } from "lucide-react";
 
@@ -39,7 +35,7 @@ import {
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { cn } from "@/lib/utils";
 
 type FilterField = ComponentProps<typeof TableAdvancedFilterBuilder>["fields"][number];
@@ -302,54 +298,6 @@ export function CustomerMobileList({
         </TableFilterPanel>
       ) : null}
 
-      {selectedIds.length > 0 ? (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3 shadow-sm">
-          <p className="min-w-0 text-lg font-bold">
-            {t("common.table.selected", { count: selectedIds.length, total: totalCount })}
-          </p>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onClearSelection}>
-              <X className="size-4" />
-              {t("common.table.clearAll")}
-            </Button>
-            {singleSelectedCustomer ? (
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn("size-10", tableSelectionActionStyles.view)}
-                onClick={() => onView(singleSelectedCustomer)}
-                aria-label={t("common.actions.view")}
-              >
-                <Eye className="size-4" />
-              </Button>
-            ) : null}
-            {canUpdate && singleSelectedCustomer ? (
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn("size-10", tableSelectionActionStyles.edit)}
-                onClick={() => onEdit(singleSelectedCustomer)}
-                aria-label={t("common.actions.edit")}
-              >
-                <Pencil className="size-4" />
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn("size-10", tableSelectionActionStyles.delete)}
-                onClick={onDeleteSelected}
-                disabled={isSaving}
-                aria-label={t("common.actions.delete")}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
       {!showInitialLoading ? (
         <div className="flex items-center justify-between gap-3">
           <Button
@@ -377,6 +325,20 @@ export function CustomerMobileList({
           </Button>
         </div>
       ) : null}
+
+      <TableSelectionBar
+        selectedCount={selectedIds.length}
+        totalCount={totalCount}
+        onClear={onClearSelection}
+        onView={() => singleSelectedCustomer && onView(singleSelectedCustomer)}
+        onEdit={() => singleSelectedCustomer && onEdit(singleSelectedCustomer)}
+        canEdit={canUpdate}
+        viewDisabled={!singleSelectedCustomer}
+        editDisabled={!singleSelectedCustomer}
+        onDelete={onDeleteSelected}
+        canDelete={canDelete}
+        deleteDisabled={isSaving}
+      />
 
       {listErrorMessage ? (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">

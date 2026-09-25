@@ -83,7 +83,7 @@ export function FormBody({ className, workflow = false, isBusy = false, busyLabe
   const { t } = useTranslation();
 
   return (
-    <div className={cn("relative flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", workflow && "@container min-h-0 space-y-5 p-4 sm:p-6", className)}>
+    <div className={cn("relative min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", workflow && "@container space-y-5 p-4 sm:p-6", className)}>
       {workflow ? <FormWorkflowHints requiredHint={t("common.form.requiredHint")} keyboardHint={t("common.form.keyboardHint")} /> : null}
       {children}
       {isBusy ? (
@@ -140,7 +140,7 @@ export function FormFooter({
       : null;
 
   return (
-    <div className="shrink-0 border-t border-border bg-card px-5 py-3">
+    <div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card px-5 py-3">
       <div className="flex items-center justify-between gap-3">
         {notice ? (
           notice.tone === "error" ? (

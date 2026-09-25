@@ -9,7 +9,7 @@ import {
 } from "@/lib/invoices/barcode-sync";
 
 /**
- * Resolve ObjectID `removeBarcodeIds` for invoice PUT when labels decrease.
+ * Resolve Barcode column values for `removeBarcodeIds` for invoice PUT when labels decrease.
  * The API deletes from embed + catalog; portal must not rewrite barcode arrays.
  */
 export function resolveInvoiceRemoveBarcodeIds(input: {
@@ -18,7 +18,7 @@ export function resolveInvoiceRemoveBarcodeIds(input: {
 }): InvoiceRemoveBarcodeIdsByDetail {
   if (!canSubmitBarcodeDecreases(input.plan, input.deletions)) {
     throw new Error(
-      "Lowering labels requires selecting one ObjectID barcodeId per removed label.",
+      "Lowering labels requires selecting one distinct, nonempty barcode number per removed label.",
     );
   }
 

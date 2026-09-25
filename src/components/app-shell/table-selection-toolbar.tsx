@@ -1,163 +1,45 @@
 "use client";
 
-import { type ReactNode } from "react";
-import { Eye, ListChecks, Pencil, Trash2, X } from "lucide-react";
+import { ListChecks } from "lucide-react";
 
+import { TableSelectionBar, type TableSelectionBarProps } from "@/components/app-shell/table-selection-bar";
 import { Button } from "@/components/ui/button";
-import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
 import { useTranslation } from "@/lib/i18n";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
-import { cn } from "@/lib/utils";
 
-type TableSelectionToolbarProps = {
+type TableSelectionToolbarProps = Omit<TableSelectionBarProps, "selectedCount" | "onClear" | "selectionActions"> & {
   selectedIds: string[];
   pageRowIds: string[];
-  /** Total selectable records (across pages). Falls back to the current page count. */
-  totalCount?: number;
   onSelectedIdsChange: (ids: string[]) => void;
-  onView?: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  /** Feature-specific bulk actions rendered before View/Edit/Delete. */
-  actions?: ReactNode;
-  /**
-   * Hide View/Edit/Delete. Prefer hiding only actions to the left of an
-   * expanded group so View/Edit/Delete (to the right) stay available.
-   */
-  hideStandardActions?: boolean;
-  canView?: boolean;
-  canEdit?: boolean;
-  canDelete?: boolean;
-  deleteDisabled?: boolean;
-  className?: string;
 };
 
-/**
- * Selection action bar that sticks to the top of the viewport (just below the
- * app topbar) while rows are selected and the table scrolls underneath.
- *
- * Grouped by purpose:
- *  - Left "selection island": what's selected + how to manage the selection.
- *  - Right "record actions": operations performed on the selected records,
- *    with the destructive action split off on its own.
- */
 export function TableSelectionToolbar({
   selectedIds,
   pageRowIds,
-  totalCount,
   onSelectedIdsChange,
-  onView,
-  onEdit,
-  onDelete,
-  actions,
-  hideStandardActions = false,
-  canView = true,
-  canEdit = true,
-  canDelete = true,
-  deleteDisabled = false,
-  className,
+  totalCount,
+  ...props
 }: TableSelectionToolbarProps) {
   const { t } = useTranslation();
 
-  if (selectedIds.length === 0) return null;
-
-  const total = totalCount ?? pageRowIds.length;
-
-  const showView = Boolean(onView && canView && !hideStandardActions);
-  const viewDisabled = selectedIds.length !== 1;
-  const showEdit = Boolean(onEdit && canEdit && !hideStandardActions);
-  const editDisabled = selectedIds.length !== 1;
-  const showDelete = Boolean(onDelete && canDelete && !hideStandardActions);
-  const othersAvailable = canSelectAllOthers(pageRowIds, selectedIds);
-  const hasRecordActions = Boolean(showView || showEdit || actions || showDelete);
-
   return (
-    <div
-      role="toolbar"
-      aria-label={`${selectedIds.length} selected`}
-      className={cn(
-        "sticky top-20 z-30 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-primary/[0.06] px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-primary/[0.05] sm:px-6",
-        "animate-in fade-in slide-in-from-top-2 duration-200",
-        className,
-      )}
-    >
-      {/* Selection status + selection management */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
-          aria-label={t("common.table.clearSelection")}
-          title={t("common.table.clearSelection")}
-          onClick={() => onSelectedIdsChange([])}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
-          {t("common.table.selected", { count: selectedIds.length, total })}
-        </span>
-        <span className="mx-1 h-5 w-px bg-primary/20" aria-hidden />
+    <TableSelectionBar
+      {...props}
+      selectedCount={selectedIds.length}
+      totalCount={totalCount ?? pageRowIds.length}
+      onClear={() => onSelectedIdsChange([])}
+      selectionActions={
         <Button
           variant="ghost"
           size="sm"
           className="gap-1.5 text-muted-foreground hover:text-foreground"
-          disabled={!othersAvailable}
+          disabled={!canSelectAllOthers(pageRowIds, selectedIds)}
           onClick={() => onSelectedIdsChange(selectAllOthers(pageRowIds, selectedIds))}
         >
           <ListChecks className="h-4 w-4" />
           <span className="whitespace-nowrap">{t("common.table.selectAllOthers")}</span>
         </Button>
-      </div>
-
-      {/* Record actions: operate on the selected rows */}
-      {hasRecordActions ? (
-        <div
-          className={cn(
-            "flex items-center gap-1.5",
-            hideStandardActions ? "flex-nowrap" : "flex-wrap",
-          )}
-        >
-          {actions}
-          {actions && (showView || showEdit || showDelete) ? <TableSelectionActionDivider /> : null}
-          {showView ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={viewDisabled}
-              className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
-              onClick={onView}
-            >
-              <Eye className="h-4 w-4" />
-              {t("common.actions.view")}
-            </Button>
-          ) : null}
-          {showEdit ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={editDisabled}
-              className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-              onClick={onEdit}
-            >
-              <Pencil className="h-4 w-4" />
-              {t("common.actions.edit")}
-            </Button>
-          ) : null}
-          {showDelete ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={deleteDisabled}
-              className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-              onClick={onDelete}
-            >
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+      }
+    />
   );
 }

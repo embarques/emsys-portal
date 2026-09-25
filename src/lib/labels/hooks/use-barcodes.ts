@@ -9,6 +9,7 @@ import {
   updateBarcodes,
   type AssignBarcodeToRouteTarget,
   type BarcodeUpdate,
+  type RouteAssignmentProgress,
   type GenerateLabelTarget,
 } from "@/lib/labels/api/barcodes-api";
 import { queryKeys } from "@/lib/query/query-keys";
@@ -53,19 +54,21 @@ export function useAssignBarcodesToRoute() {
       routeName,
       barcodes,
       barcodeIds,
+      onProgress,
     }: {
       routeId: string;
       routeName?: string;
+      onProgress?: (progress: RouteAssignmentProgress) => void;
       barcodes?: AssignBarcodeToRouteTarget[];
       /** @deprecated Prefer `barcodes` — numeric/uint32 ids for the invoice-embedded endpoint. */
       barcodeIds?: Array<string | number>;
     }) => {
       if (barcodes && barcodes.length > 0) {
-        return assignBarcodesToDailyRoute(routeId, routeName ?? routeId, barcodes);
+        return assignBarcodesToDailyRoute(routeId, routeName ?? routeId, barcodes, onProgress);
       }
       return assignInvoiceItemBarcodesToRoute(routeId, barcodeIds ?? []);
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.barcodes.all });
     },

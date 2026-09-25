@@ -598,6 +598,10 @@ export function EmployeesWorkspace() {
           pageRowIds={employees.map((employee) => String(employee.id))}
           totalCount={totalEmployees}
           onSelectedIdsChange={setSelectedIds}
+          onView={() => {
+            const employee = employees.find((entry) => String(entry.id) === selectedIds[0]);
+            if (employee) setViewEmployee(employee);
+          }}
           onEdit={() => {
             const employee = employees.find((entry) => String(entry.id) === selectedIds[0]);
             if (employee) openEditForm(employee);

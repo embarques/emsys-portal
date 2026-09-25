@@ -210,7 +210,7 @@ export function ChartAccountForm({
         </p>
       ) : null}
 
-      <div className="sticky bottom-0 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 sm:static sm:mx-0 sm:flex sm:justify-end sm:bg-transparent sm:px-0 sm:pb-0">
+      <div className="sticky bottom-0 z-10 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 sm:mx-0 sm:flex sm:justify-end sm:px-0 sm:pb-4">
         <Button
           type="button"
           variant="outline"

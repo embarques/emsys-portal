@@ -1198,61 +1198,22 @@ export function OrdersWorkspace() {
         ) : null}
 
         {!isLoading && !listErrorMessage && orders.length > 0 && selectedCount > 0 ? (
-          <div className="rounded-xl border bg-card px-3 py-3 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-foreground">
-                {selectedCount} selected
-              </span>
+          <TableSelectionToolbar
+            selectedIds={selectedIds}
+            pageRowIds={orders.map((order) => getOrderRecordId(order))}
+            totalCount={totalOrders}
+            onSelectedIdsChange={setSelectedIds}
+            onView={() => { if (selectedOrders[0]) openViewOrder(selectedOrders[0]); }}
+            onEdit={() => { if (selectedOrders[0]) openEditForm(selectedOrders[0]); }}
+            editDisabled={isSaving}
+            onDelete={() => setDeleteTarget(selectedOrders)}
+            deleteDisabled={isSaving}
+            actions={<>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-9 rounded-lg"
-                onClick={() => setSelectedIds([])}
-              >
-                Clear
-              </Button>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
-                  tableSelectionActionStyles.view,
-                )}
-                disabled={selectedCount !== 1}
-                onClick={() => {
-                  const order = selectedOrders[0];
-                  if (order) openViewOrder(order);
-                }}
-              >
-                <FileText className="size-4" />
-                {t("common.actions.view")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
-                  tableSelectionActionStyles.edit,
-                )}
-                disabled={selectedCount !== 1 || isSaving}
-                onClick={() => {
-                  const order = selectedOrders[0];
-                  if (order) openEditForm(order);
-                }}
-              >
-                <Edit className="size-4" />
-                {t("common.actions.edit")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                className="whitespace-nowrap"
                 onClick={openMapView}
               >
                 <MapIcon className="size-4" />
@@ -1262,7 +1223,7 @@ export function OrdersWorkspace() {
                 type="button"
                 size="sm"
                 className={cn(
-                  "min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
+                  "whitespace-nowrap",
                   tableSelectionActionStyles.print,
                 )}
                 variant="outline"
@@ -1276,7 +1237,7 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-10 rounded-lg bg-emerald-500/5 px-2 text-xs leading-tight text-emerald-700 whitespace-normal hover:bg-emerald-500/10 hover:text-emerald-700"
+                className="bg-emerald-500/5 text-emerald-700 whitespace-nowrap hover:bg-emerald-500/10 hover:text-emerald-700"
                 disabled={isSaving}
                 onClick={() => openCompletionConfirm(true)}
               >
@@ -1287,7 +1248,7 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-10 rounded-lg bg-amber-500/5 px-2 text-xs leading-tight text-amber-700 whitespace-normal hover:bg-amber-500/10 hover:text-amber-700"
+                className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
                 disabled={isSaving}
                 onClick={() => openCompletionConfirm(false)}
               >
@@ -1298,7 +1259,7 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                className="whitespace-nowrap"
                 disabled={isSaving}
                 onClick={openAssignRoute}
               >
@@ -1309,7 +1270,7 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-10 rounded-lg bg-amber-500/5 px-2 text-xs leading-tight text-amber-700 whitespace-normal hover:bg-amber-500/10 hover:text-amber-700"
+                className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
                 disabled={isSaving || selectedOrdersWithRoute.length === 0}
                 onClick={openClearRoute}
               >
@@ -1318,22 +1279,8 @@ export function OrdersWorkspace() {
                   ? t("orders.actions.clearingRoute")
                   : t("orders.actions.clearRoute")}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "col-span-2 min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
-                  tableSelectionActionStyles.delete,
-                )}
-                disabled={isSaving}
-                onClick={() => setDeleteTarget(selectedOrders)}
-              >
-                <Trash2 className="size-4" />
-                {t("common.actions.delete")}
-              </Button>
-            </div>
-          </div>
+            </>}
+          />
         ) : null}
 
         {missingCompanyContext ? (

@@ -12,7 +12,6 @@ import {
   RefreshCw,
   Search,
   Tags,
-  Trash2,
 } from "lucide-react";
 
 import { InvoiceStagingDialog } from "@/components/invoices/invoice-staging-dialog";
@@ -1152,34 +1151,22 @@ export function InvoicesWorkspace() {
         ) : null}
 
         {!isLoading && !isError && invoices.length > 0 && selectedCount > 0 ? (
-          <div className="rounded-xl border bg-card px-3 py-3 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-foreground">
-                {selectedCount} selected
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9 rounded-lg"
-                  onClick={() => setSelectedIds([])}
-                >
-                  Clear
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 rounded-lg"
-                  onClick={printSelectedInvoices}
-                  disabled={isPrinting}
-                >
-                  <Printer className="size-4" />
-                  {isPrinting ? "Preparing..." : "Print"}
-                </Button>
-              </div>
-            </div>
-          </div>
+          <TableSelectionToolbar
+            selectedIds={selectedIds}
+            pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
+            totalCount={totalInvoices}
+            onSelectedIdsChange={setSelectedIds}
+            onView={() => { if (selectedInvoices[0]) openView(selectedInvoices[0]); }}
+            onEdit={() => { if (selectedInvoices[0]) openEditForm(selectedInvoices[0]); }}
+            onDelete={() => setDeleteTarget(selectedInvoices)}
+            deleteDisabled={isDeleting}
+            actions={
+              <Button variant="outline" size="sm" className={tableSelectionActionStyles.print} onClick={printSelectedInvoices} disabled={isPrinting}>
+                <Printer className="h-4 w-4" />
+                {isPrinting ? "Preparing…" : "Print"}
+              </Button>
+            }
+          />
         ) : null}
 
         <div className="rounded-xl bg-background">

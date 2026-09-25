@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Route as RouteIcon } from "lucide-react";
+import { Loader2, Route as RouteIcon } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
@@ -19,7 +19,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
 import { useAssignBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
-import type { AssignBarcodeToRouteTarget } from "@/lib/labels/api/barcodes-api";
+import type { AssignBarcodeToRouteTarget, RouteAssignmentProgress } from "@/lib/labels/api/barcodes-api";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { DAILY_ROUTES_DIRECTORY_VARIANT, DELIVERY_BRANCH_CODE } from "@/lib/pickup-delivery-routes/directory-variant";
 import {
@@ -50,6 +50,7 @@ export function AssignBarcodeRouteDialog({
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const { openFormTab } = useWorkspaceTabs();
+  const [progress, setProgress] = useState<RouteAssignmentProgress | null>(null);
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -117,11 +118,14 @@ export function AssignBarcodeRouteDialog({
       return;
     }
 
+    setFormError(null);
+    setProgress(null);
     try {
       const result = await assignBarcodesMutation.mutateAsync({
         routeId,
         routeName,
         barcodes: needsUpdate,
+        onProgress: setProgress,
       });
       const assignedRouteName = result.routeName || routeName;
       const message = t("labels.staging.output.successRoute");
@@ -176,6 +180,7 @@ export function AssignBarcodeRouteDialog({
             </div>
             <SearchableSelect
               id="assign-barcode-daily-route"
+              disabled={isSaving}
               value={routeId}
               onValueChange={(value) => {
                 setRouteId(value);
@@ -196,6 +201,30 @@ export function AssignBarcodeRouteDialog({
             />
           </div>
 
+          {isSaving ? (
+            <div className="space-y-2" role="status" aria-live="polite">
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                {progress
+                  ? t(`labels.staging.routeDialog.${progress.phase}Progress`, {
+                      count: progress.completed,
+                      total: progress.total,
+                    })
+                  : t("labels.staging.routeDialog.assigning")}
+              </p>
+              {progress ? (
+                <progress
+                  className="h-2 w-full accent-primary"
+                  value={progress.completed}
+                  max={Math.max(progress.total, 1)}
+                  aria-label={t(`labels.staging.routeDialog.${progress.phase}Progress`, {
+                    count: progress.completed,
+                    total: progress.total,
+                  })}
+                />
+              ) : null}
+            </div>
+          ) : null}
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </div>
 
@@ -204,8 +233,8 @@ export function AssignBarcodeRouteDialog({
             {t("common.actions.cancel")}
           </Button>
           <Button onClick={() => void confirmAssign()} disabled={!canSubmit}>
-            <RouteIcon className="h-4 w-4" />
-            {t("labels.staging.routeDialog.assign")}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <RouteIcon className="h-4 w-4" />}
+            {t(isSaving ? "labels.staging.routeDialog.assigning" : "labels.staging.routeDialog.assign")}
           </Button>
         </DialogFooter>
       </DialogContent>

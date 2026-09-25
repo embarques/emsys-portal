@@ -525,6 +525,7 @@ export function UsersWorkspace() {
             const user = pageUsers.find((entry) => String(entry.id) === selectedIds[0]);
             if (user) openEditForm(user);
           }}
+          deleteLabel={t("users.view.deactivate")}
           onDelete={() => setDeactivateTarget(users.filter((user) => selectedIds.includes(String(user.id))))}
           deleteDisabled={isSaving}
         />

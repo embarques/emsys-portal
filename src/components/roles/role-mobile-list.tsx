@@ -108,22 +108,6 @@ export function RoleMobileList({
 
       {filtersOpen ? <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">{filterPanel}</div> : null}
 
-      <RoleMobileSelectionToolbar
-        selectedCount={selectedIds.length}
-        canViewOrEdit={selectedIds.length === 1}
-        deleteDisabled={selectedRoles.some((role) => role.systemRole)}
-        onClear={() => onSelectedIdsChange([])}
-        onView={() => {
-          const role = selectedRoles[0];
-          if (role) onOpen(role);
-        }}
-        onEdit={() => {
-          const role = selectedRoles[0];
-          if (role) onEdit(role);
-        }}
-        onDelete={() => onDelete(selectedRoles)}
-      />
-
       <div className="flex items-center justify-between gap-3">
         <Button
           type="button"
@@ -149,6 +133,22 @@ export function RoleMobileList({
           <ChevronRight className="size-4" />
         </Button>
       </div>
+
+      <RoleMobileSelectionToolbar
+        selectedCount={selectedIds.length}
+        canViewOrEdit={selectedIds.length === 1}
+        deleteDisabled={selectedRoles.some((role) => role.systemRole)}
+        onClear={() => onSelectedIdsChange([])}
+        onView={() => {
+          const role = selectedRoles[0];
+          if (role) onOpen(role);
+        }}
+        onEdit={() => {
+          const role = selectedRoles[0];
+          if (role) onEdit(role);
+        }}
+        onDelete={() => onDelete(selectedRoles)}
+      />
 
       <div className="rounded-3xl border border-border bg-card px-4 shadow-sm">
         {pageError ? (

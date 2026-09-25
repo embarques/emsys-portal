@@ -45,7 +45,7 @@ export function LoginForm() {
   const busy = loading || isLoading;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-clip bg-slate-950 px-4 py-12">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-40"
@@ -111,7 +111,7 @@ export function LoginForm() {
             </div>
           ) : null}
 
-          <Button type="submit" className="w-full" disabled={busy}>
+          <Button type="submit" className="sticky bottom-0 z-10 w-full" disabled={busy}>
             {busy ? "Signing in..." : "Sign in"}
           </Button>
         </form>

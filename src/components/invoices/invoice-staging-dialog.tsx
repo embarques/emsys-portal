@@ -6,17 +6,15 @@ import {
   ArrowLeft,
   Barcode,
   Container as ContainerIcon,
-  ListChecks,
   Printer,
   RefreshCw,
   Route as RouteIcon,
   Tag,
   Trash2,
-  X,
 } from "lucide-react";
 
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
-import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
@@ -60,8 +58,6 @@ import {
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { queryKeys } from "@/lib/query/query-keys";
-import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 export type InvoiceStagingWorkflowProps = {
@@ -186,60 +182,18 @@ function SelectionToolbar({
   children,
 }: SelectionToolbarProps) {
   const { t } = useTranslation();
-  const selectedCount = selectedKeys.length;
-
-  if (selectedCount === 0) return null;
-
-  const totalCount = total ?? allKeys.length;
-  const othersAvailable = canSelectAllOthers(allKeys, selectedKeys);
 
   return (
-    <div
-      role="toolbar"
-      aria-label={`${selectedCount} selected`}
-      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-primary/[0.06] px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-primary/[0.05]"
-    >
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
-          aria-label={t("common.table.clearSelection")}
-          title={t("common.table.clearSelection")}
-          onClick={() => onSelectedKeysChange([])}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
-          {t("common.table.selected", { count: selectedCount, total: totalCount })}
-        </span>
-        <span className="mx-1 h-5 w-px bg-primary/20" aria-hidden />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
-          disabled={!othersAvailable}
-          onClick={() => onSelectedKeysChange(selectAllOthers(allKeys, selectedKeys))}
-        >
-          <ListChecks className="h-4 w-4" />
-          <span className="whitespace-nowrap">{t("common.table.selectAllOthers")}</span>
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        {children}
-        {children ? <TableSelectionActionDivider /> : null}
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-          onClick={onRemoveAll}
-        >
-          <Trash2 className="h-4 w-4" />
-          {t("labels.staging.remove")}
-        </Button>
-      </div>
-    </div>
+    <TableSelectionToolbar
+      selectedIds={selectedKeys}
+      pageRowIds={allKeys}
+      totalCount={total}
+      onSelectedIdsChange={onSelectedKeysChange}
+      onDelete={onRemoveAll}
+      deleteLabel={t("labels.staging.remove")}
+      actions={children}
+      className="static sm:px-3"
+    />
   );
 }
 

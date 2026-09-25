@@ -160,6 +160,8 @@
       "apply": "Apply container"
     },
     "routeDialog": {
+      "checkingProgress": "Checking labels: {{count}} of {{total}}",
+      "assigningProgress": "Processing assignments: {{count}} of {{total}}",
       "title": "Assign route",
       "description": "Choose a daily route for {{count}} selected label, or create a new daily route. Only labels with a container are assigned.",
       "description_plural": "Choose a daily route for {{count}} selected labels, or create a new daily route. Only labels with a container are assigned.",

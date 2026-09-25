@@ -150,17 +150,6 @@ export function EmployeeMobileList({
         </TableFilterPanel>
       ) : null}
 
-      <EmployeeMobileSelectionToolbar
-        selectedIds={selectedIds}
-        totalCount={totalCount}
-        singleSelectedEmployee={singleSelectedEmployee}
-        isSaving={isSaving}
-        onClearSelection={onClearSelection}
-        onView={onView}
-        onEdit={onEdit}
-        onDeleteSelected={onDeleteSelected}
-      />
-
       {!showInitialLoading ? (
         <div className="flex items-center justify-between gap-3">
           <Button
@@ -188,6 +177,17 @@ export function EmployeeMobileList({
           </Button>
         </div>
       ) : null}
+
+      <EmployeeMobileSelectionToolbar
+        selectedIds={selectedIds}
+        totalCount={totalCount}
+        singleSelectedEmployee={singleSelectedEmployee}
+        isSaving={isSaving}
+        onClearSelection={onClearSelection}
+        onView={onView}
+        onEdit={onEdit}
+        onDeleteSelected={onDeleteSelected}
+      />
 
       {listErrorMessage ? (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">

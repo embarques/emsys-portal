@@ -189,7 +189,7 @@ export function ConfigurationWorkspace() {
         {updatePreferences.error ? (
           <p className="text-sm text-destructive">{normalizeApiError(updatePreferences.error).message}</p>
         ) : null}
-        <div className="flex justify-end gap-2">
+        <div className="sticky bottom-0 z-10 flex justify-end gap-2 border-t bg-background py-4">
           <Button
             type="button"
             variant="outline"

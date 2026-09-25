@@ -74,17 +74,6 @@ export function InventorySupplierMobileList({
         inputClassName="h-14 rounded-2xl text-base"
       />
 
-      <InventoryItemMobileSelectionToolbar
-        selectedCount={selectedIds.length}
-        canEdit={selectedIds.length === 1}
-        onClear={() => onSelectedIdsChange([])}
-        onEdit={() => {
-          const supplier = selectedSuppliers[0];
-          if (supplier && onEdit) onEdit(supplier);
-        }}
-        onDelete={() => onDelete?.(selectedSuppliers)}
-      />
-
       <div className="flex items-center justify-between gap-3">
         <Button
           type="button"
@@ -110,6 +99,17 @@ export function InventorySupplierMobileList({
           <ChevronRight className="size-4" />
         </Button>
       </div>
+
+      <InventoryItemMobileSelectionToolbar
+        selectedCount={selectedIds.length}
+        canEdit={selectedIds.length === 1}
+        onClear={() => onSelectedIdsChange([])}
+        onEdit={() => {
+          const supplier = selectedSuppliers[0];
+          if (supplier && onEdit) onEdit(supplier);
+        }}
+        onDelete={() => onDelete?.(selectedSuppliers)}
+      />
 
       <div className="rounded-3xl border border-border bg-card px-4 shadow-sm">
         {isLoading ? (

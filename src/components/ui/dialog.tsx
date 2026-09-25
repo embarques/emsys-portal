@@ -93,7 +93,7 @@ const DialogContent = React.forwardRef<
           // Always viewport-fixed so confirm/action dialogs stay on screen even
           // when the tab content is taller than the viewport. Overlay stays
           // absolute when tab-scoped so dimming remains inside the workspace tab.
-          "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border bg-background p-6 shadow-xl outline-none",
+          "fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-y-auto -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border bg-background p-6 shadow-xl outline-none",
           className,
         )}
         onPointerDownOutside={handlePointerDownOutside}
@@ -113,7 +113,7 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-2 text-left", className)} {...props} />
+  <div className={cn("flex shrink-0 flex-col space-y-2 text-left", className)} {...props} />
 );
 
 const DialogTitle = React.forwardRef<
@@ -133,7 +133,7 @@ const DialogDescription = React.forwardRef<
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)} {...props} />
+  <div className={cn("sticky bottom-0 z-10 flex shrink-0 flex-col-reverse gap-2 bg-background py-2 sm:flex-row sm:justify-end", className)} {...props} />
 );
 
 export {

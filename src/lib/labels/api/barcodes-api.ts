@@ -840,6 +840,12 @@ export async function assignInvoiceItemBarcodesToRoute(
   };
 }
 
+export type RouteAssignmentProgress = {
+  phase: "checking" | "assigning";
+  completed: number;
+  total: number;
+};
+
 export type AssignBarcodeToRouteTarget = {
   number: string;
   barcodeId?: string;
@@ -926,6 +932,7 @@ export async function assignBarcodesToDailyRoute(
   routeId: string,
   routeName: string,
   targets: AssignBarcodeToRouteTarget[],
+  onProgress?: (progress: RouteAssignmentProgress) => void,
 ): Promise<InvoiceItemBarcodeRoute> {
   const trimmedRouteId = routeId.trim();
   if (!trimmedRouteId) {
@@ -944,18 +951,24 @@ export async function assignBarcodesToDailyRoute(
   const embeddedTargets: AssignBarcodeToRouteTarget[] = [];
   const unresolved: string[] = [];
 
-  for (const target of targets) {
-    const catalogId = await resolveCatalogBarcodeId(target);
-    if (catalogId != null) {
-      catalogIds.push(catalogId);
-      continue;
-    }
-    if (target.invoiceId?.trim() && target.number.trim()) {
-      embeddedTargets.push(target);
-      continue;
-    }
-    unresolved.push(target.number.trim() || target.barcodeId?.trim() || "unknown");
-  }
+  let checked = 0;
+  onProgress?.({ phase: "checking", completed: 0, total: targets.length });
+  await runSettledWithConcurrency(targets, {
+    concurrency: 4,
+    getId: (target) => target.number,
+    run: async (target) => {
+      const catalogId = await resolveCatalogBarcodeId(target);
+      if (catalogId != null) {
+        catalogIds.push(catalogId);
+      } else if (target.invoiceId?.trim() && target.number.trim()) {
+        embeddedTargets.push(target);
+      } else {
+        unresolved.push(target.number.trim() || target.barcodeId?.trim() || "unknown");
+      }
+      checked += 1;
+      onProgress?.({ phase: "checking", completed: checked, total: targets.length });
+    },
+  });
 
   if (unresolved.length > 0) {
     throw new Error(
@@ -965,11 +978,6 @@ export async function assignBarcodesToDailyRoute(
 
   let assignedCount = 0;
 
-  for (const catalogId of Array.from(new Set(catalogIds))) {
-    await assignCatalogBarcodeRoute(catalogId, route);
-    assignedCount += 1;
-  }
-
   const embeddedByInvoice = new Map<string, AssignBarcodeToRouteTarget[]>();
   for (const target of embeddedTargets) {
     const invoiceId = target.invoiceId!.trim();
@@ -978,54 +986,84 @@ export async function assignBarcodesToDailyRoute(
     embeddedByInvoice.set(invoiceId, list);
   }
 
-  for (const [invoiceId, invoiceTargets] of embeddedByInvoice) {
-    const patches = invoiceTargets.map((target) => ({
-      barcodeId: target.barcodeId?.trim() || "",
-      number: target.number.trim(),
-      status: NEW_BARCODE_STATUS,
-      route,
+  // Each invoice is a single job: never race full-document writes for its labels.
+  const jobs: Array<{ count: number; run: () => Promise<void> }> =
+    Array.from(new Set(catalogIds), (catalogId) => ({
+      count: 1,
+      run: () => assignCatalogBarcodeRoute(catalogId, route),
     }));
+  for (const [invoiceId, invoiceTargets] of embeddedByInvoice) {
+    jobs.push({
+      count: invoiceTargets.length,
+      run: async () => {
+        const patches = invoiceTargets.map((target) => ({
+          barcodeId: target.barcodeId?.trim() || "",
+          number: target.number.trim(),
+          status: NEW_BARCODE_STATUS,
+          route,
+        }));
 
-    // Preserve existing status/container from the live invoice when present.
-    const liveInvoice = await fetchInvoiceById(invoiceId);
-    const liveByNumber = new Map<string, { statusId?: number; statusName?: string; containerId?: string; containerName?: string; barcodeId?: string }>();
-    for (const item of liveInvoice.lineItems) {
-      for (const barcode of item.barcodes ?? []) {
-        liveByNumber.set(barcode.number.trim(), {
-          statusId: barcode.statusId,
-          statusName: barcode.statusName,
-          containerId: barcode.containerId,
-          containerName: barcode.containerName,
-          barcodeId: barcode.barcodeId,
+        // Preserve existing status/container from the live invoice when present.
+        const liveInvoice = await fetchInvoiceById(invoiceId);
+        const liveByNumber = new Map<string, { statusId?: number; statusName?: string; containerId?: string; containerName?: string; barcodeId?: string }>();
+        for (const item of liveInvoice.lineItems) {
+          for (const barcode of item.barcodes ?? []) {
+            liveByNumber.set(barcode.number.trim(), {
+              statusId: barcode.statusId,
+              statusName: barcode.statusName,
+              containerId: barcode.containerId,
+              containerName: barcode.containerName,
+              barcodeId: barcode.barcodeId,
+            });
+          }
+        }
+
+        const resolvedPatches = patches.map((patch) => {
+          const live = liveByNumber.get(patch.number);
+          const status =
+            live?.statusId != null && live.statusId > 0 && live.statusName?.trim()
+              ? { id: live.statusId, name: live.statusName.trim() }
+              : NEW_BARCODE_STATUS;
+          const containerId = readNumericId(live?.containerId);
+          return {
+            barcodeId: live?.barcodeId?.trim() || patch.barcodeId,
+            number: patch.number,
+            status,
+            ...(containerId != null && containerId > 0
+              ? {
+                  container: {
+                    id: containerId,
+                    name: live?.containerName?.trim() || String(containerId),
+                  },
+                }
+              : {}),
+            route,
+          };
         });
-      }
-    }
 
-    const resolvedPatches = patches.map((patch) => {
-      const live = liveByNumber.get(patch.number);
-      const status =
-        live?.statusId != null && live.statusId > 0 && live.statusName?.trim()
-          ? { id: live.statusId, name: live.statusName.trim() }
-          : NEW_BARCODE_STATUS;
-      const containerId = readNumericId(live?.containerId);
-      return {
-        barcodeId: live?.barcodeId?.trim() || patch.barcodeId,
-        number: patch.number,
-        status,
-        ...(containerId != null && containerId > 0
-          ? {
-              container: {
-                id: containerId,
-                name: live?.containerName?.trim() || String(containerId),
-              },
-            }
-          : {}),
-        route,
-      };
+        await patchInvoiceEmbeddedBarcodes(invoiceId, resolvedPatches);
+      },
     });
+  }
 
-    await patchInvoiceEmbeddedBarcodes(invoiceId, resolvedPatches);
-    assignedCount += resolvedPatches.length;
+  const total = jobs.reduce((sum, job) => sum + job.count, 0);
+  let completed = 0;
+  onProgress?.({ phase: "assigning", completed, total });
+  const settled = await runSettledWithConcurrency(jobs, {
+    concurrency: 4,
+    getId: (job) => job,
+    run: async (job) => {
+      try {
+        await job.run();
+        assignedCount += job.count;
+      } finally {
+        completed += job.count;
+        onProgress?.({ phase: "assigning", completed, total });
+      }
+    },
+  });
+  if (settled.failedIds.length > 0) {
+    throw new Error(`${assignedCount} of ${total} labels assigned. ${settled.firstErrorMessage ?? "Unable to assign remaining labels."}`);
   }
 
   return {

@@ -160,6 +160,8 @@
       "apply": "Aplicar contenedor"
     },
     "routeDialog": {
+      "checkingProgress": "Verificando etiquetas: {{count}} de {{total}}",
+      "assigningProgress": "Procesando asignaciones: {{count}} de {{total}}",
       "title": "Asignar ruta",
       "description": "Elija una ruta diaria para {{count}} etiqueta seleccionada, o cree una nueva ruta diaria. Solo se asignan etiquetas con contenedor.",
       "description_plural": "Elija una ruta diaria para {{count}} etiquetas seleccionadas, o cree una nueva ruta diaria. Solo se asignan etiquetas con contenedor.",

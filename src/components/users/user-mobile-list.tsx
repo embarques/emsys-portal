@@ -108,18 +108,6 @@ export function UserMobileList({
 
       {filtersOpen ? <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">{filterPanel}</div> : null}
 
-      <UserMobileSelectionToolbar
-        selectedCount={selectedIds.length}
-        canEdit={selectedIds.length === 1}
-        disabled={isSaving}
-        onClear={() => onSelectedIdsChange([])}
-        onEdit={() => {
-          const user = selectedUsers[0];
-          if (user) onEdit(user);
-        }}
-        onDeactivate={() => onDeactivate(selectedUsers)}
-      />
-
       <div className="flex items-center justify-between gap-3">
         <Button
           type="button"
@@ -145,6 +133,18 @@ export function UserMobileList({
           <ChevronRight className="size-4" />
         </Button>
       </div>
+
+      <UserMobileSelectionToolbar
+        selectedCount={selectedIds.length}
+        canEdit={selectedIds.length === 1}
+        disabled={isSaving}
+        onClear={() => onSelectedIdsChange([])}
+        onEdit={() => {
+          const user = selectedUsers[0];
+          if (user) onEdit(user);
+        }}
+        onDeactivate={() => onDeactivate(selectedUsers)}
+      />
 
       <div className="rounded-3xl border border-border bg-card px-4 shadow-sm">
         {listErrorMessage ? (

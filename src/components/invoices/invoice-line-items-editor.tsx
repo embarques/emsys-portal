@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -1102,7 +1102,7 @@ function InvoiceLineItemsWizardEditor({
               onClick={commitDraft}
               disabled={!isDraftReadyToCommit(activeDraft)}
             >
-              <Plus className="size-5" />
+              {editingId ? <Save className="size-5" /> : <Plus className="size-5" />}
               {editingId ? labels.saveChanges : labels.addItem}
             </Button>
           ) : (
@@ -1112,7 +1112,7 @@ function InvoiceLineItemsWizardEditor({
                 onClick={commitDraft}
                 disabled={!isDraftReadyToCommit(activeDraft)}
               >
-                <Plus className="size-4" />
+                {editingId ? <Save className="size-4" /> : <Plus className="size-4" />}
                 {editingId ? labels.saveChanges : labels.addItem}
               </Button>
             </div>

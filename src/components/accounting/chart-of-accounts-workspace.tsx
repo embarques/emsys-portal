@@ -645,7 +645,7 @@ export function ChartOfAccountsWorkspace() {
                 : t("accounting.chartOfAccounts.form.createDescription")}
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 w-full max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:overflow-visible sm:p-0">
+          <div className="min-h-0 w-full max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:p-0">
             <ChartAccountForm
               key={editing?.id ?? "new"}
               initialValues={editing ? accountValues(editing) : EMPTY_ACCOUNT}

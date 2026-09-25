@@ -136,7 +136,7 @@ export function DailyIncomeStatementForm({
       <input type="hidden" {...register("branchCode")} />
       <input type="hidden" {...register("branchName")} />
       {error ? <p className="break-words text-sm text-destructive">{error}</p> : null}
-      <div className="grid grid-cols-2 gap-2 border-t pt-4 sm:flex sm:justify-end">
+      <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-2 border-t bg-background py-4 sm:flex sm:justify-end">
         <Button type="button" variant="outline" className="min-w-0" onClick={onCancel} disabled={isSubmitting}>
           {t("common.actions.cancel")}
         </Button>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useFormViewport } from "@/hooks/use-form-viewport";
+
 import { cn } from "@/lib/utils";
 
 type FormTabShellProps = {
@@ -16,9 +18,11 @@ type FormTabShellProps = {
  * form body scrolls while the footer stays pinned.
  */
 export function FormTabShell({ title, description, children, className }: FormTabShellProps) {
+  const shellRef = useFormViewport();
+
   return (
-    <div className={cn("mx-auto w-full max-w-3xl", className)}>
-      <div className="flex h-auto max-h-[calc(100vh-8rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div ref={shellRef} className={cn("mx-auto w-full max-w-3xl", className)}>
+      <div className="flex h-auto max-h-[calc(100dvh-var(--form-viewport-inset,8rem))] min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <div className="shrink-0 border-b border-border px-5 py-3">
           <h2 className="text-base font-semibold leading-tight">{title}</h2>
           {description ? (

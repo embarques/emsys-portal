@@ -9,6 +9,7 @@ import { InvoiceFormWizard } from "@/components/invoices/invoice-form-wizard";
 import {
   invoiceWizardTypographyRoot,
 } from "@/components/invoices/invoice-wizard-typography";
+import { useFormViewport } from "@/hooks/use-form-viewport";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
 import { resolveOpenIncomeStatementId } from "@/lib/accounting/daily-income/api";
@@ -96,10 +97,11 @@ function InvoiceWizardShell({
   isPrinting = false,
 }: InvoiceWizardShellProps) {
   const { t } = useTranslation();
+  const shellRef = useFormViewport();
   return (
-    <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-x-hidden md:block", invoiceWizardTypographyRoot)}>
+    <div ref={shellRef} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-x-hidden md:block", invoiceWizardTypographyRoot)}>
       <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden md:block md:max-w-6xl">
-        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-card md:max-h-[calc(100dvh-8rem)] md:rounded-xl md:border md:border-border md:shadow-sm">
+        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-card md:max-h-[calc(100dvh-var(--form-viewport-inset,8rem))] md:rounded-xl md:border md:border-border md:shadow-sm">
           <div className="hidden shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-3 md:flex">
             <div className="min-w-0">
               <h1 className="text-base font-semibold leading-tight">{title}</h1>
@@ -395,7 +397,7 @@ export function InvoiceEditWizard({
     setIsSyncingBarcodes(true);
     try {
       // API owns mint/delete/description sync. Portal only sends removeBarcodeIds
-      // when lowering labels (ObjectID barcodeId per removed label on that detail).
+      // when lowering labels (selected Barcode column value per removed label).
       const removeBarcodeIdsByDetail =
         plan.decreases.length > 0
           ? resolveInvoiceRemoveBarcodeIds({ plan, deletions })

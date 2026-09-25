@@ -388,7 +388,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           </div>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className="sticky bottom-0 z-10 flex justify-end border-t bg-background py-3">
           <Button
             type="submit"
             className="max-md:w-full"

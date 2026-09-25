@@ -296,7 +296,7 @@ function MobileCreateDailyIncomePage({
 
         <Button
           type="submit"
-          className="h-12 w-full rounded-xl text-base font-semibold"
+          className="sticky bottom-0 z-10 h-12 w-full rounded-xl text-base font-semibold"
           disabled={createStatement.isPending || currentUserQuery.isLoading || branchesQuery.isLoading}
         >
           {createStatement.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
