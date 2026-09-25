@@ -1291,8 +1291,9 @@ type ApiInvoiceDetailWriteRef = {
   price: number;
   total: number;
   /**
-   * Selected Barcode column values for the barcode-number removal experiment.
-   * One value per removed label; the request field name remains unchanged.
+   * Barcode ObjectIDs to remove when `labels` is reduced.
+   * Length must equal `currentBarcodeCount - labels`; unlisted barcodes are kept.
+   * API also deletes matching `/barcodes` catalog rows for this invoice.
    */
   removeBarcodeIds?: string[];
 };

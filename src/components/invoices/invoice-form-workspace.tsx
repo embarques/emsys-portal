@@ -397,7 +397,7 @@ export function InvoiceEditWizard({
     setIsSyncingBarcodes(true);
     try {
       // API owns mint/delete/description sync. Portal only sends removeBarcodeIds
-      // when lowering labels (selected Barcode column value per removed label).
+      // when lowering labels (exactly currentCount - labels ObjectIDs to delete).
       const removeBarcodeIdsByDetail =
         plan.decreases.length > 0
           ? resolveInvoiceRemoveBarcodeIds({ plan, deletions })

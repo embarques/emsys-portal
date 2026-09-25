@@ -20,7 +20,6 @@ import {
   areBarcodeDecreaseSelectionsComplete,
   canSubmitBarcodeDecreases,
   invoiceBarcodeObjectId,
-  invoiceBarcodeSelectionKey,
 } from "@/lib/invoices/barcode-sync";
 import { cn } from "@/lib/utils";
 
@@ -109,11 +108,12 @@ export function InvoiceBarcodeDecreaseDialog({
                 </div>
                 <ul className="space-y-1">
                   {selectable.map((barcode) => {
-                    const id = invoiceBarcodeSelectionKey(barcode);
-                    const checked = selected.includes(id);
+                    const objectId = invoiceBarcodeObjectId(barcode);
+                    if (!objectId) return null;
+                    const checked = selected.includes(objectId);
                     const disableUnchecked = !checked && selected.length >= entry.removeCount;
                     return (
-                      <li key={id}>
+                      <li key={objectId}>
                         <label
                           className={cn(
                             "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50",
@@ -126,10 +126,17 @@ export function InvoiceBarcodeDecreaseDialog({
                             checked={checked}
                             disabled={disableUnchecked}
                             onChange={(event) =>
-                              toggle(entry.lineItemId, id, event.target.checked, entry.removeCount)
+                              toggle(
+                                entry.lineItemId,
+                                objectId,
+                                event.target.checked,
+                                entry.removeCount,
+                              )
                             }
                           />
-                          <span className="font-mono text-xs">{barcode.number || id}</span>
+                          <span className="font-mono text-xs">
+                            {barcode.number || objectId}
+                          </span>
                         </label>
                       </li>
                     );
