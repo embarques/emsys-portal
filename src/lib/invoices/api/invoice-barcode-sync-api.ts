@@ -9,8 +9,9 @@ import {
 } from "@/lib/invoices/barcode-sync";
 
 /**
- * Resolve Barcode column values for `removeBarcodeIds` for invoice PUT when labels decrease.
- * The API deletes from embed + catalog; portal must not rewrite barcode arrays.
+ * Resolve barcode ObjectIDs for `removeBarcodeIds` on invoice PUT when labels decrease.
+ * Must send exactly `currentCount - labels` IDs; API keeps the rest and mirrors deletes to `/barcodes`.
+ * Portal must not rewrite barcode arrays.
  */
 export function resolveInvoiceRemoveBarcodeIds(input: {
   plan: InvoiceBarcodeSyncPlan;
@@ -18,7 +19,7 @@ export function resolveInvoiceRemoveBarcodeIds(input: {
 }): InvoiceRemoveBarcodeIdsByDetail {
   if (!canSubmitBarcodeDecreases(input.plan, input.deletions)) {
     throw new Error(
-      "Lowering labels requires selecting one distinct, nonempty barcode number per removed label.",
+      "Lowering labels requires selecting exactly currentCount - labels distinct barcode ObjectIDs to remove.",
     );
   }
 

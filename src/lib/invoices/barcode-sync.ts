@@ -155,10 +155,14 @@ export function invoiceBarcodeSyncNeedsUserInput(plan: InvoiceBarcodeSyncPlan): 
 
 export type InvoiceBarcodeDeletionSelection = Record<string, string[]>;
 
-/** Detail id → Barcode column values sent in `removeBarcodeIds` on PUT. */
+/**
+ * Detail id → barcode ObjectIDs sent in `removeBarcodeIds` on PUT.
+ * Must satisfy `len(removeBarcodeIds) === currentCount - labels`.
+ * The API keeps every embedded barcode not listed here and mirrors deletes to `/barcodes`.
+ */
 export type InvoiceRemoveBarcodeIdsByDetail = Record<string, string[]>;
 
-/** Validate the user picked exactly `removeCount` barcode ids per decreased line item. */
+/** Validate the user picked exactly `removeCount` (= currentCount - labels) barcode ObjectIDs. */
 export function areBarcodeDecreaseSelectionsComplete(
   plan: InvoiceBarcodeSyncPlan,
   selections: InvoiceBarcodeDeletionSelection,
@@ -168,17 +172,15 @@ export function areBarcodeDecreaseSelectionsComplete(
     if (selected.length !== entry.removeCount) return false;
 
     const allowed = new Set(
-      entry.barcodes
-        .map((barcode) => invoiceBarcodeObjectId(barcode) || invoiceBarcodeSelectionKey(barcode))
-        .filter(Boolean),
+      entry.barcodes.map((barcode) => invoiceBarcodeObjectId(barcode)).filter(Boolean),
     );
     return selected.every((id) => allowed.has(id));
   });
 }
 
 /**
- * Build per-detail `removeBarcodeIds` using the selected Barcode column values.
- * This tests barcode numbers against the API while keeping UI selection by ObjectID.
+ * Build per-detail `removeBarcodeIds` from the selected barcode ObjectIDs.
+ * Count must equal `currentCount - labels`; unlisted barcodes stay on the embed.
  * Keys prefer the invoice-detail API id so the write payload can attach them.
  */
 export function buildRemoveBarcodeIdsByDetail(
@@ -191,25 +193,27 @@ export function buildRemoveBarcodeIdsByDetail(
     if (entry.removeCount <= 0) continue;
 
     const selected = new Set(selections[entry.lineItemId] ?? []);
-    const barcodeNumbers: string[] = [];
+    const barcodeIds: string[] = [];
 
     for (const barcode of entry.barcodes) {
-      const key = invoiceBarcodeSelectionKey(barcode);
-      if (!selected.has(key)) continue;
-      const number = barcode.number.trim();
-      if (number) barcodeNumbers.push(number);
+      const objectId = invoiceBarcodeObjectId(barcode);
+      if (!objectId || !selected.has(objectId)) continue;
+      barcodeIds.push(objectId);
     }
 
     const detailKey = entry.lineItemApiId?.trim() || entry.lineItemId.trim();
-    if (detailKey && barcodeNumbers.length > 0) {
-      byDetail[detailKey] = barcodeNumbers;
+    if (detailKey && barcodeIds.length > 0) {
+      byDetail[detailKey] = barcodeIds;
     }
   }
 
   return byDetail;
 }
 
-/** Require one distinct, nonempty Barcode value per selected label. */
+/**
+ * Require exactly `currentCount - labels` distinct barcode ObjectIDs per decreased line.
+ * Those IDs are deleted; every other embedded barcode is kept.
+ */
 export function canSubmitBarcodeDecreases(
   plan: InvoiceBarcodeSyncPlan,
   selections: InvoiceBarcodeDeletionSelection,
@@ -221,6 +225,10 @@ export function canSubmitBarcodeDecreases(
     if (entry.removeCount <= 0) return true;
     const detailKey = entry.lineItemApiId?.trim() || entry.lineItemId.trim();
     const ids = byDetail[detailKey] ?? [];
-    return ids.length === entry.removeCount && new Set(ids).size === ids.length && ids.every((id) => id.trim().length > 0);
+    return (
+      ids.length === entry.removeCount &&
+      new Set(ids).size === ids.length &&
+      ids.every((id) => isMongoObjectId(id))
+    );
   });
 }
