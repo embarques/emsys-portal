@@ -87,6 +87,11 @@ function normalizeSeverity(value: unknown): UserActivitySeverity {
   return "common";
 }
 
+/**
+ * Map API `user` into display fields only.
+ * Do not look up users or rewrite id/email — API owns actor consistency
+ * (see APP_CONTEXT.md User Activity backend TODO).
+ */
 function normalizeUser(raw: ApiUser | string | undefined): UserActivityUser {
   if (!raw) return { id: "", name: "" };
   if (typeof raw === "string") {

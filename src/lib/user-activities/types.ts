@@ -5,6 +5,10 @@ import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-q
 /** API-owned severity; frontend only displays it. */
 export type UserActivitySeverity = "common" | "uncommon" | "rare";
 
+/**
+ * Actor as returned by the API (`useractivity.UserRef`).
+ * Display `name` as-is — do not resolve id → email/name client-side.
+ */
 export type UserActivityUser = {
   id: string;
   name: string;
@@ -13,6 +17,7 @@ export type UserActivityUser = {
 /**
  * Standardized user activity row.
  *
+ * Portal is a read-only consumer of API-recorded activities (see APP_CONTEXT.md).
  * API entity reference is `origin` + `id` (field name `id` on the wire).
  * The activity document’s own key is normalized to `activityId` so it does not
  * collide with the entity `id`.

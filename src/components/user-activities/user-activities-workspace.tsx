@@ -91,6 +91,7 @@ export function UserActivitiesWorkspace() {
         id: "user",
         label: t("userActivities.columns.user"),
         sortField: "user.name",
+        // API-owned actor label — render as returned; never look up users here.
         renderCell: (row) => (
           <span className={cn(getUserActivitySeverityClass(row.severity))}>
             {row.user.name || dash}

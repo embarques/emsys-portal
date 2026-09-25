@@ -370,11 +370,23 @@ Do not confuse:
 | Users → User Activity | Company-wide audit of user actions (`origin` + entity `id`) |
 | Invoice view → Activity | Per-invoice synthetic timeline in the portal only |
 
+##### Portal rules (read-only consumer)
+
+- Display `user.name` (and other activity fields) **exactly as returned** by list/search.
+- Do **not** resolve, enrich, or “fix” actors by looking up users (or any other resource) client-side when `user.name` is an id, email, or empty.
+- Do **not** write user-activity rows from the portal; the API owns the write path for all clients.
+- Severity is API-owned: common = default, uncommon = yellow, rare = red — display only.
+
 ##### Backend activity contract
 
 1. **Data model** (every activity):
    - `timestamp` — when it occurred
-   - `user` — who performed it (`id` + display name at minimum)
+   - `user` — who performed it; required shape:
+     ```json
+     "user": { "id": "<stable-user-id>", "name": "<canonical display>" }
+     ```
+     - `id` — always the EMSYS user id (consistent type across writers)
+     - `name` — always a human display value (prefer email or full name; **never** put the raw numeric id in `name`)
    - `description` — human-readable action text
    - `origin` — module/entity type (`invoice`, `payment`, `income_statement`, …)
    - `id` — **entity** record id (with `origin`, identifies the referenced record; **not** a separate `invoice` field)
@@ -389,20 +401,31 @@ Do not confuse:
 
 3. **Write path** — record activities in the **API** on relevant mutations so all clients (portal, legacy, scripts) are covered. Frontend must not be the sole writer.
 
-4. **Legacy alignment** — map historical user-activity rows into the new shape without dropping data:
+4. **TODO (API): Normalize `user` on every user-activity row**
+
+   **Problem:** The same actor can appear as either a numeric id (`"73"`) or an email (`"elk@elk.com"`) in User Activity, depending on which write path recorded the row (e.g. legacy label/manifest writers vs newer invoice / income-statement / pickup writers). The portal only displays `user.name` and must not resolve this client-side.
+
+   **Work items:**
+   1. **Centralize the write helper** — one `RecordUserActivity` (or equivalent) that always builds `UserRef` from the authenticated user (`id` + email/fullName). Ban ad-hoc string/id-only actor writes.
+   2. **Audit all activity writers** — especially label/barcode/manifest paths that still store a bare numeric id as the actor label; route them through the helper.
+   3. **Legacy / historical backfill** — when mapping old rows, if `user` is only a numeric id, resolve to `{ id, name }` via the users table; if resolution fails, keep `id` and set `name` to a clear fallback (e.g. `User #73`), not the bare id alone when email is known.
+   4. **Contract test** — list/search fixtures assert `user.id` and `user.name` are both present and `name` is not a pure numeric string when a user record exists.
+
+   **Out of scope for portal:** frontend stays a read-only consumer; do not “fix” by looking up users client-side.
+
+5. **Legacy alignment** — map historical user-activity rows into the new shape without dropping data:
    - timestamp / user / details → `timestamp` / `user` / `description`
    - legacy invoice (or similar) → `origin` + `id`
    - keep `quantity` when present
    - assign historical `severity` from action/type mapping
    - fallback origin (e.g. `legacy`) when classification is unclear; preserve leftover fields in description or metadata rather than discarding
+   - when remapping `user`, follow the `UserRef` shape in item 1 and the TODO in item 4
 
-5. **List API** (portal directory):
+6. **List API** (portal directory):
    - `GET /v1/user-activities` — paginated list (default sort `timestamp:desc`)
    - `POST /v1/user-activities/search` — Stripe-style search (user, description, origin, entity `id`, severity, date range)
    - Permission: `canViewUserActivity`, granted to `Administrador`
    - OpenAPI/Swagger documents the model and endpoints
-
-6. **Portal** consumes severity for display only: common = default, uncommon = yellow, rare = red.
 
 ### Reports
 
