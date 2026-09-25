@@ -13,6 +13,7 @@ import {
   EMPTY_DAILY_INCOME_SUMMARY,
   isCheckPaymentMethod,
   requiresBankAccount,
+  toApiPaymentMethodName,
   type AccountingLookup,
   type DailyIncomeJournal,
   type DailyIncomeJournalList,
@@ -629,6 +630,31 @@ export async function fetchDailyIncomeInvoiceRegistration(
   return row ? normalizeJournal(row) : null;
 }
 
+/** Invoice-payment journals always need paymentMethod.name, including $0 INITIAL-PAYMENT. */
+function resolveJournalPaymentMethod(values: DailyIncomeJournalValues): { id?: number; name: string } | undefined {
+  const amount = Number(values.amount) || 0;
+  const isInvoicePayment =
+    values.transactionType === "INITIAL-PAYMENT" || values.transactionType === "PAYMENT";
+  const apiName = toApiPaymentMethodName(values.paymentMethodName);
+
+  // Unpaid registration still posts an invoice-payment entry; always classify as Cash.
+  if (isInvoicePayment && amount === 0) {
+    return {
+      ...(values.paymentMethodId && apiName === "CASH" ? { id: values.paymentMethodId } : {}),
+      name: "CASH",
+    };
+  }
+
+  if (values.paymentMethodId || apiName) {
+    return {
+      ...(values.paymentMethodId ? { id: values.paymentMethodId } : {}),
+      name: apiName || "CASH",
+    };
+  }
+
+  return undefined;
+}
+
 function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options: JournalWriteOptions = {}) {
   if (!statement.id) {
     throw new Error("A daily closeout id is required to save a transaction.");
@@ -642,7 +668,9 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     ["EXPENSE", "SALES", "TRANSFER", "LOAN", "INVENTORY"].includes(values.transactionType);
   const sourceAccountRelated =
     ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType) || inventoryReceived;
-  const bankAccountRequired = requiresBankAccount(values.paymentMethodName);
+  const amount = Number(values.amount) || 0;
+  const paymentMethod = resolveJournalPaymentMethod(values);
+  const bankAccountRequired = amount > 0 && requiresBankAccount(paymentMethod?.name ?? values.paymentMethodName);
 
   if (bankAccountRequired && (!values.paymentAccountId || values.paymentAccountType !== "BANK")) {
     throw new Error("Select a bank account for this payment method.");
@@ -714,10 +742,8 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
       values.transactionType === "INITIAL-PAYMENT" && values.receiverId
         ? { id: values.receiverId, name: values.receiverName ?? "" }
         : undefined,
-    paymentMethod: values.paymentMethodId
-      ? { id: values.paymentMethodId, name: values.paymentMethodName }
-      : undefined,
-    ...(isCheckPaymentMethod(values.paymentMethodName)
+    paymentMethod,
+    ...(amount > 0 && isCheckPaymentMethod(paymentMethod?.name ?? values.paymentMethodName)
       ? { checkNumber: values.checkNumber?.trim() || undefined }
       : {}),
     ...(isInventory

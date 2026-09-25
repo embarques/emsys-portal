@@ -49,7 +49,6 @@ import {
 import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
-import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 type Props = {
@@ -330,6 +329,18 @@ export function InvoiceDailyIncomeDialog({
       return;
     }
 
+    const paymentRequired = values.amount > 0;
+    const cash = findCashPaymentMethod(paymentMethods);
+    // API requires paymentMethod.name for INITIAL-PAYMENT even when amount is $0.
+    const paymentMethodId = paymentRequired
+      ? values.paymentMethodId
+      : cash?.id ?? values.paymentMethodId;
+    const paymentMethodName = paymentRequired
+      ? values.paymentMethodName
+      : cash?.name ?? values.paymentMethodName ?? "CASH";
+    const includeBankAccount = paymentRequired && requiresBankAccount(paymentMethodName);
+    const includeCheckNumber = paymentRequired && isCheckPaymentMethod(paymentMethodName);
+
     try {
       setSubmitError(null);
       const journal = await createJournal.mutateAsync({
@@ -355,12 +366,12 @@ export function InvoiceDailyIncomeDialog({
           includeReceiver: Boolean(invoice.receiver),
           receiverId: invoice.receiver?.id,
           receiverName: invoice.receiver?.name,
-          paymentMethodId: paymentRequired ? values.paymentMethodId : undefined,
-          paymentMethodName: paymentRequired ? values.paymentMethodName : undefined,
-          paymentAccountId: needsBankAccount ? values.paymentAccountId : undefined,
-          paymentAccountName: needsBankAccount ? values.paymentAccountName : undefined,
-          paymentAccountType: needsBankAccount ? values.paymentAccountType : undefined,
-          checkNumber: isCheck ? values.checkNumber : undefined,
+          paymentMethodId,
+          paymentMethodName,
+          paymentAccountId: includeBankAccount ? values.paymentAccountId : undefined,
+          paymentAccountName: includeBankAccount ? values.paymentAccountName : undefined,
+          paymentAccountType: includeBankAccount ? values.paymentAccountType : undefined,
+          checkNumber: includeCheckNumber ? values.checkNumber : undefined,
         },
       });
 
@@ -374,12 +385,7 @@ export function InvoiceDailyIncomeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className={cn(
-          "max-h-[90vh] overflow-y-auto",
-          isCreating ? "sm:max-w-lg" : "sm:max-w-2xl",
-        )}
-      >
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader className="pr-8">
           <DialogTitle>
             {isCreating
@@ -408,6 +414,20 @@ export function InvoiceDailyIncomeDialog({
                 ) : null}
               </div>
               <div className="min-w-0 space-y-2">
+                <Label htmlFor="invoice-statement-currency">{t("invoices.wizard.dailyIncome.dialog.currency")}</Label>
+                <SearchableSelect
+                  id="invoice-statement-currency"
+                  value={statementCurrency}
+                  onValueChange={(next) => statementForm.setValue("currency", next, { shouldValidate: true })}
+                  options={[
+                    { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
+                    { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
+                  ]}
+                  placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
+                  truncateSelection={false}
+                />
+              </div>
+              <div className="min-w-0 space-y-2 sm:col-span-2">
                 <Label htmlFor="invoice-statement-branch">{t("invoices.wizard.dailyIncome.dialog.branch")}</Label>
                 <SearchableSelect
                   id="invoice-statement-branch"
@@ -422,26 +442,14 @@ export function InvoiceDailyIncomeDialog({
                   loading={branchesQuery.isLoading}
                   placeholder={t("invoices.wizard.dailyIncome.dialog.selectBranch")}
                   searchPlaceholder={t("invoices.wizard.dailyIncome.dialog.searchBranches")}
+                  truncateSelection={false}
                 />
                 {statementErrors.branchId ? (
                   <p className="text-sm text-destructive">{statementErrors.branchId.message}</p>
                 ) : null}
               </div>
-              <div className={cn("min-w-0 space-y-2", !showExchangeRate && "sm:col-span-2")}>
-                <Label htmlFor="invoice-statement-currency">{t("invoices.wizard.dailyIncome.dialog.currency")}</Label>
-                <SearchableSelect
-                  id="invoice-statement-currency"
-                  value={statementCurrency}
-                  onValueChange={(next) => statementForm.setValue("currency", next, { shouldValidate: true })}
-                  options={[
-                    { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
-                    { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
-                  ]}
-                  placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
-                />
-              </div>
               {showExchangeRate ? (
-                <div className="min-w-0 space-y-2">
+                <div className="min-w-0 space-y-2 sm:col-span-2">
                   <Label htmlFor="invoice-statement-rate">{t("invoices.wizard.dailyIncome.dialog.exchangeRate")}</Label>
                   <Input
                     id="invoice-statement-rate"
@@ -713,6 +721,9 @@ export function InvoiceDailyIncomeDialog({
                     disabled={!statementOpen || !paymentRequired}
                     {...register("refNumber")}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    {t("invoices.wizard.dailyIncome.dialog.referenceNumberHint")}
+                  </p>
                   {errors.refNumber ? <p className="text-xs text-destructive">{errors.refNumber.message}</p> : null}
                 </div>
 

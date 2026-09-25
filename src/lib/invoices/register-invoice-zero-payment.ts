@@ -46,6 +46,8 @@ export async function registerInvoiceZeroPaymentInCuadre(params: {
     includeReceiver: Boolean(invoice.receiver),
     receiverId: invoice.receiver?.id,
     receiverName: invoice.receiver?.name,
+    // Ledger still classifies unpaid INITIAL-PAYMENT as an invoice-payment entry.
+    paymentMethodName: "CASH",
   });
 
   if (!journal) {

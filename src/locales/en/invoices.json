@@ -379,6 +379,7 @@
         "selectBankAccount": "Select bank account",
         "searchBankAccounts": "Search bank accounts…",
         "referenceNumber": "Reference number",
+        "referenceNumberHint": "Optional internal reference or receipt number for recordkeeping or the client.",
         "checkNumber": "Check number",
         "checkNumberPlaceholder": "e.g. 4521",
         "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",

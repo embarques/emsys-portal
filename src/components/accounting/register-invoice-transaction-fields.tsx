@@ -402,6 +402,9 @@ export function RegisterInvoiceTransactionFields({
           {...register("refNumber")}
           onKeyDown={submitFormOnEnterKeyDown}
         />
+        <p className="text-xs text-muted-foreground">
+          {t("accounting.dailyIncome.form.fields.referenceNumberHint")}
+        </p>
       </div>
 
       <div className="space-y-2 sm:col-span-2">

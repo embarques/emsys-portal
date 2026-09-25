@@ -4,12 +4,15 @@ import type { LucideIcon } from "lucide-react";
 import { Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { fieldHeadingClassName } from "@/components/ui/label";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** Shared class for label-row create/edit actions (appointments Sender/Receiver style). */
-export const fieldEntityActionClassName =
-  "h-7 gap-1 px-2 text-xs font-normal text-muted-foreground hover:text-foreground";
+export const fieldEntityActionClassName = cn(
+  "h-7 gap-1 px-2 text-xs font-normal text-muted-foreground hover:text-foreground",
+  fieldHeadingClassName,
+);
 
 type FieldEntityActionsProps = {
   onAdd: () => void;

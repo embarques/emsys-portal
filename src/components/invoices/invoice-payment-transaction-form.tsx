@@ -294,6 +294,14 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
 
       const amount = Number.isFinite(values.amount) ? Number(values.amount) : 0;
       const paymentDetailsRequired = amount > 0;
+      const cash = findCashPaymentMethod(paymentMethods);
+      // API requires paymentMethod.name for INITIAL-PAYMENT even when amount is $0.
+      const paymentMethodId = paymentDetailsRequired
+        ? values.paymentMethodId
+        : cash?.id ?? values.paymentMethodId;
+      const paymentMethodName = paymentDetailsRequired
+        ? values.paymentMethodName
+        : cash?.name ?? values.paymentMethodName ?? "CASH";
 
       const journal = await createJournal.mutateAsync({
         statement,
@@ -317,8 +325,8 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           includeReceiver: Boolean(invoice.receiver),
           receiverId: invoice.receiver?.id,
           receiverName: invoice.receiver?.name,
-          paymentMethodId: paymentDetailsRequired ? values.paymentMethodId : undefined,
-          paymentMethodName: paymentDetailsRequired ? values.paymentMethodName : undefined,
+          paymentMethodId,
+          paymentMethodName,
           paymentAccountId: paymentDetailsRequired ? values.paymentAccountId : undefined,
           paymentAccountName: paymentDetailsRequired ? values.paymentAccountName : undefined,
           paymentAccountType: paymentDetailsRequired ? values.paymentAccountType : undefined,

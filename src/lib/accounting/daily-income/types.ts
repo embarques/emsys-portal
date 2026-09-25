@@ -148,7 +148,15 @@ export type DailyIncomeStatementValues = {
 };
 
 function normalizePaymentMethodName(name?: string | null): string {
-  return name?.trim().replaceAll("_", "-").toUpperCase() ?? "";
+  return name?.trim().replaceAll("_", "-").replaceAll(/\s+/g, "-").toUpperCase() ?? "";
+}
+
+/** Canonical paymentMethod.name values expected by the journal API. */
+export function toApiPaymentMethodName(name?: string | null): string {
+  const normalized = normalizePaymentMethodName(name);
+  if (normalized === "CHEQUE") return "CHECK";
+  if (normalized === "CREDITCARD") return "CREDIT-CARD";
+  return normalized;
 }
 
 /** Cash is the default method for new invoice and daily-income payments. */

@@ -382,6 +382,7 @@
         "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",
         "invoice": "Invoice",
         "referenceNumber": "Reference number",
+        "referenceNumberHint": "Optional internal reference or receipt number for recordkeeping or the client.",
         "account": "Account",
         "sourceAccount": "Source account",
         "amount": "Amount",
@@ -441,7 +442,7 @@
       },
       "hints": {
         "amountZeroAllowed": "Zero is allowed for unpaid initial registration.",
-        "paymentMethodOptionalZero": "Optional when amount is $0.00.",
+        "paymentMethodOptionalZero": "Cash is recorded when amount is $0.00.",
         "costFromLineItems": "Taken from the invoice line items total."
       },
       "invoiceSummary": {
