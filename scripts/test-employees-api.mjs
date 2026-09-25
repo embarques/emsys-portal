@@ -636,19 +636,20 @@ if (!opts.skipEmployees) {
       const departmentName =
         createdDepartmentId != null
           ? probeDepartmentName
-          : String(sample?.department ?? "driver").trim() || "driver";
+          : String(sample?.department ?? "Operations").trim() || "Operations";
       const titleName =
         createdTitleId != null
           ? probeTitleName
-          : String(sample?.title ?? "Probe").trim() || "Probe";
+          : String(sample?.title ?? "Driver").trim() || "Driver";
 
       const nextEmployeeId = await nextId("/employees");
+      // API create keeps explicit `"active": false` (omitted active still defaults to true).
       const createBody = {
         id: nextEmployeeId,
         name: probeEmployeeName,
         title: titleName,
         department: departmentName,
-        active: true,
+        active: false,
         phones: [{ number: "555-0100", type: "mobile", isPrimary: true }],
         branch: branchRef,
         email: `probe-emp-${stamp}@example.com`,
@@ -681,8 +682,18 @@ if (!opts.skipEmployees) {
         );
 
         const createdRead = await request("GET", `/employees/${createdEmployeeId}`);
-        if (ok(createdRead)) pass(`GET /employees/${createdEmployeeId} after create`);
-        else {
+        if (ok(createdRead)) {
+          const createdActive = createdRead.json?.data?.active;
+          if (createdActive === false) {
+            pass(`GET /employees/${createdEmployeeId} after create`, "active=false preserved");
+          } else {
+            fail(
+              `GET /employees/${createdEmployeeId} after create`,
+              createdRead.status,
+              `expected active=false, got active=${createdActive}`,
+            );
+          }
+        } else {
           fail(
             `GET /employees/${createdEmployeeId} after create`,
             createdRead.status,

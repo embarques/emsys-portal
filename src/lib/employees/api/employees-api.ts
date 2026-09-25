@@ -132,7 +132,11 @@ type ApiEmployee = {
   updatedAt?: string;
 };
 
-/** POST/PUT /employees — see API_PAYLOADS.md */
+/**
+ * POST/PUT /employees — see API_PAYLOADS.md.
+ * Create treats `active` by JSON presence: omit → default true; `"active": false` stays false.
+ * Always send an explicit boolean so inactive creates are not coerced back to active.
+ */
 type ApiEmployeeWritePayload = {
   name: string;
   title: string;
@@ -260,6 +264,8 @@ function buildEmployeeWritePayload(
     throw new Error("Branch is required.");
   }
 
+  // Always include `active` (never omit). API create defaults omitted active to true,
+  // but false must be sent explicitly or it would not stick.
   const payload: ApiEmployeeWritePayload = {
     name,
     title,

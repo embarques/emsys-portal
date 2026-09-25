@@ -105,9 +105,34 @@ test("employee create normalizes both dates before reaching the API", async () =
   assert.equal(calls[0].body.endDate, "2024-02-29T22:30:00.000Z");
   assert.deepEqual(calls[0].body.branch, { id: 9, code: "B" });
   assert.equal(calls[0].body.department, "Operations");
+  // Past endDate forces inactive via resolveEmployeeActiveForEndDate.
+  assert.equal(calls[0].body.active, false);
   await assert.rejects(api.createEmployee({ ...values, startDate: "2024-02-30" }));
   assert.equal(calls.length, 1);
   assert.equal(types.areEmployeeFormValuesEquivalent(values, { ...values, startDate: "2024-02-29T00:00:00Z", endDate: "2024-02-29T22:30:00Z" }), true);
+});
+
+test("employee create sends active false when the form requests inactive", async () => {
+  const calls = [];
+  const client = {
+    post: async (url, body) => { calls.push({ url, body }); return { success: true, data: { id: 8, ...body } }; },
+    get: async () => ({ data: { id: 8, name: "Inactive Employee", active: false } }),
+  };
+  const api = loadFeature("src/lib/employees/api/employees-api.ts", client);
+  const types = loadFeature("src/lib/employees/types.ts", client);
+  const values = {
+    ...types.createEmptyEmployeeForm(),
+    name: "Inactive Employee",
+    department: "Operations",
+    title: "Driver",
+    active: false,
+    phones: [],
+    branch: { id: 9, name: "Branch", code: "B" },
+  };
+  assert.equal(types.createEmptyEmployeeForm().active, true);
+  await api.createEmployee(values);
+  assert.equal(Object.hasOwn(calls[0].body, "active"), true);
+  assert.equal(calls[0].body.active, false);
 });
 
 test("branch list, detail, create, and delete use the existing endpoints", async () => {

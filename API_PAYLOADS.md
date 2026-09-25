@@ -333,6 +333,9 @@ Title records contain `id`, `name`, `active`, `createdAt`, and `updatedAt`.
 Employees store the title **name** as a string. The employee picker loads active
 options while retaining an existing inactive or legacy selection for editing.
 The Admin → Employee titles workspace supports list, create, edit, and delete.
+Tenant seed defaults include a stock title catalog (for example Driver, Dispatcher,
+Warehouse, Support, Planner, Admin, Manager, Supervisor) so new companies have
+picker options without manual setup.
 
 ---
 
@@ -349,6 +352,8 @@ Verified against the published Swagger contract on 2026-09-14.
 Department records contain `id`, `name`, `active`, `createdAt`, and `updatedAt`.
 Employees store the department **name** as a string. The employee picker loads active
 options while retaining an existing inactive or legacy selection for editing.
+Tenant seed defaults include a stock department catalog (for example Operations,
+Warehouse, Fleet, Customer Service, Administration, Accounting).
 
 ---
 
@@ -360,7 +365,7 @@ options while retaining an existing inactive or legacy selection for editing.
 {
   "name": "Jane Driver",
   "title": "Driver",
-  "department": "Delivery",
+  "department": "Operations",
   "phone1": "555-2000",
   "email": "jane@example.com",
   "active": true,
@@ -372,6 +377,11 @@ options while retaining an existing inactive or legacy selection for editing.
   }
 }
 ```
+
+`active` on create is presence-aware: omit the field and the API defaults to
+`active: true`; send `"active": false` and the employee stays inactive. The portal
+always sends an explicit boolean from the form (default `true`) so inactive creates
+are not lost.
 
 Optional employee `startDate` and `endDate` form values accept `YYYY-MM-DD` or
 RFC3339 timestamps with a timezone. The portal validates calendar dates, treats

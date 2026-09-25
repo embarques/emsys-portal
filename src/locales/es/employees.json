@@ -81,18 +81,17 @@
       "Fleet": "Flota",
       "Customer Service": "Atención al cliente",
       "Administration": "Administración",
-      "Accounting": "Contabilidad",
-      "driver": "Conductor"
+      "Accounting": "Contabilidad"
     },
     "title": {
-      "dispatcher": "Despachador",
-      "warehouse": "Almacén",
-      "driver": "Conductor",
-      "support": "Soporte",
-      "planner": "Planificador",
-      "admin": "Administrador",
-      "manager": "Gerente",
-      "supervisor": "Supervisor"
+      "Dispatcher": "Despachador",
+      "Warehouse": "Almacén",
+      "Driver": "Conductor",
+      "Support": "Soporte",
+      "Planner": "Planificador",
+      "Admin": "Administrador",
+      "Manager": "Gerente",
+      "Supervisor": "Supervisor"
     }
   },
   "form": {
