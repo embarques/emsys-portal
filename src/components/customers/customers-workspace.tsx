@@ -445,6 +445,7 @@ export function CustomersWorkspace() {
       </div>
 
       <StatCardsCarousel className="hidden md:block">
+        <NewCustomersStatCard />
         {statCards.map((stat) => (
           <FlippableStatCard
             key={stat.label}
@@ -454,7 +455,6 @@ export function CustomersWorkspace() {
             icon={stat.icon}
           />
         ))}
-        <NewCustomersStatCard />
       </StatCardsCarousel>
 
       <CustomerMobileList

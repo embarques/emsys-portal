@@ -59,6 +59,7 @@ export function DashboardAppointmentsStats() {
 
   return (
     <StatCardsCarousel>
+      <NewAppointmentsStatCard />
       {cards.map((stat) => (
         <FlippableStatCard
           key={stat.label}
@@ -67,7 +68,6 @@ export function DashboardAppointmentsStats() {
           icon={stat.icon}
         />
       ))}
-      <NewAppointmentsStatCard />
     </StatCardsCarousel>
   );
 }
@@ -104,10 +104,10 @@ export function DashboardInvoicesStats() {
 
   return (
     <StatCardsCarousel>
+      <NewInvoicesStatCard />
       {cards.map((stat) => (
         <FlippableStatCard key={stat.label} {...stat} />
       ))}
-      <NewInvoicesStatCard />
     </StatCardsCarousel>
   );
 }
@@ -139,6 +139,7 @@ export function DashboardCustomersStats() {
 
   return (
     <StatCardsCarousel>
+      <NewCustomersStatCard />
       {cards.map((stat) => (
         <FlippableStatCard
           key={stat.label}
@@ -148,7 +149,6 @@ export function DashboardCustomersStats() {
           icon={stat.icon}
         />
       ))}
-      <NewCustomersStatCard />
     </StatCardsCarousel>
   );
 }

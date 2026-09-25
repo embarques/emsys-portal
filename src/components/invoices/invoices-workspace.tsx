@@ -1254,10 +1254,10 @@ export function InvoicesWorkspace() {
 
       <div className="hidden md:block">
       <StatCardsCarousel mobileLayout="stack">
+        <NewInvoicesStatCard />
         {stats.map((stat) => (
           <FlippableStatCard key={stat.label} {...stat} />
         ))}
-        <NewInvoicesStatCard />
       </StatCardsCarousel>
 
       <Card className="mt-6 gap-0">

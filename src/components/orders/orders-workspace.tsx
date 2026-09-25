@@ -1429,6 +1429,7 @@ export function OrdersWorkspace() {
       />
 
         <StatCardsCarousel>
+          <NewAppointmentsStatCard />
           {statCards.map((stat) => (
             <FlippableStatCard
               key={stat.label}
@@ -1437,7 +1438,6 @@ export function OrdersWorkspace() {
               icon={stat.icon}
             />
           ))}
-          <NewAppointmentsStatCard />
         </StatCardsCarousel>
         <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
