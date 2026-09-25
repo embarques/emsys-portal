@@ -52,6 +52,7 @@ export function PickupRoutesSelectionActions({
     selectedIds.length === 1 ? resolveActiveRouteReportIds(activeRoutes, selectedIds)[0] : "";
 
   async function printSelectedPickupRoutes() {
+    // NY / pickup branches: print the appointments assigned to the vehicle-route.
     const routeIds = resolveActiveRouteReportIds(activeRoutes, selectedIds);
     if (routeIds.length === 0) {
       notifyError(t("routes.pickupRoutes.actions.selectAtLeastOne"));

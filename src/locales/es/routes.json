@@ -148,12 +148,15 @@
     "actions": {
       "selectAtLeastOne": "Seleccione al menos una ruta de entrega para imprimir.",
       "noDeliveriesOnRoute": "No hay entregas asignadas a la ruta seleccionada.",
+      "noBarcodesOnRoute": "No hay códigos de barra asignados a la ruta seleccionada.",
       "print": "Imprimir",
       "preparing": "Preparando…"
     },
     "toasts": {
       "reportReady": "Informe de entrega listo para {{count}} ruta.",
-      "reportReady_plural": "Informe de entrega listo para {{count}} rutas."
+      "reportReady_plural": "Informe de entrega listo para {{count}} rutas.",
+      "manifestReady": "Manifiesto de entrega listo para {{count}} código de barra.",
+      "manifestReady_plural": "Manifiesto de entrega listo para {{count}} códigos de barra."
     }
   },
   "tabs": {

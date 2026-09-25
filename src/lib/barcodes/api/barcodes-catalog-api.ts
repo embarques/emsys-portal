@@ -27,6 +27,7 @@ import {
   createBarcode,
   fetchBarcodeById,
   normalizeBarcode,
+  resolveBarcodeIdentity,
   updateBarcode,
   type BarcodeWritePayload,
 } from "@/lib/labels/api/barcodes-api";
@@ -34,6 +35,8 @@ import { fetchBarcodeStatusOptions } from "@/lib/barcodes/api/barcode-status-opt
 import type { BarcodeStatusOption } from "@/lib/labels/types";
 import { formatContainerLabel } from "@/lib/containers/display";
 import type { Container } from "@/lib/containers/types";
+import { createFilterRowId } from "@/lib/table/filter-builder";
+import type { TableFilterRowState } from "@/lib/table/filter-types";
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
@@ -156,6 +159,68 @@ export async function fetchBarcodes(params: BarcodeListParams = {}): Promise<Pag
     buildSearchBody: () => buildBarcodeSearchBody(params),
     normalize: normalizePaginatedBarcodes,
   });
+}
+
+/** Advanced filter rows for barcodes assigned to a DR daily vehicle-route. */
+export function buildBarcodeRouteFilterRows(routeId: string): TableFilterRowState[] {
+  const id = routeId.trim();
+  if (!id) return [];
+
+  return [
+    {
+      id: createFilterRowId(),
+      join: "and",
+      field: "route.id",
+      operator: "eq",
+      value: id,
+    },
+  ];
+}
+
+/** Load every barcode assigned to a delivery vehicle-route. */
+export async function fetchAllBarcodesByRoute(routeId: string): Promise<Barcode[]> {
+  const trimmedRouteId = routeId.trim();
+  if (!trimmedRouteId) return [];
+
+  const filterRows = buildBarcodeRouteFilterRows(trimmedRouteId);
+  const limit = 100;
+  let page = 1;
+  const items: Barcode[] = [];
+  let total = 0;
+
+  while (true) {
+    const result = await fetchBarcodes({
+      page,
+      limit,
+      sort: DEFAULT_BARCODE_LIST_PARAMS.sort,
+      filterRows,
+    });
+    items.push(...result.items);
+    total = result.total;
+    if (items.length >= total || result.items.length === 0) break;
+    page += 1;
+  }
+
+  return items;
+}
+
+/** Load barcodes assigned to any of the given delivery vehicle-routes. */
+export async function fetchAllBarcodesByRoutes(routeIds: string[]): Promise<Barcode[]> {
+  const uniqueRouteIds = [...new Set(routeIds.map((id) => id.trim()).filter(Boolean))];
+  if (uniqueRouteIds.length === 0) return [];
+
+  const batches = await Promise.all(uniqueRouteIds.map((routeId) => fetchAllBarcodesByRoute(routeId)));
+  const byIdentity = new Map<string, Barcode>();
+
+  for (const batch of batches) {
+    for (const barcode of batch) {
+      const identity = resolveBarcodeIdentity(barcode);
+      if (!identity) continue;
+      byIdentity.set(identity, barcode);
+    }
+  }
+
+  return [...byIdentity.values()];
 }
 
 export async function createBarcodeRecord(

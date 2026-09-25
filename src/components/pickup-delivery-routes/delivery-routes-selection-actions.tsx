@@ -5,6 +5,7 @@ import { Printer } from "lucide-react";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { fetchAllBarcodesByRoutes } from "@/lib/barcodes/api/barcodes-catalog-api";
 import { useTranslation } from "@/lib/i18n";
 import { resolveActiveRouteReportIds } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
@@ -18,6 +19,11 @@ type DeliveryRoutesSelectionActionsProps = {
   printDisabled?: boolean;
 };
 
+/**
+ * RD / delivery daily-route print.
+ * Manifest is the barcodes assigned to the vehicle-route (`POST /reports/deliveries`
+ * with the vehicle-route ObjectID; the API expands barcode route snapshots).
+ */
 export function DeliveryRoutesSelectionActions({
   activeRoutes,
   selectedIds,
@@ -51,13 +57,21 @@ export function DeliveryRoutesSelectionActions({
     }
 
     try {
+      const barcodes = await fetchAllBarcodesByRoutes(routeIds);
+
       if (process.env.NODE_ENV !== "production") {
-        console.info("[Reports Portal] Sending delivery route report request", {
+        console.info("[Reports Portal] Delivery route barcodes resolved", {
           routeIds,
-          routeCount: routeIds.length,
+          barcodeCount: barcodes.length,
         });
       }
 
+      if (barcodes.length === 0) {
+        notifyError(t("routes.deliveryRoutes.actions.noBarcodesOnRoute"));
+        return;
+      }
+
+      // One vehicle-route ObjectID → PDF of assigned barcode snapshots.
       const report = await generateDeliveryReportMutation.mutateAsync({
         type: "delivery",
         collection: "deliveries",
@@ -66,9 +80,9 @@ export function DeliveryRoutesSelectionActions({
       });
       window.open(report.url, "_blank", "noopener,noreferrer");
       notifySuccess(
-        routeIds.length === 1
-          ? t("routes.deliveryRoutes.toasts.reportReady", { count: routeIds.length })
-          : t("routes.deliveryRoutes.toasts.reportReady_plural", { count: routeIds.length }),
+        barcodes.length === 1
+          ? t("routes.deliveryRoutes.toasts.manifestReady", { count: barcodes.length })
+          : t("routes.deliveryRoutes.toasts.manifestReady_plural", { count: barcodes.length }),
       );
     } catch (mutationError) {
       if (process.env.NODE_ENV !== "production") {
@@ -83,7 +97,7 @@ export function DeliveryRoutesSelectionActions({
       variant="outline"
       size="sm"
       className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-      onClick={printSelectedDeliveryRoutes}
+      onClick={() => void printSelectedDeliveryRoutes()}
       disabled={printDisabled || isPrinting}
     >
       <Printer className="h-4 w-4" />

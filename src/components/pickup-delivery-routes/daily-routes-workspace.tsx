@@ -4,6 +4,12 @@ import { ActiveRoutesDirectoryWorkspace } from "@/components/pickup-delivery-rou
 import { DeliveryRoutesSelectionActions } from "@/components/pickup-delivery-routes/delivery-routes-selection-actions";
 import { PickupRoutesSelectionActions } from "@/components/pickup-delivery-routes/pickup-routes-selection-actions";
 import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
+import { isDeliveryBranchCode } from "@/lib/pickup-delivery-routes/types";
+
+/** NY (and other pickup branches) print appointments; RD/DR/DO print barcode delivery manifests. */
+function isDeliveryRoutePrint(record: { routeType?: string; branch?: { code?: string } | null }) {
+  return record.routeType === "delivery" || isDeliveryBranchCode(record.branch?.code);
+}
 
 export function DailyRoutesWorkspace() {
   return (
@@ -11,10 +17,10 @@ export function DailyRoutesWorkspace() {
       variant={DAILY_ROUTES_DIRECTORY_VARIANT}
       renderSelectionActions={({ activeRoutes, selectedIds }) => {
         const pickupIds = selectedIds.filter((id) =>
-          activeRoutes.some((record) => record.id === id && record.routeType !== "delivery"),
+          activeRoutes.some((record) => record.id === id && !isDeliveryRoutePrint(record)),
         );
         const deliveryIds = selectedIds.filter((id) =>
-          activeRoutes.some((record) => record.id === id && record.routeType === "delivery"),
+          activeRoutes.some((record) => record.id === id && isDeliveryRoutePrint(record)),
         );
 
         return (

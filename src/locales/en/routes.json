@@ -148,12 +148,15 @@
     "actions": {
       "selectAtLeastOne": "Select at least one delivery route to print.",
       "noDeliveriesOnRoute": "No deliveries are assigned to the selected route.",
+      "noBarcodesOnRoute": "No barcodes are assigned to the selected route.",
       "print": "Print",
       "preparing": "Preparing…"
     },
     "toasts": {
       "reportReady": "Delivery report ready for {{count}} route.",
-      "reportReady_plural": "Delivery report ready for {{count}} routes."
+      "reportReady_plural": "Delivery report ready for {{count}} routes.",
+      "manifestReady": "Delivery manifest ready for {{count}} barcode.",
+      "manifestReady_plural": "Delivery manifest ready for {{count}} barcodes."
     }
   },
   "tabs": {
