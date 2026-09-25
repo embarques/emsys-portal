@@ -329,8 +329,10 @@ That aggregation:
 Employees groups the employee directory and its supporting catalogs in one sidebar section:
 
 - Employees (`/employees`)
-- Employee titles (`/employee-titles`): tenant job-title catalog with a name and active status; employees reference the title name.
-- Employee departments (`/employee-departments`): tenant department catalog with a name and active status; employees reference the department name.
+- Employee titles (`/employee-titles`): tenant job-title catalog with a name and active status; employees reference the title name. New tenants receive stock seed titles (for example Driver, Dispatcher, Warehouse, Support, Planner, Admin, Manager, Supervisor).
+- Employee departments (`/employee-departments`): tenant department catalog with a name and active status; employees reference the department name. New tenants receive stock seed departments (for example Operations, Warehouse, Fleet, Customer Service, Administration, Accounting).
+
+On employee create, `active` is optional in the API payload: omitted defaults to active; explicit `false` stays inactive. The portal form defaults to active and always sends the chosen boolean.
 
 ### Users
 

@@ -81,18 +81,17 @@
       "Fleet": "Fleet",
       "Customer Service": "Customer Service",
       "Administration": "Administration",
-      "Accounting": "Accounting",
-      "driver": "Driver"
+      "Accounting": "Accounting"
     },
     "title": {
-      "dispatcher": "Dispatcher",
-      "warehouse": "Warehouse",
-      "driver": "Driver",
-      "support": "Support",
-      "planner": "Planner",
-      "admin": "Admin",
-      "manager": "Manager",
-      "supervisor": "Supervisor"
+      "Dispatcher": "Dispatcher",
+      "Warehouse": "Warehouse",
+      "Driver": "Driver",
+      "Support": "Support",
+      "Planner": "Planner",
+      "Admin": "Admin",
+      "Manager": "Manager",
+      "Supervisor": "Supervisor"
     }
   },
   "form": {
