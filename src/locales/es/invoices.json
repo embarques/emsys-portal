@@ -378,8 +378,8 @@
         "paymentAccount": "Cuenta de pago",
         "selectBankAccount": "Seleccionar cuenta bancaria",
         "searchBankAccounts": "Buscar cuentas bancarias…",
-        "referenceNumber": "Número de referencia",
-        "referenceNumberHint": "Referencia interna o número de recibo opcional para registro o para el cliente.",
+        "referenceNumber": "Número de referencia interna",
+        "referenceNumberHint": "Referencia que EMSYS utiliza para identificar esta transacción internamente.",
         "checkNumber": "Número de cheque",
         "checkNumberPlaceholder": "ej. 4521",
         "checkNumberHint": "Crea un cheque pendiente. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
@@ -446,7 +446,7 @@
         "amount": "Monto",
         "method": "Método",
         "date": "Fecha",
-        "referenceNumber": "Número de referencia",
+        "referenceNumber": "Número de referencia interna",
         "checkNumber": "Número de cheque",
         "createdBy": "Creado por"
       }

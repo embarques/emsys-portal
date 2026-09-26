@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 
+import { FormSection } from "@/components/forms/form-shell";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -72,6 +73,9 @@ type Props = {
   watch: UseFormWatch<DailyIncomeJournalValues>;
   /** Hide employee assignee (still required in form values when hidden). */
   showEmployee?: boolean;
+  /** Group Daily Income entry into desktop workflow sections. */
+  grouped?: boolean;
+  activeStep?: "assignment" | "amounts" | "payment" | "review";
   /** Let the assignee be an employee or a daily route. */
   allowDailyRoute?: boolean;
   /** Hide invoice number (still required in form values when hidden). */
@@ -93,6 +97,8 @@ export function RegisterInvoiceTransactionFields({
   register,
   setValue,
   watch,
+  grouped = false,
+  activeStep,
   showEmployee = true,
   allowDailyRoute = false,
   showInvoiceNumber = true,
@@ -126,6 +132,10 @@ export function RegisterInvoiceTransactionFields({
   const receiverName = watch("receiverName");
 
   useEffect(() => {
+    if (amount == null) setValue("amount", 0);
+  }, [amount, setValue]);
+
+  useEffect(() => {
     if (paymentMethods.length === 0) return;
     const matched = matchPaymentMethod(paymentMethods, paymentMethodId, paymentMethodName);
     if (matched) {
@@ -141,7 +151,7 @@ export function RegisterInvoiceTransactionFields({
     setValue("paymentMethodName", cash.name, { shouldValidate: true });
   }, [paymentMethodId, paymentMethodName, paymentMethods, setValue]);
 
-  // Prefill a bank account as soon as Deposit/Zelle is selected (not only after amount > 0).
+  // Prefill a bank account for bank-backed methods, even before an amount is entered.
   useEffect(() => {
     if (!needsBankAccount) {
       if (paymentAccountId) {
@@ -187,8 +197,8 @@ export function RegisterInvoiceTransactionFields({
   const senderOptions = useMemo(() => {
     const source = debouncedSenderQuery
       ? (senderSearch.data?.items ?? []).filter(
-          (customer) => customer.active && isCustomerSenderType(customer.customerType),
-        )
+        (customer) => customer.active && isCustomerSenderType(customer.customerType),
+      )
       : senderCustomers;
     const options = customerOptions(source);
     if (senderId && !source.some((customer) => customer.id === senderId)) {
@@ -233,8 +243,8 @@ export function RegisterInvoiceTransactionFields({
   const receiverOptions = useMemo(() => {
     const source = debouncedReceiverQuery
       ? (receiverSearch.data?.items ?? []).filter(
-          (customer) => customer.active && isCustomerReceiverType(customer.customerType),
-        )
+        (customer) => customer.active && isCustomerReceiverType(customer.customerType),
+      )
       : receiverCustomers;
     const options = customerOptions(source);
     if (receiverId && !source.some((customer) => customer.id === receiverId)) {
@@ -262,8 +272,8 @@ export function RegisterInvoiceTransactionFields({
     setValue("receiverName", customer?.name ?? "", { shouldValidate: true });
   }
 
-  return (
-    <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+  const assigneeFields = (
+    <>
       {showEmployee ? (
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
@@ -282,8 +292,12 @@ export function RegisterInvoiceTransactionFields({
           />
         </div>
       ) : null}
+    </>
+  );
 
-      <div className="space-y-2 sm:col-span-2">
+  const methodFields = (
+    <>
+      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
         {paymentDetailsRequired ? (
           <RequiredLabel htmlFor="journal-payment">
             {t("accounting.dailyIncome.form.fields.paymentMethod")}
@@ -303,7 +317,9 @@ export function RegisterInvoiceTransactionFields({
               setValue("paymentAccountName", undefined, { shouldValidate: true });
               setValue("paymentAccountType", undefined, { shouldValidate: true });
             }
-            if (!isCheckPaymentMethod(method?.name)) {
+            if (isCheckPaymentMethod(method?.name)) {
+              setValue("externalReferenceNumber", "", { shouldValidate: true });
+            } else {
               setValue("checkNumber", undefined, { shouldValidate: true });
             }
           }}
@@ -321,9 +337,13 @@ export function RegisterInvoiceTransactionFields({
           <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
         ) : null}
       </div>
+    </>
+  );
 
+  const bankFields = (
+    <>
       {needsBankAccount ? (
-        <div className="space-y-2 sm:col-span-2">
+        <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
           {paymentDetailsRequired ? (
             <RequiredLabel htmlFor="journal-bank-account">
               {t("accounting.dailyIncome.form.fields.bankAccount")}
@@ -348,9 +368,13 @@ export function RegisterInvoiceTransactionFields({
           {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
         </div>
       ) : null}
+    </>
+  );
 
+  const checkFields = (
+    <>
       {isCheck ? (
-        <div className="space-y-2 sm:col-span-2">
+        <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
           {paymentDetailsRequired ? (
             <RequiredLabel htmlFor="journal-check-number">
               {t("accounting.dailyIncome.form.fields.checkNumber")}
@@ -373,9 +397,13 @@ export function RegisterInvoiceTransactionFields({
           )}
         </div>
       ) : null}
+    </>
+  );
 
+  const invoiceFields = (
+    <>
       {showInvoiceNumber ? (
-        <div className="space-y-2 sm:col-span-2">
+        <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
           <RequiredLabel htmlFor="journal-invoice-number">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
           <Input
             id="journal-invoice-number"
@@ -387,8 +415,12 @@ export function RegisterInvoiceTransactionFields({
           ) : null}
         </div>
       ) : null}
+    </>
+  );
 
-      <div className="space-y-2 sm:col-span-2">
+  const externalReferenceFields = isCheck ? null : (
+    <>
+      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
         <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
         <Input
           id="journal-external-reference"
@@ -398,7 +430,11 @@ export function RegisterInvoiceTransactionFields({
         />
         <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
       </div>
+    </>
+  );
 
+  const referenceFields = (
+    <>
       <TransactionReferenceNumberFields
         mode={refNumberMode}
         refNumberRegister={register("refNumber")}
@@ -410,8 +446,12 @@ export function RegisterInvoiceTransactionFields({
           }
         }}
       />
+    </>
+  );
 
-      <div className="space-y-2 sm:col-span-2">
+  const costFields = (
+    <>
+      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
         <RequiredLabel htmlFor="journal-invoice-cost">{t("accounting.dailyIncome.form.fields.cost")}</RequiredLabel>
         {invoiceCostReadOnly ? (
           <Input
@@ -439,7 +479,7 @@ export function RegisterInvoiceTransactionFields({
               setValue("invoiceCost", moneyFormSetValueAs(next), { shouldValidate: true, shouldDirty: true });
             }}
             onBlur={() => setCostDraft(null)}
-            onKeyDown={submitFormOnEnterKeyDown}
+            onKeyDown={grouped ? undefined : submitFormOnEnterKeyDown}
             aria-invalid={Boolean(errors.invoiceCost)}
           />
         )}
@@ -450,8 +490,12 @@ export function RegisterInvoiceTransactionFields({
         ) : null}
         {errors.invoiceCost ? <p className="text-sm text-destructive">{errors.invoiceCost.message}</p> : null}
       </div>
+    </>
+  );
 
-      <div className="space-y-2 sm:col-span-2">
+  const amountFields = (
+    <>
+      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
         <Label htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</Label>
         <Input
           id="journal-amount"
@@ -471,7 +515,7 @@ export function RegisterInvoiceTransactionFields({
             setValue("amount", parsed == null ? 0 : parsed, { shouldValidate: true, shouldDirty: true });
           }}
           onBlur={() => setAmountDraft(null)}
-          onKeyDown={submitFormOnEnterKeyDown}
+          onKeyDown={grouped ? undefined : submitFormOnEnterKeyDown}
           aria-invalid={Boolean(errors.amount)}
         />
         <p className="text-xs text-muted-foreground">
@@ -479,8 +523,12 @@ export function RegisterInvoiceTransactionFields({
         </p>
         {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
       </div>
+    </>
+  );
 
-      <div className="space-y-2 sm:col-span-2">
+  const balanceFields = (
+    <>
+      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
         <Label htmlFor="journal-invoice-balance">{t("accounting.dailyIncome.form.fields.balance")}</Label>
         <Input
           id="journal-invoice-balance"
@@ -494,10 +542,14 @@ export function RegisterInvoiceTransactionFields({
           <p className="text-sm text-destructive">{t("accounting.dailyIncome.form.validation.balanceNegative")}</p>
         ) : null}
       </div>
+    </>
+  );
 
+  const partiesFields = (
+    <>
       {showParties ? (
         <>
-          <div className="space-y-3 sm:col-span-2">
+          <div className={grouped ? "space-y-3 min-w-0" : "space-y-3 sm:col-span-2"}>
             <label className="flex items-center gap-2 text-sm font-medium">
               <input
                 id="journal-include-sender"
@@ -536,7 +588,7 @@ export function RegisterInvoiceTransactionFields({
             ) : null}
           </div>
 
-          <div className="space-y-3 sm:col-span-2">
+          <div className={grouped ? "space-y-3 min-w-0" : "space-y-3 sm:col-span-2"}>
             <label className="flex items-center gap-2 text-sm font-medium">
               <input
                 id="journal-include-receiver"
@@ -576,6 +628,60 @@ export function RegisterInvoiceTransactionFields({
           </div>
         </>
       ) : null}
+    </>
+  );
+
+  if (grouped) {
+    return (
+      <div className="space-y-5">
+        {showEmployee ? (
+          <FormSection className={activeStep && activeStep !== "assignment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.assignment")}>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              {assigneeFields}
+            </div>
+          </FormSection>
+        ) : null}
+        <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
+          {showInvoiceNumber ? <div className="mb-4">{invoiceFields}</div> : null}
+          <div className="grid min-w-0 gap-4 sm:grid-cols-3">
+            {costFields}
+            {amountFields}
+            {balanceFields}
+          </div>
+        </FormSection>
+        <FormSection className={activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+            {methodFields}
+            {bankFields}
+            {checkFields}
+            {externalReferenceFields}
+            {referenceFields}
+          </div>
+        </FormSection>
+        {showParties ? (
+          <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.customers")}>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              {partiesFields}
+            </div>
+          </FormSection>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+      {assigneeFields}
+      {methodFields}
+      {bankFields}
+      {checkFields}
+      {invoiceFields}
+      {externalReferenceFields}
+      {referenceFields}
+      {costFields}
+      {amountFields}
+      {balanceFields}
+      {partiesFields}
     </div>
   );
 }

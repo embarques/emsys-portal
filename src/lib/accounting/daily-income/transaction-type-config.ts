@@ -135,13 +135,13 @@ export function getTransactionFormSecondFieldId(type: JournalTransactionType): s
     case "INITIAL-PAYMENT":
       return "journal-invoice-number";
     case "PAYMENT":
-      return "journal-employee";
+      return "journal-invoice";
     case "INVENTORY":
       return "journal-inventory-direction";
     case "DISCOUNT":
     case "SURCHARGE":
       return "journal-invoice";
     default:
-      return "journal-payment";
+      return "journal-account";
   }
 }

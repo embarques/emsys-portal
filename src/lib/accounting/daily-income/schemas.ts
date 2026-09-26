@@ -180,7 +180,8 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         return;
       }
 
-      if (values.amount == null) {
+      // INITIAL-PAYMENT allows $0 (unpaid registration). Blank amount defaults to 0 in the form.
+      if (values.amount == null && values.transactionType !== "INITIAL-PAYMENT") {
         context.addIssue({
           code: "custom",
           path: ["amount"],

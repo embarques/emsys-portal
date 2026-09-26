@@ -378,8 +378,8 @@
         "paymentAccount": "Payment account",
         "selectBankAccount": "Select bank account",
         "searchBankAccounts": "Search bank accounts…",
-        "referenceNumber": "Reference number",
-        "referenceNumberHint": "Optional internal reference or receipt number for recordkeeping or the client.",
+        "referenceNumber": "Internal reference number",
+        "referenceNumberHint": "Reference used by EMSYS to identify this transaction internally.",
         "checkNumber": "Check number",
         "checkNumberPlaceholder": "e.g. 4521",
         "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",
@@ -446,7 +446,7 @@
         "amount": "Amount",
         "method": "Method",
         "date": "Date",
-        "referenceNumber": "Reference number",
+        "referenceNumber": "Internal reference number",
         "checkNumber": "Check number",
         "createdBy": "Created by"
       }

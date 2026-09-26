@@ -240,7 +240,7 @@
       "employee": "Empleado",
       "assignedTo": "Asignado a",
       "type": "Transacción",
-      "reference": "Referencia #",
+      "reference": "Referencia interna #",
       "paymentMethod": "Método de pago",
       "amount": "Monto",
       "actions": "Acciones"
@@ -313,6 +313,13 @@
         "title": "Elija un tipo de transacción",
         "description": "Seleccione el tipo de transacción que desea registrar.",
         "ariaLabel": "Tipo de transacción"
+      },
+      "workflow": {
+        "assignment": "Asignación",
+        "amounts": "Factura / importes",
+        "payment": "Pago y referencias",
+        "review": "Revisar",
+        "reviewHint": "Revisa la transacción antes de guardar. Usa Anterior para hacer cambios."
       }
     },
     "transactionTypes": {
@@ -382,12 +389,12 @@
         "checkNumber": "Número de cheque",
         "checkNumberHint": "Crea un cheque pendiente. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
         "invoice": "Factura",
-        "referenceNumber": "Número de referencia",
+        "referenceNumber": "Número de referencia interna",
         "referenceNumberModeSystem": "Generado por el sistema",
         "referenceNumberModeCustom": "Ingresar el propio",
-        "referenceNumberCustom": "Su número de referencia",
-        "referenceNumberHint": "Referencia interna o número de recibo opcional para registro o para el cliente.",
-        "referenceNumberSystemHint": "El sistema asignará un número de referencia al guardar.",
+        "referenceNumberCustom": "Número de referencia interna personalizado",
+        "referenceNumberHint": "Referencia que EMSYS utiliza para identificar esta transacción internamente.",
+        "referenceNumberSystemHint": "EMSYS generará un número de referencia interna al guardar.",
         "account": "Cuenta",
         "sourceAccount": "Cuenta origen",
         "amount": "Monto",
@@ -401,8 +408,8 @@
         "inventoryDirection": "Recibido o despachado",
         "unitPrice": "Precio unitario",
         "total": "Total",
-        "externalReferenceNumber": "Referencia del pago",
-        "externalReferenceHint": "Referencia opcional del banco, tarjeta, cheque o recibo para identificar este pago."
+        "externalReferenceNumber": "Referencia de transacción de la institución",
+        "externalReferenceHint": "ID o referencia de transacción opcional emitido por el banco, proveedor de pagos u otra institución que procesa este pago."
       },
       "partyActions": {
         "new": "Nuevo",
@@ -420,7 +427,7 @@
         "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
         "selectBranch": "Seleccionar sucursal",
         "searchBranches": "Buscar sucursales…",
-        "selectReferenceNumberMode": "Seleccionar cómo definir el número de referencia",
+        "selectReferenceNumberMode": "Elige cómo asignar la referencia interna",
         "selectEmployee": "Seleccionar empleado",
         "searchEmployees": "Buscar empleados…",
         "selectRoute": "Seleccionar una ruta diaria",
@@ -435,7 +442,7 @@
         "selectInvoice": "Seleccionar factura",
         "searchInvoices": "Buscar facturas",
         "enterCheckNumber": "Ingrese el número de cheque",
-        "enterReferenceNumber": "Ingrese el número de referencia",
+        "enterReferenceNumber": "Ingresa el número de referencia interna",
         "enterDescription": "Ingrese la descripción (opcional)",
         "enterInvoiceNumber": "Ingrese el número de la nueva factura",
         "searchSender": "Buscar remitente por nombre, teléfono o dirección…",
@@ -446,7 +453,7 @@
         "selectReceiver": "Seleccionar destinatario",
         "selectInventoryDirection": "Seleccione recibido o despachado",
         "amount": "0.00",
-        "externalReferenceNumber": "Ingresa la referencia del pago"
+        "externalReferenceNumber": "Ingresa la referencia de transacción de la institución"
       },
       "hints": {
         "amountZeroAllowed": "Se permite cero para el registro inicial sin pago.",
@@ -469,8 +476,8 @@
         "amountRequired": "El monto es obligatorio.",
         "amountNonNegative": "El monto no puede ser negativo.",
         "amountPositive": "El monto debe ser mayor que cero.",
-        "refNumberTooLong": "El número de referencia es demasiado largo.",
-        "refNumberRequired": "Ingrese un número de referencia, o elija el generado por el sistema.",
+        "refNumberTooLong": "El número de referencia interna es demasiado largo.",
+        "refNumberRequired": "Ingresa un número de referencia interna o elige la generación automática.",
         "descriptionTooLong": "La descripción es demasiado larga.",
         "costPositive": "El costo debe ser mayor que cero.",
         "discountNonNegative": "El descuento no puede ser negativo.",
@@ -491,6 +498,15 @@
         "inventoryPriceRequired": "Ingrese un precio unitario o un total.",
         "supplierRequired": "El proveedor es obligatorio.",
         "balanceNegative": "El saldo no puede ser negativo."
+      },
+      "sections": {
+        "assignment": "Asignación",
+        "invoiceDetails": "Datos de la factura",
+        "paymentDetails": "Pago y referencias",
+        "customers": "Remitente y destinatario (opcional)",
+        "inventoryMovement": "Movimiento de inventario",
+        "inventoryAmounts": "Artículo e importes",
+        "amounts": "Cuentas e importe"
       }
     },
     "duplicatePayment": {

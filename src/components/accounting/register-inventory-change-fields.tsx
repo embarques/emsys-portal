@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import type { FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
+import { FormSection } from "@/components/forms/form-shell";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
@@ -55,6 +56,7 @@ import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 type EntityDialog = "supplier" | "employee" | "route" | null;
 
 type Props = {
+  activeStep?: "assignment" | "amounts" | "payment" | "review";
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
@@ -78,6 +80,7 @@ function numberInputValue(value: number | undefined): string {
 }
 
 export function RegisterInventoryChangeFields({
+  activeStep,
   employees,
   dailyRoutes = [],
   statementDate,
@@ -274,162 +277,171 @@ export function RegisterInventoryChangeFields({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-        <RequiredLabel htmlFor="journal-inventory-direction">
-          {t("accounting.dailyIncome.form.fields.inventoryDirection")}
-        </RequiredLabel>
-        <SearchableSelect
-          id="journal-inventory-direction"
-          value={direction ?? ""}
-          onValueChange={(next) => {
-            const value = next === "dispatched" || next === "received" ? (next as InventoryChangeDirection) : undefined;
-            setValue("inventoryDirection", value, { shouldValidate: true });
-            if (value === "received") {
-              setValue("employeeId", undefined, { shouldValidate: true });
-              setValue("employeeName", "");
-              setValue("routeId", undefined, { shouldValidate: true });
-              setValue("routeName", "");
-            } else {
-              setValue("inventorySupplierId", undefined, { shouldValidate: true });
-              setValue("inventorySupplierName", "");
-            }
-          }}
-          placeholder={t("accounting.dailyIncome.form.placeholders.selectInventoryDirection")}
-          searchable={false}
-          options={directionOptions}
-        />
-        {errors.inventoryDirection ? (
-          <p className="text-sm text-destructive">{errors.inventoryDirection.message}</p>
-        ) : null}
-      </div>
-
-      {direction === "received" ? (
-        <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-          <div className="flex items-center justify-between gap-2">
-            <RequiredLabel htmlFor="journal-inventory-supplier">
-              {t("inventory.form.fields.supplier")}
+    <div className="space-y-5">
+      <FormSection className={activeStep && activeStep !== "assignment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.inventoryMovement")}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2 sm:col-span-2">
+            <RequiredLabel htmlFor="journal-inventory-direction">
+              {t("accounting.dailyIncome.form.fields.inventoryDirection")}
             </RequiredLabel>
-            <FieldEntityActions
-              hasSelection={Boolean(supplierId)}
-              onAdd={openAddSupplier}
-              onEdit={openEditSupplier}
-              addIcon={Building2}
+            <SearchableSelect
+              id="journal-inventory-direction"
+              value={direction ?? ""}
+              onValueChange={(next) => {
+                const value = next === "dispatched" || next === "received" ? (next as InventoryChangeDirection) : undefined;
+                setValue("inventoryDirection", value, { shouldValidate: true });
+                if (value === "received") {
+                  setValue("employeeId", undefined, { shouldValidate: true });
+                  setValue("employeeName", "");
+                  setValue("routeId", undefined, { shouldValidate: true });
+                  setValue("routeName", "");
+                } else {
+                  setValue("inventorySupplierId", undefined, { shouldValidate: true });
+                  setValue("inventorySupplierName", "");
+                }
+              }}
+              placeholder={t("accounting.dailyIncome.form.placeholders.selectInventoryDirection")}
+              searchable={false}
+              options={directionOptions}
+            />
+            {errors.inventoryDirection ? (
+              <p className="text-sm text-destructive">{errors.inventoryDirection.message}</p>
+            ) : null}
+          </div>
+
+          {direction === "received" ? (
+            <div className="space-y-2 sm:col-span-2">
+              <div className="flex items-center justify-between gap-2">
+                <RequiredLabel htmlFor="journal-inventory-supplier">
+                  {t("inventory.form.fields.supplier")}
+                </RequiredLabel>
+                <FieldEntityActions
+                  hasSelection={Boolean(supplierId)}
+                  onAdd={openAddSupplier}
+                  onEdit={openEditSupplier}
+                  addIcon={Building2}
+                />
+              </div>
+              <SearchableSelect
+                id="journal-inventory-supplier"
+                value={supplierId ?? ""}
+                onValueChange={(next) => {
+                  const supplier = suppliers.find((entry) => entry.id === next);
+                  setValue("inventorySupplierId", supplier?.id ?? "", { shouldValidate: true });
+                  setValue("inventorySupplierName", supplier?.companyName ?? "");
+                }}
+                placeholder={t("inventory.form.placeholders.supplier")}
+                searchPlaceholder={t("inventory.search.suppliers")}
+                mobileSheet
+                options={supplierOptions}
+              />
+              {errors.inventorySupplierId ? (
+                <p className="text-sm text-destructive">{errors.inventorySupplierId.message}</p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {direction === "dispatched" ? (
+            <div className="sm:col-span-2">
+              <TransactionAssigneeSelect
+                employees={employees}
+                dailyRoutes={dailyRoutes}
+                statementDate={statementDate}
+                statementBranchId={statementBranchId}
+                employeeId={employeeId}
+                employeeName={employeeName}
+                routeId={routeId}
+                routeName={routeName}
+                assigneeSource={assigneeSource}
+                error={errors.employeeId?.message ?? errors.routeId?.message}
+                setValue={setValue}
+                onAddEmployee={openAddEmployee}
+                onEditEmployee={openEditEmployee}
+                onAddRoute={openAddRoute}
+                onEditRoute={openEditRoute}
+              />
+            </div>
+          ) : null}
+
+        </div>
+      </FormSection>
+      <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.inventoryAmounts")}>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2 sm:col-span-3">
+            <RequiredLabel htmlFor="journal-inventory-item">{t("inventory.form.fields.item")}</RequiredLabel>
+            <SearchableSelect
+              id="journal-inventory-item"
+              value={itemId ?? ""}
+              onValueChange={(next) => {
+                const item = items.find((entry) => entry.id === next);
+                setValue("inventoryItemId", item?.id ?? "", { shouldValidate: true });
+                setValue("inventoryItemName", item ? getInventoryItemLabel(item) : "");
+              }}
+              placeholder={t("inventory.form.placeholders.item")}
+              searchPlaceholder={t("inventory.search.items")}
+              mobileSheet
+              options={itemOptions}
+            />
+            {errors.inventoryItemId ? <p className="text-sm text-destructive">{errors.inventoryItemId.message}</p> : null}
+          </div>
+
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="journal-inventory-quantity">{t("inventory.form.fields.quantity")}</RequiredLabel>
+            <Input
+              id="journal-inventory-quantity"
+              type="number"
+              min={0}
+              step="1"
+              value={numberInputValue(quantity)}
+              onChange={(event) => {
+                const next = moneyFormSetValueAs(event.target.value);
+                applyLinkedPrices(next, unitPrice, total, "quantity");
+              }}
+              onFocus={selectFormFieldTextOnFocus}
+            />
+            {errors.inventoryQuantity ? (
+              <p className="text-sm text-destructive">{errors.inventoryQuantity.message}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="journal-inventory-unit-price">
+              {t("accounting.dailyIncome.form.fields.unitPrice")}
+            </RequiredLabel>
+            <Input
+              id="journal-inventory-unit-price"
+              type="number"
+              min={0}
+              step="0.01"
+              value={numberInputValue(unitPrice)}
+              onChange={(event) => {
+                const next = moneyFormSetValueAs(event.target.value);
+                applyLinkedPrices(quantity, next, total, "unit");
+              }}
+              onFocus={selectFormFieldTextOnFocus}
             />
           </div>
-          <SearchableSelect
-            id="journal-inventory-supplier"
-            value={supplierId ?? ""}
-            onValueChange={(next) => {
-              const supplier = suppliers.find((entry) => entry.id === next);
-              setValue("inventorySupplierId", supplier?.id ?? "", { shouldValidate: true });
-              setValue("inventorySupplierName", supplier?.companyName ?? "");
-            }}
-            placeholder={t("inventory.form.placeholders.supplier")}
-            searchPlaceholder={t("inventory.search.suppliers")}
-            mobileSheet
-            options={supplierOptions}
-          />
-          {errors.inventorySupplierId ? (
-            <p className="text-sm text-destructive">{errors.inventorySupplierId.message}</p>
-          ) : null}
+
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="journal-inventory-total">{t("accounting.dailyIncome.form.fields.total")}</RequiredLabel>
+            <Input
+              id="journal-inventory-total"
+              type="number"
+              min={0}
+              step="0.01"
+              value={numberInputValue(total)}
+              onChange={(event) => {
+                const next = moneyFormSetValueAs(event.target.value);
+                applyLinkedPrices(quantity, unitPrice, next, "total");
+              }}
+              onFocus={selectFormFieldTextOnFocus}
+            />
+            {errors.inventoryTotal ? <p className="text-sm text-destructive">{errors.inventoryTotal.message}</p> : null}
+            <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.inventory.priceHint")}</p>
+          </div>
+
         </div>
-      ) : null}
-
-      {direction === "dispatched" ? (
-        <div className="sm:col-span-2 lg:col-span-3">
-          <TransactionAssigneeSelect
-            employees={employees}
-            dailyRoutes={dailyRoutes}
-            statementDate={statementDate}
-            statementBranchId={statementBranchId}
-            employeeId={employeeId}
-            employeeName={employeeName}
-            routeId={routeId}
-            routeName={routeName}
-            assigneeSource={assigneeSource}
-            error={errors.employeeId?.message ?? errors.routeId?.message}
-            setValue={setValue}
-            onAddEmployee={openAddEmployee}
-            onEditEmployee={openEditEmployee}
-            onAddRoute={openAddRoute}
-            onEditRoute={openEditRoute}
-          />
-        </div>
-      ) : null}
-
-      <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-        <RequiredLabel htmlFor="journal-inventory-item">{t("inventory.form.fields.item")}</RequiredLabel>
-        <SearchableSelect
-          id="journal-inventory-item"
-          value={itemId ?? ""}
-          onValueChange={(next) => {
-            const item = items.find((entry) => entry.id === next);
-            setValue("inventoryItemId", item?.id ?? "", { shouldValidate: true });
-            setValue("inventoryItemName", item ? getInventoryItemLabel(item) : "");
-          }}
-          placeholder={t("inventory.form.placeholders.item")}
-          searchPlaceholder={t("inventory.search.items")}
-          mobileSheet
-          options={itemOptions}
-        />
-        {errors.inventoryItemId ? <p className="text-sm text-destructive">{errors.inventoryItemId.message}</p> : null}
-      </div>
-
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-inventory-quantity">{t("inventory.form.fields.quantity")}</RequiredLabel>
-        <Input
-          id="journal-inventory-quantity"
-          type="number"
-          min={0}
-          step="1"
-          value={numberInputValue(quantity)}
-          onChange={(event) => {
-            const next = moneyFormSetValueAs(event.target.value);
-            applyLinkedPrices(next, unitPrice, total, "quantity");
-          }}
-          onFocus={selectFormFieldTextOnFocus}
-        />
-        {errors.inventoryQuantity ? (
-          <p className="text-sm text-destructive">{errors.inventoryQuantity.message}</p>
-        ) : null}
-      </div>
-
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-inventory-unit-price">
-          {t("accounting.dailyIncome.form.fields.unitPrice")}
-        </RequiredLabel>
-        <Input
-          id="journal-inventory-unit-price"
-          type="number"
-          min={0}
-          step="0.01"
-          value={numberInputValue(unitPrice)}
-          onChange={(event) => {
-            const next = moneyFormSetValueAs(event.target.value);
-            applyLinkedPrices(quantity, next, total, "unit");
-          }}
-          onFocus={selectFormFieldTextOnFocus}
-        />
-      </div>
-
-      <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-        <RequiredLabel htmlFor="journal-inventory-total">{t("accounting.dailyIncome.form.fields.total")}</RequiredLabel>
-        <Input
-          id="journal-inventory-total"
-          type="number"
-          min={0}
-          step="0.01"
-          value={numberInputValue(total)}
-          onChange={(event) => {
-            const next = moneyFormSetValueAs(event.target.value);
-            applyLinkedPrices(quantity, unitPrice, next, "total");
-          }}
-          onFocus={selectFormFieldTextOnFocus}
-        />
-        {errors.inventoryTotal ? <p className="text-sm text-destructive">{errors.inventoryTotal.message}</p> : null}
-        <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.inventory.priceHint")}</p>
-      </div>
+      </FormSection>
 
       <Dialog open={entityDialog === "supplier"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">

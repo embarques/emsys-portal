@@ -718,9 +718,15 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     incomeStatement: { id: statement.id },
     date: statement.date,
     transactionType: values.transactionType,
-    amount: values.amount,
+    amount,
     ...(refNumber ? { refNumber } : {}),
-    ...journalPaymentFields(values, options),
+    // Check number maps to API paymentReference; skip payment reference for checks.
+    ...journalPaymentFields(
+      isCheckPaymentMethod(paymentMethod?.name ?? values.paymentMethodName)
+        ? { externalReferenceNumber: undefined }
+        : values,
+      options,
+    ),
     description: values.description,
     currency: statement.currency,
     rate: statement.rate,

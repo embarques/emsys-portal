@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { SubmitJournal } from "@/lib/accounting/daily-income/duplicate-payment";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
-import { findCashPaymentMethod, withDefaultCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, withDefaultCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { getTransactionStepLabelKey, getTransactionFormSteps, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { cn } from "@/lib/utils";
 
 type SharedProps = {
@@ -53,6 +54,7 @@ function emptyTransaction(
 ): DailyIncomeJournalValues {
   const values: DailyIncomeJournalValues = {
     transactionType: type,
+    amount: 0,
     refNumber: "",
     refNumberMode: "system",
     externalReferenceNumber: "",
@@ -107,7 +109,7 @@ export function AddTransactionWizard(props: Props) {
   const appearance = props.appearance ?? "default";
   const isPhone = appearance === "phone";
   const isEdit = props.mode === "edit";
-  const [step, setStep] = useState<1 | 2>(isEdit ? 2 : 1);
+  const [step, setStep] = useState<number>(isEdit ? 2 : 1);
   const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(
     isEdit ? props.initialValues.transactionType : null,
   );
@@ -116,9 +118,17 @@ export function AddTransactionWizard(props: Props) {
   );
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
-  const stepLabel = step === 1
-    ? t("accounting.dailyIncome.wizard.steps.selectType")
-    : t("accounting.dailyIncome.wizard.steps.enterDetails");
+  const detailSteps = getTransactionFormSteps(selectedType);
+  const activeFormStep = detailSteps[step - 2] ?? "assignment";
+  const totalSteps = detailSteps.length + 1;
+  const stepLabels = [
+    t("accounting.dailyIncome.wizard.steps.selectType"),
+    ...detailSteps.map((entry) => t(getTransactionStepLabelKey(entry, selectedType))),
+  ];
+  const stepLabel = stepLabels[step - 1];
+  function goToFormStep(target: TransactionFormStep) {
+    setStep(detailSteps.indexOf(target) + 2);
+  }
   const title = isEdit
     ? t("accounting.dailyIncome.wizard.editTitle")
     : t("accounting.dailyIncome.wizard.addTitle");
@@ -155,6 +165,7 @@ export function AddTransactionWizard(props: Props) {
         setDetailValues(continueTransactionValues(selectedType, values, props.paymentMethods));
         setFormSessionKey((key) => key + 1);
         setFocusSecondFieldSignal((signal) => signal + 1);
+        setStep(selectedType === "INVENTORY" ? 2 : 3);
       }
     } catch {
       // Parent surfaces API/validation errors via props.error.
@@ -162,17 +173,17 @@ export function AddTransactionWizard(props: Props) {
   }
 
   function handleTypeChange(type: JournalTransactionType) {
+    if (type === selectedType) return;
     setSelectedType(type);
     setDetailValues((current) => clearTypeSpecificFields(current, type, props.paymentMethods));
   }
 
   function handleBack() {
-    setStep(1);
+    setStep((current) => Math.max(isEdit ? 2 : 1, current - 1));
   }
 
   function handleNext() {
     if (!selectedType) return;
-    setDetailValues((current) => clearTypeSpecificFields(current, selectedType, props.paymentMethods));
     setStep(2);
   }
 
@@ -189,10 +200,10 @@ export function AddTransactionWizard(props: Props) {
         <DialogHeader className="shrink-0 space-y-4 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground">
           <div className="flex min-w-0 items-center justify-between gap-4">
             <DialogTitle className="min-w-0 truncate text-2xl font-bold text-primary-foreground">
-              {step === 2 && selectedType ? t(`accounting.dailyIncome.transactionTypes.${selectedType === "INITIAL-PAYMENT" ? "initialPayment" : selectedType.toLowerCase()}.shortLabel`) : title}
+              {step >= 2 && selectedType ? t(`accounting.dailyIncome.transactionTypes.${selectedType === "INITIAL-PAYMENT" ? "initialPayment" : selectedType.toLowerCase()}.shortLabel`) : title}
             </DialogTitle>
             <div className="flex shrink-0 items-center gap-4 text-base font-semibold">
-              <span>{t("accounting.dailyIncome.wizard.stepCount", { current: step, total: 2 })}</span>
+              <span>{t("accounting.dailyIncome.wizard.stepCount", { current: isEdit ? step - 1 : step, total: isEdit ? totalSteps - 1 : totalSteps })}</span>
               <button type="button" className="text-primary-foreground" onClick={props.onCancel}>
                 {t("common.actions.cancel")}
               </button>
@@ -204,7 +215,7 @@ export function AddTransactionWizard(props: Props) {
             <div className="h-1.5 overflow-hidden rounded-full bg-primary-foreground/25">
               <div
                 className="h-full rounded-full bg-primary-foreground transition-[width]"
-                style={{ width: step === 1 ? "50%" : "100%" }}
+                style={{ width: `${((isEdit ? step - 1 : step) / (isEdit ? totalSteps - 1 : totalSteps)) * 100}%` }}
               />
             </div>
           </div>
@@ -219,11 +230,11 @@ export function AddTransactionWizard(props: Props) {
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
           </div>
-          <TransactionWizardStepper step={step} appearance={appearance} />
+          <TransactionWizardStepper step={isEdit ? step - 1 : step} labels={isEdit ? stepLabels.slice(1) : stepLabels} disabled={isSubmitting} onSelectStep={(target) => setStep(isEdit ? target + 1 : target)} appearance={appearance} />
         </DialogHeader>
       ) : (
         <div className="shrink-0 border-b border-border px-5 py-3">
-          <TransactionWizardStepper step={step} appearance={appearance} />
+          <TransactionWizardStepper step={isEdit ? step - 1 : step} labels={isEdit ? stepLabels.slice(1) : stepLabels} disabled={isSubmitting} onSelectStep={(target) => setStep(isEdit ? target + 1 : target)} appearance={appearance} />
         </div>
       )}
 
@@ -235,8 +246,8 @@ export function AddTransactionWizard(props: Props) {
         ) : null}
 
         {selectedType ? (
-          <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", step === 2 ? "flex" : "hidden")}>
-            {isSubmitting && step === 2 ? (
+          <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", step >= 2 ? "flex" : "hidden")}>
+            {isSubmitting && step >= 2 ? (
               <div
                 className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[1px]"
                 aria-live="polite"
@@ -251,6 +262,9 @@ export function AddTransactionWizard(props: Props) {
             <DailyIncomeTransactionForm
               key={`${selectedType}-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}
               formId={formId}
+              activeStep={step >= 2 ? activeFormStep : undefined}
+              onStepChange={goToFormStep}
+              onContinue={() => setStep((current) => Math.min(current + 1, totalSteps))}
               transactionType={selectedType}
               initialValues={detailValues}
               employees={props.employees}
@@ -290,7 +304,7 @@ export function AddTransactionWizard(props: Props) {
         ) : (
           <div className={cn("flex items-center justify-between gap-3", isPhone && "flex-col items-stretch")}>
             <div className="flex min-w-0 flex-1 items-center">
-              {!isEdit ? (
+              {(!isEdit || step > 2) ? (
                 <Button type="button" variant="outline" onClick={handleBack} disabled={isSubmitting} className={cn(isPhone && "hidden")}>
                   <ArrowLeft className="size-4" />
                   {t("common.actions.previous")}
@@ -308,8 +322,8 @@ export function AddTransactionWizard(props: Props) {
               </p>
             ) : null}
             <div className={cn("flex shrink-0 items-center gap-2", isPhone && "grid grid-cols-2")}>
-              <Button type="button" variant="outline" onClick={isPhone && !isEdit ? handleBack : props.onCancel} disabled={isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
-                {isPhone && !isEdit ? (
+              <Button type="button" variant="outline" onClick={isPhone && (!isEdit || step > 2) ? handleBack : props.onCancel} disabled={isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
+                {isPhone && (!isEdit || step > 2) ? (
                   <>
                     <ArrowLeft className="size-4" />
                     {t("common.actions.previous")}
@@ -319,8 +333,8 @@ export function AddTransactionWizard(props: Props) {
                 )}
               </Button>
               <Button type="submit" form={formId} disabled={isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
-                {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                {isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.wizard.saveTransaction")}
+                {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : activeFormStep === "review" ? <Save className="size-4" /> : <ArrowRight className="size-4" />}
+                {isSubmitting ? t("common.actions.saving") : activeFormStep === "review" ? t("accounting.dailyIncome.wizard.saveTransaction") : t("common.actions.next")}
               </Button>
             </div>
           </div>
@@ -345,8 +359,17 @@ export function AddTransactionWizard(props: Props) {
             <dd>{confirmation.pendingValues?.paymentMethodName}</dd>
             <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.amount")}</dt>
             <dd>{confirmation.pendingValues?.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
-            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</dt>
-            <dd className="break-all">{confirmation.pendingValues?.externalReferenceNumber || t("common.empty.dash")}</dd>
+            {isCheckPaymentMethod(confirmation.pendingValues?.paymentMethodName) ? (
+              <>
+                <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.checkNumber")}</dt>
+                <dd className="break-all">{confirmation.pendingValues?.checkNumber || t("common.empty.dash")}</dd>
+              </>
+            ) : (
+              <>
+                <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</dt>
+                <dd className="break-all">{confirmation.pendingValues?.externalReferenceNumber || t("common.empty.dash")}</dd>
+              </>
+            )}
           </dl>
           <DialogFooter>
             <Button id={`${formId}-duplicate-cancel`} type="button" variant="outline" onClick={() => confirmation.respond(false)}>

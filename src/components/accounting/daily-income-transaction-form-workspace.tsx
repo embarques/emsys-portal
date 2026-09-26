@@ -166,7 +166,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
     <FormTabShell
       title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}
       description={description}
-      className="max-w-3xl"
+      className="max-w-5xl"
     >
       {isEditing && initialValues ? (
         <AddTransactionWizard

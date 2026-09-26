@@ -1,87 +1,51 @@
 "use client";
 
 import { Check } from "lucide-react";
-
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  step: 1 | 2;
+  step: number;
+  labels: string[];
+  disabled?: boolean;
+  onSelectStep: (step: number) => void;
   appearance?: "default" | "phone";
 };
 
-export function TransactionWizardStepper({ step, appearance = "default" }: Props) {
+export function TransactionWizardStepper({ step, labels, disabled, onSelectStep, appearance = "default" }: Props) {
   const { t } = useTranslation();
-  const stepOneComplete = step === 2;
-  const currentStepLabel = step === 1
-    ? t("accounting.dailyIncome.wizard.steps.selectType")
-    : t("accounting.dailyIncome.wizard.steps.enterDetails");
-
   if (appearance === "phone") {
     return (
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 text-sm font-semibold text-foreground">{currentStepLabel}</p>
-          <p className="shrink-0 text-sm text-muted-foreground">Step {step} of 2</p>
-        </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-blue-100">
-          <div
-            className="h-full rounded-full bg-primary transition-[width]"
-            style={{ width: step === 1 ? "50%" : "100%" }}
-          />
+        <p className="text-sm font-medium" aria-live="polite">
+          {t("accounting.dailyIncome.wizard.stepCount", { current: step, total: labels.length })} · {labels[step - 1]}
+        </p>
+        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full bg-primary transition-[width]" style={{ width: `${step / labels.length * 100}%` }} />
         </div>
       </div>
     );
   }
-
   return (
-    <div className="flex items-center gap-3 px-1">
-      <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            "flex size-7 items-center justify-center rounded-full text-xs font-semibold",
-            stepOneComplete
-              ? "bg-emerald-600 text-white"
-              : step === 1
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground",
-          )}
-        >
-          {stepOneComplete ? <Check className="size-3.5" /> : "1"}
-        </span>
-        <span
-          className={cn(
-            "text-sm font-medium",
-            step === 1 || stepOneComplete ? "text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {t("accounting.dailyIncome.wizard.steps.selectType")}
-        </span>
-      </div>
-
-      <div
-        className={cn("h-px flex-1", stepOneComplete ? "bg-emerald-600" : "bg-border")}
-        aria-hidden
-      />
-
-      <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            "flex size-7 items-center justify-center rounded-full text-xs font-semibold",
-            step === 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-          )}
-        >
-          2
-        </span>
-        <span
-          className={cn(
-            "text-sm font-medium",
-            step === 2 ? "text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {t("accounting.dailyIncome.wizard.steps.enterDetails")}
-        </span>
-      </div>
-    </div>
+    <nav aria-label={t("accounting.dailyIncome.wizard.description")}>
+      <ol className="grid gap-2" style={{ gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))` }}>
+        {labels.map((label, index) => (
+          <li key={label} className="flex justify-center">
+            <button
+              type="button"
+              disabled={disabled || index + 1 >= step}
+              onClick={() => onSelectStep(index + 1)}
+              aria-current={index + 1 === step ? "step" : undefined}
+              className="group flex flex-col items-center gap-2 rounded-lg text-center text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default"
+            >
+              <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold", index + 1 === step ? "border-2 border-primary bg-card text-primary" : index + 1 < step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                {index + 1 < step ? <Check className="size-3.5" /> : index + 1}
+              </span>
+              <span className={cn("max-w-28 font-medium leading-tight", index + 1 > step && "text-muted-foreground")}>{label}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }

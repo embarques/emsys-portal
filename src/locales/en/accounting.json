@@ -240,7 +240,7 @@
       "employee": "Employee",
       "assignedTo": "Assigned to",
       "type": "Transaction",
-      "reference": "Reference #",
+      "reference": "Internal reference #",
       "paymentMethod": "Payment method",
       "amount": "Amount",
       "actions": "Actions"
@@ -313,6 +313,13 @@
         "title": "Choose a transaction type",
         "description": "Select the type of transaction you want to record.",
         "ariaLabel": "Transaction type"
+      },
+      "workflow": {
+        "assignment": "Assignment",
+        "amounts": "Invoice / amounts",
+        "payment": "Payment & references",
+        "review": "Review",
+        "reviewHint": "Review the transaction before saving. Use Previous to make changes."
       }
     },
     "transactionTypes": {
@@ -382,12 +389,12 @@
         "checkNumber": "Check number",
         "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",
         "invoice": "Invoice",
-        "referenceNumber": "Reference number",
+        "referenceNumber": "Internal reference number",
         "referenceNumberModeSystem": "System generated",
         "referenceNumberModeCustom": "Enter your own",
-        "referenceNumberCustom": "Your reference number",
-        "referenceNumberHint": "Optional internal reference or receipt number for recordkeeping or the client.",
-        "referenceNumberSystemHint": "The system will assign a reference number when you save.",
+        "referenceNumberCustom": "Custom internal reference number",
+        "referenceNumberHint": "Reference used by EMSYS to identify this transaction internally.",
+        "referenceNumberSystemHint": "EMSYS will generate an internal reference number when you save.",
         "account": "Account",
         "sourceAccount": "Source account",
         "amount": "Amount",
@@ -401,8 +408,8 @@
         "inventoryDirection": "Received or dispatched",
         "unitPrice": "Unit price",
         "total": "Total",
-        "externalReferenceNumber": "Payment reference",
-        "externalReferenceHint": "Optional bank, card, check, or receipt reference used to identify this payment."
+        "externalReferenceNumber": "Institution transaction reference",
+        "externalReferenceHint": "Optional transaction ID or reference issued by the bank, payment provider, or other institution processing this payment."
       },
       "partyActions": {
         "new": "New",
@@ -420,7 +427,7 @@
         "selectAssigneeSource": "Select employee or daily route",
         "selectBranch": "Select branch",
         "searchBranches": "Search branches…",
-        "selectReferenceNumberMode": "Select how to set the reference number",
+        "selectReferenceNumberMode": "Choose how to assign the internal reference",
         "selectEmployee": "Select employee",
         "searchEmployees": "Search employees…",
         "selectRoute": "Select a daily route",
@@ -435,7 +442,7 @@
         "selectInvoice": "Select invoice",
         "searchInvoices": "Search invoices",
         "enterCheckNumber": "Enter check number",
-        "enterReferenceNumber": "Enter reference number",
+        "enterReferenceNumber": "Enter internal reference number",
         "enterDescription": "Enter description (optional)",
         "enterInvoiceNumber": "Enter new invoice number",
         "searchSender": "Search sender by name, phone, or address…",
@@ -446,7 +453,7 @@
         "selectReceiver": "Select receiver",
         "selectInventoryDirection": "Select received or dispatched",
         "amount": "0.00",
-        "externalReferenceNumber": "Enter the payment reference"
+        "externalReferenceNumber": "Enter the institution’s transaction reference"
       },
       "hints": {
         "amountZeroAllowed": "Zero is allowed for unpaid initial registration.",
@@ -469,8 +476,8 @@
         "amountRequired": "Amount is required.",
         "amountNonNegative": "Amount cannot be negative.",
         "amountPositive": "Amount must be greater than zero.",
-        "refNumberTooLong": "Reference number is too long.",
-        "refNumberRequired": "Enter a reference number, or choose system generated.",
+        "refNumberTooLong": "Internal reference number is too long.",
+        "refNumberRequired": "Enter an internal reference number, or choose system generated.",
         "descriptionTooLong": "Description is too long.",
         "costPositive": "Cost must be greater than zero.",
         "discountNonNegative": "Discount cannot be negative.",
@@ -491,6 +498,15 @@
         "inventoryPriceRequired": "Enter a unit price or total.",
         "supplierRequired": "Supplier is required.",
         "balanceNegative": "Balance cannot be negative."
+      },
+      "sections": {
+        "assignment": "Assignment",
+        "invoiceDetails": "Invoice details",
+        "paymentDetails": "Payment & references",
+        "customers": "Sender & receiver (optional)",
+        "inventoryMovement": "Inventory movement",
+        "inventoryAmounts": "Item & amounts",
+        "amounts": "Accounts & amount"
       }
     },
     "duplicatePayment": {

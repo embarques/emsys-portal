@@ -207,15 +207,16 @@ export function isZellePaymentMethod(name?: string | null): boolean {
   return normalizePaymentMethodName(name) === "ZELLE";
 }
 
-/** Check payments require the paper check number for reconciliation. */
+/** Check payments require the paper check number for reconciliation (not payment reference). */
 export function isCheckPaymentMethod(name?: string | null): boolean {
   const normalized = normalizePaymentMethodName(name);
   return normalized === "CHECK" || normalized === "CHEQUE";
 }
 
+/** Deposit, Zelle, check, and credit card require selecting the destination bank account. */
 export function requiresBankAccount(name?: string | null): boolean {
-  const normalizedName = normalizePaymentMethodName(name);
-  return normalizedName === "DEPOSIT" || normalizedName === "ZELLE";
+  const normalizedName = toApiPaymentMethodName(name);
+  return ["DEPOSIT", "ZELLE", "CHECK", "CREDIT-CARD"].includes(normalizedName);
 }
 
 export type DailyIncomeJournalValues = {
