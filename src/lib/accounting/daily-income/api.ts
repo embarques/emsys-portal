@@ -1,5 +1,9 @@
 import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
+import {
+  buildJournalCheckPaymentWire,
+  resolveJournalCheckNumberFromApi,
+} from "./check-payment-reference";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -233,7 +237,9 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
     paymentMethod: normalizeLookup(raw.paymentMethod),
-    checkNumber: stringValue(firstDefined(raw.checkNumber, raw.check_number)) || undefined,
+    // UI "Check number" ← API paymentReference (legacy checkNumber still accepted).
+    checkNumber: resolveJournalCheckNumberFromApi(raw),
+    paymentReference: stringValue(raw.paymentReference) || undefined,
     inventoryDirection: normalizeInventoryDirection(
       firstDefined(raw.inventoryDirection, objectValue(raw.inventory).direction),
     ),
@@ -744,7 +750,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
         : undefined,
     paymentMethod,
     ...(amount > 0 && isCheckPaymentMethod(paymentMethod?.name ?? values.paymentMethodName)
-      ? { checkNumber: values.checkNumber?.trim() || undefined }
+      ? buildJournalCheckPaymentWire(values.checkNumber)
       : {}),
     ...(isInventory
       ? {
