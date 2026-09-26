@@ -201,8 +201,9 @@ function readNumericId(value: number | string | undefined): number | undefined {
 }
 
 /**
- * Customer `accountBalance` is a stored API field (see CUSTOMER_BACKEND_CONFIRMATION /
- * API_PAYLOADS). Do not derive it from invoices, payments, or journals.
+ * Customer `accountBalance` is a stored API field (see
+ * docs/archive/CUSTOMER_BACKEND_CONFIRMATION.md / API_PAYLOADS.md). Do not derive
+ * it from invoices, payments, or journals.
  */
 function readAccountBalance(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number(value);

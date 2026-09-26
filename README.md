@@ -1,6 +1,6 @@
 # EMSYS Portal
 
-Original Next.js + Tailwind + shadcn-style sample dashboard.
+Next.js frontend for the EMSYS company management system (door-to-door shipping and logistics).
 
 ## Run locally
 
@@ -77,13 +77,21 @@ Copy `.env.local.example` to `.env.local` if you need local-only auth settings.
 
 Restart the dev server after changing env files.
 
-### API developer docs
+### Developer docs
 
 | Doc | Purpose |
 |-----|---------|
-| [`API_PAYLOADS.md`](./API_PAYLOADS.md) | POST/PUT request bodies for every EMSYS endpoint (canonical copy/paste reference) |
+| [`AGENTS.md`](./AGENTS.md) | Frontend architecture standards for agents and developers |
+| [`APP_CONTEXT.md`](./APP_CONTEXT.md) | Domain meaning of each workspace section |
+| [`API_PAYLOADS.md`](./API_PAYLOADS.md) | POST/PUT request bodies for EMSYS endpoints |
 | [`API-List-Query.md`](./API-List-Query.md) | GET list query format (`page`, `limit`, `sort`, filters) |
 | [`API-Permission.md`](./API-Permission.md) | Route permissions and sidebar gating |
+| [`API-Query-Usage.md`](./API-Query-Usage.md) | How portal code should call the EMSYS API |
+| [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Local and production Docker Compose |
+| [`PLAYWRIGHT.md`](./PLAYWRIGHT.md) | End-to-end test setup and troubleshooting |
+| [`docs/INVENTORY_FEATURE_BACKEND.md`](./docs/INVENTORY_FEATURE_BACKEND.md) | Inventory API models and permissions handoff |
+| [`docs/api-table-field-coverage.md`](./docs/api-table-field-coverage.md) | Directory table field coverage audit |
+| [`docs/archive/`](./docs/archive/) | Historical backend confirmation packs |
 
 Write payload builders live in `src/lib/api/payloads.ts` and each feature's `src/lib/<feature>/api/*-api.ts` file.
 

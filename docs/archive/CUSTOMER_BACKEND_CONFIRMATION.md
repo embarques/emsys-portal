@@ -1,5 +1,7 @@
 # Customer backend confirmation requests
 
+> **Archived (historical).** July 2026 customer backend confirmation pack. Lasting product rules live in [`APP_CONTEXT.md`](../../APP_CONTEXT.md) and [`API_PAYLOADS.md`](../../API_PAYLOADS.md).
+
 **From:** EMSYS Portal frontend  
 **Audience:** EMSYS API / backend team  
 **Status:** Backend-confirmed from EMSYS API source review on `2026-07-11`. Portal/API follow-up gaps are called out below.
