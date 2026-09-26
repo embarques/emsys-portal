@@ -34,6 +34,7 @@ export async function registerInvoiceZeroPaymentInCuadre(params: {
     transactionType: "INITIAL-PAYMENT",
     amount: 0,
     refNumber: "",
+    refNumberMode: "system",
     description,
     employeeId: employee.id,
     employeeName: employee.name,

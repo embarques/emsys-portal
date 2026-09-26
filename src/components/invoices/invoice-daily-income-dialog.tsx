@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
+import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import {
   useAccountingPaymentMethods,
@@ -34,6 +35,7 @@ import {
   requiresBankAccount,
   withDefaultCashPaymentMethod,
   type DailyIncomeJournal,
+  type DailyIncomeRefNumberMode,
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
@@ -65,6 +67,7 @@ const DEFAULT_VALUES: InvoiceDailyIncomeRegistrationValues = {
   amount: 0,
   assigneeSource: "employee",
   refNumber: "",
+  refNumberMode: "system",
   description: "",
 };
 
@@ -200,6 +203,7 @@ export function InvoiceDailyIncomeDialog({
   const routeId = watch("routeId");
   const routeName = watch("routeName");
   const assigneeSource = watch("assigneeSource");
+  const refNumberMode = watch("refNumberMode");
   const paymentRequired = amount > 0;
   const needsBankAccount = paymentRequired && requiresBankAccount(paymentMethodName);
   const isCheck = paymentRequired && isCheckPaymentMethod(paymentMethodName);
@@ -349,6 +353,7 @@ export function InvoiceDailyIncomeDialog({
           transactionType: "INITIAL-PAYMENT",
           amount: values.amount,
           refNumber: values.refNumber,
+          refNumberMode: values.refNumberMode,
           description: values.description,
           assigneeSource: assignedToRoute ? "route" : "employee",
           employeeId: assignedToRoute ? undefined : values.employeeId,
@@ -715,18 +720,19 @@ export function InvoiceDailyIncomeDialog({
                   ) : null}
                 </div>
 
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="daily-income-reference">{t("invoices.wizard.dailyIncome.dialog.referenceNumber")}</Label>
-                  <Input
-                    id="daily-income-reference"
-                    disabled={!statementOpen || !paymentRequired}
-                    {...register("refNumber")}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t("invoices.wizard.dailyIncome.dialog.referenceNumberHint")}
-                  </p>
-                  {errors.refNumber ? <p className="text-xs text-destructive">{errors.refNumber.message}</p> : null}
-                </div>
+                <TransactionReferenceNumberFields
+                  id="daily-income-reference"
+                  mode={refNumberMode}
+                  disabled={!statementOpen || !paymentRequired}
+                  refNumberRegister={register("refNumber")}
+                  error={errors.refNumber?.message}
+                  onModeChange={(mode: DailyIncomeRefNumberMode) => {
+                    setValue("refNumberMode", mode, { shouldValidate: true });
+                    if (mode === "system") {
+                      setValue("refNumber", "", { shouldValidate: true });
+                    }
+                  }}
+                />
 
                 {isCheck ? (
                   <div className="space-y-2 sm:col-span-2">

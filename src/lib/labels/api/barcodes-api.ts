@@ -953,7 +953,7 @@ export async function assignBarcodesToDailyRoute(
 
   let checked = 0;
   onProgress?.({ phase: "checking", completed: 0, total: targets.length });
-  await runSettledWithConcurrency(targets, {
+  const checkedTargets = await runSettledWithConcurrency(targets, {
     concurrency: 4,
     getId: (target) => target.number,
     run: async (target) => {
@@ -969,6 +969,10 @@ export async function assignBarcodesToDailyRoute(
       onProgress?.({ phase: "checking", completed: checked, total: targets.length });
     },
   });
+
+  if (checkedTargets.failedIds.length > 0) {
+    throw new Error(checkedTargets.firstErrorMessage ?? "Unable to check selected labels.");
+  }
 
   if (unresolved.length > 0) {
     throw new Error(

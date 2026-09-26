@@ -1,4 +1,8 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
+import type { DailyIncomeRefNumberMode } from "@/lib/accounting/daily-income/ref-number";
+
+export type { DailyIncomeRefNumberMode };
+
 export type AccountingLookup = {
   id: number;
   name: string;
@@ -218,6 +222,8 @@ export type DailyIncomeJournalValues = {
   transactionType: JournalTransactionType;
   amount?: number;
   refNumber: string;
+  /** Portal-only: system lets the API generate; custom sends `refNumber`. Do not persist. */
+  refNumberMode?: DailyIncomeRefNumberMode;
   externalReferenceNumber?: string;
   description: string;
   /** Portal-only: employee vs daily route. Do not persist. */

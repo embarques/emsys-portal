@@ -94,3 +94,39 @@ test("unresolved labels prevent any assignments", async () => {
   await assert.rejects(f.api.assignBarcodesToDailyRoute("route", "Daily route", [...f.targets, { number: "missing" }]), /Barcode not found/);
   assert.equal(f.writes.length, 0);
 });
+
+
+test("catalog lookups and updates are bounded and duplicate catalog IDs are written once", async () => {
+  let active = 0;
+  let peak = 0;
+  const writes = [];
+  const records = Array.from({ length: 9 }, (_, index) => ({
+    id: index + 1, number: String(index + 1),
+    status: { id: 7, name: "ENTREGADO" }, container: { id: 9, name: "Container" },
+  }));
+  async function request(result) {
+    active++;
+    peak = Math.max(peak, active);
+    await delay();
+    active--;
+    return { data: result };
+  }
+  const api = loadFeature(feature, {
+    post: async () => request(records),
+    get: async url => request(records[Number(url.split("/").at(-1)) - 1]),
+    put: async (url, payload) => {
+      writes.push({ url, payload });
+      return request(payload);
+    },
+  }, {});
+  const targets = [...records, records[0]].map(row => ({ number: row.number }));
+  const result = await api.assignBarcodesToDailyRoute("route", "Daily route", targets);
+  assert.equal(peak, 4);
+  assert.equal(result.assignedCount, 9);
+  assert.equal(writes.length, 9);
+  for (const { payload } of writes) {
+    assert.deepEqual(payload.status, records[0].status);
+    assert.deepEqual(payload.container, records[0].container);
+    assert.deepEqual(payload.route, { id: "route", name: "Daily route" });
+  }
+});

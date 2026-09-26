@@ -681,6 +681,10 @@ Uses `PostEntryRequest`. **Required:** `transactionType`.
   - route journals keep `vehicleRoute` / `route` / compatibility `employeeGroup` and clear `employee`
 - Responses expose `employee`, `vehicleRoute`, `route`, and `employeeGroup` for reads and search.
 
+**Reference number (`refNumber`):**
+- Portal default is system-generated: omit `refNumber` (do not send `""`) so the API assigns one.
+- When the user chooses “Enter your own”, send their `refNumber` (max 20). Portal-only `refNumberMode` is never persisted.
+
 ### New invoice wizard Daily Income registration
 
 Before `POST /v1/invoices`, the portal searches for the invoice's initial registration:
@@ -712,7 +716,6 @@ When missing, the wizard may create the registration only in today's open Daily 
   "date": "2026-06-10",
   "transactionType": "INITIAL-PAYMENT",
   "amount": 0,
-  "refNumber": "",
   "description": "Initial invoice registration",
   "currency": "USD",
   "rate": 1,
