@@ -177,6 +177,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           employees={employees}
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}
+          statementBranchId={statement.branch?.id}
           accounts={accountsQuery.data?.items ?? []}
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}
@@ -194,6 +195,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           employees={employees}
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}
+          statementBranchId={statement.branch?.id}
           accounts={accountsQuery.data?.items ?? []}
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}

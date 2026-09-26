@@ -36,6 +36,7 @@ type Props = {
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
+  statementBranchId?: number | null;
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -71,6 +72,7 @@ export function DailyIncomeTransactionForm({
   employees,
   dailyRoutes,
   statementDate,
+  statementBranchId,
   accounts,
   bankAccounts,
   invoices,
@@ -368,6 +370,7 @@ export function DailyIncomeTransactionForm({
               employees={employees}
               dailyRoutes={dailyRoutes}
               statementDate={statementDate}
+              statementBranchId={statementBranchId}
               allowDailyRoute
               bankAccounts={bankAccounts}
               paymentMethods={paymentMethods}
@@ -381,6 +384,7 @@ export function DailyIncomeTransactionForm({
               employees={employees}
               dailyRoutes={dailyRoutes}
               statementDate={statementDate}
+              statementBranchId={statementBranchId}
               errors={errors}
               setValue={setValue}
               watch={watch}
@@ -393,6 +397,7 @@ export function DailyIncomeTransactionForm({
                   employees={employees}
                   dailyRoutes={dailyRoutes}
                   statementDate={statementDate}
+                  statementBranchId={statementBranchId}
                   employeeId={employeeId}
                   employeeName={employeeName}
                   routeId={routeId}
@@ -457,6 +462,7 @@ export function DailyIncomeTransactionForm({
                   employees={employees}
                   dailyRoutes={dailyRoutes}
                   statementDate={statementDate}
+                  statementBranchId={statementBranchId}
                   employeeId={employeeId}
                   employeeName={employeeName}
                   routeId={routeId}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Route, UserPlus } from "lucide-react";
 
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
@@ -8,14 +8,16 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   buildTransactionAssigneeOptions,
+  dailyRoutesForAssigneeBranch,
   dailyRoutesForStatement,
+  employeesForAssigneeBranch,
   getTransactionAssigneeSelectValue,
+  resolveAssigneeBranchId,
   resolveDailyIncomeAssigneeSource,
 } from "@/lib/accounting/daily-income/assignee";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
-import type {
-  DailyIncomeAssigneeSource,
-} from "@/lib/accounting/daily-income/types";
+import type { DailyIncomeAssigneeSource } from "@/lib/accounting/daily-income/types";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { Employee } from "@/lib/employees/types";
 import { useTranslation } from "@/lib/i18n";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
@@ -26,6 +28,8 @@ type Props = {
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
+  /** Prefer this branch when seeding the filter (Daily Income statement branch). */
+  statementBranchId?: number | null;
   employeeId?: number;
   employeeName?: string;
   routeId?: string;
@@ -87,6 +91,7 @@ export function TransactionAssigneeSelect({
   employees,
   dailyRoutes = [],
   statementDate,
+  statementBranchId,
   employeeId,
   employeeName,
   routeId,
@@ -101,18 +106,66 @@ export function TransactionAssigneeSelect({
   onEditRoute,
 }: Props) {
   const { t } = useTranslation();
+  const branchesQuery = useBranchPicker();
+  const branches = branchesQuery.data?.items ?? [];
+
+  const selectedEmployee = useMemo(
+    () => (employeeId != null ? employees.find((item) => item.id === employeeId) : undefined),
+    [employeeId, employees],
+  );
+  const selectedRoute = useMemo(
+    () => (routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined),
+    [dailyRoutes, routeId],
+  );
+
+  const seededBranchId = resolveAssigneeBranchId({
+    statementBranchId,
+    employee: selectedEmployee,
+    route: selectedRoute,
+  });
+
+  const [branchId, setBranchId] = useState<number | undefined>(seededBranchId);
+
+  useEffect(() => {
+    const next = resolveAssigneeBranchId({
+      statementBranchId,
+      employee: selectedEmployee,
+      route: selectedRoute,
+    });
+    setBranchId((current) => {
+      if (current != null && current > 0) return current;
+      return next;
+    });
+  }, [statementBranchId, selectedEmployee, selectedRoute]);
+
   const source = allowDailyRoute
     ? resolveDailyIncomeAssigneeSource({ assigneeSource, employeeId, routeId })
     : "employee";
+
+  const branchScopedEmployees = useMemo(
+    () => employeesForAssigneeBranch(employees, branchId),
+    [branchId, employees],
+  );
+  const branchScopedRoutes = useMemo(() => {
+    const byDate = dailyRoutesForStatement(dailyRoutes, statementDate);
+    return dailyRoutesForAssigneeBranch(byDate, branchId);
+  }, [branchId, dailyRoutes, statementDate]);
+
   const employeeOptions = useMemo(
-    () => withPinnedSelectOption(buildTransactionAssigneeOptions(employees), employeeId, employeeName),
-    [employeeId, employeeName, employees],
+    () =>
+      withPinnedSelectOption(
+        buildTransactionAssigneeOptions(branchScopedEmployees),
+        employeeId,
+        employeeName,
+      ),
+    [branchScopedEmployees, employeeId, employeeName],
   );
   const routeOptions = useMemo(() => {
-    const scoped = dailyRoutesForStatement(dailyRoutes, statementDate);
     const selected = routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined;
     const list =
-      selected && !scoped.some((item) => item.id === selected.id) ? [selected, ...scoped] : scoped;
+      selected && !branchScopedRoutes.some((item) => item.id === selected.id)
+        ? [selected, ...branchScopedRoutes]
+        : branchScopedRoutes;
     return withPinnedSelectOption(
       buildActiveRouteAssignmentOptions(list, t).map((option) => ({
         value: option.value,
@@ -122,7 +175,18 @@ export function TransactionAssigneeSelect({
       routeId,
       routeName,
     );
-  }, [dailyRoutes, routeId, routeName, statementDate, t]);
+  }, [branchScopedRoutes, dailyRoutes, routeId, routeName, t]);
+
+  const branchOptions = useMemo(
+    () =>
+      branches.map((branch) => ({
+        value: String(branch.id),
+        label: [branch.name, branch.code].filter(Boolean).join(" · ") || String(branch.id),
+        keywords: [branch.name, branch.code],
+      })),
+    [branches],
+  );
+
   const employeeValue = getTransactionAssigneeSelectValue(employeeId);
   const sourceOptions = [
     { value: "employee", label: t("accounting.dailyIncome.form.fields.employee") },
@@ -139,6 +203,22 @@ export function TransactionAssigneeSelect({
     clearRoute(setValue);
   }
 
+  function handleBranchChange(next: string) {
+    const parsed = Number(next);
+    const nextId = Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+    setBranchId(nextId);
+    // Clear entity when it no longer belongs to the chosen branch.
+    if (source === "route") {
+      if (selectedRoute && nextId != null && selectedRoute.branch?.id !== nextId) {
+        clearRoute(setValue);
+      }
+      return;
+    }
+    if (selectedEmployee && nextId != null && selectedEmployee.branch?.id !== nextId) {
+      clearEmployee(setValue);
+    }
+  }
+
   function handleEmployeeChange(next: string) {
     if (!next) {
       clearEmployee(setValue);
@@ -152,6 +232,9 @@ export function TransactionAssigneeSelect({
     setValue("employeeGroupId", undefined, { shouldValidate: true });
     setValue("employeeGroupName", "");
     clearRoute(setValue);
+    if (employee?.branch?.id) {
+      setBranchId(employee.branch.id);
+    }
   }
 
   function handleRouteChange(next: string) {
@@ -171,10 +254,13 @@ export function TransactionAssigneeSelect({
     setValue("routeCrewId", route?.route?.id || undefined, { shouldValidate: true });
     setValue("routeCrewName", crewName);
     clearEmployee(setValue);
+    if (route?.branch?.id) {
+      setBranchId(route.branch.id);
+    }
   }
 
   return (
-    <div className={allowDailyRoute ? "grid gap-4 sm:grid-cols-2" : "space-y-2"}>
+    <div className="grid gap-4 sm:grid-cols-2">
       {allowDailyRoute ? (
         <div className="space-y-2">
           <RequiredLabel htmlFor={`${id}-source`}>
@@ -190,8 +276,25 @@ export function TransactionAssigneeSelect({
           />
         </div>
       ) : null}
+
+      <div className="space-y-2">
+        <RequiredLabel htmlFor={`${id}-branch`}>
+          {t("accounting.dailyIncome.form.fields.branch")}
+        </RequiredLabel>
+        <SearchableSelect
+          id={`${id}-branch`}
+          value={branchId != null ? String(branchId) : ""}
+          onValueChange={handleBranchChange}
+          placeholder={t("accounting.dailyIncome.form.placeholders.selectBranch")}
+          searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBranches")}
+          mobileSheet
+          loading={branchesQuery.isLoading}
+          options={branchOptions}
+        />
+      </div>
+
       {source === "route" ? (
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <div className="flex items-center justify-between gap-2">
             <RequiredLabel htmlFor="journal-route">
               {t("accounting.dailyIncome.form.fields.route")}
@@ -217,7 +320,7 @@ export function TransactionAssigneeSelect({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <div className="flex items-center justify-between gap-2">
             <RequiredLabel htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
             {onAddEmployee ? (

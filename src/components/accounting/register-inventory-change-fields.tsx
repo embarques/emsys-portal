@@ -58,6 +58,7 @@ type Props = {
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
+  statementBranchId?: number | null;
   errors: FieldErrors<DailyIncomeJournalValues>;
   setValue: UseFormSetValue<DailyIncomeJournalValues>;
   watch: UseFormWatch<DailyIncomeJournalValues>;
@@ -80,6 +81,7 @@ export function RegisterInventoryChangeFields({
   employees,
   dailyRoutes = [],
   statementDate,
+  statementBranchId,
   errors,
   setValue,
   watch,
@@ -340,6 +342,7 @@ export function RegisterInventoryChangeFields({
             employees={employees}
             dailyRoutes={dailyRoutes}
             statementDate={statementDate}
+            statementBranchId={statementBranchId}
             employeeId={employeeId}
             employeeName={employeeName}
             routeId={routeId}

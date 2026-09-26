@@ -62,6 +62,7 @@ type Props = {
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
+  statementBranchId?: number | null;
   bankAccounts: ChartAccount[];
   paymentMethods: AccountingLookup[];
   errors: FieldErrors<DailyIncomeJournalValues>;
@@ -84,6 +85,7 @@ export function RegisterInvoiceTransactionFields({
   employees,
   dailyRoutes,
   statementDate,
+  statementBranchId,
   bankAccounts,
   paymentMethods,
   errors,
@@ -266,6 +268,7 @@ export function RegisterInvoiceTransactionFields({
             employees={employees}
             dailyRoutes={dailyRoutes}
             statementDate={statementDate}
+            statementBranchId={statementBranchId}
             employeeId={employeeId}
             employeeName={employeeName}
             routeId={routeId}

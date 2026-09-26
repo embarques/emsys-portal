@@ -592,6 +592,7 @@ export function InvoiceDailyIncomeDialog({
                 employees={employees}
                 dailyRoutes={dailyRoutes}
                 statementDate={activeStatement.date || date}
+                statementBranchId={statementBranchId}
                 employeeId={employeeId}
                 employeeName={employeeName}
                 routeId={routeId}

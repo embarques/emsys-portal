@@ -374,6 +374,7 @@
     "form": {
       "fields": {
         "assignedTo": "Asignado a",
+        "branch": "Sucursal",
         "employee": "Empleado",
         "route": "Ruta diaria",
         "paymentMethod": "Método de pago",
@@ -413,6 +414,8 @@
       },
       "placeholders": {
         "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
+        "selectBranch": "Seleccionar sucursal",
+        "searchBranches": "Buscar sucursales…",
         "selectEmployee": "Seleccionar empleado",
         "searchEmployees": "Buscar empleados…",
         "selectRoute": "Seleccionar una ruta diaria",

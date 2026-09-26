@@ -3,6 +3,12 @@ import type { DailyIncomeAssigneeSource } from "@/lib/accounting/daily-income/ty
 import type { Employee } from "@/lib/employees/types";
 import { DAYS_OF_WEEK, type ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
+export {
+  dailyRoutesForAssigneeBranch,
+  employeesForAssigneeBranch,
+  resolveAssigneeBranchId,
+} from "@/lib/accounting/daily-income/assignee-branch";
+
 export function buildTransactionAssigneeOptions(employees: Employee[]): SearchableSelectOption[] {
   return [...employees]
     .sort((left, right) => left.name.localeCompare(right.name))
