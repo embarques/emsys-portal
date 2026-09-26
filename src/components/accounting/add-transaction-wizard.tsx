@@ -53,6 +53,7 @@ function emptyTransaction(
   const values: DailyIncomeJournalValues = {
     transactionType: type,
     refNumber: "",
+    refNumberMode: "system",
     externalReferenceNumber: "",
     description: "",
     includeSender: false,

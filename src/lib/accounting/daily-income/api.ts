@@ -1,4 +1,5 @@
 import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
+import { resolveJournalRefNumberForWrite } from "@/lib/accounting/daily-income/ref-number";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { apiClient } from "@/lib/api/client";
@@ -704,6 +705,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     !assignedToRoute && values.employeeId
       ? { id: values.employeeId, name: values.employeeName ?? "" }
       : null;
+  const refNumber = resolveJournalRefNumberForWrite(values);
 
   return {
     incomeStatementId: statement.id,
@@ -711,7 +713,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     date: statement.date,
     transactionType: values.transactionType,
     amount: values.amount,
-    refNumber: values.refNumber,
+    ...(refNumber ? { refNumber } : {}),
     ...journalPaymentFields(values, options),
     description: values.description,
     currency: statement.currency,

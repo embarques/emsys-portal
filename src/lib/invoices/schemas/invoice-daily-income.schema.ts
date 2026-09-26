@@ -26,6 +26,7 @@ const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   paymentAccountName: z.string().optional(),
   paymentAccountType: z.string().optional(),
   refNumber: z.string().trim().max(20, "Reference number is too long."),
+  refNumberMode: z.enum(["system", "custom"]).optional(),
   description: z.string().trim().max(500, "Description is too long."),
   checkNumber: z.string().optional(),
 });
@@ -84,6 +85,14 @@ function refineInvoiceDailyIncomeRegistration(
       code: "custom",
       path: ["checkNumber"],
       message: "Check number is required.",
+    });
+  }
+
+  if (values.refNumberMode === "custom" && !values.refNumber.trim()) {
+    context.addIssue({
+      code: "custom",
+      path: ["refNumber"],
+      message: "Enter a reference number, or choose system generated.",
     });
   }
 }

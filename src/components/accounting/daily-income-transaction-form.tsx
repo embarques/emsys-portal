@@ -8,17 +8,18 @@ import { useForm } from "react-hook-form";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { RegisterInventoryChangeFields } from "@/components/accounting/register-inventory-change-fields";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
+import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { useFormEnterNavigation, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { finalizeInventoryChangeJournal } from "@/lib/accounting/daily-income/inventory-change";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { Employee } from "@/lib/employees/types";
@@ -95,6 +96,7 @@ export function DailyIncomeTransactionForm({
         amountNonNegative: t("accounting.dailyIncome.form.validation.amountNonNegative"),
         amountPositive: t("accounting.dailyIncome.form.validation.amountPositive"),
         refNumberTooLong: t("accounting.dailyIncome.form.validation.refNumberTooLong"),
+        refNumberRequired: t("accounting.dailyIncome.form.validation.refNumberRequired"),
         descriptionTooLong: t("accounting.dailyIncome.form.validation.descriptionTooLong"),
         costPositive: t("accounting.dailyIncome.form.validation.costPositive"),
         discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
@@ -165,6 +167,7 @@ export function DailyIncomeTransactionForm({
   const sourceAccountName = watch("sourceAccountName");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
+  const refNumberMode = watch("refNumberMode");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
@@ -621,18 +624,17 @@ export function DailyIncomeTransactionForm({
               <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="journal-reference">{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
-              <Input
-                id="journal-reference"
-                placeholder={t("accounting.dailyIncome.form.placeholders.enterReferenceNumber")}
-                {...register("refNumber")}
-                onKeyDown={submitFormOnEnterKeyDown}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("accounting.dailyIncome.form.fields.referenceNumberHint")}
-              </p>
-            </div>
+            <TransactionReferenceNumberFields
+              mode={refNumberMode}
+              refNumberRegister={register("refNumber")}
+              error={errors.refNumber?.message}
+              onModeChange={(mode: DailyIncomeRefNumberMode) => {
+                setValue("refNumberMode", mode, { shouldValidate: true });
+                if (mode === "system") {
+                  setValue("refNumber", "", { shouldValidate: true });
+                }
+              }}
+            />
 
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="journal-description">{t("accounting.dailyIncome.form.fields.description")}</Label>

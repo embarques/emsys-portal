@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
+import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { selectFormFieldTextOnFocus, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode } from "@/lib/accounting/daily-income/types";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import {
   formatMoneyFormDisplayValue,
@@ -102,6 +103,7 @@ export function RegisterInvoiceTransactionFields({
   const routeId = watch("routeId");
   const routeName = watch("routeName");
   const assigneeSource = watch("assigneeSource");
+  const refNumberMode = watch("refNumberMode");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
@@ -394,18 +396,17 @@ export function RegisterInvoiceTransactionFields({
         <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
       </div>
 
-      <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor="journal-reference">{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
-        <Input
-          id="journal-reference"
-          placeholder={t("accounting.dailyIncome.form.placeholders.enterReferenceNumber")}
-          {...register("refNumber")}
-          onKeyDown={submitFormOnEnterKeyDown}
-        />
-        <p className="text-xs text-muted-foreground">
-          {t("accounting.dailyIncome.form.fields.referenceNumberHint")}
-        </p>
-      </div>
+      <TransactionReferenceNumberFields
+        mode={refNumberMode}
+        refNumberRegister={register("refNumber")}
+        error={errors.refNumber?.message}
+        onModeChange={(mode: DailyIncomeRefNumberMode) => {
+          setValue("refNumberMode", mode, { shouldValidate: true });
+          if (mode === "system") {
+            setValue("refNumber", "", { shouldValidate: true });
+          }
+        }}
+      />
 
       <div className="space-y-2 sm:col-span-2">
         <RequiredLabel htmlFor="journal-invoice-cost">{t("accounting.dailyIncome.form.fields.cost")}</RequiredLabel>

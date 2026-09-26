@@ -17,6 +17,7 @@ export type DailyIncomeJournalSchemaMessages = {
   amountNonNegative: string;
   amountPositive: string;
   refNumberTooLong: string;
+  refNumberRequired: string;
   descriptionTooLong: string;
   costPositive: string;
   discountNonNegative: string;
@@ -84,6 +85,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         .nonnegative(messages.amountNonNegative)
         .optional(),
       refNumber: z.string().trim().max(20, messages.refNumberTooLong),
+      refNumberMode: z.enum(["system", "custom"]).optional(),
       externalReferenceNumber: z.string().trim().optional(),
       description: z.string().trim().max(500, messages.descriptionTooLong),
       employeeId: z.number().optional(),
@@ -128,6 +130,14 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       inventorySupplierName: z.string().optional(),
     })
     .superRefine((values, context) => {
+      if (values.refNumberMode === "custom" && !values.refNumber.trim()) {
+        context.addIssue({
+          code: "custom",
+          path: ["refNumber"],
+          message: messages.refNumberRequired,
+        });
+      }
+
       if (values.transactionType === "INVENTORY") {
         if (!values.inventoryDirection) {
           context.addIssue({
@@ -316,6 +326,7 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   amountNonNegative: "Amount cannot be negative.",
   amountPositive: "Amount must be greater than zero.",
   refNumberTooLong: "Reference number is too long.",
+  refNumberRequired: "Enter a reference number, or choose system generated.",
   descriptionTooLong: "Description is too long.",
   costPositive: "Cost must be greater than zero.",
   discountNonNegative: "Discount cannot be negative.",

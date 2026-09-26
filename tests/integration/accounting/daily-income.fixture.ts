@@ -568,6 +568,7 @@ export async function fillRegisterInvoiceTransactionForm(
   await expect(dialog.locator("#journal-payment")).not.toHaveValue("");
 
   if (options.refNumber) {
+    await selectSearchableOption(page, dialog.locator("#journal-reference-mode"), "Enter your own");
     await dialog.locator("#journal-reference").fill(options.refNumber);
   }
 
@@ -879,6 +880,7 @@ export async function fillTransactionForm(
   }
 
   if (options.refNumber) {
+    await selectSearchableOption(page, dialog.locator("#journal-reference-mode"), "Enter your own");
     await dialog.locator("#journal-reference").fill(options.refNumber);
   }
 
