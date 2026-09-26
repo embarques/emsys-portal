@@ -369,6 +369,8 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         <RegisterInvoiceTransactionFields
           employees={employees}
           dailyRoutes={dailyRoutes}
+          statementDate={statement.date}
+          statementBranchId={statement.branch?.id}
           bankAccounts={bankAccounts}
           paymentMethods={paymentMethods}
           errors={errors}

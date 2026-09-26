@@ -374,6 +374,7 @@
     "form": {
       "fields": {
         "assignedTo": "Assigned to",
+        "branch": "Branch",
         "employee": "Employee",
         "route": "Daily route",
         "paymentMethod": "Payment method",
@@ -413,6 +414,8 @@
       },
       "placeholders": {
         "selectAssigneeSource": "Select employee or daily route",
+        "selectBranch": "Select branch",
+        "searchBranches": "Search branches…",
         "selectEmployee": "Select employee",
         "searchEmployees": "Search employees…",
         "selectRoute": "Select a daily route",

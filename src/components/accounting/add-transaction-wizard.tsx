@@ -24,6 +24,7 @@ type SharedProps = {
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
+  statementBranchId?: number | null;
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -254,6 +255,7 @@ export function AddTransactionWizard(props: Props) {
               employees={props.employees}
               dailyRoutes={props.dailyRoutes}
               statementDate={props.statementDate}
+              statementBranchId={props.statementBranchId}
               accounts={props.accounts}
               bankAccounts={props.bankAccounts}
               invoices={props.invoices}
