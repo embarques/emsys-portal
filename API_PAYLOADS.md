@@ -783,7 +783,9 @@ The API should enforce one `INITIAL-PAYMENT` registration per company, income st
 }
 ```
 
-When `paymentMethod.name` is `CHECK` (or `CHEQUE`), `checkNumber` is required:
+When `paymentMethod.name` is `CHECK` (or `CHEQUE`), the paper check number is required.
+The portal UI labels it **Check number**; the journal wire field is **`paymentReference`**.
+Legacy `checkNumber` is still dual-written and accepted on read.
 
 ```json
 {
@@ -791,14 +793,17 @@ When `paymentMethod.name` is `CHECK` (or `CHEQUE`), `checkNumber` is required:
   "amount": 50.0,
   "invoiceId": "674a1b2c3d4e5f6789012345",
   "paymentMethod": { "id": 3, "name": "CHECK" },
+  "paymentReference": "4521",
   "checkNumber": "4521",
   "description": "Invoice payment by check"
 }
 ```
 
-Same rule applies to `INITIAL-PAYMENT` and any other journal with `paymentMethod` CHECK: persist and return `checkNumber` on create/update/read.
+Same rule applies to `INITIAL-PAYMENT` and any other journal with `paymentMethod` CHECK:
+persist and return `paymentReference` (or legacy `checkNumber`) on create/update/read.
+Do not confuse this with optional `external_reference_number` (Zelle / duplicate-payment reference).
 
-Invoice `PAYMENT` / `INITIAL-PAYMENT` with CHECK or CHEQUE also creates an **outstanding check** (`POST /v1/checks` is used internally). The invoice `payment` / `balance` does **not** change until that check is marked `CLEARED`. Clearing applies the payment; updating or deleting a cleared check reverses it.
+Invoice `PAYMENT` / `INITIAL-PAYMENT` with CHECK or CHEQUE also creates an **outstanding check** (`POST /v1/checks` is used internally). The invoice `payment` / `balance` does **not** change until that check is marked `CLEARED`. Clearing applies the payment; updating or deleting a cleared check reverses it. The Checks directory resource (`/v1/checks`) still uses `checkNumber` as the check document field.
 
 **Example — EXPENSE:**
 

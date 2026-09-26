@@ -1,4 +1,5 @@
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
+import { resolvePaymentReferenceForDisplay } from "@/lib/accounting/daily-income/check-payment-reference";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { InvoicePayment, InvoicePaymentMethod } from "@/lib/invoices/types";
 
@@ -34,7 +35,11 @@ export function mapJournalToInvoicePayment(
       (journal.transactionType === "INITIAL-PAYMENT" ? "Initial payment" : "Payment"),
     amount: journal.amount,
     paymentMethod: mapJournalPaymentMethod(journal.paymentMethod?.name),
-    referenceNumber: journal.checkNumber?.trim() || journal.refNumber.trim(),
+    referenceNumber: resolvePaymentReferenceForDisplay({
+      paymentReference: journal.paymentReference,
+      checkNumber: journal.checkNumber,
+      refNumber: journal.refNumber,
+    }),
     createdAt: journal.createdAt?.trim() || (journal.date ? `${journal.date}T12:00:00.000Z` : ""),
     createdBy: journal.employee?.name?.trim() || DEFAULT_CREATED_BY,
   };

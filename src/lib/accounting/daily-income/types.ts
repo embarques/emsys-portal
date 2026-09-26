@@ -101,8 +101,13 @@ export type DailyIncomeJournal = ApiTableRecord & {
     receiver?: DailyIncomePartyRef;
   };
   paymentMethod?: AccountingLookup;
-  /** Check number when payment method is CHECK. */
+  /**
+   * Paper check # when payment method is CHECK/CHEQUE.
+   * Normalized from API `paymentReference` (legacy `checkNumber` fallback).
+   */
   checkNumber?: string;
+  /** API `paymentReference` when present (same value as checkNumber after normalize). */
+  paymentReference?: string;
   inventoryDirection?: InventoryChangeDirection;
   inventoryItemId?: string;
   inventoryItemName?: string;
