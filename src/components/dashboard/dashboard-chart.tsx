@@ -1,18 +1,23 @@
 "use client";
 
+import { DashboardChartPlot } from "@/components/dashboard/dashboard-chart-plot";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type DashboardBarSeries = {
+export type DashboardChartSeries = {
   key: string;
   label: string;
   values: number[];
-  barClassName: string;
+  colorClassName: string;
 };
 
-type DashboardBarChartProps = {
+export type DashboardChartVariant = "bar" | "horizontal-bar" | "line" | "area" | "donut";
+
+type DashboardChartProps = {
+  variant?: DashboardChartVariant;
+  label: string;
   categories: string[];
-  series: DashboardBarSeries[];
+  series: DashboardChartSeries[];
   isLoading?: boolean;
   isError?: boolean;
   errorLabel: string;
@@ -21,7 +26,9 @@ type DashboardBarChartProps = {
   emptyLabel: string;
 };
 
-export function DashboardBarChart({
+export function DashboardChart({
+  variant = "bar",
+  label,
   categories,
   series,
   isLoading = false,
@@ -30,7 +37,7 @@ export function DashboardBarChart({
   retryLabel,
   onRetry,
   emptyLabel,
-}: DashboardBarChartProps) {
+}: DashboardChartProps) {
   const maxValue = Math.max(0, ...series.flatMap((item) => item.values));
   const hasValues = maxValue > 0;
   const seriesCount = Math.max(series.length, 1);
@@ -72,8 +79,12 @@ export function DashboardBarChart({
     );
   }
 
+  if (variant !== "bar") {
+    return <DashboardChartPlot variant={variant} label={label} categories={categories} series={series} />;
+  }
+
   return (
-    <div className="flex items-end gap-1.5" role="img">
+    <div className="flex items-end gap-1.5" role="img" aria-label={`${label}. ${categories.map((category, index) => `${category}: ${series.map((item) => `${item.label} ${item.values[index] ?? 0}`).join(", ")}`).join("; ")}`}>
       {categories.map((category, categoryIndex) => (
         <div key={category} className="flex min-w-0 flex-1 flex-col items-center gap-1">
           <div
@@ -97,7 +108,7 @@ export function DashboardBarChart({
               return (
                 <div
                   key={item.key}
-                  className={cn("min-w-0 flex-1 rounded-t-sm", item.barClassName)}
+                  className={cn("min-w-0 flex-1 rounded-t-sm", item.colorClassName)}
                   style={{ height: `${Math.max(heightPct, value > 0 ? 3 : 0)}%` }}
                   title={`${category} · ${item.label}: ${value.toLocaleString()}`}
                 />
