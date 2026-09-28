@@ -41,13 +41,13 @@ export function DashboardWorkspace() {
       key: "created",
       label: t("dashboard.appointments.weekday.created"),
       values: weekdayValues(appointments.data?.createdByWeekday ?? emptyWeekdayCounts()),
-      barClassName: "bg-primary",
+      colorClassName: "bg-blue-600 text-blue-600 dark:bg-blue-400 dark:text-blue-400",
     },
     {
       key: "scheduled",
       label: t("dashboard.appointments.weekday.scheduled"),
       values: weekdayValues(appointments.data?.scheduledByWeekday ?? emptyWeekdayCounts()),
-      barClassName: "bg-emerald-600 dark:bg-emerald-500",
+      colorClassName: "bg-sky-400 text-sky-400 dark:bg-sky-300 dark:text-sky-300",
     },
   ];
 
@@ -77,6 +77,7 @@ export function DashboardWorkspace() {
               isError={appointments.isError && !appointments.isFetching}
             />
             <DashboardChartCard
+              variant="line"
               title={t("dashboard.appointments.month.title")}
               description={t("dashboard.appointments.month.description")}
               allTimeLabel={allTimeLabel}
@@ -90,7 +91,7 @@ export function DashboardWorkspace() {
                   key: "scheduled",
                   label: t("dashboard.appointments.weekday.scheduled"),
                   values: monthValues(appointments.data?.scheduledByMonth ?? emptyMonthCounts()),
-                  barClassName: "bg-primary",
+                  colorClassName: "bg-violet-600 text-violet-600 dark:bg-violet-400 dark:text-violet-400",
                 },
               ]}
               isLoading={appointments.isPending || appointments.isFetching}
@@ -104,6 +105,7 @@ export function DashboardWorkspace() {
           <DashboardInvoicesStats />
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardChartCard
+              variant="horizontal-bar"
               title={t("dashboard.invoices.weekday.title")}
               description={t("dashboard.invoices.weekday.description")}
               allTimeLabel={allTimeLabel}
@@ -117,13 +119,14 @@ export function DashboardWorkspace() {
                   key: "created",
                   label: t("dashboard.invoices.title"),
                   values: weekdayValues(invoices.data?.createdByWeekday ?? emptyWeekdayCounts()),
-                  barClassName: "bg-primary",
+                  colorClassName: "bg-teal-600 text-teal-600 dark:bg-teal-400 dark:text-teal-400",
                 },
               ]}
               isLoading={invoices.isPending || invoices.isFetching}
               isError={invoices.isError && !invoices.isFetching}
             />
             <DashboardChartCard
+              variant="area"
               title={t("dashboard.invoices.month.title")}
               description={t("dashboard.invoices.month.description")}
               allTimeLabel={allTimeLabel}
@@ -137,7 +140,7 @@ export function DashboardWorkspace() {
                   key: "created",
                   label: t("dashboard.invoices.title"),
                   values: monthValues(invoices.data?.createdByMonth ?? emptyMonthCounts()),
-                  barClassName: "bg-primary",
+                  colorClassName: "bg-amber-600 text-amber-600 dark:bg-amber-400 dark:text-amber-400",
                 },
               ]}
               isLoading={invoices.isPending || invoices.isFetching}
@@ -151,6 +154,7 @@ export function DashboardWorkspace() {
           <DashboardCustomersStats />
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardChartCard
+              variant="donut"
               title={t("dashboard.clients.weekday.title")}
               description={t("dashboard.clients.weekday.description")}
               allTimeLabel={allTimeLabel}
@@ -164,13 +168,14 @@ export function DashboardWorkspace() {
                   key: "created",
                   label: t("dashboard.clients.title"),
                   values: weekdayValues(clients.data?.createdByWeekday ?? emptyWeekdayCounts()),
-                  barClassName: "bg-primary",
+                  colorClassName: "bg-rose-600 text-rose-600 dark:bg-rose-400 dark:text-rose-400",
                 },
               ]}
               isLoading={clients.isPending || clients.isFetching}
               isError={clients.isError && !clients.isFetching}
             />
             <DashboardChartCard
+              variant="line"
               title={t("dashboard.clients.month.title")}
               description={t("dashboard.clients.month.description")}
               allTimeLabel={allTimeLabel}
@@ -184,7 +189,7 @@ export function DashboardWorkspace() {
                   key: "created",
                   label: t("dashboard.clients.title"),
                   values: monthValues(clients.data?.createdByMonth ?? emptyMonthCounts()),
-                  barClassName: "bg-primary",
+                  colorClassName: "bg-indigo-600 text-indigo-600 dark:bg-indigo-400 dark:text-indigo-400",
                 },
               ]}
               isLoading={clients.isPending || clients.isFetching}

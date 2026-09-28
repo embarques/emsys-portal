@@ -2,11 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  DashboardBarChart,
-  type DashboardBarSeries,
-} from "@/components/dashboard/dashboard-bar-chart";
+  DashboardChart,
+  type DashboardChartSeries,
+  type DashboardChartVariant,
+} from "@/components/dashboard/dashboard-chart";
 
 type DashboardChartCardProps = {
+  variant?: DashboardChartVariant;
   title: string;
   description: string;
   allTimeLabel: string;
@@ -16,13 +18,14 @@ type DashboardChartCardProps = {
   onRetry?: () => void;
   emptyLabel: string;
   categories: string[];
-  series: DashboardBarSeries[];
+  series: DashboardChartSeries[];
   isLoading: boolean;
   isError: boolean;
-  legend?: DashboardBarSeries[];
+  legend?: DashboardChartSeries[];
 };
 
 export function DashboardChartCard({
+  variant,
   title,
   description,
   allTimeLabel,
@@ -40,7 +43,7 @@ export function DashboardChartCard({
   const legendItems = legend ?? (series.length > 1 ? series : []);
 
   return (
-    <Card className="gap-4 py-5">
+    <Card className="min-w-0 gap-4 py-5">
       <CardHeader className="px-5">
         <div className="flex items-start justify-between gap-3">
           <CardTitle className="text-base">{title}</CardTitle>
@@ -54,7 +57,9 @@ export function DashboardChartCard({
         ) : null}
       </CardHeader>
       <CardContent className="px-5">
-        <DashboardBarChart
+        <DashboardChart
+          variant={variant}
+          label={title}
           categories={categories}
           series={series}
           isLoading={isLoading}
@@ -68,7 +73,7 @@ export function DashboardChartCard({
           <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {legendItems.map((item) => (
               <li key={item.key} className="flex items-center gap-1.5">
-                <span className={`h-2.5 w-2.5 rounded-sm ${item.barClassName}`} />
+                <span className={`h-2.5 w-2.5 rounded-sm ${item.colorClassName}`} />
                 {item.label}
               </li>
             ))}
