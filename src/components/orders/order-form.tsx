@@ -320,8 +320,14 @@ export function OrderForm({
           </p>
         </div>
         <FormSection icon={CalendarDays} title={t("orders.form.workflow.scheduleTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="grid items-end gap-4 @2xl:grid-cols-2 @4xl:grid-cols-4">
-            <div className="space-y-1.5">
+          <div
+            className={
+              isEditing
+                ? "grid items-end gap-4 @2xl:grid-cols-2 @4xl:grid-cols-4"
+                : "w-full"
+            }
+          >
+            <div className="w-full space-y-1.5">
               <Label htmlFor="date">
                 {t("orders.form.sections.pickupDate")} <span className="text-destructive">*</span>
               </Label>
@@ -331,6 +337,11 @@ export function OrderForm({
                 onChange={(event) => updateField("date", event.target.value)}
                 required
               />
+              {isEditing ? null : (
+                <p className="text-sm text-muted-foreground">
+                  {t("orders.form.workflow.scheduleHint")}
+                </p>
+              )}
             </div>
             {isEditing ? (
               <>
@@ -384,11 +395,7 @@ export function OrderForm({
                   />
                 </div>
               </>
-            ) : (
-              <p className="self-center text-sm text-muted-foreground @4xl:col-span-3">
-                {t("orders.form.workflow.scheduleHint")}
-              </p>
-            )}
+            ) : null}
           </div>
         </FormSection>
 
