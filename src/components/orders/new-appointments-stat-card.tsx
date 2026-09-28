@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CalendarPlus } from "lucide-react";
 
 import { PeriodChangeDescription } from "@/components/app-shell/period-change-description";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PeriodStatCard } from "@/components/app-shell/period-stat-card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useNewOrderStats } from "@/lib/orders/hooks/use-orders";
 import {
@@ -28,51 +28,37 @@ export function NewAppointmentsStatCard() {
   const periodLabel = t(`orders.stats.new.periods.${period}`);
 
   return (
-    <div style={{ height: 158 }}>
-      <Card className="relative h-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="min-w-0 truncate text-sm font-medium text-muted-foreground">
-            {t("orders.stats.new.label")}
-          </CardTitle>
-          <CalendarPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </CardHeader>
-        <CardContent className="pr-28">
-          <div className="text-2xl font-bold">
-            {stats.isLoading ? "…" : stats.isError ? "—" : stats.total.toLocaleString()}
-          </div>
-          <CardDescription className="mt-1">
-            {stats.isLoading ? (
-              "…"
-            ) : stats.isError ? (
-              <span className="text-destructive">{t("orders.stats.new.error")}</span>
-            ) : (
-              <PeriodChangeDescription
-                current={stats.total}
-                previous={stats.previousTotal}
-                periodLabel={periodLabel}
-              />
-            )}
-          </CardDescription>
-        </CardContent>
-        <div
-          className="absolute bottom-4 right-4"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <SearchableSelect
-            aria-label={t("orders.stats.new.periodLabel")}
-            className="h-8 min-h-8 w-auto border py-0 pl-2 pr-7 text-xs max-md:min-h-8 max-md:rounded-md max-md:text-xs"
-            contentClassName="min-w-[7rem]"
-            fitToOptions
-            options={periodOptions}
-            searchable={false}
-            value={period}
-            onValueChange={(value) => {
-              if (isNewOrderStatPeriod(value)) setPeriod(value);
-            }}
+    <PeriodStatCard
+      description={
+        stats.isLoading ? (
+          "…"
+        ) : stats.isError ? (
+          <span className="text-destructive">{t("orders.stats.new.error")}</span>
+        ) : (
+          <PeriodChangeDescription
+            current={stats.total}
+            previous={stats.previousTotal}
+            periodLabel={periodLabel}
           />
-        </div>
-      </Card>
-    </div>
+        )
+      }
+      icon={CalendarPlus}
+      label={t("orders.stats.new.label")}
+      periodControl={
+        <SearchableSelect
+          aria-label={t("orders.stats.new.periodLabel")}
+          className="h-8 min-h-8 w-auto border py-0 pl-2 pr-7 text-xs max-md:min-h-8 max-md:rounded-md max-md:text-xs"
+          contentClassName="min-w-[7rem]"
+          fitToOptions
+          options={periodOptions}
+          searchable={false}
+          value={period}
+          onValueChange={(value) => {
+            if (isNewOrderStatPeriod(value)) setPeriod(value);
+          }}
+        />
+      }
+      value={stats.isLoading ? "…" : stats.isError ? "—" : stats.total.toLocaleString()}
+    />
   );
 }
