@@ -4,6 +4,7 @@ import type { ApiSearchFilterNode } from "@/lib/api/search-query";
 export type ReportType =
   | "income"
   | "invoice"
+  | "invoice-details"
   | "journal"
   | "loan"
   | "label"
@@ -32,6 +33,8 @@ export type ReportOutputFormat = "pdf" | "excel";
  * Examples:
  * - Invoice by object id (`/reports/invoices`):
  *   `{ type: "invoice", collection: "invoices", values: ["6a32..."], lookupField: "id" }`
+ * - Invoice details report (`/reports/invoice-details`):
+ *   `{ type: "invoice-details", collection: "invoices", values: ["6a32..."], lookupField: "id" }`
  * - Labels by invoice number (`/reports/labels`):
  *   `{ type: "label", collection: "invoices", values: ["489391"], lookupField: "number" }`
  * - Labels by barcode number (`/reports/labels`):
@@ -39,7 +42,7 @@ export type ReportOutputFormat = "pdf" | "excel";
  * - Pickup manifest (`/reports/pickups`):
  *   `{ type: "pickup", collection: "pickups", values: ["42"], lookupField: "id" }`
  * - Delivery report (`/reports/deliveries`):
- *   `{ type: "delivery", collection: "deliveries", values: ["1001"], lookupField: "number", rate: 58.5 }`
+ *   `{ type: "delivery", collection: "deliveries", values: ["6a32..."], lookupField: "id", rate: 58.5 }`
  * - Income statement report (`/reports/income`):
  *   `{ type: "income", collection: "income_statements", values: ["42"], lookupField: "id" }`
  * - Customs form (`/reports/custom/form`):

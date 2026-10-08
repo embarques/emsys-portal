@@ -159,8 +159,13 @@ const PORT_OPTIONS = [
 function isInvoiceReportKey(key: string): boolean {
   return (
     key !== "customs-invoices" &&
+    !isInvoiceDetailsReportKey(key) &&
     ["invoice", "invoices", "invoice-report", "invoices-report", "invoices-by-customer"].includes(key)
   );
+}
+
+function isInvoiceDetailsReportKey(key: string): boolean {
+  return ["invoice-details", "invoice-detail-report", "invoice-details-report"].includes(key);
 }
 
 function isDeliveryReportKey(key: string): boolean {
@@ -744,7 +749,7 @@ function DynamicReportFilter({
     case "rate":
       return <TextFilter context={context} icon={CircleDollarSign} label="Rate" valueKey="rate" placeholder="Optional" inputMode="decimal" />;
     case "container":
-      return <ContainerFilter context={context} label={isInvoiceReportKey(reportKey) ? "Furgon" : "Container"} />;
+      return <ContainerFilter context={context} label={isInvoiceReportKey(reportKey) || isInvoiceDetailsReportKey(reportKey) ? "Furgon" : "Container"} />;
     case "invoice":
       return <InvoiceFilter context={context} />;
     case "invoice-status":
@@ -758,6 +763,7 @@ function DynamicReportFilter({
           valueKey="paymentStatus"
           options={
             isInvoiceReportKey(reportKey)
+              || isInvoiceDetailsReportKey(reportKey)
               ? INVOICE_PAYMENT_STATUS_OPTIONS
               : reportKey === "shipment-relation"
                 ? SHIPMENT_PAYMENT_STATUS_OPTIONS
@@ -883,7 +889,7 @@ function DeliveryNumberFilter({ context }: { context: FilterContext }) {
   const options = useMemo<SearchableSelectOption[]>(() => [
     { value: "", label: "[Select Delivery]" },
     ...((deliveries.data ?? []).map((delivery) => ({
-      value: delivery.number,
+      value: delivery.id,
       label: delivery.label,
     }))),
   ], [deliveries.data]);
@@ -1200,6 +1206,7 @@ function normalizeSearch(value: string): string {
 function validateReportFilters(report: ReportDefinition, values: ReportFilterValues) {
   const errors: Record<string, string> = {};
   const invoiceReport = isInvoiceReportKey(report.key);
+  const invoiceDetailsReport = isInvoiceDetailsReportKey(report.key);
   const dateSearchDisabled = invoiceReport && values.dateSearchDisabled === "true";
 
   if (report.filters.includes("date-range") && !dateSearchDisabled) {
@@ -1218,6 +1225,9 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
       errors.dateFrom = "Date range is required when date search is enabled.";
       errors.dateTo = "Date range is required when date search is enabled.";
     }
+  }
+  if (invoiceDetailsReport && !values.containerId?.trim()) {
+    errors.containerId = "Furgon is required for this report.";
   }
   if (report.key === "invoices-by-customer" && !values.customerId) {
     errors.customerId = "Customer is required for this report.";

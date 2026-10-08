@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
   REPORTS: "/reports",
   REPORTS_INCOME: "/reports/income",
   REPORTS_INVOICES: "/reports/invoices",
+  REPORTS_INVOICE_DETAILS: "/reports/invoice-details",
   REPORTS_JOURNALS: "/reports/journals",
   REPORTS_LOANS: "/reports/loans",
   REPORTS_LABELS: "/reports/labels",
