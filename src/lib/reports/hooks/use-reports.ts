@@ -5,6 +5,7 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   fetchReportDefinitions,
+  fetchReportDeliveryOptions,
   generateCustomsFormReport,
   generateIncomeReport,
   generateInvoiceReport,
@@ -23,6 +24,13 @@ export function useReportDefinitions() {
   return useWorkspaceQuery({
     queryKey: queryKeys.reports.definitions(),
     queryFn: fetchReportDefinitions,
+  });
+}
+
+export function useReportDeliveryOptions(limit = 200) {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.reports.deliveries(limit),
+    queryFn: () => fetchReportDeliveryOptions(limit),
   });
 }
 

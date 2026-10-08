@@ -173,10 +173,14 @@ export function useCustomerDetailsBatch(customerIds: string[], enabled = true) {
   });
 }
 
-export function useCustomerPicker(limit = 200) {
+export function useCustomerPicker(
+  limit = 200,
+  options: { customerType?: number | "all" } = {},
+) {
   return useCustomers({
     ...DEFAULT_CUSTOMER_LIST_PARAMS,
     limit,
+    customerType: options.customerType,
   });
 }
 
