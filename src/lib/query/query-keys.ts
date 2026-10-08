@@ -48,6 +48,7 @@ export const queryKeys = {
   reports: {
     all: ["reports"] as const,
     definitions: () => [...queryKeys.reports.all, "definitions"] as const,
+    deliveries: (limit: number) => [...queryKeys.reports.all, "deliveries", limit] as const,
   },
   permissions: {
     all: ["permissions"] as const,

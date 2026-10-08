@@ -3,9 +3,15 @@ import { isAxiosError } from "axios";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { getConfiguredApiBaseUrl } from "@/lib/api/base-url";
+import {
+  buildApiSearchPaginationQuery,
+  buildStripeStyleSearchBody,
+  type ApiSearchFilterGroup,
+} from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope } from "@/lib/api/types";
 import type {
   NormalizedReportRequest,
+  ReportDeliveryOption,
   ReportDefinition,
   ReportGenerationBoundaryResult,
   ReportRequest,
@@ -17,6 +23,24 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
   message?: string;
   error?: string;
+};
+
+type ApiDeliveryOption = {
+  id?: string | number;
+  _id?: string | number;
+  deliveryId?: string | number;
+  number?: string | number;
+  name?: string;
+  label?: string;
+  customer?: { name?: string };
+  receiver?: { name?: string };
+  createdAt?: string;
+};
+
+type ApiInvoiceReportMatch = {
+  id?: string | number;
+  _id?: string | number;
+  number?: string | number;
 };
 
 /** `data` may arrive as a bare URL string or a metadata object. */
@@ -43,6 +67,41 @@ function extractReportUrl(data: ReportData): string {
   return "";
 }
 
+function stringValue(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+function normalizeDeliveryOption(raw: unknown): ReportDeliveryOption | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as ApiDeliveryOption;
+  const id = stringValue(item.id) || stringValue(item._id) || stringValue(item.deliveryId);
+  const number = stringValue(item.number) || stringValue(item.deliveryId) || id;
+  if (!number) return null;
+
+  const name = stringValue(item.name) || stringValue(item.label);
+  const party = stringValue(item.customer?.name) || stringValue(item.receiver?.name);
+  const date = stringValue(item.createdAt).slice(0, 10);
+  const details = [name, party, date].filter(Boolean).join(" · ");
+
+  return {
+    id: id || number,
+    number,
+    label: details ? `${number} · ${details}` : number,
+  };
+}
+
+function normalizeInvoiceReportMatch(raw: unknown): { id: string; number: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as ApiInvoiceReportMatch;
+  const id = stringValue(item.id) || stringValue(item._id);
+  const number = stringValue(item.number);
+  if (!id && !number) return null;
+
+  return { id, number };
+}
+
 /**
  * Shared poster for every `POST /reports/*` endpoint. They all accept the same
  * `{ type, collection, values, lookup_field }` body and return a temporary
@@ -59,6 +118,7 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
     format: request.format,
     expiresInHours: request.expiresInHours ?? 24,
     language: request.language,
+    rate: request.rate,
   };
 
   if (process.env.NODE_ENV !== "production") {
@@ -168,7 +228,18 @@ export function generateShipmentRelationReport(request: ReportRequest): Promise<
 }
 
 function isLoanStatementReportKey(key: string): boolean {
-  return key === "loan-statement" || key === "employee-loans";
+  return ["loan", "loans", "loan-report", "loan-statement", "employee-loans"].includes(key);
+}
+
+function isInvoiceReportKey(key: string): boolean {
+  return (
+    key !== "customs-invoices" &&
+    ["invoice", "invoices", "invoice-report", "invoices-report", "invoices-by-customer"].includes(key)
+  );
+}
+
+function isDeliveryReportKey(key: string): boolean {
+  return ["delivery", "deliveries", "delivery-report", "conduce", "conduce-report"].includes(key);
 }
 
 function defaultReportOutputs(key: string): ReportDefinition["outputs"] {
@@ -183,6 +254,15 @@ function defaultReportOutputs(key: string): ReportDefinition["outputs"] {
 function normalizeReportFilters(raw: unknown, key: string): ReportDefinition["filters"] {
   if (key === "shipment-relation") {
     return ["container", "payment-status", "customer-type", "customer"];
+  }
+  if (isInvoiceReportKey(key)) {
+    return ["date-range", "container", "location", "payment-status", "customer", "customer-type"];
+  }
+  if (isLoanStatementReportKey(key)) {
+    return ["employee", "date-range"];
+  }
+  if (isDeliveryReportKey(key)) {
+    return ["delivery-number", "rate"];
   }
   if (!Array.isArray(raw)) return [];
   return raw.map((filter) => String(filter ?? "").trim()).filter(Boolean);
@@ -232,6 +312,66 @@ export async function fetchReportDefinitions(): Promise<ReportDefinition[]> {
     : [];
 }
 
+export async function fetchReportDeliveryOptions(limit = 200): Promise<ReportDeliveryOption[]> {
+  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.DELIVERIES}?page=1&limit=${limit}`,
+  );
+  return Array.isArray(response.data)
+    ? response.data
+        .map(normalizeDeliveryOption)
+        .filter((delivery): delivery is ReportDeliveryOption => delivery != null)
+    : [];
+}
+
+async function fetchInvoiceReportValues(
+  filters: NonNullable<ReportRequest["filters"]>,
+): Promise<{ values: string[]; lookupField: string }> {
+  const filterGroup: ApiSearchFilterGroup = { operator: "and", filters };
+  const body = buildStripeStyleSearchBody({
+    filterGroups: [filterGroup],
+    sort: [
+      { field: "date", direction: "desc" },
+      { field: "number", direction: "desc" },
+    ],
+  });
+  const limit = 500;
+  let page = 1;
+  const ids = new Set<string>();
+  const numbers = new Set<string>();
+
+  while (true) {
+    const offset = (page - 1) * limit;
+    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
+    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+      `${API_ENDPOINTS.INVOICES}/search?${paginationQuery}`,
+      body,
+    );
+    const entries = Array.isArray(response.data) ? response.data : [];
+
+    for (const entry of entries) {
+      const match = normalizeInvoiceReportMatch(entry);
+      if (!match) continue;
+      if (match.id) ids.add(match.id);
+      if (match.number) numbers.add(match.number);
+    }
+
+    const total = Number(response.total);
+    const loaded = page * limit;
+    if (!Number.isFinite(total) || loaded >= total || entries.length === 0) break;
+    page += 1;
+  }
+
+  if (ids.size > 0) {
+    return { values: Array.from(ids), lookupField: "id" };
+  }
+
+  if (numbers.size > 0) {
+    return { values: Array.from(numbers), lookupField: "number" };
+  }
+
+  throw new Error("No invoices matched the selected report filters.");
+}
+
 export async function requestReportGeneration(
   request: NormalizedReportRequest,
 ): Promise<ReportGenerationBoundaryResult> {
@@ -254,6 +394,18 @@ export async function requestReportGeneration(
   if (request.reportKey === "shipment-relation") {
     const payload = buildShipmentRelationReportRequest(request);
     const result = await generateShipmentRelationReport(payload);
+    return { status: "generated", request, result };
+  }
+
+  if (isInvoiceReportKey(request.reportKey)) {
+    const payload = await buildInvoiceReportRequest(request);
+    const result = await generateInvoiceReport(payload);
+    return { status: "generated", request, result };
+  }
+
+  if (isDeliveryReportKey(request.reportKey)) {
+    const payload = buildDeliveryReportRequest(request);
+    const result = await generateDeliveryReport(payload);
     return { status: "generated", request, result };
   }
 
@@ -322,6 +474,99 @@ function buildShipmentRelationReportRequest(request: NormalizedReportRequest): R
     lookupField: "id",
     format: "excel",
     ...(filters.length > 0 ? { filters, operator: "and" as const } : {}),
+  };
+}
+
+function buildDeliveryReportRequest(request: NormalizedReportRequest): ReportRequest {
+  const deliveryNumber = request.filters.deliveryNumber?.trim();
+  if (!deliveryNumber) {
+    throw new Error("Delivery number is required for the Conduce report.");
+  }
+
+  const rateText = request.filters.rate?.trim();
+  let rate: number | undefined;
+  if (rateText) {
+    const parsedRate = Number(rateText);
+    if (!Number.isFinite(parsedRate) || parsedRate <= 0) {
+      throw new Error("Rate must be greater than zero.");
+    }
+    rate = parsedRate;
+  }
+
+  return {
+    type: "delivery",
+    collection: "deliveries",
+    values: [deliveryNumber],
+    lookupField: "number",
+    format: request.format ?? "pdf",
+    language: "es",
+    ...(rate !== undefined ? { rate } : {}),
+  };
+}
+
+async function buildInvoiceReportRequest(request: NormalizedReportRequest): Promise<ReportRequest> {
+  const filters: NonNullable<ReportRequest["filters"]> = [];
+  const dateSearchDisabled = request.filters.dateSearchDisabled === "true";
+  const dateFrom = request.filters.dateFrom?.trim().slice(0, 10) ?? "";
+  const dateTo = request.filters.dateTo?.trim().slice(0, 10) ?? "";
+  const start = dateFrom || dateTo;
+  const end = dateTo || dateFrom;
+
+  if (!dateSearchDisabled) {
+    if (!start && !end) {
+      throw new Error("Date range is required when date search is enabled.");
+    }
+
+    if (start) filters.push({ field: "date", operator: "gte", value: start });
+    if (end) filters.push({ field: "date", operator: "lte", value: end });
+  }
+
+  const containerId = request.filters.containerId?.trim();
+  if (dateSearchDisabled && !containerId) {
+    throw new Error("Container is required when date search is disabled.");
+  }
+  if (containerId) {
+    const numericContainerId = Number(containerId);
+    filters.push({
+      field: "container.id",
+      operator: "eq",
+      value: Number.isFinite(numericContainerId) && numericContainerId > 0 ? numericContainerId : containerId,
+    });
+  }
+
+  const locationId = Number(request.filters.locationId?.trim());
+  if (Number.isFinite(locationId) && locationId > 0) {
+    filters.push({ field: "branch.id", operator: "eq", value: locationId });
+  }
+
+  const paymentStatus = request.filters.paymentStatus?.trim();
+  if (paymentStatus) {
+    filters.push({ field: "paidStatus", operator: "eq", value: paymentStatus });
+  }
+
+  const customerId = request.filters.customerId?.trim();
+  const customerType = request.filters.customerType?.trim();
+  if (customerId && customerType === "sender") {
+    filters.push({ field: "sender.id", operator: "eq", value: customerId });
+  } else if (customerId && customerType === "receiver") {
+    filters.push({ field: "receiver.id", operator: "eq", value: customerId });
+  } else if (customerId) {
+    filters.push({
+      operator: "or",
+      filters: [
+        { field: "sender.id", operator: "eq", value: customerId },
+        { field: "receiver.id", operator: "eq", value: customerId },
+      ],
+    });
+  }
+
+  const invoiceLookup = await fetchInvoiceReportValues(filters);
+
+  return {
+    type: "invoice",
+    collection: "invoices",
+    values: invoiceLookup.values,
+    lookupField: invoiceLookup.lookupField,
   };
 }
 

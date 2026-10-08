@@ -33,8 +33,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateInput } from "@/components/ui/date-input";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
+import { Switch } from "@/components/ui/switch";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { useCustomerPicker } from "@/lib/customers/hooks/use-customers";
@@ -42,7 +44,8 @@ import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { DEFAULT_INVOICE_LIST_PARAMS } from "@/lib/invoices/types";
-import { useReportDefinitions, useRequestReportGeneration } from "@/lib/reports/hooks/use-reports";
+import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
+import { useReportDefinitions, useReportDeliveryOptions, useRequestReportGeneration } from "@/lib/reports/hooks/use-reports";
 import { openReportUrl, downloadReportFile } from "@/lib/reports/open-report";
 import { normalizeApiError } from "@/lib/api/axios";
 import type {
@@ -53,20 +56,25 @@ import type {
   ReportOutputFormat,
 } from "@/lib/reports/types";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
+import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 import { cn } from "@/lib/utils";
 
 const ALL_CATEGORY = "All";
 const LOANS_REPORT_CATEGORY = "Loans";
 
+function isLoanReportKey(key: string): boolean {
+  return ["loan", "loans", "loan-report", "loan-statement", "employee-loans"].includes(key);
+}
+
 function reportDisplayType(report: Pick<ReportDefinition, "key" | "type">): string {
-  if (report.key === "loan-statement" || report.key === "employee-loans") {
+  if (isLoanReportKey(report.key)) {
     return LOANS_REPORT_CATEGORY;
   }
   return report.type;
 }
 
 const FILTER_VALUE_KEYS: Record<string, string[]> = {
-  "date-range": ["dateFrom", "dateTo"],
+  "date-range": ["dateFrom", "dateTo", "dateSearchDisabled"],
   "single-date": ["date"],
   customer: ["customerId"],
   container: ["containerId"],
@@ -77,10 +85,13 @@ const FILTER_VALUE_KEYS: Record<string, string[]> = {
   employee: ["employeeId"],
   "loan-status": ["loanStatus"],
   driver: ["driverId"],
+  vehicle: ["vehicleId"],
   location: ["locationId"],
   "port-destination": ["portDestination"],
   status: ["status"],
   "customer-type": ["customerType"],
+  "delivery-number": ["deliveryNumber"],
+  rate: ["rate"],
 };
 
 const INVOICE_STATUS_OPTIONS = [
@@ -98,14 +109,20 @@ const PAYMENT_STATUS_OPTIONS = [
   { value: "partial", label: "Partial" },
 ];
 
+const INVOICE_PAYMENT_STATUS_OPTIONS = [
+  { value: "", label: "[All Status]" },
+  { value: "OPEN", label: "Open" },
+  { value: "CLOSED", label: "Closed" },
+];
+
 const SHIPMENT_PAYMENT_STATUS_OPTIONS = [
   { value: "", label: "[All Status]" },
   { value: "OPEN", label: "Open" },
   { value: "CLOSED", label: "Closed" },
 ];
 
-const CUSTOMER_TYPE_OPTIONS = [
-  { value: "", label: "[All]" },
+const CUSTOMER_TYPE_SEGMENT_OPTIONS = [
+  { value: "", label: "All" },
   { value: "sender", label: "Sender" },
   { value: "receiver", label: "Receiver" },
 ];
@@ -138,6 +155,17 @@ const PORT_OPTIONS = [
   { value: "new-york", label: "New York" },
   { value: "new-jersey", label: "New Jersey" },
 ];
+
+function isInvoiceReportKey(key: string): boolean {
+  return (
+    key !== "customs-invoices" &&
+    ["invoice", "invoices", "invoice-report", "invoices-report", "invoices-by-customer"].includes(key)
+  );
+}
+
+function isDeliveryReportKey(key: string): boolean {
+  return ["delivery", "deliveries", "delivery-report", "conduce", "conduce-report"].includes(key);
+}
 
 type FilterContext = {
   values: ReportFilterValues;
@@ -249,6 +277,7 @@ export function ReportsWorkspace() {
       [selectedReport.key]: {
         ...(current[selectedReport.key] ?? {}),
         [key]: value,
+        ...(key === "customerType" ? { customerId: "" } : {}),
       },
     }));
     setErrors((current) => {
@@ -695,15 +724,27 @@ function DynamicReportFilter({
 }) {
   switch (filter) {
     case "date-range":
-      return <DateRangeFilter context={context} />;
+      return <DateRangeFilter context={context} allowDisable={isInvoiceReportKey(reportKey)} />;
     case "single-date":
       return <SingleDateFilter context={context} />;
     case "customer":
       return <CustomerFilter context={context} />;
     case "customer-type":
-      return <StaticSelectFilter context={context} icon={UsersRound} label="Customer Type" valueKey="customerType" options={CUSTOMER_TYPE_OPTIONS} />;
+      return (
+        <SegmentedFilter
+          context={context}
+          icon={UsersRound}
+          label="Customer Type"
+          valueKey="customerType"
+          options={CUSTOMER_TYPE_SEGMENT_OPTIONS}
+        />
+      );
+    case "delivery-number":
+      return <DeliveryNumberFilter context={context} />;
+    case "rate":
+      return <TextFilter context={context} icon={CircleDollarSign} label="Rate" valueKey="rate" placeholder="Optional" inputMode="decimal" />;
     case "container":
-      return <ContainerFilter context={context} />;
+      return <ContainerFilter context={context} label={isInvoiceReportKey(reportKey) ? "Furgon" : "Container"} />;
     case "invoice":
       return <InvoiceFilter context={context} />;
     case "invoice-status":
@@ -715,7 +756,13 @@ function DynamicReportFilter({
           icon={ReceiptText}
           label="Payment Status"
           valueKey="paymentStatus"
-          options={reportKey === "shipment-relation" ? SHIPMENT_PAYMENT_STATUS_OPTIONS : PAYMENT_STATUS_OPTIONS}
+          options={
+            isInvoiceReportKey(reportKey)
+              ? INVOICE_PAYMENT_STATUS_OPTIONS
+              : reportKey === "shipment-relation"
+                ? SHIPMENT_PAYMENT_STATUS_OPTIONS
+                : PAYMENT_STATUS_OPTIONS
+          }
         />
       );
     case "payment-method":
@@ -724,6 +771,8 @@ function DynamicReportFilter({
       return <EmployeeFilter context={context} label="Employee" valueKey="employeeId" />;
     case "driver":
       return <EmployeeFilter context={context} label="Driver / Chofer" valueKey="driverId" />;
+    case "vehicle":
+      return <VehicleFilter context={context} />;
     case "loan-status":
       return <StaticSelectFilter context={context} icon={BriefcaseBusiness} label="Loan Status" valueKey="loanStatus" options={LOAN_STATUS_OPTIONS} />;
     case "location":
@@ -740,16 +789,39 @@ function DynamicReportFilter({
   }
 }
 
-function DateRangeFilter({ context }: { context: FilterContext }) {
+function DateRangeFilter({
+  context,
+  allowDisable = false,
+}: {
+  context: FilterContext;
+  allowDisable?: boolean;
+}) {
+  const dateSearchEnabled = context.values.dateSearchDisabled !== "true";
+
   return (
     <div className="space-y-2 md:col-span-2">
-      <FilterLabel icon={CalendarDays} label="Date Range" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <FilterLabel icon={CalendarDays} label="Date Range" />
+        {allowDisable ? (
+          <div className="flex items-center gap-2">
+            <Switch
+              id="invoice-date-search-enabled"
+              checked={dateSearchEnabled}
+              onCheckedChange={(checked) => context.setValue("dateSearchDisabled", checked ? "" : "true")}
+            />
+            <Label htmlFor="invoice-date-search-enabled" className="text-sm font-medium">
+              Search by date
+            </Label>
+          </div>
+        ) : null}
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <DateInput
             value={context.values.dateFrom ?? ""}
             onChange={(event) => context.setValue("dateFrom", event.target.value)}
             aria-label="Date from"
+            disabled={!dateSearchEnabled}
           />
           <FilterError message={context.errors.dateFrom} />
         </div>
@@ -758,6 +830,7 @@ function DateRangeFilter({ context }: { context: FilterContext }) {
             value={context.values.dateTo ?? ""}
             onChange={(event) => context.setValue("dateTo", event.target.value)}
             aria-label="Date to"
+            disabled={!dateSearchEnabled}
           />
           <FilterError message={context.errors.dateTo} />
         </div>
@@ -778,8 +851,64 @@ function SingleDateFilter({ context }: { context: FilterContext }) {
   );
 }
 
+function TextFilter({
+  context,
+  icon,
+  label,
+  valueKey,
+  placeholder,
+  inputMode,
+}: {
+  context: FilterContext;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  valueKey: string;
+  placeholder?: string;
+  inputMode?: "decimal" | "numeric" | "text";
+}) {
+  return (
+    <FilterShell icon={icon} label={label} error={context.errors[valueKey]}>
+      <Input
+        value={context.values[valueKey] ?? ""}
+        onChange={(event) => context.setValue(valueKey, event.target.value)}
+        placeholder={placeholder}
+        inputMode={inputMode}
+      />
+    </FilterShell>
+  );
+}
+
+function DeliveryNumberFilter({ context }: { context: FilterContext }) {
+  const deliveries = useReportDeliveryOptions(200);
+  const options = useMemo<SearchableSelectOption[]>(() => [
+    { value: "", label: "[Select Delivery]" },
+    ...((deliveries.data ?? []).map((delivery) => ({
+      value: delivery.number,
+      label: delivery.label,
+    }))),
+  ], [deliveries.data]);
+
+  return (
+    <StaticSelectFilter
+      context={context}
+      icon={Container}
+      label="Delivery Number"
+      valueKey="deliveryNumber"
+      options={options}
+      loading={deliveries.isLoading}
+    />
+  );
+}
+
 function CustomerFilter({ context }: { context: FilterContext }) {
-  const customers = useCustomerPicker(200);
+  const selectedType = context.values.customerType;
+  const customerType =
+    selectedType === "sender"
+      ? CUSTOMER_TYPE_SENDER
+      : selectedType === "receiver"
+        ? CUSTOMER_TYPE_RECEIVER
+        : undefined;
+  const customers = useCustomerPicker(200, { customerType });
   const options = useMemo<SearchableSelectOption[]>(() => [
     { value: "", label: "[All Customers]" },
     ...((customers.data?.items ?? []).map((customer) => ({
@@ -800,21 +929,21 @@ function CustomerFilter({ context }: { context: FilterContext }) {
   );
 }
 
-function ContainerFilter({ context }: { context: FilterContext }) {
+function ContainerFilter({ context, label = "Container" }: { context: FilterContext; label?: string }) {
   const containers = useContainerPicker(200);
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: "[All Containers]" },
+    { value: "", label: label === "Furgon" ? "[All Furgons]" : "[All Containers]" },
     ...((containers.data?.items ?? []).map((container) => ({
       value: String(container.id),
       label: container.name || container.containerNumber || `Container ${container.id}`,
     }))),
-  ], [containers.data?.items]);
+  ], [containers.data?.items, label]);
 
   return (
     <StaticSelectFilter
       context={context}
       icon={Box}
-      label="Container"
+      label={label}
       valueKey="containerId"
       options={options}
       loading={containers.isLoading}
@@ -867,6 +996,31 @@ function EmployeeFilter({ context, label, valueKey }: { context: FilterContext; 
   );
 }
 
+function VehicleFilter({ context }: { context: FilterContext }) {
+  const vehicles = useVehiclePicker(200, { enabled: true });
+  const items = vehicles.data?.items ?? [];
+  const options = useMemo<SearchableSelectOption[]>(() => [
+    { value: "", label: "[All Vehicles]" },
+    ...items.map((vehicle) => ({
+      value: vehicle.id,
+      label: vehicle.name,
+      description: vehicle.licensePlate || vehicle.vehicleId,
+      keywords: [vehicle.name, vehicle.vehicleId, vehicle.licensePlate, vehicle.vin],
+    })),
+  ], [items]);
+
+  return (
+    <StaticSelectFilter
+      context={context}
+      icon={Container}
+      label="Vehicle"
+      valueKey="vehicleId"
+      options={options}
+      loading={vehicles.isLoading}
+    />
+  );
+}
+
 function LocationFilter({ context }: { context: FilterContext }) {
   const branches = useBranchPicker(200);
   const options = useMemo<SearchableSelectOption[]>(() => [
@@ -915,6 +1069,47 @@ function StaticSelectFilter({
         loading={loading}
         mobileSheet
       />
+    </FilterShell>
+  );
+}
+
+function SegmentedFilter({
+  context,
+  icon,
+  label,
+  valueKey,
+  options,
+}: {
+  context: FilterContext;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  valueKey: string;
+  options: Array<{ value: string; label: string }>;
+}) {
+  const currentValue = context.values[valueKey] ?? "";
+
+  return (
+    <FilterShell icon={icon} label={label} error={context.errors[valueKey]}>
+      <div className="grid h-11 grid-cols-[0.8fr_1fr_1.45fr] gap-1 rounded-lg border bg-muted/30 py-1.5 pl-1.5 pr-2.5">
+        {options.map((option) => {
+          const selected = currentValue === option.value;
+          return (
+            <button
+              key={option.value || "all"}
+              type="button"
+              className={cn(
+                "min-w-0 rounded-md px-2 text-sm font-medium transition-colors",
+                selected
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+              )}
+              onClick={() => context.setValue(valueKey, option.value)}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
     </FilterShell>
   );
 }
@@ -1004,12 +1199,24 @@ function normalizeSearch(value: string): string {
 
 function validateReportFilters(report: ReportDefinition, values: ReportFilterValues) {
   const errors: Record<string, string> = {};
-  if (report.filters.includes("date-range")) {
+  const invoiceReport = isInvoiceReportKey(report.key);
+  const dateSearchDisabled = invoiceReport && values.dateSearchDisabled === "true";
+
+  if (report.filters.includes("date-range") && !dateSearchDisabled) {
     const dateFrom = values.dateFrom;
     const dateTo = values.dateTo;
     if (dateFrom && dateTo && dateFrom > dateTo) {
       errors.dateFrom = "Start date must be before end date.";
       errors.dateTo = "End date must be after start date.";
+    }
+  }
+  if (invoiceReport) {
+    if (dateSearchDisabled && !values.containerId?.trim()) {
+      errors.containerId = "Container is required when date search is disabled.";
+    }
+    if (!dateSearchDisabled && !values.dateFrom?.trim() && !values.dateTo?.trim()) {
+      errors.dateFrom = "Date range is required when date search is enabled.";
+      errors.dateTo = "Date range is required when date search is enabled.";
     }
   }
   if (report.key === "invoices-by-customer" && !values.customerId) {
@@ -1024,7 +1231,16 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
   if (report.key === "shipment-relation" && !values.containerId) {
     errors.containerId = "Container is required for this report.";
   }
-  if (report.key === "loan-statement" || report.key === "employee-loans") {
+  if (isDeliveryReportKey(report.key)) {
+    if (!values.deliveryNumber?.trim()) {
+      errors.deliveryNumber = "Delivery number is required for this report.";
+    }
+    const rate = values.rate?.trim();
+    if (rate && (!Number.isFinite(Number(rate)) || Number(rate) <= 0)) {
+      errors.rate = "Rate must be greater than zero.";
+    }
+  }
+  if (isLoanReportKey(report.key)) {
     if (!values.employeeId?.trim()) {
       errors.employeeId = "Employee is required for this report.";
     }

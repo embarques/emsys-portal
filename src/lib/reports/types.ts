@@ -39,7 +39,7 @@ export type ReportOutputFormat = "pdf" | "excel";
  * - Pickup manifest (`/reports/pickups`):
  *   `{ type: "pickup", collection: "pickups", values: ["42"], lookupField: "id" }`
  * - Delivery report (`/reports/deliveries`):
- *   `{ type: "delivery", collection: "deliveries", values: ["1001"], lookupField: "id" }`
+ *   `{ type: "delivery", collection: "deliveries", values: ["1001"], lookupField: "number", rate: 58.5 }`
  * - Income statement report (`/reports/income`):
  *   `{ type: "income", collection: "income_statements", values: ["42"], lookupField: "id" }`
  * - Customs form (`/reports/custom/form`):
@@ -70,6 +70,8 @@ export type ReportRequest = {
   expiresInHours?: number;
   /** UI language for localized report labels (`en` or `es`). */
   language?: "en" | "es";
+  /** Optional exchange rate used by delivery/conduce reports. */
+  rate?: number;
 };
 
 /** Normalized result returned by the `POST /reports/*` endpoints. */
@@ -99,6 +101,12 @@ export type ReportDefinition = {
   outputs: ReportOutputFormat[];
 };
 
+export type ReportDeliveryOption = {
+  id: string;
+  number: string;
+  label: string;
+};
+
 export type ReportFilterKey =
   | "date-range"
   | "single-date"
@@ -111,10 +119,13 @@ export type ReportFilterKey =
   | "employee"
   | "loan-status"
   | "driver"
+  | "vehicle"
   | "location"
   | "port-destination"
   | "status"
   | "customer-type"
+  | "delivery-number"
+  | "rate"
   | (string & {});
 
 export type ReportFilterValues = Record<string, string>;
