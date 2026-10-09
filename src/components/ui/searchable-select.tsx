@@ -456,6 +456,13 @@ export function SearchableSelect({
     const selected =
       navigableOptions.find((option) => option.value === highlight) ?? navigableOptions[0];
     if (selected) handleSelect(selected.value);
+    else {
+      const field = searchable ? inputRef.current : triggerRef.current;
+      if (field?.closest('[data-testid="invoice-form-wizard"]')) {
+        closeDropdown();
+        window.setTimeout(() => focusNextFormField(field, { suppressComboboxOpen: true }), 0);
+      }
+    }
   }
 
   function toggleOpen() {

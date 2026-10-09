@@ -237,31 +237,11 @@ export function InvoiceForm({
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
   const [pickupAssignmentOpenKey, setPickupAssignmentOpenKey] = useState(0);
   const navigateOnEnter = useFormEnterNavigation({
+    advanceTextareas: Boolean(onContinue),
     submitOnLast: !onContinue,
     onComplete: onContinue,
   });
-  const handleEnterNavigation = useCallback(
-    (event: React.KeyboardEvent<HTMLFormElement>) => {
-      if (
-        onContinue &&
-        event.key === "Enter" &&
-        !event.shiftKey &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey &&
-        !event.defaultPrevented &&
-        !event.nativeEvent.isComposing &&
-        (event.target as HTMLElement | null)?.id === "invoiceNumber"
-      ) {
-        event.preventDefault();
-        onContinue();
-        return;
-      }
-
-      navigateOnEnter(event);
-    },
-    [navigateOnEnter, onContinue],
-  );
+  const handleEnterNavigation = navigateOnEnter;
   const createContainerMutation = useCreateContainer();
   const createEmployeeMutation = useCreateEmployee();
 

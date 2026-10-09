@@ -27,7 +27,8 @@ function isNavigableField(element: HTMLElement) {
 
   const isCombobox = element.getAttribute("role") === "combobox";
   if ((element as HTMLInputElement).readOnly && !isCombobox) return false;
-  if (element.getAttribute("aria-hidden") === "true") return false;
+  if (element.closest('[aria-hidden="true"], [inert], [data-enter-navigation="ignore"]')) return false;
+  if (window.getComputedStyle(element).visibility === "hidden") return false;
 
   const tabIndex = element.getAttribute("tabindex");
   if (tabIndex !== null && Number(tabIndex) < 0) return false;
@@ -54,7 +55,13 @@ export function focusNextFormField(
   if (currentIndex === -1) return false;
 
   const nextField = fields[currentIndex + 1];
-  if (!nextField) return false;
+  if (!nextField) {
+    const nextButton = form.closest('[data-testid="invoice-form-wizard"]')
+      ?.querySelector<HTMLButtonElement>('[data-wizard-primary]');
+    if (!nextButton || nextButton.disabled) return false;
+    nextButton.focus();
+    return true;
+  }
 
   if (options.suppressComboboxOpen) automaticSelectionFocus.add(nextField);
   try {
@@ -104,6 +111,7 @@ export function submitFormOnEnterKeyDown(
 }
 
 export type FormEnterNavigationOptions = {
+  advanceTextareas?: boolean;
   /**
    * Submit the form when Enter is pressed on the last field. When the form has
    * native `required` constraints, the browser focuses the first invalid field
@@ -148,7 +156,7 @@ function completeForm(
  * their own Enter-to-select behavior.
  */
 export function useFormEnterNavigation(options: FormEnterNavigationOptions = {}) {
-  const { submitOnLast = true, onComplete, shouldComplete } = options;
+  const { submitOnLast = true, onComplete, shouldComplete, advanceTextareas = false } = options;
 
   return React.useCallback(
     (event: React.KeyboardEvent<HTMLFormElement>) => {
@@ -164,7 +172,7 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
       const tagName = target.tagName;
 
       // Let textareas and rich-text fields insert newlines.
-      if (tagName === "TEXTAREA" || target.isContentEditable) return;
+      if ((tagName === "TEXTAREA" && !advanceTextareas) || target.isContentEditable) return;
 
       // Let buttons and links keep their native Enter behavior.
       if (tagName === "BUTTON" || tagName === "A") return;
@@ -200,6 +208,6 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
         completeForm(form, submitOnLast, onComplete);
       }
     },
-    [onComplete, shouldComplete, submitOnLast],
+    [onComplete, shouldComplete, submitOnLast, advanceTextareas],
   );
 }

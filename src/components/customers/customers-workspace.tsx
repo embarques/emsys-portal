@@ -15,7 +15,6 @@ import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -26,6 +25,7 @@ import { TableSelectionToolbar } from "@/components/app-shell/table-selection-to
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { CUSTOMER_API_TABLE_FIELDS } from "@/lib/customers/table-fields";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -42,7 +42,7 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useCustomerFilterFields } from "@/lib/customers/hooks/use-customer-filter-fields";
-import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
+import { ADDRESS_TEXT_WRAP_CLASSNAME, getPrimaryAddress } from "@/lib/customers/utils/address-utils";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
   buildTableSelectionResetKey,
@@ -75,7 +75,7 @@ import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
-const CUSTOMERS_TABLE_COLUMN_STORAGE_KEY = "customers-v7";
+const CUSTOMERS_TABLE_COLUMN_STORAGE_KEY = "customers-v9";
 
 const defaultFilters: CustomerFilterState = {
   query: "",
@@ -85,6 +85,11 @@ const defaultFilters: CustomerFilterState = {
 type CustomerDeleteTarget =
   | { mode: "single"; customer: Customer }
   | { mode: "bulk"; ids: string[] };
+
+function formatCustomerAddressPart(customer: Customer, part: "city" | "state" | "zipcode", dash: string) {
+  const value = getPrimaryAddress(customer)?.[part]?.trim() ?? "";
+  return value || dash;
+}
 
 export function CustomersWorkspace() {
   const { t } = useTranslation();
@@ -299,6 +304,7 @@ export function CustomersWorkspace() {
       id: "customerType",
       label: t("customers.columns.customerType"),
       truncateCell: false,
+      defaultWidth: 150,
       cellClassName: "align-top overflow-visible",
       renderCell: (customer) => {
         const clientType = getCustomerClientType(customer) ?? "sender";
@@ -306,15 +312,28 @@ export function CustomersWorkspace() {
           ? t("customers.types.receiver")
           : t("customers.types.sender");
         return (
-          <TableTagText className={getClientTypeBadgeClass(clientType)}>
+          <Badge
+            variant="outline"
+            className={cn(
+              "gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1",
+              getClientTypeBadgeClass(clientType),
+            )}
+          >
+            {clientType === "receiver" ? (
+              <UserCheck className="size-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <Send className="size-3.5 shrink-0" aria-hidden="true" />
+            )}
             {typeLabel}
-          </TableTagText>
+          </Badge>
         );
       },
     },
     {
       id: "name",
       label: t("customers.columns.name"),
+      sortField: "name",
+      defaultWidth: 240,
       cellClassName: "align-top font-medium",
       renderCell: (customer) => customer.name,
     },
@@ -323,12 +342,15 @@ export function CustomersWorkspace() {
       label: t("customers.columns.phone"),
       sortField: "phones.number",
       truncateCell: false,
+      defaultWidth: 160,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (customer) => <CustomerTablePhoneCell customer={customer} />,
     },
     {
       id: "IDNumber",
       label: t("customers.columns.IDNumber"),
+      defaultVisible: false,
+      defaultWidth: 140,
       cellClassName: "align-top",
       renderCell: (customer) => customer.IDNumber || t("common.empty.dash"),
     },
@@ -336,39 +358,68 @@ export function CustomersWorkspace() {
       id: "address",
       label: t("customers.columns.address"),
       sortField: "addresses.address1",
-      defaultWidth: 225,
+      defaultWidth: 300,
       truncateCell: false,
       stopRowClick: true,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (customer) => <CustomerTableAddressCell customer={customer} />,
     },
     {
+      id: "city",
+      label: t("customers.columns.city"),
+      sortField: "addresses.city",
+      defaultWidth: 120,
+      renderCell: (customer) => formatCustomerAddressPart(customer, "city", t("common.empty.dash")),
+    },
+    {
+      id: "state",
+      label: t("customers.columns.state"),
+      sortField: "addresses.state",
+      defaultWidth: 80,
+      renderCell: (customer) => formatCustomerAddressPart(customer, "state", t("common.empty.dash")),
+    },
+    {
+      id: "zipcode",
+      label: t("customers.columns.zipcode"),
+      sortField: "addresses.zipcode",
+      defaultWidth: 100,
+      renderCell: (customer) => formatCustomerAddressPart(customer, "zipcode", t("common.empty.dash")),
+    },
+    {
       id: "email",
       label: t("customers.columns.email"),
+      defaultVisible: false,
+      defaultWidth: 220,
       cellClassName: "align-top",
       renderCell: (customer) => customer.email || t("common.empty.dash"),
     },
     {
       id: "accountBalance",
       label: t("customers.columns.accountBalance"),
+      defaultVisible: false,
+      defaultWidth: 120,
       cellClassName: "align-top",
       renderCell: (customer) => formatAccountBalance(customer.accountBalance),
     },
     {
       id: "notes",
       label: t("customers.columns.notes"),
+      defaultVisible: false,
+      defaultWidth: 260,
       cellClassName: "align-top",
       renderCell: (customer) => customer.notes || t("common.empty.dash"),
     },
     {
       id: "createdBy",
       label: t("customers.columns.createdBy"),
+      defaultVisible: false,
       cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) => formatCustomerAuditActor(customer.createdBy),
     },
     {
       id: "createdAt",
       label: t("customers.columns.createdAt"),
+      defaultVisible: false,
       cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.createdAt ? formatAuditDateTime(customer.createdAt) : t("common.empty.dash"),
@@ -376,12 +427,14 @@ export function CustomersWorkspace() {
     {
       id: "updatedBy",
       label: t("customers.columns.updatedBy"),
+      defaultVisible: false,
       cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) => formatCustomerAuditActor(customer.updatedBy),
     },
     {
       id: "updatedAt",
       label: t("customers.columns.updatedAt"),
+      defaultVisible: false,
       cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.updatedAt ? formatAuditDateTime(customer.updatedAt) : t("common.empty.dash"),

@@ -187,6 +187,11 @@ export function generateInvoiceReport(request: ReportRequest): Promise<ReportRes
   return postReport(API_ENDPOINTS.REPORTS_INVOICES, request);
 }
 
+/** Generate an invoice details report (`POST /reports/invoice-details`). */
+export function generateInvoiceDetailsReport(request: ReportRequest): Promise<ReportResult> {
+  return postReport(API_ENDPOINTS.REPORTS_INVOICE_DETAILS, request);
+}
+
 /** Generate a journal report (`POST /reports/journals`). */
 export function generateJournalReport(request: ReportRequest): Promise<ReportResult> {
   return postReport(API_ENDPOINTS.REPORTS_JOURNALS, request);
@@ -234,8 +239,13 @@ function isLoanStatementReportKey(key: string): boolean {
 function isInvoiceReportKey(key: string): boolean {
   return (
     key !== "customs-invoices" &&
+    !isInvoiceDetailsReportKey(key) &&
     ["invoice", "invoices", "invoice-report", "invoices-report", "invoices-by-customer"].includes(key)
   );
+}
+
+function isInvoiceDetailsReportKey(key: string): boolean {
+  return ["invoice-details", "invoice-detail-report", "invoice-details-report"].includes(key);
 }
 
 function isDeliveryReportKey(key: string): boolean {
@@ -257,6 +267,9 @@ function normalizeReportFilters(raw: unknown, key: string): ReportDefinition["fi
   }
   if (isInvoiceReportKey(key)) {
     return ["date-range", "container", "location", "payment-status", "customer", "customer-type"];
+  }
+  if (isInvoiceDetailsReportKey(key)) {
+    return ["container", "location", "payment-status", "customer", "customer-type"];
   }
   if (isLoanStatementReportKey(key)) {
     return ["employee", "date-range"];
@@ -403,6 +416,12 @@ export async function requestReportGeneration(
     return { status: "generated", request, result };
   }
 
+  if (isInvoiceDetailsReportKey(request.reportKey)) {
+    const payload = await buildInvoiceDetailsReportRequest(request);
+    const result = await generateInvoiceDetailsReport(payload);
+    return { status: "generated", request, result };
+  }
+
   if (isDeliveryReportKey(request.reportKey)) {
     const payload = buildDeliveryReportRequest(request);
     const result = await generateDeliveryReport(payload);
@@ -478,8 +497,8 @@ function buildShipmentRelationReportRequest(request: NormalizedReportRequest): R
 }
 
 function buildDeliveryReportRequest(request: NormalizedReportRequest): ReportRequest {
-  const deliveryNumber = request.filters.deliveryNumber?.trim();
-  if (!deliveryNumber) {
+  const deliveryId = request.filters.deliveryNumber?.trim();
+  if (!deliveryId) {
     throw new Error("Delivery number is required for the Conduce report.");
   }
 
@@ -496,8 +515,8 @@ function buildDeliveryReportRequest(request: NormalizedReportRequest): ReportReq
   return {
     type: "delivery",
     collection: "deliveries",
-    values: [deliveryNumber],
-    lookupField: "number",
+    values: [deliveryId],
+    lookupField: "id",
     format: request.format ?? "pdf",
     language: "es",
     ...(rate !== undefined ? { rate } : {}),
@@ -570,6 +589,65 @@ async function buildInvoiceReportRequest(request: NormalizedReportRequest): Prom
   };
 }
 
+async function buildInvoiceDetailsReportRequest(request: NormalizedReportRequest): Promise<ReportRequest> {
+  const filters = buildInvoiceContainerReportFilters(request, { requireContainer: true });
+  const invoiceLookup = await fetchInvoiceReportValues(filters);
+
+  return {
+    type: "invoice-details",
+    collection: "invoices",
+    values: invoiceLookup.values,
+    lookupField: invoiceLookup.lookupField,
+  };
+}
+
+function buildInvoiceContainerReportFilters(
+  request: NormalizedReportRequest,
+  options: { requireContainer?: boolean } = {},
+): NonNullable<ReportRequest["filters"]> {
+  const filters: NonNullable<ReportRequest["filters"]> = [];
+  const containerId = request.filters.containerId?.trim();
+  if (options.requireContainer && !containerId) {
+    throw new Error("Furgon is required for this report.");
+  }
+  if (containerId) {
+    const numericContainerId = Number(containerId);
+    filters.push({
+      field: "container.id",
+      operator: "eq",
+      value: Number.isFinite(numericContainerId) && numericContainerId > 0 ? numericContainerId : containerId,
+    });
+  }
+
+  const locationId = Number(request.filters.locationId?.trim());
+  if (Number.isFinite(locationId) && locationId > 0) {
+    filters.push({ field: "branch.id", operator: "eq", value: locationId });
+  }
+
+  const paymentStatus = request.filters.paymentStatus?.trim();
+  if (paymentStatus) {
+    filters.push({ field: "paidStatus", operator: "eq", value: paymentStatus });
+  }
+
+  const customerId = request.filters.customerId?.trim();
+  const customerType = request.filters.customerType?.trim();
+  if (customerId && customerType === "sender") {
+    filters.push({ field: "sender.id", operator: "eq", value: customerId });
+  } else if (customerId && customerType === "receiver") {
+    filters.push({ field: "receiver.id", operator: "eq", value: customerId });
+  } else if (customerId) {
+    filters.push({
+      operator: "or",
+      filters: [
+        { field: "sender.id", operator: "eq", value: customerId },
+        { field: "receiver.id", operator: "eq", value: customerId },
+      ],
+    });
+  }
+
+  return filters;
+}
+
 function buildLoanStatementReportRequest(request: NormalizedReportRequest): ReportRequest {
   const employeeId = request.filters.employeeId?.trim();
   if (!employeeId) {
@@ -622,6 +700,7 @@ export function buildPublicReportUrl(token: string): string {
 const REPORT_GENERATORS: Record<ReportType, (request: ReportRequest) => Promise<ReportResult>> = {
   income: generateIncomeReport,
   invoice: generateInvoiceReport,
+  "invoice-details": generateInvoiceDetailsReport,
   journal: generateJournalReport,
   loan: generateLoanReport,
   label: generateLabelReport,
