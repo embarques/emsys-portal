@@ -99,6 +99,23 @@
     "receiver": "Receiver",
     "receiverAddress": "Receiver address"
   },
+  "tableColumns": {
+    "id": "Id",
+    "date": "Date",
+    "completed": "Status",
+    "createdAt": "Created",
+    "senderName": "Sender",
+    "senderAddress": "Address",
+    "senderCity": "City",
+    "senderZip": "Postal Code",
+    "senderPhone": "Phone",
+    "sectorName": "Sector",
+    "createdBy": "User",
+    "updatedAt": "Modified",
+    "comments": "Comments",
+    "branchName": "Branch",
+    "employee": "Driver"
+  },
   "search": {
     "placeholder": "Search for appointments"
   },

@@ -24,12 +24,10 @@ import {
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
-import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { LegacyLastSynced } from "@/components/app-shell/legacy-last-synced";
-import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -79,7 +77,6 @@ import {
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
-import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
@@ -91,6 +88,7 @@ import {
   formatUserSummary,
   buildOrderCreatedByFilterOptions,
   getOrderCompletedLabel,
+  formatEmployeeSummary,
 } from "@/lib/orders/display";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -214,6 +212,22 @@ function formatAddressPart(
 ) {
   const value = getPrimaryAddress(customer)?.[part]?.trim() ?? "";
   return value || dash;
+}
+
+function formatPickupTableDate(date: string): string {
+  const trimmed = date?.trim();
+  if (!trimmed) return "—";
+
+  const parsed = trimmed.includes("T")
+    ? new Date(trimmed)
+    : new Date(`${trimmed.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "—";
+
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(parsed);
 }
 
 function PickupCommentsCell({ order }: { order: Order }) {
@@ -906,119 +920,151 @@ export function OrdersWorkspace() {
   const tableColumns: DataTableColumn<Order>[] = useMemo(
     () => [
     {
-      id: "completed",
-      label: t("orders.columns.completed"),
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (order) => (
-        <TableTagText
-          className={
-            order.completed
-              ? "text-emerald-700 dark:text-emerald-300"
-              : "text-amber-700 dark:text-amber-300"
-          }
-        >
-          {getOrderCompletedLabel(order.completed, t)}
-        </TableTagText>
-      ),
+      id: "id",
+      label: t("orders.tableColumns.id"),
+      sortField: "id",
+      defaultWidth: 72,
+      renderCell: (order) => formatOrderId(order),
     },
     {
       id: "date",
-      label: t("orders.columns.date"),
-      renderCell: (order) => formatOrderDate(order.date),
+      label: t("orders.tableColumns.date"),
+      defaultWidth: 112,
+      renderCell: (order) => formatPickupTableDate(order.date),
+    },
+    {
+      id: "completed",
+      label: t("orders.tableColumns.completed"),
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      defaultWidth: 132,
+      renderCell: (order) => (
+        <Badge
+          variant="outline"
+          className={cn(
+            "gap-1.5 rounded-full border-transparent px-2.5 py-1 text-xs font-semibold",
+            order.completed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
+          )}
+        >
+          {order.completed ? <CheckCircle2 className="size-3.5" /> : <Clock className="size-3.5" />}
+          {getOrderCompletedLabel(order.completed, t)}
+        </Badge>
+      ),
+    },
+    {
+      id: "createdAt",
+      label: t("orders.tableColumns.createdAt"),
+      defaultWidth: 112,
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatPickupTableDate(order.createdAt),
+    },
+    {
+      id: "sender.phone",
+      label: t("orders.tableColumns.senderPhone"),
+      sortField: "sender.phone1",
+      defaultWidth: 128,
+      renderCell: (order) => getCustomerPrimaryPhone(order.sender, t("common.empty.dash")),
     },
     {
       id: "sender.name",
-      label: t("orders.columns.senderName"),
+      label: t("orders.tableColumns.senderName"),
+      sortField: "sender.name",
+      defaultWidth: 180,
       cellClassName: "align-top font-medium",
       renderCell: (order) => order.sender.name.trim() || t("common.empty.dash"),
     },
     {
-      id: "sender.phone",
-      label: t("orders.columns.senderPhone"),
-      sortField: "sender.phone1",
-      truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
-      renderCell: (order) => <CustomerTablePhoneCell customer={order.sender} />,
-    },
-    {
       id: "sender.address",
-      label: t("orders.columns.senderAddress"),
+      label: t("orders.tableColumns.senderAddress"),
       sortField: "sender.address.address1",
-      defaultWidth: 180,
+      defaultWidth: 240,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (order) => formatStreetAndApt(order.sender, t("common.empty.dash")),
     },
     {
       id: "sender.city",
-      label: t("orders.columns.senderCity"),
+      label: t("orders.tableColumns.senderCity"),
       sortField: "sender.address.city",
-      defaultWidth: 96,
+      defaultWidth: 108,
       renderCell: (order) => formatAddressPart(order.sender, "city", t("common.empty.dash")),
     },
     {
       id: "sender.state",
       label: t("orders.columns.senderState"),
       sortField: "sender.address.state",
-      defaultWidth: 64,
+      defaultVisible: false,
+      defaultWidth: 72,
       renderCell: (order) => formatAddressPart(order.sender, "state", t("common.empty.dash")),
     },
     {
       id: "sender.zip",
-      label: t("orders.columns.senderZip"),
+      label: t("orders.tableColumns.senderZip"),
       sortField: "sender.address.zipcode",
-      defaultWidth: 72,
+      defaultWidth: 104,
       renderCell: (order) => formatAddressPart(order.sender, "zipcode", t("common.empty.dash")),
     },
     {
+      id: "sector.name",
+      label: t("orders.tableColumns.sectorName"),
+      sortField: "sector.name",
+      defaultWidth: 96,
+      renderCell: (order) => order.sector?.name.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "createdBy",
+      label: t("orders.tableColumns.createdBy"),
+      sortField: "createdBy.name",
+      defaultWidth: 112,
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatUserSummary(order.createdBy),
+    },
+    {
+      id: "updatedAt",
+      label: t("orders.tableColumns.updatedAt"),
+      defaultVisible: false,
+      defaultWidth: 112,
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatPickupTableDate(order.updatedAt),
+    },
+    {
       id: "comments",
-      label: t("orders.columns.comments"),
-      defaultWidth: 225,
+      label: t("orders.tableColumns.comments"),
+      defaultWidth: 360,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (order) => <PickupCommentsCell order={order} />,
     },
     {
-      id: "route.name",
-      label: t("orders.columns.route"),
-      sortField: "route.name",
-      cellClassName: "text-muted-foreground",
-      renderCell: (order) =>
-        formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t),
-    },
-    {
       id: "branch.code",
-      label: t("orders.columns.branchName"),
+      label: t("orders.tableColumns.branchName"),
       sortField: "branch.code",
+      defaultWidth: 92,
       cellClassName: "text-muted-foreground",
       renderCell: (order) => order.branch.code.trim() || t("common.empty.dash"),
     },
     {
-      id: "createdBy",
-      label: t("orders.columns.createdBy"),
-      sortField: "createdBy.name",
+      id: "employee.name",
+      label: t("orders.tableColumns.employee"),
+      sortField: "employee.name",
+      defaultWidth: 120,
       cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatUserSummary(order.createdBy),
+      renderCell: (order) => formatEmployeeSummary(order.employee),
     },
     {
-      id: "createdAt",
-      label: t("orders.columns.createdAt"),
-      cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDateTime(order.createdAt),
-    },
-    {
-      id: "updatedAt",
-      label: t("orders.columns.updatedAt"),
+      id: "route.name",
+      label: t("orders.columns.route"),
+      sortField: "route.name",
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDateTime(order.updatedAt),
+      renderCell: (order) =>
+        formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t),
     },
   ],
     [pickupRouteLookup, t],
   );
 
-  const columnVisibility = useApiTableColumns("orders-v7", tableColumns, ORDER_API_TABLE_FIELDS);
+  const columnVisibility = useApiTableColumns("orders-v10", tableColumns, ORDER_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();
