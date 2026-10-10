@@ -286,11 +286,14 @@ export function SearchableSelect({
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const suppressNextFocusSearchRef = React.useRef(false);
   const skipOpenOnFocusRef = React.useRef(false);
+  const skipCloseAutoFocusRef = React.useRef(false);
+  const selectionEditedRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
   const isMobile = useIsMobileViewport();
   const [viewportResolved, setViewportResolved] = React.useState(false);
 
   const closeDropdown = React.useCallback(() => {
+    selectionEditedRef.current = false;
     setOpen((current) => {
       if (!current) return current;
       setQuery("");
@@ -375,13 +378,9 @@ export function SearchableSelect({
     onSearchChange?.(next);
   }
 
-  function handleSelect(nextValue: string) {
-    closeDropdown();
-    changeQuery("");
-    onValueChange(nextValue);
-
-    if (!advanceFocusOnSelect || !isDesktopFormNavigation()) return;
-
+  function advanceFocus() {
+    if (!isDesktopFormNavigation()) return;
+    if (open) skipCloseAutoFocusRef.current = true;
     const focusTarget = searchable ? inputRef.current : triggerRef.current;
     skipOpenOnFocusRef.current = true;
     window.setTimeout(() => {
@@ -393,6 +392,13 @@ export function SearchableSelect({
         skipOpenOnFocusRef.current = false;
       }
     }, 0);
+  }
+
+  function handleSelect(nextValue: string) {
+    closeDropdown();
+    changeQuery("");
+    onValueChange(nextValue);
+    if (advanceFocusOnSelect) advanceFocus();
   }
 
   const shouldClientFilter = searchable && !manualFiltering;
@@ -426,6 +432,8 @@ export function SearchableSelect({
   }, [open, searchable]);
 
   function handleComboboxKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.defaultPrevented || event.nativeEvent.isComposing || event.repeat ||
+      event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === "Escape") {
       event.preventDefault();
       closeDropdown();
@@ -438,6 +446,7 @@ export function SearchableSelect({
     }
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      selectionEditedRef.current = true;
       event.preventDefault();
       event.stopPropagation();
       if (!open) {
@@ -449,7 +458,18 @@ export function SearchableSelect({
       return;
     }
 
-    if (event.key !== "Enter" || event.shiftKey) return;
+    if (event.key !== "Enter") return;
+    const field = searchable ? inputRef.current : triggerRef.current;
+    // Own desktop Enter before cmdk consumes it, including when its list is closed.
+    if (isDesktopFormNavigation() && field?.closest("form") &&
+      (!open || (advanceFocusOnSelect && value !== "" && !selectionEditedRef.current))) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeDropdown();
+      changeQuery("");
+      advanceFocus();
+      return;
+    }
     if (!open) return;
     event.preventDefault();
     event.stopPropagation();
@@ -457,10 +477,9 @@ export function SearchableSelect({
       navigableOptions.find((option) => option.value === highlight) ?? navigableOptions[0];
     if (selected) handleSelect(selected.value);
     else {
-      const field = searchable ? inputRef.current : triggerRef.current;
       if (isDesktopFormNavigation() && field?.closest("form")) {
         closeDropdown();
-        window.setTimeout(() => focusNextFormField(field, { suppressComboboxOpen: true }), 0);
+        advanceFocus();
       }
     }
   }
@@ -657,7 +676,11 @@ export function SearchableSelect({
           <PopoverContent
             align={align}
             sideOffset={4}
-            onKeyDown={handleComboboxKeyDown}
+            onKeyDownCapture={handleComboboxKeyDown}
+            onCloseAutoFocus={(event) => {
+              if (skipCloseAutoFocusRef.current) event.preventDefault();
+              skipCloseAutoFocusRef.current = false;
+            }}
             className={cn(popoverContentClassName, contentClassName)}
           >
             <Command
@@ -726,11 +749,13 @@ export function SearchableSelect({
                 </span>
               ) : null}
               <CommandPrimitive.Input
+                asChild
                 ref={inputRef}
                 id={id}
                 disabled={disabled}
                 value={open ? query : hasSelection ? query || selectedOption?.label || "" : query}
                 onValueChange={(next) => {
+                  selectionEditedRef.current = true;
                   changeQuery(next);
                   if (!open) openDropdown();
                 }}
@@ -756,7 +781,13 @@ export function SearchableSelect({
                   "placeholder:text-muted-foreground",
                   !hasSelection && !open && "text-muted-foreground",
                 )}
-              />
+              >
+                <input
+                  {...(id ? { id } : {})}
+                  aria-expanded={open}
+                  {...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : ariaLabel ? { "aria-labelledby": undefined } : {})}
+                />
+              </CommandPrimitive.Input>
               {canClearSelection ? (
                 <button
                   type="button"

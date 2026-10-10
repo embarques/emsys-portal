@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { focusNextFormField, isAutomaticSelectionFocus, isDesktopFormNavigation } from "@/hooks/use-form-enter-navigation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import {
   useCustomer,
@@ -190,6 +191,10 @@ export function CustomerPartySelect({
   const queryClient = useQueryClient();
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const keyboardSelectionRef = useRef(false);
+  const skipCloseFocusRef = useRef(false);
+  const selectionEditedRef = useRef(false);
+  const pendingAddressFocusRef = useRef<string | null>(null);
   const isMobile = useIsMobileViewport();
   const ensureCustomerDetail = useEnsureCustomerDetail();
   const [open, setOpen] = useState(false);
@@ -246,6 +251,25 @@ export function CustomerPartySelect({
   const hasSelection = Boolean(value && selectedCustomer);
 
   useEffect(() => {
+    const customerId = pendingAddressFocusRef.current;
+    if (!customerId) return;
+    const address = Array.from(document.getElementById(listboxId)?.querySelectorAll<HTMLButtonElement>("[data-customer-address]") ?? [])
+      .find((button) => button.dataset.customerAddress === customerId);
+    if (address) {
+      pendingAddressFocusRef.current = null;
+      address.focus();
+    }
+  }, [expandedIds, detailQuery.data, listboxId]);
+
+  function advancePickerFocus() {
+    skipCloseFocusRef.current = true;
+    selectionEditedRef.current = false;
+    setOpen(false);
+    setQuery("");
+    window.setTimeout(() => focusNextFormField(inputRef.current, { suppressComboboxOpen: true }), 0);
+  }
+
+  useEffect(() => {
     if (!open) return;
     setHighlightedIndex(0);
   }, [debouncedQuery, open, results.length]);
@@ -270,6 +294,10 @@ export function CustomerPartySelect({
     setQuery("");
     setExpandedIds(new Set());
     setDetailCustomerId(null);
+    if (keyboardSelectionRef.current && isDesktopFormNavigation()) {
+      keyboardSelectionRef.current = false;
+      advancePickerFocus();
+    }
   }
 
   function handleAddAddress(customer: Customer) {
@@ -332,7 +360,10 @@ export function CustomerPartySelect({
   }
 
   function handleInputKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.defaultPrevented || event.nativeEvent.isComposing || event.repeat ||
+      event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "ArrowDown") {
+      selectionEditedRef.current = true;
       event.preventDefault();
       if (!open) {
         setOpen(true);
@@ -343,14 +374,28 @@ export function CustomerPartySelect({
     }
 
     if (event.key === "ArrowUp") {
+      selectionEditedRef.current = true;
       event.preventDefault();
       setHighlightedIndex((current) => Math.max(current - 1, 0));
       return;
     }
 
+    if (event.key === "Enter" && isDesktopFormNavigation() &&
+      !selectionEditedRef.current && !query.trim() && (hasSelection || !required)) {
+      event.preventDefault();
+      event.stopPropagation();
+      advancePickerFocus();
+      return;
+    }
+
     if (event.key === "Enter" && open && results[highlightedIndex]) {
       event.preventDefault();
+      event.stopPropagation();
       const displayCustomer = resolveDisplayCustomer(results[highlightedIndex]!.customer);
+      keyboardSelectionRef.current = isDesktopFormNavigation();
+      if (keyboardSelectionRef.current && resolveCustomerAddressCount(displayCustomer) > 1) {
+        pendingAddressFocusRef.current = displayCustomer.id;
+      }
       activateCustomerRow(displayCustomer, resolveCustomerAddressCount(displayCustomer));
       return;
     }
@@ -508,6 +553,7 @@ export function CustomerPartySelect({
                           <button
                             key={address.id ?? `${displayCustomer.id}-${addressIndex}`}
                             type="button"
+                            data-customer-address={displayCustomer.id}
                             className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-muted/70"
                             onClick={() => void selectCustomer(displayCustomer, address.id)}
                           >
@@ -647,11 +693,14 @@ export function CustomerPartySelect({
               id={id}
               value={open ? query : hasSelection ? displayLabel : query}
               onChange={(event) => {
+                selectionEditedRef.current = true;
                 setQuery(event.target.value);
                 if (!open) setOpen(true);
               }}
               onFocus={() => {
                 if (disabled) return;
+                if (isAutomaticSelectionFocus(inputRef.current)) return;
+                selectionEditedRef.current = false;
                 setOpen(true);
               }}
               onKeyDown={handleInputKeyDown}
@@ -689,6 +738,10 @@ export function CustomerPartySelect({
           align="start"
           sideOffset={4}
           onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => {
+            if (skipCloseFocusRef.current) event.preventDefault();
+            skipCloseFocusRef.current = false;
+          }}
           className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0"
         >
           <div
