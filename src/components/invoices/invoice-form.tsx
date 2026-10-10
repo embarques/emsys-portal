@@ -37,13 +37,12 @@ import {
   wizardSelectClassNameFor,
   wizardSelectFieldProps,
 } from "@/components/invoices/invoice-wizard-styles";
-import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
+import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-company";
 
 import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker, useCreateContainer } from "@/lib/containers/hooks/use-containers";
 import {
   createEmptyContainerForm,
@@ -69,7 +68,7 @@ import {
   type EmployeeFormValues,
 } from "@/lib/employees/types";
 import {
-  INVOICE_PAYMENT_LOCATIONS,
+  mapPaymentLocationToPaidRegion,
   INVOICE_PICKUP_SOURCES,
   computeInvoiceBalance,
   createEmptyInvoiceForm,
@@ -215,6 +214,7 @@ export function InvoiceForm({
   requestEditLineItemId = null,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
+  const googleMapsConfigured = useIsGoogleMapsConfigured();
   const isPhoneWizard = appearance === "phoneWizard";
   const isWizard = appearance === "wizard" || isPhoneWizard;
   const { data: containersData } = useContainerPicker();
@@ -252,7 +252,7 @@ export function InvoiceForm({
     ),
     [pickupRoutesQuery.data?.items],
   );
-  const { data: branchesData } = useBranchPicker();
+  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
   const branches = branchesData?.items ?? [];
   const branchesById = useMemo(
     () => new Map(branches.map((branch) => [branch.id, branch])),
@@ -641,8 +641,8 @@ export function InvoiceForm({
 
   const unverifiedPartyMessage = t("invoices.wizard.validation.unverifiedSenderAddress");
   // Only senders use Google verification; receivers use a predetermined city list.
-  const blockForUnverifiedParty =
-    isGoogleMapsConfigured() &&
+  const warnForUnverifiedParty =
+    googleMapsConfigured &&
     Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
 
   function handleSubmit(event: React.FormEvent) {
@@ -779,7 +779,7 @@ export function InvoiceForm({
             { value: "", label: t("invoices.form.placeholders.selectContainer") },
             ...containers.map((container) => ({
               value: String(container.id),
-              label: formatContainerLabel(container),
+              label: container.name,
             })),
           ]}
         />,
@@ -866,16 +866,17 @@ export function InvoiceForm({
         true,
         <SearchableSelect
           id="paymentLocation"
-          value={values.paymentLocation}
+          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
           onValueChange={(next) =>
             updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
           }
           placeholder={t("invoices.form.fields.paymentLocation")}
           {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
           required
-          options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
-            value: option.value,
-            label: option.label,
+          loading={branchesLoading}
+          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
+            value: branch.code.trim().toUpperCase(),
+            label: branch.code.trim().toUpperCase(),
           }))}
         />,
         wizardFieldCol,
@@ -1107,7 +1108,7 @@ export function InvoiceForm({
         {showFooter ? (
         <FormFooter
           error={errorMessage}
-          warning={blockForUnverifiedParty ? unverifiedPartyMessage : null}
+          warning={warnForUnverifiedParty ? unverifiedPartyMessage : null}
           submitLabel={submitLabel}
           onCancel={onCancel}
         />

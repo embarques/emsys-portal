@@ -60,7 +60,15 @@ export function resolvePickupSearchField(field: string): string {
  * API adds completed=false by default (incomplete pickups only).
  */
 export function createPickupBarSearchFilterGroup(value: string): ApiSearchFilterGroup | null {
-  return createOrTextSearchFilterGroup(value, [...PICKUP_BAR_OR_FIELDS], "contains");
+  const term = value.trim();
+  const idText = term.replace(/^#\s*/, "");
+  const pickupId = /^\d+$/.test(idText) ? Number(idText) : null;
+  const group = createOrTextSearchFilterGroup(term, [...PICKUP_BAR_OR_FIELDS], "contains");
+  if (group && pickupId !== null && Number.isSafeInteger(pickupId) && pickupId > 0) {
+    // Pickup IDs are numeric: the API requires a JSON number and equality.
+    group.filters.unshift({ field: "id", operator: "eq", value: pickupId });
+  }
+  return group;
 }
 
 export function createPickupTextSearchFilter(

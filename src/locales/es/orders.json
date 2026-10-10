@@ -330,7 +330,7 @@
       "selected": "Seleccionada"
     },
     "errors": {
-      "notConfigured": "Google Maps no está configurado. Agregue NEXT_PUBLIC_GOOGLE_MAPS_API_KEY para habilitar el mapa de recogidas.",
+      "notConfigured": "Google Maps no está configurado para esta empresa.",
       "loadFailed": "No se pudo cargar Google Maps.",
       "loadOrdersFailed": "No se pudieron cargar las recogidas para el mapa."
     }

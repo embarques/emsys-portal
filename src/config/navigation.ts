@@ -259,6 +259,7 @@ export const navigationSections: NavigationSection[] = [
     groups: [
       ...[appointmentsItem, invoicesItem].map(navigationItemToGroup),
       accountingGroup,
+      ...[customersItem, reportsItem].map(navigationItemToGroup),
     ],
   },
   {
@@ -268,12 +269,11 @@ export const navigationSections: NavigationSection[] = [
       inventoryItem,
       containersItem,
       routesItem,
-      reportsItem,
     ].map(navigationItemToGroup),
   },
   {
     id: "reference",
-    groups: [customersItem, itemsItem, vehiclesItem].map(navigationItemToGroup),
+    groups: [itemsItem, vehiclesItem].map(navigationItemToGroup),
   },
   {
     id: "admin",

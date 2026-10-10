@@ -9,6 +9,10 @@ const FIELD_SELECTOR = [
 
 const automaticSelectionFocus = new WeakSet<HTMLElement>();
 
+export function isDesktopFormNavigation() {
+  return typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
+}
+
 /** A select is handing focus forward while its own popup is closing. */
 export function isAutomaticSelectionFocus(element: HTMLElement | null): boolean {
   return element !== null && automaticSelectionFocus.has(element);
@@ -23,7 +27,7 @@ function isVisible(element: HTMLElement) {
 }
 
 function isNavigableField(element: HTMLElement) {
-  if ((element as HTMLInputElement).disabled) return false;
+  if (element.matches(":disabled") || element.getAttribute("aria-disabled") === "true") return false;
 
   const isCombobox = element.getAttribute("role") === "combobox";
   if ((element as HTMLInputElement).readOnly && !isCombobox) return false;
@@ -45,7 +49,7 @@ export function focusNextFormField(
   current: HTMLElement | null,
   options: { suppressComboboxOpen?: boolean } = {},
 ): boolean {
-  if (!current) return false;
+  if (!current || !isDesktopFormNavigation()) return false;
 
   const form = current.closest("form");
   if (!form) return false;
@@ -54,21 +58,25 @@ export function focusNextFormField(
   const currentIndex = fields.indexOf(current);
   if (currentIndex === -1) return false;
 
-  const nextField = fields[currentIndex + 1];
+  const nextField = fields.slice(currentIndex + 1).find((field) => {
+    if (options.suppressComboboxOpen) automaticSelectionFocus.add(field);
+    try {
+      field.focus();
+      return document.activeElement === field;
+    } finally {
+      automaticSelectionFocus.delete(field);
+    }
+  });
   if (!nextField) {
-    const nextButton = form.closest('[data-testid="invoice-form-wizard"]')
+    const nextButton = Array.from(form.elements).find((element) =>
+      element instanceof HTMLButtonElement && element.type === "submit" && isNavigableField(element),
+    ) as HTMLButtonElement | undefined ?? form.closest('[data-testid="invoice-form-wizard"]')
       ?.querySelector<HTMLButtonElement>('[data-wizard-primary]');
     if (!nextButton || nextButton.disabled) return false;
     nextButton.focus();
     return true;
   }
 
-  if (options.suppressComboboxOpen) automaticSelectionFocus.add(nextField);
-  try {
-    nextField.focus();
-  } finally {
-    automaticSelectionFocus.delete(nextField);
-  }
   selectFormFieldText(nextField);
   return true;
 }
@@ -102,6 +110,8 @@ export function selectFormFieldTextOnFocus(
 export function submitFormOnEnterKeyDown(
   event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
 ) {
+  // Desktop forms advance through every field before submitting.
+  if (isDesktopFormNavigation()) return;
   if (event.key !== "Enter") return;
   if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.nativeEvent.isComposing) return;
@@ -142,72 +152,68 @@ function completeForm(
 
   if (!submitOnLast) return;
 
+  const submitters = Array.from(form.elements).filter((element) =>
+    (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) && element.type === "submit",
+  ) as (HTMLButtonElement | HTMLInputElement)[];
+  const submitter = submitters.find(isNavigableField);
+  if (submitters.length && !submitter) return;
+
   if (typeof form.requestSubmit === "function") {
-    form.requestSubmit();
+    form.requestSubmit(submitter);
   } else {
     form.submit();
   }
 }
 
 /**
- * Returns a form `onKeyDown` handler that turns Enter into "advance to next
- * field" navigation (like Tab) and submits the form once the last field is
- * reached. Textareas keep their newline behavior, and open comboboxes keep
- * their own Enter-to-select behavior.
+ * Desktop Enter advances fields and submits at the end. Shift+Enter preserves
+ * multiline input; open comboboxes retain their own Enter-to-select behavior.
  */
+export function handleFormEnterNavigation(
+  event: KeyboardEvent | React.KeyboardEvent<HTMLFormElement>,
+  form: HTMLFormElement,
+  options: FormEnterNavigationOptions = {},
+) {
+  const { submitOnLast = true, onComplete, shouldComplete, advanceTextareas = true } = options;
+  if (!isDesktopFormNavigation() || event.key !== "Enter") return;
+  if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+  const composing = "nativeEvent" in event ? event.nativeEvent.isComposing : event.isComposing;
+  if (event.defaultPrevented || event.repeat || composing) return;
+
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  if (target.closest('[data-enter-navigation="ignore"]')) return;
+  if ((target.tagName === "TEXTAREA" && !advanceTextareas) || target.isContentEditable) return;
+  if (target.tagName === "BUTTON" || target.tagName === "A") return;
+  const inputType = (target as HTMLInputElement).type;
+  if (inputType === "submit" || inputType === "button") return;
+  if (target.getAttribute("aria-expanded") === "true") return;
+
+  const fields = getNavigableFormFields(form);
+  const currentIndex = fields.indexOf(target);
+  if (currentIndex === -1) return;
+  event.preventDefault();
+
+  if (shouldComplete?.()) {
+    completeForm(form, submitOnLast, onComplete);
+    return;
+  }
+
+  for (const nextField of fields.slice(currentIndex + 1)) {
+    nextField.focus();
+    if (document.activeElement !== nextField) continue;
+    selectFormFieldText(nextField);
+    return;
+  }
+  completeForm(form, submitOnLast, onComplete);
+}
+
 export function useFormEnterNavigation(options: FormEnterNavigationOptions = {}) {
-  const { submitOnLast = true, onComplete, shouldComplete, advanceTextareas = false } = options;
-
+  const { submitOnLast, onComplete, shouldComplete, advanceTextareas } = options;
   return React.useCallback(
-    (event: React.KeyboardEvent<HTMLFormElement>) => {
-      if (event.key !== "Enter") return;
-      if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
-      if (event.defaultPrevented || event.nativeEvent.isComposing) return;
-
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-
-      if (target.closest('[data-enter-navigation="ignore"]')) return;
-
-      const tagName = target.tagName;
-
-      // Let textareas and rich-text fields insert newlines.
-      if ((tagName === "TEXTAREA" && !advanceTextareas) || target.isContentEditable) return;
-
-      // Let buttons and links keep their native Enter behavior.
-      if (tagName === "BUTTON" || tagName === "A") return;
-      const inputType = (target as HTMLInputElement).type;
-      if (inputType === "submit" || inputType === "button") return;
-
-      // Let open comboboxes/menus handle Enter (e.g. confirming an option).
-      if (target.getAttribute("aria-expanded") === "true") return;
-
-      const form = event.currentTarget;
-      const fields = getNavigableFormFields(form);
-
-      const currentIndex = fields.indexOf(target);
-      if (currentIndex === -1) return;
-
-      if (shouldComplete?.()) {
-        event.preventDefault();
-        completeForm(form, submitOnLast, onComplete);
-        return;
-      }
-
-      const nextField = fields[currentIndex + 1];
-
-      if (nextField) {
-        event.preventDefault();
-        nextField.focus();
-        selectFormFieldText(nextField);
-        return;
-      }
-
-      if (onComplete || submitOnLast) {
-        event.preventDefault();
-        completeForm(form, submitOnLast, onComplete);
-      }
-    },
+    (event: React.KeyboardEvent<HTMLFormElement>) => handleFormEnterNavigation(event, event.currentTarget, {
+      submitOnLast, onComplete, shouldComplete, advanceTextareas,
+    }),
     [onComplete, shouldComplete, submitOnLast, advanceTextareas],
   );
 }

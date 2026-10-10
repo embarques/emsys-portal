@@ -2,22 +2,13 @@
  * Browser-only loader for the Google Maps JavaScript API.
  *
  * Loads the API once (idempotent) using the `places` library and the
- * `importLibrary` bootstrap. The key is read from
- * `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` and never hardcoded.
+ * `importLibrary` bootstrap. Callers supply the selected company's browser key.
  */
 
 const GOOGLE_MAPS_CALLBACK = "__emsysInitGoogleMaps";
 
 let loaderPromise: Promise<void> | null = null;
-
-export function getGoogleMapsApiKey(): string {
-  return (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "").trim();
-}
-
-/** True when a Google Maps API key is configured (autocomplete can be offered). */
-export function isGoogleMapsConfigured(): boolean {
-  return getGoogleMapsApiKey().length > 0;
-}
+let loadedApiKey: string | null = null;
 
 type GoogleMapsGlobal = {
   maps?: GoogleMapsCoreApi & {
@@ -48,12 +39,17 @@ export function getGoogleMapsCoreApi(): GoogleMapsCoreApi | null {
  * Ensure the Google Maps JS API is loaded. Resolves once `importLibrary`
  * is available. Safe to call repeatedly — only one script tag is injected.
  */
-export function loadGoogleMaps(): Promise<void> {
+export function loadGoogleMaps(companyApiKey: string): Promise<void> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("Google Maps can only load in the browser."));
   }
 
-  if (getGoogleGlobal()?.maps?.importLibrary) {
+  const apiKey = companyApiKey.trim();
+  if (!apiKey) return Promise.reject(new Error("Google Maps is not configured for this company."));
+  if (loadedApiKey && loadedApiKey !== apiKey) {
+    return Promise.reject(new Error("Reload the page to use this company's Google Maps configuration."));
+  }
+  if (loadedApiKey === apiKey && getGoogleGlobal()?.maps?.importLibrary) {
     return Promise.resolve();
   }
 
@@ -61,11 +57,7 @@ export function loadGoogleMaps(): Promise<void> {
     return loaderPromise;
   }
 
-  const apiKey = getGoogleMapsApiKey();
-  if (!apiKey) {
-    return Promise.reject(new Error("Google Maps API key is not configured."));
-  }
-
+  loadedApiKey = apiKey;
   loaderPromise = new Promise<void>((resolve, reject) => {
     const win = window as unknown as Record<string, unknown>;
 
@@ -88,6 +80,8 @@ export function loadGoogleMaps(): Promise<void> {
     script.defer = true;
     script.onerror = () => {
       loaderPromise = null;
+      loadedApiKey = null;
+      script.remove();
       delete win[GOOGLE_MAPS_CALLBACK];
       reject(new Error("Failed to load the Google Maps script."));
     };
@@ -99,8 +93,8 @@ export function loadGoogleMaps(): Promise<void> {
 }
 
 /** Load the Maps API then import a specific library (e.g. "places"). */
-export async function importGoogleMapsLibrary<T = unknown>(name: string): Promise<T> {
-  await loadGoogleMaps();
+export async function importGoogleMapsLibrary<T = unknown>(name: string, apiKey: string): Promise<T> {
+  await loadGoogleMaps(apiKey);
   const importLibrary = getGoogleGlobal()?.maps?.importLibrary;
   if (!importLibrary) {
     throw new Error("Google Maps importLibrary is unavailable.");

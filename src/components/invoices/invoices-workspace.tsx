@@ -56,6 +56,7 @@ import {
   formatInvoiceDate,
   formatInvoiceMoney,
   formatInvoicePartyAddressLine,
+  formatInvoicePartyAddressLines,
   formatInvoiceTabLabel,
   getContainerLabelForInvoice,
   getInvoiceBalance,
@@ -118,6 +119,8 @@ import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
+import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
+import { Badge } from "@/components/ui/badge";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { OrderParty } from "@/lib/orders/types";
@@ -186,14 +189,40 @@ function isLegacySyncPermissionError(message: string): boolean {
 
 function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
   const { t } = useTranslation();
-  const addressLine = formatInvoicePartyAddressLine(party);
-  const displayLine = addressLine === "—" ? t("common.empty.dash") : addressLine;
+  const lines = formatInvoicePartyAddressLines(party);
 
   return (
     <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME)}>
-      <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={displayLine}>
-        {displayLine}
-      </p>
+      {lines.length ? lines.map((line, index) => (
+        <p key={index} className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")}>
+          {line}
+        </p>
+      )) : t("common.empty.dash")}
+    </div>
+  );
+}
+
+function InvoicePartyPhoneCell({ party }: { party: OrderParty | null | undefined }) {
+  const { t } = useTranslation();
+  const phones = (party?.phones ?? []).map((phone) => ({
+    ...phone,
+    display: resolvePhoneDisplayValue(phone.number, phone.displayNumber),
+  })).filter((phone) => phone.display)
+    .sort((a, b) => Number(b.isPrimary === true) - Number(a.isPrimary === true));
+
+  return (
+    <div className="flex flex-col gap-1 tabular-nums">
+      {phones.length ? phones.map((phone, index) => (
+        <span key={`${phone.id}-${index}`} className="flex items-center gap-2 whitespace-nowrap leading-snug">
+          <span title={phone.label}>{phone.display}</span>
+          {phone.isPrimary ? (
+            <Badge variant="outline"
+              className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+              {t("invoices.columns.primaryPhone")}
+            </Badge>
+          ) : null}
+        </span>
+      )) : t("common.empty.dash")}
     </div>
   );
 }
@@ -957,11 +986,18 @@ export function InvoicesWorkspace() {
       renderCell: (invoice) => invoice.sender.name.trim() || t("common.empty.dash"),
     },
     {
+      id: "sender.phones",
+      label: t("invoices.columns.senderPhone"),
+      defaultWidth: 260,
+      truncateCell: false,
+      cellClassName: "align-top",
+      renderCell: (invoice) => <InvoicePartyPhoneCell party={invoice.sender} />,
+    },
+    {
       id: "sender.address",
       label: t("invoices.columns.senderAddress"),
       sortField: "sender.address.address1",
-      defaultVisible: false,
-      defaultWidth: 220,
+      defaultWidth: 340,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (invoice) => <InvoicePartyAddressCell party={invoice.sender} />,
@@ -977,11 +1013,18 @@ export function InvoicesWorkspace() {
       },
     },
     {
+      id: "receiver.phones",
+      label: t("invoices.columns.receiverPhone"),
+      defaultWidth: 260,
+      truncateCell: false,
+      cellClassName: "align-top",
+      renderCell: (invoice) => <InvoicePartyPhoneCell party={getInvoicePrimaryReceiver(invoice)} />,
+    },
+    {
       id: "receiver.address",
       label: t("invoices.columns.receiverAddress"),
       sortField: "receiver.address.address1",
-      defaultVisible: false,
-      defaultWidth: 220,
+      defaultWidth: 340,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (invoice) => (
@@ -1072,7 +1115,7 @@ export function InvoicesWorkspace() {
     [t],
   );
 
-  const columnVisibility = useApiTableColumns("invoices-v11", tableColumns, INVOICE_API_TABLE_FIELDS);
+  const columnVisibility = useApiTableColumns("invoices-v12", tableColumns, INVOICE_API_TABLE_FIELDS);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;

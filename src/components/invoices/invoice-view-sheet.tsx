@@ -337,7 +337,26 @@ export function InvoiceViewSheet({
         />
 
         <RecordViewSheetBody>
-          {/* Creation-workflow fields first (aligned with wizard), then view-only sections. */}
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <InvoiceTotalCell
+              label={t("invoices.columns.total")}
+              value={formatInvoiceMoney(totals.subtotal)}
+            />
+            <InvoiceTotalCell
+              label={t("invoices.columns.discount")}
+              value={formatInvoiceDeduction(invoice.discount)}
+            />
+            <InvoiceTotalCell
+              label={t("invoices.columns.amountPaid")}
+              value={formatInvoiceDeduction(invoice.amountPaid)}
+              tone={invoice.amountPaid > 0 ? "positive" : "default"}
+            />
+            <InvoiceTotalCell
+              label={t("invoices.columns.balance")}
+              value={formatInvoiceMoney(totals.balance)}
+              tone="balance"
+            />
+          </div>
           <RecordViewSheetSection title={t("invoices.form.sections.invoiceDetails")}>
             <RecordViewSheetDetailRow
               label={t("invoices.form.fields.invoiceNumber")}
@@ -429,28 +448,6 @@ export function InvoiceViewSheet({
                   )}
                 </tbody>
               </table>
-            </div>
-            <div className="mt-4 border-t border-border bg-muted/20 px-1 py-3.5 sm:px-0">
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                <InvoiceTotalCell
-                  label={t("invoices.columns.total")}
-                  value={formatInvoiceMoney(totals.subtotal)}
-                />
-                <InvoiceTotalCell
-                  label={t("invoices.columns.discount")}
-                  value={formatInvoiceDeduction(invoice.discount)}
-                />
-                <InvoiceTotalCell
-                  label={t("invoices.columns.amountPaid")}
-                  value={formatInvoiceDeduction(invoice.amountPaid)}
-                  tone={invoice.amountPaid > 0 ? "positive" : "default"}
-                />
-                <InvoiceTotalCell
-                  label={t("invoices.columns.balance")}
-                  value={formatInvoiceMoney(totals.balance)}
-                  tone="balance"
-                />
-              </div>
             </div>
           </RecordViewSheetSection>
 

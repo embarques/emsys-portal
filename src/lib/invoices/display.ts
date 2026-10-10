@@ -1,5 +1,5 @@
 import { formatContainerIdLabel } from "@/lib/containers/display";
-import { formatAddressLine } from "@/lib/customers/display";
+import { formatAddressLine, formatCoreAddressLines } from "@/lib/customers/display";
 import type { CustomerCoreAddress } from "@/lib/customers/types";
 import { formatAddressLine as formatSnapshotAddressLine } from "@/lib/customers/utils/address-utils";
 import { formatItemPrice } from "@/lib/items/display";
@@ -201,6 +201,11 @@ export function formatInvoicePartyAddressLine(party: OrderParty | null | undefin
   if (!address) return "—";
 
   return formatSnapshotAddressLine(orderPartyAddressToCore(address), "full");
+}
+
+export function formatInvoicePartyAddressLines(party: OrderParty | null | undefined): string[] {
+  const address = party ? getOrderPartyAddress(party) : null;
+  return address ? formatCoreAddressLines(orderPartyAddressToCore(address)) : [];
 }
 
 /** displayNumber is presentation-only; stored number remains the search/write value. */

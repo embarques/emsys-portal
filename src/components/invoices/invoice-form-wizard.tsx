@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { getNavigableFormFields } from "@/hooks/use-form-enter-navigation";
+import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -136,20 +137,23 @@ export function InvoiceFormWizard({
   );
   const previewStep: InvoiceWizardStep = requireDailyIncomeRegistration ? 5 : 4;
   const wizardRef = useRef<HTMLDivElement>(null);
+  const isTabActive = useWorkspaceTabQueriesEnabled();
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
+    if (!isTabActive || isMobileLayout) return;
+    const timeout = window.setTimeout(() => {
       const root = wizardRef.current;
       if (!root) return;
       const fields = getNavigableFormFields(root);
-      if (fields.includes(document.activeElement as HTMLElement)) return;
+      if (focusFieldId && document.activeElement?.id === focusFieldId &&
+        fields.includes(document.activeElement as HTMLElement)) return;
       const first = step === previewStep
         ? root.querySelector<HTMLElement>('[data-wizard-primary]')
         : fields[0] ?? root.querySelector<HTMLElement>('[data-wizard-primary]');
       first?.focus();
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [step, previewStep]);
+    }, 100);
+    return () => window.clearTimeout(timeout);
+  }, [step, previewStep, isTabActive, isMobileLayout, formSessionKey, focusFieldId]);
 
   useEffect(() => {
     valuesRef.current = values;

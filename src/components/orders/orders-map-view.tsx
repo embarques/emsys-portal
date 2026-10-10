@@ -22,7 +22,6 @@ import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appoint
 import {
   getGoogleMapsCoreApi,
   importGoogleMapsLibrary,
-  isGoogleMapsConfigured,
   loadGoogleMaps,
 } from "@/lib/maps/load-google-maps";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -39,6 +38,7 @@ import { buildPickupMapStops, type PickupMapStop } from "@/lib/orders/utils/pick
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
 import { useTranslation } from "@/lib/i18n";
+import { useGoogleMapsApiKey } from "@/lib/company/hooks/use-current-company";
 import { cn } from "@/lib/utils";
 
 const MAP_ORDERS_LIMIT = 500;
@@ -142,6 +142,7 @@ export function OrdersMapView({
   isUnassigning,
 }: OrdersMapViewProps) {
   const { t } = useTranslation();
+  const googleMapsApiKey = useGoogleMapsApiKey();
   const { notifyError } = useFeedback();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
@@ -233,7 +234,7 @@ export function OrdersMapView({
       return;
     }
 
-    if (!isGoogleMapsConfigured()) {
+    if (!googleMapsApiKey) {
       setMapError(t("orders.map.errors.notConfigured"));
       return;
     }
@@ -242,8 +243,8 @@ export function OrdersMapView({
 
     async function initMap() {
       try {
-        await loadGoogleMaps();
-        await importGoogleMapsLibrary("maps");
+        await loadGoogleMaps(googleMapsApiKey);
+        await importGoogleMapsLibrary("maps", googleMapsApiKey);
         const maps = getGoogleMapsCoreApi() as GoogleMapsCore | null;
         if (!maps) {
           throw new Error(t("orders.map.errors.loadFailed"));
@@ -281,7 +282,7 @@ export function OrdersMapView({
       mapsLibRef.current = null;
       setMapReady(false);
     };
-  }, [active, t]);
+  }, [active, t, googleMapsApiKey]);
 
   // Plot all mapped stops once per base change; selection styling is handled separately.
   useEffect(() => {

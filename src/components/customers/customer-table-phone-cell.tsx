@@ -175,8 +175,13 @@ export function CustomerTablePhoneCell({ customer, className }: CustomerTablePho
       <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME, className)}>
         <div className={cn("flex w-full flex-col gap-0.5", ADDRESS_TEXT_WRAP_CLASSNAME)}>
           {visiblePhones.map(({ phone, display }, index) => (
-            <span key={`${phone.number}-${index}`} className="leading-snug">
-              {display}
+            <span key={`${phone.number}-${index}`} className="flex flex-wrap items-center gap-2 leading-snug">
+              <span className="whitespace-nowrap tabular-nums">{display}</span>
+              {phone.isPrimary ? (
+                <Badge variant="outline" className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+                  {t("phones.primaryBadge")}
+                </Badge>
+              ) : null}
             </span>
           ))}
         </div>

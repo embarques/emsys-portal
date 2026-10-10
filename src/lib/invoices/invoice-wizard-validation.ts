@@ -1,4 +1,3 @@
-import { customerHasUnverifiedPrimaryAddress } from "@/lib/customers/types";
 import { canContinueInvoiceDailyIncomeStep, type InvoiceDailyIncomeContext } from "@/lib/invoices/invoice-daily-income-context";
 import {
   getInvoiceFormBalance,
@@ -8,7 +7,6 @@ import {
   resolveLineTotal,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
-import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 
 export const INVOICE_WIZARD_FIELDS = {
   date: "date",
@@ -89,13 +87,6 @@ export function findInvoiceWizardStep2Issue(
       step: 2,
       fieldId: INVOICE_WIZARD_FIELDS.senderId,
       message: t("invoices.wizard.validation.senderRequired"),
-    };
-  }
-  if (isGoogleMapsConfigured() && customerHasUnverifiedPrimaryAddress(values.sender)) {
-    return {
-      step: 2,
-      fieldId: INVOICE_WIZARD_FIELDS.senderId,
-      message: t("invoices.wizard.validation.unverifiedSenderAddress"),
     };
   }
   return null;

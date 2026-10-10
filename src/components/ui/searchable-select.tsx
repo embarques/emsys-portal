@@ -5,7 +5,7 @@ import { Command as CommandPrimitive, defaultFilter } from "cmdk";
 import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { focusNextFormField, isAutomaticSelectionFocus } from "@/hooks/use-form-enter-navigation";
+import { focusNextFormField, isAutomaticSelectionFocus, isDesktopFormNavigation } from "@/hooks/use-form-enter-navigation";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import {
   Command,
@@ -380,7 +380,7 @@ export function SearchableSelect({
     changeQuery("");
     onValueChange(nextValue);
 
-    if (!advanceFocusOnSelect) return;
+    if (!advanceFocusOnSelect || !isDesktopFormNavigation()) return;
 
     const focusTarget = searchable ? inputRef.current : triggerRef.current;
     skipOpenOnFocusRef.current = true;
@@ -458,7 +458,7 @@ export function SearchableSelect({
     if (selected) handleSelect(selected.value);
     else {
       const field = searchable ? inputRef.current : triggerRef.current;
-      if (field?.closest('[data-testid="invoice-form-wizard"]')) {
+      if (isDesktopFormNavigation() && field?.closest("form")) {
         closeDropdown();
         window.setTimeout(() => focusNextFormField(field, { suppressComboboxOpen: true }), 0);
       }

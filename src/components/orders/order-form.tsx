@@ -15,7 +15,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
-import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
+import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-company";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
 
@@ -104,6 +104,7 @@ export function OrderForm({
   onCancel,
 }: OrderFormProps) {
   const { t } = useTranslation();
+  const googleMapsConfigured = useIsGoogleMapsConfigured();
   const { data: branchesData } = useBranchPicker();
   const employeesQuery = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
   const { openFormTab } = useWorkspaceTabs();
@@ -251,7 +252,7 @@ export function OrderForm({
   const unverifiedPartyMessage = t("orders.form.validation.unverifiedSenderAddress");
   // Only senders use Google verification; receivers use a predetermined city list.
   const blockForUnverifiedParty =
-    isGoogleMapsConfigured() &&
+    googleMapsConfigured &&
     Boolean(
       values.sender &&
         customerHasUnverifiedAddressAtIndex(values.sender, values.senderAddressIndex),

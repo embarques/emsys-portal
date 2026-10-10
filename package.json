@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test:unit": "node --experimental-strip-types --test tests/unit/*.test.mjs",
+    "test:keyboard": "node --test tests/browser/form-enter-navigation.test.mjs",
     "test:api": "node scripts/test-all-apis.mjs",
     "test:api:all": "node scripts/test-all-apis.mjs",
     "test:api:pickups": "node scripts/test-pickups-api.mjs",

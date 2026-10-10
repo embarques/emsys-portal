@@ -32,7 +32,7 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
 import { useTranslation } from "@/lib/i18n";
 import { useCreateUser, useUpdateUser, useUsers } from "@/lib/users/hooks/use-users";
-import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
+import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-company";
 import { createEmptyUserForm, type User, type UserFormValues, userToFormValues } from "@/lib/users/types";
 import {
   createEmptyEmployeeForm,
@@ -60,6 +60,7 @@ export function EmployeeForm({
   onCancel,
 }: EmployeeFormProps) {
   const { t } = useTranslation();
+  const googleMapsConfigured = useIsGoogleMapsConfigured();
   const { notifyAdded } = useFeedback();
   const usersQuery = useUsers({ page: 1, limit: 200, sort: "name:asc", active: true });
   const createUserMutation = useCreateUser();
@@ -494,8 +495,8 @@ export function EmployeeForm({
                     value={values.address.city}
                     onChange={(event) => updateAddressField("city", event.target.value)}
                     placeholder={t("employees.form.placeholders.city")}
-                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                    disabled={googleMapsConfigured && !manualAddressEntry}
+                    readOnly={googleMapsConfigured && !manualAddressEntry}
                   />
                 </div>
                 <div className="space-y-1">
@@ -507,8 +508,8 @@ export function EmployeeForm({
                     value={values.address.state}
                     onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
                     placeholder={t("employees.form.placeholders.state")}
-                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                    disabled={googleMapsConfigured && !manualAddressEntry}
+                    readOnly={googleMapsConfigured && !manualAddressEntry}
                   />
                 </div>
                 <div className="space-y-1">
@@ -520,8 +521,8 @@ export function EmployeeForm({
                     value={values.address.zipcode}
                     onChange={(event) => updateAddressField("zipcode", event.target.value)}
                     placeholder={t("employees.form.placeholders.zipcode")}
-                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                    disabled={googleMapsConfigured && !manualAddressEntry}
+                    readOnly={googleMapsConfigured && !manualAddressEntry}
                   />
                 </div>
                 <div className="space-y-1">
@@ -533,8 +534,8 @@ export function EmployeeForm({
                     value={values.address.country}
                     onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
                     placeholder={t("employees.form.placeholders.country")}
-                    disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                    readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                    disabled={googleMapsConfigured && !manualAddressEntry}
+                    readOnly={googleMapsConfigured && !manualAddressEntry}
                   />
                 </div>
               </div>

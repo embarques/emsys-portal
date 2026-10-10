@@ -342,7 +342,7 @@ export function CustomersWorkspace() {
       label: t("customers.columns.phone"),
       sortField: "phones.number",
       truncateCell: false,
-      defaultWidth: 160,
+      defaultWidth: 260,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (customer) => <CustomerTablePhoneCell customer={customer} />,
     },
