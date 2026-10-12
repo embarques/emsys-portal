@@ -18,7 +18,6 @@ import {
   getUserBranchBadgeClass,
   getUserRoleBadgeClass,
   getUserRoleLabel,
-  truncateUid,
   truncateUserId,
 } from "@/lib/users/display";
 import { useUserLabels } from "@/lib/users/hooks/use-user-labels";
@@ -60,10 +59,6 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("users.view.sections.profile")}>
             <RecordViewSheetDetailRow label={t("users.view.userId")} value={truncateUserId(user.id)} />
-            <RecordViewSheetDetailRow
-              label={t("users.view.firebaseUid")}
-              value={user.uid ? truncateUid(user.uid) : dash}
-            />
             <RecordViewSheetDetailRow label={t("users.view.name")} value={user.name} />
             <RecordViewSheetDetailRow label={t("users.view.email")} value={user.email} />
             <RecordViewSheetDetailRow
@@ -80,16 +75,20 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
               }
             />
           </RecordViewSheetSection>
-          <RecordViewSheetSection title={t("users.view.sections.loginHours")}>
+          {user.startTime.trim() || user.endTime.trim() ? <RecordViewSheetSection title={t("users.view.sections.loginHours")}>
+            {user.startTime.trim() ? (
             <RecordViewSheetDetailRow
               label={t("users.view.startTime")}
-              value={user.startTime || t("users.view.notRestricted")}
+              value={user.startTime.trim()}
             />
+            ) : null}
+            {user.endTime.trim() ? (
             <RecordViewSheetDetailRow
               label={t("users.view.endTime")}
-              value={user.endTime || t("users.view.notRestricted")}
+              value={user.endTime.trim()}
             />
-          </RecordViewSheetSection>
+            ) : null}
+          </RecordViewSheetSection> : null}
           <RecordViewSheetSection title={t("users.view.sections.audit")}>
             <RecordViewSheetDetailRow
               label={t("users.view.created")}

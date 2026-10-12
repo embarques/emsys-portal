@@ -1172,7 +1172,7 @@ export function OrdersWorkspace() {
               }}
               placeholder={t("orders.search.placeholder")}
               className="min-w-0 flex-1"
-              inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
+              inputClassName="h-12 rounded-2xl border-border bg-background text-base text-foreground shadow-none"
             />
             <Button
               type="button"

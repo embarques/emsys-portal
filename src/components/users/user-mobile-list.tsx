@@ -66,13 +66,12 @@ export function UserMobileList({
   }
 
   return (
-    <section className="space-y-5 overflow-x-hidden md:hidden">
+    <section className="space-y-4 md:hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-4xl font-bold tracking-normal text-foreground">{t("users.title")}</h1>
-          <p className="mt-1 text-base text-muted-foreground">{t("users.pages.description")}</p>
+          <h1 className="text-2xl font-bold tracking-normal text-foreground">{t("users.title")}</h1>
         </div>
-        <Button type="button" size="icon" className="size-12 shrink-0 rounded-2xl" disabled={isSaving} onClick={onAddUser}>
+        <Button type="button" size="icon" className="size-11 shrink-0 rounded-lg" disabled={isSaving} onClick={onAddUser} title={t("users.actions.add")}>
           <Plus className="size-6" />
           <span className="sr-only">{t("users.actions.add")}</span>
         </Button>
@@ -87,13 +86,15 @@ export function UserMobileList({
           }}
           placeholder={t("users.search.placeholder")}
           className="flex-1"
-          inputClassName="h-14 rounded-2xl text-base"
+          inputClassName="h-11 rounded-lg text-base"
         />
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="relative size-14 shrink-0 rounded-full"
+          className="relative size-11 shrink-0 rounded-lg"
+          title={t("common.table.filter")}
+          aria-expanded={filtersOpen}
           onClick={() => onFiltersOpenChange(!filtersOpen)}
         >
           <Filter className="size-6 text-primary" />
@@ -106,18 +107,18 @@ export function UserMobileList({
         </Button>
       </div>
 
-      {filtersOpen ? <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">{filterPanel}</div> : null}
+      {filtersOpen ? <div className="border-y border-border py-4">{filterPanel}</div> : null}
 
       <div className="flex items-center justify-between gap-3">
         <Button
           type="button"
           variant="outline"
-          className="h-12 rounded-xl"
+          className="size-11 shrink-0 rounded-lg"
+          aria-label={t("common.actions.previous")}
           disabled={page <= 1 || isLoading}
           onClick={() => onPageChange(Math.max(1, page - 1))}
         >
           <ChevronLeft className="size-4" />
-          {t("common.actions.previous")}
         </Button>
         <p className="text-sm font-medium text-muted-foreground">
           {t("common.pagination.pageOf", { current: page, total: totalPages })}
@@ -125,11 +126,11 @@ export function UserMobileList({
         <Button
           type="button"
           variant="outline"
-          className="h-12 rounded-xl"
+          className="size-11 shrink-0 rounded-lg"
+          aria-label={t("common.actions.next")}
           disabled={page >= totalPages || isLoading}
           onClick={() => onPageChange(Math.min(totalPages, page + 1))}
         >
-          {t("common.actions.next")}
           <ChevronRight className="size-4" />
         </Button>
       </div>
@@ -146,7 +147,7 @@ export function UserMobileList({
         onDeactivate={() => onDeactivate(selectedUsers)}
       />
 
-      <div className="rounded-3xl border border-border bg-card px-4 shadow-sm">
+      <div className="min-w-0 border-t border-border">
         {listErrorMessage ? (
           <p className="py-6 text-center text-sm text-destructive">{listErrorMessage}</p>
         ) : isLoading ? (

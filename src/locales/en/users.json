@@ -7,6 +7,9 @@
   },
   "noun": "users",
   "actions": {
+    "details": "View details",
+    "select": "Select {{name}}",
+    "deselect": "Deselect {{name}}",
     "add": "Add user",
     "edit": "Edit user",
     "editNamed": "Edit {{name}}",
