@@ -5,6 +5,8 @@ const FIELD_SELECTOR = [
   "select",
   "textarea",
   "[role='combobox']",
+  "[role='switch']",
+  "[role='checkbox']",
 ].join(",");
 
 const automaticSelectionFocus = new WeakSet<HTMLElement>();
@@ -184,9 +186,10 @@ export function handleFormEnterNavigation(
   if (!(target instanceof HTMLElement)) return;
   if (target.closest('[data-enter-navigation="ignore"]')) return;
   if ((target.tagName === "TEXTAREA" && !advanceTextareas) || target.isContentEditable) return;
-  if (target.tagName === "BUTTON" || target.tagName === "A") return;
+  const isFieldButton = target.matches('[role="switch"], [role="checkbox"]');
+  if ((target.tagName === "BUTTON" && !isFieldButton) || target.tagName === "A") return;
   const inputType = (target as HTMLInputElement).type;
-  if (inputType === "submit" || inputType === "button") return;
+  if (inputType === "submit" || (inputType === "button" && !isFieldButton)) return;
   if (target.getAttribute("aria-expanded") === "true") return;
 
   const fields = getNavigableFormFields(form);

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { TransactionReview } from "@/components/accounting/transaction-review";
-import { getTransactionFieldStep, TRANSACTION_STEP_FIELDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import { getTransactionFieldStep, TRANSACTION_FIELD_IDS, TRANSACTION_STEP_FIELDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { RegisterInventoryChangeFields } from "@/components/accounting/register-inventory-change-fields";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
@@ -15,7 +15,7 @@ import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { getNavigableFormFields, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { getNavigableFormFields, isDesktopFormNavigation, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { finalizeInventoryChangeJournal } from "@/lib/accounting/daily-income/inventory-change";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
@@ -95,6 +95,7 @@ export function DailyIncomeTransactionForm({
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [invalidField, setInvalidField] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const isPhone = appearance === "phone";
   const typeOption = getTransactionTypeOption(transactionType, t);
@@ -176,6 +177,23 @@ export function DailyIncomeTransactionForm({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [activeStep]);
+
+  useEffect(() => {
+    if (!invalidField || !isDesktopFormNavigation()) return;
+    const timer = window.setTimeout(() => {
+      const form = formRef.current;
+      if (!form) return;
+      const id = TRANSACTION_FIELD_IDS[invalidField as keyof DailyIncomeJournalValues];
+      const field = getNavigableFormFields(form).find((element) =>
+        element.id === id || element.getAttribute("name") === invalidField,
+      );
+      if (!field) return;
+      field.focus();
+      field.scrollIntoView({ block: "nearest" });
+      setInvalidField(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [invalidField, activeStep, errors]);
 
   const type = watch("transactionType");
   const employeeId = watch("employeeId");
@@ -358,7 +376,10 @@ export function DailyIncomeTransactionForm({
     await onSubmit(values);
   }, (validationErrors) => {
     const field = Object.keys(validationErrors)[0];
-    if (field) onStepChange?.(getTransactionFieldStep(field));
+    if (field) {
+      setInvalidField(field);
+      onStepChange?.(getTransactionFieldStep(field));
+    }
   });
 
   return (
@@ -375,6 +396,7 @@ export function DailyIncomeTransactionForm({
             setStepError(null);
             onContinue?.();
           } else {
+            setInvalidField(fields.find((field) => getFieldState(field).error) ?? null);
             const firstError = fields.map((field) => getFieldState(field).error).find(Boolean);
             setStepError(firstError?.message ?? null);
           }

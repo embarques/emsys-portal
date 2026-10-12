@@ -76,6 +76,7 @@ type SearchableSelectProps = {
   mobileSheet?: boolean;
   "aria-label"?: string;
   "aria-labelledby"?: string;
+  "aria-invalid"?: boolean;
 };
 
 /** Strip diacritics so "e" matches "é"/"è" and vice versa during search. */
@@ -278,6 +279,7 @@ export function SearchableSelect({
   mobileSheet = false,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
+  "aria-invalid": ariaInvalid,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(defaultOpen);
   const [query, setQuery] = React.useState("");
@@ -564,6 +566,7 @@ export function SearchableSelect({
             type="button"
             id={id}
             role="combobox"
+            aria-invalid={ariaInvalid}
             aria-expanded={open}
             aria-label={ariaLabel}
             aria-labelledby={ariaLabelledBy}
@@ -651,6 +654,7 @@ export function SearchableSelect({
               type="button"
               id={id}
               role="combobox"
+              aria-invalid={ariaInvalid}
               aria-expanded={open}
               aria-label={ariaLabel}
               aria-labelledby={ariaLabelledBy}
@@ -784,6 +788,7 @@ export function SearchableSelect({
               >
                 <input
                   {...(id ? { id } : {})}
+                  aria-invalid={ariaInvalid}
                   aria-expanded={open}
                   {...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : ariaLabel ? { "aria-labelledby": undefined } : {})}
                 />

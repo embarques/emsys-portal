@@ -1,3 +1,2 @@
-export function useTranslation() {
-  return { t: (key: string) => key };
-}
+const t = (key: string) => key;
+export function useTranslation() { return { t }; }

@@ -48,6 +48,70 @@ test("desktop traverses visible editable fields, skips unavailable controls, the
   } finally { await page.close(); }
 });
 
+test("opening a form focuses its first editable field and rerenders preserve later focus", async () => {
+  const page = await fixture('<form><input disabled><input readonly><input type="hidden"><input id="first"><input id="second"></form>');
+  try {
+    await page.waitForFunction(() => document.activeElement.id === "first");
+    await page.locator("#second").fill("Working");
+    await page.evaluate(() => {
+      document.querySelector("form").append(document.createElement("p"));
+      document.querySelector("form").className = "updated";
+    });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    assert.equal(await page.evaluate(() => document.activeElement.id), "second");
+  } finally { await page.close(); }
+});
+
+test("delayed fields and reactivated workspace tabs receive initial focus", async () => {
+  const page = await fixture('<section id="tab" hidden><form id="form"></form></section>');
+  try {
+    await page.evaluate(() => {
+      document.getElementById("form").innerHTML = '<input id="first"><input id="last">';
+    });
+    assert.notEqual(await page.evaluate(() => document.activeElement.id), "first");
+    await page.locator("#tab").evaluate((tab) => { tab.hidden = false; });
+    await page.waitForFunction(() => document.activeElement.id === "first");
+    await page.locator("#last").focus();
+    await page.locator("#tab").evaluate((tab) => { tab.hidden = true; });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await page.locator("#tab").evaluate((tab) => { tab.hidden = false; });
+    await page.waitForFunction(() => document.activeElement.id === "first");
+    await page.evaluate(() => { document.getElementById("form").outerHTML = '<form id="loading"></form>'; });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await page.evaluate(() => { document.getElementById("loading").innerHTML = '<input id="loaded">'; });
+    await page.waitForFunction(() => document.activeElement.id === "loaded");
+  } finally { await page.close(); }
+});
+
+test("new dialog form focuses first field without background focus stealing on close", async () => {
+  const page = await fixture('<form id="page"><input id="first"><input id="last"></form>');
+  try {
+    await page.waitForFunction(() => document.activeElement.id === "first");
+    await page.locator("#last").focus();
+    await page.evaluate(() => document.body.insertAdjacentHTML("beforeend", '<div id="dialog" role="dialog"><button>Close</button><form><input id="dialog-first"><input id="dialog-last"></form></div>'));
+    await page.waitForFunction(() => document.activeElement.id === "dialog-first");
+    await page.evaluate(() => {
+      document.getElementById("page").setAttribute("aria-hidden", "true");
+    });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await page.evaluate(() => {
+      document.getElementById("dialog").remove();
+      document.getElementById("page").removeAttribute("aria-hidden");
+      document.getElementById("last").focus();
+    });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    assert.equal(await page.evaluate(() => document.activeElement.id), "last");
+  } finally { await page.close(); }
+});
+
+test("mobile form mounting does not autofocus fields", async () => {
+  const page = await fixture('<form><input id="first"></form>', 390);
+  try {
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    assert.notEqual(await page.evaluate(() => document.activeElement.id), "first");
+  } finally { await page.close(); }
+});
+
 test("mobile keeps textarea Enter and does not advance selection focus", async () => {
   const page = await fixture('<form><textarea id="notes"></textarea><input id="next"></form>', 390);
   try {
@@ -55,6 +119,37 @@ test("mobile keeps textarea Enter and does not advance selection focus", async (
     assert.equal(await page.locator("#notes").inputValue(), "\n");
     assert.equal(await page.evaluate(() => window.navigation.focusNextFormField(document.querySelector("#notes"))), false);
     assert.equal(await page.evaluate(() => document.activeElement.id), "notes");
+  } finally { await page.close(); }
+});
+
+test("desktop traverses date, native select, checkbox and switch without toggling values", async () => {
+  const page = await fixture(`<form><input id="date" type="date" value="2026-10-10">
+    <select id="select"><option>Selected</option></select><input id="checkbox" type="checkbox">
+    <button id="switch" type="button" role="switch" aria-checked="true">Enabled</button>
+    <input id="last"><button type="submit">Save</button></form>`);
+  try {
+    await page.locator("#date").focus();
+    for (const id of ["select", "checkbox", "switch", "last"]) {
+      await page.keyboard.press("Enter");
+      assert.equal(await page.evaluate(() => document.activeElement.id), id);
+    }
+    assert.equal(await page.locator("#checkbox").isChecked(), false);
+    assert.equal(await page.locator("#switch").getAttribute("aria-checked"), "true");
+    assert.equal(await page.evaluate(() => window.submits), 0);
+  } finally { await page.close(); }
+});
+
+test("last dropdown focuses external wizard submit and disabled saves stay inactive", async () => {
+  const page = await fixture('<form id="form"><input id="combo" role="combobox"></form><button id="next" form="form" type="submit">Next</button>');
+  try {
+    await page.locator("#combo").focus();
+    assert.equal(await page.evaluate(() => window.navigation.focusNextFormField(document.activeElement)), true);
+    assert.equal(await page.evaluate(() => document.activeElement.id), "next");
+    await page.keyboard.press("Enter");
+    assert.equal(await page.evaluate(() => window.submits), 1);
+    await page.locator("#next").evaluate((button) => { button.disabled = true; });
+    await page.locator("#combo").press("Enter");
+    assert.equal(await page.evaluate(() => window.submits), 1);
   } finally { await page.close(); }
 });
 
@@ -67,6 +162,17 @@ test("native validation focuses a missing field and disabled saves cannot submit
     await page.locator("#required").fill("valid");
     await page.locator("button").evaluate((button) => { button.disabled = true; });
     await page.locator("#last").press("Enter");
+    assert.equal(await page.evaluate(() => window.submits), 0);
+  } finally { await page.close(); }
+});
+
+test("required custom selects focus the visible control, not the hidden validation input", async () => {
+  const page = await fixture(`<form><div><input id="visible" role="combobox">
+    <input required aria-hidden="true" tabindex="-1" style="opacity:0"></div>
+    <input id="last"><button type="submit">Save</button></form>`);
+  try {
+    await page.locator("#last").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "visible");
     assert.equal(await page.evaluate(() => window.submits), 0);
   } finally { await page.close(); }
 });

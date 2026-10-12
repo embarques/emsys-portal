@@ -226,7 +226,8 @@ function MobileStatCardsCarousel({
     <Carousel
       aria-label="Summary cards"
       className="space-y-2 [&_[data-slot=carousel-content]]:h-[var(--stat-cards-carousel-height)]"
-      opts={{ align: "start", slidesToScroll: 1 }}
+      // Vertical touch gestures belong to the page; use the arrows to page cards.
+      opts={{ align: "start", slidesToScroll: 1, watchDrag: false }}
       orientation="vertical"
       setApi={setApi}
       style={carouselStyle}
