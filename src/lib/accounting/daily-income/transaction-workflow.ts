@@ -2,6 +2,20 @@ import type { DailyIncomeJournalValues, JournalTransactionType } from "./types";
 
 export type TransactionFormStep = "assignment" | "amounts" | "payment" | "review";
 
+export const TRANSACTION_FIELD_IDS: Partial<Record<keyof DailyIncomeJournalValues, string>> = {
+  employeeId: "journal-employee", routeId: "journal-route",
+  invoiceId: "journal-invoice", invoiceNumber: "journal-invoice-number",
+  invoiceCost: "journal-invoice-cost", amount: "journal-amount",
+  accountId: "journal-account", sourceAccountId: "journal-source",
+  senderId: "journal-sender", receiverId: "journal-receiver",
+  paymentMethodId: "journal-payment", paymentMethodName: "journal-payment",
+  paymentAccountId: "journal-bank-account", paymentAccountType: "journal-bank-account",
+  checkNumber: "journal-check-number", refNumber: "journal-reference",
+  inventoryDirection: "journal-inventory-direction", inventorySupplierId: "journal-inventory-supplier",
+  inventoryItemId: "journal-inventory-item", inventoryQuantity: "journal-inventory-quantity",
+  inventoryUnitPrice: "journal-inventory-unit-price", inventoryTotal: "journal-inventory-total",
+};
+
 export const TRANSACTION_STEP_FIELDS: Record<Exclude<TransactionFormStep, "review">, (keyof DailyIncomeJournalValues)[]> = {
   assignment: ["employeeId", "routeId", "inventoryDirection", "inventorySupplierId"],
   amounts: ["invoiceId", "invoiceNumber", "invoiceCost", "invoiceDiscount", "amount", "accountId", "sourceAccountId", "includeSender", "senderId", "includeReceiver", "receiverId", "inventoryItemId", "inventoryQuantity", "inventoryUnitPrice", "inventoryTotal"],

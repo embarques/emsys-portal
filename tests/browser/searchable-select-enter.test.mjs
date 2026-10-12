@@ -13,10 +13,14 @@ before(async () => {
   directory = await mkdtemp(path.join(tmpdir(), "emsys-select-test-"));
   const compiler = webpackPackage.webpack({
     mode: "development", devtool: false,
+    plugins: [new webpackPackage.webpack.DefinePlugin({ "process.env": JSON.stringify({ NODE_ENV: "development" }) })],
     entry: path.resolve("tests/browser/fixtures/searchable-select.tsx"),
     output: { path: directory, filename: "fixture.js" },
     resolve: { extensions: [".tsx", ".ts", ".js"], alias: {
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/i18n.ts"),
+      "@/lib/branches/hooks/use-branches$": path.resolve("tests/browser/fixtures/branches.ts"),
+      "@/lib/customers/hooks/use-customers$": path.resolve("tests/browser/fixtures/customers.ts"),
+      "@/hooks/use-address-autocomplete$": path.resolve("tests/browser/fixtures/address-autocomplete.ts"),
       "@": path.resolve("src"),
     } },
     module: { rules: [{ test: /\.tsx?$/, exclude: /node_modules/,
@@ -36,16 +40,18 @@ after(async () => {
   if (directory) await rm(directory, { recursive: true, force: true });
 });
 
-async function fixture(width = 1280, kind = "select") {
+async function fixture(width = 1280, kind = "select", settings = {}) {
   const page = await browser.newPage({ viewport: { width, height: 800 } });
   page.on("pageerror", (error) => console.error(error));
   page.setDefaultTimeout(5000);
   await page.setContent('<div id="root"></div>');
   await page.evaluate((kind) => { document.documentElement.dataset.fixture = kind; }, kind);
+  await page.evaluate((settings) => Object.assign(document.documentElement.dataset, settings), settings);
   await page.addStyleTag({ content: '.hidden {display:none} @media(min-width:768px) { .md\\:hidden {display:none} .md\\:block {display:block} }' });
   await page.addScriptTag({ content: script });
   await page.locator("form").waitFor();
-  await page.locator(kind === "comments" ? "#comment-purpose-0" : "#branch").waitFor();
+  const first = { comments: "#comment-purpose-0", statement: "#statement-branch", transaction: "#transaction", customer: "#sender", address: "#address" }[kind] ?? "#branch";
+  await page.locator(first).waitFor();
   return page;
 }
 
@@ -60,6 +66,106 @@ test("Enter traverses populated searchable and plain selects without changing th
     await page.waitForFunction(() => document.activeElement.id === "last");
     assert.equal(await page.locator("#value").textContent(), "NY");
     assert.equal(await page.locator("#changes").textContent(), "0");
+  } finally { await page.close(); }
+});
+
+test("address suggestions either accept the highlighted result or advance without changing text", async () => {
+  for (const selectSuggestion of [false, true]) {
+    const page = await fixture(1280, "address");
+    try {
+      await page.locator("#address").fill("123 Main");
+      if (selectSuggestion) await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await page.waitForFunction(() => document.activeElement.id === "apartment");
+      assert.equal(await page.locator("#address").inputValue(), selectSuggestion ? "123 Main St" : "123 Main");
+    } finally { await page.close(); }
+  }
+});
+
+test("customer selection advances and optional receiver can be skipped", async () => {
+  const page = await fixture(1280, "customer");
+  try {
+    await page.locator("#sender").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "receiver");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "after-party");
+    await page.locator("#sender").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "receiver");
+  } finally { await page.close(); }
+});
+
+test("customer search with no results does not trap Enter", async () => {
+  const page = await fixture(1280, "customer");
+  try {
+    await page.locator("#sender").fill("missing");
+    await page.waitForTimeout(350);
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "receiver");
+  } finally { await page.close(); }
+});
+
+test("daily income statement follows branch, date, currency, and save", async () => {
+  const page = await fixture(1280, "statement");
+  try {
+    await page.locator("#statement-branch").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "statement-date");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "statement-currency");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.type === "submit");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.getElementById("submitted").textContent === "1");
+  } finally { await page.close(); }
+});
+
+test("daily income reveals and focuses exchange rate after choosing DOP", async () => {
+  const page = await fixture(1280, "statement");
+  try {
+    await page.locator("#statement-currency").press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "statement-rate");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.getElementById("submitted").textContent === "1");
+  } finally { await page.close(); }
+});
+
+test("daily income validation focuses a missing custom branch selector", async () => {
+  const page = await fixture(1280, "statement");
+  try {
+    await page.getByRole("button", { name: "Clear selection" }).dispatchEvent("pointerdown");
+    await page.locator('button[type="submit"]').click();
+    await page.waitForFunction(() => document.activeElement.id === "statement-branch");
+    assert.equal(await page.locator("#statement-branch").getAttribute("aria-invalid"), "true");
+    assert.equal(await page.locator("#submitted").textContent(), "0");
+  } finally { await page.close(); }
+});
+
+test("daily income expense advances across accounts and amount into payment step", async () => {
+  const page = await fixture(1280, "transaction", { step: "amounts" });
+  try {
+    await page.locator("#journal-account").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "journal-source");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "journal-amount");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.getElementById("step").textContent === "payment");
+    await page.waitForFunction(() => document.activeElement.id === "journal-payment");
+  } finally { await page.close(); }
+});
+
+test("daily income check payment focuses the newly mounted bank and check fields", async () => {
+  const page = await fixture(1280, "transaction", { step: "payment" });
+  try {
+    await page.locator("#journal-payment").fill("CHECK");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "journal-bank-account");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "journal-check-number");
+    await page.keyboard.press("Enter");
+    await page.locator("#save").click();
+    await page.waitForFunction(() => document.activeElement.id === "journal-check-number");
+    assert.equal(await page.locator("#step").textContent(), "payment");
   } finally { await page.close(); }
 });
 

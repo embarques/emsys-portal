@@ -9,6 +9,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import type { DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import type { Branch } from "@/lib/branches/types";
@@ -35,6 +36,7 @@ export function DailyIncomeStatementForm({
   onCancel,
 }: Props) {
   const { t } = useTranslation();
+  const navigateOnEnter = useFormEnterNavigation();
   const schema = useMemo(
     () =>
       createDailyIncomeStatementSchema({
@@ -75,6 +77,7 @@ export function DailyIncomeStatementForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
+      onKeyDown={navigateOnEnter}
       className="min-w-0 space-y-5 max-md:[&_button]:h-12 max-md:[&_button]:rounded-xl max-md:[&_input]:h-12 max-md:[&_input]:rounded-xl max-md:[&_input]:text-base max-md:[&_label]:text-base"
     >
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
@@ -85,6 +88,7 @@ export function DailyIncomeStatementForm({
           ) : (
             <SearchableSelect
               id="statement-branch"
+              aria-invalid={Boolean(errors.branchId)}
               value={branchId ? String(branchId) : ""}
               onValueChange={(next) => {
                 const branch = branches.find((item) => item.id === Number(next));
@@ -102,13 +106,14 @@ export function DailyIncomeStatementForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="statement-date">{t("accounting.dailyIncome.statement.fields.date")}</Label>
-          <DateInput id="statement-date" {...register("date")} />
+          <DateInput id="statement-date" aria-invalid={Boolean(errors.date)} {...register("date")} />
           {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor="statement-currency">{t("accounting.dailyIncome.statement.fields.currency")}</Label>
           <SearchableSelect
             id="statement-currency"
+            aria-invalid={Boolean(errors.currency)}
             value={currency ?? ""}
             onValueChange={(next) => {
               setValue("currency", next, { shouldValidate: true });
@@ -125,7 +130,7 @@ export function DailyIncomeStatementForm({
         {showExchangeRate ? (
           <div className="space-y-2">
             <Label htmlFor="statement-rate">{t("accounting.dailyIncome.statement.fields.exchangeRate")}</Label>
-            <Input id="statement-rate" type="number" step="0.01" {...register("rate", { valueAsNumber: true })} />
+            <Input id="statement-rate" aria-invalid={Boolean(errors.rate)} type="number" step="0.01" {...register("rate", { valueAsNumber: true })} />
             {errors.rate ? <p className="text-sm text-destructive">{errors.rate.message}</p> : null}
           </div>
         ) : (

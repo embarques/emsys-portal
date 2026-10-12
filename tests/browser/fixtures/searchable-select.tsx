@@ -4,6 +4,35 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import type { OrderCommentFormValues } from "@/lib/orders/types";
+import { DailyIncomeFixture } from "./daily-income";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CustomerPartySelect } from "@/components/customers/customer-party-select";
+import type { Customer } from "@/lib/customers/types";
+import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
+
+function AddressFixture() {
+  const [value, setValue] = useState("");
+  const navigate = useFormEnterNavigation();
+  return <form onKeyDown={navigate} onSubmit={(event) => event.preventDefault()}>
+    <AddressAutocompleteInput id="address" value={value} onValueChange={setValue}
+      onPlaceSelected={(place) => setValue(place.address1)} />
+    <input id="apartment" />
+  </form>;
+}
+
+const customerQueryClient = new QueryClient();
+function CustomerFixture() {
+  const [sender, setSender] = useState<Customer>();
+  const navigate = useFormEnterNavigation();
+  return <QueryClientProvider client={customerQueryClient}>
+    <form onKeyDown={navigate} onSubmit={(event) => event.preventDefault()}>
+      <CustomerPartySelect id="sender" partyType="sender" required value={sender?.id ?? ""}
+        selectedCustomer={sender} onValueChange={(_id, customer) => setSender(customer)} />
+      <CustomerPartySelect id="receiver" partyType="receiver" value="" onValueChange={() => {}} />
+      <input id="after-party" />
+    </form>
+  </QueryClientProvider>;
+}
 
 function PickupCommentsFixture() {
   const [comments, setComments] = useState<OrderCommentFormValues[]>([]);
@@ -42,5 +71,9 @@ function Fixture() {
 }
 
 createRoot(document.getElementById("root")!).render(
-  document.documentElement.dataset.fixture === "comments" ? <PickupCommentsFixture /> : <Fixture />,
+  document.documentElement.dataset.fixture === "comments" ? <PickupCommentsFixture /> :
+    document.documentElement.dataset.fixture === "address" ? <AddressFixture /> :
+    document.documentElement.dataset.fixture === "customer" ? <CustomerFixture /> :
+    document.documentElement.dataset.fixture === "statement" ? <DailyIncomeFixture /> :
+      document.documentElement.dataset.fixture === "transaction" ? <DailyIncomeFixture transaction /> : <Fixture />,
 );

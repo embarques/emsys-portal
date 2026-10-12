@@ -381,7 +381,8 @@ export function CustomerPartySelect({
     }
 
     if (event.key === "Enter" && isDesktopFormNavigation() &&
-      !selectionEditedRef.current && !query.trim() && (hasSelection || !required)) {
+      ((!selectionEditedRef.current && !query.trim() && (hasSelection || !required)) ||
+        (open && results.length === 0))) {
       event.preventDefault();
       event.stopPropagation();
       advancePickerFocus();

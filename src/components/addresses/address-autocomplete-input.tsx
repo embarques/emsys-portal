@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { useAddressAutocomplete } from "@/hooks/use-address-autocomplete";
+import { focusNextFormField, isDesktopFormNavigation } from "@/hooks/use-form-enter-navigation";
 import { useTranslation } from "@/lib/i18n";
 import type { PlaceSuggestion } from "@/lib/maps/places";
 import type { ParsedPlaceAddress } from "@/lib/customers/types";
@@ -79,7 +80,7 @@ export function AddressAutocompleteInput({
     setOpen(true);
   }
 
-  async function handleSelect(suggestion: PlaceSuggestion) {
+  async function handleSelect(suggestion: PlaceSuggestion, keyboardField?: HTMLInputElement) {
     skipNextQueryRef.current = true;
     const street = suggestion.primaryText || suggestion.description;
     setOpen(false);
@@ -97,10 +98,27 @@ export function AddressAutocompleteInput({
       }
     } finally {
       setResolving(false);
+      if (keyboardField && document.activeElement === keyboardField) {
+        window.setTimeout(() => focusNextFormField(keyboardField, { suppressComboboxOpen: true }), 0);
+      }
     }
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.defaultPrevented || event.nativeEvent.isComposing || event.repeat ||
+      event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key === "Enter" && open && isDesktopFormNavigation()) {
+      event.preventDefault();
+      event.stopPropagation();
+      const field = event.currentTarget;
+      if (activeIndex >= 0 && suggestions[activeIndex]) {
+        void handleSelect(suggestions[activeIndex]!, field);
+      } else {
+        setOpen(false);
+        focusNextFormField(field, { suppressComboboxOpen: true });
+      }
+      return;
+    }
     if (!open || suggestions.length === 0) return;
 
     if (event.key === "ArrowDown") {
