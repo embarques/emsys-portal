@@ -41,7 +41,7 @@ test("existing business renderers and API aliases remain one column per concept"
   ], formatters);
   assert.deepEqual(columns.map(c => c.id), ["pickupAssignment", "updatedBy"]);
   assert.equal(columns[0].renderCell, renderCell);
-  assert.equal(columns[0].defaultVisible, true);
+  assert.equal(columns[0].defaultVisible, false);
 });
 
 test("a conditional column absent from the base table is restored from its API field", () => {

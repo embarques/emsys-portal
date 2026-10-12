@@ -921,9 +921,11 @@ function InvoiceLineItemsWizardEditor({
     [lineItems],
   );
 
-  const [draft, setDraft] = useState<InvoiceLineItemFormValues | null>(null);
+  const [draft, setDraft] = useState<InvoiceLineItemFormValues | null>(() =>
+    committedItems.length === 0 ? createEmptyInvoiceLineItem() : null,
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [focusDescription, setFocusDescription] = useState(false);
+  const [focusDescription, setFocusDescription] = useState(committedItems.length === 0);
   const clearFocusDescription = useCallback(() => setFocusDescription(false), []);
   const activeDraft = draft ?? createEmptyInvoiceLineItem();
   const isDraftOpen = draft !== null || Boolean(editingId);
@@ -979,7 +981,17 @@ function InvoiceLineItemsWizardEditor({
   }
 
   function commitDraft() {
-    if (!draft || !isDraftReadyToCommit(draft)) return;
+    if (!draft) return;
+    if (!isDraftReadyToCommit(draft)) {
+      const field = !draft.itemName.trim()
+        ? "description"
+        : !hasPositiveInvoiceLineItemQuantity(draft) ? "quantity" : "unitPrice";
+      focusFieldById(`${draft.id}-${field}`);
+      return;
+    }
+
+    const wizard = document.getElementById(`${draft.id}-total`)
+      ?.closest('[data-testid="invoice-form-wizard"]');
 
     const finalized = finalizeLineItemDraft(draft);
     const { items, mergedIntoId } = commitInvoiceLineItemWithUniqueDescription(
@@ -993,6 +1005,9 @@ function InvoiceLineItemsWizardEditor({
       notifySuccess(t("invoices.form.lineItems.duplicateMerged"));
     }
     resetDraft();
+    window.requestAnimationFrame(() => {
+      wizard?.querySelector<HTMLButtonElement>('[data-wizard-primary]')?.focus();
+    });
   }
 
   function cancelEdit() {

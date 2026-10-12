@@ -93,6 +93,7 @@ type ApiInvoicePhone = {
   type?: string;
   number?: string;
   displayNumber?: string;
+  isPrimary?: boolean;
 };
 
 type ApiInvoiceParty = {
@@ -299,6 +300,7 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
             number,
             ...(displayNumber ? { displayNumber } : {}),
             ...(label ? { label } : {}),
+            isPrimary: phone.isPrimary === true,
           };
         })
         .filter((phone): phone is NonNullable<typeof phone> => phone != null)

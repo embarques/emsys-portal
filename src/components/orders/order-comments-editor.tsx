@@ -46,11 +46,21 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   const { t } = useTranslation();
   const [editing, setEditing] = useState<EditingCell>(null);
   const [mobileEditingIndex, setMobileEditingIndex] = useState<number | null>(null);
-  const [draft, setDraft] = useState<OrderCommentFormValues | null>(null);
+  const [draft, setDraft] = useState<OrderCommentFormValues | null>(() =>
+    comments.length === 0 ? createEmptyOrderComment() : null,
+  );
   const advancingRef = useRef(false);
-  const draftRef = useRef<OrderCommentFormValues | null>(null);
+  const draftRef = useRef<OrderCommentFormValues | null>(draft);
   const commentsRef = useRef(comments);
   commentsRef.current = comments;
+
+  useEffect(() => {
+    if (comments.length === 0 && !draftRef.current) {
+      const next = createEmptyOrderComment();
+      draftRef.current = next;
+      setDraft(next);
+    }
+  }, [comments, draft]);
 
   useEffect(() => {
     if (editing?.field !== "quantity") return;
@@ -221,7 +231,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   function discardIncompleteDraft() {
     const current = draftRef.current;
     if (!current || isOrderCommentComplete(current)) return;
-    setDraftState(null);
+    if (commentsRef.current.length > 0) setDraftState(null);
     setEditing(null);
     setMobileEditingIndex((index) => (index === draftIndex ? null : index));
   }
@@ -582,11 +592,12 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                 <div key={`comment-${index}`} className="flex items-center gap-2 px-2 py-1">
                   {/* Purpose */}
                   <div className="w-32 shrink-0">
-                    {isEditing(index, "purpose") ? (
+                    {isEditing(index, "purpose") || (isDraftIndex(index) && !comment.purpose) ? (
                       <SearchableSelect
                         id={`comment-purpose-${index}`}
-                        autoFocus
-                        defaultOpen
+                        autoFocus={isEditing(index, "purpose")}
+                        defaultOpen={isEditing(index, "purpose")}
+                        advanceFocusOnSelect={false}
                         onClose={() => handleEditorClose(index, "purpose")}
                         value={comment.purpose}
                         onValueChange={(value) => {
@@ -620,6 +631,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                           id={`comment-item-${index}`}
                           autoFocus
                           defaultOpen
+                          advanceFocusOnSelect={false}
                           onClose={() => handleEditorClose(index, "item")}
                           value={comment.itemType}
                           onValueChange={(value) => changeItem(index, value)}

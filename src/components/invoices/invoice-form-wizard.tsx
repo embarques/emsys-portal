@@ -27,6 +27,8 @@ import {
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { getNavigableFormFields } from "@/hooks/use-form-enter-navigation";
+import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -134,6 +136,24 @@ export function InvoiceFormWizard({
     emptyInvoiceDailyIncomeContext(),
   );
   const previewStep: InvoiceWizardStep = requireDailyIncomeRegistration ? 5 : 4;
+  const wizardRef = useRef<HTMLDivElement>(null);
+  const isTabActive = useWorkspaceTabQueriesEnabled();
+
+  useEffect(() => {
+    if (!isTabActive || isMobileLayout) return;
+    const timeout = window.setTimeout(() => {
+      const root = wizardRef.current;
+      if (!root) return;
+      const fields = getNavigableFormFields(root);
+      if (focusFieldId && document.activeElement?.id === focusFieldId &&
+        fields.includes(document.activeElement as HTMLElement)) return;
+      const first = step === previewStep
+        ? root.querySelector<HTMLElement>('[data-wizard-primary]')
+        : fields[0] ?? root.querySelector<HTMLElement>('[data-wizard-primary]');
+      first?.focus();
+    }, 100);
+    return () => window.clearTimeout(timeout);
+  }, [step, previewStep, isTabActive, isMobileLayout, formSessionKey, focusFieldId]);
 
   useEffect(() => {
     valuesRef.current = values;
@@ -483,7 +503,7 @@ export function InvoiceFormWizard({
 
   const nextOrSaveButton =
     step < previewStep ? (
-      <Button type="button" className="max-sm:px-3" onClick={handleNext}>
+      <Button data-wizard-primary type="button" className="max-sm:px-3" onClick={handleNext}>
         {t("common.actions.next")}
         <ArrowRight className="size-4" />
       </Button>
@@ -501,7 +521,7 @@ export function InvoiceFormWizard({
             {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
           </Button>
         ) : null}
-        <Button type="button" className="max-sm:px-3" onClick={handleSave} disabled={saveDisabled}>
+        <Button data-wizard-primary type="button" className="max-sm:px-3" onClick={handleSave} disabled={saveDisabled}>
           {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {isSubmitting ? t("common.actions.saving") : submitLabel}
         </Button>
@@ -525,7 +545,7 @@ export function InvoiceFormWizard({
       step > 1 ? t("invoices.wizard.actions.back") : t("common.actions.cancel");
     const phonePrimary =
       step < previewStep ? (
-        <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleNext}>
+        <Button data-wizard-primary type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleNext}>
           {t("common.actions.next")}
           <ArrowRight className="size-4" />
         </Button>
@@ -542,13 +562,13 @@ export function InvoiceFormWizard({
           >
             {isPrinting ? <Loader2 className="size-4 animate-spin" /> : <Printer className="size-4" />}
           </Button>
-          <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
+          <Button data-wizard-primary type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {isSubmitting ? t("common.actions.saving") : submitLabel}
           </Button>
         </div>
       ) : (
-        <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
+        <Button data-wizard-primary type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
           {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {isSubmitting ? t("common.actions.saving") : submitLabel}
         </Button>
@@ -567,6 +587,7 @@ export function InvoiceFormWizard({
 
     return (
       <div
+        ref={wizardRef}
         data-testid="invoice-form-wizard"
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background",
@@ -633,6 +654,7 @@ export function InvoiceFormWizard({
 
   return (
     <div
+      ref={wizardRef}
       data-testid="invoice-form-wizard"
       className={cn("flex min-h-0 flex-1 flex-col", invoiceWizardTypographyRoot)}
     >

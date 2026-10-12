@@ -127,6 +127,7 @@ export type CustomerPhone = {
   id: string;
   number: string;
   displayNumber?: string;
+  isPrimary?: boolean;
   label?: string;
 };
 
@@ -751,6 +752,7 @@ export function getCustomerPhones(customer: Pick<Customer, "phones">): CustomerP
       number: phone.number.trim(),
       ...(phone.displayNumber?.trim() ? { displayNumber: phone.displayNumber.trim() } : {}),
       label: phone.isPrimary ? "Primary" : phone.type,
+      isPrimary: phone.isPrimary,
     }));
 }
 

@@ -20,7 +20,7 @@ import {
   type OrderParty,
 } from "@/lib/orders/types";
 
-export type InvoicePaymentLocation = "usa" | "dr";
+export type InvoicePaymentLocation = string;
 
 /** Where the pickup was handled: on a route, or by an employee at a warehouse or office. */
 export type InvoicePickupSource = "route" | "warehouse" | "office";
@@ -339,15 +339,14 @@ export function buildInvoiceListParams(input: {
 }
 
 export function mapPaidRegionToPaymentLocation(paidRegion: string): InvoicePaymentLocation {
-  const normalized = paidRegion.trim().toLowerCase();
-  if (normalized === "rd" || normalized === "dr" || normalized === "do") {
-    return "dr";
-  }
-  return "usa";
+  return mapPaymentLocationToPaidRegion(paidRegion);
 }
 
 export function mapPaymentLocationToPaidRegion(location: InvoicePaymentLocation): string {
-  return location === "dr" ? "RD" : "NY";
+  const code = location.trim().toUpperCase();
+  if (["USA", "US"].includes(code)) return "NY";
+  if (["DR", "DO"].includes(code)) return "RD";
+  return code;
 }
 
 export function getInvoiceTotal(invoice: Invoice): number {
@@ -694,11 +693,11 @@ function orderPartyToInvoiceFormCustomer(
     oldID: null,
     name: party.name.trim() || "—",
     customerType,
-    phones: party.phones.map((phone, index) => ({
+    phones: party.phones.map((phone) => ({
       type: "mobile",
       number: phone.number,
       displayNumber: phone.displayNumber ?? phone.number,
-      isPrimary: index === 0,
+      isPrimary: phone.isPrimary === true,
     })),
     email: party.email?.trim() ?? "",
     active: true,

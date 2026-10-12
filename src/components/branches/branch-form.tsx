@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { useTranslation } from "@/lib/i18n";
-import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
+import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-company";
 import {
   type BranchAddress,
   type BranchFormValues,
@@ -42,6 +42,7 @@ export function BranchForm({
   onCancel,
 }: BranchFormProps) {
   const { t } = useTranslation();
+  const googleMapsConfigured = useIsGoogleMapsConfigured();
   const { control, reset, setValue, getValues, handleSubmit, formState: { errors } } = useForm<BranchFormValues>({
     defaultValues: initialValues ?? createEmptyBranchForm(), resolver: zodResolver(branchFormSchema),
   });
@@ -184,8 +185,8 @@ export function BranchForm({
                   id="address-city"
                   value={values.address.city}
                   onChange={(event) => updateAddressField("city", event.target.value)}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                  disabled={googleMapsConfigured && !manualAddressEntry}
+                  readOnly={googleMapsConfigured && !manualAddressEntry}
                 />
               </div>
               <div className="space-y-1">
@@ -196,8 +197,8 @@ export function BranchForm({
                   id="address-state"
                   value={values.address.state}
                   onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                  disabled={googleMapsConfigured && !manualAddressEntry}
+                  readOnly={googleMapsConfigured && !manualAddressEntry}
                 />
               </div>
               <div className="space-y-1">
@@ -208,8 +209,8 @@ export function BranchForm({
                   id="address-zipcode"
                   value={values.address.zipcode}
                   onChange={(event) => updateAddressField("zipcode", event.target.value)}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                  disabled={googleMapsConfigured && !manualAddressEntry}
+                  readOnly={googleMapsConfigured && !manualAddressEntry}
                 />
               </div>
               <div className="space-y-1">
@@ -220,8 +221,8 @@ export function BranchForm({
                   id="address-country"
                   value={values.address.country}
                   onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
-                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
-                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
+                  disabled={googleMapsConfigured && !manualAddressEntry}
+                  readOnly={googleMapsConfigured && !manualAddressEntry}
                 />
               </div>
             </div>

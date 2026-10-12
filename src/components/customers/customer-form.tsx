@@ -13,7 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
+import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-company";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import {
@@ -181,7 +181,7 @@ function AddressFieldGrid({
       ? [{ value: address.city, label: address.city }, ...CITY_DROPDOWN_OPTIONS]
       : CITY_DROPDOWN_OPTIONS;
 
-  const googleEnabled = isGoogleMapsConfigured();
+  const googleEnabled = useIsGoogleMapsConfigured();
   // Senders use Google autocomplete to fill city/state/zip, so we render those
   // as read-only text instead of editable fields.
   const senderAutoFill = mode === "sender" && googleEnabled;
@@ -605,7 +605,7 @@ export function CustomerForm({
 
   const isSender = isCustomerSenderType(values.customerType);
   const addressMode: "sender" | "receiver" = isSender ? "sender" : "receiver";
-  const googleEnabled = isGoogleMapsConfigured();
+  const googleEnabled = useIsGoogleMapsConfigured();
 
   // The single reason the customer can't be saved yet, evaluated in priority
   // order: name → first phone → any other started phone → any open address.

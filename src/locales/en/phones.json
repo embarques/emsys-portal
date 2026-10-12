@@ -10,6 +10,7 @@
   "fieldNumber": "Number",
   "searchTypes": "Search types…",
   "primary": "Primary phone",
+  "primaryBadge": "Primary",
   "setPrimary": "Set as primary",
   "remove": "Remove phone",
   "removeButton": "Remove",

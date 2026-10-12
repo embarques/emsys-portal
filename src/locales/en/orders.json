@@ -99,6 +99,23 @@
     "receiver": "Receiver",
     "receiverAddress": "Receiver address"
   },
+  "tableColumns": {
+    "id": "Id",
+    "date": "Date",
+    "completed": "Status",
+    "createdAt": "Created",
+    "senderName": "Sender",
+    "senderAddress": "Address",
+    "senderCity": "City",
+    "senderZip": "Postal Code",
+    "senderPhone": "Phone",
+    "sectorName": "Sector",
+    "createdBy": "User",
+    "updatedAt": "Modified",
+    "comments": "Comments",
+    "branchName": "Branch",
+    "employee": "Driver"
+  },
   "search": {
     "placeholder": "Search for appointments"
   },
@@ -313,7 +330,7 @@
       "selected": "Selected"
     },
     "errors": {
-      "notConfigured": "Google Maps is not configured. Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to enable the pickup map.",
+      "notConfigured": "Google Maps is not configured for this company.",
       "loadFailed": "Failed to load Google Maps.",
       "loadOrdersFailed": "Failed to load pickups for the map."
     }

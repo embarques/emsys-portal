@@ -9,6 +9,7 @@ import { RegisterInvoiceTransactionFields } from "@/components/accounting/regist
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import {
@@ -104,6 +105,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   const { notifySuccess, notifyError } = useFeedback();
   const isMobileLayout = useIsMobileViewport();
   const formId = useId();
+  const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const currentUserQuery = useCurrentUser();
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc", active: true });
@@ -367,7 +369,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
 
   return (
     <div className="space-y-4">
-      <form id={formId} className="space-y-4" onSubmit={handleSubmit(submit, handleInvalid)}>
+      <form id={formId} className="space-y-4" onKeyDown={navigateOnEnter} onSubmit={handleSubmit(submit, handleInvalid)}>
         <RegisterInvoiceTransactionFields
           employees={employees}
           dailyRoutes={dailyRoutes}

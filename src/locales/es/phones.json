@@ -10,6 +10,7 @@
   "fieldNumber": "Número",
   "searchTypes": "Buscar tipo…",
   "primary": "Teléfono principal",
+  "primaryBadge": "Principal",
   "setPrimary": "Marcar como principal",
   "remove": "Quitar teléfono",
   "removeButton": "Quitar",

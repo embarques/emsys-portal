@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import {
   useCreateIncomeStatement,
   useDailyIncomeInvoiceRegistration,
@@ -93,6 +94,7 @@ function MobileCreateDailyIncomePage({
   const selectedStatementBranch = branches.find((branch) => branch.id === statementBranchId);
   const showExchangeRate = selectedStatementBranch?.code.trim().toUpperCase() === "RD";
   const errors = form.formState.errors;
+  const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
   const branchOptions = branches.map((branch) => ({
     value: String(branch.id),
     label: `${branch.code} — ${branch.name}`,
@@ -180,7 +182,7 @@ function MobileCreateDailyIncomePage({
         </p>
       </div>
 
-      <form className="space-y-5" onSubmit={form.handleSubmit(createDailyIncome)}>
+      <form className="space-y-5" onKeyDown={navigateOnEnter} onSubmit={form.handleSubmit(createDailyIncome)}>
         <div className="space-y-2" data-invoice-wizard-focus="daily-income">
           <Label htmlFor="invoice-mobile-statement-branch">
             {t("invoices.wizard.dailyIncome.dialog.branch")}

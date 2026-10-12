@@ -6,6 +6,8 @@ export type ApiTableField = {
   /** Existing column that already represents this API field. */
   columnId?: string;
   format?: "date";
+  /** When false, generated API columns start hidden until enabled in the Columns menu. */
+  defaultVisible?: boolean;
 };
 
 export type ApiTableRecord = {
@@ -105,9 +107,9 @@ export function completeApiTableColumns<T extends ApiTableRecord>(
   fields: readonly ApiTableField[],
   formatters: ApiTableFormatters,
 ): DataTableColumn<T>[] {
-  const result = columns.map((column) => ({ ...column, defaultVisible: true }));
+  const result = columns.map((column) => ({ ...column }));
   const ids = new Set(columns.map((column) => column.id));
-  for (const { field, columnId = field, format } of fields) {
+  for (const { field, columnId = field, format, defaultVisible = true } of fields) {
     if (ids.has(columnId) || PRIVATE_FIELDS.test(field)) continue;
     ids.add(columnId);
     const renderValue = (row: T) => {
@@ -120,7 +122,7 @@ export function completeApiTableColumns<T extends ApiTableRecord>(
     result.push({
       id: columnId,
       label: formatters.label(field),
-      defaultVisible: true,
+      defaultVisible,
       // The schema describes response fields, not server-supported sort paths.
       sortable: false,
       renderCell: renderValue,

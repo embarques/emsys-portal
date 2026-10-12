@@ -68,7 +68,7 @@
     }
   },
   "status": {
-    "completed": "Completada",
+    "completed": "Completado",
     "pending": "Pendiente"
   },
   "columns": {
@@ -98,6 +98,23 @@
     "phone1": "Teléfono 1",
     "receiver": "Destinatario",
     "receiverAddress": "Dirección del destinatario"
+  },
+  "tableColumns": {
+    "id": "Id",
+    "date": "Fecha",
+    "completed": "Estado",
+    "createdAt": "Creada",
+    "senderName": "Envia",
+    "senderAddress": "Dirección",
+    "senderCity": "Ciudad",
+    "senderZip": "Código Postal",
+    "senderPhone": "Teléfono",
+    "sectorName": "Sector",
+    "createdBy": "Usuario",
+    "updatedAt": "Modificada",
+    "comments": "Comentarios",
+    "branchName": "Sucursal",
+    "employee": "Chofer"
   },
   "search": {
     "placeholder": "Buscar citas"
@@ -313,7 +330,7 @@
       "selected": "Seleccionada"
     },
     "errors": {
-      "notConfigured": "Google Maps no está configurado. Agregue NEXT_PUBLIC_GOOGLE_MAPS_API_KEY para habilitar el mapa de recogidas.",
+      "notConfigured": "Google Maps no está configurado para esta empresa.",
       "loadFailed": "No se pudo cargar Google Maps.",
       "loadOrdersFailed": "No se pudieron cargar las recogidas para el mapa."
     }

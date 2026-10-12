@@ -9,14 +9,13 @@
  * billable autocomplete session (recommended by Google).
  */
 
-import { importGoogleMapsLibrary, isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
+import { importGoogleMapsLibrary } from "@/lib/maps/load-google-maps";
 import {
   createAddressGeoLocation,
   type AddressGeoLocation,
   type ParsedPlaceAddress,
 } from "@/lib/customers/types";
 
-export { isGoogleMapsConfigured };
 
 export type PlaceSuggestion = {
   placeId: string;
@@ -71,21 +70,13 @@ type PlacesLibrary = {
   };
 };
 
-let placesLibraryPromise: Promise<PlacesLibrary> | null = null;
-
-function getPlacesLibrary(): Promise<PlacesLibrary> {
-  if (!placesLibraryPromise) {
-    placesLibraryPromise = importGoogleMapsLibrary<PlacesLibrary>("places").catch((error) => {
-      placesLibraryPromise = null;
-      throw error;
-    });
-  }
-  return placesLibraryPromise;
+function getPlacesLibrary(apiKey: string): Promise<PlacesLibrary> {
+  return importGoogleMapsLibrary<PlacesLibrary>("places", apiKey);
 }
 
 /** Opaque autocomplete session token; create one per autocomplete session. */
-export async function createAutocompleteSessionToken(): Promise<object> {
-  const places = await getPlacesLibrary();
+export async function createAutocompleteSessionToken(apiKey: string): Promise<object> {
+  const places = await getPlacesLibrary(apiKey);
   return new places.AutocompleteSessionToken();
 }
 
@@ -95,12 +86,13 @@ function readText(value: FormattableText): string {
 
 export async function fetchPlaceSuggestions(
   input: string,
+  apiKey: string,
   sessionToken?: object,
 ): Promise<PlaceSuggestion[]> {
   const query = input.trim();
   if (!query) return [];
 
-  const places = await getPlacesLibrary();
+  const places = await getPlacesLibrary(apiKey);
   const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
     input: query,
     sessionToken,

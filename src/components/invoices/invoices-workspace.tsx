@@ -56,6 +56,7 @@ import {
   formatInvoiceDate,
   formatInvoiceMoney,
   formatInvoicePartyAddressLine,
+  formatInvoicePartyAddressLines,
   formatInvoiceTabLabel,
   getContainerLabelForInvoice,
   getInvoiceBalance,
@@ -118,6 +119,8 @@ import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
+import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
+import { Badge } from "@/components/ui/badge";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { OrderParty } from "@/lib/orders/types";
@@ -186,16 +189,91 @@ function isLegacySyncPermissionError(message: string): boolean {
 
 function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
   const { t } = useTranslation();
-  const addressLine = formatInvoicePartyAddressLine(party);
-  const displayLine = addressLine === "—" ? t("common.empty.dash") : addressLine;
+  const lines = formatInvoicePartyAddressLines(party);
 
   return (
     <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME)}>
-      <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={displayLine}>
-        {displayLine}
-      </p>
+      {lines.length ? lines.map((line, index) => (
+        <p key={index} className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")}>
+          {line}
+        </p>
+      )) : t("common.empty.dash")}
     </div>
   );
+}
+
+function InvoicePartyPhoneCell({ party }: { party: OrderParty | null | undefined }) {
+  const { t } = useTranslation();
+  const phones = (party?.phones ?? []).map((phone) => ({
+    ...phone,
+    display: resolvePhoneDisplayValue(phone.number, phone.displayNumber),
+  })).filter((phone) => phone.display)
+    .sort((a, b) => Number(b.isPrimary === true) - Number(a.isPrimary === true));
+
+  return (
+    <div className="flex flex-col gap-1 tabular-nums">
+      {phones.length ? phones.map((phone, index) => (
+        <span key={`${phone.id}-${index}`} className="flex items-center gap-2 whitespace-nowrap leading-snug">
+          <span title={phone.label}>{phone.display}</span>
+          {phone.isPrimary ? (
+            <Badge variant="outline"
+              className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+              {t("invoices.columns.primaryPhone")}
+            </Badge>
+          ) : null}
+        </span>
+      )) : t("common.empty.dash")}
+    </div>
+  );
+}
+
+function formatInvoiceLineItemsSummary(
+  invoice: Invoice,
+  t: ReturnType<typeof useTranslation>["t"],
+): string {
+  const lineItemCount = invoice.lineItems.length;
+  if (lineItemCount === 0) return t("common.empty.dash");
+
+  const labelCount = invoice.lineItems.reduce((total, item) => total + item.labelCount, 0);
+  const firstItemName = invoice.lineItems.find((item) => item.itemName.trim())?.itemName.trim();
+  const itemLabel = t(
+    lineItemCount === 1 ? "invoices.columns.itemSingular" : "invoices.columns.itemPlural",
+  );
+  const labelLabel = t(
+    labelCount === 1 ? "invoices.columns.labelSingular" : "invoices.columns.labelPlural",
+  );
+  const countSummary = `${lineItemCount} ${itemLabel} · ${labelCount} ${labelLabel}`;
+
+  if (!firstItemName) return countSummary;
+  if (lineItemCount === 1) return `${countSummary} · ${firstItemName}`;
+  return `${countSummary} · ${firstItemName} +${lineItemCount - 1}`;
+}
+
+function getInvoiceTableStatusLabel(
+  invoice: Invoice,
+  t: ReturnType<typeof useTranslation>["t"],
+): string {
+  const status = resolveInvoicePaidStatus(invoice);
+  return t(status === "closed" ? "invoices.columns.statusClosed" : "invoices.columns.statusOpen");
+}
+
+function getInvoicePendingLabel(
+  invoice: Invoice,
+  t: ReturnType<typeof useTranslation>["t"],
+): string {
+  return getInvoiceBalance(invoice) <= 0
+    ? t("invoices.columns.pendingPaid")
+    : t("invoices.columns.pendingOpen");
+}
+
+function formatInvoiceTableDate(date: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  })
+    .format(new Date(`${date}T12:00:00`))
+    .replaceAll("/", "-");
 }
 
 function getInvoiceMobileInitials(invoice: Invoice): string {
@@ -840,56 +918,86 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.invoiceNumber"),
       sortField: "number",
       cellClassName: "font-medium",
+      defaultWidth: 130,
       renderCell: (invoice) => invoice.invoiceNumber,
     },
     {
       id: "date",
       label: t("invoices.columns.date"),
-      renderCell: (invoice) => formatInvoiceDate(invoice.date),
+      defaultWidth: 130,
+      renderCell: (invoice) => formatInvoiceTableDate(invoice.date),
     },
     {
       id: "container",
       label: t("invoices.columns.container"),
       sortField: "container.name",
+      defaultWidth: 120,
       renderCell: (invoice) => getContainerLabelForInvoice(invoice),
+    },
+    {
+      id: "invoiceDetails",
+      label: t("invoices.columns.invoiceDetails"),
+      defaultVisible: false,
+      defaultWidth: 240,
+      renderCell: (invoice) => formatInvoiceLineItemsSummary(invoice, t),
     },
     {
       id: "paidStatus",
       label: t("invoices.columns.paidStatus"),
       truncateCell: false,
       cellClassName: "overflow-visible",
+      defaultWidth: 120,
       renderCell: (invoice) => {
         const status = resolveInvoicePaidStatus(invoice);
         return (
           <TableTagText className={getInvoicePaidStatusBadgeClass(status)}>
-            {getInvoicePaidStatusLabel(status)}
+            {getInvoiceTableStatusLabel(invoice, t)}
           </TableTagText>
         );
       },
     },
     {
-      id: "paymentLocation",
-      label: t("invoices.columns.paymentLocation"),
-      sortField: "paidRegion",
+      id: "pendingStatus",
+      label: t("invoices.columns.pendingStatus"),
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (invoice) => (
-        <TableTagText className={getBranchBadgeClass(invoice.paymentLocation)}>
-          {getPaymentLocationLabel(invoice.paymentLocation)}
-        </TableTagText>
-      ),
+      defaultWidth: 120,
+      sortable: false,
+      renderCell: (invoice) => {
+        const isPaid = getInvoiceBalance(invoice) <= 0;
+        return (
+          <TableTagText
+            className={
+              isPaid
+                ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                : "border-transparent bg-rose-500/15 text-rose-700 dark:text-rose-300"
+            }
+          >
+            {getInvoicePendingLabel(invoice, t)}
+          </TableTagText>
+        );
+      },
     },
     {
       id: "sender.name",
       label: t("invoices.columns.senderName"),
       sortField: "sender.name",
+      defaultWidth: 280,
       renderCell: (invoice) => invoice.sender.name.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "sender.phones",
+      label: t("invoices.columns.senderPhone"),
+      defaultWidth: 260,
+      truncateCell: false,
+      cellClassName: "align-top",
+      renderCell: (invoice) => <InvoicePartyPhoneCell party={invoice.sender} />,
     },
     {
       id: "sender.address",
       label: t("invoices.columns.senderAddress"),
       sortField: "sender.address.address1",
-      defaultWidth: 220,
+      defaultWidth: 340,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (invoice) => <InvoicePartyAddressCell party={invoice.sender} />,
@@ -898,16 +1006,25 @@ export function InvoicesWorkspace() {
       id: "receiver.name",
       label: t("invoices.columns.receiverName"),
       sortField: "receiver.name",
+      defaultWidth: 340,
       renderCell: (invoice) => {
         const receiver = getInvoicePrimaryReceiver(invoice);
         return receiver?.name?.trim() || t("common.empty.dash");
       },
     },
     {
+      id: "receiver.phones",
+      label: t("invoices.columns.receiverPhone"),
+      defaultWidth: 260,
+      truncateCell: false,
+      cellClassName: "align-top",
+      renderCell: (invoice) => <InvoicePartyPhoneCell party={getInvoicePrimaryReceiver(invoice)} />,
+    },
+    {
       id: "receiver.address",
       label: t("invoices.columns.receiverAddress"),
       sortField: "receiver.address.address1",
-      defaultWidth: 220,
+      defaultWidth: 340,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (invoice) => (
@@ -919,6 +1036,7 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.total"),
       sortField: "cost",
       truncateCell: false,
+      defaultWidth: 120,
       renderCell: (invoice) => {
         const amount = getInvoiceSubtotal(invoice);
         return <span className={getInvoiceTotalMoneyClass()}>{formatInvoiceMoney(amount)}</span>;
@@ -928,6 +1046,7 @@ export function InvoicesWorkspace() {
       id: "discount",
       label: t("invoices.columns.discount"),
       truncateCell: false,
+      defaultWidth: 120,
       renderCell: (invoice) => (
         <span className={getInvoiceDiscountMoneyClass(invoice.discount)}>
           {formatInvoiceMoney(invoice.discount)}
@@ -939,6 +1058,7 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.amountPaid"),
       sortField: "payment",
       truncateCell: false,
+      defaultWidth: 120,
       renderCell: (invoice) => (
         <span className={getInvoicePaidMoneyClass(invoice.amountPaid)}>
           {formatInvoiceMoney(invoice.amountPaid)}
@@ -949,14 +1069,29 @@ export function InvoicesWorkspace() {
       id: "balance",
       label: t("invoices.columns.balance"),
       truncateCell: false,
+      defaultWidth: 120,
       renderCell: (invoice) => {
         const amount = getInvoiceBalance(invoice);
         return <span className={getInvoiceBalanceMoneyClass(amount)}>{formatInvoiceMoney(amount)}</span>;
       },
     },
     {
+      id: "paymentLocation",
+      label: t("invoices.columns.paymentLocation"),
+      sortField: "paidRegion",
+      defaultVisible: false,
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      renderCell: (invoice) => (
+        <TableTagText className={getBranchBadgeClass(invoice.paymentLocation)}>
+          {getPaymentLocationLabel(invoice.paymentLocation)}
+        </TableTagText>
+      ),
+    },
+    {
       id: "pickupAssignment",
       label: t("invoices.columns.pickupAssignment"),
+      defaultVisible: false,
       renderCell: (invoice) =>
         formatInvoicePickupAssignmentLabel(invoice, t, t("common.empty.dash")),
     },
@@ -964,12 +1099,14 @@ export function InvoicesWorkspace() {
       id: "createdBy",
       label: t("invoices.columns.createdBy"),
       sortField: "createdBy.name",
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (invoice) => invoice.createdBy.trim() || t("common.empty.dash"),
     },
     {
       id: "createdAt",
       label: t("invoices.columns.createdAt"),
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (invoice) =>
         invoice.createdAt ? formatAuditDateTime(invoice.createdAt) : t("common.empty.dash"),
@@ -978,7 +1115,7 @@ export function InvoicesWorkspace() {
     [t],
   );
 
-  const columnVisibility = useApiTableColumns("invoices-v7", tableColumns, INVOICE_API_TABLE_FIELDS);
+  const columnVisibility = useApiTableColumns("invoices-v12", tableColumns, INVOICE_API_TABLE_FIELDS);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;

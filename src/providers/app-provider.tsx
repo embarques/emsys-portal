@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiUnavailableBanner } from "@/components/app-shell/api-unavailable-banner";
+import { FormKeyboardNavigation } from "@/components/forms/form-keyboard-navigation";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/providers/auth-provider";
 import { I18nProvider } from "@/lib/i18n";
@@ -17,6 +18,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             <I18nProvider>
               <TooltipProvider delayDuration={200}>
                 <ApiUnavailableBanner />
+                <FormKeyboardNavigation />
                 {children}
               </TooltipProvider>
             </I18nProvider>

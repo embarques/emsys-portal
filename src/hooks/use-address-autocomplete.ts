@@ -6,11 +6,11 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   createAutocompleteSessionToken,
   fetchPlaceSuggestions,
-  isGoogleMapsConfigured,
   resolvePredictionAddress,
   type PlaceSuggestion,
 } from "@/lib/maps/places";
 import type { ParsedPlaceAddress } from "@/lib/customers/types";
+import { useGoogleMapsApiKey } from "@/lib/company/hooks/use-current-company";
 
 type UseAddressAutocompleteOptions = {
   /** Minimum input length before predictions are requested. */
@@ -37,7 +37,8 @@ export function useAddressAutocomplete(
   options: UseAddressAutocompleteOptions = {},
 ): UseAddressAutocompleteResult {
   const { minLength = 3, debounceMs = 250 } = options;
-  const enabled = isGoogleMapsConfigured();
+  const apiKey = useGoogleMapsApiKey();
+  const enabled = Boolean(apiKey);
 
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -52,13 +53,13 @@ export function useAddressAutocomplete(
   const ensureSessionToken = useCallback(async () => {
     if (!sessionTokenRef.current) {
       try {
-        sessionTokenRef.current = await createAutocompleteSessionToken();
+        sessionTokenRef.current = await createAutocompleteSessionToken(apiKey);
       } catch {
         sessionTokenRef.current = undefined;
       }
     }
     return sessionTokenRef.current;
-  }, []);
+  }, [apiKey]);
 
   const reset = useCallback(() => {
     requestIdRef.current += 1;
@@ -67,6 +68,10 @@ export function useAddressAutocomplete(
     setError(null);
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    reset();
+  }, [apiKey, reset]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -85,7 +90,7 @@ export function useAddressAutocomplete(
     (async () => {
       try {
         const token = await ensureSessionToken();
-        const results = await fetchPlaceSuggestions(debouncedQuery, token);
+        const results = await fetchPlaceSuggestions(debouncedQuery, apiKey, token);
         if (cancelled || requestId !== requestIdRef.current) return;
         setSuggestions(results);
       } catch {
@@ -102,7 +107,7 @@ export function useAddressAutocomplete(
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, enabled, ensureSessionToken, minLength]);
+  }, [debouncedQuery, enabled, ensureSessionToken, minLength, apiKey]);
 
   const resolveSuggestion = useCallback(
     async (suggestion: PlaceSuggestion): Promise<ParsedPlaceAddress | null> => {
