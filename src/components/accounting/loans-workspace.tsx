@@ -1595,7 +1595,7 @@ export function LoansWorkspace() {
                   setPage(1);
                 }}
                 placeholder="Search employee, loan, reference"
-                inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
+                inputClassName="h-12 rounded-2xl border-border bg-background text-base text-foreground shadow-none"
               />
               <div className="mt-3">
                 <TableDirectoryToolbar

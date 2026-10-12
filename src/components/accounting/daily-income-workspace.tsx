@@ -805,7 +805,7 @@ export function DailyIncomeWorkspace() {
               }}
               placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}
               className="min-w-0"
-              inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
+              inputClassName="h-12 rounded-2xl border-border bg-background text-base text-foreground shadow-none"
             />
           </div>
 
