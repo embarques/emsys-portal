@@ -1307,7 +1307,7 @@ type ApiInvoiceRouteWriteRef = {
 };
 
 type ApiInvoiceReceivedByWrite =
-  | InvoiceWriteEmployeeRef
+  | (Omit<InvoiceWriteEmployeeRef, "id"> & { id: string })
   | (InvoiceWriteRouteRef & { route?: InvoiceWriteRouteRef });
 
 type ApiInvoiceWritePayload = {
@@ -1466,7 +1466,8 @@ function applyInvoicePickupAssignment(
   const employee = assignment.pickupEmployee
     ? buildInvoiceEmployeeWriteRef(assignment.pickupEmployee)
     : null;
-  payload.receivedBy = employee;
+  // ReceivedByRef uses string IDs; legacy employee fields still require numbers.
+  payload.receivedBy = employee ? { ...employee, id: String(employee.id) } : null;
   payload.employee = employee;
   payload.pickupEmployee = employee;
   payload.officeBranch = assignment.officeBranch
