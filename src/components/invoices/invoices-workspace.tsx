@@ -434,8 +434,8 @@ function MobileInvoiceRow({
           "block truncate text-lg font-bold leading-tight",
           hasPendingRegistration(invoice) ? "text-red-600 dark:text-red-400" : "text-foreground",
         )}>
+          {hasPendingRegistration(invoice) ? "*" : ""}
           {invoice.invoiceNumber || emptyLabel}
-          {hasPendingRegistration(invoice) ? " *" : ""}
         </span>
         <span className="mt-1 block truncate text-base font-medium uppercase leading-tight text-foreground/80">
           {getInvoiceMobilePartyName(invoice, emptyLabel)}
@@ -929,8 +929,8 @@ export function InvoicesWorkspace() {
       defaultWidth: 130,
       renderCell: (invoice) => (
         <span className={hasPendingRegistration(invoice) ? "text-red-600 dark:text-red-400" : undefined}>
+          {hasPendingRegistration(invoice) ? "*" : ""}
           {invoice.invoiceNumber}
-          {hasPendingRegistration(invoice) ? " *" : ""}
         </span>
       ),
     },
