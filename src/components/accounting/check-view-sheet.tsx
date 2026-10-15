@@ -1,11 +1,11 @@
 "use client";
 
-import { Banknote } from "lucide-react";
+import { Banknote, CheckCircle2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   RecordViewSheet,
-  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -23,20 +23,18 @@ type CheckViewSheetProps = {
   check: Check | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (check: Check) => void;
-  onDelete: (check: Check) => void;
-  canEdit?: boolean;
-  canDelete?: boolean;
+  onMarkCleared?: (check: Check) => void;
+  canMarkCleared?: boolean;
+  isMarkingCleared?: boolean;
 };
 
 export function CheckViewSheet({
   check,
   open,
   onOpenChange,
-  onEdit,
-  onDelete,
-  canEdit = true,
-  canDelete = true,
+  onMarkCleared,
+  canMarkCleared = false,
+  isMarkingCleared = false,
 }: CheckViewSheetProps) {
   const { t } = useTranslation();
 
@@ -107,12 +105,18 @@ export function CheckViewSheet({
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        <RecordViewSheetActions
-          editLabel={t("accounting.checks.actions.edit")}
-          deleteLabel={t("common.actions.delete")}
-          onEdit={canEdit ? () => onEdit(check) : undefined}
-          onDelete={canDelete ? () => onDelete(check) : undefined}
-        />
+        {canMarkCleared && check.status === "OUTSTANDING" && onMarkCleared ? (
+          <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+            <Button
+              className="w-full"
+              disabled={isMarkingCleared}
+              onClick={() => onMarkCleared(check)}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {t("accounting.checks.actions.markCleared")}
+            </Button>
+          </div>
+        ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

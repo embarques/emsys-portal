@@ -276,9 +276,11 @@ API assignee rules (`POST` / `PUT` `/v1/journals`):
 
 Checks manages invoice payments made by check.
 
-CHECK or CHEQUE invoice payments (`INITIAL-PAYMENT` and `PAYMENT`) create an **outstanding check** and do **not** update the invoice `payment` / `balance`. The invoice payment is applied only when the check is marked **cleared**. Updating or deleting a cleared check reverses those invoice effects.
+CHECK or CHEQUE invoice payments (`INITIAL-PAYMENT` and `PAYMENT`) create an **outstanding check** and do **not** update the invoice `payment` / `balance`. The invoice payment is applied only when the check is marked **cleared**.
 
-The Checks workspace lists those records so staff can search, edit, clear, or delete them. Each check stores:
+The Checks workspace is view-only aside from that status change. Staff can search and open a check, and can mark **outstanding** checks as **cleared**. They cannot add checks or delete them from this directory, and a cleared check cannot be moved back to outstanding here. Outstanding status is shown in red and cleared status in green. The sidebar shows a count of outstanding checks next to Checks.
+
+Each check stores:
 
 - Check number
 - Amount
