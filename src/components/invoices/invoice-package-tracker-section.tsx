@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 
+import { RecordViewList, RecordViewListItem } from "@/components/app-shell/record-view-list";
+
 import { RecordViewSheetDetailRow, RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { formatLabelTimestamp } from "@/lib/labels/display";
 import { buildInvoicePackageTrackerEntries } from "@/lib/invoices/package-tracker";
@@ -27,9 +29,9 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
       {sortedTimeline.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.packageTracker.empty")}</p>
       ) : (
-        <ul className="divide-y-4 divide-border/60">
+        <RecordViewList className="bg-muted/20 p-3">
           {sortedTimeline.map((entry) => (
-            <li
+            <RecordViewListItem
               key={entry.id}
               className={cn("border-l-2", entry.success ? "border-l-emerald-500/40" : "border-l-destructive/40")}
             >
@@ -45,9 +47,9 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
                 label={t("invoices.view.packageTracker.fields.description")}
                 value={entry.description}
               />
-            </li>
+            </RecordViewListItem>
           ))}
-        </ul>
+        </RecordViewList>
       )}
     </RecordViewSheetSection>
   );

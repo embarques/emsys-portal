@@ -53,29 +53,49 @@ type InvoiceViewSheetProps = {
   onAddComment: (invoiceId: string, description: string) => void;
 };
 
+function partyPhoneList(party: Invoice["sender"]): string {
+  const formatted = formatPartyPhoneList(party.phones).trim();
+  if (!formatted || formatted === "—" || formatted === "-") return "";
+  return formatted;
+}
+
+function partyAddressLine(party: Invoice["sender"]): string {
+  const address = getOrderPartyAddress(party);
+  if (!address) return "";
+  return formatAddressLine(address).trim();
+}
+
 function PartySection({ title, party }: { title: string; party: Invoice["sender"] }) {
   const { t } = useTranslation();
-  const address = getOrderPartyAddress(party);
+  const name = party.name.trim();
+  const documentId = party.documentId?.trim() ?? "";
+  const email = party.email?.trim() ?? "";
+  const phones = partyPhoneList(party);
+  const addressLine = partyAddressLine(party);
+
+  if (!name && !documentId && !email && !phones && !addressLine) return null;
 
   return (
     <RecordViewSheetSection title={title} padding="relaxed">
-      <p className="text-sm font-medium">{party.name}</p>
-      {party.documentId ? (
-        <p className="mt-1 text-xs text-muted-foreground">
-          {t("invoices.view.fields.documentId")}: {party.documentId}
+      {name ? <p className="text-sm font-medium">{name}</p> : null}
+      {documentId ? (
+        <p className={cn("text-xs text-muted-foreground", name && "mt-1")}>
+          {t("invoices.view.fields.documentId")}: {documentId}
         </p>
       ) : null}
-      {party.email ? <p className="text-xs text-muted-foreground">{party.email}</p> : null}
-      <div className="mt-3">
-        <p className="text-xs font-medium text-primary">{t("invoices.view.fields.phones")}</p>
-        <p className="mt-1 text-sm leading-relaxed">{formatPartyPhoneList(party.phones)}</p>
-      </div>
-      <div className="mt-4">
-        <p className="text-xs font-medium text-primary">{t("invoices.view.fields.address")}</p>
-        <p className="mt-1 text-sm leading-relaxed">
-          {address ? formatAddressLine(address) : t("common.empty.dash")}
-        </p>
-      </div>
+      {email ? <p className="text-xs text-muted-foreground">{email}</p> : null}
+      {phones ? (
+        <div className={cn(name || documentId || email ? "mt-3" : undefined)}>
+          <p className="text-xs font-medium text-primary">{t("invoices.view.fields.phones")}</p>
+          <p className="mt-1 text-sm leading-relaxed">{phones}</p>
+        </div>
+      ) : null}
+      {addressLine ? (
+        <div className={cn(name || documentId || email || phones ? "mt-4" : undefined)}>
+          <p className="text-xs font-medium text-primary">{t("invoices.view.fields.address")}</p>
+          <p className="mt-1 text-sm leading-relaxed">{addressLine}</p>
+        </div>
+      ) : null}
     </RecordViewSheetSection>
   );
 }
@@ -138,127 +158,121 @@ function formatBarcodeScanDate(scanDate: string | undefined, empty: string): str
   }).format(parsed);
 }
 
-function InvoiceLineItemRow({ item }: { item: InvoiceLineItem }) {
+function LineItemMetric({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string | number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-sm tabular-nums leading-snug text-foreground [overflow-wrap:anywhere]">{value}</p>
+    </div>
+  );
+}
+
+function InvoiceLineItemCard({ item }: { item: InvoiceLineItem }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const barcodes = item.barcodes ?? [];
   const hasBarcodes = barcodes.length > 0;
   const showDescription = Boolean(item.description && item.description !== item.itemName);
   const empty = t("common.empty.dash");
+  const panelId = `invoice-line-item-barcodes-${item.id}`;
+  const barcodeToggleLabel = open
+    ? t(
+        barcodes.length === 1
+          ? "invoices.view.lineItems.hideBarcodesCount"
+          : "invoices.view.lineItems.hideBarcodesCount_plural",
+        { count: barcodes.length },
+      )
+    : t(
+        barcodes.length === 1
+          ? "invoices.view.lineItems.showBarcodesCount"
+          : "invoices.view.lineItems.showBarcodesCount_plural",
+        { count: barcodes.length },
+      );
 
   return (
-    <>
-      <tr className="border-b border-border/50 last:border-0">
-        <td className="py-3 pr-3 align-top">
-          <div className="flex items-start gap-2">
-            {hasBarcodes ? (
-              <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                aria-expanded={open}
-                aria-label={
-                  open
-                    ? t("invoices.view.lineItems.hideBarcodes")
-                    : t("invoices.view.lineItems.showBarcodes")
-                }
-                className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-              </button>
-            ) : (
-              <span className="mt-0.5 inline-block size-4 shrink-0" aria-hidden />
-            )}
-            <span className="min-w-0">
-              <span className="block">{item.itemName}</span>
-              {showDescription ? (
-                <span className="mt-0.5 block text-xs text-muted-foreground">{item.description}</span>
-              ) : null}
-              {hasBarcodes ? (
-                <button
-                  type="button"
-                  onClick={() => setOpen((value) => !value)}
-                  className="mt-0.5 text-xs text-primary hover:underline"
-                >
-                  {open
-                    ? t(
-                        barcodes.length === 1
-                          ? "invoices.view.lineItems.hideBarcodesCount"
-                          : "invoices.view.lineItems.hideBarcodesCount_plural",
-                        { count: barcodes.length },
-                      )
-                    : t(
-                        barcodes.length === 1
-                          ? "invoices.view.lineItems.showBarcodesCount"
-                          : "invoices.view.lineItems.showBarcodesCount_plural",
-                        { count: barcodes.length },
-                      )}
-                </button>
-              ) : null}
-            </span>
+    <li className="overflow-hidden rounded-lg border border-border/60 bg-background">
+      <div className="px-3 py-2.5">
+        <p className="text-sm font-medium leading-snug text-foreground">{item.itemName}</p>
+        {showDescription ? (
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{item.description}</p>
+        ) : null}
+        <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm leading-5">
+          <div className="flex items-baseline gap-1.5">
+            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.quantity")}</dt>
+            <dd className="tabular-nums text-foreground">{item.quantity}</dd>
           </div>
-        </td>
-        <td className="py-3 pr-3 align-top">{item.quantity}</td>
-        <td className="py-3 pr-3 align-top">{item.labelCount}</td>
-        <td className="py-3 pr-3 align-top">{formatInvoiceMoney(item.unitPrice)}</td>
-        <td className="py-3 text-right align-top font-medium">{formatInvoiceMoney(item.lineTotal)}</td>
-      </tr>
+          <div className="flex items-baseline gap-1.5">
+            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.labels")}</dt>
+            <dd className="tabular-nums text-foreground">{item.labelCount}</dd>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.unitPrice")}</dt>
+            <dd className="tabular-nums text-foreground">{formatInvoiceMoney(item.unitPrice)}</dd>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.total")}</dt>
+            <dd className="font-semibold tabular-nums text-foreground">{formatInvoiceMoney(item.lineTotal)}</dd>
+          </div>
+        </dl>
+        {hasBarcodes ? (
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+            aria-controls={panelId}
+            className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            {barcodeToggleLabel}
+          </button>
+        ) : null}
+      </div>
       {hasBarcodes && open ? (
-        <tr className="border-b border-border/50 last:border-0">
-          <td colSpan={5} className="p-0">
-            <div className="overflow-x-auto bg-muted/20">
-              <table className="w-full min-w-[560px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 text-xs text-muted-foreground">
-                    <th className="whitespace-nowrap px-3 py-2 text-left align-middle font-medium">
-                      {t("invoices.view.barcodeStatus.fields.barcode")}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left align-middle font-medium">
-                      {t("invoices.view.barcodeStatus.fields.status")}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left align-middle font-medium">
-                      {t("invoices.view.barcodeStatus.fields.container")}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left align-middle font-medium">
-                      {t("invoices.view.barcodeStatus.fields.deliveryRoute")}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left align-middle font-medium">
-                      {t("invoices.view.fields.scanned")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {barcodes.map((barcode) => (
-                    <tr key={barcode.id} className="border-b border-border/40 last:border-0">
-                      <td className="px-3 py-2 align-middle font-mono text-xs" title={barcode.number}>
-                        {barcode.number}
-                      </td>
-                      <td className="px-3 py-2 align-middle">
-                        {barcode.statusName ? (
-                          <TableTagText className={getBarcodeStatusBadgeClass(barcode.statusName)}>
-                            {barcode.statusName}
-                          </TableTagText>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">{empty}</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {barcode.containerName ?? empty}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {barcode.deliveryName ?? barcode.routeName ?? empty}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {formatBarcodeScanDate(barcode.scanDate, empty)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </td>
-        </tr>
+        <ul id={panelId} className="space-y-2 border-t border-border/60 bg-muted/30 px-3 py-2.5">
+          {barcodes.map((barcode) => (
+            <li key={barcode.id} className="rounded-md border border-border/50 bg-background px-2.5 py-2">
+              <div className="flex items-start justify-between gap-2">
+                <span className="min-w-0 font-mono text-xs leading-snug text-foreground [overflow-wrap:anywhere]">
+                  {barcode.number}
+                </span>
+                {barcode.statusName ? (
+                  <span className="shrink-0 text-xs">
+                    <TableTagText className={getBarcodeStatusBadgeClass(barcode.statusName)}>
+                      {barcode.statusName}
+                    </TableTagText>
+                  </span>
+                ) : (
+                  <span className="shrink-0 text-xs text-muted-foreground">{empty}</span>
+                )}
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
+                <LineItemMetric
+                  label={t("invoices.view.barcodeStatus.fields.container")}
+                  value={barcode.containerName ?? empty}
+                />
+                <LineItemMetric
+                  label={t("invoices.view.barcodeStatus.fields.deliveryRoute")}
+                  value={barcode.deliveryName ?? barcode.routeName ?? empty}
+                />
+                <LineItemMetric
+                  className="col-span-2"
+                  label={t("invoices.view.fields.scanned")}
+                  value={formatBarcodeScanDate(barcode.scanDate, empty)}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : null}
-    </>
+    </li>
   );
 }
 
@@ -400,52 +414,21 @@ export function InvoiceViewSheet({
           <PartySection title={t("invoices.form.fields.sender")} party={invoice.sender} />
           {invoice.receiver ? (
             <PartySection title={t("invoices.form.fields.receiver")} party={invoice.receiver} />
-          ) : (
-            <RecordViewSheetSection title={t("invoices.form.fields.receiver")} padding="relaxed">
-              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noReceiver")}</p>
-            </RecordViewSheetSection>
-          )}
+          ) : null}
 
           <RecordViewSheetSection
             title={t("invoices.wizard.review.lineItems")}
             padding="relaxed"
           >
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 text-xs text-muted-foreground">
-                    <th className="pb-3 pr-3 font-medium">
-                      {t("invoices.form.lineItems.columns.description")}
-                    </th>
-                    <th className="pb-3 pr-3 font-medium">
-                      {t("invoices.form.lineItems.columns.quantity")}
-                    </th>
-                    <th className="pb-3 pr-3 font-medium">
-                      {t("invoices.form.lineItems.columns.labels")}
-                    </th>
-                    <th className="pb-3 pr-3 font-medium">
-                      {t("invoices.form.lineItems.columns.unitPrice")}
-                    </th>
-                    <th className="pb-3 font-medium text-right">
-                      {t("invoices.form.lineItems.columns.total")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.lineItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-3 text-sm text-muted-foreground">
-                        {t("invoices.wizard.review.noLineItems")}
-                      </td>
-                    </tr>
-                  ) : (
-                    invoice.lineItems.map((item) => (
-                      <InvoiceLineItemRow key={item.id} item={item} />
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {invoice.lineItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
+            ) : (
+              <ul className="space-y-2">
+                {invoice.lineItems.map((item) => (
+                  <InvoiceLineItemCard key={item.id} item={item} />
+                ))}
+              </ul>
+            )}
           </RecordViewSheetSection>
 
           <InvoiceCommentsSection

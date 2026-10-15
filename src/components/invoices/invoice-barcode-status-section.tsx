@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 
+import { RecordViewList, RecordViewListItem } from "@/components/app-shell/record-view-list";
+
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { RecordViewSheetDetailRow, RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { getBarcodeStatusBadgeClass } from "@/lib/barcodes/display";
@@ -24,9 +26,9 @@ export function InvoiceBarcodeStatusSection({ invoice }: InvoiceBarcodeStatusSec
       {rows.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.barcodeStatus.empty")}</p>
       ) : (
-        <ul className="divide-y-4 divide-border/60">
+        <RecordViewList className="bg-muted/20 p-3">
           {rows.map((row) => (
-            <li key={row.id}>
+            <RecordViewListItem key={row.id}>
               <RecordViewSheetDetailRow
                 label={t("invoices.view.barcodeStatus.fields.invoiceNumber")}
                 value={row.invoiceNumber}
@@ -65,9 +67,9 @@ export function InvoiceBarcodeStatusSection({ invoice }: InvoiceBarcodeStatusSec
                 label={t("invoices.view.barcodeStatus.fields.description")}
                 value={row.description}
               />
-            </li>
+            </RecordViewListItem>
           ))}
-        </ul>
+        </RecordViewList>
       )}
     </RecordViewSheetSection>
   );

@@ -427,7 +427,6 @@
     },
     "comments": {
       "title": "Comments ({{count}})",
-      "description": "Notes about reaching out, delivery preferences, and other follow-ups. Comments cannot be deleted.",
       "empty": "No comments yet.",
       "addLabel": "Add comment",
       "placeholder": "e.g. Tried reaching out — customer only wants delivery in the morning.",

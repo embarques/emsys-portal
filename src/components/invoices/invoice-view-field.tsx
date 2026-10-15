@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 
+import { RecordViewListItem } from "@/components/app-shell/record-view-list";
+
 import { cn } from "@/lib/utils";
 
 type InvoiceViewFieldProps = {
@@ -43,9 +45,9 @@ type InvoiceViewListItemProps = {
 
 export function InvoiceViewListItem({ children, className, layout = "stack" }: InvoiceViewListItemProps) {
   return (
-    <li
+    <RecordViewListItem
       className={cn(
-        "rounded-lg border bg-background p-3",
+        "p-3",
         layout === "grid"
           ? "grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-x-4 gap-y-2.5"
           : "space-y-2.5",
@@ -53,6 +55,6 @@ export function InvoiceViewListItem({ children, className, layout = "stack" }: I
       )}
     >
       {children}
-    </li>
+    </RecordViewListItem>
   );
 }

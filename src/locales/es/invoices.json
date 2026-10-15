@@ -427,7 +427,6 @@
     },
     "comments": {
       "title": "Comentarios ({{count}})",
-      "description": "Notas sobre contacto, preferencias de entrega y otros seguimientos. Los comentarios no se pueden eliminar.",
       "empty": "Aún no hay comentarios.",
       "addLabel": "Agregar comentario",
       "placeholder": "p. ej. Intenté contactar — el cliente solo quiere entrega por la mañana.",
