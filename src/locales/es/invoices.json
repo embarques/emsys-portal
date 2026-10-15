@@ -1,7 +1,7 @@
 {
   "title": "Facturas",
   "registrationStatus": {
-    "legend": "* Registro pendiente",
+    "legend": "* La factura está pendiente por registrar y su información está incompleta.",
     "pending": "Pendiente",
     "completed": "Completado"
   },

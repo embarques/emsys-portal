@@ -1,7 +1,7 @@
 {
   "title": "Invoices",
   "registrationStatus": {
-    "legend": "* Pending registration",
+    "legend": "* The invoice is pending registration and its information is incomplete.",
     "pending": "Pending",
     "completed": "Completed"
   },
