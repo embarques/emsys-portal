@@ -1,5 +1,10 @@
 {
   "title": "Facturas",
+  "registrationStatus": {
+    "legend": "* Registro pendiente",
+    "pending": "Pendiente",
+    "completed": "Completado"
+  },
   "pages": {
     "description": "Digitalice y rastree la mercancía del cliente que recogemos o recibimos como parte de un envío."
   },

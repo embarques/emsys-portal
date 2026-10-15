@@ -249,6 +249,10 @@ function formatInvoiceLineItemsSummary(
   return `${countSummary} · ${firstItemName} +${lineItemCount - 1}`;
 }
 
+function hasPendingRegistration(invoice: Invoice): boolean {
+  return String(invoice.apiTableValues?.registration ?? "").trim().toUpperCase() === "PENDING";
+}
+
 function getInvoiceTableStatusLabel(
   invoice: Invoice,
   t: ReturnType<typeof useTranslation>["t"],
@@ -428,6 +432,7 @@ function MobileInvoiceRow({
       >
         <span className="block truncate text-lg font-bold leading-tight text-foreground">
           {invoice.invoiceNumber || emptyLabel}
+          {hasPendingRegistration(invoice) ? " *" : ""}
         </span>
         <span className="mt-1 block truncate text-base font-medium uppercase leading-tight text-foreground/80">
           {getInvoiceMobilePartyName(invoice, emptyLabel)}
@@ -919,7 +924,30 @@ export function InvoicesWorkspace() {
       sortField: "number",
       cellClassName: "font-medium",
       defaultWidth: 130,
-      renderCell: (invoice) => invoice.invoiceNumber,
+      renderCell: (invoice) => (
+        <span>
+          {invoice.invoiceNumber}
+          {hasPendingRegistration(invoice) ? " *" : ""}
+        </span>
+      ),
+    },
+    {
+      id: "registration",
+      label: t("common.apiColumns.registration"),
+      defaultVisible: false,
+      defaultWidth: 150,
+      sortable: false,
+      renderCell: (invoice) => {
+        const registration = String(invoice.apiTableValues?.registration ?? "").trim();
+        switch (registration.toUpperCase()) {
+          case "PENDING":
+            return t("invoices.registrationStatus.pending");
+          case "COMPLETED":
+            return t("invoices.registrationStatus.completed");
+          default:
+            return registration || t("common.empty.dash");
+        }
+      },
     },
     {
       id: "date",
@@ -1231,6 +1259,8 @@ export function InvoicesWorkspace() {
           ) : null}
         </div>
 
+        <p className="text-sm text-muted-foreground">{t("invoices.registrationStatus.legend")}</p>
+
         {mobileFiltersOpen ? (
           <TableFilterPanel
             resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
@@ -1393,14 +1423,17 @@ export function InvoicesWorkspace() {
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
-              <TableSearchInput
-                value={filters.query}
-                onChange={(query) => {
-                  setFilters((current) => ({ ...current, query }));
-                  setPage(1);
-                }}
-                placeholder={t("invoices.search.placeholder")}
-              />
+              <div className="min-w-0 flex-1 space-y-2">
+                <TableSearchInput
+                  value={filters.query}
+                  onChange={(query) => {
+                    setFilters((current) => ({ ...current, query }));
+                    setPage(1);
+                  }}
+                  placeholder={t("invoices.search.placeholder")}
+                />
+                <p className="text-sm text-muted-foreground">{t("invoices.registrationStatus.legend")}</p>
+              </div>
             }
             filterPanel={
               <TableFilterPanel

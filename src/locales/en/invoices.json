@@ -1,5 +1,10 @@
 {
   "title": "Invoices",
+  "registrationStatus": {
+    "legend": "* Pending registration",
+    "pending": "Pending",
+    "completed": "Completed"
+  },
   "pages": {
     "description": "Digitize and track customer merchandise we pick up or receive as part of a shipment."
   },
