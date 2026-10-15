@@ -1,3 +1,5 @@
+import enOrders from "@/locales/en/orders.json";
+import esOrders from "@/locales/es/orders.json";
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
@@ -113,12 +115,22 @@ export function toApiCommentPurpose(purpose: string): string {
 }
 
 export type OrderCommentFormValues = {
+  language?: "en" | "es";
   purpose: string;
   itemType: OrderCommentItemType | "";
   customItem: string;
   quantity: string;
   description: string;
 };
+
+/** Capture the active input language when a comment is changed, not when a blank row mounts. */
+export function updateOrderComment(
+  comment: OrderCommentFormValues,
+  patch: Partial<OrderCommentFormValues>,
+  language: "en" | "es",
+): OrderCommentFormValues {
+  return { ...comment, ...patch, language };
+}
 
 /**
  * Take/Pickup item lines are unique per (purpose, itemType):
@@ -344,16 +356,19 @@ export function deriveOrderPurpose(comments: OrderCommentFormValues[]): string {
   return keywords.join(", ");
 }
 
-function orderCommentPurposeLabel(purpose: string): string {
+const commentLabels = { en: enOrders.comments, es: esOrders.comments };
+
+function orderCommentPurposeLabel(purpose: string, language: "en" | "es" = "en"): string {
   const normalized = normalizeOrderCommentPurpose(purpose);
   if (!normalized) return "";
-  return ORDER_COMMENT_PURPOSES.find((entry) => entry.value === normalized)?.label ?? "";
+  return commentLabels[language].purposes[normalized];
 }
 
-function orderCommentItemLabel(itemType: string): string {
+function orderCommentItemLabel(itemType: string, language: "en" | "es" = "en"): string {
   const value = itemType.trim().toLowerCase();
   if (!value) return "";
-  return ORDER_COMMENT_ITEM_TYPES.find((entry) => entry.value === value)?.label ?? itemType.trim();
+  const item = ORDER_COMMENT_ITEM_TYPES.find((entry) => entry.value === value);
+  return item ? commentLabels[language].items[item.value] : itemType.trim();
 }
 
 function stripTrailingPeriods(value: string): string {
@@ -366,10 +381,10 @@ function escapeRegExp(value: string): string {
 
 /**
  * Format one comment row as "Purpose Qty Item." or "Purpose comment."
- * Uses canonical English labels so the stored paragraph is locale-stable.
+ * Uses the entry language; the compiled description preserves it in storage.
  */
 export function formatOrderCommentSentence(comment: OrderCommentFormValues): string {
-  const purpose = orderCommentPurposeLabel(comment.purpose);
+  const purpose = orderCommentPurposeLabel(comment.purpose, comment.language);
   if (!purpose) return "";
 
   if (orderCommentPurposeRequiresItem(comment.purpose)) {
@@ -378,7 +393,7 @@ export function formatOrderCommentSentence(comment: OrderCommentFormValues): str
       return note ? `${purpose} ${note}.` : `${purpose}.`;
     }
 
-    const item = orderCommentItemLabel(comment.itemType);
+    const item = orderCommentItemLabel(comment.itemType, comment.language);
     const qty = comment.quantity.trim();
     if (qty && item) return `${purpose} ${qty} ${item}.`;
     if (item) return `${purpose} ${item}.`;
@@ -403,7 +418,9 @@ function unwrapCompiledCommentDescription(purpose: string, description: string):
   const trimmed = stripTrailingPeriods(description);
   if (!trimmed) return "";
 
-  const label = orderCommentPurposeLabel(purpose);
+  const label = [orderCommentPurposeLabel(purpose), orderCommentPurposeLabel(purpose, "es"), ...(normalizeOrderCommentPurpose(purpose) === "PICKUP" ? ["Recogida"] : [])].filter(Boolean).find((candidate) =>
+    new RegExp(`^${escapeRegExp(candidate)}(?:\\s|$)`, "i").test(trimmed),
+  );
   if (!label) return trimmed;
 
   const match = trimmed.match(new RegExp(`^${escapeRegExp(label)}(?:\\s+([\\s\\S]+))?$`, "i"));
@@ -624,6 +641,7 @@ export function orderCommentToFormValues(comment: PickupComment): OrderCommentFo
   }
 
   return {
+    language: /^(Pago|Estimado|Llevar|Recoger|Recogida|Otro)(?:\s|[.]|$)/i.test(comment.description.trim()) ? "es" : "en",
     purpose: normalizeOrderCommentPurpose(comment.purpose),
     itemType,
     customItem,

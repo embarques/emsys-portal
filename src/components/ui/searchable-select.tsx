@@ -724,6 +724,13 @@ export function SearchableSelect({
         value={highlight}
         onValueChange={(next) => {
           setHighlight((current) => (current === next ? current : next));
+          // cmdk falls back to focusing its list when our form input id replaces
+          // its generated id. Keep typing in the combobox as filtering highlights results.
+          const input = inputRef.current;
+          const listId = input?.getAttribute("aria-controls");
+          if (input && listId && document.activeElement === document.getElementById(listId)) {
+            input.focus({ preventScroll: true });
+          }
         }}
         loop
       >

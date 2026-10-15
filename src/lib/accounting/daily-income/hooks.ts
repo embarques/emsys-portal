@@ -2,7 +2,7 @@
 
 import type { JournalWriteOptions } from "./duplicate-payment";
 
-import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useMutationState, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -22,6 +22,7 @@ import {
   updateIncomeStatement,
 } from "@/lib/accounting/daily-income/api";
 import type {
+  DailyIncomeJournal,
   DailyIncomeJournalListParams,
   DailyIncomeJournalValues,
   DailyIncomeStatement,
@@ -161,9 +162,12 @@ export function useSetIncomeStatementStatus() {
   });
 }
 
-export function useCreateDailyIncomeJournal() {
+export function useCreateDailyIncomeJournal(sessionId?: string) {
   const queryClient = useQueryClient();
+  const { companyId, user } = useAuth();
   return useMutation({
+    mutationKey: ["daily-income-created", companyId, user?.uid, ...(sessionId ? [sessionId] : [])],
+    gcTime: Infinity,
     mutationFn: ({ statement, values, options }: { statement: DailyIncomeStatement; values: DailyIncomeJournalValues; options?: JournalWriteOptions }) =>
       createDailyIncomeJournal(statement, values, options),
     retry: false,
@@ -187,4 +191,16 @@ export function useDeleteDailyIncomeJournal() {
     mutationFn: (id: string) => deleteDailyIncomeJournal(id),
     onSuccess: () => invalidateDailyIncome(queryClient),
   });
+}
+
+/** Successful entries from this signed-in session only; server data stays in TanStack Query. */
+export function useSessionDailyIncomeTransactions(statementId: number, sessionId?: string) {
+  const { companyId, user } = useAuth();
+  return useMutationState({
+    filters: { mutationKey: ["daily-income-created", companyId, user?.uid, ...(sessionId ? [sessionId] : [])], status: "success", exact: true },
+    select: (mutation) => {
+      const variables = mutation.state.variables as { statement: DailyIncomeStatement; values: DailyIncomeJournalValues };
+      return { journal: mutation.state.data as DailyIncomeJournal, values: variables.values, statementId: variables.statement.id, savedAt: mutation.state.submittedAt };
+    },
+  }).filter((entry) => companyId && user?.uid && entry.journal && entry.statementId === statementId).sort((a, b) => b.savedAt - a.savedAt);
 }

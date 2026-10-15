@@ -17,6 +17,8 @@ before(async () => {
     entry: path.resolve("tests/browser/fixtures/searchable-select.tsx"),
     output: { path: directory, filename: "fixture.js" },
     resolve: { extensions: [".tsx", ".ts", ".js"], alias: {
+      "@/lib/inventory/hooks/use-inventory$": path.resolve("tests/browser/fixtures/inventory-hooks.ts"),
+      "@/lib/employees/hooks/use-employees$": path.resolve("tests/browser/fixtures/inventory-hooks.ts"),
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/i18n.ts"),
       "@/lib/branches/hooks/use-branches$": path.resolve("tests/browser/fixtures/branches.ts"),
       "@/lib/customers/hooks/use-customers$": path.resolve("tests/browser/fixtures/customers.ts"),
@@ -49,6 +51,7 @@ async function fixture(width = 1280, kind = "select", settings = {}) {
   await page.evaluate((settings) => Object.assign(document.documentElement.dataset, settings), settings);
   await page.addStyleTag({ content: '.hidden {display:none} @media(min-width:768px) { .md\\:hidden {display:none} .md\\:block {display:block} }' });
   await page.addScriptTag({ content: script });
+  if (kind === "wizard") { await page.getByTestId("transaction-wizard").waitFor(); return page; }
   await page.locator("form").waitFor();
   const first = { comments: "#comment-purpose-0", statement: "#statement-branch", transaction: "#transaction", customer: "#sender", address: "#address" }[kind] ?? "#branch";
   await page.locator(first).waitFor();
@@ -283,3 +286,142 @@ test("mobile selection does not advance to another field", async () => {
     assert.notEqual(await page.evaluate(() => document.activeElement.id), "last");
   } finally { await page.close(); }
 });
+
+test("desktop search keeps accepting characters after the first keystroke", async () => {
+  const page = await fixture();
+  try {
+    const input = page.locator("#branch");
+    await input.click();
+    await input.press("ControlOrMeta+A");
+    await page.keyboard.type("RD", { delay: 120 });
+    assert.equal(await input.inputValue(), "RD");
+    assert.equal(await input.evaluate(el => el === document.activeElement), true);
+  } finally { await page.close(); }
+});
+
+test("quick invoice entry advances from cost to amount before saving", async () => {
+  const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT", quickEntry: "true" });
+  try {
+    assert.equal(await page.locator("#journal-payment").isVisible(), true);
+    await page.locator("#journal-invoice-number").fill("80424");
+    await page.locator("#journal-invoice-cost").fill("200");
+    await page.locator("#journal-invoice-cost").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "journal-amount");
+    assert.equal(await page.locator("#submitted").textContent(), "0");
+    await page.locator("#journal-amount").fill("150");
+    await page.locator("#journal-amount").press("Enter");
+    await page.waitForFunction(() => document.getElementById("submitted").textContent === "1");
+    assert.equal(await page.locator("#step").textContent(), "amounts");
+  } finally { await page.close(); }
+});
+
+test("normal invoice entry keeps payment selection in its own step", async () => {
+  const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT" });
+  try {
+    assert.equal(await page.locator("#journal-payment").isVisible(), false);
+    await page.locator("#journal-invoice-number").fill("80425");
+    await page.locator("#journal-invoice-cost").fill("200");
+    await page.locator("#save").click();
+    await page.waitForFunction(() => document.getElementById("step").textContent === "payment");
+    assert.equal(await page.locator("#journal-payment").isVisible(), true);
+    assert.equal(await page.locator("#submitted").textContent(), "0");
+  } finally { await page.close(); }
+});
+
+
+test("quick-entry switch lives in step 3, disables other steps and restores normal payment flow", async () => {
+  const page = await fixture(1280, "wizard");
+  try {
+    await page.getByRole("radio").first().click();
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    assert.equal(await page.getByRole("switch").count(), 0);
+    await page.locator("#journal-employee").fill("Maria");
+    await page.locator("#journal-employee").press("Enter");
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    const toggle = page.getByRole("switch", { name: "accounting.dailyIncome.quickEntry.label" });
+    await toggle.waitFor();
+    await toggle.click();
+    assert.equal(await toggle.getAttribute("aria-checked"), "true");
+    assert.equal(await page.locator("#journal-payment").isVisible(), true);
+    assert.equal(await page.getByRole("button", { name: "accounting.dailyIncome.wizard.saveTransaction", exact: true }).isVisible(), true);
+    assert.equal(await page.locator("nav button:not([disabled])").count(), 2);
+    await page.locator("nav button").nth(1).click();
+    assert.equal(await page.locator("#journal-employee").isVisible(), true);
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    await page.locator("nav button").first().click();
+    assert.equal(await page.getByRole("radio").first().isVisible(), true);
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    assert.equal(await toggle.getAttribute("aria-checked"), "true");
+    await toggle.click();
+    assert.equal(await page.locator("#journal-payment").isVisible(), false);
+    await toggle.click();
+    await page.locator("#journal-invoice-number").fill("80426");
+    await page.locator("#journal-invoice-cost").fill("200");
+    await page.locator("#journal-invoice-cost").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "journal-amount");
+    assert.equal(await page.locator("#submitted").textContent(), "0");
+    await page.locator("#journal-amount").fill("150");
+    await page.locator("#journal-amount").press("Enter");
+    await page.waitForFunction(() => document.getElementById("submitted").textContent === "1");
+    assert.equal(await toggle.getAttribute("aria-checked"), "true");
+    assert.equal(await page.locator("#journal-invoice-number").inputValue(), "");
+  } finally { await page.close(); }
+});
+
+test("changing transaction type in step 1 preserves the selected employee", async () => {
+  const page = await fixture(1280, "wizard");
+  try {
+    await page.getByRole("radio").first().click();
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    await page.locator("#journal-employee").fill("Maria");
+    await page.locator("#journal-employee").press("Enter");
+    await page.locator("nav button").first().click();
+    await page.getByRole("radio").nth(2).click();
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    assert.equal(await page.locator("#journal-employee").inputValue(), "Maria");
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    await page.locator("nav button").first().click();
+    await page.getByRole("radio").first().click();
+    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    assert.equal(await page.locator("#journal-employee").inputValue(), "Maria");
+  } finally { await page.close(); }
+});
+
+for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "EXPENSE", "SALES", "DISCOUNT", "SURCHARGE", "TRANSFER", "LOAN", "INVENTORY"]) {
+  test(`Enter saves ${transactionType} from review`, async () => {
+    const page = await fixture(1280, "transaction", { step: "review", transactionType, ready: "true" });
+    try {
+      await page.waitForFunction(() => document.activeElement?.id === "save");
+      await page.keyboard.press("Enter");
+      await page.waitForFunction(() => document.getElementById("submitted").textContent === "1");
+    } finally { await page.close(); }
+  });
+}
+
+
+for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "EXPENSE", "SALES", "DISCOUNT", "SURCHARGE", "TRANSFER", "INVENTORY"]) {
+  for (const step of transactionType === "INVENTORY" ? ["assignment", "amounts"] : ["assignment", "amounts", "payment"]) {
+    test(`Enter completes ${transactionType} ${step} and moves to the next step`, async () => {
+      const page = await fixture(1280, "transaction", { step, transactionType, ready: "true" });
+      try {
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const last = await page.locator("#transaction").evaluate(form => {
+          const fields = [...form.querySelectorAll("input:not([type=hidden]),select,textarea,[role=combobox]")].filter(el => !el.disabled && (!el.readOnly || el.getAttribute("role") === "combobox") && !el.closest('[aria-hidden="true"], [inert]') && el.tabIndex >= 0 && el.getClientRects().length > 0);
+          return fields.at(-1)?.id;
+        });
+        assert.ok(last, "Expected a visible final field");
+        await page.locator(`#${last}`).focus();
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+        await page.locator(`#${last}`).press("Enter");
+        if (await page.locator("#step").textContent() === step) {
+          await page.waitForFunction(() => document.activeElement?.id === "save");
+          await page.keyboard.press("Enter");
+        }
+        const next = step === "assignment" ? "amounts" : step === "amounts" && transactionType !== "INVENTORY" ? "payment" : "review";
+        await page.waitForFunction(next => document.getElementById("step").textContent === next, next);
+        assert.equal(await page.locator("#submitted").textContent(), "0");
+      } finally { await page.close(); }
+    });
+  }
+}

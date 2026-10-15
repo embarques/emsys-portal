@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { SessionTransactionsLayout } from "@/components/accounting/session-transactions-panel";
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -11,6 +12,7 @@ import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accou
 import { normalizeApiError } from "@/lib/api/axios";
 import {
   useAccountingPaymentMethods,
+  useSessionDailyIncomeTransactions,
   useChartAccounts,
   useCreateDailyIncomeJournal,
   useDailyIncomeJournal,
@@ -32,6 +34,8 @@ import { useTranslation } from "@/lib/i18n";
 export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
+  const transactionSessionId = useId();
+  const [entryActive, setEntryActive] = useState(false);
   const { notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
@@ -42,6 +46,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   const editStatementId = journalQuery.data?.incomeStatementId ?? 0;
   const statementId = isEditing ? editStatementId : addStatementId;
   const statementQuery = useIncomeStatementById(statementId > 0 ? statementId : null);
+  const sessionTransactions = useSessionDailyIncomeTransactions(statementId, transactionSessionId);
 
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
   const employees = useMemo(
@@ -54,7 +59,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
   const paymentMethodsQuery = useAccountingPaymentMethods(true);
-  const createJournal = useCreateDailyIncomeJournal();
+  const createJournal = useCreateDailyIncomeJournal(transactionSessionId);
   const updateJournal = useUpdateDailyIncomeJournal();
 
   const statement = statementQuery.data ?? null;
@@ -162,11 +167,11 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
     ? `${typeLabel} · ${closeoutLabel}`
     : closeoutLabel;
 
-  return (
+  const wizard = (
     <FormTabShell
       title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}
       description={description}
-      className="max-w-5xl"
+      className="min-w-0 max-w-5xl"
     >
       {isEditing && initialValues ? (
         <AddTransactionWizard
@@ -192,6 +197,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           presentation="tab"
           open
           mode="add"
+          onEntryActiveChange={setEntryActive}
           employees={employees}
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}
@@ -208,4 +214,5 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
       )}
     </FormTabShell>
   );
+  return isEditing ? wizard : <SessionTransactionsLayout active={entryActive} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>;
 }

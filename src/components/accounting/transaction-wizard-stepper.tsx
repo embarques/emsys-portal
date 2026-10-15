@@ -8,11 +8,12 @@ type Props = {
   step: number;
   labels: string[];
   disabled?: boolean;
+  allowedSteps?: number[];
   onSelectStep: (step: number) => void;
   appearance?: "default" | "phone";
 };
 
-export function TransactionWizardStepper({ step, labels, disabled, onSelectStep, appearance = "default" }: Props) {
+export function TransactionWizardStepper({ step, labels, disabled, allowedSteps, onSelectStep, appearance = "default" }: Props) {
   const { t } = useTranslation();
   if (appearance === "phone") {
     return (
@@ -33,7 +34,7 @@ export function TransactionWizardStepper({ step, labels, disabled, onSelectStep,
           <li key={label} className="flex justify-center">
             <button
               type="button"
-              disabled={disabled || index + 1 >= step}
+              disabled={disabled || index + 1 >= step || (allowedSteps !== undefined && !allowedSteps.includes(index + 1))}
               onClick={() => onSelectStep(index + 1)}
               aria-current={index + 1 === step ? "step" : undefined}
               className="group flex flex-col items-center gap-2 rounded-lg text-center text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default"

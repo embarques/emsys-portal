@@ -284,6 +284,7 @@ export function ChartOfAccountsWorkspace() {
     () => [
       {
         id: "id",
+        defaultVisible: false,
         label: t("accounting.chartOfAccounts.columns.id"),
         renderCell: (account) => account.id,
       },
@@ -312,6 +313,7 @@ export function ChartOfAccountsWorkspace() {
       },
       {
         id: "parent",
+        defaultVisible: false,
         label: t("accounting.chartOfAccounts.columns.parent"),
         renderCell: (account) =>
           account.parentAccount?.displayName ??
@@ -320,11 +322,13 @@ export function ChartOfAccountsWorkspace() {
       },
       {
         id: "description",
+        defaultVisible: false,
         label: t("accounting.chartOfAccounts.columns.description"),
         renderCell: (account) => account.description || dash,
       },
       {
         id: "system",
+        defaultVisible: false,
         label: t("accounting.chartOfAccounts.columns.system"),
         truncateCell: false,
         renderCell: (account) =>
@@ -339,7 +343,7 @@ export function ChartOfAccountsWorkspace() {
     ],
     [dash, t],
   );
-  const columnLayout = useApiTableColumns("chart-of-accounts-v1", columns, CHART_ACCOUNT_API_TABLE_FIELDS);
+  const columnLayout = useApiTableColumns("chart-of-accounts-v2", columns, CHART_ACCOUNT_API_TABLE_FIELDS);
 
   const searchSummary = buildToolbarSearchSummary(
     {
@@ -586,7 +590,7 @@ export function ChartOfAccountsWorkspace() {
                 rowKey={(account) => String(account.id)}
                 rowLabel={(account) => account.displayName}
                 columnLayout={columnLayout}
-                minWidth={1100}
+                minWidth={640}
                 selectable
                 selectedIds={selectedIds}
                 allPageSelected={allPageSelected}

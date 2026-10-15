@@ -4,7 +4,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import type { OrderCommentFormValues } from "@/lib/orders/types";
-import { DailyIncomeFixture } from "./daily-income";
+import { DailyIncomeFixture, DailyIncomeWizardFixture } from "./daily-income";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
 import type { Customer } from "@/lib/customers/types";
@@ -71,6 +71,7 @@ function Fixture() {
 }
 
 createRoot(document.getElementById("root")!).render(
+  document.documentElement.dataset.fixture === "wizard" ? <DailyIncomeWizardFixture /> :
   document.documentElement.dataset.fixture === "comments" ? <PickupCommentsFixture /> :
     document.documentElement.dataset.fixture === "address" ? <AddressFixture /> :
     document.documentElement.dataset.fixture === "customer" ? <CustomerFixture /> :

@@ -187,7 +187,12 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const invoiceCost = optionalNumberValue(firstDefined(invoiceRaw.cost, invoiceRaw.total, invoiceRaw.invoiceCost));
   const invoiceDiscount = optionalNumberValue(firstDefined(invoiceRaw.discount, invoiceRaw.invoiceDiscount));
   const invoicePayment = optionalNumberValue(firstDefined(invoiceRaw.payment, invoiceRaw.amountPaid));
-  const invoiceBalance = optionalNumberValue(invoiceRaw.balance);
+  const explicitInvoiceBalance = optionalNumberValue(firstDefined(invoiceRaw.balance, raw.transactionBalance));
+  const initialPayment = firstDefined(raw.transactionType, raw.transType) === "INITIAL-PAYMENT";
+  const paid = invoicePayment ?? (initialPayment ? optionalNumberValue(firstDefined(raw.transactionAmount, raw.amount)) ?? 0 : undefined);
+  const invoiceBalance = explicitInvoiceBalance ?? (
+    invoiceCost != null && paid != null ? invoiceCost - (invoiceDiscount ?? 0) - paid : undefined
+  );
   const hasInvoice =
     invoiceId != null ||
     Boolean(invoiceNumber) ||

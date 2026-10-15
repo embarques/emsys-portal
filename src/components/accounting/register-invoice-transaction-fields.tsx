@@ -61,6 +61,7 @@ function customerOptions(customers: Customer[]) {
 }
 
 type Props = {
+  quickEntry?: boolean;
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
@@ -98,6 +99,7 @@ export function RegisterInvoiceTransactionFields({
   setValue,
   watch,
   grouped = false,
+  quickEntry = false,
   activeStep,
   showEmployee = true,
   allowDailyRoute = false,
@@ -515,7 +517,12 @@ export function RegisterInvoiceTransactionFields({
             setValue("amount", parsed == null ? 0 : parsed, { shouldValidate: true, shouldDirty: true });
           }}
           onBlur={() => setAmountDraft(null)}
-          onKeyDown={grouped ? undefined : submitFormOnEnterKeyDown}
+          onKeyDown={quickEntry ? (event) => {
+              if (event.key !== "Enter" || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey || event.nativeEvent.isComposing) return;
+              event.preventDefault();
+              event.stopPropagation();
+              event.currentTarget.form?.requestSubmit();
+            } : grouped ? undefined : submitFormOnEnterKeyDown}
           aria-invalid={Boolean(errors.amount)}
         />
         <p className="text-xs text-muted-foreground">
@@ -649,16 +656,16 @@ export function RegisterInvoiceTransactionFields({
             {balanceFields}
           </div>
         </FormSection>
-        <FormSection className={activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
+        <FormSection className={!quickEntry && activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             {methodFields}
             {bankFields}
             {checkFields}
-            {externalReferenceFields}
-            {referenceFields}
+            {!quickEntry && externalReferenceFields}
+            {!quickEntry && referenceFields}
           </div>
         </FormSection>
-        {showParties ? (
+        {showParties && !quickEntry ? (
           <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.customers")}>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               {partiesFields}
