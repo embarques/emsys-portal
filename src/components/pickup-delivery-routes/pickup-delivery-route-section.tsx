@@ -359,6 +359,34 @@ export function ActiveRouteSection({
     setPreviousRouteId("");
   }
 
+  function handleResetFields() {
+    syncedRouteRecordIdRef.current = "";
+    setPreviousRouteId("");
+    setFormError(null);
+
+    if (initialRecord) {
+      setValues({
+        ...activeRouteToFormValues(initialRecord),
+        scheduleType: "date",
+        dayOfWeek: [],
+      });
+      return;
+    }
+
+    const resolved = resolveUserBranchRef(currentUserQuery.data?.branch, branches);
+    const empty = createEmptyActiveRouteForm("pickup");
+    setValues((current) => ({
+      ...empty,
+      date: current.date.trim() || defaultDate?.trim() || empty.date,
+      ...(resolved?.code.trim()
+        ? {
+            branch: resolved,
+            routeType: routeTypeForBranchCode(resolved.code),
+          }
+        : {}),
+    }));
+  }
+
   function handlePreviousRouteChange(routeId: string) {
     const record = previousRoutes.find((entry) => entry.id === routeId);
     if (!record) return;
@@ -540,6 +568,7 @@ export function ActiveRouteSection({
         selectedRouteLoading={selectedRouteQuery.isLoading}
         submitDisabled={submitDisabled}
         onPreviousRouteChange={handlePreviousRouteChange}
+        onResetFields={handleResetFields}
         onBranchChange={handleBranchChange}
         onDateChange={(date) => {
           setValues((current) => ({ ...current, date, scheduleType: "date", dayOfWeek: [] }));

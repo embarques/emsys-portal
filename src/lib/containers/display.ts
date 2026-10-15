@@ -55,21 +55,20 @@ export const DEPARTED_PERIOD_DAYS = {
   past360Days: 360,
 } as const;
 
-/** Extrapolates a departed count over `periodDays` to an annual pace. */
+/** Extrapolates a departed count to an annual pace, using a decimal point in every language. */
 export function formatDepartedAnnualPace(
   departedCount: number,
   periodDays: number,
-  locale = "en",
 ): string {
   if (periodDays <= 0 || !Number.isFinite(departedCount)) return "0";
 
   const pace = (departedCount * 365) / periodDays;
   if (!Number.isFinite(pace) || pace === 0) return "0";
   if (pace >= 100 || Math.abs(pace - Math.round(pace)) < 0.05) {
-    return Math.round(pace).toLocaleString(locale);
+    return Math.round(pace).toLocaleString("en-US");
   }
 
-  return pace.toLocaleString(locale, { maximumFractionDigits: 1 });
+  return pace.toLocaleString("en-US", { maximumFractionDigits: 1 });
 }
 
 function subtractDays(from: Date, days: number): Date {

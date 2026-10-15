@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Ship } from "lucide-react";
 
 import { PeriodStatCard } from "@/components/app-shell/period-stat-card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -31,7 +30,6 @@ export function DepartedContainersStatCard() {
   const annualPace = formatDepartedAnnualPace(
     stats.total,
     DEPARTED_CONTAINER_STAT_PERIOD_DAYS[period],
-    locale,
   );
 
   return (
@@ -39,7 +37,6 @@ export function DepartedContainersStatCard() {
       description={
         stats.isLoading ? "…" : t("containers.stats.departed.annualPace", { pace: annualPace })
       }
-      icon={Ship}
       label={t("containers.stats.departed.label")}
       periodControl={
         <SearchableSelect

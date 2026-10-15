@@ -24,6 +24,7 @@ type RecordViewSheetContentProps = {
 };
 
 type RecordViewSheetHeaderProps = {
+  compact?: boolean;
   title: React.ReactNode;
   description?: React.ReactNode;
   meta?: React.ReactNode;
@@ -102,10 +103,10 @@ export function RecordViewSheetContent({ children, className }: RecordViewSheetC
   );
 }
 
-export function RecordViewSheetHeader({ title, description, meta }: RecordViewSheetHeaderProps) {
+export function RecordViewSheetHeader({ title, description, meta, compact = false }: RecordViewSheetHeaderProps) {
   return (
-    <div className="shrink-0 border-b border-border bg-card px-6 pb-4 pt-6">
-      <SheetHeader className="space-y-2.5 pr-10 text-left">
+    <div className={cn("shrink-0 border-b border-border bg-card", compact ? "px-5 py-3" : "px-6 pb-4 pt-6")}>
+      <SheetHeader className={cn("pr-10 text-left", compact ? "space-y-1.5" : "space-y-2.5")}>
         <SheetTitle className="text-xl font-semibold leading-tight tracking-tight">{title}</SheetTitle>
         {description ? (
           <SheetDescription className="text-sm leading-relaxed text-muted-foreground">
@@ -167,7 +168,7 @@ export function RecordViewSheetDetailRow({ label, value }: RecordViewSheetDetail
   return (
     <div className="grid grid-cols-[minmax(6.5rem,38%)_1fr] items-baseline gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 odd:bg-muted/25">
       <span className="text-xs font-medium leading-snug text-muted-foreground">{label}</span>
-      <span className="min-w-0 break-words text-sm font-medium leading-snug text-foreground">
+      <span className="min-w-0 whitespace-pre-wrap text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
         {value}
       </span>
     </div>

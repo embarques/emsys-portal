@@ -35,12 +35,6 @@ type QuickActionDefinition = {
 
 const QUICK_ACTION_DEFINITIONS: QuickActionDefinition[] = [
   {
-    id: "addTransaction",
-    labelKey: "shell.search.addTransaction",
-    icon: HandCoins,
-    permission: PERMISSIONS.incomeView,
-  },
-  {
     id: "createAppointment",
     labelKey: "shell.search.createAppointment",
     icon: CalendarPlus,
@@ -57,6 +51,12 @@ const QUICK_ACTION_DEFINITIONS: QuickActionDefinition[] = [
     labelKey: "shell.search.createInvoice",
     icon: FilePlus2,
     permission: PERMISSIONS.invoicesView,
+  },
+  {
+    id: "addTransaction",
+    labelKey: "shell.search.addTransaction",
+    icon: HandCoins,
+    permission: PERMISSIONS.incomeView,
   },
 ];
 

@@ -155,7 +155,7 @@ export function RouteForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody workflow isBusy={isSubmitting}>
-        <div className="grid items-start gap-5 @4xl:grid-cols-2">
+        <div className="grid items-stretch gap-5 @4xl:grid-cols-2">
           {isEditing && (values.routeId.trim() || values.name.trim()) ? (
             <FormSection variant="card" className="@4xl:col-span-2" icon={ClipboardList} title={t("routes.form.sections.details")}>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -180,7 +180,7 @@ export function RouteForm({
             </FormSection>
           ) : null}
 
-          <FormSection variant="card" icon={CircleCheck} title={t("routes.activeRoute.status")}>
+          <FormSection variant="card" className="h-full" icon={CircleCheck} title={t("routes.activeRoute.status")}>
             <div
               className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
               role="radiogroup"
@@ -214,7 +214,7 @@ export function RouteForm({
             </div>
           </FormSection>
 
-          <FormSection variant="card" description={t("routes.form.design.branch")} icon={Building2} title={t("routes.form.sections.branch")} required>
+          <FormSection variant="card" className="h-full" description={t("routes.form.design.branch")} icon={Building2} title={t("routes.form.sections.branch")} required>
             <SearchableSelect
               id="routeBranch"
               aria-label={t("routes.form.sections.branch")}

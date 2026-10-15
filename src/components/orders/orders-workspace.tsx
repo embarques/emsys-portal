@@ -940,16 +940,18 @@ export function OrdersWorkspace() {
       cellClassName: "overflow-visible",
       defaultWidth: 132,
       renderCell: (order) => (
-        <Badge
-          variant="outline"
-          className={cn(
-            "gap-1.5 rounded-full border-transparent px-2.5 py-1 text-xs font-semibold",
-            order.completed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
-          )}
-        >
-          {order.completed ? <CheckCircle2 className="size-3.5" /> : <Clock className="size-3.5" />}
-          {getOrderCompletedLabel(order.completed, t)}
-        </Badge>
+        <div className="flex h-5 items-center">
+          <Badge
+            variant="outline"
+            className={cn(
+              "shrink-0 gap-1.5 rounded-full border-transparent px-2.5 py-1 text-xs font-semibold",
+              order.completed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
+            )}
+          >
+            {order.completed ? <CheckCircle2 className="size-3.5" /> : <Clock className="size-3.5" />}
+            {getOrderCompletedLabel(order.completed, t)}
+          </Badge>
+        </div>
       ),
     },
     {

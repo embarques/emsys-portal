@@ -40,7 +40,6 @@ import {
   isInvoiceEmployeePickupSource,
   type Invoice,
   type InvoiceLineItem,
-  type InvoicePaymentInput,
 } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -52,7 +51,6 @@ type InvoiceViewSheetProps = {
   onEdit: (invoice: Invoice) => void;
   onDelete: (invoice: Invoice) => void;
   onAddComment: (invoiceId: string, description: string) => void;
-  onRecordPayment: (invoiceId: string, input: InvoicePaymentInput) => void;
 };
 
 function PartySection({ title, party }: { title: string; party: Invoice["sender"] }) {
@@ -297,7 +295,6 @@ export function InvoiceViewSheet({
   onEdit,
   onDelete,
   onAddComment,
-  onRecordPayment,
 }: InvoiceViewSheetProps) {
   const { t } = useTranslation();
   const totals = useMemo(() => {
@@ -321,18 +318,44 @@ export function InvoiceViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          compact
           title={
-            <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span>{invoice.invoiceNumber}</span>
-              <span className="text-sm font-normal text-muted-foreground">
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="text-lg font-semibold leading-6 tabular-nums tracking-normal">
+                {invoice.invoiceNumber}
+              </span>
+              <span className="text-sm font-normal leading-5 tracking-normal text-muted-foreground">
                 {formatInvoiceDate(invoice.date)}
               </span>
+              <Badge
+                className={cn(
+                  "shrink-0 rounded-full px-2 py-0.5 text-sm font-medium leading-5 tracking-normal",
+                  getInvoicePaidStatusBadgeClass(paidStatus),
+                )}
+              >
+                {getInvoicePaidStatusLabel(paidStatus)}
+              </Badge>
             </span>
           }
           meta={
-            <Badge className={getInvoicePaidStatusBadgeClass(paidStatus)}>
-              {getInvoicePaidStatusLabel(paidStatus)}
-            </Badge>
+            <dl className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5 text-sm leading-5">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <dt className="font-normal text-muted-foreground">
+                  {t("invoices.form.fields.container")}
+                </dt>
+                <dd className="break-words font-medium text-foreground">
+                  {containerLabel}
+                </dd>
+              </div>
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <dt className="font-normal text-muted-foreground">
+                  {t("invoices.form.fields.paymentLocation")}
+                </dt>
+                <dd className="break-words font-medium text-foreground">
+                  {getPaymentLocationLabel(invoice.paymentLocation)}
+                </dd>
+              </div>
+            </dl>
           }
         />
 
@@ -357,48 +380,22 @@ export function InvoiceViewSheet({
               tone="balance"
             />
           </div>
-          <RecordViewSheetSection title={t("invoices.form.sections.invoiceDetails")}>
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.invoiceNumber")}
-              value={invoice.invoiceNumber || empty}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.date")}
-              value={formatInvoiceDate(invoice.date) || empty}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.container")}
-              value={containerLabel}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.pickupReference")}
-              value={pickupReference}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.pickupSource")}
-              value={pickupSourceKey ? t(pickupSourceKey) : empty}
-            />
-            <RecordViewSheetDetailRow
-              label={getPickupAssignmentFieldLabel(invoice, t)}
-              value={formatPickupAssignmentDisplay(invoice, t)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.paymentLocation")}
-              value={getPaymentLocationLabel(invoice.paymentLocation)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.columns.createdBy")}
-              value={invoice.createdBy || empty}
-            />
-            <RecordViewSheetDetailRow
-              label={t("common.audit.createdAt")}
-              value={formatAuditDateTime(invoice.createdAt) || empty}
-            />
-            <RecordViewSheetDetailRow
-              label={t("common.audit.updatedAt")}
-              value={formatAuditDateTime(invoice.updatedAt) || empty}
-            />
-          </RecordViewSheetSection>
+          {pickupReference !== empty || pickupSourceKey || formatPickupAssignmentDisplay(invoice, t) !== empty ? (
+            <RecordViewSheetSection title={t("invoices.form.sections.invoiceDetails")}>
+              <RecordViewSheetDetailRow
+                label={t("invoices.form.fields.pickupReference")}
+                value={pickupReference}
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.form.fields.pickupSource")}
+                value={pickupSourceKey ? t(pickupSourceKey) : empty}
+              />
+              <RecordViewSheetDetailRow
+                label={getPickupAssignmentFieldLabel(invoice, t)}
+                value={formatPickupAssignmentDisplay(invoice, t)}
+              />
+            </RecordViewSheetSection>
+          ) : null}
 
           <PartySection title={t("invoices.form.fields.sender")} party={invoice.sender} />
           {invoice.receiver ? (
@@ -456,16 +453,28 @@ export function InvoiceViewSheet({
             onAddComment={(description) => onAddComment(invoice.invoiceId, description)}
           />
 
-          <InvoicePaymentsSection
-            invoice={invoice}
-            onRecordPayment={(input) => onRecordPayment(invoice.invoiceId, input)}
-          />
+          <InvoicePaymentsSection invoice={invoice} />
 
           <InvoiceBarcodeStatusSection invoice={invoice} />
 
           <InvoicePackageTrackerSection invoice={invoice} />
 
           <InvoiceActivitySection invoice={invoice} />
+
+          <RecordViewSheetSection title={t("invoices.view.system")}>
+            <RecordViewSheetDetailRow
+              label={t("invoices.columns.createdBy")}
+              value={invoice.createdBy || empty}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.createdAt")}
+              value={formatAuditDateTime(invoice.createdAt) || empty}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.updatedAt")}
+              value={formatAuditDateTime(invoice.updatedAt) || empty}
+            />
+          </RecordViewSheetSection>
         </RecordViewSheetBody>
 
         <RecordViewSheetActions

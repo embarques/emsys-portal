@@ -31,7 +31,7 @@
     "inputPlaceholder": "Filtrar acciones rápidas…",
     "quickActions": "Acciones rápidas",
     "noResults": "No se encontraron acciones.",
-    "addTransaction": "Agregar transacción",
+    "addTransaction": "Crear transacción",
     "addTransactionNeedsOpenCuadre": "Abra el ingreso diario (Cuadre) de hoy antes de agregar una transacción.",
     "createAppointment": "Crear cita",
     "createCustomer": {

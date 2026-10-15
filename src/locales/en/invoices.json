@@ -409,6 +409,7 @@
     }
   },
   "view": {
+    "system": "System",
     "pickupAssignment": "Received by",
     "fields": {
       "documentId": "Doc",
@@ -442,13 +443,6 @@
       "title": "Payments ({{count}})",
       "description": "Recorded payments for this invoice. Total paid: {{totalPaid}}.",
       "empty": "No payments recorded yet.",
-      "recordTitle": "Record payment",
-      "recordAction": "Record payment",
-      "recordError": "Unable to record payment.",
-      "descriptionPlaceholder": "e.g. Partial payment collected at front desk",
-      "referencePlaceholder": "Check #, transaction ID, confirmation code...",
-      "checkNumberPlaceholder": "e.g. 4521",
-      "searchMethods": "Search methods…",
       "methods": {
         "cash": "Cash",
         "check": "Check",

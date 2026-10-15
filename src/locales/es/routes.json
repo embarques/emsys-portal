@@ -36,6 +36,7 @@
       "loadPreviousPlaceholder": "Copiar una configuración anterior…",
       "loadPreviousSearch": "Buscar rutas diarias anteriores…",
       "loadPreviousEmpty": "No hay rutas diarias anteriores para copiar.",
+      "resetFields": "Restablecer campos",
       "design": {
         "date": "Elige el día en que trabajarán este vehículo y equipo.",
         "branch": "Elige primero la sucursal para ver los vehículos y equipos disponibles.",

@@ -409,6 +409,7 @@
     }
   },
   "view": {
+    "system": "Sistema",
     "pickupAssignment": "Recibido por",
     "fields": {
       "documentId": "Doc",
@@ -442,13 +443,6 @@
       "title": "Pagos ({{count}})",
       "description": "Pagos registrados para esta factura. Total pagado: {{totalPaid}}.",
       "empty": "Aún no hay pagos registrados.",
-      "recordTitle": "Registrar pago",
-      "recordAction": "Registrar pago",
-      "recordError": "No se pudo registrar el pago.",
-      "descriptionPlaceholder": "p. ej. Pago parcial recibido en recepción",
-      "referencePlaceholder": "N.º de cheque, ID de transacción, código de confirmación...",
-      "checkNumberPlaceholder": "ej. 4521",
-      "searchMethods": "Buscar métodos…",
       "methods": {
         "cash": "Efectivo",
         "check": "Cheque",

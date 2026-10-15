@@ -1,10 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { PackageSearch } from "lucide-react";
 
-import { InvoiceViewCollapsibleSection } from "@/components/invoices/invoice-view-collapsible-section";
-import { InvoiceViewField, InvoiceViewListItem } from "@/components/invoices/invoice-view-field";
+import { RecordViewSheetDetailRow, RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { formatLabelTimestamp } from "@/lib/labels/display";
 import { buildInvoicePackageTrackerEntries } from "@/lib/invoices/package-tracker";
 import type { Invoice } from "@/lib/invoices/types";
@@ -23,37 +21,34 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
   const sortedTimeline = [...timeline].reverse();
 
   return (
-    <InvoiceViewCollapsibleSection
+    <RecordViewSheetSection
       title={t("invoices.view.packageTracker.title", { count: timeline.length })}
-      description={t("invoices.view.packageTracker.description")}
-      icon={PackageSearch}
-      count={timeline.length}
     >
       {sortedTimeline.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("invoices.view.packageTracker.empty")}</p>
+        <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.packageTracker.empty")}</p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y-4 divide-border/60">
           {sortedTimeline.map((entry) => (
-            <InvoiceViewListItem
+            <li
               key={entry.id}
-              className={cn(entry.success ? "bg-emerald-500/5" : "bg-destructive/5")}
+              className={cn("border-l-2", entry.success ? "border-l-emerald-500/40" : "border-l-destructive/40")}
             >
-              <InvoiceViewField
+              <RecordViewSheetDetailRow
                 label={t("invoices.view.packageTracker.fields.dateTime")}
                 value={formatLabelTimestamp(entry.timestamp)}
               />
-              <InvoiceViewField
+              <RecordViewSheetDetailRow
                 label={t("invoices.view.packageTracker.fields.createdBy")}
                 value={entry.performedBy}
               />
-              <InvoiceViewField
+              <RecordViewSheetDetailRow
                 label={t("invoices.view.packageTracker.fields.description")}
                 value={entry.description}
               />
-            </InvoiceViewListItem>
+            </li>
           ))}
         </ul>
       )}
-    </InvoiceViewCollapsibleSection>
+    </RecordViewSheetSection>
   );
 }

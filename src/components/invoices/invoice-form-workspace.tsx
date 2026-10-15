@@ -428,27 +428,32 @@ export function InvoiceEditWizard({
 
   async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
     try {
-      if (
-        invoiceQuery.data &&
-        areInvoiceFormValuesEquivalent(values, invoiceToFormValues(invoiceQuery.data))
-      ) {
-        notifySuccess(t("common.form.noChanges"));
-        return { error: null, savedInvoiceId: invoiceQuery.data.invoiceId };
-      }
-
       if (!invoiceQuery.data) {
         return { error: "Unable to load this invoice." };
       }
 
-      const plan = planInvoiceBarcodeSync(invoiceQuery.data, values);
+      const saved = invoiceToFormValues(invoiceQuery.data);
+      // Payment and discount are posted on create or from Daily Income, not on edit.
+      const submitted: InvoiceFormValues = {
+        ...values,
+        discount: saved.discount,
+        amountPaid: saved.amountPaid,
+      };
+
+      if (areInvoiceFormValuesEquivalent(submitted, saved)) {
+        notifySuccess(t("common.form.noChanges"));
+        return { error: null, savedInvoiceId: invoiceQuery.data.invoiceId };
+      }
+
+      const plan = planInvoiceBarcodeSync(invoiceQuery.data, submitted);
       if (invoiceBarcodeSyncNeedsUserInput(plan)) {
-        setPendingValues(values);
+        setPendingValues(submitted);
         setPendingPlan(plan);
         setDecreaseOpen(true);
         return { error: null, deferClose: true };
       }
 
-      return await saveInvoiceWithBarcodeSync(values, plan, {});
+      return await saveInvoiceWithBarcodeSync(submitted, plan, {});
     } catch (error) {
       return { error: normalizeApiError(error).message };
     }

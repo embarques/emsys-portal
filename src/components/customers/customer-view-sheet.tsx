@@ -34,6 +34,11 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import type { Customer } from "@/lib/customers/types";
 
+function hasCustomerDetailValue(value: string | null | undefined) {
+  const trimmed = value?.trim() ?? "";
+  return trimmed !== "" && trimmed !== "—" && trimmed !== "-";
+}
+
 type CustomerViewSheetProps = {
   customer: Customer | null;
   open: boolean;
@@ -69,6 +74,9 @@ export function CustomerViewSheet({
     resolveCustomerAddressCount(resolvedCustomer) > 0;
   const phones = getOrderedRecordPhones(resolvedCustomer.phones);
   const isLoadingPhones = detailQuery.isFetching && phones.length === 0;
+  const hasGeneralDetails = [resolvedCustomer.email, resolvedCustomer.IDNumber, resolvedCustomer.notes].some(
+    hasCustomerDetailValue,
+  );
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -85,20 +93,22 @@ export function CustomerViewSheet({
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("customers.view.general")} icon={User}>
-            <RecordViewSheetDetailRow
-              label={t("customers.view.email")}
-              value={resolvedCustomer.email || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("customers.view.idNumber")}
-              value={resolvedCustomer.IDNumber || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("customers.view.notes")}
-              value={resolvedCustomer.notes || dash}
-            />
-          </RecordViewSheetSection>
+          {hasGeneralDetails ? (
+            <RecordViewSheetSection title={t("customers.view.general")} icon={User}>
+              <RecordViewSheetDetailRow
+                label={t("customers.view.email")}
+                value={resolvedCustomer.email || dash}
+              />
+              <RecordViewSheetDetailRow
+                label={t("customers.view.idNumber")}
+                value={resolvedCustomer.IDNumber || dash}
+              />
+              <RecordViewSheetDetailRow
+                label={t("customers.view.notes")}
+                value={resolvedCustomer.notes || dash}
+              />
+            </RecordViewSheetSection>
+          ) : null}
 
           <RecordViewSheetSection title={t("customers.view.phones")} icon={PhoneIcon}>
             {isLoadingPhones ? (

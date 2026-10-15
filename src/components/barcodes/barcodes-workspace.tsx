@@ -32,7 +32,7 @@ import {
 import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
-import { TableTagText } from "@/components/app-shell/table-tag-text";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -404,13 +404,6 @@ export function BarcodesWorkspace() {
 
   const tableColumns: DataTableColumn<Barcode>[] = [
     {
-      id: "barcodeId",
-      label: t("barcodes.columns.barcodeId"),
-      defaultVisible: false,
-      cellClassName: "font-mono text-xs text-muted-foreground",
-      renderCell: (barcode) => barcode.barcodeId?.trim() || t("common.empty.dash"),
-    },
-    {
       id: "id",
       label: t("barcodes.columns.id"),
       sortField: "id",
@@ -447,9 +440,12 @@ export function BarcodesWorkspace() {
         const statusName = barcode.status?.name ?? "";
         if (!statusName) return t("common.empty.dash");
         return (
-          <TableTagText className={getBarcodeStatusBadgeClass(statusName)}>
+          <Badge
+            variant="outline"
+            className={cn("whitespace-nowrap rounded-full px-2.5 py-1", getBarcodeStatusBadgeClass(statusName))}
+          >
             {formatBarcodeStatus(barcode.status, t)}
-          </TableTagText>
+          </Badge>
         );
       },
     },
@@ -508,7 +504,15 @@ export function BarcodesWorkspace() {
     },
   ];
 
-  const columnVisibility = useApiTableColumns("barcodes-v2", tableColumns, BARCODE_API_TABLE_FIELDS);
+  const columnVisibility = useApiTableColumns("barcodes-v3", tableColumns, BARCODE_API_TABLE_FIELDS, [
+    {
+      id: "barcodeId",
+      label: t("barcodes.columns.barcodeId"),
+      defaultVisible: false,
+      cellClassName: "font-mono text-xs text-muted-foreground",
+      renderCell: (barcode) => barcode.barcodeId?.trim() || t("common.empty.dash"),
+    },
+  ]);
   const activeFilterCount = countCompleteFilterRows(filters.rows, barcodeFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const noun = t("barcodes.noun");

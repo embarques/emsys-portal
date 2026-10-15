@@ -428,14 +428,17 @@ export function InvoiceFormWizard({
     />
   ) : null;
   const showPrint = allowPrint && Boolean(onPrint);
-  const summaryDiscountChange =
-    requireDailyIncomeRegistration && dailyIncomeContext.registration
-      ? undefined
-      : handleDiscountChange;
   const canApplyInvoiceDiscount = hasPermission(
     PERMISSIONS.invoicesApplyDiscount.name,
     PERMISSIONS.invoicesApplyDiscount.resourceType,
   );
+  // Payments and discounts are posted on create (Cuadre) or from Daily Income.
+  // Edit keeps the saved amounts and does not offer those actions.
+  const allowDiscountEditing = requireDailyIncomeRegistration && canApplyInvoiceDiscount;
+  const summaryDiscountChange =
+    requireDailyIncomeRegistration && !dailyIncomeContext.registration
+      ? handleDiscountChange
+      : undefined;
 
   const stepLabelKey =
     !requireDailyIncomeRegistration && step === 4
@@ -488,8 +491,8 @@ export function InvoiceFormWizard({
           : undefined
       }
       onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
-      canApplyInvoiceDiscount={canApplyInvoiceDiscount}
-      onDiscountChange={canApplyInvoiceDiscount ? handleDiscountChange : undefined}
+      canApplyInvoiceDiscount={allowDiscountEditing}
+      onDiscountChange={allowDiscountEditing ? handleDiscountChange : undefined}
     />
   );
 

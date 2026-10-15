@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus } from "lucide-react";
 
 import { PeriodChangeDescription } from "@/components/app-shell/period-change-description";
 import { PeriodStatCard } from "@/components/app-shell/period-stat-card";
@@ -42,7 +41,6 @@ export function NewAppointmentsStatCard() {
           />
         )
       }
-      icon={CalendarPlus}
       label={t("orders.stats.new.label")}
       periodControl={
         <SearchableSelect

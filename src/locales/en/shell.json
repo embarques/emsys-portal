@@ -31,7 +31,7 @@
     "inputPlaceholder": "Filter quick actions…",
     "quickActions": "Quick actions",
     "noResults": "No matching actions found.",
-    "addTransaction": "Add transaction",
+    "addTransaction": "Create transaction",
     "addTransactionNeedsOpenCuadre": "Open today’s Daily Income (Cuadre) before adding a transaction.",
     "createAppointment": "Create appointment",
     "createCustomer": {

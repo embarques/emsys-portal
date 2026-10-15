@@ -13,9 +13,10 @@ export function useApiTableColumns<T extends ApiTableRecord>(
   storageKey: string,
   columns: DataTableColumn<T>[],
   fields: readonly ApiTableField[],
+  trailingColumns: DataTableColumn<T>[] = [],
 ) {
   const { t, locale } = useTranslation();
-  const completeColumns = useMemo(() => completeApiTableColumns(columns, fields, {
+  const completeColumns = useMemo(() => completeApiTableColumns([...columns, ...trailingColumns], fields, {
     label: (field) => {
       const key = `common.apiColumns.${field}`;
       const translated = t(key);
@@ -26,8 +27,14 @@ export function useApiTableColumns<T extends ApiTableRecord>(
     yes: t("common.apiColumns.yes"),
     no: t("common.apiColumns.no"),
     empty: t("common.empty.dash"),
-  }), [columns, fields, locale, t]);
+  }), [columns, trailingColumns, fields, locale, t]);
+
+  const trailingIds = new Set(trailingColumns.map((column) => column.id));
+  const orderedColumns = [
+    ...completeColumns.filter((column) => !trailingIds.has(column.id)),
+    ...trailingColumns,
+  ];
 
   // Start the expanded schema layout with every column visible; subsequent choices persist.
-  return useColumnVisibility(`${storageKey}-api-fields-v1`, completeColumns);
+  return useColumnVisibility(`${storageKey}-api-fields-v1`, orderedColumns);
 }

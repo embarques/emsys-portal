@@ -17,6 +17,7 @@ import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-butto
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useFormViewport } from "@/hooks/use-form-viewport";
 import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
 import {
   LabelChangeOutputTable,
@@ -192,7 +193,7 @@ function SelectionToolbar({
       onDelete={onRemoveAll}
       deleteLabel={t("labels.staging.remove")}
       actions={children}
-      className="static sm:px-3"
+      className="static shrink-0 sm:px-3"
     />
   );
 }
@@ -206,6 +207,7 @@ export function InvoiceStagingWorkflow({
   onClose,
 }: InvoiceStagingWorkflowProps) {
   const { t } = useTranslation();
+  const shellRef = useFormViewport();
   const queryClient = useQueryClient();
   const { email, displayName } = useAuth();
   const performedBy = displayName?.trim() || email?.trim() || undefined;
@@ -984,9 +986,16 @@ export function InvoiceStagingWorkflow({
       </Button>
     ) : null;
 
+  const listFrameClassName = isDialog
+    ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border"
+    : "flex min-h-0 flex-auto flex-col overflow-hidden rounded-xl border";
+  const listScrollClassName = isDialog
+    ? "min-h-0 flex-1 overflow-auto"
+    : "min-h-0 flex-auto overflow-y-auto";
+
   const workflowPanels =
     step === "line-items" ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
+          <div className={listFrameClassName}>
             <SelectionToolbar
               allKeys={itemKeys}
               selectedKeys={selectedItemKeys}
@@ -997,7 +1006,7 @@ export function InvoiceStagingWorkflow({
               {manageLabelsButton}
             </SelectionToolbar>
 
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div className={listScrollClassName}>
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-muted/50 text-xs text-muted-foreground">
                   <tr className="border-b">
@@ -1060,8 +1069,8 @@ export function InvoiceStagingWorkflow({
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-            <div className="flex w-full items-center gap-2 border-b bg-muted/10 px-3 py-2">
+          <div className={listFrameClassName}>
+            <div className="flex w-full shrink-0 items-center gap-2 border-b bg-muted/10 px-3 py-2">
               <Input
                 value={labelQuery}
                 onChange={(event) => setLabelQuery(event.target.value)}
@@ -1130,7 +1139,7 @@ export function InvoiceStagingWorkflow({
               </Button>
             </SelectionToolbar>
 
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div className={listScrollClassName}>
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-muted/50 text-xs text-muted-foreground">
                   <tr className="border-b">
@@ -1333,8 +1342,11 @@ export function InvoiceStagingWorkflow({
   if (!isDialog) {
     return (
       <>
-        <div className="flex h-[calc(100dvh-10rem)] flex-col gap-4">
-          <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          ref={shellRef}
+          className="flex h-auto max-h-[calc(100dvh-var(--form-viewport-inset,8rem))] min-h-0 flex-col gap-4 overflow-hidden"
+        >
+          <div className="flex shrink-0 flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("invoices.staging.tableAction")}
@@ -1354,7 +1366,7 @@ export function InvoiceStagingWorkflow({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="flex min-h-0 flex-auto flex-col gap-4 overflow-hidden">
             {workflowPanels}
             <LabelChangeOutputTable rows={changeResults} />
           </div>

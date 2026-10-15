@@ -72,10 +72,7 @@ import {
   formatInvoicePickupAssignmentLabel,
   resolveInvoicePaidStatus,
 } from "@/lib/invoices/display";
-import {
-  buildInvoiceCommentActivity,
-  buildPaymentRecordedActivity,
-} from "@/lib/invoices/activity";
+import { buildInvoiceCommentActivity } from "@/lib/invoices/activity";
 import {
   useDeleteInvoices,
   useInvoice,
@@ -102,14 +99,11 @@ import { mapInvoiceJournalsToPayments } from "@/lib/invoices/invoice-journals";
 import {
   buildInvoiceListParams,
   createInvoiceComment,
-  createInvoicePayment,
-  computeTotalPayments,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceRecordId,
   getInvoicePrimaryReceiver,
   type Invoice,
   type InvoiceFilterState,
-  type InvoicePaymentInput,
 } from "@/lib/invoices/types";
 import { useLegacyLastSynced } from "@/lib/legacy-sync/use-legacy-last-synced";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
@@ -661,8 +655,7 @@ export function InvoicesWorkspace() {
       ...base,
       comments: [...base.comments, ...(viewOverlay?.comments ?? [])],
       activity: [...base.activity, ...(viewOverlay?.activity ?? [])],
-      payments: [...(journalPayments.length > 0 ? journalPayments : base.payments), ...(viewOverlay?.payments ?? [])],
-      amountPaid: viewOverlay?.amountPaid ?? base.amountPaid,
+      payments: journalPayments.length > 0 ? journalPayments : base.payments,
       updatedAt: viewOverlay?.updatedAt ?? base.updatedAt,
     };
   }, [detailInvoice, invoices, invoiceJournals, viewInvoiceId, viewOverlay]);
@@ -730,24 +723,6 @@ export function InvoicesWorkspace() {
     }));
 
     notifyAdded("Comment");
-  }
-
-  function recordInvoicePayment(invoiceId: string, input: InvoicePaymentInput) {
-    const payment = createInvoicePayment(invoiceId, input);
-
-    setViewOverlay((current) => {
-      const payments = [...(current?.payments ?? []), payment];
-      const amountPaid = computeTotalPayments(payments);
-      return {
-        ...current,
-        payments,
-        amountPaid,
-        activity: [...(current?.activity ?? []), buildPaymentRecordedActivity(payment, amountPaid)],
-        updatedAt: payment.createdAt,
-      };
-    });
-
-    notifyAdded("Payment", formatInvoiceMoney(payment.amount));
   }
 
   async function printSelectedInvoices() {
@@ -1590,7 +1565,6 @@ export function InvoicesWorkspace() {
         onEdit={(invoice) => openEditForm(invoice)}
         onDelete={(invoice) => openDeleteInvoice(invoice)}
         onAddComment={addInvoiceComment}
-        onRecordPayment={recordInvoicePayment}
       />
 
       <Dialog

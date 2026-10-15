@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { DollarSign } from "lucide-react";
 
 import { PeriodStatCard } from "@/components/app-shell/period-stat-card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -34,7 +33,6 @@ export function AverageContainerValueStatCard() {
           ? "…"
           : t("containers.stats.averageValue.description", { count: stats.containerCount })
       }
-      icon={DollarSign}
       label={t("containers.stats.averageValue.label")}
       periodControl={
         <SearchableSelect

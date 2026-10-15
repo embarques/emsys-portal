@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { FilePlus2 } from "lucide-react";
 
 import { PeriodChangeDescription } from "@/components/app-shell/period-change-description";
 import { PeriodStatCard } from "@/components/app-shell/period-stat-card";
@@ -40,7 +39,6 @@ export function NewInvoicesStatCard() {
           />
         )
       }
-      icon={FilePlus2}
       label={t("invoices.stats.new.label")}
       periodControl={
         <SearchableSelect

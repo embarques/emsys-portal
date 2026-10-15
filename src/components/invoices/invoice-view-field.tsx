@@ -24,7 +24,7 @@ export function InvoiceViewField({ label, value, mono, className }: InvoiceViewF
   if (isEmptyValue(value)) return null;
 
   return (
-    <div className={cn("flex flex-col gap-0.5", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-0.5 [overflow-wrap:anywhere]", className)}>
       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
@@ -38,10 +38,21 @@ export function InvoiceViewField({ label, value, mono, className }: InvoiceViewF
 type InvoiceViewListItemProps = {
   children: ReactNode;
   className?: string;
+  layout?: "stack" | "grid";
 };
 
-export function InvoiceViewListItem({ children, className }: InvoiceViewListItemProps) {
+export function InvoiceViewListItem({ children, className, layout = "stack" }: InvoiceViewListItemProps) {
   return (
-    <li className={cn("space-y-2.5 rounded-lg border bg-background px-3 py-3", className)}>{children}</li>
+    <li
+      className={cn(
+        "rounded-lg border bg-background p-3",
+        layout === "grid"
+          ? "grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-x-4 gap-y-2.5"
+          : "space-y-2.5",
+        className,
+      )}
+    >
+      {children}
+    </li>
   );
 }

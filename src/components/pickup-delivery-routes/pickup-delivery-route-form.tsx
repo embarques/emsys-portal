@@ -9,12 +9,13 @@ import {
   History,
   Plus,
   Package,
+  RotateCcw,
   Route as RouteIcon,
   Users,
 } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
-import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { FieldEntityActions, fieldEntityActionClassName } from "@/components/forms/field-entity-actions";
 import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pickup-route-orders-section";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -50,6 +51,7 @@ type ActiveRouteFormProps = {
   selectedRouteLoading?: boolean;
   submitDisabled?: boolean;
   onPreviousRouteChange?: (routeId: string) => void;
+  onResetFields?: () => void;
   onBranchChange: (branchCode: string) => void;
   onDateChange: (date: string) => void;
   onVehicleChange: (vehicleId: string) => void;
@@ -89,6 +91,7 @@ export function ActiveRouteForm({
   selectedRouteLoading = false,
   submitDisabled = false,
   onPreviousRouteChange,
+  onResetFields,
   onBranchChange,
   onDateChange,
   onVehicleChange,
@@ -108,6 +111,19 @@ export function ActiveRouteForm({
   const handleEnterNavigation = useFormEnterNavigation();
   const hasBranch = Boolean(branchCode.trim());
   const crewRoles: RouteCrewRole[] = ["driver", "appraiser", "helper"];
+  const resetFieldsButton = onResetFields ? (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={fieldEntityActionClassName}
+      onClick={onResetFields}
+      disabled={isSubmitting}
+    >
+      <RotateCcw className="size-3.5" />
+      {t("routes.dailyRoutes.form.resetFields")}
+    </Button>
+  ) : null;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -123,7 +139,14 @@ export function ActiveRouteForm({
       <FormBody workflow isBusy={isSubmitting}>
         <div className="grid items-start gap-5 @4xl:grid-cols-2">
           {showPreviousRouteField ? (
-            <FormSection variant="card" className="@4xl:col-span-2" description={t("routes.dailyRoutes.form.design.previous")} icon={History} title={t("routes.dailyRoutes.form.loadPrevious")}>
+            <FormSection
+              variant="card"
+              className="@4xl:col-span-2"
+              description={t("routes.dailyRoutes.form.design.previous")}
+              icon={History}
+              title={t("routes.dailyRoutes.form.loadPrevious")}
+              action={resetFieldsButton}
+            >
               <SearchableSelect
                 id="daily-route-previous"
                 aria-label={t("routes.dailyRoutes.form.loadPrevious")}
@@ -137,6 +160,8 @@ export function ActiveRouteForm({
                 options={previousRouteOptions}
               />
             </FormSection>
+          ) : resetFieldsButton ? (
+            <div className="flex justify-end @4xl:col-span-2">{resetFieldsButton}</div>
           ) : null}
 
           <FormSection variant="card" description={t("routes.dailyRoutes.form.design.branch")} icon={Building2} title={t("routes.activeRoute.branch")} required>
@@ -252,8 +277,8 @@ export function ActiveRouteForm({
           ) : null}
 
           {isDeliveryBranch ? (
-            <>
-              <FormSection variant="card" icon={Container} title={t("routes.activeRoute.container")} required>
+            <div className="grid items-stretch gap-5 @4xl:col-span-2 @4xl:grid-cols-2">
+              <FormSection variant="card" className="h-full" icon={Container} title={t("routes.activeRoute.container")} required>
                 <SearchableSelect
                   id="active-route-container"
                   aria-label={t("routes.activeRoute.container")}
@@ -266,7 +291,7 @@ export function ActiveRouteForm({
                 />
               </FormSection>
 
-              <FormSection variant="card" icon={DollarSign} title={t("routes.activeRoute.rate")}>
+              <FormSection variant="card" className="h-full" icon={DollarSign} title={t("routes.activeRoute.rate")}>
                 <div className="space-y-1.5">
                   <Input
                     id="active-route-rate"
@@ -284,7 +309,7 @@ export function ActiveRouteForm({
                   </p>
                 </div>
               </FormSection>
-            </>
+            </div>
           ) : null}
 
           {isEditing && !isDeliveryBranch && vehicleRouteId ? (
