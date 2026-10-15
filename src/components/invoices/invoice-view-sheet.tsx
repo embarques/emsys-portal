@@ -21,14 +21,13 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
+import { formatOrderDateWithWeekday } from "@/lib/orders/display";
 import { formatAddressLine, formatPartyPhoneList } from "@/lib/customers/display";
 import {
-  formatInvoiceDate,
   formatInvoiceMoney,
   formatInvoicePickupAssignmentLabel,
   getContainerLabelForInvoice,
   getInvoiceBalance,
-  getInvoicePaidStatusBadgeClass,
   getInvoicePaidStatusLabel,
   getInvoiceSubtotal,
   getPaymentLocationLabel,
@@ -158,30 +157,12 @@ function formatBarcodeScanDate(scanDate: string | undefined, empty: string): str
   }).format(parsed);
 }
 
-function LineItemMetric({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: string | number;
-  className?: string;
-}) {
-  return (
-    <div className={cn("min-w-0", className)}>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm tabular-nums leading-snug text-foreground [overflow-wrap:anywhere]">{value}</p>
-    </div>
-  );
-}
-
 function InvoiceLineItemCard({ item }: { item: InvoiceLineItem }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const barcodes = item.barcodes ?? [];
   const hasBarcodes = barcodes.length > 0;
   const showDescription = Boolean(item.description && item.description !== item.itemName);
-  const empty = t("common.empty.dash");
   const panelId = `invoice-line-item-barcodes-${item.id}`;
   const barcodeToggleLabel = open
     ? t(
@@ -238,36 +219,33 @@ function InvoiceLineItemCard({ item }: { item: InvoiceLineItem }) {
       {hasBarcodes && open ? (
         <ul id={panelId} className="space-y-2 border-t border-border/60 bg-muted/30 px-3 py-2.5">
           {barcodes.map((barcode) => (
-            <li key={barcode.id} className="rounded-md border border-border/50 bg-background px-2.5 py-2">
-              <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0 font-mono text-xs leading-snug text-foreground [overflow-wrap:anywhere]">
-                  {barcode.number}
-                </span>
-                {barcode.statusName ? (
-                  <span className="shrink-0 text-xs">
+            <li key={barcode.id} className="overflow-hidden rounded-lg border border-border bg-card">
+              <RecordViewSheetDetailRow
+                label={t("invoices.view.barcodeStatus.fields.barcode")}
+                value={<span className="font-mono">{barcode.number}</span>}
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.view.barcodeStatus.fields.status")}
+                value={
+                  barcode.statusName ? (
                     <TableTagText className={getBarcodeStatusBadgeClass(barcode.statusName)}>
                       {barcode.statusName}
                     </TableTagText>
-                  </span>
-                ) : (
-                  <span className="shrink-0 text-xs text-muted-foreground">{empty}</span>
-                )}
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
-                <LineItemMetric
-                  label={t("invoices.view.barcodeStatus.fields.container")}
-                  value={barcode.containerName ?? empty}
-                />
-                <LineItemMetric
-                  label={t("invoices.view.barcodeStatus.fields.deliveryRoute")}
-                  value={barcode.deliveryName ?? barcode.routeName ?? empty}
-                />
-                <LineItemMetric
-                  className="col-span-2"
-                  label={t("invoices.view.fields.scanned")}
-                  value={formatBarcodeScanDate(barcode.scanDate, empty)}
-                />
-              </div>
+                  ) : undefined
+                }
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.view.barcodeStatus.fields.container")}
+                value={barcode.containerName}
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.view.barcodeStatus.fields.deliveryRoute")}
+                value={barcode.deliveryName ?? barcode.routeName}
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.view.fields.scanned")}
+                value={formatBarcodeScanDate(barcode.scanDate, "")}
+              />
             </li>
           ))}
         </ul>
@@ -310,7 +288,7 @@ export function InvoiceViewSheet({
   onDelete,
   onAddComment,
 }: InvoiceViewSheetProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const totals = useMemo(() => {
     if (!invoice) return null;
     const subtotal = getInvoiceSubtotal(invoice);
@@ -332,44 +310,23 @@ export function InvoiceViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          compact
-          title={
-            <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <span className="text-lg font-semibold leading-6 tabular-nums tracking-normal">
-                {invoice.invoiceNumber}
-              </span>
-              <span className="text-sm font-normal leading-5 tracking-normal text-muted-foreground">
-                {formatInvoiceDate(invoice.date)}
+          title={invoice.invoiceNumber.trim() || empty}
+          meta={
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {formatOrderDateWithWeekday(invoice.date, locale)}
               </span>
               <Badge
-                className={cn(
-                  "shrink-0 rounded-full px-2 py-0.5 text-sm font-medium leading-5 tracking-normal",
-                  getInvoicePaidStatusBadgeClass(paidStatus),
-                )}
+                variant="outline"
+                className={
+                  paidStatus === "closed"
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                }
               >
                 {getInvoicePaidStatusLabel(paidStatus)}
               </Badge>
-            </span>
-          }
-          meta={
-            <dl className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5 text-sm leading-5">
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                <dt className="font-normal text-muted-foreground">
-                  {t("invoices.form.fields.container")}
-                </dt>
-                <dd className="break-words font-medium text-foreground">
-                  {containerLabel}
-                </dd>
-              </div>
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                <dt className="font-normal text-muted-foreground">
-                  {t("invoices.form.fields.paymentLocation")}
-                </dt>
-                <dd className="break-words font-medium text-foreground">
-                  {getPaymentLocationLabel(invoice.paymentLocation)}
-                </dd>
-              </div>
-            </dl>
+            </div>
           }
         />
 
@@ -394,22 +351,28 @@ export function InvoiceViewSheet({
               tone="balance"
             />
           </div>
-          {pickupReference !== empty || pickupSourceKey || formatPickupAssignmentDisplay(invoice, t) !== empty ? (
-            <RecordViewSheetSection title={t("invoices.form.sections.invoiceDetails")}>
-              <RecordViewSheetDetailRow
-                label={t("invoices.form.fields.pickupReference")}
-                value={pickupReference}
-              />
-              <RecordViewSheetDetailRow
-                label={t("invoices.form.fields.pickupSource")}
-                value={pickupSourceKey ? t(pickupSourceKey) : empty}
-              />
-              <RecordViewSheetDetailRow
-                label={getPickupAssignmentFieldLabel(invoice, t)}
-                value={formatPickupAssignmentDisplay(invoice, t)}
-              />
-            </RecordViewSheetSection>
-          ) : null}
+          <RecordViewSheetSection title={t("invoices.form.sections.invoiceDetails")}>
+            <RecordViewSheetDetailRow
+              label={t("invoices.form.fields.container")}
+              value={containerLabel}
+            />
+            <RecordViewSheetDetailRow
+              label={t("invoices.form.fields.paymentLocation")}
+              value={getPaymentLocationLabel(invoice.paymentLocation)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("invoices.form.fields.pickupReference")}
+              value={pickupReference}
+            />
+            <RecordViewSheetDetailRow
+              label={t("invoices.form.fields.pickupSource")}
+              value={pickupSourceKey ? t(pickupSourceKey) : empty}
+            />
+            <RecordViewSheetDetailRow
+              label={getPickupAssignmentFieldLabel(invoice, t)}
+              value={formatPickupAssignmentDisplay(invoice, t)}
+            />
+          </RecordViewSheetSection>
 
           <PartySection title={t("invoices.form.fields.sender")} party={invoice.sender} />
           {invoice.receiver ? (

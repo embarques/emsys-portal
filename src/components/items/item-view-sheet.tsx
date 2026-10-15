@@ -11,7 +11,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
-import { formatItemDate, formatItemPrice, truncateItemId } from "@/lib/items/display";
+import { formatItemDate, formatItemPrice } from "@/lib/items/display";
 import type { Item } from "@/lib/items/types";
 
 type ItemViewSheetProps = {
@@ -31,16 +31,9 @@ export function ItemViewSheet({ item, open, onOpenChange, onEdit, onDelete }: It
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader
-          title={truncateItemId(item.itemId)}
-          description={<span className="font-mono text-xs">{item.itemId}</span>}
-        />
+        <RecordViewSheetHeader title={item.description.trim() || dash} />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("items.view.description")} padding="relaxed">
-            <p className="text-sm leading-relaxed text-foreground">{item.description}</p>
-          </RecordViewSheetSection>
-
           <RecordViewSheetSection title={t("items.view.details")}>
             <RecordViewSheetDetailRow label={t("items.view.itemId")} value={item.itemId} />
             <RecordViewSheetDetailRow label={t("items.view.price")} value={formatItemPrice(item.price)} />

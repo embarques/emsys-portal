@@ -48,7 +48,7 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-3 border-b border-border/80 px-4 py-2.5 last:border-b-0 odd:bg-muted/25",
+        "flex items-start justify-between gap-3 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
         className,
       )}
     >

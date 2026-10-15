@@ -62,6 +62,13 @@ export function SenderOrderHistorySection({
   const sectionId = "sender-appointment-history";
   const isView = variant === "view";
 
+  const showTable = Boolean(senderId) && !isLoading && !errorMessage && history.length > 0;
+  const headerClassName = cn(
+    "px-3 py-2 font-medium",
+    isView && "whitespace-nowrap",
+  );
+  const cellClassName = "px-3 py-2 text-xs text-foreground";
+
   const content = !senderId ? (
     <p className="text-sm text-muted-foreground">{t("orders.history.pendingSavedSender")}</p>
   ) : isLoading ? (
@@ -74,22 +81,27 @@ export function SenderOrderHistorySection({
   ) : history.length === 0 ? (
     <p className="text-sm text-muted-foreground">{t("orders.empty.noPickupHistory")}</p>
   ) : (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full min-w-[960px] text-left text-sm">
+    <div className={cn("overflow-x-auto", !isView && "rounded-lg border")}>
+      <table className={cn("w-full text-left", isView ? "text-xs" : "min-w-[960px] text-sm")}>
           <thead>
-            <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
-              <th className="px-3 py-2 font-medium">{t("orders.columns.orderId")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.date")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.completed")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.sender")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.senderAddressLine")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.phone1")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.comments")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.receiver")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.receiverAddress")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.createdAt")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.createdBy")}</th>
-              <th className="px-3 py-2 font-medium">{t("orders.columns.updatedAt")}</th>
+            <tr
+              className={cn(
+                "border-b text-muted-foreground",
+                isView ? "bg-muted/40" : "bg-muted/50 text-xs",
+              )}
+            >
+              <th className={headerClassName}>{t("orders.columns.orderId")}</th>
+              <th className={headerClassName}>{t("orders.columns.date")}</th>
+              <th className={headerClassName}>{t("orders.columns.completed")}</th>
+              <th className={headerClassName}>{t("orders.columns.sender")}</th>
+              <th className={headerClassName}>{t("orders.columns.senderAddressLine")}</th>
+              <th className={headerClassName}>{t("orders.columns.phone1")}</th>
+              <th className={headerClassName}>{t("orders.columns.comments")}</th>
+              <th className={headerClassName}>{t("orders.columns.receiver")}</th>
+              <th className={headerClassName}>{t("orders.columns.receiverAddress")}</th>
+              <th className={headerClassName}>{t("orders.columns.createdAt")}</th>
+              <th className={headerClassName}>{t("orders.columns.createdBy")}</th>
+              <th className={headerClassName}>{t("orders.columns.updatedAt")}</th>
             </tr>
           </thead>
           <tbody>
@@ -99,20 +111,24 @@ export function SenderOrderHistorySection({
                 <tr
                   key={order.id}
                   className={cn(
-                    "border-b last:border-0",
-                    isCurrent ? "bg-primary/5" : "bg-background",
+                    "border-b last:border-b-0",
+                    isView
+                      ? "even:bg-muted/25"
+                      : isCurrent
+                        ? "bg-primary/5"
+                        : "bg-background",
                   )}
                 >
-                  <td className="px-3 py-2 font-mono text-xs">
+                  <td className={cn(cellClassName, "whitespace-nowrap font-mono")}>
                     {order.id}
                     {isCurrent ? (
-                      <span className="ml-2 text-[10px] font-sans text-primary">
+                      <span className="ml-2 font-sans text-[10px] text-primary">
                         {t("orders.history.current")}
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs">{formatOrderDate(order.date)}</td>
-                  <td className="px-3 py-2">
+                  <td className={cn(cellClassName, "whitespace-nowrap")}>{formatOrderDate(order.date)}</td>
+                  <td className={cn(cellClassName, "whitespace-nowrap")}>
                     <TableTagText
                       className={
                         order.completed
@@ -123,19 +139,23 @@ export function SenderOrderHistorySection({
                       {getOrderCompletedLabel(order.completed, t)}
                     </TableTagText>
                   </td>
-                  <td className="px-3 py-2 text-xs">{order.sender.name}</td>
-                  <td className="px-3 py-2 text-xs">{getCustomerAddressLine(order.sender)}</td>
-                  <td className="px-3 py-2 text-xs">{getCustomerPhone(order.sender)}</td>
-                  <td className="px-3 py-2 text-xs">
+                  <td className={cn(cellClassName, "whitespace-nowrap")}>{order.sender.name}</td>
+                  <td className={cn(cellClassName, "min-w-[10rem] leading-snug [overflow-wrap:anywhere]")}>
+                    {getCustomerAddressLine(order.sender)}
+                  </td>
+                  <td className={cn(cellClassName, "whitespace-nowrap")}>{getCustomerPhone(order.sender)}</td>
+                  <td className={cn(cellClassName, "min-w-[8rem] leading-snug [overflow-wrap:anywhere]")}>
                     {order.comments.length > 0 ? formatOrderCommentsSummary(order) : dash}
                   </td>
-                  <td className="px-3 py-2 text-xs">{getReceiverSummary(order)}</td>
-                  <td className="px-3 py-2 text-xs">{getReceiverAddressLine(order)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                  <td className={cn(cellClassName, "whitespace-nowrap")}>{getReceiverSummary(order)}</td>
+                  <td className={cn(cellClassName, "min-w-[10rem] leading-snug [overflow-wrap:anywhere]")}>
+                    {getReceiverAddressLine(order)}
+                  </td>
+                  <td className={cn(cellClassName, "whitespace-nowrap", !isView && "text-muted-foreground")}>
                     {formatAuditDateTime(order.createdAt)}
                   </td>
-                  <td className="px-3 py-2 text-xs">{formatUserSummary(order.createdBy)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                  <td className={cn(cellClassName, "whitespace-nowrap")}>{formatUserSummary(order.createdBy)}</td>
+                  <td className={cn(cellClassName, "whitespace-nowrap", !isView && "text-muted-foreground")}>
                     {formatAuditDateTime(order.updatedAt)}
                   </td>
                 </tr>
@@ -169,12 +189,18 @@ export function SenderOrderHistorySection({
             : "min-h-7 rounded-md hover:bg-muted/50",
         )}
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <History className="size-4 shrink-0 text-primary" />
+        <span className="flex min-w-0 items-center gap-2.5">
+          {isView ? (
+            <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
+          ) : (
+            <History className="size-4 shrink-0 text-primary" />
+          )}
           <span
             className={cn(
-              "truncate font-semibold uppercase tracking-wide text-muted-foreground",
-              isView ? "text-[11px] tracking-[0.1em] text-foreground/75" : "text-xs",
+              "truncate uppercase",
+              isView
+                ? "text-[11px] font-bold tracking-[0.1em] text-foreground/75"
+                : "text-xs font-semibold tracking-wide text-muted-foreground",
             )}
           >
             {sectionTitle}
@@ -185,7 +211,7 @@ export function SenderOrderHistorySection({
         </span>
       </button>
       {open ? (
-        <div id={`${sectionId}-panel`} className={cn(isView && "p-4")}>
+        <div id={`${sectionId}-panel`} className={cn(isView && !showTable && "p-4")}>
           {content}
         </div>
       ) : null}

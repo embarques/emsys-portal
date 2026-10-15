@@ -52,7 +52,7 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 last:border-b-0 odd:bg-muted/25",
+        "flex items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
         className,
       )}
     >

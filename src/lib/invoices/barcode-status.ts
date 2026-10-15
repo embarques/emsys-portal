@@ -2,7 +2,6 @@ import type { Invoice } from "@/lib/invoices/types";
 
 export type InvoiceBarcodeStatusRow = {
   id: string;
-  invoiceNumber: string;
   barcode: string;
   status: string;
   quantity: number;
@@ -19,7 +18,6 @@ export function buildInvoiceBarcodeStatusRows(invoice: Invoice): InvoiceBarcodeS
     for (const barcode of item.barcodes ?? []) {
       rows.push({
         id: barcode.id,
-        invoiceNumber: invoice.invoiceNumber,
         barcode: barcode.number,
         status: barcode.statusName?.trim() || "—",
         quantity: item.quantity,

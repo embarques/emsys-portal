@@ -52,21 +52,24 @@ export function BranchViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={branch.name}
-          description={
-            branch.code || t("branches.view.branchFallback", { id: formatBranchId(branch.id) })
-          }
+          title={branch.name.trim() || dash}
           meta={
-            <>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {branch.code.trim() ||
+                  t("branches.view.branchFallback", { id: formatBranchId(branch.id) })}
+              </span>
               {branch.type ? (
-                <Badge className={getBranchTypeBadgeClass(branch.type)}>{branch.type}</Badge>
+                <Badge variant="outline" className={getBranchTypeBadgeClass(branch.type)}>
+                  {branch.type}
+                </Badge>
               ) : null}
               {branch.settings.labelPrefix ? (
                 <Badge variant="outline">
                   {t("branches.view.prefixLabel", { prefix: branch.settings.labelPrefix })}
                 </Badge>
               ) : null}
-            </>
+            </div>
           }
         />
 

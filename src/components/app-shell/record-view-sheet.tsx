@@ -166,7 +166,7 @@ export function RecordViewSheetDetailRow({ label, value }: RecordViewSheetDetail
   if (isPlaceholderValue(value)) return null;
 
   return (
-    <div className="grid grid-cols-[minmax(6.5rem,38%)_1fr] items-baseline gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 odd:bg-muted/25">
+    <div className="grid grid-cols-[minmax(6.5rem,38%)_1fr] items-baseline gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
       <span className="text-xs font-medium leading-snug text-muted-foreground">{label}</span>
       <span className="min-w-0 whitespace-pre-wrap text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
         {value}

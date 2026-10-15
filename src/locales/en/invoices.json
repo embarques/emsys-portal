@@ -429,7 +429,7 @@
       "title": "Comments ({{count}})",
       "empty": "No comments yet.",
       "addLabel": "Add comment",
-      "placeholder": "e.g. Tried reaching out — customer only wants delivery in the morning.",
+      "placeholder": "Write a comment…",
       "postAction": "Post comment",
       "validationRequired": "Comment description is required.",
       "fields": {
@@ -467,7 +467,6 @@
       "description": "Barcode scan status, container assignment, and delivery route for each label on this invoice.",
       "empty": "No barcode status records yet.",
       "fields": {
-        "invoiceNumber": "Invoice number",
         "barcode": "Barcode",
         "status": "Status",
         "quantity": "Quantity",

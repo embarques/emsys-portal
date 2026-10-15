@@ -22,7 +22,6 @@ import {
 import {
   formatAccountBalance,
   formatCustomerAuditActor,
-  getClientTypeBadgeClass,
 } from "@/lib/customers/display";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { useCustomer } from "@/lib/customers/hooks/use-customers";
@@ -82,13 +81,22 @@ export function CustomerViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={
-            <span className="flex flex-wrap items-center gap-2">
-              <span>{resolvedCustomer.name}</span>
-              {clientType ? (
-                <Badge className={getClientTypeBadgeClass(clientType)}>{typeLabel}</Badge>
-              ) : null}
-            </span>
+          title={resolvedCustomer.name.trim() || dash}
+          meta={
+            clientType ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={
+                    clientType === "sender"
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  }
+                >
+                  {typeLabel}
+                </Badge>
+              </div>
+            ) : null
           }
         />
 

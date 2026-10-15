@@ -23,7 +23,6 @@ import {
   formatEmployeeId,
   formatEmployeeMoney,
   formatEmployeeUserLabel,
-  getEmployeeActiveBadgeClass,
   getEmployeeBranchBadgeClass,
 } from "@/lib/employees/display";
 import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
@@ -50,22 +49,32 @@ export function EmployeeViewSheet({
   if (!employee) return null;
 
   const dash = t("common.empty.dash");
+  const department = employeeLabels.department(employee.department).trim();
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={employee.name}
-          description={employeeLabels.department(employee.department)}
+          title={employee.name.trim() || dash}
           meta={
-            <>
-              <Badge className={getEmployeeBranchBadgeClass(employee)}>
+            <div className="flex flex-wrap items-center gap-2">
+              {department ? (
+                <span className="text-sm text-muted-foreground">{department}</span>
+              ) : null}
+              <Badge variant="outline" className={getEmployeeBranchBadgeClass(employee)}>
                 {employeeLabels.branchLabel(employee)}
               </Badge>
-              <Badge className={getEmployeeActiveBadgeClass(employee.active)}>
+              <Badge
+                variant="outline"
+                className={
+                  employee.active
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "border-border bg-muted text-muted-foreground"
+                }
+              >
                 {employeeLabels.active(employee.active)}
               </Badge>
-            </>
+            </div>
           }
         />
 

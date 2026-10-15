@@ -66,6 +66,8 @@ export function ActiveRouteViewSheet({
   if (!record) return null;
 
   const title = formatActiveRouteRowLabel(record, dash, t);
+  const routeName = record.route.name?.trim() ?? "";
+  const showRouteName = Boolean(routeName) && !title.includes(routeName);
   const showDeliveryFields =
     record.routeType === "delivery" || isDeliveryBranchCode(record.branch?.code);
 
@@ -75,8 +77,8 @@ export function ActiveRouteViewSheet({
         <RecordViewSheetHeader
           title={title}
           description={
-            record.route.name ? (
-              <span className="text-sm text-muted-foreground">{record.route.name}</span>
+            showRouteName ? (
+              <span className="text-sm text-muted-foreground">{routeName}</span>
             ) : undefined
           }
         />

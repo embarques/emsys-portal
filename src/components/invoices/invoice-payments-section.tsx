@@ -1,10 +1,6 @@
 "use client";
 
-import { DollarSign } from "lucide-react";
-
-import { RecordViewList } from "@/components/app-shell/record-view-list";
-import { InvoiceViewCollapsibleSection } from "@/components/invoices/invoice-view-collapsible-section";
-import { InvoiceViewField, InvoiceViewListItem } from "@/components/invoices/invoice-view-field";
+import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import {
   formatInvoiceCommentDateTime,
   formatInvoiceMoney,
@@ -20,7 +16,10 @@ function paymentMethodLabelKey(method: InvoicePaymentMethod): string {
   return `invoices.view.payments.methods.${method}`;
 }
 
-const paymentFieldClassName = "min-w-0 [&_span:last-child]:break-words";
+function isFilled(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed !== "" && trimmed !== "—" && trimmed !== "-";
+}
 
 function paymentDateLabel(iso: string): string | undefined {
   const trimmed = iso.trim();
@@ -39,62 +38,73 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
 
   if (sortedPayments.length === 0) return null;
 
+  const referenceLabel =
+    sortedPayments.length > 0 && sortedPayments.every((payment) => payment.paymentMethod === "check")
+      ? t("invoices.view.payments.fields.checkNumber")
+      : t("invoices.view.payments.fields.referenceNumber");
+  const empty = t("common.empty.dash");
+
   return (
-    <InvoiceViewCollapsibleSection
+    <RecordViewSheetSection
       title={t("invoices.view.payments.title", { count: sortedPayments.length })}
-      description={t("invoices.view.payments.description", {
-        totalPaid: formatInvoiceMoney(invoice.amountPaid),
-      })}
-      icon={DollarSign}
-      count={sortedPayments.length}
     >
-      <RecordViewList>
-        {sortedPayments.map((payment) => (
-          <InvoiceViewListItem key={payment.id} className="bg-emerald-500/5">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-              <InvoiceViewField
-                className={paymentFieldClassName}
-                label={t("invoices.view.payments.fields.description")}
-                value={payment.description}
-              />
-              <InvoiceViewField
-                className={paymentFieldClassName}
-                label={t("invoices.view.payments.fields.amount")}
-                value={Number.isFinite(payment.amount) ? formatInvoiceMoney(payment.amount) : undefined}
-              />
-              <InvoiceViewField
-                className={paymentFieldClassName}
-                label={t("invoices.view.payments.fields.method")}
-                value={
-                  payment.paymentMethod
-                    ? t(paymentMethodLabelKey(payment.paymentMethod))
-                    : undefined
-                }
-              />
-              <InvoiceViewField
-                className={paymentFieldClassName}
-                label={t("invoices.view.payments.fields.date")}
-                value={paymentDateLabel(payment.createdAt)}
-              />
-              <InvoiceViewField
-                className={paymentFieldClassName}
-                label={
-                  payment.paymentMethod === "check"
-                    ? t("invoices.view.payments.fields.checkNumber")
-                    : t("invoices.view.payments.fields.referenceNumber")
-                }
-                value={payment.referenceNumber}
-                mono
-              />
-              <InvoiceViewField
-                className={paymentFieldClassName}
-                label={t("invoices.view.payments.fields.createdBy")}
-                value={payment.createdBy}
-              />
-            </div>
-          </InvoiceViewListItem>
-        ))}
-      </RecordViewList>
-    </InvoiceViewCollapsibleSection>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <thead>
+            <tr className="border-b bg-muted/40 text-muted-foreground">
+              <th className="px-3 py-2 font-medium">
+                {t("invoices.view.payments.fields.description")}
+              </th>
+              <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                {t("invoices.view.payments.fields.amount")}
+              </th>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                {t("invoices.view.payments.fields.method")}
+              </th>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                {t("invoices.view.payments.fields.date")}
+              </th>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">{referenceLabel}</th>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">
+                {t("invoices.view.payments.fields.createdBy")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedPayments.map((payment) => {
+              const description = payment.description?.trim() ?? "";
+              const method = payment.paymentMethod
+                ? t(paymentMethodLabelKey(payment.paymentMethod))
+                : "";
+              const date = paymentDateLabel(payment.createdAt) ?? "";
+              const reference = payment.referenceNumber?.trim() ?? "";
+              const createdBy = payment.createdBy?.trim() ?? "";
+              return (
+                <tr key={payment.id} className="border-b last:border-b-0 even:bg-muted/25">
+                  <td className="min-w-[8rem] px-3 py-2 leading-snug text-foreground [overflow-wrap:anywhere]">
+                    {isFilled(description) ? description : empty}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-foreground">
+                    {Number.isFinite(payment.amount) ? formatInvoiceMoney(payment.amount) : empty}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                    {isFilled(method) ? method : empty}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                    {isFilled(date) ? date : empty}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-foreground">
+                    {isFilled(reference) ? reference : empty}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                    {isFilled(createdBy) ? createdBy : empty}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </RecordViewSheetSection>
   );
 }

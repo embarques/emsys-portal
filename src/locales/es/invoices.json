@@ -429,7 +429,7 @@
       "title": "Comentarios ({{count}})",
       "empty": "Aún no hay comentarios.",
       "addLabel": "Agregar comentario",
-      "placeholder": "p. ej. Intenté contactar — el cliente solo quiere entrega por la mañana.",
+      "placeholder": "Escriba un comentario…",
       "postAction": "Publicar comentario",
       "validationRequired": "La descripción del comentario es obligatoria.",
       "fields": {
@@ -467,7 +467,6 @@
       "description": "Estado de escaneo, asignación de contenedor y ruta de entrega de cada etiqueta en esta factura.",
       "empty": "Aún no hay registros de estado de códigos de barras.",
       "fields": {
-        "invoiceNumber": "Número de factura",
         "barcode": "Código de barras",
         "status": "Estado",
         "quantity": "Cantidad",
