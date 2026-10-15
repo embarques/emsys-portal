@@ -119,17 +119,8 @@ function isDiscountSummaryLabel(label: string) {
   return normalized.includes("descuento") || normalized.includes("discount");
 }
 
-function prioritizeTotalCashStat(stats: StatCardItem[]) {
-  const totalCashIndex = stats.findIndex((stat) => isTotalCashSummaryLabel(stat.label));
-  if (totalCashIndex <= 0) return stats;
-  const nextStats = [...stats];
-  const [totalCashStat] = nextStats.splice(totalCashIndex, 1);
-  if (totalCashStat) nextStats.unshift(totalCashStat);
-  return nextStats;
-}
-
-/** Ensure Total Depositado is its own card, placed immediately after Total Efectivo. */
-function ensureDepositStatAfterTotalCash(
+/** Keep deposits separate and put the primary daily-income totals first. */
+function ensureDepositStatAndOrder(
   stats: StatCardItem[],
   options: { label: string; zeroValue: string },
 ): StatCardItem[] {
@@ -175,18 +166,16 @@ function ensureDepositStatAfterTotalCash(
     icon: depositIcon,
   };
 
-  const withDeposit = [...cleanedStats, depositStat];
-  const cashFirst = prioritizeTotalCashStat(withDeposit);
-  const depositIndex = cashFirst.findIndex((stat) => isDepositSummaryLabel(stat.label));
-  if (depositIndex < 0) return cashFirst;
-
-  const nextStats = [...cashFirst];
-  const [deposit] = nextStats.splice(depositIndex, 1);
-  if (!deposit) return cashFirst;
-
-  const insertAt = nextStats.findIndex((stat) => isTotalCashSummaryLabel(stat.label)) === 0 ? 1 : 0;
-  nextStats.splice(insertAt, 0, deposit);
-  return nextStats;
+  const priority = (stat: StatCardItem) => {
+    const label = stat.label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+    if (isTotalCashSummaryLabel(stat.label)) return 0;
+    if (label === "total ingresos" || label === "total income") return 1;
+    if (isExpenseSummaryLabel(stat.label)) return 2;
+    if (label === "otros ingresos" || label === "other income" || label === "other incomes") return 3;
+    if (isDepositSummaryLabel(stat.label)) return 4;
+    return 5;
+  };
+  return [...cleanedStats, depositStat].sort((left, right) => priority(left) - priority(right));
 }
 
 function promoteExpenseAndDiscountDetails(stats: StatCardItem[]) {
@@ -475,7 +464,7 @@ export function DailyIncomeWorkspace() {
       })),
     })));
 
-    return ensureDepositStatAfterTotalCash(nextStats, {
+    return ensureDepositStatAndOrder(nextStats, {
       label: t("accounting.dailyIncome.summary.totalDeposited"),
       zeroValue: formatAmount(0),
     });
