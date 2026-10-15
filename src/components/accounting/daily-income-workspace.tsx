@@ -166,6 +166,21 @@ function ensureDepositStatAndOrder(
     icon: depositIcon,
   };
 
+  const isZelle = (label: string) => label.toLowerCase().includes("zelle");
+  const zelleSource = stats.find((stat) => isZelle(stat.label)) ?? stats.flatMap((stat) =>
+    (stat.details ?? []).filter((detail) => isZelle(detail.label)).map((detail) => ({ ...detail, description: stat.description, icon: stat.icon })),
+  )[0];
+  const zelleStat: StatCardItem = {
+    label: "Zelle",
+    value: zelleSource?.value ?? options.zeroValue,
+    description: zelleSource?.description ?? template?.description,
+    icon: zelleSource?.icon ?? template?.icon,
+  };
+  const remainingStats = cleanedStats.filter((stat) => !isZelle(stat.label)).map((stat) => {
+    const details = stat.details?.filter((detail) => !isZelle(detail.label));
+    return { ...stat, details: details?.length ? details : undefined };
+  });
+
   const priority = (stat: StatCardItem) => {
     const label = stat.label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
     if (isTotalCashSummaryLabel(stat.label)) return 0;
@@ -173,9 +188,10 @@ function ensureDepositStatAndOrder(
     if (isExpenseSummaryLabel(stat.label)) return 2;
     if (label === "otros ingresos" || label === "other income" || label === "other incomes") return 3;
     if (isDepositSummaryLabel(stat.label)) return 4;
-    return 5;
+    if (isZelle(stat.label)) return 5;
+    return 6;
   };
-  return [...cleanedStats, depositStat].sort((left, right) => priority(left) - priority(right));
+  return [...remainingStats, depositStat, zelleStat].sort((left, right) => priority(left) - priority(right));
 }
 
 function promoteExpenseAndDiscountDetails(stats: StatCardItem[]) {
