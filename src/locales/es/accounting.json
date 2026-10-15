@@ -222,6 +222,21 @@
       "dop": "Peso",
       "select": "Seleccionar moneda"
     },
+    "quickEntry": {"label": "Entrada rápida", "yes": "Sí", "no": "No"},
+    "sessionPanel": {
+      "total": "Total",
+      "show": "Mostrar transacciones",
+      "hide": "Ocultar transacciones",
+      "deposit": "Depósito",
+      "title": "Mis transacciones",
+      "subtitle": "Este cierre · {{count}} guardadas en esta sesión",
+      "list": "Transacciones guardadas",
+      "empty": "Las transacciones que guardes aparecerán aquí.",
+      "totals": "Totales",
+      "payment": "Pago",
+      "amount": "Monto",
+      "noPayment": "Sin pago"
+    },
     "transactions": {
       "title": "Transacciones",
       "searchPlaceholder": "Buscar transacciones…",
@@ -235,6 +250,12 @@
       }
     },
     "columns": {
+      "invoice": "Factura",
+      "user": "Usuario",
+      "account": "Cuenta",
+      "cost": "Costo",
+      "payment": "Pago",
+      "balance": "Balance",
       "date": "Fecha",
       "accountInvoice": "Cuenta / factura",
       "employee": "Empleado",

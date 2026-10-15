@@ -221,8 +221,8 @@
     "purposes": {
       "PAYMENT": "Pago",
       "ESTIMATE": "Estimado",
-      "TAKE": "Take",
-      "PICKUP": "Recogida",
+      "TAKE": "Llevar",
+      "PICKUP": "Recoger",
       "OTHER": "Otro"
     },
     "items": {

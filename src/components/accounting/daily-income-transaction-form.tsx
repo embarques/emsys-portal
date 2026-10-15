@@ -34,6 +34,8 @@ const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 type Props = {
+  onValuesChange?: (values: DailyIncomeJournalValues) => void;
+  quickEntry?: boolean;
   activeStep?: TransactionFormStep;
   onStepChange?: (step: TransactionFormStep) => void;
   onContinue?: () => void;
@@ -73,6 +75,7 @@ function isUserRevenueAccount(account: ChartAccount) {
 }
 
 export function DailyIncomeTransactionForm({
+  quickEntry = false,
   activeStep,
   onStepChange,
   onContinue,
@@ -91,6 +94,7 @@ export function DailyIncomeTransactionForm({
   appearance = "default",
   focusSecondFieldSignal,
   onSubmit,
+  onValuesChange,
 }: Props) {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
@@ -149,6 +153,13 @@ export function DailyIncomeTransactionForm({
   });
 
   useEffect(() => {
+    if (!onValuesChange) return;
+    onValuesChange(watch());
+    const subscription = watch(() => onValuesChange(watch()));
+    return () => subscription.unsubscribe();
+  }, [watch, onValuesChange]);
+
+  useEffect(() => {
     reset({ ...initialValues, transactionType });
     setSourceAccountDefaultCleared(false);
   }, [initialValues, reset, transactionType]);
@@ -171,7 +182,11 @@ export function DailyIncomeTransactionForm({
     setStepError(null);
     const timer = window.setTimeout(() => {
       const form = formRef.current;
-      const field = form && getNavigableFormFields(form)[0];
+      const field = activeStep === "review"
+        ? Array.from(form?.elements ?? []).find((element): element is HTMLButtonElement =>
+          element instanceof HTMLButtonElement && element.type === "submit" && !element.disabled && element.getClientRects().length > 0,
+        )
+        : form && getNavigableFormFields(form)[0];
       field?.focus();
 
     }, 0);
@@ -378,7 +393,7 @@ export function DailyIncomeTransactionForm({
     const field = Object.keys(validationErrors)[0];
     if (field) {
       setInvalidField(field);
-      onStepChange?.(getTransactionFieldStep(field));
+      if (!quickEntry) onStepChange?.(getTransactionFieldStep(field));
     }
   });
 
@@ -389,7 +404,7 @@ export function DailyIncomeTransactionForm({
       noValidate
       onSubmit={async (event) => {
         event.preventDefault();
-        if (activeStep && activeStep !== "review") {
+        if (!quickEntry && activeStep && activeStep !== "review") {
           const fields = TRANSACTION_STEP_FIELDS[activeStep];
           const valid = await trigger(fields, { shouldFocus: true });
           if (valid) {
@@ -441,6 +456,7 @@ export function DailyIncomeTransactionForm({
         {isRegisterInvoice ? (
           <RegisterInvoiceTransactionFields
             grouped
+            quickEntry={quickEntry}
             activeStep={activeStep}
             employees={employees}
             dailyRoutes={dailyRoutes}

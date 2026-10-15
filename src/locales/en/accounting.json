@@ -222,6 +222,21 @@
       "dop": "Peso",
       "select": "Select currency"
     },
+    "quickEntry": {"label": "Quick entry", "yes": "Yes", "no": "No"},
+    "sessionPanel": {
+      "total": "Total",
+      "show": "Show transactions",
+      "hide": "Hide transactions",
+      "deposit": "Deposit",
+      "title": "My transactions",
+      "subtitle": "This closeout · {{count}} saved this session",
+      "list": "Saved transactions",
+      "empty": "Transactions you save will appear here.",
+      "totals": "Totals",
+      "payment": "Payment",
+      "amount": "Amount",
+      "noPayment": "No payment"
+    },
     "transactions": {
       "title": "Transactions",
       "searchPlaceholder": "Search transactions…",
@@ -235,6 +250,12 @@
       }
     },
     "columns": {
+      "invoice": "Invoice",
+      "user": "User",
+      "account": "Account",
+      "cost": "Cost",
+      "payment": "Payment",
+      "balance": "Balance",
       "date": "Date",
       "accountInvoice": "Account / invoice",
       "employee": "Employee",

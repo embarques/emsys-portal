@@ -14,7 +14,6 @@ import type { User } from "@/lib/users/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 
 import {
-  compileOrderCommentsParagraph,
   formatOrderCommentSentence,
   orderCommentToFormValues,
   type Order,
@@ -41,15 +40,21 @@ export function formatOrderDate(date: string): string {
   }).format(parsed);
 }
 
+/** Scheduled pickup day, without shifting it into the viewer's timezone. */
+export function formatOrderCalendarDate(date: string): string {
+  const trimmed = date?.trim();
+  if (!trimmed || !parseOrderDateValue(trimmed)) return "—";
+  return trimmed.slice(0, 10);
+}
+
 const ORDER_DATE_LOCALE_TAGS: Record<string, string> = {
   en: "en-US",
   es: "es-US",
 };
 
 function parseOrderDateValue(date: string): Date | null {
-  const parsed = date.includes("T")
-    ? new Date(date)
-    : new Date(`${date.slice(0, 10)}T12:00:00`);
+  // Appointment dates are calendar days, including when the API adds UTC midnight.
+  const parsed = new Date(`${date.slice(0, 10)}T12:00:00`);
 
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -128,6 +133,7 @@ export function formatOrderRouteName(
 }
 
 export function formatPickupCommentSummary(comment: PickupComment): string {
+  if (comment.description.trim()) return comment.description.trim();
   const sentence = formatOrderCommentSentence(orderCommentToFormValues(comment));
   if (sentence) return sentence;
 
@@ -136,7 +142,7 @@ export function formatPickupCommentSummary(comment: PickupComment): string {
 }
 
 export function formatOrderCommentsSummary(order: Order): string {
-  return compileOrderCommentsParagraph(order.comments.map(orderCommentToFormValues)) || "—";
+  return order.comments.map(formatPickupCommentSummary).filter((text) => text !== "—").join(" ") || "—";
 }
 
 export function getOrderCreatedByDisplayName(user: Order["createdBy"]): string {

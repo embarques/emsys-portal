@@ -13,3 +13,5 @@ export function useCustomerAutocomplete(query: string) {
 export function useCustomerDetailsBatch() {}
 export function useCustomer() { return { data: customer, isFetching: false }; }
 export function useEnsureCustomerDetail() { return async () => customer; }
+
+export function useCustomerSearch() { return { data: { items: [customer] }, isFetching: false }; }

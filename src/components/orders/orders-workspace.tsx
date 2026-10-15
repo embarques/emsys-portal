@@ -82,6 +82,7 @@ import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   formatOrderCommentsSummary,
   formatOrderDate,
+  formatOrderCalendarDate,
   formatOrderId,
   getOrderFeedbackName,
   formatOrderRouteName,
@@ -930,7 +931,7 @@ export function OrdersWorkspace() {
       id: "date",
       label: t("orders.tableColumns.date"),
       defaultWidth: 112,
-      renderCell: (order) => formatPickupTableDate(order.date),
+      renderCell: (order) => formatOrderCalendarDate(order.date),
     },
     {
       id: "completed",

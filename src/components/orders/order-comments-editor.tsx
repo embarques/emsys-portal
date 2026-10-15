@@ -10,6 +10,7 @@ import {
   ORDER_COMMENT_ITEM_TYPES,
   ORDER_COMMENT_PURPOSES,
   createEmptyOrderComment,
+  updateOrderComment,
   isOrderCommentComplete,
   orderCommentPurposeRequiresItem,
   type OrderCommentFormValues,
@@ -43,11 +44,11 @@ type OrderCommentsEditorProps = {
 };
 
 export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [editing, setEditing] = useState<EditingCell>(null);
   const [mobileEditingIndex, setMobileEditingIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<OrderCommentFormValues | null>(() =>
-    comments.length === 0 ? createEmptyOrderComment() : null,
+    comments.length === 0 ? { ...createEmptyOrderComment(), language: locale } : null,
   );
   const advancingRef = useRef(false);
   const draftRef = useRef<OrderCommentFormValues | null>(draft);
@@ -56,11 +57,11 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
 
   useEffect(() => {
     if (comments.length === 0 && !draftRef.current) {
-      const next = createEmptyOrderComment();
+      const next = { ...createEmptyOrderComment(), language: locale };
       draftRef.current = next;
       setDraft(next);
     }
-  }, [comments, draft]);
+  }, [comments, draft, locale]);
 
   useEffect(() => {
     if (editing?.field !== "quantity") return;
@@ -179,7 +180,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
 
   function updateComment(index: number, patch: Partial<OrderCommentFormValues>) {
     if (isDraftIndex(index)) {
-      const next = draft ? { ...draft, ...patch } : null;
+      const next = draft ? updateOrderComment(draft, patch, locale) : null;
       if (!next) {
         setDraftState(null);
         return;
@@ -204,7 +205,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
       return;
     }
     const updated = commentsRef.current.map((comment, commentIndex) =>
-      commentIndex === index ? { ...comment, ...patch } : comment,
+      commentIndex === index ? updateOrderComment(comment, patch, locale) : comment,
     );
     commentsRef.current = updated;
     onChange(updated);
@@ -275,7 +276,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
     if (index === commentsRef.current.length && draftRef.current) {
       const current = draftRef.current;
       if (!isOrderCommentComplete(current)) return;
-      setDraftState(createEmptyOrderComment());
+      setDraftState({ ...createEmptyOrderComment(), language: locale });
       const committed = [...commentsRef.current, current];
       commentsRef.current = committed;
       onChange(committed);
@@ -301,7 +302,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
       description: "",
     };
     if (isDraftIndex(index)) {
-      const next = { ...(draft ?? createEmptyOrderComment()), ...patch };
+      const next = updateOrderComment(draft ?? createEmptyOrderComment(), patch, locale);
       if (isOrderCommentComplete(next)) {
         commitDraft(next, "note");
         return;
@@ -366,7 +367,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
       return;
     }
 
-    setDraftState(createEmptyOrderComment());
+    setDraftState({ ...createEmptyOrderComment(), language: locale });
     const newIndex = comments.length;
     if (isMobileViewportNow()) {
       setEditing(null);
