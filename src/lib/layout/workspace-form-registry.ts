@@ -27,6 +27,8 @@ export type WorkspaceFormHostProps = {
   /** Preset/locked customer type when the form was opened with one (customers add). */
   customerType?: number;
   customerFormIntent?: "address" | "phone";
+  /** Focus an existing customer address instead of the name field. */
+  focusAddressIndex?: number;
   /** Invoice wizard step to open on when deep-linking from another workspace. */
   initialWizardStep?: number;
   /** Prefer focusing the line item that owns this barcode id/number. */

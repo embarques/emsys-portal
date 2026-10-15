@@ -9,6 +9,8 @@ import {
   floatingUtilityPanelBasePositionClassName,
   floatingUtilityPanelBodyClassName,
   floatingUtilityPanelClassName,
+  floatingUtilityPanelPairedHeightClassName,
+  floatingUtilityPanelSingleHeightClassName,
   floatingUtilityPanelStackedPositionClassName,
 } from "@/components/app-shell/floating-utility-panel-styles";
 import { Button } from "@/components/ui/button";
@@ -107,7 +109,12 @@ export function FloatingMemoPad() {
       aria-live="polite"
     >
       <div
-        className={floatingUtilityPanelClassName}
+        className={cn(
+          floatingUtilityPanelClassName,
+          calculatorOpen
+            ? floatingUtilityPanelPairedHeightClassName
+            : floatingUtilityPanelSingleHeightClassName,
+        )}
         role="dialog"
         aria-label={t("shell.memoPad.title")}
       >

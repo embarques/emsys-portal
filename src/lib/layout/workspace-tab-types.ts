@@ -24,6 +24,11 @@ export type WorkspaceTabForm = {
    */
   customerType?: number;
   customerFormIntent?: "address" | "phone";
+  /**
+   * Content-address index to focus when editing a customer (the same index
+   * appointment and invoice party selection uses). Does not add a new address.
+   */
+  focusAddressIndex?: number;
   /** Original mobile location; the customer form replaces its content temporarily. */
   mobileReturnHref?: string;
   /**

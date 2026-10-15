@@ -49,7 +49,7 @@ import {
   type ContainerFormValues,
 } from "@/lib/containers/types";
 import { useEnsureCustomerDetail } from "@/lib/customers/hooks/use-customers";
-import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, customerHasUnverifiedPrimaryAddress, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
+import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, coreAddressHasContent, customerHasUnverifiedPrimaryAddress, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
@@ -599,7 +599,7 @@ export function InvoiceForm({
     });
   }
 
-  function openEditCustomer(side: PartySide) {
+  function openEditCustomer(side: PartySide, addressIndex?: number) {
     const current = side === "sender" ? values.sender : values.receiver;
     if (!current?.id) return;
 
@@ -610,11 +610,18 @@ export function InvoiceForm({
       mode: "edit",
       entityId: current.id,
       customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+      ...(addressIndex != null && addressIndex >= 0 ? { focusAddressIndex: addressIndex } : {}),
       label:
         side === "receiver"
           ? t("invoices.form.partyActions.editReceiver")
           : t("invoices.form.partyActions.editSender"),
     });
+  }
+
+  function primaryAddressContentIndex(customer: Customer): number {
+    const content = customer.addresses.filter(coreAddressHasContent);
+    const primaryIndex = content.findIndex((address) => address.isPrimary);
+    return primaryIndex >= 0 ? primaryIndex : 0;
   }
 
   function openAddAddress(side: PartySide, customer: Customer) {
@@ -945,7 +952,9 @@ export function InvoiceForm({
             <CustomerContactSummary customer={values.sender} />
             <UnverifiedAddressNotice
               customer={values.sender}
-              onUpdateAddress={() => openEditCustomer("sender")}
+              onUpdateAddress={() =>
+                values.sender ? openEditCustomer("sender", primaryAddressContentIndex(values.sender)) : undefined
+              }
             />
           </>
         ) : null}
@@ -989,7 +998,11 @@ export function InvoiceForm({
             <CustomerContactSummary customer={values.receiver} />
             <UnverifiedAddressNotice
               customer={values.receiver}
-              onUpdateAddress={() => openEditCustomer("receiver")}
+              onUpdateAddress={() =>
+                values.receiver
+                  ? openEditCustomer("receiver", primaryAddressContentIndex(values.receiver))
+                  : undefined
+              }
             />
           </>
         ) : null}

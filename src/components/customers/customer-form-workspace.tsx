@@ -34,6 +34,7 @@ export function CustomerFormWorkspace({
   entityId,
   customerType,
   customerFormIntent,
+  focusAddressIndex,
   formNonce,
 }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
@@ -154,6 +155,7 @@ export function CustomerFormWorkspace({
         entryNonce={formNonce}
         startWithNewAddress={customerFormIntent === "address"}
         startWithNewPhone={customerFormIntent === "phone"}
+        focusAddressIndex={focusAddressIndex}
         isEditing={isEditing}
         lockCustomerType={hasPresetCustomerType}
         submitLabel={

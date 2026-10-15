@@ -122,6 +122,8 @@ export function useWorkspaceTabs() {
       /** Preset/locked customer type when opening the customers add form for a party. */
       customerType?: number;
       customerFormIntent?: "address" | "phone";
+      /** Focus this existing address when the customer edit form opens. */
+      focusAddressIndex?: number;
       /** Invoice wizard step to land on (e.g. 3 = line items). */
       initialWizardStep?: number;
       /** Focus the line item that owns this barcode id/number when editing an invoice. */
@@ -144,6 +146,7 @@ export function useWorkspaceTabs() {
             entityId: params.entityId,
             customerType: params.customerType,
             customerFormIntent: params.customerFormIntent,
+            focusAddressIndex: params.focusAddressIndex,
             mobileReturnHref,
           },
         }));
@@ -162,6 +165,7 @@ export function useWorkspaceTabs() {
       if (existing) {
         if (
           params.customerFormIntent != null ||
+          params.focusAddressIndex != null ||
           params.initialWizardStep != null ||
           params.focusBarcodeId != null
         ) {
@@ -171,6 +175,9 @@ export function useWorkspaceTabs() {
               form: {
                 ...(params.customerFormIntent != null
                   ? { customerFormIntent: params.customerFormIntent }
+                  : {}),
+                ...(params.focusAddressIndex != null
+                  ? { focusAddressIndex: params.focusAddressIndex }
                   : {}),
                 ...(params.initialWizardStep != null
                   ? { initialWizardStep: params.initialWizardStep }
@@ -203,6 +210,9 @@ export function useWorkspaceTabs() {
             entityId: params.entityId,
             returnToTabId,
             customerFormIntent: params.customerFormIntent,
+            ...(params.focusAddressIndex != null
+              ? { focusAddressIndex: params.focusAddressIndex }
+              : {}),
             ...(params.customerType != null ? { customerType: params.customerType } : {}),
             ...(params.initialWizardStep != null
               ? { initialWizardStep: params.initialWizardStep }

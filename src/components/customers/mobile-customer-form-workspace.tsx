@@ -50,6 +50,7 @@ export function MobileCustomerFormWorkspace({ children }: { children: React.Reac
           entityId={form.entityId}
           customerType={form.customerType}
           customerFormIntent={form.customerFormIntent}
+          focusAddressIndex={form.focusAddressIndex}
         />
       ) : null}
     </>

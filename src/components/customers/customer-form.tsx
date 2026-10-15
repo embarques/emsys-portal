@@ -40,6 +40,7 @@ import {
   applyCustomerTypeBranch,
   applyPlaceToCoreAddress,
   clearCoreAddressVerification,
+  coreAddressHasContent,
   coreAddressRequiresVerification,
   createEmptyCustomerCoreAddress,
   createEmptyCustomerForm,
@@ -92,6 +93,11 @@ type CustomerFormProps = {
   startWithNewPhone?: boolean;
   /** A new navigation request for an already-open customer form. */
   entryNonce?: number;
+  /**
+   * Index among addresses that have content. Focus that street field instead of
+   * the name when the form opens from "Update address".
+   */
+  focusAddressIndex?: number;
   onSubmit: (values: CustomerFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -125,19 +131,40 @@ function withTrailingEmptyPhone(values: CustomerFormValues): CustomerFormValues 
   };
 }
 
+function resolveExistingAddressFocusIndex(
+  addresses: CustomerCoreAddress[],
+  contentIndex: number | null | undefined,
+): number | null {
+  if (contentIndex == null || contentIndex < 0) return null;
+  const contentIndexes = addresses
+    .map((address, index) => (coreAddressHasContent(address) ? index : -1))
+    .filter((index) => index >= 0);
+  const formIndex = contentIndexes[contentIndex];
+  return formIndex == null ? null : formIndex;
+}
+
 function initializeCustomerFormState(
   initialValues: CustomerFormValues | undefined,
   startWithNewAddress: boolean,
   startWithNewPhone = false,
+  focusAddressIndex?: number,
 ) {
   const base = normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm());
   let values = startWithNewAddress ? withTrailingEmptyAddress(base) : base;
   values = startWithNewPhone ? withTrailingEmptyPhone(values) : values;
+  const existingAddressFocusIndex = startWithNewAddress
+    ? null
+    : resolveExistingAddressFocusIndex(values.addresses, focusAddressIndex);
 
   return {
     values,
-    showAddresses: startWithNewAddress || values.addresses.some(coreAddressRequiresVerification),
-    pendingAddressFocusIndex: startWithNewAddress ? values.addresses.length - 1 : null,
+    showAddresses:
+      startWithNewAddress ||
+      existingAddressFocusIndex != null ||
+      values.addresses.some(coreAddressRequiresVerification),
+    pendingAddressFocusIndex: startWithNewAddress
+      ? values.addresses.length - 1
+      : existingAddressFocusIndex,
     pendingPhoneFocusIndex: startWithNewPhone ? values.phones.length - 1 : null,
   };
 }
@@ -380,6 +407,7 @@ export function CustomerForm({
   startWithNewAddress = false,
   startWithNewPhone = false,
   entryNonce,
+  focusAddressIndex,
   onSubmit,
   onCancel,
 }: CustomerFormProps) {
@@ -388,6 +416,7 @@ export function CustomerForm({
     initialValues,
     startWithNewAddress,
     startWithNewPhone,
+    focusAddressIndex,
   );
   const [values, setValues] = useState<CustomerFormValues>(() => initialState.values);
   const [formError, setFormError] = useState<string | null>(null);
@@ -409,6 +438,7 @@ export function CustomerForm({
       initialValues,
       startWithNewAddress,
       startWithNewPhone,
+      focusAddressIndex,
     );
     setValues(next.values);
     setShowAddresses(next.showAddresses);
@@ -430,15 +460,27 @@ export function CustomerForm({
       const next = withTrailingEmptyPhone(values);
       setValues(next);
       setPendingPhoneFocusIndex(next.phones.length - 1);
+    } else if (focusAddressIndex != null) {
+      const formIndex = resolveExistingAddressFocusIndex(values.addresses, focusAddressIndex);
+      if (formIndex != null) {
+        setShowAddresses(true);
+        setPendingAddressFocusIndex(formIndex);
+      }
     }
-  }, [entryNonce, startWithNewAddress, startWithNewPhone, values]);
+  }, [entryNonce, focusAddressIndex, startWithNewAddress, startWithNewPhone, values]);
 
   useEffect(() => {
     if (pendingAddressFocusIndex == null || !showAddresses) return;
-    const input = document.getElementById(`address-${pendingAddressFocusIndex}-address1`);
-    if (!input) return;
-    input.focus();
-    setPendingAddressFocusIndex(null);
+    const index = pendingAddressFocusIndex;
+    // Run after the form's first-field focus so the street field wins.
+    const frame = window.requestAnimationFrame(() => {
+      const input = document.getElementById(`address-${index}-address1`);
+      if (!(input instanceof HTMLElement)) return;
+      input.focus();
+      input.scrollIntoView({ block: "nearest" });
+      setPendingAddressFocusIndex(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [pendingAddressFocusIndex, showAddresses, values.addresses.length]);
 
   useEffect(() => {

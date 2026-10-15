@@ -9,6 +9,8 @@ import {
   floatingUtilityPanelBasePositionClassName,
   floatingUtilityPanelBodyClassName,
   floatingUtilityPanelClassName,
+  floatingUtilityPanelPairedHeightClassName,
+  floatingUtilityPanelSingleHeightClassName,
   floatingUtilityPanelStackedPositionClassName,
 } from "@/components/app-shell/floating-utility-panel-styles";
 import { Button } from "@/components/ui/button";
@@ -224,7 +226,10 @@ export function FloatingCalculator() {
       aria-live="polite"
     >
       <div
-        className={floatingUtilityPanelClassName}
+        className={cn(
+          floatingUtilityPanelClassName,
+          memoOpen ? floatingUtilityPanelPairedHeightClassName : floatingUtilityPanelSingleHeightClassName,
+        )}
         role="dialog"
         aria-label={t("shell.calculator.title")}
       >
@@ -239,7 +244,7 @@ export function FloatingCalculator() {
         </div>
 
         <div className={cn(floatingUtilityPanelBodyClassName, "space-y-3")}>
-          <div className="rounded-xl border bg-background px-3 py-3 text-right">
+          <div className="shrink-0 rounded-xl border bg-background px-3 py-3 text-right">
             <p className="truncate font-mono text-3xl font-semibold tracking-tight">{state.display}</p>
             {state.pendingOperator ? (
               <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -248,57 +253,62 @@ export function FloatingCalculator() {
             ) : null}
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
-            <CalcButton variant="muted" onClick={() => press("clear")}>
+          <div
+            className={cn(
+              "grid grid-cols-4 gap-2",
+              memoOpen && "min-h-0 shrink grid-rows-[repeat(5,minmax(2rem,2.75rem))] content-start",
+            )}
+          >
+            <CalcButton variant="muted" paired={memoOpen} onClick={() => press("clear")}>
               AC
             </CalcButton>
-            <CalcButton variant="muted" onClick={() => press("toggleSign")}>
+            <CalcButton variant="muted" paired={memoOpen} onClick={() => press("toggleSign")}>
               +/−
             </CalcButton>
-            <CalcButton variant="muted" onClick={() => press("percent")}>
+            <CalcButton variant="muted" paired={memoOpen} onClick={() => press("percent")}>
               %
             </CalcButton>
-            <CalcButton variant="operator" onClick={() => press("operator", "/")}>
+            <CalcButton variant="operator" paired={memoOpen} onClick={() => press("operator", "/")}>
               ÷
             </CalcButton>
 
             {digitButtons.slice(0, 3).map((digit) => (
-              <CalcButton key={digit} onClick={() => press("digit", digit)}>
+              <CalcButton key={digit} paired={memoOpen} onClick={() => press("digit", digit)}>
                 {digit}
               </CalcButton>
             ))}
-            <CalcButton variant="operator" onClick={() => press("operator", "*")}>
+            <CalcButton variant="operator" paired={memoOpen} onClick={() => press("operator", "*")}>
               ×
             </CalcButton>
 
             {digitButtons.slice(3, 6).map((digit) => (
-              <CalcButton key={digit} onClick={() => press("digit", digit)}>
+              <CalcButton key={digit} paired={memoOpen} onClick={() => press("digit", digit)}>
                 {digit}
               </CalcButton>
             ))}
-            <CalcButton variant="operator" onClick={() => press("operator", "-")}>
+            <CalcButton variant="operator" paired={memoOpen} onClick={() => press("operator", "-")}>
               −
             </CalcButton>
 
             {digitButtons.slice(6, 9).map((digit) => (
-              <CalcButton key={digit} onClick={() => press("digit", digit)}>
+              <CalcButton key={digit} paired={memoOpen} onClick={() => press("digit", digit)}>
                 {digit}
               </CalcButton>
             ))}
-            <CalcButton variant="operator" onClick={() => press("operator", "+")}>
+            <CalcButton variant="operator" paired={memoOpen} onClick={() => press("operator", "+")}>
               +
             </CalcButton>
 
-            <CalcButton className="col-span-2" onClick={() => press("digit", "0")}>
+            <CalcButton className="col-span-2" paired={memoOpen} onClick={() => press("digit", "0")}>
               0
             </CalcButton>
-            <CalcButton onClick={() => press("digit", ".")}>.</CalcButton>
-            <CalcButton variant="equals" onClick={() => press("equals")}>
+            <CalcButton paired={memoOpen} onClick={() => press("digit", ".")}>.</CalcButton>
+            <CalcButton variant="equals" paired={memoOpen} onClick={() => press("equals")}>
               =
             </CalcButton>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex shrink-0 justify-end">
             <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={() => press("backspace")}>
               <Delete className="h-3.5 w-3.5" />
               {t("shell.calculator.backspace")}
@@ -314,11 +324,13 @@ function CalcButton({
   children,
   className,
   variant = "default",
+  paired = false,
   onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   variant?: "default" | "operator" | "equals" | "muted";
+  paired?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -326,7 +338,8 @@ function CalcButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-11 items-center justify-center rounded-xl text-base font-medium transition-colors",
+        "flex items-center justify-center rounded-xl text-base font-medium transition-colors",
+        paired ? "h-full min-h-8" : "h-11",
         variant === "default" && "bg-muted/60 hover:bg-muted",
         variant === "muted" && "bg-muted text-muted-foreground hover:bg-muted/80",
         variant === "operator" && "bg-primary/10 text-primary hover:bg-primary/15",

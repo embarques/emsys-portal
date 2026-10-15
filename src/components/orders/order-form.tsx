@@ -217,7 +217,7 @@ export function OrderForm({
     });
   }
 
-  function openEditCustomer(side: PartySide) {
+  function openEditCustomer(side: PartySide, addressIndex?: number) {
     const current = side === "sender" ? values.sender : values.receiver;
     if (!current?.id) return;
 
@@ -228,6 +228,7 @@ export function OrderForm({
       mode: "edit",
       entityId: current.id,
       customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+      ...(addressIndex != null && addressIndex >= 0 ? { focusAddressIndex: addressIndex } : {}),
       label:
         side === "receiver"
           ? t("orders.form.partyActions.editReceiver")
@@ -434,7 +435,7 @@ export function OrderForm({
                   <UnverifiedAddressNotice
                     customer={values.sender}
                     addressIndex={values.senderAddressIndex}
-                    onUpdateAddress={() => openEditCustomer("sender")}
+                    onUpdateAddress={() => openEditCustomer("sender", values.senderAddressIndex)}
                   />
                 </>
               ) : null}
@@ -474,7 +475,7 @@ export function OrderForm({
                   <UnverifiedAddressNotice
                     customer={values.receiver}
                     addressIndex={values.receiverAddressIndex}
-                    onUpdateAddress={() => openEditCustomer("receiver")}
+                    onUpdateAddress={() => openEditCustomer("receiver", values.receiverAddressIndex)}
                   />
                 </>
               ) : null}
