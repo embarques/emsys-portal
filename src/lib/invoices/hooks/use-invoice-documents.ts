@@ -7,6 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 import { useAppSelector } from "@/lib/store/hooks";
 import {
   deleteInvoiceDocument,
@@ -22,6 +23,7 @@ import {
 } from "@/lib/invoices/documents";
 
 export function useInvoiceDocuments(invoiceId: string) {
+  const tabActive = useWorkspaceTabQueriesEnabled();
   const companyId = useAppSelector((state) => state.auth.companyId);
   const client = useQueryClient();
   const key = ["invoice-documents", companyId, invoiceId];
@@ -30,7 +32,7 @@ export function useInvoiceDocuments(invoiceId: string) {
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => fetchInvoiceDocuments(invoiceId, pageParam),
     getNextPageParam: (page) => page.nextCursor || undefined,
-    enabled: Boolean(invoiceId && companyId),
+    enabled: tabActive && Boolean(invoiceId && companyId),
   });
   const invalidate = () => client.invalidateQueries({ queryKey: key });
   const rename = useMutation({
@@ -126,6 +128,7 @@ export function useInvoiceDocumentLink(
   invoiceId: string,
   document: InvoiceDocument | null,
 ) {
+  const tabActive = useWorkspaceTabQueriesEnabled();
   const companyId = useAppSelector((state) => state.auth.companyId);
   return useQuery({
     queryKey: [
@@ -136,9 +139,9 @@ export function useInvoiceDocumentLink(
       document?.version,
     ],
     queryFn: () => fetchInvoiceDocumentLink(invoiceId, document!.id),
-    enabled: Boolean(document && !document.deleting),
+    enabled: tabActive && Boolean(document && !document.deleting),
     staleTime: 180_000,
-    refetchInterval: document ? 240_000 : false,
+    refetchInterval: tabActive && document ? 240_000 : false,
     gcTime: 0,
   });
 }

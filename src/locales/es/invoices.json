@@ -685,6 +685,9 @@
     "changeError": "No se pudo modificar el documento. Actualice e inténtelo de nuevo; otro usuario puede haberlo modificado.",
     "deleteWarning": "¿Eliminar permanentemente {name}? Esta acción no se puede deshacer.",
     "renameHint": "Escriba un nombre y conserve la extensión original.",
-    "invalidName": "Escriba un nombre válido de hasta 200 caracteres, sin barras."
+    "invalidName": "Escriba un nombre válido de hasta 200 caracteres, sin barras.",
+    "tabTitle": "Documentos — Factura {invoice}",
+    "backToInvoices": "Volver a facturas",
+    "accessDenied": "No tiene permiso para ver los documentos de la factura."
   }
 }

@@ -19,6 +19,9 @@ before(async () => {
     resolve: {
       extensions: [".tsx", ".ts", ".js"],
       alias: {
+        "@/lib/layout/hooks/use-workspace-tabs": path.resolve(
+          "tests/browser/fixtures/documents-navigation.ts",
+        ),
         "@/lib/i18n": path.resolve("tests/browser/fixtures/documents-i18n.ts"),
         "@/lib/auth/hooks/use-auth": path.resolve(
           "tests/browser/fixtures/documents-auth.ts",
@@ -68,7 +71,7 @@ after(async () => {
   if (directory) await rm(directory, { recursive: true, force: true });
 });
 
-async function fixture(width = 1440, readOnly = false) {
+async function fixture(width = 1440, readOnly = false, multipleDocs = false) {
   const page = await browser.newPage({ viewport: { width, height: 950 } });
   page.on("pageerror", (error) => console.error("UI error:", error.message));
   await page.setContent(
@@ -79,6 +82,13 @@ async function fixture(width = 1440, readOnly = false) {
     window.process = { env: { NODE_ENV: "development" } };
   }, readOnly);
   await page.addStyleTag({ content: css });
+  await page.evaluate(
+    ({ mobile, multipleDocs }) => {
+      window.mobileDocs = mobile;
+      window.multipleDocs = multipleDocs;
+    },
+    { mobile: width < 768, multipleDocs },
+  );
   await page.addScriptTag({ content: script });
   await page
     .getByRole("button", { name: "signed-invoice.pdf", exact: true })
@@ -211,5 +221,39 @@ test("mobile layout contains overflow and read-only users cannot mutate document
     });
   } finally {
     await page.close();
+  }
+});
+
+test("Documents shortcut opens an invoice-number tab and is disabled for multiple selection", async () => {
+  const page = await fixture();
+  try {
+    const button = page.getByRole("button", { name: "Documents", exact: true });
+    await button.click();
+    const tabs = await page.evaluate(() => window.documentTabs);
+    assert.equal(tabs[0].feature, "invoice-documents");
+    assert.equal(tabs[0].entityId, "invoice");
+    assert.equal(tabs[0].label, "INV-456");
+  } finally {
+    await page.close();
+  }
+  const multiple = await fixture(1440, false, true);
+  try {
+    assert.equal(
+      await multiple
+        .getByRole("button", { name: "Documents", exact: true })
+        .isDisabled(),
+      true,
+    );
+  } finally {
+    await multiple.close();
+  }
+  const mobile = await fixture(390);
+  try {
+    await mobile
+      .getByRole("button", { name: "Documents", exact: true })
+      .click();
+    assert.equal(await mobile.evaluate(() => window.openedMobile), true);
+  } finally {
+    await mobile.close();
   }
 });

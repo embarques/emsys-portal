@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { Pencil, X } from "lucide-react";
+import { FileText, Pencil, X } from "lucide-react";
 
 import { WorkspaceTabColorMenu } from "@/components/app-shell/workspace-tab-color-menu";
 import {
@@ -65,6 +65,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
   const accentColor = resolveWorkspaceTabAccentColor(tab, sectionColorOverrides);
   const tabSection = resolveWorkspaceTabSection(tab);
   const topAccentStyle = getWorkspaceTabTopAccentStyle(accentColor, active);
+  const isDocuments = tab.form?.feature === "invoice-documents";
   const showEditIcon = tab.form?.mode === "edit";
 
   return (
@@ -92,9 +93,11 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
             type="button"
             className="flex min-w-0 flex-1 items-center truncate text-left"
             onClick={() => onActivate(tab.id)}
-            title={`${tab.number} · ${displayLabel}`}
+            title={isDocuments ? t("invoices.documents.tabTitle", { invoice: displayLabel }) : `${tab.number} · ${displayLabel}`}
           >
-            {showEditIcon ? (
+            {isDocuments ? (
+              <FileText className={cn("mr-1.5 size-3.5 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden />
+            ) : showEditIcon ? (
               <Pencil
                 className={cn(
                   "mr-1.5 size-3.5 shrink-0",

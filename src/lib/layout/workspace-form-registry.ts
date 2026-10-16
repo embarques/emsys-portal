@@ -5,6 +5,7 @@ import { BranchFormWorkspace } from "@/components/branches/branch-form-workspace
 import { ContainerFormWorkspace } from "@/components/containers/container-form-workspace";
 import { CustomerFormWorkspace } from "@/components/customers/customer-form-workspace";
 import { EmployeeFormWorkspace } from "@/components/employees/employee-form-workspace";
+import { InvoiceDocumentsWorkspace } from "@/components/invoices/invoice-documents-workspace";
 import { InvoiceFormWorkspace } from "@/components/invoices/invoice-form-workspace";
 import { InvoiceItemStagingFormWorkspace } from "@/components/invoices/invoice-item-staging-form-workspace";
 import { ItemFormWorkspace } from "@/components/items/item-form-workspace";
@@ -43,6 +44,7 @@ export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHo
   customers: CustomerFormWorkspace,
   orders: OrderFormWorkspace,
   invoices: InvoiceFormWorkspace,
+  "invoice-documents": InvoiceDocumentsWorkspace,
   "invoice-item-staging": InvoiceItemStagingFormWorkspace,
   items: ItemFormWorkspace,
   containers: ContainerFormWorkspace,

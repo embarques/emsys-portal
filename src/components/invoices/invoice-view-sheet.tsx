@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 
 type InvoiceViewSheetProps = {
   invoice: Invoice | null;
+  initialTab?: "overview" | "documents";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (invoice: Invoice) => void;
@@ -338,6 +339,7 @@ function formatPickupAssignmentDisplay(
 
 export function InvoiceViewSheet({
   invoice,
+  initialTab = "overview",
   open,
   onOpenChange,
   onEdit,
@@ -345,7 +347,7 @@ export function InvoiceViewSheet({
   onAddComment,
 }: InvoiceViewSheetProps) {
   const { t, locale } = useTranslation();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const totals = useMemo(() => {
     if (!invoice) return null;
     const subtotal = getInvoiceSubtotal(invoice);

@@ -88,6 +88,7 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   routes: "pickups",
   invoices: "invoices",
   "invoice-item-staging": "invoices",
+  "invoice-documents": "invoices",
   items: "invoices",
   containers: "invoices",
   "delivery-routes": "pickups",

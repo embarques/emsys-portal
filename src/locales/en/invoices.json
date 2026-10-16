@@ -685,6 +685,9 @@
     "changeError": "The document could not be changed. Refresh and try again; another user may have changed it.",
     "deleteWarning": "Permanently delete {name}? This cannot be undone.",
     "renameHint": "Enter a filename and keep its original extension.",
-    "invalidName": "Enter a valid filename, up to 200 characters, without slashes."
+    "invalidName": "Enter a valid filename, up to 200 characters, without slashes.",
+    "tabTitle": "Documents — Invoice {invoice}",
+    "backToInvoices": "Back to invoices",
+    "accessDenied": "You do not have permission to view invoice documents."
   }
 }
