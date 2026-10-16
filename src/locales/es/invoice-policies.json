@@ -1,0 +1,24 @@
+{
+  "title": "Políticas de factura",
+  "entity": "Política de factura",
+  "description": "Administra el texto de políticas que el cliente acepta y firma al crear una factura.",
+  "add": "Agregar política",
+  "edit": "Editar política",
+  "active": "Activa",
+  "inactive": "Inactiva",
+  "empty": "No se encontraron políticas de factura.",
+  "tableHint": "Las políticas activas aparecen en el asistente de creación de facturas para acuerdo y firma del cliente.",
+  "confirmDelete": "¿Eliminar la política {{name}}?",
+  "retry": "Reintentar",
+  "fields": {
+    "title": "Título",
+    "body": "Texto de la política",
+    "sortOrder": "Orden",
+    "active": "Activa"
+  },
+  "form": {
+    "details": "01 · Datos de la política",
+    "hint": "Escribe un lenguaje claro. Solo las políticas activas se muestran al crear una factura.",
+    "activeHint": "Las políticas inactivas permanecen en el catálogo pero se ocultan del asistente de creación."
+  }
+}

@@ -108,6 +108,7 @@
       "totals": "Totals",
       "navigationHint": "Complete this step, then choose Next. You can return to completed steps to make changes.",
       "paymentHint": "Review Daily Income and payment details before continuing.",
+      "policiesHint": "Review the company policies, confirm agreement, and capture the customer signature before continuing.",
       "reviewHint": "Check the customers, merchandise, labels, and totals before saving."
     },
     "fields": {
@@ -217,6 +218,7 @@
       "parties": "Parties",
       "lineItems": "Line items",
       "payment": "Payment",
+      "policies": "Policies",
       "preview": "Preview"
     },
     "stepTitles": {
@@ -224,7 +226,16 @@
       "selectParties": "Select sender & receiver",
       "addLineItems": "Add line items",
       "paymentInfo": "Payment information",
+      "reviewPolicies": "Review policies & sign",
       "reviewAndSave": "Review & save invoice"
+    },
+    "policies": {
+      "title": "Company policies",
+      "description": "Read each policy, confirm agreement, and sign before continuing.",
+      "agreeLabel": "I have read and agree to the policies listed above.",
+      "signatureLabel": "Customer signature",
+      "signatureHint": "Sign with a mouse or finger. Clear and retry if needed.",
+      "clearSignature": "Clear signature"
     },
     "actions": {
       "back": "Back",
@@ -246,7 +257,9 @@
       "dailyIncomeContinueRequired": "Open a Cuadre, then record a payment or check Skip payment before continuing.",
       "dailyIncomeSaveRequired": "Open a Cuadre, then record a payment or check Skip payment before saving.",
       "negativeBalance": "Balance cannot be negative. Reduce the payment or discount so it does not exceed the invoice total.",
-      "registeredCostMismatch": "Line items total must match the registered Daily Income cost before saving."
+      "registeredCostMismatch": "Line items total must match the registered Daily Income cost before saving.",
+      "policiesAgreeRequired": "Confirm that you agree to the invoice policies before continuing.",
+      "policiesSignatureRequired": "A customer signature is required before continuing."
     },
     "summary": {
       "title": "Invoice summary",

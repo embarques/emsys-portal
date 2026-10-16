@@ -7,6 +7,7 @@ import {
   resolveLineTotal,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
+import type { InvoiceWizardStep } from "@/components/invoices/invoice-wizard-stepper";
 
 export const INVOICE_WIZARD_FIELDS = {
   date: "date",
@@ -19,15 +20,22 @@ export const INVOICE_WIZARD_FIELDS = {
   lineItems: "lineItems",
   dailyIncome: "daily-income",
   discount: "invoice-wizard-discount",
+  policiesAgree: "invoice-policies-agree",
+  policiesSignature: "invoice-signature-pad",
 } as const;
 
 export type InvoiceWizardIssue = {
-  step: 1 | 2 | 3 | 4 | 5;
+  step: InvoiceWizardStep;
   fieldId: string;
   message: string;
 };
 
 type Translate = (key: string) => string;
+
+export type InvoicePoliciesAgreementInput = {
+  agreed: boolean;
+  signatureDataUrl: string | null;
+};
 
 export function findInvoiceWizardStep1Issue(
   values: InvoiceFormValues,
@@ -121,17 +129,18 @@ export function findInvoiceWizardPaymentIssue(
   t: Translate,
   purpose: "continue" | "save",
   values?: Pick<InvoiceFormValues, "paymentLocation">,
+  paymentStep: InvoiceWizardStep = 4,
 ): InvoiceWizardIssue | null {
   if (values && !values.paymentLocation) {
     return {
-      step: 4,
+      step: paymentStep,
       fieldId: INVOICE_WIZARD_FIELDS.paymentLocation,
       message: t("invoices.wizard.validation.paymentLocationRequired"),
     };
   }
   if (canContinueInvoiceDailyIncomeStep(context)) return null;
   return {
-    step: 4,
+    step: paymentStep,
     fieldId: INVOICE_WIZARD_FIELDS.dailyIncome,
     message:
       purpose === "save"
@@ -140,14 +149,50 @@ export function findInvoiceWizardPaymentIssue(
   };
 }
 
+export function findInvoiceWizardPoliciesIssue(
+  agreement: InvoicePoliciesAgreementInput,
+  t: Translate,
+  policiesStep: InvoiceWizardStep,
+): InvoiceWizardIssue | null {
+  if (!agreement.agreed) {
+    return {
+      step: policiesStep,
+      fieldId: INVOICE_WIZARD_FIELDS.policiesAgree,
+      message: t("invoices.wizard.validation.policiesAgreeRequired"),
+    };
+  }
+  if (!agreement.signatureDataUrl) {
+    return {
+      step: policiesStep,
+      fieldId: INVOICE_WIZARD_FIELDS.policiesSignature,
+      message: t("invoices.wizard.validation.policiesSignatureRequired"),
+    };
+  }
+  return null;
+}
+
 export function findInvoiceWizardSaveIssue(options: {
   values: InvoiceFormValues;
   dailyIncome: InvoiceDailyIncomeContext;
   requireDailyIncome: boolean;
-  previewStep: 4 | 5;
+  requirePolicySignature: boolean;
+  policiesAgreement: InvoicePoliciesAgreementInput;
+  paymentStep: InvoiceWizardStep | null;
+  policiesStep: InvoiceWizardStep | null;
+  previewStep: InvoiceWizardStep;
   t: Translate;
 }): InvoiceWizardIssue | null {
-  const { values, dailyIncome, requireDailyIncome, previewStep, t } = options;
+  const {
+    values,
+    dailyIncome,
+    requireDailyIncome,
+    requirePolicySignature,
+    policiesAgreement,
+    paymentStep,
+    policiesStep,
+    previewStep,
+    t,
+  } = options;
   const amountPaid = Number(dailyIncome.registration?.amount ?? values.amountPaid ?? 0) || 0;
   const registeredCost = dailyIncome.registration?.invoice?.cost;
   const hasRegisteredCost = registeredCost != null && Number.isFinite(registeredCost);
@@ -159,7 +204,12 @@ export function findInvoiceWizardSaveIssue(options: {
     findInvoiceWizardStep1Issue(values, t, { includePaymentLocation: !requireDailyIncome }) ??
     findInvoiceWizardStep2Issue(values, t) ??
     findInvoiceWizardStep3Issue(values, t) ??
-    (requireDailyIncome ? findInvoiceWizardPaymentIssue(dailyIncome, t, "save", values) : null) ??
+    (requireDailyIncome && paymentStep != null
+      ? findInvoiceWizardPaymentIssue(dailyIncome, t, "save", values, paymentStep)
+      : null) ??
+    (requirePolicySignature && policiesStep != null
+      ? findInvoiceWizardPoliciesIssue(policiesAgreement, t, policiesStep)
+      : null) ??
     (registeredCostMismatch
       ? {
           step: 3,

@@ -55,6 +55,7 @@
     "barcodeStatuses": "Estados de códigos de barras",
     "settings": "Configuración",
     "employeeDepartments": "Departamentos de empleados",
-    "employeeTitles": "Cargos de empleados"
+    "employeeTitles": "Cargos de empleados",
+    "invoicePolicies": "Políticas de factura"
   }
 }

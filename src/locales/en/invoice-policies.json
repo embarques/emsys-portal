@@ -1,0 +1,24 @@
+{
+  "title": "Invoice policies",
+  "entity": "Invoice policy",
+  "description": "Manage the policy text customers agree to and sign when creating an invoice.",
+  "add": "Add policy",
+  "edit": "Edit policy",
+  "active": "Active",
+  "inactive": "Inactive",
+  "empty": "No invoice policies found.",
+  "tableHint": "Active policies appear in the invoice create wizard for customer agreement and signature.",
+  "confirmDelete": "Delete policy {{name}}?",
+  "retry": "Retry",
+  "fields": {
+    "title": "Title",
+    "body": "Policy text",
+    "sortOrder": "Sort order",
+    "active": "Active"
+  },
+  "form": {
+    "details": "01 · Policy details",
+    "hint": "Write clear policy language. Only active policies are shown during invoice creation.",
+    "activeHint": "Inactive policies stay in the catalog but are hidden from the create wizard."
+  }
+}

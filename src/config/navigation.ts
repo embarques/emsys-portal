@@ -301,6 +301,12 @@ export const navigationSections: NavigationSection[] = [
             icon: Settings,
             permission: PERMISSIONS.accountSettingsView,
           },
+          {
+            labelKey: "navigation.items.invoicePolicies",
+            href: "/invoice-policies",
+            icon: ScrollText,
+            permission: PERMISSIONS.invoicePoliciesList,
+          },
         ],
       },
       {

@@ -55,6 +55,7 @@
     "barcodeStatuses": "Barcode Statuses",
     "settings": "Settings",
     "employeeDepartments": "Employee departments",
-    "employeeTitles": "Employee titles"
+    "employeeTitles": "Employee titles",
+    "invoicePolicies": "Invoice policies"
   }
 }

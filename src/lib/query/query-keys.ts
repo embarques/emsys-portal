@@ -33,6 +33,12 @@ export const queryKeys = {
     list: () => ["employee-departments", "list"] as const,
     detail: (id: number) => ["employee-departments", "detail", id] as const,
   },
+  invoicePolicies: {
+    all: ["invoice-policies"] as const,
+    list: () => ["invoice-policies", "list"] as const,
+    active: () => ["invoice-policies", "active"] as const,
+    detail: (id: number) => ["invoice-policies", "detail", id] as const,
+  },
   api: {
     health: () => ["api", "health"] as const,
   },

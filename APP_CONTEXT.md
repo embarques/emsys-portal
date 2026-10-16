@@ -377,6 +377,14 @@ This includes:
 - Company configuration
 - Other administrative controls
 
+#### Invoice policies
+
+Portal route: `/invoice-policies` (Admin sidebar). Tenant catalog of policy titles and body text with sort order and active flag.
+
+Active invoice policies are shown during **invoice creation** (after payment / Cuadre, before preview). The customer must agree and sign (mouse or touch). The portal builds a signed agreement document (policies list + signature PNG) and uploads it as an invoice document after save. Edit invoice flows skip the policies step.
+
+Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
+
 #### User Activity (Users)
 
 Replaces the legacy screen at `tenares.embarqueros.com` → `#menu/useractivities`.

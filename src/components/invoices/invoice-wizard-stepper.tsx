@@ -5,38 +5,107 @@ import { Check } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-export const INVOICE_WIZARD_STEP_ORDER = [1, 2, 3, 4, 5] as const;
+export const INVOICE_WIZARD_STEP_ORDER = [1, 2, 3, 4, 5, 6] as const;
 
 export type InvoiceWizardStep = (typeof INVOICE_WIZARD_STEP_ORDER)[number];
 export type InvoiceWizardFormStep = 1 | 2 | 3;
 
-const STEP_LABEL_KEYS: Record<InvoiceWizardStep, string> = {
-  1: "invoices.wizard.steps.details",
-  2: "invoices.wizard.steps.parties",
-  3: "invoices.wizard.steps.lineItems",
-  4: "invoices.wizard.steps.payment",
-  5: "invoices.wizard.steps.preview",
+export type InvoiceWizardStepKind =
+  | "details"
+  | "parties"
+  | "lineItems"
+  | "payment"
+  | "policies"
+  | "preview";
+
+export type InvoiceWizardLayoutStep = {
+  id: InvoiceWizardStep;
+  kind: InvoiceWizardStepKind;
 };
 
-const STEP_TITLE_KEYS: Record<InvoiceWizardStep, string> = {
-  1: "invoices.wizard.stepTitles.enterDetails",
-  2: "invoices.wizard.stepTitles.selectParties",
-  3: "invoices.wizard.stepTitles.addLineItems",
-  4: "invoices.wizard.stepTitles.paymentInfo",
-  5: "invoices.wizard.stepTitles.reviewAndSave",
+export type InvoiceWizardLayout = {
+  steps: InvoiceWizardLayoutStep[];
+  previewStep: InvoiceWizardStep;
+  paymentStep: InvoiceWizardStep | null;
+  policiesStep: InvoiceWizardStep | null;
+  includePaymentStep: boolean;
+  includePoliciesStep: boolean;
 };
 
-export function getInvoiceWizardStepLabelKey(step: InvoiceWizardStep): string {
-  return STEP_LABEL_KEYS[step];
+const STEP_LABEL_KEYS: Record<InvoiceWizardStepKind, string> = {
+  details: "invoices.wizard.steps.details",
+  parties: "invoices.wizard.steps.parties",
+  lineItems: "invoices.wizard.steps.lineItems",
+  payment: "invoices.wizard.steps.payment",
+  policies: "invoices.wizard.steps.policies",
+  preview: "invoices.wizard.steps.preview",
+};
+
+const STEP_TITLE_KEYS: Record<InvoiceWizardStepKind, string> = {
+  details: "invoices.wizard.stepTitles.enterDetails",
+  parties: "invoices.wizard.stepTitles.selectParties",
+  lineItems: "invoices.wizard.stepTitles.addLineItems",
+  payment: "invoices.wizard.stepTitles.paymentInfo",
+  policies: "invoices.wizard.stepTitles.reviewPolicies",
+  preview: "invoices.wizard.stepTitles.reviewAndSave",
+};
+
+export function resolveInvoiceWizardLayout(options: {
+  requireDailyIncomeRegistration: boolean;
+  requirePolicySignature: boolean;
+}): InvoiceWizardLayout {
+  const steps: InvoiceWizardLayoutStep[] = [
+    { id: 1, kind: "details" },
+    { id: 2, kind: "parties" },
+    { id: 3, kind: "lineItems" },
+  ];
+
+  let paymentStep: InvoiceWizardStep | null = null;
+  let policiesStep: InvoiceWizardStep | null = null;
+
+  if (options.requireDailyIncomeRegistration) {
+    const id = (steps.length + 1) as InvoiceWizardStep;
+    paymentStep = id;
+    steps.push({ id, kind: "payment" });
+  }
+
+  if (options.requirePolicySignature) {
+    const id = (steps.length + 1) as InvoiceWizardStep;
+    policiesStep = id;
+    steps.push({ id, kind: "policies" });
+  }
+
+  const previewStep = (steps.length + 1) as InvoiceWizardStep;
+  steps.push({ id: previewStep, kind: "preview" });
+
+  return {
+    steps,
+    previewStep,
+    paymentStep,
+    policiesStep,
+    includePaymentStep: paymentStep != null,
+    includePoliciesStep: policiesStep != null,
+  };
 }
 
-export function getInvoiceWizardStepTitleKey(step: InvoiceWizardStep): string {
-  return STEP_TITLE_KEYS[step];
+export function getInvoiceWizardStepKind(
+  layout: InvoiceWizardLayout,
+  step: InvoiceWizardStep,
+): InvoiceWizardStepKind {
+  return layout.steps.find((entry) => entry.id === step)?.kind ?? "details";
+}
+
+export function getInvoiceWizardStepLabelKey(kind: InvoiceWizardStepKind): string {
+  return STEP_LABEL_KEYS[kind];
+}
+
+export function getInvoiceWizardStepTitleKey(kind: InvoiceWizardStepKind): string {
+  return STEP_TITLE_KEYS[kind];
 }
 
 type Props = {
   step: InvoiceWizardStep;
-  includePaymentStep?: boolean;
+  layout: InvoiceWizardLayout;
   onSelectStep?: (step: InvoiceWizardStep) => void;
 };
 
@@ -73,25 +142,26 @@ function StepCircle({
 
 export function InvoiceWizardStepper({
   step,
-  includePaymentStep = true,
+  layout,
   onSelectStep,
 }: Props) {
   const { t } = useTranslation();
-
-  const steps = includePaymentStep
-    ? INVOICE_WIZARD_STEP_ORDER.map((id) => ({ id, labelKey: STEP_LABEL_KEYS[id] }))
-    : [
-        { id: 1 as const, labelKey: STEP_LABEL_KEYS[1] },
-        { id: 2 as const, labelKey: STEP_LABEL_KEYS[2] },
-        { id: 3 as const, labelKey: STEP_LABEL_KEYS[3] },
-        { id: 4 as const, labelKey: "invoices.wizard.steps.preview" },
-      ];
+  const steps = layout.steps.map((entry) => ({
+    id: entry.id,
+    labelKey: STEP_LABEL_KEYS[entry.kind],
+  }));
   const currentStepIndex = Math.max(
     steps.findIndex((entry) => entry.id === step),
     0,
   );
-  const currentStepLabel = t(steps[currentStepIndex]?.labelKey ?? STEP_LABEL_KEYS[step]);
+  const currentStepLabel = t(steps[currentStepIndex]?.labelKey ?? STEP_LABEL_KEYS.details);
   const progressValue = ((currentStepIndex + 1) / steps.length) * 100;
+  const gridColsClass =
+    steps.length <= 4
+      ? "grid-cols-4"
+      : steps.length === 5
+        ? "grid-cols-5"
+        : "grid-cols-6";
 
   return (
     <nav
@@ -114,7 +184,7 @@ export function InvoiceWizardStepper({
         </div>
       </div>
 
-      <div className="relative mx-auto hidden max-w-3xl md:block">
+      <div className="relative mx-auto hidden max-w-4xl md:block">
         <div
           className="absolute top-[1.125rem] h-0.5 bg-border"
           style={{ left: `${50 / steps.length}%`, right: `${50 / steps.length}%` }}
@@ -124,12 +194,12 @@ export function InvoiceWizardStepper({
           className="absolute top-[1.125rem] h-0.5 bg-primary transition-[width]"
           style={{
             left: `${50 / steps.length}%`,
-            width: `${((step - 1) / (steps.length - 1)) * (100 - 100 / steps.length)}%`,
+            width: `${((currentStepIndex) / Math.max(steps.length - 1, 1)) * (100 - 100 / steps.length)}%`,
           }}
           aria-hidden
         />
 
-        <ol className={cn("relative grid gap-2", includePaymentStep ? "grid-cols-5" : "grid-cols-4")}>
+        <ol className={cn("relative grid gap-2", gridColsClass)}>
           {steps.map((entry) => {
             const status = stepStatus(entry.id, step);
             const label = t(entry.labelKey);
