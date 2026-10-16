@@ -84,6 +84,171 @@
       "updated": "Cuenta actualizada."
     }
   },
+  "clearablePayments": {
+    "nav": {
+      "outstandingAlert": "{{count}} pago pendiente",
+      "outstandingAlert_plural": "{{count}} pagos pendientes"
+    }
+  },
+  "zellePayments": {
+    "title": "Zelle",
+    "description": "Controle los pagos de facturas hechos con Zelle. Los pagos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "noun": "pagos Zelle",
+    "searchPlaceholder": "Buscar pagos Zelle…",
+    "empty": "Ningún pago Zelle coincide con su búsqueda.",
+    "emptyNone": "Aún no hay pagos Zelle.",
+    "columns": {
+      "status": "Estado",
+      "invoiceNumber": "Factura #",
+      "paymentReference": "Referencia Zelle",
+      "paymentAmount": "Monto",
+      "datePosted": "Fecha de registro",
+      "referenceNumber": "Ref. interna #",
+      "createdAt": "Creado el",
+      "createdBy": "Creado por"
+    },
+    "status": {
+      "outstanding": "Pendiente",
+      "cleared": "Cobrado"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} pago Zelle pendiente",
+      "outstandingAlert_plural": "{{count}} pagos Zelle pendientes"
+    },
+    "actions": {
+      "markCleared": "Marcar cobrado"
+    },
+    "form": {
+      "sections": {
+        "details": "Detalles del pago",
+        "clearance": "Cobro"
+      },
+      "fields": {
+        "invoice": "Factura",
+        "paymentReference": "Referencia Zelle",
+        "paymentAmount": "Monto",
+        "datePosted": "Fecha de registro",
+        "referenceNumber": "Número de referencia interna",
+        "createdBy": "Creado por",
+        "clearedAt": "Cobrado el"
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Auditoría"
+      }
+    },
+    "toasts": {
+      "markedCleared": "{{count}} pago Zelle marcado como cobrado.",
+      "markedCleared_plural": "{{count}} pagos Zelle marcados como cobrados."
+    }
+  },
+  "deposits": {
+    "title": "Depósitos",
+    "description": "Controle los pagos de facturas hechos por depósito bancario. Los depósitos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "noun": "depósitos",
+    "searchPlaceholder": "Buscar depósitos…",
+    "empty": "Ningún depósito coincide con su búsqueda.",
+    "emptyNone": "Aún no hay depósitos.",
+    "columns": {
+      "status": "Estado",
+      "invoiceNumber": "Factura #",
+      "paymentReference": "Referencia de depósito",
+      "paymentAmount": "Monto",
+      "datePosted": "Fecha de registro",
+      "referenceNumber": "Ref. interna #",
+      "createdAt": "Creado el",
+      "createdBy": "Creado por"
+    },
+    "status": {
+      "outstanding": "Pendiente",
+      "cleared": "Cobrado"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} depósito pendiente",
+      "outstandingAlert_plural": "{{count}} depósitos pendientes"
+    },
+    "actions": {
+      "markCleared": "Marcar cobrado"
+    },
+    "form": {
+      "sections": {
+        "details": "Detalles del depósito",
+        "clearance": "Cobro"
+      },
+      "fields": {
+        "invoice": "Factura",
+        "paymentReference": "Referencia de depósito",
+        "paymentAmount": "Monto",
+        "datePosted": "Fecha de registro",
+        "referenceNumber": "Número de referencia interna",
+        "createdBy": "Creado por",
+        "clearedAt": "Cobrado el"
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Auditoría"
+      }
+    },
+    "toasts": {
+      "markedCleared": "{{count}} depósito marcado como cobrado.",
+      "markedCleared_plural": "{{count}} depósitos marcados como cobrados."
+    }
+  },
+  "creditCardPayments": {
+    "title": "Tarjetas de crédito",
+    "description": "Controle los pagos de facturas hechos con tarjeta de crédito. Los pagos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "noun": "pagos con tarjeta",
+    "searchPlaceholder": "Buscar pagos con tarjeta…",
+    "empty": "Ningún pago con tarjeta coincide con su búsqueda.",
+    "emptyNone": "Aún no hay pagos con tarjeta.",
+    "columns": {
+      "status": "Estado",
+      "invoiceNumber": "Factura #",
+      "paymentReference": "Referencia de tarjeta",
+      "paymentAmount": "Monto",
+      "datePosted": "Fecha de registro",
+      "referenceNumber": "Ref. interna #",
+      "createdAt": "Creado el",
+      "createdBy": "Creado por"
+    },
+    "status": {
+      "outstanding": "Pendiente",
+      "cleared": "Cobrado"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} pago con tarjeta pendiente",
+      "outstandingAlert_plural": "{{count}} pagos con tarjeta pendientes"
+    },
+    "actions": {
+      "markCleared": "Marcar cobrado"
+    },
+    "form": {
+      "sections": {
+        "details": "Detalles del pago",
+        "clearance": "Cobro"
+      },
+      "fields": {
+        "invoice": "Factura",
+        "paymentReference": "Referencia de tarjeta",
+        "paymentAmount": "Monto",
+        "datePosted": "Fecha de registro",
+        "referenceNumber": "Número de referencia interna",
+        "createdBy": "Creado por",
+        "clearedAt": "Cobrado el"
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Auditoría"
+      }
+    },
+    "toasts": {
+      "markedCleared": "{{count}} pago con tarjeta marcado como cobrado.",
+      "markedCleared_plural": "{{count}} pagos con tarjeta marcados como cobrados."
+    }
+  },
   "checks": {
     "title": "Cheques",
     "description": "Controle los pagos de facturas hechos con cheque. Los cheques pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",

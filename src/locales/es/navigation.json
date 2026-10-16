@@ -44,6 +44,9 @@
     "dailyIncome": "Ingresos diarios",
     "loans": "Préstamos",
     "checks": "Cheques",
+    "zelle": "Zelle",
+    "deposits": "Depósitos",
+    "creditCards": "Tarjetas de crédito",
     "chartOfAccounts": "Catálogo de cuentas",
     "reports": "Reportes",
     "analytics": "Análisis",
@@ -55,6 +58,7 @@
     "barcodeStatuses": "Estados de códigos de barras",
     "settings": "Configuración",
     "employeeDepartments": "Departamentos de empleados",
-    "employeeTitles": "Cargos de empleados"
+    "employeeTitles": "Cargos de empleados",
+    "invoicePolicies": "Políticas de factura"
   }
 }

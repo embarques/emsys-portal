@@ -44,6 +44,9 @@
     "dailyIncome": "Daily Income",
     "loans": "Loans",
     "checks": "Checks",
+    "zelle": "Zelle",
+    "deposits": "Deposits",
+    "creditCards": "Credit Cards",
     "chartOfAccounts": "Chart of Accounts",
     "reports": "Reports",
     "analytics": "Analytics",
@@ -55,6 +58,7 @@
     "barcodeStatuses": "Barcode Statuses",
     "settings": "Settings",
     "employeeDepartments": "Employee departments",
-    "employeeTitles": "Employee titles"
+    "employeeTitles": "Employee titles",
+    "invoicePolicies": "Invoice policies"
   }
 }

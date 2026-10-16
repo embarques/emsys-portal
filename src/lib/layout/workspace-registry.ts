@@ -9,7 +9,10 @@ import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { DailyIncomeWorkspace } from "@/components/accounting/daily-income-workspace";
 import { ChartOfAccountsWorkspace } from "@/components/accounting/chart-of-accounts-workspace";
 import { ChecksWorkspace } from "@/components/accounting/checks-workspace";
+import { CreditCardPaymentsWorkspace } from "@/components/accounting/credit-card-payments-workspace";
+import { DepositsWorkspace } from "@/components/accounting/deposits-workspace";
 import { LoansWorkspace } from "@/components/accounting/loans-workspace";
+import { ZellePaymentsWorkspace } from "@/components/accounting/zelle-payments-workspace";
 import { BranchesWorkspace } from "@/components/branches/branches-workspace";
 import { ConfigurationWorkspace } from "@/components/configuration/configuration-workspace";
 import { ContainersWorkspace } from "@/components/containers/containers-workspace";
@@ -63,6 +66,9 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/accounting/daily-income": DailyIncomeWorkspace,
   "/accounting/loans": LoansWorkspace,
   "/accounting/checks": ChecksWorkspace,
+  "/accounting/zelle": ZellePaymentsWorkspace,
+  "/accounting/deposits": DepositsWorkspace,
+  "/accounting/credit-cards": CreditCardPaymentsWorkspace,
   "/accounting/accounts": ChartOfAccountsWorkspace,
   "/reports": ReportsWorkspace,
   "/analytics": AnalyticsWorkspace,
