@@ -21,6 +21,7 @@ function loadFeature(relative, apiClient) {
       if (specifier === "@/lib/api/client") return { apiClient };
       if (specifier.startsWith("@/") || specifier.startsWith(".")) {
         const target = specifier.startsWith("@/") ? path.join(root, "src", specifier.slice(2)) : path.resolve(path.dirname(filename), specifier);
+        if (target.endsWith(".json")) return JSON.parse(fs.readFileSync(target, "utf8"));
         return load(fs.existsSync(`${target}.ts`) ? `${target}.ts` : path.join(target, "index.ts"));
       }
       return require(specifier);
@@ -67,4 +68,30 @@ for (const method of ["createInvoice", "updateInvoice"]) {
    }
   });
  }
+}
+
+for (const [pickupId, expected] of [["21801", 21801], [" 21801 ", 21801], ["4294967295", 4294967295], ["", undefined]]) {
+ test(`invoice update sends numeric pickup reference for ${JSON.stringify(pickupId)}`, async () => {
+  let payload;
+  const stop = new Error("Captured request");
+  const api = loadFeature("src/lib/invoices/api/invoices-api.ts", { put: async (_, body) => { payload = JSON.parse(JSON.stringify(body)); throw stop; } });
+  const types = loadFeature("src/lib/invoices/types.ts", {});
+  const customers = loadFeature("src/lib/customers/types.ts", {});
+  const values = { ...types.createEmptyInvoiceForm(), pickupId, invoiceNumber: "TEST-1", date: "2026-10-15", sender: { ...customers.createEmptyCustomerForm(), id: "customer-1", name: "Sender" }, lineItems: [{ ...types.createEmptyInvoiceLineItem(), itemName: "Box", quantity: "1", labels: "1", unitPrice: "80", total: "80" }] };
+  await assert.rejects(api.updateInvoice("507f1f77bcf86cd799439011", values, { branch: { id: 1, name: "NY", code: "NY" }, container: { id: 1, name: "66-26" } }), error => error === stop);
+  assert.equal(payload.pickup?.id, expected);
+  if (expected !== undefined) assert.equal(typeof payload.pickup.id, "number");
+ });
+}
+
+for (const pickupId of ["abc", "0", "-1", "1.5", "4294967296"]) {
+ test(`invoice update rejects invalid pickup ID ${pickupId} before HTTP`, async () => {
+  let called = false;
+  const api = loadFeature("src/lib/invoices/api/invoices-api.ts", { put: async () => { called = true; } });
+  const types = loadFeature("src/lib/invoices/types.ts", {});
+  const customers = loadFeature("src/lib/customers/types.ts", {});
+  const values = { ...types.createEmptyInvoiceForm(), pickupId, invoiceNumber: "TEST-1", date: "2026-10-15", sender: { ...customers.createEmptyCustomerForm(), id: "customer-1", name: "Sender" }, lineItems: [{ ...types.createEmptyInvoiceLineItem(), itemName: "Box", quantity: "1", labels: "1", unitPrice: "80", total: "80" }] };
+  await assert.rejects(api.updateInvoice("507f1f77bcf86cd799439011", values, { branch: { id: 1, name: "NY", code: "NY" }, container: { id: 1, name: "66-26" } }), /Pickup ID must/);
+  assert.equal(called, false);
+ });
 }

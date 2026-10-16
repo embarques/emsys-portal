@@ -1327,7 +1327,7 @@ type ApiInvoiceWritePayload = {
   container: InvoiceWriteContext["container"];
   sender: ApiInvoiceCustomerWriteRef;
   receiver?: ApiInvoiceCustomerWriteRef;
-  pickup?: { id: string | number };
+  pickup?: { id: number };
   route?: ApiInvoiceRouteWriteRef | null;
   routeCrew?: InvoiceWriteRouteRef | null;
   pickupEmployee?: InvoiceWriteEmployeeRef | null;
@@ -1598,7 +1598,11 @@ function buildInvoiceWritePayload(
   if (options.isUpdate) {
     const pickupId = values.pickupId.trim();
     if (pickupId) {
-      payload.pickup = { id: pickupId };
+      const id = Number(pickupId);
+      if (!/^\d+$/.test(pickupId) || !Number.isInteger(id) || id <= 0 || id > 0xffffffff) {
+        throw new Error("Pickup ID must be a positive integer within the API's supported range.");
+      }
+      payload.pickup = { id };
     }
     payload.isVoid = false;
   }
