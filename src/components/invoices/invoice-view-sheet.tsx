@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
+import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceActivitySection } from "@/components/invoices/invoice-activity-section";
 import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barcode-status-section";
 import { InvoiceCommentsSection } from "@/components/invoices/invoice-comments-section";
@@ -22,7 +23,10 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatOrderDateWithWeekday } from "@/lib/orders/display";
-import { formatAddressLine, formatPartyPhoneList } from "@/lib/customers/display";
+import {
+  formatAddressLine,
+  formatPartyPhoneList,
+} from "@/lib/customers/display";
 import {
   formatInvoiceMoney,
   formatInvoicePickupAssignmentLabel,
@@ -64,7 +68,13 @@ function partyAddressLine(party: Invoice["sender"]): string {
   return formatAddressLine(address).trim();
 }
 
-function PartySection({ title, party }: { title: string; party: Invoice["sender"] }) {
+function PartySection({
+  title,
+  party,
+}: {
+  title: string;
+  party: Invoice["sender"];
+}) {
   const { t } = useTranslation();
   const name = party.name.trim();
   const documentId = party.documentId?.trim() ?? "";
@@ -85,13 +95,21 @@ function PartySection({ title, party }: { title: string; party: Invoice["sender"
       {email ? <p className="text-xs text-muted-foreground">{email}</p> : null}
       {phones ? (
         <div className={cn(name || documentId || email ? "mt-3" : undefined)}>
-          <p className="text-xs font-medium text-primary">{t("invoices.view.fields.phones")}</p>
+          <p className="text-xs font-medium text-primary">
+            {t("invoices.view.fields.phones")}
+          </p>
           <p className="mt-1 text-sm leading-relaxed">{phones}</p>
         </div>
       ) : null}
       {addressLine ? (
-        <div className={cn(name || documentId || email || phones ? "mt-4" : undefined)}>
-          <p className="text-xs font-medium text-primary">{t("invoices.view.fields.address")}</p>
+        <div
+          className={cn(
+            name || documentId || email || phones ? "mt-4" : undefined,
+          )}
+        >
+          <p className="text-xs font-medium text-primary">
+            {t("invoices.view.fields.address")}
+          </p>
           <p className="mt-1 text-sm leading-relaxed">{addressLine}</p>
         </div>
       ) : null}
@@ -119,7 +137,9 @@ function InvoiceTotalCell({
     <div
       className={cn(
         "rounded-lg border px-3 py-2.5",
-        isBalance ? "border-primary/40 bg-primary/10" : "border-border/60 bg-background",
+        isBalance
+          ? "border-primary/40 bg-primary/10"
+          : "border-border/60 bg-background",
       )}
     >
       <p
@@ -134,7 +154,8 @@ function InvoiceTotalCell({
         className={cn(
           "mt-1 text-base tabular-nums",
           isBalance && "font-bold text-primary",
-          tone === "positive" && "font-semibold text-emerald-600 dark:text-emerald-400",
+          tone === "positive" &&
+            "font-semibold text-emerald-600 dark:text-emerald-400",
           tone === "default" && "font-semibold text-foreground",
         )}
       >
@@ -144,7 +165,10 @@ function InvoiceTotalCell({
   );
 }
 
-function formatBarcodeScanDate(scanDate: string | undefined, empty: string): string {
+function formatBarcodeScanDate(
+  scanDate: string | undefined,
+  empty: string,
+): string {
   if (!scanDate) return empty;
   const parsed = new Date(scanDate);
   if (Number.isNaN(parsed.getTime())) return empty;
@@ -162,7 +186,9 @@ function InvoiceLineItemCard({ item }: { item: InvoiceLineItem }) {
   const [open, setOpen] = useState(false);
   const barcodes = item.barcodes ?? [];
   const hasBarcodes = barcodes.length > 0;
-  const showDescription = Boolean(item.description && item.description !== item.itemName);
+  const showDescription = Boolean(
+    item.description && item.description !== item.itemName,
+  );
   const panelId = `invoice-line-item-barcodes-${item.id}`;
   const barcodeToggleLabel = open
     ? t(
@@ -181,26 +207,42 @@ function InvoiceLineItemCard({ item }: { item: InvoiceLineItem }) {
   return (
     <li className="overflow-hidden rounded-lg border border-border/60 bg-background">
       <div className="px-3 py-2.5">
-        <p className="text-sm font-medium leading-snug text-foreground">{item.itemName}</p>
+        <p className="text-sm font-medium leading-snug text-foreground">
+          {item.itemName}
+        </p>
         {showDescription ? (
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{item.description}</p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+            {item.description}
+          </p>
         ) : null}
         <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm leading-5">
           <div className="flex items-baseline gap-1.5">
-            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.quantity")}</dt>
+            <dt className="text-muted-foreground">
+              {t("invoices.form.lineItems.columns.quantity")}
+            </dt>
             <dd className="tabular-nums text-foreground">{item.quantity}</dd>
           </div>
           <div className="flex items-baseline gap-1.5">
-            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.labels")}</dt>
+            <dt className="text-muted-foreground">
+              {t("invoices.form.lineItems.columns.labels")}
+            </dt>
             <dd className="tabular-nums text-foreground">{item.labelCount}</dd>
           </div>
           <div className="flex items-baseline gap-1.5">
-            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.unitPrice")}</dt>
-            <dd className="tabular-nums text-foreground">{formatInvoiceMoney(item.unitPrice)}</dd>
+            <dt className="text-muted-foreground">
+              {t("invoices.form.lineItems.columns.unitPrice")}
+            </dt>
+            <dd className="tabular-nums text-foreground">
+              {formatInvoiceMoney(item.unitPrice)}
+            </dd>
           </div>
           <div className="flex items-baseline gap-1.5">
-            <dt className="text-muted-foreground">{t("invoices.form.lineItems.columns.total")}</dt>
-            <dd className="font-semibold tabular-nums text-foreground">{formatInvoiceMoney(item.lineTotal)}</dd>
+            <dt className="text-muted-foreground">
+              {t("invoices.form.lineItems.columns.total")}
+            </dt>
+            <dd className="font-semibold tabular-nums text-foreground">
+              {formatInvoiceMoney(item.lineTotal)}
+            </dd>
           </div>
         </dl>
         {hasBarcodes ? (
@@ -211,15 +253,25 @@ function InvoiceLineItemCard({ item }: { item: InvoiceLineItem }) {
             aria-controls={panelId}
             className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
           >
-            {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            {open ? (
+              <ChevronDown className="size-3.5" />
+            ) : (
+              <ChevronRight className="size-3.5" />
+            )}
             {barcodeToggleLabel}
           </button>
         ) : null}
       </div>
       {hasBarcodes && open ? (
-        <ul id={panelId} className="space-y-2 border-t border-border/60 bg-muted/30 px-3 py-2.5">
+        <ul
+          id={panelId}
+          className="space-y-2 border-t border-border/60 bg-muted/30 px-3 py-2.5"
+        >
           {barcodes.map((barcode) => (
-            <li key={barcode.id} className="overflow-hidden rounded-lg border border-border bg-card">
+            <li
+              key={barcode.id}
+              className="overflow-hidden rounded-lg border border-border bg-card"
+            >
               <RecordViewSheetDetailRow
                 label={t("invoices.view.barcodeStatus.fields.barcode")}
                 value={<span className="font-mono">{barcode.number}</span>}
@@ -228,7 +280,9 @@ function InvoiceLineItemCard({ item }: { item: InvoiceLineItem }) {
                 label={t("invoices.view.barcodeStatus.fields.status")}
                 value={
                   barcode.statusName ? (
-                    <TableTagText className={getBarcodeStatusBadgeClass(barcode.statusName)}>
+                    <TableTagText
+                      className={getBarcodeStatusBadgeClass(barcode.statusName)}
+                    >
                       {barcode.statusName}
                     </TableTagText>
                   ) : undefined
@@ -258,8 +312,10 @@ function getPickupAssignmentFieldLabel(
   invoice: Invoice,
   t: (key: string) => string,
 ): string {
-  if (invoice.pickupSource === "warehouse") return t("invoices.form.fields.warehouseEmployee");
-  if (invoice.pickupSource === "office") return t("invoices.form.fields.officeEmployee");
+  if (invoice.pickupSource === "warehouse")
+    return t("invoices.form.fields.warehouseEmployee");
+  if (invoice.pickupSource === "office")
+    return t("invoices.form.fields.officeEmployee");
   return t("invoices.form.fields.pickupRoute");
 }
 
@@ -289,6 +345,7 @@ export function InvoiceViewSheet({
   onAddComment,
 }: InvoiceViewSheetProps) {
   const { t, locale } = useTranslation();
+  const [activeTab, setActiveTab] = useState("overview");
   const totals = useMemo(() => {
     if (!invoice) return null;
     const subtotal = getInvoiceSubtotal(invoice);
@@ -308,7 +365,9 @@ export function InvoiceViewSheet({
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
-      <RecordViewSheetContent>
+      <RecordViewSheetContent
+        className={activeTab === "documents" ? "sm:max-w-6xl" : undefined}
+      >
         <RecordViewSheetHeader
           title={invoice.invoiceNumber.trim() || empty}
           meta={
@@ -330,98 +389,169 @@ export function InvoiceViewSheet({
           }
         />
 
-        <RecordViewSheetBody>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-            <InvoiceTotalCell
-              label={t("invoices.columns.total")}
-              value={formatInvoiceMoney(totals.subtotal)}
-            />
-            <InvoiceTotalCell
-              label={t("invoices.columns.discount")}
-              value={formatInvoiceDeduction(invoice.discount)}
-            />
-            <InvoiceTotalCell
-              label={t("invoices.columns.amountPaid")}
-              value={formatInvoiceDeduction(invoice.amountPaid)}
-              tone={invoice.amountPaid > 0 ? "positive" : "default"}
-            />
-            <InvoiceTotalCell
-              label={t("invoices.columns.balance")}
-              value={formatInvoiceMoney(totals.balance)}
-              tone="balance"
-            />
-          </div>
-          <RecordViewSheetSection title={t("invoices.form.sections.invoiceDetails")}>
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.container")}
-              value={containerLabel}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.paymentLocation")}
-              value={getPaymentLocationLabel(invoice.paymentLocation)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.pickupReference")}
-              value={pickupReference}
-            />
-            <RecordViewSheetDetailRow
-              label={t("invoices.form.fields.pickupSource")}
-              value={pickupSourceKey ? t(pickupSourceKey) : empty}
-            />
-            <RecordViewSheetDetailRow
-              label={getPickupAssignmentFieldLabel(invoice, t)}
-              value={formatPickupAssignmentDisplay(invoice, t)}
-            />
-          </RecordViewSheetSection>
-
-          <PartySection title={t("invoices.form.fields.sender")} party={invoice.sender} />
-          {invoice.receiver ? (
-            <PartySection title={t("invoices.form.fields.receiver")} party={invoice.receiver} />
-          ) : null}
-
-          <RecordViewSheetSection
-            title={t("invoices.wizard.review.lineItems")}
-            padding="relaxed"
+        <div
+          role="tablist"
+          aria-label={t("invoices.documents.title")}
+          className="flex gap-6 border-b px-6"
+        >
+          {["overview", "documents"].map((tab) => (
+            <button
+              key={tab}
+              id={`invoice-tab-${tab}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              tabIndex={activeTab === tab ? 0 : -1}
+              onKeyDown={(event) => {
+                let next: string | undefined;
+                if (event.key === "ArrowLeft" || event.key === "ArrowRight")
+                  next = tab === "overview" ? "documents" : "overview";
+                if (event.key === "Home") next = "overview";
+                if (event.key === "End") next = "documents";
+                if (next) {
+                  event.preventDefault();
+                  setActiveTab(next);
+                  document.getElementById(`invoice-tab-${next}`)?.focus();
+                }
+              }}
+              aria-controls={`invoice-panel-${tab}`}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "border-b-2 px-1 py-3 text-sm font-medium",
+                activeTab === tab
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground",
+              )}
+            >
+              {t(
+                `invoices.documents.${tab === "overview" ? "overview" : "title"}`,
+              )}
+            </button>
+          ))}
+        </div>
+        {activeTab === "documents" ? (
+          <RecordViewSheetBody>
+            <div
+              role="tabpanel"
+              id="invoice-panel-documents"
+              aria-labelledby="invoice-tab-documents"
+            >
+              <InvoiceDocumentsSection
+                key={invoice.invoiceId}
+                invoice={invoice}
+              />
+            </div>
+          </RecordViewSheetBody>
+        ) : (
+          <RecordViewSheetBody
+            role="tabpanel"
+            id="invoice-panel-overview"
+            aria-labelledby="invoice-tab-overview"
           >
-            {invoice.lineItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
-            ) : (
-              <ul className="space-y-2">
-                {invoice.lineItems.map((item) => (
-                  <InvoiceLineItemCard key={item.id} item={item} />
-                ))}
-              </ul>
-            )}
-          </RecordViewSheetSection>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <InvoiceTotalCell
+                label={t("invoices.columns.total")}
+                value={formatInvoiceMoney(totals.subtotal)}
+              />
+              <InvoiceTotalCell
+                label={t("invoices.columns.discount")}
+                value={formatInvoiceDeduction(invoice.discount)}
+              />
+              <InvoiceTotalCell
+                label={t("invoices.columns.amountPaid")}
+                value={formatInvoiceDeduction(invoice.amountPaid)}
+                tone={invoice.amountPaid > 0 ? "positive" : "default"}
+              />
+              <InvoiceTotalCell
+                label={t("invoices.columns.balance")}
+                value={formatInvoiceMoney(totals.balance)}
+                tone="balance"
+              />
+            </div>
+            <RecordViewSheetSection
+              title={t("invoices.form.sections.invoiceDetails")}
+            >
+              <RecordViewSheetDetailRow
+                label={t("invoices.form.fields.container")}
+                value={containerLabel}
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.form.fields.paymentLocation")}
+                value={getPaymentLocationLabel(invoice.paymentLocation)}
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.form.fields.pickupReference")}
+                value={pickupReference}
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.form.fields.pickupSource")}
+                value={pickupSourceKey ? t(pickupSourceKey) : empty}
+              />
+              <RecordViewSheetDetailRow
+                label={getPickupAssignmentFieldLabel(invoice, t)}
+                value={formatPickupAssignmentDisplay(invoice, t)}
+              />
+            </RecordViewSheetSection>
 
-          <InvoiceCommentsSection
-            comments={invoice.comments}
-            onAddComment={(description) => onAddComment(invoice.invoiceId, description)}
-          />
-
-          <InvoicePaymentsSection invoice={invoice} />
-
-          <InvoiceBarcodeStatusSection invoice={invoice} />
-
-          <InvoicePackageTrackerSection invoice={invoice} />
-
-          <InvoiceActivitySection invoice={invoice} />
-
-          <RecordViewSheetSection title={t("invoices.view.system")}>
-            <RecordViewSheetDetailRow
-              label={t("invoices.columns.createdBy")}
-              value={invoice.createdBy || empty}
+            <PartySection
+              title={t("invoices.form.fields.sender")}
+              party={invoice.sender}
             />
-            <RecordViewSheetDetailRow
-              label={t("common.audit.createdAt")}
-              value={formatAuditDateTime(invoice.createdAt) || empty}
+            {invoice.receiver ? (
+              <PartySection
+                title={t("invoices.form.fields.receiver")}
+                party={invoice.receiver}
+              />
+            ) : null}
+
+            <RecordViewSheetSection
+              title={t("invoices.wizard.review.lineItems")}
+              padding="relaxed"
+            >
+              {invoice.lineItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("invoices.wizard.review.noLineItems")}
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {invoice.lineItems.map((item) => (
+                    <InvoiceLineItemCard key={item.id} item={item} />
+                  ))}
+                </ul>
+              )}
+            </RecordViewSheetSection>
+
+            <InvoiceCommentsSection
+              comments={invoice.comments}
+              onAddComment={(description) =>
+                onAddComment(invoice.invoiceId, description)
+              }
             />
-            <RecordViewSheetDetailRow
-              label={t("common.audit.updatedAt")}
-              value={formatAuditDateTime(invoice.updatedAt) || empty}
-            />
-          </RecordViewSheetSection>
-        </RecordViewSheetBody>
+
+            <InvoicePaymentsSection invoice={invoice} />
+
+            <InvoiceBarcodeStatusSection invoice={invoice} />
+
+            <InvoicePackageTrackerSection invoice={invoice} />
+
+            <InvoiceActivitySection invoice={invoice} />
+
+            <RecordViewSheetSection title={t("invoices.view.system")}>
+              <RecordViewSheetDetailRow
+                label={t("invoices.columns.createdBy")}
+                value={invoice.createdBy || empty}
+              />
+              <RecordViewSheetDetailRow
+                label={t("common.audit.createdAt")}
+                value={formatAuditDateTime(invoice.createdAt) || empty}
+              />
+              <RecordViewSheetDetailRow
+                label={t("common.audit.updatedAt")}
+                value={formatAuditDateTime(invoice.updatedAt) || empty}
+              />
+            </RecordViewSheetSection>
+          </RecordViewSheetBody>
+        )}
 
         <RecordViewSheetActions
           editLabel={t("invoices.workspace.editInvoice")}
