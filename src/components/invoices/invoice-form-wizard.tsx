@@ -378,7 +378,6 @@ export function InvoiceFormWizard({
     }
 
     if (!initialValues?.invoiceId && result.savedInvoiceId && documentDraft.files.length) {
-      setDocumentsBusy(true);
       setDocumentStage(true);
       return;
     }
@@ -545,11 +544,20 @@ export function InvoiceFormWizard({
     {initialValues?.invoiceId ? (
       <div className="rounded-lg border p-3 sm:p-4">
         <p className="mb-3 text-sm text-muted-foreground">{t("invoices.documents.editHint")}</p>
-        <InvoiceDocumentsSection invoice={initialValues} onBusyChange={setDocumentsBusy} />
+        <InvoiceDocumentsSection
+          compact
+          invoice={initialValues}
+          onBusyChange={setDocumentsBusy}
+        />
       </div>
     ) : canUploadDocuments ? (
-      <InvoiceDocumentPicker files={documentDraft.files} invalid={documentDraft.invalid}
-        disabled={isSubmitting} onAdd={documentDraft.add} onRemove={documentDraft.remove} />
+      <InvoiceDocumentPicker
+        files={documentDraft.files}
+        invalid={documentDraft.invalid}
+        disabled={isSubmitting || documentsBusy}
+        onAdd={documentDraft.add}
+        onRemove={documentDraft.remove}
+      />
     ) : null}
     </div>
   );
@@ -591,17 +599,29 @@ export function InvoiceFormWizard({
 
   if (documentStage && savedInvoiceId) {
     return (
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-5">
-        <p role="status" className="rounded-lg bg-muted p-3 text-sm">{t("invoices.documents.savedHint")}</p>
-        <InvoiceDocumentsSection
-          key={savedInvoiceId}
-          invoice={{ ...values, invoiceId: savedInvoiceId }}
-          initialFiles={documentDraft.files}
-          onBusyChange={setDocumentsBusy}
-        />
-        <Button type="button" className="min-h-11 w-full" disabled={documentsBusy} onClick={finishSave}>
-          {t("invoices.documents.finish")}
-        </Button>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:p-5 sm:pb-5">
+          <p role="status" className="rounded-lg bg-muted p-3 text-sm">
+            {t("invoices.documents.savedHint")}
+          </p>
+          <InvoiceDocumentsSection
+            key={savedInvoiceId}
+            compact
+            invoice={{ ...values, invoiceId: savedInvoiceId }}
+            initialFiles={documentDraft.files}
+            onBusyChange={setDocumentsBusy}
+          />
+        </div>
+        <div className="shrink-0 border-t bg-background p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-4">
+          <Button
+            type="button"
+            className="min-h-11 w-full"
+            disabled={documentsBusy}
+            onClick={finishSave}
+          >
+            {t("invoices.documents.finish")}
+          </Button>
+        </div>
       </div>
     );
   }

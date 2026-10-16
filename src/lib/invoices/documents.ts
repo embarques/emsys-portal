@@ -1,6 +1,22 @@
 export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
-export const DOCUMENT_ACCEPT =
-  "";
+/** Photos, videos, audio, PDFs, office docs, and common phone formats (e.g. HEIC). */
+export const DOCUMENT_ACCEPT = [
+  "image/*",
+  "video/*",
+  "audio/*",
+  "application/pdf",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".txt",
+  ".csv",
+  ".heic",
+  ".heif",
+].join(",");
 
 export type DocumentActor = {
   name?: string;

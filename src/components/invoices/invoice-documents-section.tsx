@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LayoutGrid, List, Search, Upload } from "lucide-react";
+import { Camera, LayoutGrid, List, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InvoiceDocumentList } from "@/components/invoices/invoice-document-list";
@@ -18,18 +18,30 @@ import {
   useInvoiceDocuments,
 } from "@/lib/invoices/hooks/use-invoice-documents";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useTranslation } from "@/lib/i18n";
 import { getContainerLabelForInvoice } from "@/lib/invoices/display";
 import type { Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
 
-export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChange }: {
-  invoice: Pick<Invoice, "invoiceId" | "invoiceNumber" | "containerId" | "containerName">;
+export function InvoiceDocumentsSection({
+  invoice,
+  initialFiles = [],
+  onBusyChange,
+  compact = false,
+}: {
+  invoice: Pick<
+    Invoice,
+    "invoiceId" | "invoiceNumber" | "containerId" | "containerName"
+  >;
   initialFiles?: File[];
   onBusyChange?: (busy: boolean) => void;
+  /** Tighter header when embedded in the invoice wizard. */
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
+  const isMobile = useIsMobileViewport();
   const canUpload = hasPermission("canUpdateInvoice", "invoice");
   const canDelete = hasPermission("canDeleteInvoice", "invoice");
   const { query, documents, rename, remove, upload, uploads, uploading } =
@@ -55,11 +67,14 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
   const selected =
     documents.find((item) => item.id === selectedId && !item.deleting) ?? null;
   const items = sortDocuments(documents, search, sort);
   const hasContainer = Boolean(invoice.containerId?.trim());
   const allowUpload = canUpload && hasContainer && !uploading;
+  const previewPresentation = isMobile ? "sheet" : "panel";
+
   async function download(document: InvoiceDocument) {
     setError(null);
     try {
@@ -75,26 +90,40 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
   return (
     <section className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">
+        <div className="min-w-0">
+          <h2 className={cn("font-semibold", compact ? "text-base" : "text-lg")}>
             {t("invoices.documents.title")}{" "}
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm font-normal text-muted-foreground">
               ({documents.length}
               {query.hasNextPage ? "+" : ""})
             </span>
           </h2>
-          <p className="text-xs text-muted-foreground">
-            {getContainerLabelForInvoice(invoice)} / {invoice.invoiceNumber}
-          </p>
+          {!compact ? (
+            <p className="text-xs text-muted-foreground">
+              {getContainerLabelForInvoice(invoice)} / {invoice.invoiceNumber}
+            </p>
+          ) : null}
         </div>
         {canUpload ? (
-          <Button
-            onClick={() => input.current?.click()}
-            disabled={!allowUpload}
-          >
-            <Upload className="mr-2 size-4" />
-            {t("invoices.documents.upload")}
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              onClick={() => input.current?.click()}
+              disabled={!allowUpload}
+            >
+              <Upload className="mr-2 size-4" />
+              {t("invoices.documents.upload")}
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-11 w-full sm:hidden"
+              onClick={() => cameraInput.current?.click()}
+              disabled={!allowUpload}
+            >
+              <Camera className="mr-2 size-4" />
+              {t("invoices.documents.takePhoto")}
+            </Button>
+          </div>
         ) : null}
       </div>
       {error ? (
@@ -108,32 +137,33 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
       <div
         className={cn(
           "grid gap-4",
-          selected && "lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]",
+          selected && !isMobile && "lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]",
         )}
       >
-        <div className={cn("min-w-0 space-y-3", selected && "max-lg:order-2")}>
+        <div className="min-w-0 space-y-3">
           <div className="flex flex-wrap gap-2">
-            <div className="relative min-w-40 flex-1">
+            <div className="relative min-w-0 flex-1 basis-full sm:min-w-40 sm:basis-auto">
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
               <Input
                 aria-label={t("invoices.documents.search")}
                 placeholder={t("invoices.documents.search")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="pl-9"
+                className="min-h-11 pl-9"
               />
             </div>
             <select
               aria-label={t("invoices.documents.sort")}
               value={sort}
               onChange={(event) => setSort(event.target.value as typeof sort)}
-              className="rounded-md border bg-background px-2 text-sm"
+              className="min-h-11 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm sm:flex-none"
             >
               <option value="newest">{t("invoices.documents.newest")}</option>
               <option value="name">{t("invoices.documents.name")}</option>
             </select>
             <Button
               size="icon"
+              className="size-11"
               variant={view === "list" ? "secondary" : "outline"}
               aria-label={t("invoices.documents.list")}
               aria-pressed={view === "list"}
@@ -143,6 +173,7 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
             </Button>
             <Button
               size="icon"
+              className="size-11"
               variant={view === "grid" ? "secondary" : "outline"}
               aria-label={t("invoices.documents.grid")}
               aria-pressed={view === "grid"}
@@ -189,7 +220,7 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
           {query.hasNextPage ? (
             <Button
               variant="outline"
-              className="w-full"
+              className="min-h-11 w-full"
               disabled={query.isFetchingNextPage}
               onClick={() => void query.fetchNextPage()}
             >
@@ -209,7 +240,7 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
                 startUpload(Array.from(event.dataTransfer.files));
               }}
               className={cn(
-                "rounded-lg border-2 border-dashed p-6 text-center",
+                "rounded-lg border-2 border-dashed p-4 text-center sm:p-6",
                 dragging && "border-primary bg-primary/5",
               )}
             >
@@ -242,6 +273,19 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
                   event.target.value = "";
                 }}
               />
+              <input
+                ref={cameraInput}
+                type="file"
+                accept="image/*,video/*"
+                capture="environment"
+                className="sr-only"
+                aria-label={t("invoices.documents.takePhoto")}
+                disabled={!allowUpload}
+                onChange={(event) => {
+                  startUpload(Array.from(event.target.files ?? []));
+                  event.target.value = "";
+                }}
+              />
             </div>
           ) : null}
           <div aria-live="polite" className="space-y-2">
@@ -264,7 +308,7 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
                   className="mt-2 h-1.5 w-full"
                 />
                 {job.status === "failed" ? (
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-destructive">
                       {job.error === "size"
                         ? t("invoices.documents.formats")
@@ -273,6 +317,7 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
                     <Button
                       size="sm"
                       variant="outline"
+                      className="min-h-11 sm:min-h-8"
                       disabled={uploading}
                       onClick={() => startUpload([job.file], job)}
                     >
@@ -289,6 +334,7 @@ export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChan
             key={selected.id}
             invoiceId={invoice.invoiceId}
             document={selected}
+            presentation={previewPresentation}
             onClose={() => setSelectedId(null)}
             onDownload={() => void download(selected)}
           />
