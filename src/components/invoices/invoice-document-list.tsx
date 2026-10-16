@@ -8,8 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { InvoiceDocumentInfo } from "@/components/invoices/invoice-document-info";
 import { InvoiceDocumentThumbnail } from "@/components/invoices/invoice-document-thumbnail";
 import {
+  documentActorName,
   formatDocumentSize,
   type InvoiceDocument,
 } from "@/lib/invoices/documents";
@@ -143,10 +145,7 @@ export function InvoiceDocumentList({
                 </button>
               </td>
               <td className="px-3 py-3">
-                {document.createdBy?.name ||
-                  document.createdBy?.fullName ||
-                  document.createdBy?.email ||
-                  "—"}
+                {documentActorName(document.createdBy)}
               </td>
               <td className="whitespace-nowrap px-3 py-3">
                 {formatAuditDateTime(document.createdAt || "") || "—"}
@@ -154,7 +153,12 @@ export function InvoiceDocumentList({
               <td className="whitespace-nowrap px-3 py-3">
                 {formatDocumentSize(document.size)}
               </td>
-              <td className="px-2">{actions(document)}</td>
+              <td className="px-2">
+                <div className="flex items-center">
+                  <InvoiceDocumentInfo document={document} />
+                  {actions(document)}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -186,7 +190,10 @@ export function InvoiceDocumentList({
           </button>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{formatDocumentSize(document.size)}</span>
-            {actions(document)}
+            <div className="flex items-center">
+              <InvoiceDocumentInfo document={document} />
+              {actions(document)}
+            </div>
           </div>
         </div>
       ))}

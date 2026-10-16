@@ -7,15 +7,23 @@ import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** Matches the desktop Enter-navigation breakpoint; mobile keeps native keyboard behavior. */
+export function FormKeyboardHint({ text, className }: { text?: string; className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <p className={cn("col-span-full hidden shrink-0 items-center gap-1.5 text-xs text-muted-foreground md:flex", className)}>
+      <Keyboard className="size-3.5 shrink-0" aria-hidden="true" />
+      {text ?? t("common.form.keyboardHint")}
+    </p>
+  );
+}
+
 /** Compact instructions shared by desktop-first entry forms. */
-export function FormWorkflowHints({ requiredHint, keyboardHint }: { requiredHint: string; keyboardHint: string }) {
+export function FormWorkflowHints({ requiredHint, keyboardHint }: { requiredHint: string; keyboardHint?: string }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
       <p>{requiredHint}</p>
-      <p className="flex items-center gap-1.5">
-        <Keyboard className="size-3.5 shrink-0" aria-hidden="true" />
-        {keyboardHint}
-      </p>
+      {keyboardHint ? <FormKeyboardHint text={keyboardHint} /> : null}
     </div>
   );
 }
@@ -71,6 +79,8 @@ export function FormSection({
 type FormBodyProps = {
   className?: string;
   workflow?: boolean;
+  /** Disable for read-only review bodies or forms with their own workflow header. */
+  keyboardHint?: boolean;
   /** When true, shows a saving overlay so the wait is obvious during CRUD. */
   isBusy?: boolean;
   /** Optional busy message (defaults to common.actions.saving). */
@@ -79,12 +89,12 @@ type FormBodyProps = {
 };
 
 /** Scrollable form body with the shared muted background and padding. */
-export function FormBody({ className, workflow = false, isBusy = false, busyLabel, children }: FormBodyProps) {
+export function FormBody({ className, workflow = false, keyboardHint = true, isBusy = false, busyLabel, children }: FormBodyProps) {
   const { t } = useTranslation();
 
   return (
     <div className={cn("relative min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", workflow && "@container space-y-5 p-4 sm:p-6", className)}>
-      {workflow ? <FormWorkflowHints requiredHint={t("common.form.requiredHint")} keyboardHint={t("common.form.keyboardHint")} /> : null}
+      {workflow ? <FormWorkflowHints requiredHint={t("common.form.requiredHint")} keyboardHint={keyboardHint ? t("common.form.keyboardHint") : undefined} /> : keyboardHint ? <FormKeyboardHint /> : null}
       {children}
       {isBusy ? (
         <div

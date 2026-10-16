@@ -2,6 +2,19 @@ export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
 export const DOCUMENT_ACCEPT =
   ".pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.tif,.tiff,.bmp,.avif";
 
+export type DocumentActor = {
+  name?: string;
+  fullName?: string;
+  userName?: string;
+  email?: string;
+};
+
+export function documentActorName(actor?: DocumentActor): string {
+  return (
+    actor?.name || actor?.fullName || actor?.userName || actor?.email || "—"
+  );
+}
+
 export type InvoiceDocument = {
   id: string;
   invoiceId: string;
@@ -13,12 +26,8 @@ export type InvoiceDocument = {
   deleting: boolean;
   createdAt?: string;
   updatedAt?: string;
-  createdBy?: {
-    name?: string;
-    fullName?: string;
-    userName?: string;
-    email?: string;
-  };
+  createdBy?: DocumentActor;
+  updatedBy?: DocumentActor;
 };
 export type DocumentPage = { items: InvoiceDocument[]; nextCursor?: string };
 export type DocumentLink = { url: string; expiresAt: string; mimeType: string };

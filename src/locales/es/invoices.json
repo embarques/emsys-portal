@@ -195,6 +195,13 @@
         "actions": "Acciones"
       },
       "itemNumber": "Artículo {{number}}"
+    },
+    "autoNumber": {
+      "permissionHint": "Se requiere un permiso especial para ingresar números de factura manualmente.",
+      "label": "Generar número",
+      "tooltip": "Generar número de factura automáticamente",
+      "assignedOnSave": "Se asignará al guardar",
+      "hint": "El número se asigna del rango de su empresa cuando la factura se crea correctamente."
     }
   },
   "wizard": {
@@ -688,6 +695,13 @@
     "invalidName": "Escriba un nombre válido de hasta 200 caracteres, sin barras.",
     "tabTitle": "Documentos — Factura {invoice}",
     "backToInvoices": "Volver a facturas",
-    "accessDenied": "No tiene permiso para ver los documentos de la factura."
+    "accessDenied": "No tiene permiso para ver los documentos de la factura.",
+    "info": "Información del documento",
+    "infoFor": "Información de {name}",
+    "originalName": "Nombre original",
+    "fileType": "Tipo de archivo",
+    "bytes": "bytes",
+    "updated": "Última modificación",
+    "updatedBy": "Modificado por"
   }
 }

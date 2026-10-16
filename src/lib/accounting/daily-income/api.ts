@@ -689,9 +689,11 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   }
 
   const invoice =
-    values.transactionType === "INITIAL-PAYMENT" && values.invoiceNumber?.trim()
+    values.transactionType === "INITIAL-PAYMENT" && (values.invoiceNumber?.trim() || values.autoGenerateInvoiceNumber)
       ? {
-          number: values.invoiceNumber.trim(),
+          ...(values.autoGenerateInvoiceNumber
+            ? { autoGenerateNumber: true }
+            : { number: values.invoiceNumber?.trim() }),
           cost: values.invoiceCost,
           discount: values.invoiceDiscount ?? 0,
         }

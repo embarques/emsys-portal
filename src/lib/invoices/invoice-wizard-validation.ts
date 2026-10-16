@@ -68,7 +68,7 @@ export function findInvoiceWizardStep1Issue(
       message: t("invoices.wizard.validation.paymentLocationRequired"),
     };
   }
-  if (!values.invoiceNumber.trim()) {
+  if (!values.autoGenerateNumber && !values.invoiceNumber.trim()) {
     return {
       step: 1,
       fieldId: INVOICE_WIZARD_FIELDS.invoiceNumber,

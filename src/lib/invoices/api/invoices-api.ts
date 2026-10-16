@@ -1311,7 +1311,8 @@ type ApiInvoiceReceivedByWrite =
   | (InvoiceWriteRouteRef & { route?: InvoiceWriteRouteRef });
 
 type ApiInvoiceWritePayload = {
-  number: string;
+  autoGenerateNumber?: boolean;
+  number?: string;
   date: string;
   incomeStatement?: { id: number };
   branch: ReturnType<typeof buildApiBranchDto>;
@@ -1497,8 +1498,9 @@ function buildInvoiceWritePayload(
     removeBarcodeIdsByDetail?: InvoiceRemoveBarcodeIdsByDetail;
   } = {},
 ): ApiInvoiceWritePayload {
-  const invoiceNumber = values.invoiceNumber.trim();
-  if (!invoiceNumber) {
+  const autoGenerateNumber = !options.isUpdate && Boolean(values.autoGenerateNumber) && !values.generatedInvoiceNumber;
+  const invoiceNumber = autoGenerateNumber ? "" : values.invoiceNumber.trim();
+  if (!autoGenerateNumber && !invoiceNumber) {
     throw new Error("Invoice number is required.");
   }
 
@@ -1561,7 +1563,7 @@ function buildInvoiceWritePayload(
   const roundedDiscount = Math.round(discount * 100) / 100;
 
   const payload: ApiInvoiceWritePayload = {
-    number: invoiceNumber,
+    ...(autoGenerateNumber ? { autoGenerateNumber: true } : { number: invoiceNumber }),
     date: values.date.trim().slice(0, 10),
     branch: buildApiBranchDto(context.branch),
     cost,

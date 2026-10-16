@@ -108,6 +108,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       sourceAccountType: z.string().optional(),
       invoiceId: z.string().optional(),
       invoiceNumber: z.string().optional(),
+      autoGenerateInvoiceNumber: z.boolean().optional(),
       invoiceCost: z.number().positive(messages.costPositive).optional(),
       invoiceDiscount: z.number().nonnegative(messages.discountNonNegative).optional(),
       invoiceBalance: z.number().optional(),
@@ -226,7 +227,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         if (!hasJournalAssignee(values)) {
           addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
         }
-        if (!values.invoiceNumber?.trim()) {
+        if (!values.invoiceNumber?.trim() && !values.autoGenerateInvoiceNumber) {
           context.addIssue({ code: "custom", path: ["invoiceNumber"], message: messages.invoiceRequired });
         }
         if (!values.invoiceCost || values.invoiceCost <= 0) {

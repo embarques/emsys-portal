@@ -209,6 +209,8 @@ export type InvoiceLineItemFormValues = {
 };
 
 export type InvoiceFormValues = {
+  autoGenerateNumber?: boolean;
+  generatedInvoiceNumber?: string;
   invoiceId: string;
   invoiceNumber: string;
   date: string;
@@ -490,6 +492,7 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
   return {
     invoiceId: createInvoiceId(),
     invoiceNumber: "",
+    autoGenerateNumber: true,
     date: todayDateInputValue(),
     pickupId: "",
     containerId: "",
@@ -526,6 +529,7 @@ export function resetInvoiceFormForNextEntry(previous: InvoiceFormValues): Invoi
 
   return {
     ...empty,
+    autoGenerateNumber: previous.autoGenerateNumber ?? false,
     date: previous.date,
     containerId: previous.containerId,
     paymentLocation: previous.paymentLocation,
@@ -832,7 +836,7 @@ export function formValuesToInvoice(
   activity: InvoiceActivityEntry[] = [],
   payments: InvoicePayment[] = []
 ): Invoice {
-  if (!values.invoiceNumber.trim()) {
+  if (!values.autoGenerateNumber && !values.invoiceNumber.trim()) {
     throw new Error("Invoice number is required.");
   }
 

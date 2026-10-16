@@ -573,7 +573,7 @@ export function DailyIncomeWorkspace() {
       ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values, options })
       : createJournal.mutateAsync({ statement, values, options })
     )
-      .then(() => {
+      .then((journal) => {
         if (editingJournal) {
           feedback.notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
           setTransactionDialog(false);
@@ -581,7 +581,7 @@ export function DailyIncomeWorkspace() {
           return;
         }
 
-        feedback.notifySuccess(journalCreatedToastMessage(values, t));
+        feedback.notifySuccess(journalCreatedToastMessage({ ...values, invoiceNumber: journal?.invoice?.number || values.invoiceNumber }, t));
       })
       .catch((error) => {
         if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;

@@ -445,7 +445,7 @@ function InvoiceWizardCheckoutReview({
             label={t("invoices.wizard.review.invoice")}
             value={
               <>
-                <p>{values.invoiceNumber || t("common.empty.dash")}</p>
+                <p>{values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber || t("common.empty.dash")}</p>
                 <p>{formatInvoiceDate(values.date) || values.date || t("common.empty.dash")}</p>
               </>
             }
@@ -839,7 +839,7 @@ export function InvoiceFormPreviewStep({
   }
 
   return (
-    <FormBody>
+    <FormBody keyboardHint={false}>
       {errorMessage ? (
         <InvoiceWizardNotice tone="error" message={errorMessage} className="rounded-lg border" />
       ) : null}
@@ -852,7 +852,7 @@ export function InvoiceFormPreviewStep({
       <FormSection icon={Receipt} title="Invoice details">
         <div className="grid gap-3 sm:grid-cols-2">
           <PreviewField label="Date" value={values.date} />
-          <PreviewField label="Invoice number" value={values.invoiceNumber} />
+          <PreviewField label="Invoice number" value={values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber} />
           <PreviewField label={pickupFieldLabel} value={pickupLabel} />
           <PreviewField label="Container" value={containerLabel} />
           <PreviewField label={t("invoices.form.fields.paymentLocation")} value={getPaymentLocationLabel(values.paymentLocation)} />

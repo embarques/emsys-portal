@@ -8,6 +8,9 @@ import { TransactionAssigneeSelect } from "@/components/accounting/transaction-a
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { selectFormFieldTextOnFocus, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { InvoiceNumberSwitch } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -108,6 +111,19 @@ export function RegisterInvoiceTransactionFields({
   invoiceCostReadOnly = false,
 }: Props) {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
+  const canUseManualNumber = hasPermission(
+    PERMISSIONS.invoicesManualNumber.name,
+    PERMISSIONS.invoicesManualNumber.resourceType,
+  );
+  const automaticNumber = watch("autoGenerateInvoiceNumber") ?? true;
+  useEffect(() => {
+    // Hidden numbering is managed by the invoice wizard that owns these fields.
+    if (showInvoiceNumber && !canUseManualNumber && !automaticNumber) {
+      setValue("autoGenerateInvoiceNumber", true, { shouldValidate: true });
+    }
+  }, [automaticNumber, canUseManualNumber, setValue, showInvoiceNumber]);
+
   const employeeId = watch("employeeId");
   const employeeName = watch("employeeName");
   const routeId = watch("routeId");
@@ -406,11 +422,23 @@ export function RegisterInvoiceTransactionFields({
     <>
       {showInvoiceNumber ? (
         <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
-          <RequiredLabel htmlFor="journal-invoice-number">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
+          <InvoiceNumberSwitch
+            id="journal-auto-invoice-number"
+            checked={automaticNumber}
+            disabled={!canUseManualNumber}
+            onCheckedChange={(checked) => setValue("autoGenerateInvoiceNumber", checked, { shouldValidate: true, shouldDirty: true })}
+          />
+          <Label htmlFor="journal-invoice-number">
+            {t("accounting.dailyIncome.form.fields.invoice")}
+            {!automaticNumber ? <span className="text-destructive"> *</span> : null}
+          </Label>
           <Input
             id="journal-invoice-number"
-            placeholder={t("accounting.dailyIncome.form.placeholders.enterInvoiceNumber")}
+            placeholder={t(automaticNumber ? "invoices.form.autoNumber.assignedOnSave" : "accounting.dailyIncome.form.placeholders.enterInvoiceNumber")}
             {...register("invoiceNumber")}
+            value={automaticNumber ? "" : watch("invoiceNumber") ?? ""}
+            disabled={automaticNumber}
+            required={!automaticNumber}
           />
           {errors.invoiceNumber ? (
             <p className="text-sm text-destructive">{errors.invoiceNumber.message}</p>

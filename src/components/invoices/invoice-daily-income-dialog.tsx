@@ -1,5 +1,7 @@
 "use client";
 
+import { FormKeyboardHint } from "@/components/forms/form-shell";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, CheckCircle2, Loader2, Lock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -406,6 +408,7 @@ export function InvoiceDailyIncomeDialog({
 
         {isCreating ? (
           <form className="space-y-4" onSubmit={statementForm.handleSubmit(createDailyIncome)}>
+            <FormKeyboardHint />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="min-w-0 space-y-2">
                 <Label htmlFor="invoice-statement-date">{t("invoices.form.fields.date")}</Label>
@@ -549,6 +552,7 @@ export function InvoiceDailyIncomeDialog({
           </form>
         ) : (
           <form className="space-y-5" onSubmit={handleSubmit(submit)}>
+            <FormKeyboardHint />
             <section className="rounded-lg border bg-card p-4 text-sm">
               <div className="space-y-2">
                 <p className="font-semibold">{t("invoices.wizard.dailyIncome.dialog.todaysDailyIncome")}</p>

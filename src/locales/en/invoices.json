@@ -195,6 +195,13 @@
         "actions": "Actions"
       },
       "itemNumber": "Item {{number}}"
+    },
+    "autoNumber": {
+      "permissionHint": "Manual invoice numbers require special permission.",
+      "label": "Generate number",
+      "tooltip": "Generate invoice number automatically",
+      "assignedOnSave": "Assigned when saved",
+      "hint": "The number is assigned from your company’s range after the invoice is successfully created."
     }
   },
   "wizard": {
@@ -688,6 +695,13 @@
     "invalidName": "Enter a valid filename, up to 200 characters, without slashes.",
     "tabTitle": "Documents — Invoice {invoice}",
     "backToInvoices": "Back to invoices",
-    "accessDenied": "You do not have permission to view invoice documents."
+    "accessDenied": "You do not have permission to view invoice documents.",
+    "info": "Document information",
+    "infoFor": "Information for {name}",
+    "originalName": "Original filename",
+    "fileType": "File type",
+    "bytes": "bytes",
+    "updated": "Last updated",
+    "updatedBy": "Updated by"
   }
 }

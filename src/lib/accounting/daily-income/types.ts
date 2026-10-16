@@ -248,6 +248,7 @@ export type DailyIncomeJournalValues = {
   sourceAccountType?: string;
   invoiceId?: string;
   invoiceNumber?: string;
+  autoGenerateInvoiceNumber?: boolean;
   invoiceCost?: number;
   invoiceDiscount?: number;
   invoiceBalance?: number;

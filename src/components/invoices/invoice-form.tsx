@@ -21,6 +21,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DateInput } from "@/components/ui/date-input";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { InvoiceNumberSwitch } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -214,6 +217,8 @@ export function InvoiceForm({
   requestEditLineItemId = null,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
+  const canUseManualNumber = hasPermission(PERMISSIONS.invoicesManualNumber.name, PERMISSIONS.invoicesManualNumber.resourceType);
   const googleMapsConfigured = useIsGoogleMapsConfigured();
   const isPhoneWizard = appearance === "phoneWizard";
   const isWizard = appearance === "wizard" || isPhoneWizard;
@@ -228,7 +233,10 @@ export function InvoiceForm({
   const catalogItems = itemsData?.items ?? [];
 
   const [values, setValues] = useState<InvoiceFormValues>(
-    () => initialValues ?? createEmptyInvoiceForm(),
+    () => {
+      const initial = initialValues ?? createEmptyInvoiceForm();
+      return !isEditing && !canUseManualNumber ? { ...initial, autoGenerateNumber: true } : initial;
+    },
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [entityDialog, setEntityDialog] = useState<"container" | "employee" | "route" | null>(null);
@@ -365,9 +373,10 @@ export function InvoiceForm({
   useEffect(() => {
     if (isWizard) return;
 
-    setValues(initialValues ?? createEmptyInvoiceForm());
+    const initial = initialValues ?? createEmptyInvoiceForm();
+    setValues(!isEditing && !canUseManualNumber ? { ...initial, autoGenerateNumber: true } : initial);
     setFormError(null);
-  }, [initialValues, isWizard]);
+  }, [initialValues, isWizard, isEditing, canUseManualNumber]);
 
   useEffect(() => {
     onValuesChange?.(values);
@@ -891,15 +900,36 @@ export function InvoiceForm({
       {renderField(
         t("invoices.form.fields.invoiceNumber"),
         "invoiceNumber",
-        true,
-        <Input
-          id="invoiceNumber"
-          value={values.invoiceNumber}
-          onChange={(event) => updateField("invoiceNumber", event.target.value)}
-          placeholder={t("invoices.form.placeholders.invoiceNumber")}
-          {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
-          required
-        />,
+        isEditing || !values.autoGenerateNumber,
+        <div className="space-y-2">
+          {!isEditing ? (
+            <InvoiceNumberSwitch
+              id="autoGenerateInvoiceNumber"
+              disabled={!canUseManualNumber || Boolean(values.generatedInvoiceNumber)}
+              checked={Boolean(values.autoGenerateNumber)}
+              onCheckedChange={(checked) => updateField("autoGenerateNumber", checked)}
+            />
+          ) : null}
+          <Input
+            id="invoiceNumber"
+            value={!isEditing && values.autoGenerateNumber ? values.generatedInvoiceNumber || "" : values.invoiceNumber}
+            onChange={(event) => updateField("invoiceNumber", event.target.value)}
+            disabled={isEditing ? !canUseManualNumber : Boolean(values.autoGenerateNumber)}
+            placeholder={t(
+              !isEditing && values.autoGenerateNumber
+                ? "invoices.form.autoNumber.assignedOnSave"
+                : "invoices.form.placeholders.invoiceNumber",
+            )}
+            {...(isWizard && !values.autoGenerateNumber ? wizardInputFieldProps(values.invoiceNumber) : {})}
+            required={isEditing || !values.autoGenerateNumber}
+          />
+          {!isEditing && !canUseManualNumber ? (
+            <p className="text-xs text-muted-foreground">{t("invoices.form.autoNumber.permissionHint")}</p>
+          ) : null}
+          {!isEditing && values.autoGenerateNumber && !values.generatedInvoiceNumber ? (
+            <p className="text-xs text-muted-foreground">{t("invoices.form.autoNumber.hint")}</p>
+          ) : null}
+        </div>,
         wizardFieldCol,
       )}
     </div>

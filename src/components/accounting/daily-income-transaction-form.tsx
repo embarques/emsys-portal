@@ -149,7 +149,7 @@ export function DailyIncomeTransactionForm({
   } = useForm<DailyIncomeJournalValues>({
     resolver: zodResolver(schema),
     shouldFocusError: !activeStep,
-    defaultValues: { ...initialValues, transactionType },
+    defaultValues: { ...initialValues, autoGenerateInvoiceNumber: initialValues.autoGenerateInvoiceNumber ?? transactionType === "INITIAL-PAYMENT", transactionType },
   });
 
   useEffect(() => {
@@ -160,7 +160,7 @@ export function DailyIncomeTransactionForm({
   }, [watch, onValuesChange]);
 
   useEffect(() => {
-    reset({ ...initialValues, transactionType });
+    reset({ ...initialValues, autoGenerateInvoiceNumber: initialValues.autoGenerateInvoiceNumber ?? transactionType === "INITIAL-PAYMENT", transactionType });
     setSourceAccountDefaultCleared(false);
   }, [initialValues, reset, transactionType]);
 

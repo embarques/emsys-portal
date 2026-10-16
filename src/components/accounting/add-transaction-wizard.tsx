@@ -57,6 +57,7 @@ function emptyTransaction(
 ): DailyIncomeJournalValues {
   const values: DailyIncomeJournalValues = {
     transactionType: type,
+    autoGenerateInvoiceNumber: type === "INITIAL-PAYMENT",
     amount: 0,
     refNumber: "",
     refNumberMode: "system",
@@ -76,6 +77,7 @@ function continueTransactionValues(
 ): DailyIncomeJournalValues {
   return {
     ...emptyTransaction(type, paymentMethods),
+    autoGenerateInvoiceNumber: type === "INITIAL-PAYMENT" ? values.autoGenerateInvoiceNumber ?? true : undefined,
     employeeId: values.employeeId,
     employeeName: values.employeeName,
     employeeGroupId: values.employeeGroupId,
