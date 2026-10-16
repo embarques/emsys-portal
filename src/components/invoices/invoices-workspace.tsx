@@ -16,6 +16,7 @@ import {
 
 import { InvoiceStagingDialog } from "@/components/invoices/invoice-staging-dialog";
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
+import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -499,6 +500,7 @@ export function InvoicesWorkspace() {
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_INVOICE_LIST_PARAMS.sort, () => setPage(1));
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
+  const [viewDocuments, setViewDocuments] = useState(false);
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
   const [stagingOpen, setStagingOpen] = useState(false);
@@ -695,7 +697,19 @@ export function InvoicesWorkspace() {
     setSelectedIds((current) => (checked ? [...current, invoiceId] : current.filter((entry) => entry !== invoiceId)));
   }
 
+  const documentsButton = (
+    <InvoiceDocumentsButton
+      invoice={selectedInvoices[0]}
+      selectedCount={selectedCount}
+      onOpenMobile={(invoice) => {
+        openView(invoice);
+        setViewDocuments(true);
+      }}
+    />
+  );
+
   function openView(invoice: Invoice) {
+    setViewDocuments(false);
     setViewInvoiceId(invoice.invoiceId);
     setViewOverlay(null);
   }
@@ -1306,10 +1320,13 @@ export function InvoicesWorkspace() {
             onDelete={() => setDeleteTarget(selectedInvoices)}
             deleteDisabled={isDeleting}
             actions={
-              <Button variant="outline" size="sm" className={tableSelectionActionStyles.print} onClick={printSelectedInvoices} disabled={isPrinting}>
-                <Printer className="h-4 w-4" />
-                {isPrinting ? "Preparing…" : "Print"}
-              </Button>
+              <>
+                {documentsButton}
+                <Button variant="outline" size="sm" className={tableSelectionActionStyles.print} onClick={printSelectedInvoices} disabled={isPrinting}>
+                  <Printer className="h-4 w-4" />
+                  {isPrinting ? "Preparing…" : "Print"}
+                </Button>
+              </>
             }
           />
         ) : null}
@@ -1484,6 +1501,7 @@ export function InvoicesWorkspace() {
                 <Printer className="h-4 w-4" />
                 {isPrinting ? "Preparing…" : "Print"}
               </Button>
+              {documentsButton}
             </>
           }
         />
@@ -1557,6 +1575,8 @@ export function InvoicesWorkspace() {
       />
 
       <InvoiceViewSheet
+        key={`${viewInvoiceId}-${viewDocuments}`}
+        initialTab={viewDocuments ? "documents" : "overview"}
         invoice={viewInvoice}
         open={Boolean(viewInvoiceId)}
         onOpenChange={(open) => {

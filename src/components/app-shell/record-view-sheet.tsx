@@ -33,7 +33,7 @@ type RecordViewSheetHeaderProps = {
 type RecordViewSheetBodyProps = {
   children: React.ReactNode;
   className?: string;
-};
+} & Pick<React.HTMLAttributes<HTMLDivElement>, "id" | "role" | "aria-labelledby">;
 
 type RecordViewSheetSectionProps = {
   title?: string;
@@ -119,9 +119,9 @@ export function RecordViewSheetHeader({ title, description, meta, compact = fals
   );
 }
 
-export function RecordViewSheetBody({ children, className }: RecordViewSheetBodyProps) {
+export function RecordViewSheetBody({ children, className, ...props }: RecordViewSheetBodyProps) {
   return (
-    <div className={cn("min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>
+    <div {...props} className={cn("min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>
       {children}
     </div>
   );
