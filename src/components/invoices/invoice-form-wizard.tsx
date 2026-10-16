@@ -81,6 +81,11 @@ type Props = {
   initialValues?: InvoiceFormValues;
   submitLabel: string;
   externalError?: string | null;
+  /**
+   * True when editing a persisted invoice. Create always pre-fills a client
+   * `invoiceId`, so callers must not use truthy `invoiceId` to detect edit mode.
+   */
+  isEditing?: boolean;
   /** Print is only available when editing a saved invoice in the database. */
   allowPrint?: boolean;
   isSubmitting?: boolean;
@@ -123,6 +128,7 @@ export function InvoiceFormWizard({
   initialValues,
   submitLabel,
   externalError = null,
+  isEditing = false,
   allowPrint = false,
   isSubmitting = false,
   resetAfterSave = true,
@@ -444,7 +450,7 @@ export function InvoiceFormWizard({
 
     const draftFiles = [...documentDraft.files];
     if (
-      !initialValues?.invoiceId &&
+      !isEditing &&
       result.savedInvoiceId &&
       includePoliciesStep &&
       policiesAgreement.signatureDataUrl
@@ -465,7 +471,7 @@ export function InvoiceFormWizard({
       }
     }
 
-    if (!initialValues?.invoiceId && result.savedInvoiceId && draftFiles.length) {
+    if (!isEditing && result.savedInvoiceId && draftFiles.length) {
       setPendingUploadFiles(draftFiles);
       setDocumentsBusy(true);
       setDocumentStage(true);
@@ -651,7 +657,7 @@ export function InvoiceFormWizard({
       canApplyInvoiceDiscount={allowDiscountEditing}
       onDiscountChange={allowDiscountEditing ? handleDiscountChange : undefined}
     />
-    {initialValues?.invoiceId ? (
+    {isEditing && initialValues?.invoiceId ? (
       <div className="rounded-lg border p-3 sm:p-4">
         <p className="mb-3 text-sm text-muted-foreground">{t("invoices.documents.editHint")}</p>
         <InvoiceDocumentsSection

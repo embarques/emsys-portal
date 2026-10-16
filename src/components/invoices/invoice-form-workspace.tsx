@@ -62,6 +62,8 @@ type InvoiceWizardShellProps = {
   onCancel: () => void;
   initialValues: InvoiceFormValues;
   submitLabel: string;
+  /** True when editing a persisted invoice (not create with a client-generated id). */
+  isEditing?: boolean;
   allowPrint?: boolean;
   resetAfterSave?: boolean;
   requireDailyIncomeRegistration?: boolean;
@@ -85,6 +87,7 @@ function InvoiceWizardShell({
   onCancel,
   initialValues,
   submitLabel,
+  isEditing = false,
   allowPrint = false,
   resetAfterSave = true,
   requireDailyIncomeRegistration = false,
@@ -118,6 +121,7 @@ function InvoiceWizardShell({
             key={`${initialValues.invoiceId || "new"}:${formNonce ?? 0}:${initialWizardStep ?? 1}`}
             initialValues={initialValues}
             submitLabel={submitLabel}
+            isEditing={isEditing}
             allowPrint={allowPrint}
             resetAfterSave={resetAfterSave}
             requireDailyIncomeRegistration={requireDailyIncomeRegistration}
@@ -493,6 +497,7 @@ export function InvoiceEditWizard({
         onCancel={onCancel}
         initialValues={initialValues}
         submitLabel={submitLabel}
+        isEditing
         allowPrint
         resetAfterSave={false}
         isSubmitting={updateMutation.isPending || isSyncingBarcodes}
