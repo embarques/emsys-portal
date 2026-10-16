@@ -166,6 +166,26 @@ Scanned numbers are merchandise labels that originated on an invoice. Resolve by
 
 ### Inventory
 
+**Holder workflow (proposed contract):** `inventory.md` defines the new supply
+operations model implemented at `/inventory/workflow`. Enable it only against an
+API implementing that contract with `NEXT_PUBLIC_INVENTORY_WORKFLOW_ENABLED=true`.
+See `docs/inventory-workflow.md` for deployment requirements and remaining integration work.
+
+In this model, stock belongs to a persistent warehouse, employee, vehicle, or route
+crew holder; a daily route is context only. Dispatch transfers stock without
+recognizing sales. Returns, aggregate supply sales, categorized dispositions,
+physical counts, payment verification, office handovers and obligation settlements
+are separate documents. Posted documents are immutable. Closeout requires physical
+counts for available and quarantined stock and a fresh server reconciliation;
+financial differences require an explanation. Reopening uses a permissioned reason,
+corrective postings and immutable revisions. Retained stock persists overnight.
+
+The following describes the **existing legacy API/workspaces**, which remain available
+for historical context. Live Swagger now documents multi-line, versioned receipts
+and dispatches at those same `/inventory/...` paths; the legacy portal adapter
+requires migration (see `docs/inventory-swagger-verification.md`). Do not combine their journal
+inventory changes with the new workflow for the same supply movements.
+
 Inventory manages the company's internal supplies and materials.
 
 It is separate from customer merchandise and is used to:

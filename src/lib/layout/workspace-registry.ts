@@ -1,3 +1,4 @@
+import { InventoryWorkflowWorkspace } from "@/lib/inventory/workflow/components/inventory-workflow-workspace";
 import { EmployeeTitlesWorkspace } from "@/components/employee-titles/employee-titles-workspace";
 import { EmployeeDepartmentsWorkspace } from "@/components/employee-departments/employee-departments-workspace";
 import type { ComponentType } from "react";
@@ -38,6 +39,7 @@ import { translate, type Locale } from "@/lib/i18n/catalog";
 
 /** Maps dashboard routes to the client workspace component rendered inside a tab. */
 export const workspaceRegistry: Record<string, ComponentType> = {
+  "/inventory/workflow": InventoryWorkflowWorkspace,
   "/": DashboardWorkspace,
   "/customers": CustomersWorkspace,
   "/appointments": OrdersWorkspace,

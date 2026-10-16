@@ -23,7 +23,7 @@ import {
 import { DateInput } from "@/components/ui/date-input";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
-import { InvoiceNumberSwitch } from "@/components/invoices/invoice-number-switch";
+import { InvoiceNumberModeFields } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -106,6 +106,8 @@ type InvoiceFormProps = {
   wizardTotalSteps?: number;
   appearance?: "default" | "wizard" | "phoneWizard";
   showFooter?: boolean;
+  /** Hide pending payment branch when the wizard payment step owns that field. */
+  showPaymentLocation?: boolean;
   onValuesChange?: (values: InvoiceFormValues) => void;
   /** Wizard Next: called when Enter is pressed on invoice number or the last field. */
   onContinue?: () => void;
@@ -210,6 +212,7 @@ export function InvoiceForm({
   wizardStep,
   appearance = "default",
   showFooter = true,
+  showPaymentLocation = true,
   onValuesChange,
   onContinue,
   focusFieldId = null,
@@ -876,61 +879,66 @@ export function InvoiceForm({
             wizardFieldCol,
             <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
           )}
-      {renderField(
-        t("invoices.form.fields.paymentLocation"),
-        "paymentLocation",
-        true,
-        <SearchableSelect
-          id="paymentLocation"
-          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
-          onValueChange={(next) =>
-            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-          }
-          placeholder={t("invoices.form.fields.paymentLocation")}
-          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
-          required
-          loading={branchesLoading}
-          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
-            value: branch.code.trim().toUpperCase(),
-            label: branch.code.trim().toUpperCase(),
-          }))}
-        />,
-        wizardFieldCol,
-      )}
-      {renderField(
-        t("invoices.form.fields.invoiceNumber"),
-        "invoiceNumber",
-        isEditing || !values.autoGenerateNumber,
-        <div className="space-y-2">
-          {!isEditing ? (
-            <InvoiceNumberSwitch
-              id="autoGenerateInvoiceNumber"
-              disabled={!canUseManualNumber || Boolean(values.generatedInvoiceNumber)}
-              checked={Boolean(values.autoGenerateNumber)}
-              onCheckedChange={(checked) => updateField("autoGenerateNumber", checked)}
-            />
-          ) : null}
+      {showPaymentLocation
+        ? renderField(
+            t("invoices.form.fields.paymentLocation"),
+            "paymentLocation",
+            true,
+            <SearchableSelect
+              id="paymentLocation"
+              value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
+              onValueChange={(next) =>
+                updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
+              }
+              placeholder={t("invoices.form.fields.paymentLocation")}
+              {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
+              required
+              loading={branchesLoading}
+              options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
+                value: branch.code.trim().toUpperCase(),
+                label: branch.code.trim().toUpperCase(),
+              }))}
+            />,
+            wizardFieldCol,
+          )
+        : null}
+      {isEditing ? (
+        renderField(
+          t("invoices.form.fields.invoiceNumber"),
+          "invoiceNumber",
+          true,
           <Input
             id="invoiceNumber"
-            value={!isEditing && values.autoGenerateNumber ? values.generatedInvoiceNumber || "" : values.invoiceNumber}
+            value={values.invoiceNumber}
             onChange={(event) => updateField("invoiceNumber", event.target.value)}
-            disabled={isEditing ? !canUseManualNumber : Boolean(values.autoGenerateNumber)}
-            placeholder={t(
-              !isEditing && values.autoGenerateNumber
-                ? "invoices.form.autoNumber.assignedOnSave"
-                : "invoices.form.placeholders.invoiceNumber",
-            )}
-            {...(isWizard && !values.autoGenerateNumber ? wizardInputFieldProps(values.invoiceNumber) : {})}
-            required={isEditing || !values.autoGenerateNumber}
+            disabled={!canUseManualNumber}
+            placeholder={t("invoices.form.placeholders.invoiceNumber")}
+            required
+          />,
+          wizardFieldCol,
+        )
+      ) : (
+        <div className={cn(isPhoneWizard ? undefined : isWizard ? "@2xl:col-span-2" : "sm:col-span-2")}>
+          <InvoiceNumberModeFields
+            id="invoiceNumber"
+            autoGenerate={Boolean(values.autoGenerateNumber)}
+            invoiceNumber={values.invoiceNumber}
+            generatedInvoiceNumber={values.generatedInvoiceNumber}
+            canUseManualNumber={canUseManualNumber}
+            onModeChange={(nextAutoGenerate) => {
+              updateField("autoGenerateNumber", nextAutoGenerate);
+              if (nextAutoGenerate) {
+                updateField("invoiceNumber", "");
+              }
+            }}
+            onInvoiceNumberChange={(next) => updateField("invoiceNumber", next)}
+            inputProps={
+              isWizard && !values.autoGenerateNumber
+                ? wizardInputFieldProps(values.invoiceNumber)
+                : undefined
+            }
           />
-          {!isEditing && !canUseManualNumber ? (
-            <p className="text-xs text-muted-foreground">{t("invoices.form.autoNumber.permissionHint")}</p>
-          ) : null}
-          {!isEditing && values.autoGenerateNumber && !values.generatedInvoiceNumber ? (
-            <p className="text-xs text-muted-foreground">{t("invoices.form.autoNumber.hint")}</p>
-          ) : null}
-        </div>,
-        wizardFieldCol,
+        </div>
       )}
     </div>
   );

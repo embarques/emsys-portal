@@ -25,6 +25,7 @@
     "barcodeManager": "Códigos de barras",
     "barcodes": "Códigos de barras",
     "inventory": "Inventario",
+    "inventoryWorkflow": "Operaciones de suministros",
     "inventoryStock": "Stock",
     "inventoryReceipts": "Ingresos",
     "inventoryDispatches": "Despachos",

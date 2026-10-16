@@ -36,17 +36,60 @@ import { type InvoiceDailyIncomeContext } from "@/lib/invoices/invoice-daily-inc
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   isInvoiceEmployeePickupSource,
+  mapPaymentLocationToPaidRegion,
   type InvoiceFormValues,
+  type InvoicePaymentLocation,
 } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
+import { cn } from "@/lib/utils";
 
 type Props = {
   values: InvoiceFormValues;
   onContextChange: (context: InvoiceDailyIncomeContext) => void;
+  onPaymentLocationChange?: (paymentLocation: InvoicePaymentLocation) => void;
 };
+
+function PendingPaymentBranchField({
+  value,
+  onChange,
+  className,
+}: {
+  value: InvoicePaymentLocation;
+  onChange?: (paymentLocation: InvoicePaymentLocation) => void;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  const branchesQuery = useBranchPicker(200);
+  const branches = branchesQuery.data?.items ?? [];
+
+  return (
+    <div className={cn("rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5", className)}>
+      <div className="space-y-2">
+        <Label htmlFor="paymentLocation">
+          {t("invoices.form.fields.paymentLocation")}
+          <span className="text-destructive"> *</span>
+        </Label>
+        <SearchableSelect
+          id="paymentLocation"
+          value={mapPaymentLocationToPaidRegion(value)}
+          onValueChange={(next) => onChange?.(next as InvoicePaymentLocation)}
+          placeholder={t("invoices.form.fields.paymentLocation")}
+          required
+          loading={branchesQuery.isLoading}
+          options={branches
+            .filter((branch) => branch.code.trim())
+            .map((branch) => ({
+              value: branch.code.trim().toUpperCase(),
+              label: branch.code.trim().toUpperCase(),
+            }))}
+        />
+      </div>
+    </div>
+  );
+}
 
 function todayDateValue() {
   const now = new Date();
@@ -314,10 +357,20 @@ function MobileCreateDailyIncomePage({
   );
 }
 
-export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
+export function InvoiceDailyIncomeStep({
+  values,
+  onContextChange,
+  onPaymentLocationChange,
+}: Props) {
   const { t } = useTranslation();
   const isMobileLayout = useIsMobileViewport();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const paymentLocationField = (
+    <PendingPaymentBranchField
+      value={values.paymentLocation}
+      onChange={onPaymentLocationChange}
+    />
+  );
   const [statusError, setStatusError] = useState<string | null>(null);
   const [localRegistration, setLocalRegistration] = useState<DailyIncomeJournal | null>(null);
   const [localStatement, setLocalStatement] = useState<DailyIncomeStatement | null>(null);
@@ -455,9 +508,12 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" />
-        {t("invoices.wizard.dailyIncome.checking")}
+      <div className="space-y-5">
+        {paymentLocationField}
+        <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          {t("invoices.wizard.dailyIncome.checking")}
+        </div>
       </div>
     );
   }
@@ -466,6 +522,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     if (queryError) {
       return (
         <div className="space-y-5">
+          {paymentLocationField}
           <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
@@ -486,6 +543,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     if (registration) {
       return (
         <div className="space-y-5">
+          {paymentLocationField}
           <div className="rounded-xl border bg-card p-4">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
@@ -540,6 +598,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     if (!statement) {
       return (
         <div className="space-y-5">
+          {paymentLocationField}
           <MobileCreateDailyIncomePage date={currentDate} onCreated={handleStatementCreated} />
         </div>
       );
@@ -548,6 +607,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     if (!statementOpen) {
       return (
         <div className="space-y-5">
+          {paymentLocationField}
           <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
             <div className="space-y-2">
               <p className="font-semibold text-amber-950 dark:text-amber-100">
@@ -580,6 +640,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
 
     return (
       <div className="space-y-5">
+        {paymentLocationField}
         <div className="rounded-xl border bg-card p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
@@ -633,6 +694,8 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
 
   return (
     <div className="space-y-5 p-4 sm:p-6">
+      {paymentLocationField}
+
       {queryError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
           <div className="flex items-start gap-3">

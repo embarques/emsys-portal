@@ -1,0 +1,785 @@
+{
+  "source": "https://api.embarqueros.com/swagger/doc.json",
+  "retrievedAt": "2026-10-16T15:55:26.472386+00:00",
+  "basePath": "/v1",
+  "paths": {
+    "/inventory/dispatches": {
+      "get": {
+        "parameters": []
+      },
+      "post": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Dispatch"
+            }
+          }
+        ]
+      }
+    },
+    "/inventory/dispatches/search": {
+      "post": {
+        "parameters": []
+      }
+    },
+    "/inventory/dispatches/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Dispatch"
+            }
+          },
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current entity version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/dispatches/{id}/cancel": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current draft version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/dispatches/{id}/post": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current draft version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Safe retry key",
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/holders": {
+      "get": {
+        "parameters": []
+      },
+      "post": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.InventoryHolder"
+            }
+          }
+        ]
+      }
+    },
+    "/inventory/holders/search": {
+      "post": {
+        "parameters": []
+      }
+    },
+    "/inventory/holders/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/items": {
+      "get": {
+        "parameters": []
+      },
+      "post": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Item"
+            }
+          }
+        ]
+      }
+    },
+    "/inventory/items/search": {
+      "post": {
+        "parameters": []
+      }
+    },
+    "/inventory/items/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Item"
+            }
+          },
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current entity version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/receipts": {
+      "get": {
+        "parameters": []
+      },
+      "post": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Receipt"
+            }
+          }
+        ]
+      }
+    },
+    "/inventory/receipts/search": {
+      "post": {
+        "parameters": []
+      }
+    },
+    "/inventory/receipts/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Receipt"
+            }
+          },
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current entity version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/receipts/{id}/cancel": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current draft version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/receipts/{id}/post": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current draft version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Safe retry key",
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/stock": {
+      "get": {
+        "parameters": []
+      }
+    },
+    "/inventory/stock/search": {
+      "post": {
+        "parameters": []
+      }
+    },
+    "/inventory/stock/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/inventory/suppliers": {
+      "get": {
+        "parameters": []
+      },
+      "post": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Supplier"
+            }
+          }
+        ]
+      }
+    },
+    "/inventory/suppliers/search": {
+      "post": {
+        "parameters": []
+      }
+    },
+    "/inventory/suppliers/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "description": "Inventory record",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/inventory.Supplier"
+            }
+          },
+          {
+            "type": "string",
+            "description": "Inventory UUID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Current entity version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "inventory.Audit": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "inventory.Dispatch": {
+      "type": "object",
+      "properties": {
+        "assigneeEmployeeId": {
+          "type": "string"
+        },
+        "audit": {
+          "$ref": "#/definitions/inventory.Audit"
+        },
+        "correctsSourceId": {
+          "type": "string"
+        },
+        "dailyRouteId": {
+          "type": "string"
+        },
+        "dispatchedAt": {
+          "type": "string"
+        },
+        "fromHolderId": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/inventory.DispatchLine"
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "postedAt": {
+          "type": "string"
+        },
+        "postedBy": {
+          "type": "string"
+        },
+        "postingRevision": {
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/inventory.DocumentStatus"
+        },
+        "toHolderId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.DispatchLine": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "itemId": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.DocumentStatus": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "POSTED",
+        "CANCELLED"
+      ],
+      "x-enum-varnames": [
+        "StatusDraft",
+        "StatusPosted",
+        "StatusCancelled"
+      ]
+    },
+    "inventory.HolderType": {
+      "type": "string",
+      "enum": [
+        "WAREHOUSE",
+        "EMPLOYEE",
+        "VEHICLE",
+        "ROUTE_CREW"
+      ],
+      "x-enum-varnames": [
+        "HolderWarehouse",
+        "HolderEmployee",
+        "HolderVehicle",
+        "HolderRouteCrew"
+      ]
+    },
+    "inventory.InventoryHolder": {
+      "type": "object",
+      "properties": {
+        "audit": {
+          "$ref": "#/definitions/inventory.Audit"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "entityId": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "type": {
+          "$ref": "#/definitions/inventory.HolderType"
+        },
+        "version": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.Item": {
+      "type": "object",
+      "properties": {
+        "audit": {
+          "$ref": "#/definitions/inventory.Audit"
+        },
+        "category": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "defaultSellingPriceMinor": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "reorderThreshold": {
+          "type": "integer"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "unitOfMeasure": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.Receipt": {
+      "type": "object",
+      "properties": {
+        "audit": {
+          "$ref": "#/definitions/inventory.Audit"
+        },
+        "correctsSourceId": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/inventory.ReceiptLine"
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "postedAt": {
+          "type": "string"
+        },
+        "postedBy": {
+          "type": "string"
+        },
+        "postingRevision": {
+          "type": "integer"
+        },
+        "receivedAt": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/inventory.DocumentStatus"
+        },
+        "supplierId": {
+          "type": "string"
+        },
+        "toHolderId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.ReceiptLine": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "itemId": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "unitCostMinor": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.StockBalance": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "$ref": "#/definitions/inventory.StockCondition"
+        },
+        "holderId": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "itemId": {
+          "type": "string"
+        },
+        "quantityOnHand": {
+          "type": "integer"
+        },
+        "quantityReserved": {
+          "type": "integer"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.StockCondition": {
+      "type": "string",
+      "enum": [
+        "AVAILABLE",
+        "QUARANTINED"
+      ],
+      "x-enum-varnames": [
+        "ConditionAvailable",
+        "ConditionQuarantined"
+      ]
+    },
+    "inventory.Supplier": {
+      "type": "object",
+      "properties": {
+        "addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audit": {
+          "$ref": "#/definitions/inventory.Audit"
+        },
+        "companyName": {
+          "type": "string"
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/inventory.SupplierContact"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "integer"
+        }
+      }
+    },
+    "inventory.SupplierContact": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        }
+      }
+    },
+    "responses.Error": {
+      "type": "object",
+      "properties": {
+        "data": {},
+        "error": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "responses.Success": {
+      "type": "object",
+      "properties": {
+        "data": {},
+        "duration": {
+          "type": "number"
+        },
+        "error": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "resultsPerPage": {
+          "type": "integer"
+        },
+        "subtotal": {
+          "type": "integer"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "total": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

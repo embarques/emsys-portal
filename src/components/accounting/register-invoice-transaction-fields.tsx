@@ -10,7 +10,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { selectFormFieldTextOnFocus, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
-import { InvoiceNumberSwitch } from "@/components/invoices/invoice-number-switch";
+import { InvoiceNumberModeFields } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -419,27 +419,24 @@ export function RegisterInvoiceTransactionFields({
   const invoiceFields = (
     <>
       {showInvoiceNumber ? (
-        <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
-          <InvoiceNumberSwitch
-            id="journal-auto-invoice-number"
-            checked={automaticNumber}
-            disabled={!canUseManualNumber}
-            onCheckedChange={(checked) => setValue("autoGenerateInvoiceNumber", checked, { shouldValidate: true, shouldDirty: true })}
-          />
-          <Label htmlFor="journal-invoice-number">
-            {t("accounting.dailyIncome.form.fields.invoice")}
-            {!automaticNumber ? <span className="text-destructive"> *</span> : null}
-          </Label>
-          <Input
+        <div className={grouped ? "min-w-0" : "min-w-0 sm:col-span-2"}>
+          <InvoiceNumberModeFields
             id="journal-invoice-number"
-            placeholder={t(automaticNumber ? "invoices.form.autoNumber.assignedOnSave" : "accounting.dailyIncome.form.placeholders.enterInvoiceNumber")}
-            {...register("invoiceNumber")}
-            value={automaticNumber ? "" : watch("invoiceNumber") ?? ""}
-            disabled={automaticNumber}
-            required={!automaticNumber}
+            autoGenerate={automaticNumber}
+            invoiceNumber={watch("invoiceNumber") ?? ""}
+            canUseManualNumber={canUseManualNumber}
+            onModeChange={(nextAutoGenerate) => {
+              setValue("autoGenerateInvoiceNumber", nextAutoGenerate, { shouldValidate: true, shouldDirty: true });
+              if (nextAutoGenerate) {
+                setValue("invoiceNumber", "", { shouldValidate: true, shouldDirty: true });
+              }
+            }}
+            onInvoiceNumberChange={(next) => {
+              setValue("invoiceNumber", next, { shouldValidate: true, shouldDirty: true });
+            }}
           />
           {errors.invoiceNumber ? (
-            <p className="text-sm text-destructive">{errors.invoiceNumber.message}</p>
+            <p className="mt-2 text-sm text-destructive">{errors.invoiceNumber.message}</p>
           ) : null}
         </div>
       ) : null}
@@ -479,7 +476,7 @@ export function RegisterInvoiceTransactionFields({
 
   const costFields = (
     <>
-      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
+      <div className="space-y-2 min-w-0">
         <RequiredLabel htmlFor="journal-invoice-cost">{t("accounting.dailyIncome.form.fields.cost")}</RequiredLabel>
         {invoiceCostReadOnly ? (
           <Input
@@ -523,7 +520,7 @@ export function RegisterInvoiceTransactionFields({
 
   const amountFields = (
     <>
-      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
+      <div className="space-y-2 min-w-0">
         <Label htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</Label>
         <Input
           id="journal-amount"
@@ -561,7 +558,7 @@ export function RegisterInvoiceTransactionFields({
 
   const balanceFields = (
     <>
-      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
+      <div className="space-y-2 min-w-0">
         <Label htmlFor="journal-invoice-balance">{t("accounting.dailyIncome.form.fields.balance")}</Label>
         <Input
           id="journal-invoice-balance"
@@ -719,9 +716,11 @@ export function RegisterInvoiceTransactionFields({
       </div>
       {invoiceFields}
       {referenceFields}
-      {costFields}
-      {amountFields}
-      {balanceFields}
+      <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-3">
+        {costFields}
+        {amountFields}
+        {balanceFields}
+      </div>
       {partiesFields}
     </div>
   );

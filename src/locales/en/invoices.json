@@ -131,6 +131,7 @@
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
+      "selectInvoiceNumberMode": "Choose how to assign the invoice number",
       "selectContainer": "Select a container",
       "searchContainers": "Search containers…",
       "selectSender": "Select sender",
@@ -200,8 +201,11 @@
       "permissionHint": "Manual invoice numbers require special permission.",
       "label": "Generate number",
       "tooltip": "Generate invoice number automatically",
+      "modeSystem": "System generated",
+      "modeCustom": "Enter your own",
+      "customLabel": "Custom invoice number",
       "assignedOnSave": "Assigned when saved",
-      "hint": "The number is assigned from your company’s range after the invoice is successfully created."
+      "hint": "EMSYS will generate an invoice number from your company’s range when you save."
     }
   },
   "wizard": {
@@ -685,7 +689,13 @@
     "downloadError": "Download could not be started. Try again.",
     "noPreview": "This format cannot be previewed here. Download the original file to open it.",
     "drop": "Drop files here or browse",
-    "formats": "PDF and images, including HEIC/HEIF. Up to 25 MB per file.",
+    "draftHint": "Choose attachments now. They will upload after the invoice is saved.",
+    "editHint": "Document changes are saved immediately, independently of invoice changes.",
+    "savedHint": "Invoice saved. Review your uploads below. Failed uploads can be retried without creating another invoice.",
+    "finish": "Finish documents",
+    "invalidSize": "Files must be non-empty and no larger than 25 MB.",
+    "removeQueued": "Remove {name}",
+    "formats": "Photos, videos, audio, PDFs and other documents. Up to 25 MB per file.",
     "containerRequired": "Assign this invoice to a container before uploading documents.",
     "failed": "Upload failed",
     "done": "Uploaded",

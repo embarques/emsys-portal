@@ -1,41 +1,110 @@
 "use client";
 
+import type { InputHTMLAttributes } from "react";
+
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+
+type Mode = "system" | "custom";
 
 type Props = {
-  id: string;
-  checked: boolean;
+  id?: string;
+  autoGenerate: boolean;
+  invoiceNumber: string;
+  generatedInvoiceNumber?: string;
+  canUseManualNumber?: boolean;
   disabled?: boolean;
-  onCheckedChange: (checked: boolean) => void;
+  className?: string;
+  inputProps?: Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "disabled">;
+  onModeChange: (autoGenerate: boolean) => void;
+  onInvoiceNumberChange: (value: string) => void;
 };
 
-export function InvoiceNumberSwitch({ id, checked, disabled, onCheckedChange }: Props) {
+function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
+  return (
+    <Label htmlFor={htmlFor}>
+      {children}
+      <span className="text-destructive"> *</span>
+    </Label>
+  );
+}
+
+export function InvoiceNumberModeFields({
+  id = "invoiceNumber",
+  autoGenerate,
+  invoiceNumber,
+  generatedInvoiceNumber = "",
+  canUseManualNumber = true,
+  disabled = false,
+  className,
+  inputProps,
+  onModeChange,
+  onInvoiceNumberChange,
+}: Props) {
   const { t } = useTranslation();
+  const mode: Mode = autoGenerate ? "system" : "custom";
+  const modeLocked = disabled || !canUseManualNumber || Boolean(generatedInvoiceNumber);
+  const modeOptions = [
+    {
+      value: "system",
+      label: t("invoices.form.autoNumber.modeSystem"),
+    },
+    {
+      value: "custom",
+      label: t("invoices.form.autoNumber.modeCustom"),
+      disabled: !canUseManualNumber,
+    },
+  ];
 
   return (
-    <div className="flex items-center justify-end gap-2">
-      <Label htmlFor={id} className="cursor-pointer text-xs font-normal text-muted-foreground">
-        {t("invoices.form.autoNumber.label")}
-      </Label>
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex" tabIndex={disabled ? 0 : undefined}>
-              <Switch
-                id={id}
-                checked={checked}
-                disabled={disabled}
-                onCheckedChange={onCheckedChange}
-                aria-label={t("invoices.form.autoNumber.tooltip")}
-              />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{t("invoices.form.autoNumber.tooltip")}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <div className={cn("grid gap-4 sm:grid-cols-2", className)}>
+      <div className="space-y-2">
+        <Label htmlFor={`${id}-mode`}>{t("invoices.form.fields.invoiceNumber")}</Label>
+        <SearchableSelect
+          id={`${id}-mode`}
+          value={mode}
+          disabled={modeLocked}
+          onValueChange={(next) => {
+            if (!canUseManualNumber && next === "custom") return;
+            onModeChange(next !== "custom");
+            if (next !== "custom") {
+              onInvoiceNumberChange("");
+            }
+          }}
+          placeholder={t("invoices.form.placeholders.selectInvoiceNumberMode")}
+          searchable={false}
+          options={modeOptions}
+        />
+        {mode === "system" ? (
+          <p className="text-xs text-muted-foreground">
+            {generatedInvoiceNumber
+              ? generatedInvoiceNumber
+              : t("invoices.form.autoNumber.hint")}
+          </p>
+        ) : null}
+        {!canUseManualNumber ? (
+          <p className="text-xs text-muted-foreground">{t("invoices.form.autoNumber.permissionHint")}</p>
+        ) : null}
+      </div>
+
+      {mode === "custom" ? (
+        <div className="space-y-2">
+          <RequiredLabel htmlFor={id}>{t("invoices.form.autoNumber.customLabel")}</RequiredLabel>
+          <Input
+            id={id}
+            value={invoiceNumber}
+            onChange={(event) => onInvoiceNumberChange(event.target.value)}
+            disabled={disabled}
+            placeholder={t("invoices.form.placeholders.invoiceNumber")}
+            autoComplete="off"
+            required
+            {...inputProps}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

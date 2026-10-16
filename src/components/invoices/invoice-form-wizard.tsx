@@ -3,6 +3,9 @@
 import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Printer, Save } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
+import { InvoiceDocumentPicker } from "@/components/invoices/invoice-document-picker";
+import { useInvoiceDocumentDraft } from "@/lib/invoices/hooks/use-invoice-document-draft";
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDailyIncomeStep } from "@/components/invoices/invoice-daily-income-step";
 import { InvoiceFormPreviewStep } from "@/components/invoices/invoice-form-preview-step";
@@ -131,6 +134,10 @@ export function InvoiceFormWizard({
       ? initialValues
       : { ...(initialValues ?? createEmptyInvoiceForm()), autoGenerateNumber: true },
   );
+  const documentDraft = useInvoiceDocumentDraft();
+  const [documentStage, setDocumentStage] = useState(false);
+  const [documentsBusy, setDocumentsBusy] = useState(false);
+  const canUploadDocuments = hasPermission("canUpdateInvoice", "invoice");
   const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [stepError, setStepError] = useState<string | null>(null);
@@ -168,8 +175,11 @@ export function InvoiceFormWizard({
   const previousReceiverIdRef = useRef(values.receiverId);
 
   const findStep1Issue = useCallback(
-    (formValues: InvoiceFormValues) => findInvoiceWizardStep1Issue(formValues, t),
-    [t],
+    (formValues: InvoiceFormValues) =>
+      findInvoiceWizardStep1Issue(formValues, t, {
+        includePaymentLocation: !requireDailyIncomeRegistration,
+      }),
+    [requireDailyIncomeRegistration, t],
   );
   const findStep2Issue = useCallback(
     (formValues: InvoiceFormValues) => findInvoiceWizardStep2Issue(formValues, t),
@@ -280,7 +290,7 @@ export function InvoiceFormWizard({
           : step === 3
             ? findStep3Issue(currentValues)
             : requireDailyIncomeRegistration && step === 4
-              ? findInvoiceWizardPaymentIssue(dailyIncomeContext, t, "continue")
+              ? findInvoiceWizardPaymentIssue(dailyIncomeContext, t, "continue", currentValues)
               : null;
     if (issue) {
       revealIssue(issue);
@@ -295,11 +305,13 @@ export function InvoiceFormWizard({
   }
 
   function handleBack() {
+    if (documentsBusy || isSubmitting) return;
     clearErrors();
     setStep((current) => (current - 1) as InvoiceWizardStep);
   }
 
   function goToStep(target: InvoiceWizardStep) {
+    if (documentsBusy || isSubmitting) return;
     clearErrors();
     setStep(target);
   }
@@ -326,6 +338,7 @@ export function InvoiceFormWizard({
   }
 
   async function handleSave() {
+    if (isSubmitting || documentsBusy || documentStage) return;
     const issue = findSaveIssue(values);
     if (issue) {
       revealIssue(issue);
@@ -364,6 +377,17 @@ export function InvoiceFormWizard({
       setSavedInvoiceId(result.savedInvoiceId);
     }
 
+    if (!initialValues?.invoiceId && result.savedInvoiceId && documentDraft.files.length) {
+      setDocumentsBusy(true);
+      setDocumentStage(true);
+      return;
+    }
+    finishSave();
+  }
+
+  function finishSave() {
+    documentDraft.reset();
+    setDocumentStage(false);
     onSaved?.();
 
     if (!resetAfterSave) return;
@@ -389,7 +413,7 @@ export function InvoiceFormWizard({
   const registeredCostMismatchError = hasRegisteredCostMismatch
     ? t("invoices.wizard.validation.registeredCostMismatch")
     : null;
-  const saveDisabled = isSubmitting || hasNegativeBalance || hasRegisteredCostMismatch;
+  const saveDisabled = isSubmitting || documentsBusy || hasNegativeBalance || hasRegisteredCostMismatch;
   const bannerError =
     step === previewStep
       ? submitError ?? negativeBalanceError ?? registeredCostMismatchError ?? externalError
@@ -469,6 +493,7 @@ export function InvoiceFormWizard({
       wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
       wizardTotalSteps={previewStep}
       showFooter={false}
+      showPaymentLocation={!requireDailyIncomeRegistration}
       initialValues={values}
       submitLabel={submitLabel}
       onSubmit={() => ({ error: null })}
@@ -485,10 +510,20 @@ export function InvoiceFormWizard({
     <InvoiceDailyIncomeStep
       values={values}
       onContextChange={handleDailyIncomeContextChange}
+      onPaymentLocationChange={(paymentLocation) => {
+        setValues((current) => {
+          const next = { ...current, paymentLocation };
+          valuesRef.current = next;
+          return next;
+        });
+        setStepError(null);
+        setSubmitError(null);
+      }}
     />
   );
 
   const previewContent = (
+    <div className="min-w-0 space-y-4">
     <InvoiceFormPreviewStep
       values={values}
       appearance={isMobileLayout ? "phoneWizard" : "wizard"}
@@ -507,6 +542,16 @@ export function InvoiceFormWizard({
       canApplyInvoiceDiscount={allowDiscountEditing}
       onDiscountChange={allowDiscountEditing ? handleDiscountChange : undefined}
     />
+    {initialValues?.invoiceId ? (
+      <div className="rounded-lg border p-3 sm:p-4">
+        <p className="mb-3 text-sm text-muted-foreground">{t("invoices.documents.editHint")}</p>
+        <InvoiceDocumentsSection invoice={initialValues} onBusyChange={setDocumentsBusy} />
+      </div>
+    ) : canUploadDocuments ? (
+      <InvoiceDocumentPicker files={documentDraft.files} invalid={documentDraft.invalid}
+        disabled={isSubmitting} onAdd={documentDraft.add} onRemove={documentDraft.remove} />
+    ) : null}
+    </div>
   );
 
   const backButton =
@@ -543,6 +588,23 @@ export function InvoiceFormWizard({
         </Button>
       </>
     );
+
+  if (documentStage && savedInvoiceId) {
+    return (
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-5">
+        <p role="status" className="rounded-lg bg-muted p-3 text-sm">{t("invoices.documents.savedHint")}</p>
+        <InvoiceDocumentsSection
+          key={savedInvoiceId}
+          invoice={{ ...values, invoiceId: savedInvoiceId }}
+          initialFiles={documentDraft.files}
+          onBusyChange={setDocumentsBusy}
+        />
+        <Button type="button" className="min-h-11 w-full" disabled={documentsBusy} onClick={finishSave}>
+          {t("invoices.documents.finish")}
+        </Button>
+      </div>
+    );
+  }
 
   if (isMobileLayout) {
     const steps = requireDailyIncomeRegistration

@@ -25,6 +25,7 @@
     "barcodeManager": "Barcodes",
     "barcodes": "Barcodes",
     "inventory": "Inventory",
+    "inventoryWorkflow": "Supply operations",
     "inventoryStock": "Stock",
     "inventoryReceipts": "Receipts",
     "inventoryDispatches": "Dispatches",

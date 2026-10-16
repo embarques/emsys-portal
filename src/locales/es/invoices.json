@@ -131,6 +131,7 @@
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
+      "selectInvoiceNumberMode": "Elige cómo asignar el número de factura",
       "selectContainer": "Seleccionar contenedor",
       "searchContainers": "Buscar contenedores…",
       "selectSender": "Seleccionar remitente",
@@ -200,8 +201,11 @@
       "permissionHint": "Se requiere un permiso especial para ingresar números de factura manualmente.",
       "label": "Generar número",
       "tooltip": "Generar número de factura automáticamente",
+      "modeSystem": "Generado por el sistema",
+      "modeCustom": "Ingresar el propio",
+      "customLabel": "Número de factura personalizado",
       "assignedOnSave": "Se asignará al guardar",
-      "hint": "El número se asigna del rango de su empresa cuando la factura se crea correctamente."
+      "hint": "EMSYS generará un número de factura del rango de su empresa al guardar."
     }
   },
   "wizard": {
@@ -685,7 +689,13 @@
     "downloadError": "No se pudo iniciar la descarga. Inténtelo de nuevo.",
     "noPreview": "Este formato no admite vista previa aquí. Descargue el archivo original para abrirlo.",
     "drop": "Arrastre archivos aquí o seleccione archivos",
-    "formats": "PDF e imágenes, incluidos HEIC/HEIF. Hasta 25 MB por archivo.",
+    "draftHint": "Seleccione archivos ahora. Se subirán después de guardar la factura.",
+    "editHint": "Los cambios en documentos se guardan de inmediato, independientemente de los cambios en la factura.",
+    "savedHint": "Factura guardada. Revise los archivos abajo. Puede reintentar las cargas fallidas sin crear otra factura.",
+    "finish": "Finalizar documentos",
+    "invalidSize": "Los archivos no pueden estar vacíos ni superar los 25 MB.",
+    "removeQueued": "Quitar {name}",
+    "formats": "Fotos, videos, audio, PDF y otros documentos. Hasta 25 MB por archivo.",
     "containerRequired": "Asigne esta factura a un contenedor antes de subir documentos.",
     "failed": "Error al subir",
     "done": "Subido",

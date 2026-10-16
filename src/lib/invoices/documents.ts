@@ -1,6 +1,6 @@
 export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
 export const DOCUMENT_ACCEPT =
-  ".pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.tif,.tiff,.bmp,.avif";
+  "";
 
 export type DocumentActor = {
   name?: string;
@@ -40,7 +40,7 @@ export type UploadItem = {
 };
 
 export function canPreviewDocument(mimeType: string): boolean {
-  return [
+  return mimeType.startsWith("video/") || mimeType.startsWith("audio/") || [
     "application/pdf",
     "image/jpeg",
     "image/png",

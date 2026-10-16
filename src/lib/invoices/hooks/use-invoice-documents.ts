@@ -50,6 +50,11 @@ export function useInvoiceDocuments(invoiceId: string) {
       deleteInvoiceDocument(invoiceId, document),
     onSettled: invalidate,
   });
+  const uploadMutation = useMutation({
+    mutationFn: ({ file, progress }: { file: File; progress: (percent: number) => void }) =>
+      uploadInvoiceDocument(invoiceId, file, progress),
+  });
+  const uploadFile = uploadMutation.mutateAsync;
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const running = useRef(false);
   const batchSequence = useRef(0);
@@ -86,9 +91,9 @@ export function useInvoiceDocuments(invoiceId: string) {
           }
           update(job.id, { status: "uploading" });
           try {
-            await uploadInvoiceDocument(invoiceId, job.file, (progress) =>
+            await uploadFile({ file: job.file, progress: (progress) =>
               update(job.id, { progress }),
-            );
+            });
             update(job.id, { status: "done", progress: 100 });
             await client.invalidateQueries({
               queryKey: ["invoice-documents", companyId, invoiceId],
@@ -111,7 +116,7 @@ export function useInvoiceDocuments(invoiceId: string) {
         setUploading(false);
       }
     },
-    [client, companyId, invoiceId],
+    [client, companyId, invoiceId, uploadFile],
   );
   return {
     query,

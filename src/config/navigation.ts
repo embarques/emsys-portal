@@ -150,6 +150,7 @@ const inventoryItem: NavigationItem = {
   labelKey: "navigation.submenus.inventory",
   icon: Warehouse,
   children: [
+    { labelKey: "navigation.items.inventoryWorkflow", href: "/inventory/workflow", icon: Boxes, permission: PERMISSIONS.inventoryWorkflowRead },
     {
       labelKey: "navigation.items.inventoryStock",
       href: "/inventory/items",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LayoutGrid, List, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,13 +23,27 @@ import { getContainerLabelForInvoice } from "@/lib/invoices/display";
 import type { Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
 
-export function InvoiceDocumentsSection({ invoice }: { invoice: Invoice }) {
+export function InvoiceDocumentsSection({ invoice, initialFiles = [], onBusyChange }: {
+  invoice: Pick<Invoice, "invoiceId" | "invoiceNumber" | "containerId" | "containerName">;
+  initialFiles?: File[];
+  onBusyChange?: (busy: boolean) => void;
+}) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const canUpload = hasPermission("canUpdateInvoice", "invoice");
   const canDelete = hasPermission("canDeleteInvoice", "invoice");
   const { query, documents, rename, remove, upload, uploads, uploading } =
     useInvoiceDocuments(invoice.invoiceId);
+  const started = useRef(false);
+  useEffect(() => {
+    if (!started.current && initialFiles.length && canUpload) {
+      started.current = true;
+      void upload(initialFiles);
+    }
+  }, [initialFiles, canUpload, upload]);
+  useEffect(() => {
+    onBusyChange?.(uploading || rename.isPending || remove.isPending);
+  }, [uploading, rename.isPending, remove.isPending, onBusyChange]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"newest" | "name">("newest");
   const [view, setView] = useState<"list" | "grid">("list");
@@ -59,7 +73,7 @@ export function InvoiceDocumentsSection({ invoice }: { invoice: Invoice }) {
     if (allowUpload) void upload(files, retryJob);
   }
   return (
-    <section className="space-y-4">
+    <section className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">
@@ -97,7 +111,7 @@ export function InvoiceDocumentsSection({ invoice }: { invoice: Invoice }) {
           selected && "lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]",
         )}
       >
-        <div className="min-w-0 space-y-3">
+        <div className={cn("min-w-0 space-y-3", selected && "max-lg:order-2")}>
           <div className="flex flex-wrap gap-2">
             <div className="relative min-w-40 flex-1">
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -202,6 +216,7 @@ export function InvoiceDocumentsSection({ invoice }: { invoice: Invoice }) {
               <Upload className="mx-auto mb-2 size-8 text-muted-foreground" />
               <Button
                 variant="link"
+                className="h-auto min-h-11 max-w-full whitespace-normal"
                 disabled={!allowUpload}
                 onClick={() => input.current?.click()}
               >

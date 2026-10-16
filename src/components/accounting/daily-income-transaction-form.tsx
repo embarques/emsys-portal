@@ -621,7 +621,7 @@ export function DailyIncomeTransactionForm({
             </FormSection>
             <FormSection className={activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2 min-w-0">
+                <div className={cn("space-y-2 min-w-0", !isCheck && "sm:col-span-2")}>
                   {needsPaymentMethod ? (
                     <RequiredLabel htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</RequiredLabel>
                   ) : (

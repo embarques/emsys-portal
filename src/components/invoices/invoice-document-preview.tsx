@@ -68,6 +68,14 @@ export function InvoiceDocumentPreview({
             className="h-[60vh] min-h-80 w-full"
             referrerPolicy="no-referrer"
           />
+        ) : document.mimeType.startsWith("video/") ? (
+          <video controls playsInline preload="metadata" src={link.data?.url}
+            aria-label={document.name} className="max-h-[60vh] w-full"
+            onError={() => setImageFailed(true)} />
+        ) : document.mimeType.startsWith("audio/") ? (
+          <audio controls preload="metadata" src={link.data?.url}
+            aria-label={document.name} className="w-full min-w-0"
+            onError={() => setImageFailed(true)} />
         ) : link.data ? (
           <Image
             src={link.data.url}

@@ -2,6 +2,7 @@ import type { Permission } from "@/lib/auth/types/permission";
 
 /** Portal page gates — aligned with emsys-api permission seed where applicable. */
 export const PERMISSIONS = {
+  inventoryWorkflowRead: { name: "inventory.read", resourceType: "inventory" },
   dashboardView: { name: "canViewDashboard", resourceType: "dashboard" },
   clientsView: { name: "canViewCustomer", resourceType: "customer" },
   clientsCreate: { name: "canCreateCustomer", resourceType: "customer" },

@@ -46,6 +46,7 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { cn } from "@/lib/utils";
 import {
   buildInvoiceDailyIncomeAssigneeDefaults,
   createInvoiceDailyIncomeRegistrationSchema,
@@ -663,7 +664,7 @@ export function InvoiceDailyIncomeDialog({
                 </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className={cn("space-y-2", !isCheck && "sm:col-span-2")}>
                   <Label htmlFor="daily-income-payment-method">{t("invoices.wizard.dailyIncome.paymentMethod")}</Label>
                   <SearchableSelect
                     id="daily-income-payment-method"
@@ -692,7 +693,30 @@ export function InvoiceDailyIncomeDialog({
                   ) : null}
                 </div>
 
-                <div className="space-y-2">
+                {isCheck ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="daily-income-check-number">
+                      {t("invoices.wizard.dailyIncome.dialog.checkNumber")}{" "}
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="daily-income-check-number"
+                      disabled={!statementOpen || !paymentRequired}
+                      placeholder={t("invoices.wizard.dailyIncome.dialog.checkNumberPlaceholder")}
+                      autoComplete="off"
+                      {...register("checkNumber")}
+                    />
+                    {errors.checkNumber ? (
+                      <p className="text-xs text-destructive">{errors.checkNumber.message}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {t("invoices.wizard.dailyIncome.dialog.checkNumberHint")}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="daily-income-payment-account">{t("invoices.wizard.dailyIncome.dialog.paymentAccount")}</Label>
                   <SearchableSelect
                     id="daily-income-payment-account"
@@ -729,29 +753,6 @@ export function InvoiceDailyIncomeDialog({
                     }
                   }}
                 />
-
-                {isCheck ? (
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="daily-income-check-number">
-                      {t("invoices.wizard.dailyIncome.dialog.checkNumber")}{" "}
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="daily-income-check-number"
-                      disabled={!statementOpen || !paymentRequired}
-                      placeholder={t("invoices.wizard.dailyIncome.dialog.checkNumberPlaceholder")}
-                      autoComplete="off"
-                      {...register("checkNumber")}
-                    />
-                    {errors.checkNumber ? (
-                      <p className="text-xs text-destructive">{errors.checkNumber.message}</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {t("invoices.wizard.dailyIncome.dialog.checkNumberHint")}
-                      </p>
-                    )}
-                  </div>
-                ) : null}
               </div>
             </div>
 

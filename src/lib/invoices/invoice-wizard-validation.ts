@@ -32,7 +32,9 @@ type Translate = (key: string) => string;
 export function findInvoiceWizardStep1Issue(
   values: InvoiceFormValues,
   t: Translate,
+  options?: { includePaymentLocation?: boolean },
 ): InvoiceWizardIssue | null {
+  const includePaymentLocation = options?.includePaymentLocation ?? true;
   if (!values.date.trim()) {
     return { step: 1, fieldId: INVOICE_WIZARD_FIELDS.date, message: t("invoices.wizard.validation.dateRequired") };
   }
@@ -61,7 +63,7 @@ export function findInvoiceWizardStep1Issue(
           : t("invoices.wizard.validation.officeEmployeeRequired"),
     };
   }
-  if (!values.paymentLocation) {
+  if (includePaymentLocation && !values.paymentLocation) {
     return {
       step: 1,
       fieldId: INVOICE_WIZARD_FIELDS.paymentLocation,
@@ -118,7 +120,15 @@ export function findInvoiceWizardPaymentIssue(
   context: InvoiceDailyIncomeContext,
   t: Translate,
   purpose: "continue" | "save",
+  values?: Pick<InvoiceFormValues, "paymentLocation">,
 ): InvoiceWizardIssue | null {
+  if (values && !values.paymentLocation) {
+    return {
+      step: 4,
+      fieldId: INVOICE_WIZARD_FIELDS.paymentLocation,
+      message: t("invoices.wizard.validation.paymentLocationRequired"),
+    };
+  }
   if (canContinueInvoiceDailyIncomeStep(context)) return null;
   return {
     step: 4,
@@ -146,10 +156,10 @@ export function findInvoiceWizardSaveIssue(options: {
     hasRegisteredCost && Math.round(Math.abs(lineSubtotal - (registeredCost as number)) * 100) / 100 >= 0.01;
 
   return (
-    findInvoiceWizardStep1Issue(values, t) ??
+    findInvoiceWizardStep1Issue(values, t, { includePaymentLocation: !requireDailyIncome }) ??
     findInvoiceWizardStep2Issue(values, t) ??
     findInvoiceWizardStep3Issue(values, t) ??
-    (requireDailyIncome ? findInvoiceWizardPaymentIssue(dailyIncome, t, "save") : null) ??
+    (requireDailyIncome ? findInvoiceWizardPaymentIssue(dailyIncome, t, "save", values) : null) ??
     (registeredCostMismatch
       ? {
           step: 3,
