@@ -169,3 +169,12 @@ If Daily Income works manually on port 3100 but the test still fails, check the 
 - User profile dropdown
 - Sample dashboard pages
 - Workspace root warning fixed with `turbopack.root`
+
+
+### Audit timestamp timezone
+
+Set `NEXT_PUBLIC_APP_TIMEZONE` to the same IANA timezone as the API's
+`APP_TIMEZONE` (both default to `America/New_York`). Audit timestamps display
+in that business timezone with the zone abbreviation, independent of the browser
+or server machine timezone. Plain `YYYY-MM-DD` calendar dates keep their date.
+This is a public build-time setting; rebuild the portal after changing it.
