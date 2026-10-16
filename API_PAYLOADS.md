@@ -17,6 +17,7 @@ Use this document when wiring the Next.js client to `emsys-api`.
 | Containers                                            | `src/lib/containers/api/containers-api.ts`             |
 | Inventory                                             | `src/lib/inventory/api/inventory-api.ts`               |
 | Checks                                                | `src/lib/accounting/checks/api/checks-api.ts`          |
+| Clearable payments (Zelle / deposits / cards; assumed)| `src/lib/accounting/clearable-payments/api.ts`         |
 | Daily income / journals                               | `src/lib/accounting/daily-income/api.ts`               |
 | API base URL                                          | `src/lib/api/base-url.ts` (`NEXT_PUBLIC_API_BASE_URL`) |
 
@@ -875,6 +876,40 @@ Portal implementation: `src/lib/accounting/checks/api/checks-api.ts`
 
 ---
 
+## Clearable payments (Zelle / deposits / credit cards) — **assumed / not live**
+
+Portal scaffolding only. These endpoints are **not** confirmed in live Swagger. When the API ships, they should mirror `/checks` outstanding → cleared lifecycle (invoice `payment` / `balance` updates only on `CLEARED`).
+
+| Resource | Path | Portal config |
+| --- | --- | --- |
+| Zelle payments | `/zelle-payments` | `API_ENDPOINTS.ACCOUNTING_ZELLE_PAYMENTS` |
+| Deposits | `/deposits` | `API_ENDPOINTS.ACCOUNTING_DEPOSITS` |
+| Credit card payments | `/credit-card-payments` | `API_ENDPOINTS.ACCOUNTING_CREDIT_CARD_PAYMENTS` |
+
+### Assumed write shape (`PUT /v1/{resource}/{id}`)
+
+```json
+{
+  "id": "674a1b2c3d4e5f6789012345",
+  "invoice": { "id": "674a1b2c3d4e5f6789012345", "number": "INV-1001" },
+  "paymentReference": "ZELLE-ABC",
+  "paymentAmount": 50.0,
+  "datePosted": "2026-09-11T00:00:00Z",
+  "refNumber": "REF-1001",
+  "status": "CLEARED",
+  "clearedAt": "2026-09-12T00:00:00Z",
+  "journal": { "id": "674a1b2c3d4e5f6789012346" }
+}
+```
+
+`status` is `OUTSTANDING` or `CLEARED`. `datePosted` / `clearedAt` are RFC3339. List/search/get follow the same patterns as checks (`GET`, `POST …/search`, `GET/{id}`). Search fields: `paymentReference`, `invoice.number`, `refNumber`, `status`, `createdBy.name`.
+
+Until dedicated permission seeds exist, the portal gates these directories with `check` view/update grants.
+
+Portal implementation: `src/lib/accounting/clearable-payments/api.ts`
+
+---
+
 ## Income statements (cuadre) — permission: `income_statement`
 
 ### `POST /v1/income-statements`
@@ -1089,6 +1124,9 @@ Same write shape. `{id}` = ObjectID hex.
 | `/invoices`                          | `invoice`               |
 | `/journals`                          | `journal`               |
 | `/checks`                            | `check`                 |
+| `/zelle-payments` (assumed)          | `check` (until seeded)  |
+| `/deposits` (assumed)                | `check` (until seeded)  |
+| `/credit-card-payments` (assumed)    | `check` (until seeded)  |
 | `/income-statements`                 | `income_statement`      |
 | `/vehicles`                          | `vehicle`               |
 | `/routes`                            | `route`                 |

@@ -84,6 +84,171 @@
       "updated": "Account updated."
     }
   },
+  "clearablePayments": {
+    "nav": {
+      "outstandingAlert": "{{count}} outstanding payment",
+      "outstandingAlert_plural": "{{count}} outstanding payments"
+    }
+  },
+  "zellePayments": {
+    "title": "Zelle",
+    "description": "Track invoice payments made by Zelle. Outstanding payments do not change the invoice balance until they are marked cleared.",
+    "noun": "Zelle payments",
+    "searchPlaceholder": "Search Zelle payments…",
+    "empty": "No Zelle payments match your search.",
+    "emptyNone": "No Zelle payments yet.",
+    "columns": {
+      "status": "Status",
+      "invoiceNumber": "Invoice #",
+      "paymentReference": "Zelle reference",
+      "paymentAmount": "Amount",
+      "datePosted": "Date posted",
+      "referenceNumber": "Internal ref #",
+      "createdAt": "Created at",
+      "createdBy": "Created by"
+    },
+    "status": {
+      "outstanding": "Outstanding",
+      "cleared": "Cleared"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} outstanding Zelle payment",
+      "outstandingAlert_plural": "{{count}} outstanding Zelle payments"
+    },
+    "actions": {
+      "markCleared": "Mark cleared"
+    },
+    "form": {
+      "sections": {
+        "details": "Payment details",
+        "clearance": "Clearance"
+      },
+      "fields": {
+        "invoice": "Invoice",
+        "paymentReference": "Zelle reference",
+        "paymentAmount": "Amount",
+        "datePosted": "Date posted",
+        "referenceNumber": "Internal reference number",
+        "createdBy": "Created by",
+        "clearedAt": "Cleared on"
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Audit"
+      }
+    },
+    "toasts": {
+      "markedCleared": "Marked {{count}} Zelle payment as cleared.",
+      "markedCleared_plural": "Marked {{count}} Zelle payments as cleared."
+    }
+  },
+  "deposits": {
+    "title": "Deposits",
+    "description": "Track invoice payments made by bank deposit. Outstanding deposits do not change the invoice balance until they are marked cleared.",
+    "noun": "deposits",
+    "searchPlaceholder": "Search deposits…",
+    "empty": "No deposits match your search.",
+    "emptyNone": "No deposits yet.",
+    "columns": {
+      "status": "Status",
+      "invoiceNumber": "Invoice #",
+      "paymentReference": "Deposit reference",
+      "paymentAmount": "Amount",
+      "datePosted": "Date posted",
+      "referenceNumber": "Internal ref #",
+      "createdAt": "Created at",
+      "createdBy": "Created by"
+    },
+    "status": {
+      "outstanding": "Outstanding",
+      "cleared": "Cleared"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} outstanding deposit",
+      "outstandingAlert_plural": "{{count}} outstanding deposits"
+    },
+    "actions": {
+      "markCleared": "Mark cleared"
+    },
+    "form": {
+      "sections": {
+        "details": "Deposit details",
+        "clearance": "Clearance"
+      },
+      "fields": {
+        "invoice": "Invoice",
+        "paymentReference": "Deposit reference",
+        "paymentAmount": "Amount",
+        "datePosted": "Date posted",
+        "referenceNumber": "Internal reference number",
+        "createdBy": "Created by",
+        "clearedAt": "Cleared on"
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Audit"
+      }
+    },
+    "toasts": {
+      "markedCleared": "Marked {{count}} deposit as cleared.",
+      "markedCleared_plural": "Marked {{count}} deposits as cleared."
+    }
+  },
+  "creditCardPayments": {
+    "title": "Credit Cards",
+    "description": "Track invoice payments made by credit card. Outstanding card payments do not change the invoice balance until they are marked cleared.",
+    "noun": "credit card payments",
+    "searchPlaceholder": "Search credit card payments…",
+    "empty": "No credit card payments match your search.",
+    "emptyNone": "No credit card payments yet.",
+    "columns": {
+      "status": "Status",
+      "invoiceNumber": "Invoice #",
+      "paymentReference": "Card payment reference",
+      "paymentAmount": "Amount",
+      "datePosted": "Date posted",
+      "referenceNumber": "Internal ref #",
+      "createdAt": "Created at",
+      "createdBy": "Created by"
+    },
+    "status": {
+      "outstanding": "Outstanding",
+      "cleared": "Cleared"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} outstanding credit card payment",
+      "outstandingAlert_plural": "{{count}} outstanding credit card payments"
+    },
+    "actions": {
+      "markCleared": "Mark cleared"
+    },
+    "form": {
+      "sections": {
+        "details": "Payment details",
+        "clearance": "Clearance"
+      },
+      "fields": {
+        "invoice": "Invoice",
+        "paymentReference": "Card payment reference",
+        "paymentAmount": "Amount",
+        "datePosted": "Date posted",
+        "referenceNumber": "Internal reference number",
+        "createdBy": "Created by",
+        "clearedAt": "Cleared on"
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Audit"
+      }
+    },
+    "toasts": {
+      "markedCleared": "Marked {{count}} credit card payment as cleared.",
+      "markedCleared_plural": "Marked {{count}} credit card payments as cleared."
+    }
+  },
   "checks": {
     "title": "Checks",
     "description": "Track invoice payments made by check. Outstanding checks do not change the invoice balance until they are marked cleared.",

@@ -66,6 +66,20 @@ export const PERMISSIONS = {
   checksCreate: { name: "canCreateCheck", resourceType: "check" },
   checksUpdate: { name: "canUpdateCheck", resourceType: "check" },
   checksDelete: { name: "canDeleteCheck", resourceType: "check" },
+  /**
+   * Zelle / deposit / credit-card clearing directories (assumed API).
+   * Until the API seeds dedicated permissions, gate with check view/update.
+   * Future seeds (not wired yet): zelle_payment, deposit, credit_card_payment.
+   */
+  zellePaymentsList: { name: "canViewCheck", resourceType: "check" },
+  zellePaymentsView: { name: "canViewCheck", resourceType: "check" },
+  zellePaymentsUpdate: { name: "canUpdateCheck", resourceType: "check" },
+  depositsList: { name: "canViewCheck", resourceType: "check" },
+  depositsView: { name: "canViewCheck", resourceType: "check" },
+  depositsUpdate: { name: "canUpdateCheck", resourceType: "check" },
+  creditCardPaymentsList: { name: "canViewCheck", resourceType: "check" },
+  creditCardPaymentsView: { name: "canViewCheck", resourceType: "check" },
+  creditCardPaymentsUpdate: { name: "canUpdateCheck", resourceType: "check" },
   accountsView: { name: "canViewChartAccount", resourceType: "chart_account" },
   reportsView: { name: "canViewReport", resourceType: "report" },
   usersView: { name: "canViewUser", resourceType: "user" },

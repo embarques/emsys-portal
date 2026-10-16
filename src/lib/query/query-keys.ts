@@ -13,6 +13,7 @@ import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/t
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { CheckListParams } from "@/lib/accounting/checks/types";
+import type { ClearablePaymentListParams } from "@/lib/accounting/clearable-payments/types";
 import type { LoanListParams } from "@/lib/accounting/loans/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
@@ -215,6 +216,10 @@ export const queryKeys = {
     checks: (params: CheckListParams) => [...queryKeys.accounting.all, "checks", params] as const,
     check: (id: string) => [...queryKeys.accounting.all, "check", id] as const,
     checksOutstanding: () => [...queryKeys.accounting.all, "checks-outstanding"] as const,
+    clearablePayments: (segment: string, params: ClearablePaymentListParams) =>
+      [...queryKeys.accounting.all, segment, params] as const,
+    clearablePaymentsOutstanding: (segment: string) =>
+      [...queryKeys.accounting.all, `${segment}-outstanding`] as const,
     loanTransactions: (id: string) =>
       [...queryKeys.accounting.all, "loan-transactions", id] as const,
     invoiceRegistration: (invoiceNumber: string) =>

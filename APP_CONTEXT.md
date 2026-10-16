@@ -314,6 +314,24 @@ Each check stores:
 - Cleared date
 - Historical audit fields
 
+### Zelle, Deposits, and Credit Cards (clearing directories)
+
+These Accounting directories mirror Checks for invoice payments made by Zelle, bank deposit, or credit card: outstanding payments do not change the invoice balance until marked **cleared**. Each method has its own sidebar page with search, view, and multi-select **Mark cleared**.
+
+**Assumed API (not live yet):** `/v1/zelle-payments`, `/v1/deposits`, `/v1/credit-card-payments` — same outstanding/cleared lifecycle as `/v1/checks`. The portal UI is scaffolded against those paths; lists and clears will fail until the API ships. Until dedicated permissions exist, access is gated with check view/update grants.
+
+Each clearable payment stores:
+
+- Payment reference (API `paymentReference`; UI label varies by method)
+- Internal reference (`refNumber`)
+- Amount
+- Date posted
+- Linked invoice
+- Optional journal
+- Status (outstanding or cleared)
+- Cleared date
+- Historical audit fields
+
 ### Chart of Accounts
 
 The Chart of Accounts defines the different financial categories used throughout the accounting system.
@@ -375,7 +393,14 @@ This includes:
 - System settings
 - Roles and permissions
 - Company configuration
+- Invoice policies (text customers review and sign during invoice create)
 - Other administrative controls
+
+#### Invoice policies
+
+Active invoice policies are shown during **invoice creation** (after payment / Cuadre, before preview). The customer must agree and sign (mouse or touch). The portal builds a signed agreement document (policies list + signature) and uploads it as an invoice document after save.
+
+Admin CRUD lives at `/invoice-policies`. Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
 
 #### User Activity (Users)
 
