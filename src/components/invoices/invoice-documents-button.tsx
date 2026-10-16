@@ -4,6 +4,7 @@ import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { useTranslation } from "@/lib/i18n";
 import { invoiceDocumentTabOptions } from "@/lib/invoices/documents-navigation";
 import type { Invoice } from "@/lib/invoices/types";
@@ -28,6 +29,7 @@ export function InvoiceDocumentsButton({
     <Button
       variant="outline"
       size="sm"
+      className={tableSelectionActionStyles.documents}
       disabled={selectedCount !== 1 || !invoice}
       onClick={() => {
         if (!invoice || selectedCount !== 1) return;
