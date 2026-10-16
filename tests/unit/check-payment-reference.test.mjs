@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildCheckDocumentPaymentWire,
   buildJournalCheckPaymentWire,
   resolveJournalCheckNumberFromApi,
   resolvePaymentReferenceForDisplay,
@@ -15,14 +16,21 @@ test("write dual-sends paymentReference and legacy checkNumber", () => {
   assert.deepEqual(buildJournalCheckPaymentWire(undefined), {});
 });
 
-test("read prefers paymentReference over legacy checkNumber", () => {
+test("check document write carries paper number through supported fields", () => {
+  assert.deepEqual(buildCheckDocumentPaymentWire("00123"), {
+    paymentReference: "00123",
+    checkNumber: "00123",
+  });
+});
+
+test("read prefers paymentReference over legacy checkNumber and preserves leading zeros", () => {
   assert.equal(
     resolveJournalCheckNumberFromApi({
-      paymentReference: "PAY-9",
+      paymentReference: "00123",
       checkNumber: "LEGACY",
       check_number: "SNAKE",
     }),
-    "PAY-9",
+    "00123",
   );
   assert.equal(
     resolveJournalCheckNumberFromApi({
@@ -35,22 +43,26 @@ test("read prefers paymentReference over legacy checkNumber", () => {
   assert.equal(resolveJournalCheckNumberFromApi({}), undefined);
 });
 
-test("display mapping prefers paymentReference then checkNumber then refNumber", () => {
+test("display mapping prefers paymentReference then checkNumber and never uses refNumber", () => {
   assert.equal(
     resolvePaymentReferenceForDisplay({
       paymentReference: "PAY-1",
       checkNumber: "CHK-1",
-      refNumber: "REF-1",
     }),
     "PAY-1",
   );
   assert.equal(
     resolvePaymentReferenceForDisplay({
       checkNumber: "CHK-1",
-      refNumber: "REF-1",
     }),
     "CHK-1",
   );
-  assert.equal(resolvePaymentReferenceForDisplay({ refNumber: "REF-1" }), "REF-1");
   assert.equal(resolvePaymentReferenceForDisplay({}), "");
+  assert.equal(
+    resolvePaymentReferenceForDisplay({
+      paymentReference: "00123",
+      checkNumber: "99",
+    }),
+    "00123",
+  );
 });

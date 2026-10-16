@@ -1,5 +1,6 @@
 /** POST /checks/search — OR bar search across check fields. */
 export const CHECK_BAR_OR_SEARCH_FIELDS = [
+  "paymentReference",
   "checkNumber",
   "invoice.number",
   "refNumber",

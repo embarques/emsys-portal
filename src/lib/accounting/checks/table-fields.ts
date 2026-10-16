@@ -2,6 +2,7 @@ import type { ApiTableField } from "@/lib/table/api-table-fields";
 
 /** Directory coverage for api-docs.json definitions["check.Check"]. */
 export const CHECK_API_TABLE_FIELDS = [
+  { field: "paymentReference", columnId: "checkNumber" },
   { field: "checkNumber" },
   { field: "clearedAt", format: "date" },
   { field: "createdAt", format: "date" },

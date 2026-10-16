@@ -1,0 +1,23 @@
+---
+description: Check numbers vs internal refNumber — UI Check number maps to API paymentReference; preserve leading zeros.
+globs: src/lib/accounting/checks/**/*.{ts,tsx},src/lib/accounting/daily-income/**/*.{ts,tsx},src/components/accounting/check*.tsx,src/components/accounting/*check*,APP_CONTEXT.md,API_PAYLOADS.md
+alwaysApply: false
+---
+
+# Check numbers vs internal references
+
+Do not conflate these fields.
+
+| Concept | Frontend / UI | Backend / API | Notes |
+| --- | --- | --- | --- |
+| Paper check number | Label: **Check number** / **Check #**. Portal model: `checkNumber`. | `paymentReference` (legacy `checkNumber` dual-read/write) | Keep as a **string**. Preserve leading zeros. Never coerce with `Number()`. |
+| Internal transaction reference | Label: **Internal reference** / **Internal ref #**. Portal model: `refNumber`. | `refNumber` | EMSYS internal id. Not the paper check number. |
+
+## Rules
+
+- **UI always says “Check number.”** Never surface the backend name `paymentReference` in labels or column titles.
+- Map API `paymentReference` → portal `checkNumber` on read (legacy `checkNumber` fallback). On write, dual-send `paymentReference` + legacy `checkNumber` with the same string value.
+- When journals generate outstanding checks, that string carries through supported reference fields so leading zeros survive.
+- Checks table **Check #** renders portal `checkNumber` (already normalized from `paymentReference`). **Internal ref #** renders `refNumber` only.
+- Do not use `refNumber` as a fallback when resolving a paper check number.
+- `external_reference_number` is a separate optional payment reference (e.g. Zelle) — not the check number.

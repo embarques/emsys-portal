@@ -1,4 +1,8 @@
 import { CHECK_API_TABLE_FIELDS } from "@/lib/accounting/checks/table-fields";
+import {
+  buildCheckDocumentPaymentWire,
+  resolveJournalCheckNumberFromApi,
+} from "@/lib/accounting/daily-income/check-payment-reference";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -49,7 +53,10 @@ type ApiCheckJournal = {
 
 type ApiCheck = {
   id?: string;
+  /** Paper check number; prefer `paymentReference` when present. */
+  paymentReference?: string;
   checkNumber?: string;
+  /** Internal transaction reference — not the paper check number. */
   refNumber?: string;
   paymentAmount?: number;
   datePosted?: string;
@@ -65,6 +72,7 @@ type ApiCheck = {
 
 type ApiCheckWritePayload = {
   id?: string;
+  paymentReference?: string;
   checkNumber: string;
   paymentAmount: number;
   invoice: { id: string; number?: string };
@@ -160,11 +168,15 @@ export function normalizeCheck(raw: unknown): Check | null {
   const invoice = normalizeInvoice(item.invoice);
   const journalId = readStringId(item.journal?.id);
 
+  // API wire may be paymentReference; UI model is always checkNumber.
+  const checkNumber = resolveJournalCheckNumberFromApi(item) ?? "";
+
   return {
     ...captureApiTableFields(raw, CHECK_API_TABLE_FIELDS),
     id,
     status: normalizeCheckStatus(item.status),
-    checkNumber: String(item.checkNumber ?? "").trim(),
+    checkNumber,
+    // Internal transaction reference only — never treat as the paper check #.
     refNumber: String(item.refNumber ?? "").trim(),
     paymentAmount: numberValue(item.paymentAmount),
     datePosted: String(item.datePosted ?? "").trim(),
@@ -216,6 +228,7 @@ export function buildCheckWritePayload(
       id: invoiceId,
       ...(values.invoiceNumber.trim() ? { number: values.invoiceNumber.trim() } : {}),
     },
+    ...buildCheckDocumentPaymentWire(checkNumber),
     checkNumber,
     paymentAmount,
     status: values.status,

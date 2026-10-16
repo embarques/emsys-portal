@@ -18,7 +18,12 @@ export type CheckInvoiceRef = {
 export type Check = ApiTableRecord & {
   id: string;
   status: CheckStatus;
+  /**
+   * UI "Check number". Normalized from API `paymentReference`
+   * (legacy `checkNumber` fallback). Keep as a string — preserve leading zeros.
+   */
   checkNumber: string;
+  /** Internal transaction reference — not the paper check number. */
   refNumber: string;
   paymentAmount: number;
   datePosted: string;

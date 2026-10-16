@@ -104,7 +104,9 @@ export function ChecksWorkspace() {
       {
         id: "checkNumber",
         label: t("accounting.checks.columns.checkNumber"),
-        cellClassName: "font-medium",
+        // Backend field is paymentReference; UI model normalizes to checkNumber.
+        sortField: "paymentReference",
+        cellClassName: "font-medium tabular-nums",
         renderCell: (check) => check.checkNumber || t("common.empty.dash"),
       },
       {

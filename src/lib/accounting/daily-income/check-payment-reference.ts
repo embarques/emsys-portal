@@ -1,9 +1,12 @@
 /**
  * CHECK/CHEQUE journal payments: UI "Check number" maps to API `paymentReference`.
  * Legacy `checkNumber` is still dual-written/read while the live API accepts it.
+ *
+ * Keep values as strings so leading zeros survive. Never coerce with Number().
+ * Do not fall back to journal/check `refNumber` — that is the internal transaction reference.
  */
 
-/** Resolve the paper check # from a journal API row. */
+/** Resolve the paper check # from a journal or check API row. */
 export function resolveJournalCheckNumberFromApi(raw: {
   paymentReference?: unknown;
   checkNumber?: unknown;
@@ -11,6 +14,7 @@ export function resolveJournalCheckNumberFromApi(raw: {
 }): string | undefined {
   for (const value of [raw.paymentReference, raw.checkNumber, raw.check_number]) {
     if (value == null) continue;
+    // Trim whitespace only — do not parse as a number (preserves leading zeros).
     const trimmed = String(value).trim();
     if (trimmed) return trimmed;
   }
@@ -32,16 +36,20 @@ export function buildJournalCheckPaymentWire(
   };
 }
 
-/** Prefer payment reference, then check number, then internal ref for display mapping. */
+/**
+ * Wire fields for a Checks directory document write.
+ * Carries the paper check number through supported reference fields.
+ */
+export function buildCheckDocumentPaymentWire(
+  checkNumber: string | undefined,
+): { paymentReference: string; checkNumber: string } | Record<string, never> {
+  return buildJournalCheckPaymentWire(checkNumber);
+}
+
+/** Prefer payment reference, then legacy check number — never internal refNumber. */
 export function resolvePaymentReferenceForDisplay(input: {
   paymentReference?: string | null;
   checkNumber?: string | null;
-  refNumber?: string | null;
 }): string {
-  return (
-    input.paymentReference?.trim() ||
-    input.checkNumber?.trim() ||
-    input.refNumber?.trim() ||
-    ""
-  );
+  return input.paymentReference?.trim() || input.checkNumber?.trim() || "";
 }

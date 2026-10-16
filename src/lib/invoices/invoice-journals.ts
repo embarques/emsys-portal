@@ -38,7 +38,6 @@ export function mapJournalToInvoicePayment(
     referenceNumber: resolvePaymentReferenceForDisplay({
       paymentReference: journal.paymentReference,
       checkNumber: journal.checkNumber,
-      refNumber: journal.refNumber,
     }),
     createdAt: journal.createdAt?.trim() || (journal.date ? `${journal.date}T12:00:00.000Z` : ""),
     createdBy: journal.employee?.name?.trim() || DEFAULT_CREATED_BY,

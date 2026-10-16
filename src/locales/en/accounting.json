@@ -98,7 +98,7 @@
       "checkNumber": "Check #",
       "paymentAmount": "Amount",
       "datePosted": "Date posted",
-      "referenceNumber": "Reference #",
+      "referenceNumber": "Internal ref #",
       "createdAt": "Created at",
       "createdBy": "Created by"
     },
@@ -132,7 +132,7 @@
         "checkNumber": "Check number",
         "paymentAmount": "Amount",
         "datePosted": "Date posted",
-        "referenceNumber": "Reference number",
+        "referenceNumber": "Internal reference number",
         "status": "Status",
         "createdBy": "Created by",
         "clearedAt": "Cleared on"

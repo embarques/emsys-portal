@@ -808,7 +808,9 @@ Same rule applies to `INITIAL-PAYMENT` and any other journal with `paymentMethod
 persist and return `paymentReference` (or legacy `checkNumber`) on create/update/read.
 Do not confuse this with optional `external_reference_number` (Zelle / duplicate-payment reference).
 
-Invoice `PAYMENT` / `INITIAL-PAYMENT` with CHECK or CHEQUE also creates an **outstanding check** (`POST /v1/checks` is used internally). The invoice `payment` / `balance` does **not** change until that check is marked `CLEARED`. Clearing applies the payment; updating or deleting a cleared check reverses it. The Checks directory resource (`/v1/checks`) still uses `checkNumber` as the check document field.
+Invoice `PAYMENT` / `INITIAL-PAYMENT` with CHECK or CHEQUE also creates an **outstanding check** (`POST /v1/checks` is used internally). The invoice `payment` / `balance` does **not** change until that check is marked `CLEARED`. Clearing applies the payment; updating or deleting a cleared check reverses it.
+
+The paper check number carries into the generated check as a **string** through supported fields (`paymentReference` preferred, legacy `checkNumber` dual-written/read) so leading zeros are preserved. The UI always shows **Check number** (portal `checkNumber`, normalized from API `paymentReference`). Check `refNumber` is the **internal** transaction reference only — never the paper check number.
 
 **Example — EXPENSE:**
 
@@ -837,13 +839,16 @@ ID is auto-assigned. **Required:** `invoice` with `id`. `checkNumber` and `payme
 ```json
 {
   "invoice": { "id": "674a1b2c3d4e5f6789012345", "number": "INV-1001" },
-  "checkNumber": "4521",
+  "paymentReference": "00123",
+  "checkNumber": "00123",
   "paymentAmount": 50.0,
   "datePosted": "2026-09-11T00:00:00Z",
   "refNumber": "REF-1001",
   "status": "OUTSTANDING"
 }
 ```
+
+Portal dual-writes `paymentReference` and legacy `checkNumber` as the same string (keep leading zeros). `refNumber` is the internal transaction reference, not the paper check number.
 
 `status` is `OUTSTANDING` or `CLEARED` (API may return lowercase). `datePosted` / `clearedAt` are RFC3339 `time.Time` — date-only strings are rejected. Omit `clearedAt` until the check is cleared. Permission resource: `check` (`canViewCheck`, `canCreateCheck`, `canUpdateCheck`, `canDeleteCheck`; no separate list permission).
 
@@ -864,7 +869,7 @@ Same `check.Check` shape. `{id}` = ObjectID hex. Marking `CLEARED` applies the l
 
 ### `GET /v1/checks` / `POST /v1/checks/search` / `GET /v1/checks/{id}` / `DELETE /v1/checks/{id}`
 
-Standard list, search, retrieve, and delete. Search fields include `checkNumber`, `invoice.number`, `refNumber`, `status`, and `createdBy.name`.
+Standard list, search, retrieve, and delete. Search fields include `paymentReference`, `checkNumber`, `invoice.number`, `refNumber`, `status`, and `createdBy.name`. Portal Check # column displays normalized `checkNumber` (from API `paymentReference`).
 
 Portal implementation: `src/lib/accounting/checks/api/checks-api.ts`
 

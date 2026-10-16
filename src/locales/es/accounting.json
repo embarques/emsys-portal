@@ -98,7 +98,7 @@
       "checkNumber": "Cheque #",
       "paymentAmount": "Monto",
       "datePosted": "Fecha de registro",
-      "referenceNumber": "Referencia #",
+      "referenceNumber": "Ref. interna #",
       "createdAt": "Creado el",
       "createdBy": "Creado por"
     },
@@ -132,7 +132,7 @@
         "checkNumber": "Número de cheque",
         "paymentAmount": "Monto",
         "datePosted": "Fecha de registro",
-        "referenceNumber": "Número de referencia",
+        "referenceNumber": "Número de referencia interna",
         "status": "Estado",
         "createdBy": "Creado por",
         "clearedAt": "Cobrado el"

@@ -280,9 +280,12 @@ CHECK or CHEQUE invoice payments (`INITIAL-PAYMENT` and `PAYMENT`) create an **o
 
 The Checks workspace is view-only aside from that status change. Staff can search and open a check, and can mark **outstanding** checks as **cleared**. They cannot add checks or delete them from this directory, and a cleared check cannot be moved back to outstanding here. Outstanding status is shown in red and cleared status in green. The sidebar shows a count of outstanding checks next to Checks.
 
+**Check number vs internal reference:** The UI always labels this **Check number**. On the backend that value is `paymentReference` (legacy `checkNumber` still dual-read/written). The portal normalizes it to `checkNumber` for UI/code. Keep it as a **string** so leading zeros are preserved when it carries into generated checks. `refNumber` is the **internal** transaction reference only — never use it as the paper check number.
+
 Each check stores:
 
-- Check number
+- Check number (UI `checkNumber` ← API `paymentReference`)
+- Internal reference (`refNumber`)
 - Amount
 - Date posted
 - Linked invoice
