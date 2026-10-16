@@ -33,6 +33,7 @@ const RESOURCE_PERMISSION_SUFFIX: Record<string, string> = {
   inventory_receipt: "InventoryReceipt",
   inventory_dispatch: "InventoryDispatch",
   inventory_supplier: "InventorySupplier",
+  invoice_policy: "InvoicePolicy",
 };
 
 type CrudFlag = "list" | "view" | "create" | "update" | "delete" | "print";

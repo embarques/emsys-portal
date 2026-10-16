@@ -102,6 +102,7 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   branches: "admin",
   "employee-departments": "admin",
   "employee-titles": "admin",
+  "invoice-policies": "admin",
 };
 
 /** Extra list/map routes not present as nav leaves (or opened outside the sidebar). */

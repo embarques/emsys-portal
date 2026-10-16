@@ -65,6 +65,7 @@ type InvoiceWizardShellProps = {
   allowPrint?: boolean;
   resetAfterSave?: boolean;
   requireDailyIncomeRegistration?: boolean;
+  requirePolicySignature?: boolean;
   isSubmitting?: boolean;
   initialWizardStep?: number;
   requestEditLineItemId?: string | null;
@@ -87,6 +88,7 @@ function InvoiceWizardShell({
   allowPrint = false,
   resetAfterSave = true,
   requireDailyIncomeRegistration = false,
+  requirePolicySignature = false,
   isSubmitting = false,
   initialWizardStep,
   requestEditLineItemId,
@@ -119,6 +121,7 @@ function InvoiceWizardShell({
             allowPrint={allowPrint}
             resetAfterSave={resetAfterSave}
             requireDailyIncomeRegistration={requireDailyIncomeRegistration}
+            requirePolicySignature={requirePolicySignature}
             isSubmitting={isSubmitting}
             initialWizardStep={initialWizardStep}
             requestEditLineItemId={requestEditLineItemId}
@@ -300,6 +303,7 @@ export function InvoiceCreateWizard({
       initialValues={initialValues}
       submitLabel={submitLabel}
       requireDailyIncomeRegistration
+      requirePolicySignature
       isSubmitting={createMutation.isPending}
       onSubmit={handleSubmit}
     />

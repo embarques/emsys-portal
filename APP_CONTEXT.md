@@ -398,9 +398,11 @@ This includes:
 
 #### Invoice policies
 
-Active invoice policies are shown during **invoice creation** (after payment / Cuadre, before preview). The customer must agree and sign (mouse or touch). The portal builds a signed agreement document (policies list + signature) and uploads it as an invoice document after save.
+Portal route: `/invoice-policies` (Admin sidebar). Tenant catalog of policy titles and body text with sort order and active flag.
 
-Admin CRUD lives at `/invoice-policies`. Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
+Active invoice policies are shown during **invoice creation** (after payment / Cuadre, before preview). The customer must agree and sign (mouse or touch). The portal builds a signed agreement document (policies list + signature PNG) and uploads it as an invoice document after save. Edit invoice flows skip the policies step.
+
+Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
 
 #### User Activity (Users)
 

@@ -108,6 +108,7 @@
       "totals": "Totales",
       "navigationHint": "Completa este paso y selecciona Siguiente. Puedes volver a los pasos completados para hacer cambios.",
       "paymentHint": "Revisa el cuadre y los datos del pago antes de continuar.",
+      "policiesHint": "Revisa las políticas de la empresa, confirma el acuerdo y captura la firma del cliente antes de continuar.",
       "reviewHint": "Verifica los clientes, la mercancía, las etiquetas y los totales antes de guardar."
     },
     "fields": {
@@ -217,6 +218,7 @@
       "parties": "Partes",
       "lineItems": "Artículos",
       "payment": "Pago",
+      "policies": "Políticas",
       "preview": "Vista previa"
     },
     "stepTitles": {
@@ -224,7 +226,16 @@
       "selectParties": "Seleccionar remitente y destinatario",
       "addLineItems": "Agregar artículos",
       "paymentInfo": "Información de pago",
+      "reviewPolicies": "Revisar políticas y firmar",
       "reviewAndSave": "Revisar y guardar factura"
+    },
+    "policies": {
+      "title": "Políticas de la empresa",
+      "description": "Lee cada política, confirma el acuerdo y firma antes de continuar.",
+      "agreeLabel": "He leído y acepto las políticas listadas arriba.",
+      "signatureLabel": "Firma del cliente",
+      "signatureHint": "Firma con el mouse o el dedo. Borra y vuelve a intentar si es necesario.",
+      "clearSignature": "Borrar firma"
     },
     "actions": {
       "back": "Atrás",
@@ -246,7 +257,9 @@
       "dailyIncomeContinueRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de continuar.",
       "dailyIncomeSaveRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de guardar.",
       "negativeBalance": "El saldo no puede ser negativo. Reduzca el pago o el descuento para que no superen el total de la factura.",
-      "registeredCostMismatch": "El total de artículos debe coincidir con el costo registrado en Ingresos diarios antes de guardar."
+      "registeredCostMismatch": "El total de artículos debe coincidir con el costo registrado en Ingresos diarios antes de guardar.",
+      "policiesAgreeRequired": "Confirma que aceptas las políticas de la factura antes de continuar.",
+      "policiesSignatureRequired": "Se requiere la firma del cliente antes de continuar."
     },
     "summary": {
       "title": "Resumen de factura",

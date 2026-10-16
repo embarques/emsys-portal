@@ -36,6 +36,7 @@ export const PAGE_PERMISSIONS: Record<string, Permission> = {
   "/roles": PERMISSIONS.rolesView,
   "/employee-titles": PERMISSIONS.employeeTitlesView,
   "/employee-departments": PERMISSIONS.employeeDepartmentsView,
+  "/invoice-policies": PERMISSIONS.invoicePoliciesList,
   "/employees": PERMISSIONS.employeesView,
   "/settings": PERMISSIONS.accountSettingsView,
   "/branches": PERMISSIONS.branchesList,

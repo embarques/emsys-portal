@@ -2,6 +2,8 @@ import enEmployeeTitles from "@/locales/en/employee-titles.json";
 import esEmployeeTitles from "@/locales/es/employee-titles.json";
 import enEmployeeDepartments from "@/locales/en/employee-departments.json";
 import esEmployeeDepartments from "@/locales/es/employee-departments.json";
+import enInvoicePolicies from "@/locales/en/invoice-policies.json";
+import esInvoicePolicies from "@/locales/es/invoice-policies.json";
 import type { LanguagePreference } from "@/lib/configuration/types";
 
 import enCommon from "@/locales/en/common.json";
@@ -83,6 +85,7 @@ const catalogs: Record<Locale, MessageTree> = {
     shell: enShell,
     employeeTitles: enEmployeeTitles,
     employeeDepartments: enEmployeeDepartments,
+    invoicePolicies: enInvoicePolicies,
     branches: enBranches,
     vehicles: enVehicles,
     roles: enRoles,
@@ -112,6 +115,7 @@ const catalogs: Record<Locale, MessageTree> = {
     shell: esShell,
     employeeTitles: esEmployeeTitles,
     employeeDepartments: esEmployeeDepartments,
+    invoicePolicies: esInvoicePolicies,
     branches: esBranches,
     vehicles: esVehicles,
     roles: esRoles,

@@ -23,6 +23,7 @@ import { InventoryReceiptsWorkspace } from "@/components/inventory/inventory-rec
 import { InventoryDispatchesWorkspace } from "@/components/inventory/inventory-dispatches-workspace";
 import { InventorySuppliersWorkspace } from "@/components/inventory/inventory-suppliers-workspace";
 import { InvoicesWorkspace } from "@/components/invoices/invoices-workspace";
+import { InvoicePoliciesWorkspace } from "@/components/invoice-policies/invoice-policies-workspace";
 import { ItemsWorkspace } from "@/components/items/items-workspace";
 import { BarcodesWorkspace } from "@/components/barcodes/barcodes-workspace";
 import { BarcodeStatusesWorkspace } from "@/components/barcodes/barcode-statuses-workspace";
@@ -48,6 +49,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/appointments": OrdersWorkspace,
   "/appointments/map": OrdersMapWorkspace,
   "/invoices": InvoicesWorkspace,
+  "/invoice-policies": InvoicePoliciesWorkspace,
   "/barcodes": BarcodesWorkspace,
   "/barcode-statuses": BarcodeStatusesWorkspace,
   "/label-updater": LabelUpdaterWorkspace,

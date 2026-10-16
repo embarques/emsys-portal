@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Printer, Save } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceDocumentPicker } from "@/components/invoices/invoice-document-picker";
@@ -9,6 +9,10 @@ import { useInvoiceDocumentDraft } from "@/lib/invoices/hooks/use-invoice-docume
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDailyIncomeStep } from "@/components/invoices/invoice-daily-income-step";
 import { InvoiceFormPreviewStep } from "@/components/invoices/invoice-form-preview-step";
+import {
+  InvoicePoliciesStep,
+  type InvoicePoliciesAgreementState,
+} from "@/components/invoices/invoice-policies-step";
 import { focusInvoiceWizardField } from "@/components/invoices/invoice-wizard-focus";
 import { InvoiceWizardNotice } from "@/components/invoices/invoice-wizard-notice";
 import {
@@ -16,12 +20,13 @@ import {
   InvoiceWizardSummarySidebar,
 } from "@/components/invoices/invoice-wizard-summary-panel";
 import {
+  getInvoiceWizardStepKind,
   getInvoiceWizardStepLabelKey,
   getInvoiceWizardStepTitleKey,
   InvoiceWizardStepper,
+  resolveInvoiceWizardLayout,
   type InvoiceWizardStep,
   type InvoiceWizardFormStep,
-  INVOICE_WIZARD_STEP_ORDER,
 } from "@/components/invoices/invoice-wizard-stepper";
 import {
   invoiceStepEyebrowClassName,
@@ -35,6 +40,8 @@ import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope"
 import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { useActiveInvoicePolicies } from "@/lib/invoice-policies/hooks/use-invoice-policies";
+import { buildPolicyAgreementDocument } from "@/lib/invoice-policies/utils/build-policy-agreement-document";
 import { isMissingOpenIncomeStatementError } from "@/lib/invoices/missing-open-income-statement";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -48,6 +55,7 @@ import {
 } from "@/lib/invoices/invoice-daily-income-context";
 import {
   findInvoiceWizardPaymentIssue,
+  findInvoiceWizardPoliciesIssue,
   findInvoiceWizardSaveIssue,
   findInvoiceWizardStep1Issue,
   findInvoiceWizardStep2Issue,
@@ -64,6 +72,11 @@ import {
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
 
+const EMPTY_POLICIES_AGREEMENT: InvoicePoliciesAgreementState = {
+  agreed: false,
+  signatureDataUrl: null,
+};
+
 type Props = {
   initialValues?: InvoiceFormValues;
   submitLabel: string;
@@ -78,7 +91,12 @@ type Props = {
    * before continuing — same click-Next-then-error pattern as other steps.
    */
   requireDailyIncomeRegistration?: boolean;
-  /** Open on this wizard step (1–5). Defaults to 1. */
+  /**
+   * Include the policies + signature step on create when active policies exist.
+   * Edit flows leave this false.
+   */
+  requirePolicySignature?: boolean;
+  /** Open on this wizard step. Defaults to 1. */
   initialWizardStep?: number;
   /** Open the matching line item in edit mode when landing on step 3. */
   requestEditLineItemId?: string | null;
@@ -94,11 +112,10 @@ type Props = {
 
 function resolveInitialWizardStep(
   step: number | undefined,
-  requireDailyIncomeRegistration: boolean,
+  maxStep: InvoiceWizardStep,
 ): InvoiceWizardStep {
   if (step == null || !Number.isFinite(step)) return 1;
-  const max = requireDailyIncomeRegistration ? 5 : 4;
-  const clamped = Math.min(Math.max(Math.trunc(step), 1), max);
+  const clamped = Math.min(Math.max(Math.trunc(step), 1), maxStep);
   return clamped as InvoiceWizardStep;
 }
 
@@ -110,6 +127,7 @@ export function InvoiceFormWizard({
   isSubmitting = false,
   resetAfterSave = true,
   requireDailyIncomeRegistration = false,
+  requirePolicySignature = false,
   initialWizardStep,
   requestEditLineItemId = null,
   onSubmit,
@@ -126,8 +144,27 @@ export function InvoiceFormWizard({
   );
   const isMobileLayout = useIsMobileViewport();
   const currentUserQuery = useCurrentUser();
+  const activePoliciesQuery = useActiveInvoicePolicies(requirePolicySignature);
+  const activePolicies = activePoliciesQuery.data ?? [];
+  const includePoliciesStep = requirePolicySignature && activePolicies.length > 0;
+  const layout = useMemo(
+    () =>
+      resolveInvoiceWizardLayout({
+        requireDailyIncomeRegistration,
+        requirePolicySignature: includePoliciesStep,
+      }),
+    [includePoliciesStep, requireDailyIncomeRegistration],
+  );
+  const { previewStep, paymentStep: paymentStepId, policiesStep: policiesStepId } = layout;
+
   const [step, setStep] = useState<InvoiceWizardStep>(() =>
-    resolveInitialWizardStep(initialWizardStep, requireDailyIncomeRegistration),
+    resolveInitialWizardStep(
+      initialWizardStep,
+      resolveInvoiceWizardLayout({
+        requireDailyIncomeRegistration,
+        requirePolicySignature,
+      }).previewStep,
+    ),
   );
   const [values, setValues] = useState<InvoiceFormValues>(
     initialValues && (!requireDailyIncomeRegistration || canUseManualNumber)
@@ -135,6 +172,7 @@ export function InvoiceFormWizard({
       : { ...(initialValues ?? createEmptyInvoiceForm()), autoGenerateNumber: true },
   );
   const documentDraft = useInvoiceDocumentDraft();
+  const [pendingUploadFiles, setPendingUploadFiles] = useState<File[] | null>(null);
   const [documentStage, setDocumentStage] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
   const canUploadDocuments = hasPermission("canUpdateInvoice", "invoice");
@@ -148,9 +186,15 @@ export function InvoiceFormWizard({
   const [dailyIncomeContext, setDailyIncomeContext] = useState<InvoiceDailyIncomeContext>(
     emptyInvoiceDailyIncomeContext(),
   );
-  const previewStep: InvoiceWizardStep = requireDailyIncomeRegistration ? 5 : 4;
+  const [policiesAgreement, setPoliciesAgreement] =
+    useState<InvoicePoliciesAgreementState>(EMPTY_POLICIES_AGREEMENT);
   const wizardRef = useRef<HTMLDivElement>(null);
   const isTabActive = useWorkspaceTabQueriesEnabled();
+  const stepKind = getInvoiceWizardStepKind(layout, step);
+
+  useEffect(() => {
+    if (step > previewStep) setStep(previewStep);
+  }, [previewStep, step]);
 
   useEffect(() => {
     if (!isTabActive || isMobileLayout) return;
@@ -210,10 +254,23 @@ export function InvoiceFormWizard({
         values: formValues,
         dailyIncome: dailyIncomeContext,
         requireDailyIncome: requireDailyIncomeRegistration,
-        previewStep: requireDailyIncomeRegistration ? 5 : 4,
+        requirePolicySignature: includePoliciesStep,
+        policiesAgreement,
+        paymentStep: paymentStepId,
+        policiesStep: policiesStepId,
+        previewStep,
         t,
       }),
-    [dailyIncomeContext, requireDailyIncomeRegistration, t],
+    [
+      dailyIncomeContext,
+      includePoliciesStep,
+      paymentStepId,
+      policiesAgreement,
+      policiesStepId,
+      previewStep,
+      requireDailyIncomeRegistration,
+      t,
+    ],
   );
 
   const handleValuesChange = useCallback((next: InvoiceFormValues) => {
@@ -289,9 +346,17 @@ export function InvoiceFormWizard({
           ? findStep2Issue(currentValues)
           : step === 3
             ? findStep3Issue(currentValues)
-            : requireDailyIncomeRegistration && step === 4
-              ? findInvoiceWizardPaymentIssue(dailyIncomeContext, t, "continue", currentValues)
-              : null;
+            : paymentStepId != null && step === paymentStepId
+              ? findInvoiceWizardPaymentIssue(
+                  dailyIncomeContext,
+                  t,
+                  "continue",
+                  currentValues,
+                  paymentStepId,
+                )
+              : policiesStepId != null && step === policiesStepId
+                ? findInvoiceWizardPoliciesIssue(policiesAgreement, t, policiesStepId)
+                : null;
     if (issue) {
       revealIssue(issue);
       return;
@@ -353,9 +418,9 @@ export function InvoiceFormWizard({
       toInvoiceFormSubmitContext(dailyIncomeContext),
     );
     if (result.error) {
-      if (isMissingOpenIncomeStatementError(result.error) && requireDailyIncomeRegistration) {
+      if (isMissingOpenIncomeStatementError(result.error) && paymentStepId != null) {
         revealIssue({
-          step: 4,
+          step: paymentStepId,
           fieldId: INVOICE_WIZARD_FIELDS.dailyIncome,
           message: result.error,
         });
@@ -377,7 +442,32 @@ export function InvoiceFormWizard({
       setSavedInvoiceId(result.savedInvoiceId);
     }
 
-    if (!initialValues?.invoiceId && result.savedInvoiceId && documentDraft.files.length) {
+    const draftFiles = [...documentDraft.files];
+    if (
+      !initialValues?.invoiceId &&
+      result.savedInvoiceId &&
+      includePoliciesStep &&
+      policiesAgreement.signatureDataUrl
+    ) {
+      try {
+        const agreementFile = await buildPolicyAgreementDocument({
+          policies: activePolicies,
+          signatureDataUrl: policiesAgreement.signatureDataUrl,
+          invoiceNumber: values.invoiceNumber || values.generatedInvoiceNumber || undefined,
+        });
+        documentDraft.add([agreementFile]);
+        draftFiles.push(agreementFile);
+      } catch (cause) {
+        setSubmitError(
+          cause instanceof Error ? cause.message : t("invoices.wizard.validation.policiesSignatureRequired"),
+        );
+        return;
+      }
+    }
+
+    if (!initialValues?.invoiceId && result.savedInvoiceId && draftFiles.length) {
+      setPendingUploadFiles(draftFiles);
+      setDocumentsBusy(true);
       setDocumentStage(true);
       return;
     }
@@ -386,7 +476,9 @@ export function InvoiceFormWizard({
 
   function finishSave() {
     documentDraft.reset();
+    setPendingUploadFiles(null);
     setDocumentStage(false);
+    setPoliciesAgreement(EMPTY_POLICIES_AGREEMENT);
     onSaved?.();
 
     if (!resetAfterSave) return;
@@ -476,14 +568,16 @@ export function InvoiceFormWizard({
       ? handleDiscountChange
       : undefined;
 
-  const stepLabelKey =
-    !requireDailyIncomeRegistration && step === 4
-      ? "invoices.wizard.steps.preview"
-      : getInvoiceWizardStepLabelKey(step);
-  const stepTitleKey =
-    !requireDailyIncomeRegistration && step === 4
-      ? "invoices.wizard.stepTitles.reviewAndSave"
-      : getInvoiceWizardStepTitleKey(step);
+  const stepLabelKey = getInvoiceWizardStepLabelKey(stepKind);
+  const stepTitleKey = getInvoiceWizardStepTitleKey(stepKind);
+  const stepHintKey =
+    stepKind === "preview"
+      ? "invoices.form.design.reviewHint"
+      : stepKind === "payment"
+        ? "invoices.form.design.paymentHint"
+        : stepKind === "policies"
+          ? "invoices.form.design.policiesHint"
+          : "invoices.form.design.navigationHint";
 
   const formStep = (
     <InvoiceForm
@@ -505,7 +599,7 @@ export function InvoiceFormWizard({
     />
   );
 
-  const paymentStep = (
+  const paymentStepContent = (
     <InvoiceDailyIncomeStep
       values={values}
       onContextChange={handleDailyIncomeContextChange}
@@ -520,6 +614,20 @@ export function InvoiceFormWizard({
       }}
     />
   );
+
+  const policiesStepContent =
+    policiesStepId != null ? (
+      <InvoicePoliciesStep
+        policies={activePolicies}
+        value={policiesAgreement}
+        onChange={(next) => {
+          setPoliciesAgreement(next);
+          setStepError(null);
+          setSubmitError(null);
+        }}
+        disabled={isSubmitting || documentsBusy}
+      />
+    ) : null;
 
   const previewContent = (
     <div className="min-w-0 space-y-4">
@@ -537,7 +645,9 @@ export function InvoiceFormWizard({
             }
           : undefined
       }
-      onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
+      onEditPayment={
+        paymentStepId != null ? () => setStep(paymentStepId) : undefined
+      }
       canApplyInvoiceDiscount={allowDiscountEditing}
       onDiscountChange={allowDiscountEditing ? handleDiscountChange : undefined}
     />
@@ -608,7 +718,7 @@ export function InvoiceFormWizard({
             key={savedInvoiceId}
             compact
             invoice={{ ...values, invoiceId: savedInvoiceId }}
-            initialFiles={documentDraft.files}
+            initialFiles={pendingUploadFiles ?? documentDraft.files}
             onBusyChange={setDocumentsBusy}
           />
         </div>
@@ -627,9 +737,7 @@ export function InvoiceFormWizard({
   }
 
   if (isMobileLayout) {
-    const steps = requireDailyIncomeRegistration
-      ? INVOICE_WIZARD_STEP_ORDER
-      : ([1, 2, 3, 4] as const);
+    const steps = layout.steps.map((entry) => entry.id);
     const currentStepIndex = Math.max(
       steps.findIndex((entry) => entry === step),
       0,
@@ -717,9 +825,13 @@ export function InvoiceFormWizard({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {step <= 3 ? (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{formStep}</div>
-          ) : requireDailyIncomeRegistration && step === 4 ? (
+          ) : paymentStepId != null && step === paymentStepId ? (
             <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-              {paymentStep}
+              {paymentStepContent}
+            </div>
+          ) : policiesStepId != null && step === policiesStepId ? (
+            <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
+              {policiesStepContent}
             </div>
           ) : (
             <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
@@ -759,7 +871,7 @@ export function InvoiceFormWizard({
       <div data-print-hide>
         <InvoiceWizardStepper
           step={step}
-          includePaymentStep={requireDailyIncomeRegistration}
+          layout={layout}
           onSelectStep={handleSelectCompletedStep}
         />
       </div>
@@ -778,7 +890,7 @@ export function InvoiceFormWizard({
               })}
             </p>
             <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
-            <p className="text-sm text-muted-foreground">{t(step === previewStep ? "invoices.form.design.reviewHint" : step === 4 ? "invoices.form.design.paymentHint" : "invoices.form.design.navigationHint")}</p>
+            <p className="text-sm text-muted-foreground">{t(stepHintKey)}</p>
           </div>
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -791,9 +903,13 @@ export function InvoiceFormWizard({
             >
               {formStep}
             </div>
-            {requireDailyIncomeRegistration && step === 4 ? (
+            {paymentStepId != null && step === paymentStepId ? (
               <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">
-                {paymentStep}
+                {paymentStepContent}
+              </div>
+            ) : policiesStepId != null && step === policiesStepId ? (
+              <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">
+                {policiesStepContent}
               </div>
             ) : step === previewStep ? (
               <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">

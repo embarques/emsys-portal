@@ -34,6 +34,7 @@ export const API_ENDPOINTS = {
   /** @deprecated Use VEHICLE_ROUTES. */
   DELIVERY_ROUTE_SCHEDULES: "/vehicle-routes",
   INVOICES: "/invoices",
+  INVOICE_POLICIES: "/invoice-policies",
   INVOICE_ITEM_BARCODE_ROUTE: "/invoices/item/barcode/route",
   INVOICE_DETAIL_LABELS: "/invoice/detail/labels",
   INVOICE_DETAIL_BARCODE: "/invoice/detail/barcode",
