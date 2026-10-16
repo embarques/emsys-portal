@@ -428,6 +428,28 @@ export async function fetchIncomeStatementSummaryTotals(
   };
 }
 
+/** Paginated open closeouts, oldest first, scoped to the active branch. */
+export async function fetchOpenIncomeStatements(branchId: number, page: number) {
+  const limit = 5;
+  const pagination = buildApiSearchPaginationQuery({ page, limit, offset: (page - 1) * limit });
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/search?${pagination}`,
+    buildStripeStyleSearchBody({
+      sort: { field: "date", direction: "asc" },
+      filterGroups: [{ operator: "and", filters: [
+        { field: "branch.id", operator: "eq", value: branchId },
+        { field: "status", operator: "eq", value: "OPEN" },
+      ] }],
+    }),
+  );
+  const rows = unwrapArray(payload);
+  return {
+    items: rows.map(normalizeIncomeStatement).filter((item): item is DailyIncomeStatement =>
+      item != null && item.branch?.id === branchId && item.status === "OPEN"),
+    hasMore: rows.length === limit,
+  };
+}
+
 export async function fetchIncomeStatement(branchId: number, date: string) {
   if (!branchId || !date) return null;
   const isoDate = date.slice(0, 10);

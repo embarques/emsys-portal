@@ -16,12 +16,15 @@ import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/
 import type { DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import type { Branch } from "@/lib/branches/types";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 type Props = {
   branches: Branch[];
   initialValues: DailyIncomeStatementValues;
   /** When true, branch comes from the existing statement and is shown read-only. */
   lockBranch?: boolean;
+  /** When true, fields and save are disabled (e.g. previous closeout still open). */
+  disabled?: boolean;
   isSubmitting: boolean;
   error?: string | null;
   onSubmit: (values: DailyIncomeStatementValues) => void;
@@ -32,6 +35,7 @@ export function DailyIncomeStatementForm({
   branches,
   initialValues,
   lockBranch = false,
+  disabled = false,
   isSubmitting,
   error,
   onSubmit,
@@ -67,6 +71,7 @@ export function DailyIncomeStatementForm({
   const branchName = watch("branchName");
   const currency = watch("currency");
   const showExchangeRate = currency?.trim().toUpperCase() === "DOP";
+  const fieldsDisabled = disabled || isSubmitting;
   const branchOptions = branches.map((branch) => ({
     value: String(branch.id),
     label: `${branch.code} — ${branch.name}`,
@@ -80,66 +85,86 @@ export function DailyIncomeStatementForm({
     <form
       onSubmit={handleSubmit(onSubmit)}
       onKeyDown={navigateOnEnter}
-      className="min-w-0 space-y-5 max-md:[&_button]:h-12 max-md:[&_button]:rounded-xl max-md:[&_input]:h-12 max-md:[&_input]:rounded-xl max-md:[&_input]:text-base max-md:[&_label]:text-base"
+      className={cn(
+        "min-w-0 space-y-5 max-md:[&_button]:h-12 max-md:[&_button]:rounded-xl max-md:[&_input]:h-12 max-md:[&_input]:rounded-xl max-md:[&_input]:text-base max-md:[&_label]:text-base",
+        disabled && "opacity-60",
+      )}
+      aria-disabled={disabled || undefined}
     >
       <FormKeyboardHint />
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="statement-branch">{t("accounting.dailyIncome.statement.fields.branch")}</Label>
-          {lockBranch ? (
-            <Input id="statement-branch" value={lockedBranchLabel} readOnly disabled />
-          ) : (
+      <fieldset disabled={fieldsDisabled} className="min-w-0 space-y-4 border-0 p-0">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="statement-branch">{t("accounting.dailyIncome.statement.fields.branch")}</Label>
+            {lockBranch ? (
+              <Input id="statement-branch" value={lockedBranchLabel} readOnly disabled />
+            ) : (
+              <SearchableSelect
+                id="statement-branch"
+                aria-invalid={Boolean(errors.branchId)}
+                disabled={fieldsDisabled}
+                value={branchId ? String(branchId) : ""}
+                onValueChange={(next) => {
+                  const branch = branches.find((item) => item.id === Number(next));
+                  setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
+                  setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
+                  setValue("branchName", branch?.name ?? "", { shouldValidate: true });
+                }}
+                options={branchOptions}
+                placeholder={t("accounting.dailyIncome.statement.placeholders.selectBranch")}
+                searchPlaceholder={t("accounting.dailyIncome.statement.placeholders.searchBranches")}
+                mobileSheet
+              />
+            )}
+            {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="statement-date">{t("accounting.dailyIncome.statement.fields.date")}</Label>
+            <DateInput
+              id="statement-date"
+              aria-invalid={Boolean(errors.date)}
+              disabled={fieldsDisabled}
+              {...register("date")}
+            />
+            {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
+          </div>
+          <div className={cn("space-y-2", !showExchangeRate && "sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]")}>
+            <Label htmlFor="statement-currency">{t("accounting.dailyIncome.statement.fields.currency")}</Label>
             <SearchableSelect
-              id="statement-branch"
-              aria-invalid={Boolean(errors.branchId)}
-              value={branchId ? String(branchId) : ""}
+              id="statement-currency"
+              aria-invalid={Boolean(errors.currency)}
+              disabled={fieldsDisabled}
+              value={currency ?? ""}
               onValueChange={(next) => {
-                const branch = branches.find((item) => item.id === Number(next));
-                setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
-                setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
-                setValue("branchName", branch?.name ?? "", { shouldValidate: true });
+                setValue("currency", next, { shouldValidate: true });
+                if (next.trim().toUpperCase() !== "DOP") {
+                  setValue("rate", 1, { shouldValidate: true });
+                }
               }}
-              options={branchOptions}
-              placeholder={t("accounting.dailyIncome.statement.placeholders.selectBranch")}
-              searchPlaceholder={t("accounting.dailyIncome.statement.placeholders.searchBranches")}
+              options={currencyOptions}
+              placeholder={t("accounting.dailyIncome.currency.select")}
+              searchable={false}
               mobileSheet
             />
-          )}
-          {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="statement-date">{t("accounting.dailyIncome.statement.fields.date")}</Label>
-          <DateInput id="statement-date" aria-invalid={Boolean(errors.date)} {...register("date")} />
-          {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="statement-currency">{t("accounting.dailyIncome.statement.fields.currency")}</Label>
-          <SearchableSelect
-            id="statement-currency"
-            aria-invalid={Boolean(errors.currency)}
-            value={currency ?? ""}
-            onValueChange={(next) => {
-              setValue("currency", next, { shouldValidate: true });
-              if (next.trim().toUpperCase() !== "DOP") {
-                setValue("rate", 1, { shouldValidate: true });
-              }
-            }}
-            options={currencyOptions}
-            placeholder={t("accounting.dailyIncome.currency.select")}
-            searchable={false}
-            mobileSheet
-          />
-        </div>
-        {showExchangeRate ? (
-          <div className="space-y-2">
-            <Label htmlFor="statement-rate">{t("accounting.dailyIncome.statement.fields.exchangeRate")}</Label>
-            <Input id="statement-rate" aria-invalid={Boolean(errors.rate)} type="number" step="0.01" {...register("rate", { valueAsNumber: true })} />
-            {errors.rate ? <p className="text-sm text-destructive">{errors.rate.message}</p> : null}
           </div>
-        ) : (
-          <input type="hidden" {...register("rate", { valueAsNumber: true })} />
-        )}
-      </div>
+          {showExchangeRate ? (
+            <div className="space-y-2">
+              <Label htmlFor="statement-rate">{t("accounting.dailyIncome.statement.fields.exchangeRate")}</Label>
+              <Input
+                id="statement-rate"
+                aria-invalid={Boolean(errors.rate)}
+                type="number"
+                step="0.01"
+                disabled={fieldsDisabled}
+                {...register("rate", { valueAsNumber: true })}
+              />
+              {errors.rate ? <p className="text-sm text-destructive">{errors.rate.message}</p> : null}
+            </div>
+          ) : (
+            <input type="hidden" {...register("rate", { valueAsNumber: true })} />
+          )}
+        </div>
+      </fieldset>
       <input type="hidden" {...register("branchId", { valueAsNumber: true })} />
       <input type="hidden" {...register("branchCode")} />
       <input type="hidden" {...register("branchName")} />
@@ -148,7 +173,7 @@ export function DailyIncomeStatementForm({
         <Button type="button" variant="outline" className="min-w-0" onClick={onCancel} disabled={isSubmitting}>
           {t("common.actions.cancel")}
         </Button>
-        <Button type="submit" className="min-w-0 whitespace-normal" disabled={isSubmitting}>
+        <Button type="submit" className="min-w-0 whitespace-normal" disabled={fieldsDisabled}>
           {isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.statement.save")}
         </Button>
       </div>

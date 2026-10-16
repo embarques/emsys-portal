@@ -15,6 +15,7 @@ import {
   fetchDailyIncomeJournals,
   fetchDailyIncomeInvoiceRegistration,
   fetchIncomeStatement,
+  fetchOpenIncomeStatements,
   fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
   setIncomeStatementStatus,
@@ -42,6 +43,15 @@ function useAccountingQueryEnabled(extraEnabled = true) {
     !roleLoading &&
     Boolean(idToken && companyId && transportCompanyId && companyId === transportCompanyId)
   );
+}
+
+export function useOpenIncomeStatements(branchId: number, page: number) {
+  const enabled = useAccountingQueryEnabled(branchId > 0);
+  return useWorkspaceQuery({
+    queryKey: queryKeys.accounting.openIncomeStatements(branchId, page),
+    queryFn: () => fetchOpenIncomeStatements(branchId, page),
+    enabled,
+  });
 }
 
 export function useIncomeStatement(branchId: number, date: string) {

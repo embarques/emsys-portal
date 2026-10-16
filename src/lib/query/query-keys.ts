@@ -203,6 +203,8 @@ export const queryKeys = {
     all: ["accounting"] as const,
     incomeStatement: (branchCode: string, date: string) =>
       [...queryKeys.accounting.all, "income-statement", branchCode, date] as const,
+    openIncomeStatements: (branchId: number, page: number) =>
+      [...queryKeys.accounting.all, "open-income-statements", branchId, page] as const,
     incomeStatementById: (id: number) =>
       [...queryKeys.accounting.all, "income-statement-by-id", id] as const,
     summaryTotals: (incomeStatementId: number) =>

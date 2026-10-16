@@ -3,7 +3,7 @@
 import { FormKeyboardHint } from "@/components/forms/form-shell";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CheckCircle2, Loader2, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { PreviousOpenStatementsBanner } from "@/components/accounting/previous-open-statements-banner";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
@@ -474,57 +475,47 @@ export function InvoiceDailyIncomeDialog({
               ) : null}
             </div>
 
-            {statementError ? (
-              <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {openStatements.length === 1 ? (
-                  <p className="leading-snug break-words">
-                    {t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
+            {statementError && openStatements.length > 0 ? (
+              <PreviousOpenStatementsBanner
+                title={
+                  openStatements.length === 1
+                    ? t("invoices.wizard.dailyIncome.dialog.previousOpenTitle")
+                    : t("invoices.wizard.dailyIncome.dialog.previousOpenTitles")
+                }
+                description={
+                  openStatements.length === 1 ? (
+                    t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
                       id: openStatements[0].id,
                       date: openStatements[0].date,
-                    })}
-                  </p>
-                ) : openStatements.length > 1 ? (
-                  <div className="space-y-2">
-                    <p className="leading-snug break-words">
-                      {t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}
-                    </p>
-                    <ul className="list-disc space-y-1 pl-5 leading-snug">
-                      {openStatements.map((item) => (
-                        <li key={item.id}>
-                          {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
-                            id: item.id,
-                            date: item.date,
-                          })}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <p className="leading-snug break-words">{statementError}</p>
-                )}
-                {openStatements.length > 0 ? (
-                  <Button
-                    data-testid="invoice-daily-income-close-previous"
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={closeOpenStatements}
-                    disabled={closeStatement.isPending}
-                  >
-                    {closeStatement.isPending ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <Lock className="size-4" />
-                    )}
-                    {closeStatement.isPending
-                      ? t("invoices.wizard.dailyIncome.dialog.closing")
-                      : openStatements.length > 1
-                        ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
-                        : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")}
-                  </Button>
-                ) : null}
-              </div>
+                    })
+                  ) : (
+                    <div className="space-y-1.5">
+                      <p>{t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}</p>
+                      <ul className="list-disc space-y-0.5 pl-5">
+                        {openStatements.map((item) => (
+                          <li key={item.id}>
+                            {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
+                              id: item.id,
+                              date: item.date,
+                            })}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                }
+                closeLabel={
+                  openStatements.length > 1
+                    ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
+                    : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")
+                }
+                closingLabel={t("invoices.wizard.dailyIncome.dialog.closing")}
+                isClosing={closeStatement.isPending}
+                onClose={closeOpenStatements}
+                closeButtonTestId="invoice-daily-income-close-previous"
+              />
+            ) : statementError ? (
+              <p className="break-words text-sm text-destructive">{statementError}</p>
             ) : null}
 
             <DialogFooter className="gap-2 border-t pt-4 sm:justify-end">
@@ -538,6 +529,7 @@ export function InvoiceDailyIncomeDialog({
                 disabled={
                   createStatement.isPending ||
                   closeStatement.isPending ||
+                  openStatements.length > 0 ||
                   !currentUserQuery.data ||
                   branchesQuery.isLoading ||
                   !statementBranchId

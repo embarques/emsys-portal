@@ -9,6 +9,7 @@ import { AddTransactionWizard } from "@/components/accounting/add-transaction-wi
 import { DailyIncomePrintDialog, type DailyIncomePrintSelection } from "@/components/accounting/daily-income-print-dialog";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
 import { DailyIncomeTransactionViewSheet } from "@/components/accounting/daily-income-transaction-view-sheet";
+import { PreviousOpenStatementsBanner } from "@/components/accounting/previous-open-statements-banner";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -25,7 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DateInput } from "@/components/ui/date-input";
+import { CloseoutDateNavigation } from "@/components/accounting/closeout-date-navigation";
+import { OpenCloseoutsPanel } from "@/components/accounting/open-closeouts-panel";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -73,9 +75,6 @@ import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
-
-const toolbarFieldControlClassName =
-  "h-10 w-auto rounded-lg border-2 border-foreground/60 bg-card shadow-none focus-visible:border-foreground focus-visible:ring-0";
 
 function today() {
   const date = new Date();
@@ -764,18 +763,12 @@ export function DailyIncomeWorkspace() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="daily-date-mobile">{t("accounting.dailyIncome.filters.date")}</Label>
-            <DateInput
-              id="daily-date-mobile"
-              className="h-12 min-h-12 w-full max-w-full rounded-xl border-border bg-card text-base"
-              value={date}
-              onChange={(event) => {
-                setDate(event.target.value);
-                setPage(1);
-              }}
-            />
+            <CloseoutDateNavigation id="daily-date-mobile" date={date} today={today()} onChange={(next) => { setDate(next); setPage(1); }} />
           </div>
         </div>
       </div>
+
+      <OpenCloseoutsPanel key={selectedBranch?.id ?? 0} branchId={selectedBranch?.id ?? 0} date={date} onReview={(next) => { setDate(next); setPage(1); }} />
 
       {statement ? (
         <DailyIncomeMobileSummary
@@ -906,15 +899,7 @@ export function DailyIncomeWorkspace() {
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
-          <DateInput
-            id="daily-date"
-            className={toolbarFieldControlClassName}
-            value={date}
-            onChange={(event) => {
-              setDate(event.target.value);
-              setPage(1);
-            }}
-          />
+          <CloseoutDateNavigation id="daily-date" date={date} today={today()} onChange={(next) => { setDate(next); setPage(1); }} />
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label>{t("accounting.dailyIncome.filters.status")}</Label>
@@ -937,6 +922,8 @@ export function DailyIncomeWorkspace() {
         </div>
       </CardContent>
     </Card>
+
+    <OpenCloseoutsPanel key={selectedBranch?.id ?? 0} branchId={selectedBranch?.id ?? 0} date={date} onReview={(next) => { setDate(next); setPage(1); }} />
 
     {statement ? <>
     <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={openAddTransactionForm} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
@@ -971,54 +958,51 @@ export function DailyIncomeWorkspace() {
           <DialogTitle>{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle>
           <DialogDescription>{statement ? t("accounting.dailyIncome.statement.editDescription") : t("accounting.dailyIncome.statement.description")}</DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 overflow-y-auto px-6 py-5">
+        <div className="min-h-0 space-y-5 overflow-y-auto px-6 py-5">
           {!statement && previousOpenStatements.length > 0 ? (
-            <div className="mb-5 space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {previousOpenStatements.length === 1 ? (
-                <p className="break-words leading-snug">
-                  {t("accounting.dailyIncome.statement.previousOpenStatement", {
+            <PreviousOpenStatementsBanner
+              title={
+                previousOpenStatements.length === 1
+                  ? t("accounting.dailyIncome.statement.previousOpenTitle")
+                  : t("accounting.dailyIncome.statement.previousOpenTitles")
+              }
+              description={
+                previousOpenStatements.length === 1 ? (
+                  t("accounting.dailyIncome.statement.previousOpenStatement", {
                     id: previousOpenStatements[0].id,
                     date: previousOpenStatements[0].date,
-                  })}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  <p className="break-words leading-snug">
-                    {t("accounting.dailyIncome.statement.previousOpenStatements")}
-                  </p>
-                  <ul className="list-disc space-y-1 pl-5 leading-snug">
-                    {previousOpenStatements.map((item) => (
-                      <li key={item.id}>
-                        {t("accounting.dailyIncome.statement.previousOpenStatementItem", {
-                          id: item.id,
-                          date: item.date,
-                        })}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={closePreviousStatements}
-                disabled={statusMutation.isPending}
-              >
-                {statusMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}
-                {statusMutation.isPending
-                  ? t("accounting.dailyIncome.statement.closing")
-                  : previousOpenStatements.length > 1
-                    ? t("accounting.dailyIncome.statement.closeAllPreviousCuadres")
-                    : t("accounting.dailyIncome.statement.closePreviousCuadre")}
-              </Button>
-            </div>
+                  })
+                ) : (
+                  <div className="space-y-1.5">
+                    <p>{t("accounting.dailyIncome.statement.previousOpenStatements")}</p>
+                    <ul className="list-disc space-y-0.5 pl-5">
+                      {previousOpenStatements.map((item) => (
+                        <li key={item.id}>
+                          {t("accounting.dailyIncome.statement.previousOpenStatementItem", {
+                            id: item.id,
+                            date: item.date,
+                          })}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              }
+              closeLabel={
+                previousOpenStatements.length > 1
+                  ? t("accounting.dailyIncome.statement.closeAllPreviousCuadres")
+                  : t("accounting.dailyIncome.statement.closePreviousCuadre")
+              }
+              closingLabel={t("accounting.dailyIncome.statement.closing")}
+              isClosing={statusMutation.isPending}
+              onClose={closePreviousStatements}
+            />
           ) : null}
           <DailyIncomeStatementForm
             branches={branches}
             initialValues={statementValues}
             lockBranch={Boolean(statement)}
+            disabled={!statement && previousOpenStatements.length > 0}
             isSubmitting={mutationPending}
             error={previousOpenStatements.length > 0 ? null : formError}
             onSubmit={saveStatement}
