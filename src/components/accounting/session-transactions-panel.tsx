@@ -2,7 +2,6 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { useFormViewport } from "@/hooks/use-form-viewport";
 import { PanelRightOpen, ReceiptText, X } from "lucide-react";
 import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
 import { transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
@@ -53,19 +52,39 @@ export function SessionTransactionsLayout({ children, entries, currency, active 
   const [panelVisible, setPanelVisible] = useState(true);
   const showPanel = active && panelVisible;
   const panelId = useId();
-  const layoutRef = useFormViewport();
-  return <div className="mx-auto w-full max-w-[90rem]">
-    {active && !panelVisible && <div className="mb-3 hidden justify-end xl:flex">
-      <Button type="button" variant="outline" size="sm" aria-expanded={panelVisible} aria-controls={panelId} onClick={() => setPanelVisible(true)}>
-        <PanelRightOpen className="size-4" aria-hidden="true" />
-        {t("accounting.dailyIncome.sessionPanel.show")}
-      </Button>
-    </div>}
-    <div ref={layoutRef} className={`grid w-full items-start gap-5 pb-6 xl:pb-32 ${showPanel ? "xl:grid-cols-[minmax(0,1fr)_22rem]" : ""}`}>
-      {children}
-      <div id={panelId} hidden={!showPanel} className={showPanel ? "relative hidden min-h-0 min-w-0 self-stretch xl:block" : "hidden"}>
-        <SessionTransactionsPanel entries={entries} currency={currency} onClose={() => setPanelVisible(false)} />
+  return (
+    <div className="mx-auto w-full max-w-[90rem]">
+      {active && !panelVisible ? (
+        <div className="mb-3 hidden justify-end xl:flex">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-expanded={panelVisible}
+            aria-controls={panelId}
+            onClick={() => setPanelVisible(true)}
+          >
+            <PanelRightOpen className="size-4" aria-hidden="true" />
+            {t("accounting.dailyIncome.sessionPanel.show")}
+          </Button>
+        </div>
+      ) : null}
+      <div
+        className={`grid w-full items-stretch gap-5 ${showPanel ? "xl:grid-cols-[minmax(0,1fr)_22rem]" : ""}`}
+      >
+        <div className="min-h-0 min-w-0">{children}</div>
+        <div
+          id={panelId}
+          hidden={!showPanel}
+          className={showPanel ? "relative hidden min-h-0 min-w-0 xl:block" : "hidden"}
+        >
+          <SessionTransactionsPanel
+            entries={entries}
+            currency={currency}
+            onClose={() => setPanelVisible(false)}
+          />
+        </div>
       </div>
     </div>
-  </div>;
+  );
 }

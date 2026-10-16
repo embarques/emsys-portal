@@ -262,12 +262,12 @@ export function AddTransactionWizard(props: Props) {
           <TransactionWizardStepper step={isEdit ? step - 1 : step} labels={isEdit ? stepLabels.slice(1) : stepLabels} disabled={isSubmitting} allowedSteps={quickEntryActive ? [1, 2] : undefined} onSelectStep={(target) => setStep(isEdit ? target + 1 : target)} appearance={appearance} />
         </DialogHeader>
       ) : (
-        <div className="shrink-0 border-b border-border px-5 py-3">
+        <div className="shrink-0 border-b border-border px-5 py-4">
           <TransactionWizardStepper step={isEdit ? step - 1 : step} labels={isEdit ? stepLabels.slice(1) : stepLabels} disabled={isSubmitting} allowedSteps={quickEntryActive ? [1, 2] : undefined} onSelectStep={(target) => setStep(isEdit ? target + 1 : target)} appearance={appearance} />
         </div>
       )}
 
-      {!isEdit && selectedType === "INITIAL-PAYMENT" && step === 3 && <div className="flex shrink-0 items-center justify-end gap-3 border-b px-5 py-3">
+      {!isEdit && selectedType === "INITIAL-PAYMENT" && step === 3 && <div className="flex shrink-0 items-center justify-end gap-3 border-b px-5 py-4">
         <Label htmlFor={quickEntryId}>{t("accounting.dailyIncome.quickEntry.label")}</Label>
         <Switch id={quickEntryId} checked={quickEntryActive} disabled={isSubmitting} onCheckedChange={setQuickEntry} />
         <span className="text-sm">{t(`accounting.dailyIncome.quickEntry.${quickEntryActive ? "yes" : "no"}`)}</span>
@@ -323,8 +323,8 @@ export function AddTransactionWizard(props: Props) {
       <div
         className={cn(
           "shrink-0 border-t border-border bg-card",
-          presentation === "dialog" ? "px-6 py-3" : "px-5 py-3",
-          isPhone && "pb-[calc(env(safe-area-inset-bottom)+0.75rem)] px-4 py-3",
+          presentation === "dialog" ? "px-6 py-4" : "px-5 py-4",
+          isPhone && "pb-[calc(env(safe-area-inset-bottom)+1rem)] px-4 py-4",
         )}
       >
         {step === 1 ? (

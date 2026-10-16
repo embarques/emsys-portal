@@ -20,7 +20,7 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode } from "@/lib/accounting/daily-income/types";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import {
   formatMoneyFormDisplayValue,
@@ -169,22 +169,13 @@ export function RegisterInvoiceTransactionFields({
     setValue("paymentMethodName", cash.name, { shouldValidate: true });
   }, [paymentMethodId, paymentMethodName, paymentMethods, setValue]);
 
-  // Prefill a bank account for bank-backed methods, even before an amount is entered.
+  // Clear bank account when the payment method no longer needs one.
   useEffect(() => {
-    if (!needsBankAccount) {
-      if (paymentAccountId) {
-        setValue("paymentAccountId", undefined, { shouldValidate: false });
-        setValue("paymentAccountName", undefined, { shouldValidate: false });
-        setValue("paymentAccountType", undefined, { shouldValidate: false });
-      }
-      return;
-    }
-    if (paymentAccountId || !bankAccounts[0]) return;
-    const account = bankAccounts[0];
-    setValue("paymentAccountId", account.id, { shouldValidate: true });
-    setValue("paymentAccountName", account.displayName);
-    setValue("paymentAccountType", account.type);
-  }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
+    if (needsBankAccount || !paymentAccountId) return;
+    setValue("paymentAccountId", undefined, { shouldValidate: false });
+    setValue("paymentAccountName", undefined, { shouldValidate: false });
+    setValue("paymentAccountType", undefined, { shouldValidate: false });
+  }, [needsBankAccount, paymentAccountId, setValue]);
 
   const [senderQuery, setSenderQuery] = useState("");
   const [receiverQuery, setReceiverQuery] = useState("");
@@ -315,7 +306,7 @@ export function RegisterInvoiceTransactionFields({
 
   const methodFields = (
     <>
-      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
+      <div className="space-y-2 min-w-0">
         {paymentDetailsRequired ? (
           <RequiredLabel htmlFor="journal-payment">
             {t("accounting.dailyIncome.form.fields.paymentMethod")}
@@ -335,9 +326,10 @@ export function RegisterInvoiceTransactionFields({
               setValue("paymentAccountName", undefined, { shouldValidate: true });
               setValue("paymentAccountType", undefined, { shouldValidate: true });
             }
-            if (isCheckPaymentMethod(method?.name)) {
+            if (isCheckPaymentMethod(method?.name) || isCashPaymentMethod(method?.name)) {
               setValue("externalReferenceNumber", "", { shouldValidate: true });
-            } else {
+            }
+            if (!isCheckPaymentMethod(method?.name)) {
               setValue("checkNumber", undefined, { shouldValidate: true });
             }
           }}
@@ -361,7 +353,7 @@ export function RegisterInvoiceTransactionFields({
   const bankFields = (
     <>
       {needsBankAccount ? (
-        <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
+        <div className="space-y-2 min-w-0">
           {paymentDetailsRequired ? (
             <RequiredLabel htmlFor="journal-bank-account">
               {t("accounting.dailyIncome.form.fields.bankAccount")}
@@ -373,10 +365,16 @@ export function RegisterInvoiceTransactionFields({
             id="journal-bank-account"
             value={paymentAccountId != null ? String(paymentAccountId) : ""}
             onValueChange={(next) => {
+              if (!next) {
+                setValue("paymentAccountId", undefined, { shouldValidate: true, shouldDirty: true });
+                setValue("paymentAccountName", undefined, { shouldValidate: true, shouldDirty: true });
+                setValue("paymentAccountType", undefined, { shouldValidate: true, shouldDirty: true });
+                return;
+              }
               const account = bankAccounts.find((item) => item.id === Number(next));
               setValue("paymentAccountId", account?.id, { shouldValidate: true, shouldDirty: true });
-              setValue("paymentAccountName", account?.displayName ?? "");
-              setValue("paymentAccountType", account?.type);
+              setValue("paymentAccountName", account?.displayName ?? "", { shouldValidate: true, shouldDirty: true });
+              setValue("paymentAccountType", account?.type ?? "BANK", { shouldValidate: true, shouldDirty: true });
             }}
             placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
             searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
@@ -392,7 +390,7 @@ export function RegisterInvoiceTransactionFields({
   const checkFields = (
     <>
       {isCheck ? (
-        <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
+        <div className="space-y-2 min-w-0">
           {paymentDetailsRequired ? (
             <RequiredLabel htmlFor="journal-check-number">
               {t("accounting.dailyIncome.form.fields.checkNumber")}
@@ -448,9 +446,9 @@ export function RegisterInvoiceTransactionFields({
     </>
   );
 
-  const externalReferenceFields = isCheck ? null : (
+  const externalReferenceFields = isCheck || isCashPaymentMethod(paymentMethodName) ? null : (
     <>
-      <div className={grouped ? "space-y-2 min-w-0" : "space-y-2 sm:col-span-2"}>
+      <div className="space-y-2 min-w-0">
         <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
         <Input
           id="journal-external-reference"
@@ -686,10 +684,14 @@ export function RegisterInvoiceTransactionFields({
         </FormSection>
         <FormSection className={!quickEntry && activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-            {methodFields}
-            {bankFields}
-            {checkFields}
-            {!quickEntry && externalReferenceFields}
+            <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">
+              {methodFields}
+              {checkFields}
+            </div>
+            <div className="grid min-w-0 gap-4 empty:hidden sm:col-span-2 sm:grid-cols-2">
+              {bankFields}
+              {!quickEntry && externalReferenceFields}
+            </div>
             {!quickEntry && referenceFields}
           </div>
         </FormSection>
@@ -707,11 +709,15 @@ export function RegisterInvoiceTransactionFields({
   return (
     <div className="grid min-w-0 gap-4 sm:grid-cols-2">
       {assigneeFields}
-      {methodFields}
-      {bankFields}
-      {checkFields}
+      <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">
+        {methodFields}
+        {checkFields}
+      </div>
+      <div className="grid min-w-0 gap-4 empty:hidden sm:col-span-2 sm:grid-cols-2">
+        {bankFields}
+        {externalReferenceFields}
+      </div>
       {invoiceFields}
-      {externalReferenceFields}
       {referenceFields}
       {costFields}
       {amountFields}

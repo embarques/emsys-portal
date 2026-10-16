@@ -21,7 +21,7 @@ import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { Employee } from "@/lib/employees/types";
@@ -348,14 +348,6 @@ export function DailyIncomeTransactionForm({
   }, [needsPaymentMethod, paymentMethodId, paymentMethodName, paymentMethods, setValue]);
 
   useEffect(() => {
-    if (!needsBankAccount || paymentAccountId || !bankAccounts[0]) return;
-    const account = bankAccounts[0];
-    setValue("paymentAccountId", account.id, { shouldValidate: true });
-    setValue("paymentAccountName", account.displayName);
-    setValue("paymentAccountType", account.type);
-  }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
-
-  useEffect(() => {
     if (type !== "EXPENSE" || expenseSourceAccounts.length === 0) return;
     if (sourceAccountDefaultCleared) return;
     if (sourceAccountId) return;
@@ -554,14 +546,12 @@ export function DailyIncomeTransactionForm({
 
                 <div
                   className={cn(
-                    "grid gap-4",
-                    (needsAccount || needsSourceAccount) && "sm:col-span-2",
+                    "grid gap-4 sm:col-span-2",
                     needsAccount && needsSourceAccount
                       ? "sm:grid-cols-2 lg:grid-cols-3"
                       : needsAccount || needsSourceAccount
                         ? "sm:grid-cols-2"
                         : "sm:grid-cols-1",
-
                   )}
                 >
                   {needsAccount ? (
@@ -649,9 +639,10 @@ export function DailyIncomeTransactionForm({
                         setValue("paymentAccountName", undefined, { shouldValidate: true });
                         setValue("paymentAccountType", undefined, { shouldValidate: true });
                       }
-                      if (isCheckPaymentMethod(method?.name)) {
+                      if (isCheckPaymentMethod(method?.name) || isCashPaymentMethod(method?.name)) {
                         setValue("externalReferenceNumber", "", { shouldValidate: true });
-                      } else {
+                      }
+                      if (!isCheckPaymentMethod(method?.name)) {
                         setValue("checkNumber", undefined, { shouldValidate: true });
                       }
                     }}
@@ -664,27 +655,6 @@ export function DailyIncomeTransactionForm({
                     <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
                   ) : null}
                 </div>
-
-                {needsBankAccount ? (
-                  <div className="space-y-2 min-w-0">
-                    <RequiredLabel htmlFor="journal-bank-account">{t("accounting.dailyIncome.form.fields.bankAccount")}</RequiredLabel>
-                    <SearchableSelect
-                      id="journal-bank-account"
-                      value={paymentAccountId != null ? String(paymentAccountId) : ""}
-                      onValueChange={(next) => {
-                        const account = bankAccounts.find((item) => item.id === Number(next));
-                        setValue("paymentAccountId", account?.id, { shouldValidate: true });
-                        setValue("paymentAccountName", account?.displayName ?? "");
-                        setValue("paymentAccountType", account?.type);
-                      }}
-                      placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
-                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
-                      mobileSheet
-                      options={bankAccountOptions}
-                    />
-                    {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
-                  </div>
-                ) : null}
 
                 {isCheck ? (
                   <div className="space-y-2 min-w-0">
@@ -707,7 +677,34 @@ export function DailyIncomeTransactionForm({
                   </div>
                 ) : null}
 
-                {!isCheck ? <div className="space-y-2 sm:col-span-2">
+                {needsBankAccount ? (
+                  <div className="space-y-2 min-w-0 sm:col-start-1">
+                    <RequiredLabel htmlFor="journal-bank-account">{t("accounting.dailyIncome.form.fields.bankAccount")}</RequiredLabel>
+                    <SearchableSelect
+                      id="journal-bank-account"
+                      value={paymentAccountId != null ? String(paymentAccountId) : ""}
+                      onValueChange={(next) => {
+                        if (!next) {
+                          setValue("paymentAccountId", undefined, { shouldValidate: true });
+                          setValue("paymentAccountName", undefined, { shouldValidate: true });
+                          setValue("paymentAccountType", undefined, { shouldValidate: true });
+                          return;
+                        }
+                        const account = bankAccounts.find((item) => item.id === Number(next));
+                        setValue("paymentAccountId", account?.id, { shouldValidate: true });
+                        setValue("paymentAccountName", account?.displayName ?? "", { shouldValidate: true });
+                        setValue("paymentAccountType", account?.type ?? "BANK", { shouldValidate: true });
+                      }}
+                      placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
+                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
+                      mobileSheet
+                      options={bankAccountOptions}
+                    />
+                    {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
+                  </div>
+                ) : null}
+
+                {!isCheck && !isCashPaymentMethod(paymentMethodName) ? <div className="space-y-2 min-w-0">
                   <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
                   <Input
                     id="journal-external-reference"
