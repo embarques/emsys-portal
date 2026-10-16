@@ -19,6 +19,7 @@ before(async () => {
     resolve: { extensions: [".tsx", ".ts", ".js"], alias: {
       "@/lib/inventory/hooks/use-inventory$": path.resolve("tests/browser/fixtures/inventory-hooks.ts"),
       "@/lib/employees/hooks/use-employees$": path.resolve("tests/browser/fixtures/inventory-hooks.ts"),
+      "@/lib/auth/hooks/use-auth$": path.resolve("tests/browser/fixtures/documents-auth.ts"),
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/i18n.ts"),
       "@/lib/branches/hooks/use-branches$": path.resolve("tests/browser/fixtures/branches.ts"),
       "@/lib/customers/hooks/use-customers$": path.resolve("tests/browser/fixtures/customers.ts"),
@@ -303,6 +304,7 @@ test("quick invoice entry advances from cost to amount before saving", async () 
   const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT", quickEntry: "true" });
   try {
     assert.equal(await page.locator("#journal-payment").isVisible(), true);
+    await page.locator("#journal-auto-invoice-number").uncheck();
     await page.locator("#journal-invoice-number").fill("80424");
     await page.locator("#journal-invoice-cost").fill("200");
     await page.locator("#journal-invoice-cost").press("Enter");
@@ -319,6 +321,7 @@ test("normal invoice entry keeps payment selection in its own step", async () =>
   const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT" });
   try {
     assert.equal(await page.locator("#journal-payment").isVisible(), false);
+    await page.locator("#journal-auto-invoice-number").uncheck();
     await page.locator("#journal-invoice-number").fill("80425");
     await page.locator("#journal-invoice-cost").fill("200");
     await page.locator("#save").click();
@@ -356,6 +359,7 @@ test("quick-entry switch lives in step 3, disables other steps and restores norm
     await toggle.click();
     assert.equal(await page.locator("#journal-payment").isVisible(), false);
     await toggle.click();
+    await page.locator("#journal-auto-invoice-number").uncheck();
     await page.locator("#journal-invoice-number").fill("80426");
     await page.locator("#journal-invoice-cost").fill("200");
     await page.locator("#journal-invoice-cost").press("Enter");

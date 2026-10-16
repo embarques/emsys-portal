@@ -257,3 +257,55 @@ test("Documents shortcut opens an invoice-number tab and is disabled for multipl
     await mobile.close();
   }
 });
+
+test("document info exposes upload and modification metadata in list and thumbnail views", async () => {
+  const page = await fixture(390, true);
+  try {
+    for (const view of ["List view", "Grid view"]) {
+      await page.getByRole("button", { name: view, exact: true }).click();
+      const info = page.getByRole("button", {
+        name: "Information for signed-invoice.pdf",
+        exact: true,
+      });
+      await info.click();
+      const dialog = page.getByRole("dialog");
+      await dialog
+        .getByRole("heading", { name: "Document information", exact: true })
+        .waitFor();
+      assert.equal(
+        await dialog
+          .locator("dd")
+          .filter({ hasText: "Hector Martinez" })
+          .count(),
+        1,
+      );
+      assert.equal(
+        await dialog.locator("dd").filter({ hasText: "Ana Perez" }).count(),
+        1,
+      );
+      assert.equal(
+        await dialog.getByText("2.0 KB (2,048 bytes)", { exact: true }).count(),
+        1,
+      );
+      assert.equal(await dialog.getByText("PDF", { exact: true }).count(), 1);
+      assert.equal(
+        await dialog
+          .getByText("Oct 15, 2026, 2:00 PM EDT", { exact: true })
+          .count(),
+        1,
+      );
+      assert.equal(await page.locator("iframe").count(), 0);
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        true,
+      );
+      await page.keyboard.press("Escape");
+      await dialog.waitFor({ state: "hidden" });
+      await page.waitForFunction(() => document.activeElement?.getAttribute("aria-label") === "Information for signed-invoice.pdf");
+    }
+  } finally {
+    await page.close();
+  }
+});

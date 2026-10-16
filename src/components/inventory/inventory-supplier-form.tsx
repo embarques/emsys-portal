@@ -148,7 +148,7 @@ export function InventorySupplierForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+      <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <FormWorkflowHints requiredHint={t("inventory.form.workflow.requiredHint")} keyboardHint={t("inventory.form.workflow.keyboardHint")} />
         <div className="grid items-start gap-5 @4xl:grid-cols-2">
           <div className="min-w-0 space-y-5">

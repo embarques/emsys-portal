@@ -1,5 +1,7 @@
 "use client";
 
+import { FormKeyboardHint } from "@/components/forms/form-shell";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { invoiceDocumentNameSchema } from "@/lib/invoices/schemas/invoice-document.schema";
@@ -64,6 +66,7 @@ export function InvoiceDocumentActions({
           })}
           className="space-y-4"
         >
+          {mode === "rename" ? <FormKeyboardHint /> : null}
           {mode === "rename" ? (
             <div className="space-y-2">
               <Label htmlFor="document-name">

@@ -1,5 +1,7 @@
 "use client";
 
+import { FormKeyboardHint } from "@/components/forms/form-shell";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
@@ -109,6 +111,7 @@ export function ChartAccountForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-full min-w-0 space-y-5 max-md:[&_label]:text-base">
+      <FormKeyboardHint />
       <div className="min-w-0 space-y-2">
         <Label htmlFor="account-name">
           {t("accounting.chartOfAccounts.form.fields.displayName")}

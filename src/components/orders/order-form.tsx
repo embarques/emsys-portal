@@ -1,6 +1,8 @@
 "use client";
 
-import { CalendarDays, Keyboard, UserPlus, Users } from "lucide-react";
+import { FormKeyboardHint } from "@/components/forms/form-shell";
+
+import { CalendarDays, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -313,13 +315,10 @@ export function OrderForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+      <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <p>{t("orders.form.workflow.requiredHint")}</p>
-          <p className="flex items-center gap-1.5">
-            <Keyboard className="size-3.5" aria-hidden="true" />
-            {t("orders.form.workflow.keyboardHint")}
-          </p>
+          <FormKeyboardHint />
         </div>
         <FormSection icon={CalendarDays} title={t("orders.form.workflow.scheduleTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div

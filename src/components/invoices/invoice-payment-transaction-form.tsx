@@ -1,5 +1,7 @@
 "use client";
 
+import { FormKeyboardHint } from "@/components/forms/form-shell";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -60,6 +62,7 @@ function buildInitialValues(
     refNumberMode: "system",
     description: "",
     invoiceNumber: invoice.invoiceNumber,
+    autoGenerateInvoiceNumber: Boolean(invoice.autoGenerateNumber && !invoice.generatedInvoiceNumber),
     invoiceCost: Math.max(0, invoiceSubtotal),
     invoiceDiscount: discount,
     includeSender: Boolean(invoice.sender),
@@ -246,7 +249,8 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     setValue("invoiceCost", invoiceLineItemsTotal, { shouldValidate: true });
     setValue("invoiceDiscount", invoiceDiscount, { shouldValidate: true });
     setValue("invoiceNumber", invoice.invoiceNumber);
-  }, [invoice.invoiceNumber, invoiceDiscount, invoiceLineItemsTotal, setValue]);
+    setValue("autoGenerateInvoiceNumber", Boolean(invoice.autoGenerateNumber && !invoice.generatedInvoiceNumber));
+  }, [invoice.invoiceNumber, invoice.autoGenerateNumber, invoice.generatedInvoiceNumber, invoiceDiscount, invoiceLineItemsTotal, setValue]);
 
   // Enrich route label once daily routes finish loading.
   useEffect(() => {
@@ -321,6 +325,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           routeCrewId: assignedToRoute ? values.routeCrewId : undefined,
           routeCrewName: assignedToRoute ? values.routeCrewName : undefined,
           invoiceNumber: invoice.invoiceNumber,
+          autoGenerateInvoiceNumber: Boolean(invoice.autoGenerateNumber && !invoice.generatedInvoiceNumber),
           invoiceCost: invoiceLineItemsTotal,
           invoiceDiscount,
           includeSender: Boolean(invoice.sender),
@@ -344,12 +349,12 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         isCheckPaymentMethod(values.paymentMethodName) && amount > 0
           ? t("invoices.wizard.dailyIncome.checkPaymentRecordedToast", {
               amount: formatInvoiceMoney(journal.amount),
-              invoiceNumber: invoice.invoiceNumber,
+              invoiceNumber: journal.invoice?.number || invoice.invoiceNumber,
               checkNumber: values.checkNumber?.trim() || "—",
             })
           : t("invoices.wizard.dailyIncome.paymentRecordedToast", {
               amount: formatInvoiceMoney(journal.amount),
-              invoiceNumber: invoice.invoiceNumber,
+              invoiceNumber: journal.invoice?.number || invoice.invoiceNumber,
             }),
       );
       await onRegistered(journal);
@@ -370,6 +375,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   return (
     <div className="space-y-4">
       <form id={formId} className="space-y-4" onKeyDown={navigateOnEnter} onSubmit={handleSubmit(submit, handleInvalid)}>
+        <FormKeyboardHint />
         <RegisterInvoiceTransactionFields
           employees={employees}
           dailyRoutes={dailyRoutes}

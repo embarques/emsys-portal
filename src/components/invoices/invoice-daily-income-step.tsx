@@ -1,5 +1,7 @@
 "use client";
 
+import { FormKeyboardHint } from "@/components/forms/form-shell";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, CheckCircle2, Loader2, Lock, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -183,6 +185,7 @@ function MobileCreateDailyIncomePage({
       </div>
 
       <form className="space-y-5" onKeyDown={navigateOnEnter} onSubmit={form.handleSubmit(createDailyIncome)}>
+        <FormKeyboardHint />
         <div className="space-y-2" data-invoice-wizard-focus="daily-income">
           <Label htmlFor="invoice-mobile-statement-branch">
             {t("invoices.wizard.dailyIncome.dialog.branch")}
@@ -332,7 +335,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
   });
 
   useEffect(() => {
-    setLocalRegistration(null);
+    setLocalRegistration((current) => current?.invoice?.number === values.invoiceNumber ? current : null);
   }, [values.invoiceNumber]);
 
   useEffect(() => {
@@ -397,9 +400,11 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
         incomeStatementId: journal.incomeStatementId || associatedStatementId,
         paymentSkipped: journal.amount === 0,
       });
-      await registrationQuery.refetch();
+      if (values.invoiceNumber.trim()) {
+        await registrationQuery.refetch();
+      }
     },
-    [associatedStatementId, onContextChange, registrationQuery],
+    [associatedStatementId, onContextChange, registrationQuery, values.invoiceNumber],
   );
 
   const isLoading =

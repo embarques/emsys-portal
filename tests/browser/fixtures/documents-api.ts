@@ -13,6 +13,8 @@ let documents: InvoiceDocument[] = [
     deleting: false,
     createdAt: "2026-10-15T18:00:00Z",
     createdBy: { name: "Hector Martinez" },
+    updatedAt: "2026-10-16T02:00:00Z",
+    updatedBy: { name: "Ana Perez" },
   },
   {
     id: "photo",

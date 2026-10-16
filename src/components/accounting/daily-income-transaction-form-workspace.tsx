@@ -95,8 +95,8 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
         return;
       }
 
-      await createJournal.mutateAsync({ statement, values, options });
-      notifySuccess(journalCreatedToastMessage(values, t));
+      const journal = await createJournal.mutateAsync({ statement, values, options });
+      notifySuccess(journalCreatedToastMessage({ ...values, invoiceNumber: journal?.invoice?.number || values.invoiceNumber }, t));
     } catch (error) {
       if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
       const message = normalizeApiError(error).message;

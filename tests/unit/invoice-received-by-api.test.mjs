@@ -43,7 +43,7 @@ for (const method of ["createInvoice", "updateInvoice"]) {
    const types = loadFeature("src/lib/invoices/types.ts", {});
    const customers = loadFeature("src/lib/customers/types.ts", {});
    const values = {
-    ...types.createEmptyInvoiceForm(), invoiceNumber:"TEST-1", date:"2026-10-12",
+    ...types.createEmptyInvoiceForm(), autoGenerateNumber:false, invoiceNumber:"TEST-1", date:"2026-10-12",
     sender: {...customers.createEmptyCustomerForm(), id:"customer-1", name:"Sender"},
     lineItems:[{...types.createEmptyInvoiceLineItem(), itemName:"Box", quantity:"1", labels:"1", unitPrice:"80", total:"80"}],
    };
@@ -95,3 +95,59 @@ for (const pickupId of ["abc", "0", "-1", "1.5", "4294967296"]) {
   assert.equal(called, false);
  });
 }
+
+for (const generatedInvoiceNumber of [undefined, "INV-26-001423"]) {
+ test(`automatic invoice ${generatedInvoiceNumber ? "completes its assigned pending number" : "requests server allocation"}`, async () => {
+  let payload;
+  const stop = new Error("Captured request");
+  const api = loadFeature("src/lib/invoices/api/invoices-api.ts", { post: async (_, body) => {payload=body;throw stop;} });
+  const {createEmptyInvoiceForm,createEmptyInvoiceLineItem} = loadFeature("src/lib/invoices/types.ts", {});
+  const {createEmptyCustomerForm} = loadFeature("src/lib/customers/types.ts", {});
+  const values={...createEmptyInvoiceForm(),autoGenerateNumber:true,generatedInvoiceNumber,invoiceNumber:generatedInvoiceNumber??"",date:"2026-10-16",sender:{...createEmptyCustomerForm(),id:"customer-1",name:"Sender"},lineItems:[{...createEmptyInvoiceLineItem(),itemName:"Box",quantity:"1",labels:"1",unitPrice:"80",total:"80"}]};
+  await assert.rejects(api.createInvoice(values,{branch:{id:1,name:"NY",code:"NY"},container:{id:1,name:"66-26"},pickupAssignment:{source:"office",pickupEmployee:{id:73,name:"Maria"},officeBranch:{id:1,name:"NY",code:"NY"}}}),error=>error===stop);
+  assert.equal(payload.autoGenerateNumber, generatedInvoiceNumber ? undefined : true);
+  assert.equal(payload.number,generatedInvoiceNumber);
+  assert.equal(Object.hasOwn(payload,"number"),Boolean(generatedInvoiceNumber));
+ });
+}
+
+test("wizard requires a manual number and accepts automatic allocation", () => {
+ const {findInvoiceWizardStep1Issue}=loadFeature("src/lib/invoices/invoice-wizard-validation.ts",{});
+ const {createEmptyInvoiceForm}=loadFeature("src/lib/invoices/types.ts",{});
+ const values={...createEmptyInvoiceForm(),date:"2026-10-16",containerId:"1",pickupSource:"office",pickupEmployeeId:"1",paymentLocation:"US",autoGenerateNumber:false,invoiceNumber:""};
+ assert.match(findInvoiceWizardStep1Issue(values,key=>key).message,/invoiceNumberRequired/);
+ assert.equal(findInvoiceWizardStep1Issue({...values,autoGenerateNumber:true},key=>key),null);
+});
+
+test("new invoices default to automatic and manual numbering requires its own grant", () => {
+ const {createEmptyInvoiceForm}=loadFeature("src/lib/invoices/types.ts",{});
+ const {PERMISSIONS,permissionIsGranted}=loadFeature("src/lib/auth/permissions.ts",{});
+ assert.equal(createEmptyInvoiceForm().autoGenerateNumber,true);
+ const permission=PERMISSIONS.invoicesManualNumber;
+ assert.equal(permissionIsGranted(permission,new Set(["invoice:cancreateinvoice"])),false);
+ assert.equal(permissionIsGranted(permission,new Set(["invoice_manual_number:candisableautomaticinvoicenumber"])),true);
+});
+
+for (const automatic of [true, false]) {
+ test(`Daily Income invoice creation ${automatic ? "omits number and sends automatic flag" : "sends manual number"}`, async () => {
+  let payload;
+  const stop=new Error("Captured request");
+  const api=loadFeature("src/lib/accounting/daily-income/api.ts",{post:async(_,body)=>{payload=body;throw stop;}});
+  await assert.rejects(api.createDailyIncomeJournal({id:1,date:"2026-10-16"},{transactionType:"INITIAL-PAYMENT",autoGenerateInvoiceNumber:automatic,invoiceNumber:automatic?"":"MANUAL-42",invoiceCost:100,amount:0,employeeId:1,refNumber:"",refNumberMode:"system",description:"Registration"}),error=>error===stop);
+  assert.equal(payload.invoice.autoGenerateNumber,automatic?true:undefined);
+  assert.equal(Object.hasOwn(payload.invoice,"number"),!automatic);
+  assert.equal(payload.invoice.number,automatic?undefined:"MANUAL-42");
+ });
+}
+
+test("Daily Income validates numberless automatic invoices but requires manual numbers", () => {
+ const {createDailyIncomeJournalSchema}=loadFeature("src/lib/accounting/daily-income/schemas.ts",{});
+ const messages=new Proxy({}, {get:(_,key)=>String(key)});
+ const schema=createDailyIncomeJournalSchema(messages);
+ const values={transactionType:"INITIAL-PAYMENT",invoiceCost:100,amount:0,employeeId:1,refNumber:"",refNumberMode:"system",description:"Registration"};
+ const auto=schema.safeParse({...values,autoGenerateInvoiceNumber:true});
+ assert.equal(auto.success,true,JSON.stringify(auto.error?.issues));
+ const manual=schema.safeParse({...values,autoGenerateInvoiceNumber:false});
+ assert.equal(manual.success,false);
+ assert.ok(manual.error.issues.some(issue=>issue.path.includes("invoiceNumber")));
+});

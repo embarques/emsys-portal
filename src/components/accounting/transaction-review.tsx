@@ -26,7 +26,7 @@ export function TransactionReview({ values: v, onEdit }: Props) {
     },
     {
       step: "amounts", rows: [
-        ["accounting.dailyIncome.form.fields.invoice", v.invoiceNumber],
+        ["accounting.dailyIncome.form.fields.invoice", v.autoGenerateInvoiceNumber ? t("invoices.form.autoNumber.assignedOnSave") : v.invoiceNumber],
         ["accounting.dailyIncome.form.fields.account", v.accountName],
         ["accounting.dailyIncome.form.fields.sourceAccount", v.sourceAccountName],
         ["accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],

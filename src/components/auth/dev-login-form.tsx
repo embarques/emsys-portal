@@ -1,5 +1,7 @@
 "use client";
 
+import { FormKeyboardHint } from "@/components/forms/form-shell";
+
 import { Eye, EyeOff, Wrench } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -71,6 +73,7 @@ export function DevLoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-5">
+          <FormKeyboardHint />
           <div className="space-y-2">
             <label htmlFor="dev-company-id" className="text-sm font-medium text-slate-200">
               Company ID

@@ -117,13 +117,19 @@ export function InvoiceFormWizard({
 }: Props) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
+  const canUseManualNumber = hasPermission(
+    PERMISSIONS.invoicesManualNumber.name,
+    PERMISSIONS.invoicesManualNumber.resourceType,
+  );
   const isMobileLayout = useIsMobileViewport();
   const currentUserQuery = useCurrentUser();
   const [step, setStep] = useState<InvoiceWizardStep>(() =>
     resolveInitialWizardStep(initialWizardStep, requireDailyIncomeRegistration),
   );
   const [values, setValues] = useState<InvoiceFormValues>(
-    initialValues ?? createEmptyInvoiceForm(),
+    initialValues && (!requireDailyIncomeRegistration || canUseManualNumber)
+      ? initialValues
+      : { ...(initialValues ?? createEmptyInvoiceForm()), autoGenerateNumber: true },
   );
   const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
   const [formSessionKey, setFormSessionKey] = useState(0);
@@ -204,13 +210,14 @@ export function InvoiceFormWizard({
     setValues((current) => {
       const merged = {
         ...next,
+        ...(!canUseManualNumber && requireDailyIncomeRegistration ? { autoGenerateNumber: true } : {}),
         discount: current.discount,
         amountPaid: current.amountPaid,
       };
       valuesRef.current = merged;
       return merged;
     });
-  }, []);
+  }, [canUseManualNumber, requireDailyIncomeRegistration]);
 
   const handleDailyIncomeContextChange = useCallback((context: InvoiceDailyIncomeContext) => {
     setDailyIncomeContext(context);
@@ -221,6 +228,12 @@ export function InvoiceFormWizard({
     setValues((current) => {
       const next = {
         ...current,
+        ...(current.autoGenerateNumber && context.registration?.invoice?.number
+          ? {
+              invoiceNumber: context.registration.invoice.number,
+              generatedInvoiceNumber: context.registration.invoice.number,
+            }
+          : {}),
         amountPaid: String(context.registration?.amount ?? 0),
       };
       valuesRef.current = next;
