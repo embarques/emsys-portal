@@ -420,7 +420,11 @@ export function InvoiceDailyIncomeStep({
   ]);
 
   useEffect(() => {
-    if (!registrationQuery.isSuccess && !localRegistration) return;
+    // New invoices often have no number yet (auto-generate), so the registration
+    // query stays disabled and never reaches isSuccess. Still sync skip + open
+    // Cuadre id so Next validation matches what the step UI already shows.
+    const hasInvoiceNumber = Boolean(values.invoiceNumber.trim());
+    if (hasInvoiceNumber && !registrationQuery.isSuccess && !localRegistration) return;
 
     if (registration) {
       onContextChange({
@@ -443,6 +447,7 @@ export function InvoiceDailyIncomeStep({
     registration,
     registrationQuery.isSuccess,
     skipPayment,
+    values.invoiceNumber,
   ]);
 
   const applyRegistration = useCallback(
