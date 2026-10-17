@@ -17,6 +17,51 @@ All agents and developers must follow this file when creating or modifying code.
 
 ---
 
+# Quality, Performance, and Efficient Delivery
+
+Protect the reliability, usability, and performance already built into EMSYS.
+Performance is a first-class acceptance criterion, alongside correctness, security,
+accessibility, and maintainability. Never trade tenant isolation or correct financial
+behavior for a faster-looking screen.
+
+## Before changing code
+
+* Read the applicable agent instructions and relevant feature/context documentation. Trace the page, feature hooks, schemas, API client, and backend contract before editing; reuse the existing architecture and UI patterns.
+* Check the working tree and related work first. Preserve user changes, stashes, and unrelated branches. Keep the diff focused; separate optional refactoring, dependency upgrades, and formatting churn.
+* Identify the behavior that must remain stable: layouts, keyboard navigation, permissions, tenant/branch scope, forms, pagination, numeric/date/currency semantics, and API payload shapes. Do not guess endpoints or treat similarly named fields as substitutes.
+* Reproduce reported failures when practical and define observable acceptance criteria. Resolve routine choices using existing patterns and state material assumptions.
+
+## Correctness and maintainability
+
+* Keep business logic in the feature layer, server state in TanStack Query, global client context in Redux, and form state in React Hook Form/Zod. Do not introduce competing state or request systems.
+* Keep components and hooks focused and readable. Reuse established helpers and components; avoid duplicated business rules, speculative abstractions, broad type casts, and silent error handling.
+* Treat the API as authoritative for permissions and business invariants. Gate each fetch/action with its documented permission, including separate list/view/update grants and explicit legacy fallbacks. A hidden button does not replace backend enforcement.
+* Keep TypeScript types, Zod schemas, endpoint constants, and payload adapters aligned with the actual API contract. Preserve false/zero values and the distinction between omitted fields and explicit nulls, especially on partial updates.
+* Prevent duplicate submissions and handle failures without losing user input. Preserve the existing skip-unchanged-save behavior, accessible controls, loading/empty/error states, focus management, and keyboard workflows.
+
+## Performance requirements
+
+* Use server pagination/filtering/sorting through the existing query layer. Do not download whole directories to display one page or introduce request waterfalls/N+1 detail fetches when the API supports a suitable list/batch response.
+* Scope query keys to the relevant company, branch, resource, filters, and pagination. Prevent stale data from one tenant or session appearing in another; honor cancellation and clear or invalidate context-dependent caches when context changes.
+* Reuse cached data deliberately. Avoid duplicate queries, effects that trigger repeated refetches, unnecessary polling, and broad cache invalidations. After a mutation, refresh the affected dependent data—for example invoice balances, payment badges, and income totals—without refetching the entire application.
+* Avoid unnecessary client rendering, expensive work in render paths, and oversized client bundles. Use existing pagination/virtualization and lazy-loading patterns where warranted. Add memoization only when profiling or a clear cost justifies it; do not add large dependencies for small features without a concrete benefit.
+* For performance-sensitive changes, record reproducible before/after evidence on representative non-production data: network request count/payload, render/profile results, bundle impact, interaction latency, or an existing performance metric. Preserve established budgets and document measured tradeoffs; do not claim speed improvements from intuition alone.
+
+## Work and validation efficiently
+
+* Search narrowly with `rg`; batch independent reads/checks and use the existing scripts. Run focused feature tests during implementation, followed by the relevant lint/type/build and integration checks. Repeat checks only after relevant changes or failures.
+* Test observable behavior and meaningful failures: permission gates, tenant/context changes, payloads, mutation invalidation, duplicate submits, and keyboard/accessibility behavior where affected. Prefer focused regressions over snapshots or tests that only mirror implementation.
+* Use fixtures and approved non-production environments. Do not run live API mutation scripts against production as an incidental part of validation, and do not weaken auth or leave bypasses enabled to make tests pass.
+* For documentation-only changes, validate the text, references, and final diff; do not invent application changes or unnecessary runtime tests. Report unavailable checks honestly rather than suppressing failures or claiming untested behavior works.
+
+## Completion and handoff
+
+* Review the final diff for unrelated changes, exposed secrets, stale schemas, accidental layout changes, and performance regressions. Update cross-repository contract documentation when the boundary changes.
+* Report what changed, why, the checks actually run, performance evidence when relevant, and any remaining limitations. Distinguish local work, commits, merged changes, deployments, and backend permission seeding/cache refreshes.
+* Follow this repository's Git workflow: a documentation update does not grant blanket permission to commit, push, or merge. When a merge is requested, verify the intended PR/base and checks, preserve all features during conflict resolution, and delete the merged temporary branch locally and remotely where applicable.
+
+---
+
 # EMSYS Frontend Technology Stack
 
 ## Framework
