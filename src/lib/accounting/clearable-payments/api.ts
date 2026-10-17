@@ -2,6 +2,10 @@ import { CLEARABLE_PAYMENT_API_TABLE_FIELDS } from "@/lib/accounting/clearable-p
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
@@ -288,6 +292,23 @@ export async function fetchClearablePaymentById(
   return payment;
 }
 
+export async function createClearablePayment(
+  endpoint: string,
+  values: ClearablePaymentFormValues,
+): Promise<ClearablePayment> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    endpoint,
+    buildClearablePaymentWritePayload(values),
+  );
+
+  assertMutationSuccess(response, "Unable to create payment.");
+
+  const created = extractClearablePaymentFromMutationResponse(response.data);
+  if (created) return created;
+
+  throw new Error(response.message?.trim() || response.error?.trim() || "Unable to create payment.");
+}
+
 export async function updateClearablePayment(
   endpoint: string,
   paymentId: string,
@@ -306,4 +327,18 @@ export async function updateClearablePayment(
   if (updated) return updated;
 
   return fetchClearablePaymentById(endpoint, id);
+}
+
+export async function deleteClearablePayment(endpoint: string, paymentId: string): Promise<void> {
+  const id = parseClearablePaymentPathId(paymentId);
+  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(`${endpoint}/${id}`);
+  assertMutationSuccess(response, "Unable to delete payment.");
+}
+
+export async function deleteClearablePayments(
+  endpoint: string,
+  paymentIds: string[],
+): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(paymentIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, (id) => deleteClearablePayment(endpoint, id));
 }

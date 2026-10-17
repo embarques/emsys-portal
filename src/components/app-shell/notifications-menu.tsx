@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Bell, ScrollText } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  CreditCard,
+  Landmark,
+  ScrollText,
+  Smartphone,
+  type LucideIcon,
+} from "lucide-react";
 
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import { Button } from "@/components/ui/button";
@@ -13,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { ClearablePaymentMethodId } from "@/lib/accounting/clearable-payments/configs";
 import { useTranslation } from "@/lib/i18n";
 import {
   getSeenNotificationIds,
@@ -23,6 +32,12 @@ import {
   type NotificationItem,
 } from "@/lib/notifications/hooks/use-topbar-notifications";
 import { cn } from "@/lib/utils";
+
+const PAYMENT_METHOD_ICONS: Record<ClearablePaymentMethodId, LucideIcon> = {
+  zelle: Smartphone,
+  deposit: Landmark,
+  creditCard: CreditCard,
+};
 
 function formatNotificationWhen(value: string, locale: string) {
   const date = new Date(value);
@@ -39,6 +54,11 @@ function notificationTitle(item: NotificationItem, t: (key: string, values?: Rec
   if (item.kind === "rare-activity") {
     return item.activity.description.trim() || t("shell.notifications.rareActivityFallback");
   }
+  if (item.kind === "outstanding-payment") {
+    const reference = item.payment.paymentReference.trim();
+    const key = `shell.notifications.outstandingPayments.${item.config.i18nKey}`;
+    return reference ? t(`${key}.title`, { reference }) : t(`${key}.fallback`);
+  }
   return t("shell.notifications.outstandingCheckTitle", {
     number: item.check.checkNumber.trim() || item.check.id,
   });
@@ -49,6 +69,12 @@ function notificationDetail(item: NotificationItem, t: (key: string, values?: Re
     const user = item.activity.user.name.trim();
     const origin = item.activity.origin.trim();
     return [user, origin].filter(Boolean).join(" · ") || t("shell.notifications.rareActivity");
+  }
+  if (item.kind === "outstanding-payment") {
+    const invoice = item.payment.invoice.number.trim();
+    return invoice
+      ? t("shell.notifications.outstandingCheckInvoice", { invoice })
+      : t(`shell.notifications.outstandingPayments.${item.config.i18nKey}.fallback`);
   }
   const invoice = item.check.invoice.number.trim();
   return invoice
@@ -115,7 +141,12 @@ export function NotificationsMenu() {
             </p>
           ) : (
             items.map((item) => {
-              const Icon = item.kind === "rare-activity" ? AlertTriangle : ScrollText;
+              const Icon =
+                item.kind === "rare-activity"
+                  ? AlertTriangle
+                  : item.kind === "outstanding-payment"
+                    ? PAYMENT_METHOD_ICONS[item.config.id]
+                    : ScrollText;
               const unseen = !seenIds.has(item.id);
               return (
                 <WorkspaceNavLink

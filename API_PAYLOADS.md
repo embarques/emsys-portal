@@ -17,7 +17,7 @@ Use this document when wiring the Next.js client to `emsys-api`.
 | Containers                                            | `src/lib/containers/api/containers-api.ts`             |
 | Inventory                                             | `src/lib/inventory/api/inventory-api.ts`               |
 | Checks                                                | `src/lib/accounting/checks/api/checks-api.ts`          |
-| Clearable payments (Zelle / deposits / cards; assumed)| `src/lib/accounting/clearable-payments/api.ts`         |
+| Clearable payments (Zelle / deposits / cards)         | `src/lib/accounting/clearable-payments/api.ts`         |
 | Daily income / journals                               | `src/lib/accounting/daily-income/api.ts`               |
 | API base URL                                          | `src/lib/api/base-url.ts` (`NEXT_PUBLIC_API_BASE_URL`) |
 
@@ -851,7 +851,7 @@ ID is auto-assigned. **Required:** `invoice` with `id`. `checkNumber` and `payme
 
 Portal dual-writes `paymentReference` and legacy `checkNumber` as the same string (keep leading zeros). `refNumber` is the internal transaction reference, not the paper check number.
 
-`status` is `OUTSTANDING` or `CLEARED` (API may return lowercase). `datePosted` / `clearedAt` are RFC3339 `time.Time` — date-only strings are rejected. Omit `clearedAt` until the check is cleared. Permission resource: `check` (`canViewCheck`, `canCreateCheck`, `canUpdateCheck`, `canDeleteCheck`; no separate list permission).
+`status` is `OUTSTANDING` or `CLEARED` (API may return lowercase). `datePosted` / `clearedAt` are RFC3339 `time.Time` — date-only strings are rejected. Omit `clearedAt` until the check is cleared. Permission resource: `check` (`canListCheck`, `canViewCheck`, `canCreateCheck`, `canUpdateCheck`, `canDeleteCheck`). Roles seeded before `canListCheck` still list via `canViewCheck`.
 
 ### `PUT /v1/checks/{id}`
 
@@ -876,17 +876,30 @@ Portal implementation: `src/lib/accounting/checks/api/checks-api.ts`
 
 ---
 
-## Clearable payments (Zelle / deposits / credit cards) — **assumed / not live**
+## Clearable payments (Zelle / deposits / credit cards)
 
-Portal scaffolding only. These endpoints are **not** confirmed in live Swagger. When the API ships, they should mirror `/checks` outstanding → cleared lifecycle (invoice `payment` / `balance` updates only on `CLEARED`).
+These mirror `/checks` outstanding → cleared lifecycle (invoice `payment` / `balance` updates only on `CLEARED`).
 
-| Resource | Path | Portal config |
+| Resource | Path | Portal config | Permission resource |
+| --- | --- | --- | --- |
+| Zelle payments | `/zelle-payments` | `API_ENDPOINTS.ACCOUNTING_ZELLE_PAYMENTS` | `zelle_payment` |
+| Deposits | `/deposits` | `API_ENDPOINTS.ACCOUNTING_DEPOSITS` | `deposit` |
+| Credit card payments | `/credit-card-payments` | `API_ENDPOINTS.ACCOUNTING_CREDIT_CARD_PAYMENTS` | `credit_card_payment` |
+
+Each resource supports:
+
+| Method | Path | Purpose |
 | --- | --- | --- |
-| Zelle payments | `/zelle-payments` | `API_ENDPOINTS.ACCOUNTING_ZELLE_PAYMENTS` |
-| Deposits | `/deposits` | `API_ENDPOINTS.ACCOUNTING_DEPOSITS` |
-| Credit card payments | `/credit-card-payments` | `API_ENDPOINTS.ACCOUNTING_CREDIT_CARD_PAYMENTS` |
+| GET | `/` | List |
+| POST | `/search` | Search |
+| GET | `/{id}` | Detail |
+| POST | `/` | Create |
+| PUT | `/{id}` | Update or clear |
+| DELETE | `/{id}` | Delete |
 
-### Assumed write shape (`PUT /v1/{resource}/{id}`)
+Permissions per resource: `canList…`, `canView…`, `canCreate…`, `canUpdate…`, `canDelete…` (e.g. `canListZellePayment`, `canViewDeposit`, `canUpdateCreditCardPayment`).
+
+### Write shape (`POST /v1/{resource}` / `PUT /v1/{resource}/{id}`)
 
 ```json
 {
@@ -902,9 +915,7 @@ Portal scaffolding only. These endpoints are **not** confirmed in live Swagger. 
 }
 ```
 
-`status` is `OUTSTANDING` or `CLEARED`. `datePosted` / `clearedAt` are RFC3339. List/search/get follow the same patterns as checks (`GET`, `POST …/search`, `GET/{id}`). Search fields: `paymentReference`, `invoice.number`, `refNumber`, `status`, `createdBy.name`.
-
-Until dedicated permission seeds exist, the portal gates these directories with `check` view/update grants.
+`status` is `OUTSTANDING` or `CLEARED`. `datePosted` / `clearedAt` are RFC3339. Omit `id` on create. Search fields: `paymentReference`, `invoice.number`, `refNumber`, `status`, `createdBy.name`.
 
 Portal implementation: `src/lib/accounting/clearable-payments/api.ts`
 
@@ -1105,7 +1116,7 @@ Same write shape. `{id}` = ObjectID hex.
 | POST   | `/v1/income-statements/{id}/open`  | Reopen cuadre                     |
 | GET    | `/v1/pickups/search-by-route`      | Query: `routeId`, `page`, `limit` |
 
-**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `routes`, `vehicle-routes`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `checks`, `income-statements`.
+**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `routes`, `vehicle-routes`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `checks`, `zelle-payments`, `deposits`, `credit-card-payments`, `income-statements`.
 
 ---
 
@@ -1124,9 +1135,9 @@ Same write shape. `{id}` = ObjectID hex.
 | `/invoices`                          | `invoice`               |
 | `/journals`                          | `journal`               |
 | `/checks`                            | `check`                 |
-| `/zelle-payments` (assumed)          | `check` (until seeded)  |
-| `/deposits` (assumed)                | `check` (until seeded)  |
-| `/credit-card-payments` (assumed)    | `check` (until seeded)  |
+| `/zelle-payments`                    | `zelle_payment`         |
+| `/deposits`                          | `deposit`               |
+| `/credit-card-payments`              | `credit_card_payment`   |
 | `/income-statements`                 | `income_statement`      |
 | `/vehicles`                          | `vehicle`               |
 | `/routes`                            | `route`                 |

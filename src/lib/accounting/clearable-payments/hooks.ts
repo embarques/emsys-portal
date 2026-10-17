@@ -3,6 +3,9 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  createClearablePayment,
+  deleteClearablePayment,
+  deleteClearablePayments,
   fetchClearablePayments,
   updateClearablePayment,
 } from "@/lib/accounting/clearable-payments/api";
@@ -45,7 +48,9 @@ export function useClearablePayments(
 }
 
 export function useOutstandingClearablePaymentsCount(config: ClearablePaymentMethodConfig) {
-  const queryEnabled = useClearablePaymentsQueryEnabled();
+  const { hasPermission } = useAuth();
+  const canList = hasPermission(config.permissions.list.name, config.permissions.list.resourceType);
+  const queryEnabled = useClearablePaymentsQueryEnabled(canList);
 
   const query = useQuery({
     queryKey: queryKeys.accounting.clearablePaymentsOutstanding(config.queryKeySegment),
@@ -61,7 +66,7 @@ export function useOutstandingClearablePaymentsCount(config: ClearablePaymentMet
     retry: false,
   });
 
-  return query.data?.total ?? 0;
+  return queryEnabled ? (query.data?.total ?? 0) : 0;
 }
 
 function invalidateClearablePayments(queryClient: ReturnType<typeof useQueryClient>) {
@@ -69,6 +74,15 @@ function invalidateClearablePayments(queryClient: ReturnType<typeof useQueryClie
     queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all }),
   ]);
+}
+
+export function useCreateClearablePayment(config: ClearablePaymentMethodConfig) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: ClearablePaymentFormValues) => createClearablePayment(config.endpoint, values),
+    onSuccess: () => invalidateClearablePayments(queryClient),
+  });
 }
 
 export function useUpdateClearablePayment(config: ClearablePaymentMethodConfig) {
@@ -84,6 +98,24 @@ export function useUpdateClearablePayment(config: ClearablePaymentMethodConfig) 
       values: ClearablePaymentFormValues;
       journalId?: string;
     }) => updateClearablePayment(config.endpoint, paymentId, values, { journalId }),
+    onSuccess: () => invalidateClearablePayments(queryClient),
+  });
+}
+
+export function useDeleteClearablePayment(config: ClearablePaymentMethodConfig) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (paymentId: string) => deleteClearablePayment(config.endpoint, paymentId),
+    onSuccess: () => invalidateClearablePayments(queryClient),
+  });
+}
+
+export function useDeleteClearablePayments(config: ClearablePaymentMethodConfig) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (paymentIds: string[]) => deleteClearablePayments(config.endpoint, paymentIds),
     onSuccess: () => invalidateClearablePayments(queryClient),
   });
 }
