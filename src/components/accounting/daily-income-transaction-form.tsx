@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionReview } from "@/components/accounting/transaction-review";
 import { getTransactionFieldStep, TRANSACTION_FIELD_IDS, TRANSACTION_STEP_FIELDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
@@ -53,6 +54,8 @@ type Props = {
   showTypeSummary?: boolean;
   appearance?: "default" | "phone";
   focusSecondFieldSignal?: number;
+  /** Offer the auto-clear switch (create only). */
+  allowAutoClear?: boolean;
   onSubmit: (values: DailyIncomeJournalValues) => void | Promise<void>;
 };
 
@@ -93,6 +96,7 @@ export function DailyIncomeTransactionForm({
   showTypeSummary = false,
   appearance = "default",
   focusSecondFieldSignal,
+  allowAutoClear = false,
   onSubmit,
   onValuesChange,
 }: Props) {
@@ -227,6 +231,8 @@ export function DailyIncomeTransactionForm({
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const refNumberMode = watch("refNumberMode");
+  const amount = watch("amount");
+  const autoClear = watch("autoClear");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
@@ -455,6 +461,7 @@ export function DailyIncomeTransactionForm({
             statementDate={statementDate}
             statementBranchId={statementBranchId}
             allowDailyRoute
+            allowAutoClear={allowAutoClear}
             bankAccounts={bankAccounts}
             paymentMethods={paymentMethods}
             errors={errors}
@@ -714,6 +721,16 @@ export function DailyIncomeTransactionForm({
                   />
                   <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
                 </div> : null}
+
+                {allowAutoClear ? (
+                  <PaymentAutoClearField
+                    transactionType={type}
+                    amount={amount}
+                    paymentMethodName={paymentMethodName}
+                    checked={Boolean(autoClear)}
+                    onCheckedChange={(checked) => setValue("autoClear", checked, { shouldDirty: true })}
+                  />
+                ) : null}
 
                 <TransactionReferenceNumberFields
                   mode={refNumberMode}

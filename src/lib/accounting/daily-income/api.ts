@@ -5,6 +5,7 @@ import {
   buildJournalCheckPaymentWire,
   resolveJournalCheckNumberFromApi,
 } from "./check-payment-reference";
+import { isAutoClearEligible } from "./auto-clear";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -829,7 +830,10 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
 }
 
 export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
-  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, journalPayload(statement, values, options));
+  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, {
+    ...journalPayload(statement, values, options),
+    ...(values.autoClear && isAutoClearEligible(values) ? { autoClear: true } : {}),
+  });
   assertMutation(payload, "Unable to create transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
 }

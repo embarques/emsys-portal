@@ -813,6 +813,21 @@ Invoice `PAYMENT` / `INITIAL-PAYMENT` with CHECK or CHEQUE also creates an **out
 
 The paper check number carries into the generated check as a **string** through supported fields (`paymentReference` preferred, legacy `checkNumber` dual-written/read) so leading zeros are preserved. The UI always shows **Check number** (portal `checkNumber`, normalized from API `paymentReference`). Check `refNumber` is the **internal** transaction reference only — never the paper check number.
 
+**Auto-approve (`autoClear`) — requested API feature:** Zelle, DEPOSIT, and CREDIT-CARD invoice payments follow the same outstanding lifecycle via `/zelle-payments`, `/deposits`, and `/credit-card-payments`. On `POST /v1/journals` only, the portal may send `"autoClear": true` for `PAYMENT` / `INITIAL-PAYMENT` with `amount > 0` and `paymentMethod.name` of `CHECK`, `ZELLE`, `DEPOSIT`, or `CREDIT-CARD`. The flag is omitted otherwise (never sent as `false`, never sent on `PUT`).
+
+```json
+{
+  "transactionType": "PAYMENT",
+  "amount": 50.0,
+  "invoiceId": "674a1b2c3d4e5f6789012345",
+  "paymentMethod": { "id": 4, "name": "ZELLE" },
+  "paymentAccount": { "id": 12, "name": "Chase Operating", "type": "BANK" },
+  "autoClear": true
+}
+```
+
+Expected API behavior in the same transaction as the journal: create the check / Zelle / deposit / card record with `status: "CLEARED"` and `clearedAt` = journal date, apply the invoice `payment` / `balance` immediately, and record who cleared it. Require the method's update permission (`canUpdateCheck`, `canUpdateZellePayment`, `canUpdateDeposit`, `canUpdateCreditCardPayment`) and return 403 when missing rather than silently creating an outstanding record. Later status changes go through `PUT` on the payment record.
+
 **Example — EXPENSE:**
 
 ```json

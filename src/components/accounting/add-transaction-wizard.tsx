@@ -313,6 +313,7 @@ export function AddTransactionWizard(props: Props) {
               showTypeSummary={!isEdit}
               appearance={appearance}
               focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
+              allowAutoClear={!isEdit}
               onValuesChange={rememberFormValues}
               onSubmit={handleFormSubmit}
             />

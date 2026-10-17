@@ -261,6 +261,8 @@ export type DailyIncomeJournalValues = {
   paymentMethodId?: number;
   paymentMethodName?: string;
   checkNumber?: string;
+  /** Create only: API clears the outstanding check / Zelle / deposit / card record and applies it to the invoice. */
+  autoClear?: boolean;
   /** Inventory change recorded with this journal. Posted with the closeout, not as a separate stock write. */
   inventoryDirection?: InventoryChangeDirection;
   inventoryItemId?: string;
