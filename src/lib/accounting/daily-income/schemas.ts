@@ -121,6 +121,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       paymentMethodId: z.number().optional(),
       paymentMethodName: z.string().optional(),
       checkNumber: z.string().optional(),
+      autoClear: z.boolean().optional(),
       inventoryDirection: z.enum(["received", "dispatched"]).optional(),
       inventoryItemId: z.string().optional(),
       inventoryItemName: z.string().optional(),

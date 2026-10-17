@@ -320,6 +320,8 @@ These Accounting directories mirror Checks for invoice payments made by Zelle, b
 
 **API:** `/v1/zelle-payments`, `/v1/deposits`, `/v1/credit-card-payments` — same outstanding/cleared lifecycle and endpoints as `/v1/checks` (list, search, detail, create, update/clear, delete). Each method has its own role permissions (list, view, create, update, delete) on resources `zelle_payment`, `deposit`, and `credit_card_payment`; they are independent of check grants.
 
+**Auto-approve in Daily Income:** When adding an invoice payment (`INITIAL-PAYMENT` or `PAYMENT`) by check, Zelle, deposit, or credit card with an amount above zero, the payment step shows an **Auto-approve (mark as cleared)** switch. It is off by default and only appears when the user has that method's update permission (the same grant as **Mark cleared**). When on, the journal create request sends `autoClear: true` so the API creates the record already cleared and applies it to the invoice balance. It is not offered when editing a transaction, in quick entry, or in the invoice wizard's payment step.
+
 Each clearable payment stores:
 
 - Payment reference (API `paymentReference`; UI label varies by method)

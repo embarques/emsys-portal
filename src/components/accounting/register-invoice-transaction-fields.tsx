@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 
 import { FormSection } from "@/components/forms/form-shell";
+import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -88,6 +89,8 @@ type Props = {
   showParties?: boolean;
   /** When true, cost is shown but not editable (driven by invoice line items). */
   invoiceCostReadOnly?: boolean;
+  /** Offer the auto-clear switch (Daily Income create only). */
+  allowAutoClear?: boolean;
 };
 
 export function RegisterInvoiceTransactionFields({
@@ -109,6 +112,7 @@ export function RegisterInvoiceTransactionFields({
   showInvoiceNumber = true,
   showParties = true,
   invoiceCostReadOnly = false,
+  allowAutoClear = false,
 }: Props) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
@@ -138,6 +142,7 @@ export function RegisterInvoiceTransactionFields({
   const paymentAccountName = watch("paymentAccountName");
   const invoiceCost = watch("invoiceCost");
   const amount = watch("amount");
+  const autoClear = watch("autoClear");
   const [costDraft, setCostDraft] = useState<string | null>(null);
   const [amountDraft, setAmountDraft] = useState<string | null>(null);
   const paymentDetailsRequired = (Number(amount) || 0) > 0;
@@ -458,6 +463,16 @@ export function RegisterInvoiceTransactionFields({
     </>
   );
 
+  const autoClearFields = allowAutoClear ? (
+    <PaymentAutoClearField
+      transactionType="INITIAL-PAYMENT"
+      amount={amount}
+      paymentMethodName={paymentMethodName}
+      checked={Boolean(autoClear)}
+      onCheckedChange={(checked) => setValue("autoClear", checked, { shouldDirty: true })}
+    />
+  ) : null;
+
   const referenceFields = (
     <>
       <TransactionReferenceNumberFields
@@ -689,6 +704,7 @@ export function RegisterInvoiceTransactionFields({
               {bankFields}
               {!quickEntry && externalReferenceFields}
             </div>
+            {!quickEntry && autoClearFields}
             {!quickEntry && referenceFields}
           </div>
         </FormSection>
@@ -714,6 +730,7 @@ export function RegisterInvoiceTransactionFields({
         {bankFields}
         {externalReferenceFields}
       </div>
+      {autoClearFields}
       {invoiceFields}
       {referenceFields}
       <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-3">

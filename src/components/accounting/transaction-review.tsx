@@ -3,6 +3,7 @@
 import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { formatAccountingMoney } from "@/lib/accounting/display";
+import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
 import { isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { getTransactionStepLabelKey, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { useTranslation } from "@/lib/i18n";
@@ -46,6 +47,7 @@ export function TransactionReview({ values: v, onEdit }: Props) {
         ["accounting.dailyIncome.form.fields.bankAccount", requiresBankAccount(v.paymentMethodName) ? v.paymentAccountName : undefined],
         ["accounting.dailyIncome.form.fields.checkNumber", isCheckPaymentMethod(v.paymentMethodName) ? v.checkNumber : undefined],
         ["accounting.dailyIncome.form.fields.externalReferenceNumber", isCheckPaymentMethod(v.paymentMethodName) ? undefined : v.externalReferenceNumber],
+        ["accounting.dailyIncome.form.fields.autoClear", v.autoClear && isAutoClearEligible(v) ? t("accounting.dailyIncome.form.fields.autoClearReviewValue") : undefined],
         ["accounting.dailyIncome.form.fields.referenceNumber", v.refNumberMode === "custom" ? v.refNumber : t("accounting.dailyIncome.form.fields.referenceNumberModeSystem")],
         ["accounting.dailyIncome.form.fields.description", v.description],
       ] as [string, string | undefined][]
