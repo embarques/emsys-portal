@@ -152,7 +152,8 @@ export function InvoiceFormWizard({
   const currentUserQuery = useCurrentUser();
   const activePoliciesQuery = useActiveInvoicePolicies(requirePolicySignature);
   const activePolicies = activePoliciesQuery.data ?? [];
-  const includePoliciesStep = requirePolicySignature && activePolicies.length > 0;
+  const policiesUnavailable = requirePolicySignature && !activePoliciesQuery.isSuccess;
+  const includePoliciesStep = requirePolicySignature && (policiesUnavailable || activePolicies.length > 0);
   const layout = useMemo(
     () =>
       resolveInvoiceWizardLayout({
@@ -344,6 +345,7 @@ export function InvoiceFormWizard({
   }, [focusFieldId, focusFieldKey, step]);
 
   async function handleNext() {
+    if (policiesUnavailable && step === policiesStepId) return;
     const currentValues = valuesRef.current;
     const issue =
       step === 1
@@ -409,7 +411,7 @@ export function InvoiceFormWizard({
   }
 
   async function handleSave() {
-    if (isSubmitting || documentsBusy || documentStage) return;
+    if (isSubmitting || documentsBusy || documentStage || policiesUnavailable) return;
     const issue = findSaveIssue(values);
     if (issue) {
       revealIssue(issue);
@@ -510,7 +512,7 @@ export function InvoiceFormWizard({
   const registeredCostMismatchError = hasRegisteredCostMismatch
     ? t("invoices.wizard.validation.registeredCostMismatch")
     : null;
-  const saveDisabled = isSubmitting || documentsBusy || hasNegativeBalance || hasRegisteredCostMismatch;
+  const saveDisabled = isSubmitting || documentsBusy || policiesUnavailable || hasNegativeBalance || hasRegisteredCostMismatch;
   const bannerError =
     step === previewStep
       ? submitError ?? negativeBalanceError ?? registeredCostMismatchError ?? externalError
@@ -622,7 +624,20 @@ export function InvoiceFormWizard({
   );
 
   const policiesStepContent =
-    policiesStepId != null ? (
+    policiesStepId != null && policiesUnavailable ? (
+      <div className="mx-auto w-full max-w-3xl space-y-3 p-6">
+        {activePoliciesQuery.isError ? (
+          <>
+            <p role="alert" className="text-sm text-destructive">
+              {t("invoices.wizard.policies.loadError")}
+            </p>
+            <Button type="button" variant="outline" disabled={activePoliciesQuery.isFetching} onClick={() => void activePoliciesQuery.refetch()}>
+              {t("invoicePolicies.retry")}
+            </Button>
+          </>
+        ) : <p role="status" className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+      </div>
+    ) : policiesStepId != null ? (
       <InvoicePoliciesStep
         policies={activePolicies}
         value={policiesAgreement}

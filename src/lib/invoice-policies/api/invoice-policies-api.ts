@@ -44,8 +44,8 @@ export async function fetchAllInvoicePolicies(): Promise<InvoicePolicy[]> {
 
 export async function fetchActiveInvoicePolicies(): Promise<InvoicePolicy[]> {
   const response = await apiClient.get<ApiSuccessEnvelope<unknown>>(`${endpoint}/active`);
-  const data = unwrapApiData(response);
-  const list = Array.isArray(data) ? data : [];
+  assertMutationSuccess(response, "Unable to load invoice policies.");
+  const list = unwrapApiData(response);
   return invoicePolicySchema
     .array()
     .parse(list)

@@ -38,7 +38,7 @@ export function InvoicePoliciesStep({
             <ScrollText className="size-4" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-base font-semibold text-foreground">
+            <h3 id="invoice-policies-heading" className="text-base font-semibold text-foreground">
               {t("invoices.wizard.policies.title")}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -47,18 +47,25 @@ export function InvoicePoliciesStep({
           </div>
         </div>
 
-        <ol className="space-y-4">
-          {policies.map((policy, index) => (
-            <li key={policy.id} className="rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
-              <p className="text-sm font-semibold text-foreground">
-                {index + 1}. {policy.title}
-              </p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                {policy.body}
-              </p>
-            </li>
-          ))}
-        </ol>
+        <div
+          role="region"
+          aria-labelledby="invoice-policies-heading"
+          tabIndex={0}
+          className="max-h-[min(40dvh,24rem)] overflow-y-auto overscroll-contain rounded-lg border border-border p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+        >
+          <ol className="space-y-4">
+            {policies.map((policy, index) => (
+              <li key={policy.id} className="rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
+                <p className="text-sm font-semibold text-foreground">
+                  {index + 1}. {policy.title}
+                </p>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
+                  {policy.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
 
       <Label className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3">

@@ -26,7 +26,7 @@ export function InvoicePolicyDialog({
   state: ReturnType<typeof useInvoicePolicyWorkspace>;
 }) {
   const { t } = useTranslation();
-  const handleEnterNavigation = useFormEnterNavigation({ advanceTextareas: true });
+  const handleEnterNavigation = useFormEnterNavigation({ advanceTextareas: false });
   const active = state.form.watch("active");
 
   return (

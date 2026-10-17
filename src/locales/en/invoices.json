@@ -233,6 +233,7 @@
       "title": "Company policies",
       "description": "Read each policy, confirm agreement, and sign before continuing.",
       "agreeLabel": "I have read and agree to the policies listed above.",
+      "loadError": "Unable to load invoice policies. Retry before saving the invoice.",
       "signatureLabel": "Customer signature",
       "signatureHint": "Sign with a mouse or finger. Clear and retry if needed.",
       "clearSignature": "Clear signature"

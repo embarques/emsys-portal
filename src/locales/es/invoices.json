@@ -233,6 +233,7 @@
       "title": "Políticas de la empresa",
       "description": "Lee cada política, confirma el acuerdo y firma antes de continuar.",
       "agreeLabel": "He leído y acepto las políticas listadas arriba.",
+      "loadError": "No se pudieron cargar las políticas. Vuelve a intentar antes de guardar la factura.",
       "signatureLabel": "Firma del cliente",
       "signatureHint": "Firma con el mouse o el dedo. Borra y vuelve a intentar si es necesario.",
       "clearSignature": "Borrar firma"
