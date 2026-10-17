@@ -36,7 +36,6 @@ import {
 } from "@/lib/accounting/clearable-payments/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useTranslation } from "@/lib/i18n";
 import {
   buildTableSelectionResetKey,
@@ -59,10 +58,10 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
   const { hasPermission } = useAuth();
   const feedback = useFeedback();
   const i18n = `accounting.${config.i18nKey}`;
-  const canView = hasPermission(PERMISSIONS.checksView.name, PERMISSIONS.checksView.resourceType);
+  const canView = hasPermission(config.permissions.view.name, config.permissions.view.resourceType);
   const canUpdate = hasPermission(
-    PERMISSIONS.checksUpdate.name,
-    PERMISSIONS.checksUpdate.resourceType,
+    config.permissions.update.name,
+    config.permissions.update.resourceType,
   );
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CLEARABLE_PAYMENT_LIST_PARAMS.sort, () =>

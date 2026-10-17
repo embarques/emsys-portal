@@ -18,12 +18,26 @@
   "notifications": {
     "title": "Notifications",
     "loading": "Loading notifications…",
-    "empty": "No rare activity or outstanding checks right now.",
+    "empty": "No rare activity or outstanding payments right now.",
     "rareActivity": "Rare activity",
     "rareActivityFallback": "Rare user activity",
     "outstandingCheck": "Outstanding check",
     "outstandingCheckTitle": "Outstanding check {{number}}",
-    "outstandingCheckInvoice": "Invoice {{invoice}}"
+    "outstandingCheckInvoice": "Invoice {{invoice}}",
+    "outstandingPayments": {
+      "zellePayments": {
+        "title": "Outstanding Zelle payment {{reference}}",
+        "fallback": "Outstanding Zelle payment"
+      },
+      "deposits": {
+        "title": "Outstanding deposit {{reference}}",
+        "fallback": "Outstanding deposit"
+      },
+      "creditCardPayments": {
+        "title": "Outstanding credit card payment {{reference}}",
+        "fallback": "Outstanding credit card payment"
+      }
+    }
   },
   "search": {
     "openMenu": "Open quick actions",

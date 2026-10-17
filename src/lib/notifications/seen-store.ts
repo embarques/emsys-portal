@@ -38,3 +38,7 @@ export function notificationActivityId(activityId: string) {
 export function notificationCheckId(checkId: string) {
   return `check:${checkId}`;
 }
+
+export function notificationClearablePaymentId(methodSegment: string, paymentId: string) {
+  return `${methodSegment}:${paymentId}`;
+}

@@ -18,12 +18,26 @@
   "notifications": {
     "title": "Notificaciones",
     "loading": "Cargando notificaciones…",
-    "empty": "No hay actividad rara ni cheques pendientes por ahora.",
+    "empty": "No hay actividad rara ni pagos pendientes por ahora.",
     "rareActivity": "Actividad rara",
     "rareActivityFallback": "Actividad de usuario rara",
     "outstandingCheck": "Cheque pendiente",
     "outstandingCheckTitle": "Cheque pendiente {{number}}",
-    "outstandingCheckInvoice": "Factura {{invoice}}"
+    "outstandingCheckInvoice": "Factura {{invoice}}",
+    "outstandingPayments": {
+      "zellePayments": {
+        "title": "Pago Zelle pendiente {{reference}}",
+        "fallback": "Pago Zelle pendiente"
+      },
+      "deposits": {
+        "title": "Depósito pendiente {{reference}}",
+        "fallback": "Depósito pendiente"
+      },
+      "creditCardPayments": {
+        "title": "Pago con tarjeta pendiente {{reference}}",
+        "fallback": "Pago con tarjeta pendiente"
+      }
+    }
   },
   "search": {
     "openMenu": "Abrir acciones rápidas",

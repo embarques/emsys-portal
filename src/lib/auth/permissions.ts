@@ -58,28 +58,30 @@ export const PERMISSIONS = {
   inventoryView: { name: "canListInventoryStock", resourceType: "inventory_stock" },
   incomeView: { name: "canViewIncomeStatement", resourceType: "income_statement" },
   /**
-   * Checks workspace gate. API seeds view/create/update/delete only (no canListCheck),
-   * matching invoice/journal. Income view still aliases older grants.
+   * Checks — dedicated CRUD + list. Roles seeded before canListCheck still list
+   * via canViewCheck; income view still aliases older grants.
    */
-  checksList: { name: "canViewCheck", resourceType: "check" },
+  checksList: { name: "canListCheck", resourceType: "check" },
   checksView: { name: "canViewCheck", resourceType: "check" },
   checksCreate: { name: "canCreateCheck", resourceType: "check" },
   checksUpdate: { name: "canUpdateCheck", resourceType: "check" },
   checksDelete: { name: "canDeleteCheck", resourceType: "check" },
-  /**
-   * Zelle / deposit / credit-card clearing directories (assumed API).
-   * Until the API seeds dedicated permissions, gate with check view/update.
-   * Future seeds (not wired yet): zelle_payment, deposit, credit_card_payment.
-   */
-  zellePaymentsList: { name: "canViewCheck", resourceType: "check" },
-  zellePaymentsView: { name: "canViewCheck", resourceType: "check" },
-  zellePaymentsUpdate: { name: "canUpdateCheck", resourceType: "check" },
-  depositsList: { name: "canViewCheck", resourceType: "check" },
-  depositsView: { name: "canViewCheck", resourceType: "check" },
-  depositsUpdate: { name: "canUpdateCheck", resourceType: "check" },
-  creditCardPaymentsList: { name: "canViewCheck", resourceType: "check" },
-  creditCardPaymentsView: { name: "canViewCheck", resourceType: "check" },
-  creditCardPaymentsUpdate: { name: "canUpdateCheck", resourceType: "check" },
+  /** Zelle / deposit / credit-card clearing directories — dedicated CRUD + list per resource. */
+  zellePaymentsList: { name: "canListZellePayment", resourceType: "zelle_payment" },
+  zellePaymentsView: { name: "canViewZellePayment", resourceType: "zelle_payment" },
+  zellePaymentsCreate: { name: "canCreateZellePayment", resourceType: "zelle_payment" },
+  zellePaymentsUpdate: { name: "canUpdateZellePayment", resourceType: "zelle_payment" },
+  zellePaymentsDelete: { name: "canDeleteZellePayment", resourceType: "zelle_payment" },
+  depositsList: { name: "canListDeposit", resourceType: "deposit" },
+  depositsView: { name: "canViewDeposit", resourceType: "deposit" },
+  depositsCreate: { name: "canCreateDeposit", resourceType: "deposit" },
+  depositsUpdate: { name: "canUpdateDeposit", resourceType: "deposit" },
+  depositsDelete: { name: "canDeleteDeposit", resourceType: "deposit" },
+  creditCardPaymentsList: { name: "canListCreditCardPayment", resourceType: "credit_card_payment" },
+  creditCardPaymentsView: { name: "canViewCreditCardPayment", resourceType: "credit_card_payment" },
+  creditCardPaymentsCreate: { name: "canCreateCreditCardPayment", resourceType: "credit_card_payment" },
+  creditCardPaymentsUpdate: { name: "canUpdateCreditCardPayment", resourceType: "credit_card_payment" },
+  creditCardPaymentsDelete: { name: "canDeleteCreditCardPayment", resourceType: "credit_card_payment" },
   accountsView: { name: "canViewChartAccount", resourceType: "chart_account" },
   reportsView: { name: "canViewReport", resourceType: "report" },
   usersView: { name: "canViewUser", resourceType: "user" },
@@ -171,6 +173,11 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
   "customer:canupdatecustomer": ["client:canupdateclient"],
   "customer:candeletecustomer": ["client:candeleteclient"],
   "income_statement:canviewincomestatement": ["income:canviewincome"],
+  "check:canlistcheck": [
+    "check:canviewcheck",
+    "income_statement:canviewincomestatement",
+    "income:canviewincome",
+  ],
   "check:canviewcheck": [
     "income_statement:canviewincomestatement",
     "income:canviewincome",
@@ -211,6 +218,13 @@ const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
   canupdatecustomer: ["canupdateclient", "canupdatecustomer"],
   candeletecustomer: ["candeleteclient", "candeletecustomer"],
   canviewincomestatement: ["canviewincome", "canviewincomestatement"],
+  canlistcheck: [
+    "canlistchecks",
+    "canviewcheck",
+    "canviewchecks",
+    "canviewincomestatement",
+    "canviewincome",
+  ],
   canviewcheck: [
     "canviewincomestatement",
     "canviewincome",

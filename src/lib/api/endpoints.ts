@@ -47,11 +47,11 @@ export const API_ENDPOINTS = {
   ACCOUNTING_LOANS: "/loans",
   ACCOUNTING_LOAN: "/loans",
   ACCOUNTING_CHECKS: "/checks",
-  /** Assumed — not live until API ships. Mirrors /checks outstanding→cleared lifecycle. */
+  /** Mirrors /checks outstanding→cleared lifecycle. */
   ACCOUNTING_ZELLE_PAYMENTS: "/zelle-payments",
-  /** Assumed — not live until API ships. Mirrors /checks outstanding→cleared lifecycle. */
+  /** Mirrors /checks outstanding→cleared lifecycle. */
   ACCOUNTING_DEPOSITS: "/deposits",
-  /** Assumed — not live until API ships. Mirrors /checks outstanding→cleared lifecycle. */
+  /** Mirrors /checks outstanding→cleared lifecycle. */
   ACCOUNTING_CREDIT_CARD_PAYMENTS: "/credit-card-payments",
   CHART_ACCOUNTS: "/chart-accounts",
   ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",

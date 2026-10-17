@@ -318,7 +318,7 @@ Each check stores:
 
 These Accounting directories mirror Checks for invoice payments made by Zelle, bank deposit, or credit card: outstanding payments do not change the invoice balance until marked **cleared**. Each method has its own sidebar page with search, view, and multi-select **Mark cleared**.
 
-**Assumed API (not live yet):** `/v1/zelle-payments`, `/v1/deposits`, `/v1/credit-card-payments` — same outstanding/cleared lifecycle as `/v1/checks`. The portal UI is scaffolded against those paths; lists and clears will fail until the API ships. Until dedicated permissions exist, access is gated with check view/update grants.
+**API:** `/v1/zelle-payments`, `/v1/deposits`, `/v1/credit-card-payments` — same outstanding/cleared lifecycle and endpoints as `/v1/checks` (list, search, detail, create, update/clear, delete). Each method has its own role permissions (list, view, create, update, delete) on resources `zelle_payment`, `deposit`, and `credit_card_payment`; they are independent of check grants.
 
 Each clearable payment stores:
 
