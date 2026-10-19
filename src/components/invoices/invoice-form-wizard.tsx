@@ -427,6 +427,10 @@ export function InvoiceFormWizard({
     savingRef.current = true;
     setPreparingSave(true);
     try {
+      const submittedValues = {
+        ...values,
+        amountPaid: String(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0),
+      };
       const draftFiles = [...documentDraft.files];
       if (
         !isEditing &&
@@ -437,7 +441,7 @@ export function InvoiceFormWizard({
           const agreementFile = await buildPolicyAgreementDocument({
             policies: activePolicies,
             signatureDataUrl: policiesAgreement.signatureDataUrl,
-            invoiceNumber: values.invoiceNumber || values.generatedInvoiceNumber || undefined,
+            invoice: submittedValues,
           });
           draftFiles.push(agreementFile);
         } catch (cause) {
@@ -449,10 +453,7 @@ export function InvoiceFormWizard({
       }
 
       const result = await onSubmit(
-        {
-          ...values,
-          amountPaid: String(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0),
-        },
+        submittedValues,
         toInvoiceFormSubmitContext(dailyIncomeContext),
       );
       if (result.error) {

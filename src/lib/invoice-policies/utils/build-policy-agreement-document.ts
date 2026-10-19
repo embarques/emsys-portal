@@ -1,5 +1,49 @@
 import type { InvoicePolicy } from "@/lib/invoice-policies/types";
 
+import { formatCoreAddressLines } from "@/lib/customers/display";
+import { getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
+import { getOrderedRecordPhones } from "@/lib/phones/phones";
+import { formatInvoiceDate, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
+import { computeInvoiceBalance, resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
+
+function partyLines(label: string, customer: Customer | null): string[] {
+  if (!customer) return [`${label}: —`];
+  const phones = getOrderedRecordPhones(customer.phones)
+    .map((phone) => phone.displayNumber?.trim() || phone.number.trim())
+    .filter(Boolean).join(" · ");
+  return [
+    `${label}: ${customer.name}`,
+    ...formatCoreAddressLines(getCustomerPrimaryCoreAddress(customer)),
+    ...(phones ? [`Phone: ${phones}`] : []),
+  ];
+}
+
+/** Snapshot of the submitted invoice; uses the same line-total and balance rules as preview. */
+export function buildAgreementInvoiceLines(invoice: InvoiceFormValues): string[] {
+  const subtotal = invoice.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0);
+  const discount = Number(invoice.discount) || 0;
+  const paid = Number(invoice.amountPaid) || 0;
+  return [
+    `Invoice: ${invoice.invoiceNumber || invoice.generatedInvoiceNumber || "—"}`,
+    `Date: ${formatInvoiceDate(invoice.date)}`,
+    `Payment location: ${getPaymentLocationLabel(invoice.paymentLocation)}`,
+    "",
+    ...partyLines("Sender", invoice.sender),
+    "",
+    ...partyLines("Receiver", invoice.receiver),
+    "",
+    "Items",
+    ...invoice.lineItems.map((item, index) =>
+      `${index + 1}. ${item.itemName.trim() || "Line item"} | Qty: ${item.quantity} | Price: ${formatInvoiceMoney(Number(item.unitPrice) || 0)} | Total: ${formatInvoiceMoney(resolveLineTotal(item))}`,
+    ),
+    "",
+    `Subtotal: ${formatInvoiceMoney(subtotal)}`,
+    `Discount: ${formatInvoiceMoney(discount)}`,
+    `Paid: ${formatInvoiceMoney(paid)}`,
+    `Balance: ${formatInvoiceMoney(computeInvoiceBalance(subtotal, discount, paid))}`,
+  ];
+}
+
 const CANVAS_WIDTH = 900;
 const MARGIN_X = 48;
 const MARGIN_Y = 48;
@@ -49,16 +93,16 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Builds a PNG of the active policies plus the customer signature for upload
+ * Builds a PNG of the invoice snapshot, active policies, and customer signature for upload
  * as an invoice document after create.
  */
 export async function buildPolicyAgreementDocument(options: {
   policies: InvoicePolicy[];
   signatureDataUrl: string;
-  invoiceNumber?: string;
+  invoice: InvoiceFormValues;
   signedAt?: Date;
 }): Promise<File> {
-  const { policies, signatureDataUrl, invoiceNumber } = options;
+  const { policies, signatureDataUrl, invoice } = options;
   const signedAt = options.signedAt ?? new Date();
   const signatureImage = await loadImage(signatureDataUrl);
 
@@ -74,10 +118,13 @@ export async function buildPolicyAgreementDocument(options: {
   height += TITLE_SIZE + 12;
   measureCtx.font = `400 ${BODY_SIZE}px system-ui, sans-serif`;
   const metaLines = [
-    invoiceNumber ? `Invoice: ${invoiceNumber}` : null,
     `Signed: ${signedAt.toLocaleString()}`,
   ].filter(Boolean) as string[];
   height += metaLines.length * LINE_HEIGHT + SECTION_GAP;
+
+  const invoiceLines = buildAgreementInvoiceLines(invoice)
+    .flatMap((line) => wrapText(measureCtx, line, contentWidth));
+  height += HEADING_SIZE + 10 + invoiceLines.length * LINE_HEIGHT + SECTION_GAP;
 
   for (const policy of policies) {
     measureCtx.font = `600 ${HEADING_SIZE}px system-ui, sans-serif`;
@@ -121,6 +168,16 @@ export async function buildPolicyAgreementDocument(options: {
   }
   y += SECTION_GAP;
   ctx.fillStyle = "#111827";
+
+  ctx.font = `600 ${HEADING_SIZE}px system-ui, sans-serif`;
+  ctx.fillText("Invoice being signed", MARGIN_X, y);
+  y += HEADING_SIZE + 10;
+  ctx.font = `400 ${BODY_SIZE}px system-ui, sans-serif`;
+  for (const line of invoiceLines) {
+    ctx.fillText(line, MARGIN_X, y);
+    y += LINE_HEIGHT;
+  }
+  y += SECTION_GAP;
 
   for (const policy of policies) {
     ctx.font = `600 ${HEADING_SIZE}px system-ui, sans-serif`;
