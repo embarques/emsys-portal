@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-export const INVOICE_WIZARD_STEP_ORDER = [1, 2, 3, 4, 5, 6] as const;
+export const INVOICE_WIZARD_STEP_ORDER = [1, 2, 3, 4, 5, 6, 7] as const;
 
 export type InvoiceWizardStep = (typeof INVOICE_WIZARD_STEP_ORDER)[number];
 export type InvoiceWizardFormStep = 1 | 2 | 3;
@@ -15,6 +15,7 @@ export type InvoiceWizardStepKind =
   | "parties"
   | "lineItems"
   | "payment"
+  | "documents"
   | "policies"
   | "preview";
 
@@ -27,6 +28,7 @@ export type InvoiceWizardLayout = {
   steps: InvoiceWizardLayoutStep[];
   previewStep: InvoiceWizardStep;
   paymentStep: InvoiceWizardStep | null;
+  documentsStep: InvoiceWizardStep | null;
   policiesStep: InvoiceWizardStep | null;
   includePaymentStep: boolean;
   includePoliciesStep: boolean;
@@ -37,6 +39,7 @@ const STEP_LABEL_KEYS: Record<InvoiceWizardStepKind, string> = {
   parties: "invoices.wizard.steps.parties",
   lineItems: "invoices.wizard.steps.lineItems",
   payment: "invoices.wizard.steps.payment",
+  documents: "invoices.documents.title",
   policies: "invoices.wizard.steps.policies",
   preview: "invoices.wizard.steps.preview",
 };
@@ -46,6 +49,7 @@ const STEP_TITLE_KEYS: Record<InvoiceWizardStepKind, string> = {
   parties: "invoices.wizard.stepTitles.selectParties",
   lineItems: "invoices.wizard.stepTitles.addLineItems",
   payment: "invoices.wizard.stepTitles.paymentInfo",
+  documents: "invoices.documents.title",
   policies: "invoices.wizard.stepTitles.reviewPolicies",
   preview: "invoices.wizard.stepTitles.reviewAndSave",
 };
@@ -53,6 +57,7 @@ const STEP_TITLE_KEYS: Record<InvoiceWizardStepKind, string> = {
 export function resolveInvoiceWizardLayout(options: {
   requireDailyIncomeRegistration: boolean;
   requirePolicySignature: boolean;
+  includeDocumentsStep?: boolean;
 }): InvoiceWizardLayout {
   const steps: InvoiceWizardLayoutStep[] = [
     { id: 1, kind: "details" },
@@ -69,6 +74,13 @@ export function resolveInvoiceWizardLayout(options: {
     steps.push({ id, kind: "payment" });
   }
 
+  const documentsStep = options.includeDocumentsStep
+    ? (steps.length + 1) as InvoiceWizardStep
+    : null;
+  if (documentsStep != null) {
+    steps.push({ id: documentsStep, kind: "documents" });
+  }
+
   if (options.requirePolicySignature) {
     const id = (steps.length + 1) as InvoiceWizardStep;
     policiesStep = id;
@@ -82,6 +94,7 @@ export function resolveInvoiceWizardLayout(options: {
     steps,
     previewStep,
     paymentStep,
+    documentsStep,
     policiesStep,
     includePaymentStep: paymentStep != null,
     includePoliciesStep: policiesStep != null,
@@ -161,7 +174,9 @@ export function InvoiceWizardStepper({
       ? "grid-cols-4"
       : steps.length === 5
         ? "grid-cols-5"
-        : "grid-cols-6";
+        : steps.length === 6
+          ? "grid-cols-6"
+          : "grid-cols-7";
 
   return (
     <nav

@@ -28,6 +28,7 @@ export function InvoiceDocumentsSection({
   invoice,
   initialFiles = [],
   onBusyChange,
+  onUploadsComplete,
   compact = false,
 }: {
   invoice: Pick<
@@ -36,6 +37,7 @@ export function InvoiceDocumentsSection({
   >;
   initialFiles?: File[];
   onBusyChange?: (busy: boolean) => void;
+  onUploadsComplete?: () => void;
   /** Tighter header when embedded in the invoice wizard. */
   compact?: boolean;
 }) {
@@ -56,6 +58,19 @@ export function InvoiceDocumentsSection({
   useEffect(() => {
     onBusyChange?.(uploading || rename.isPending || remove.isPending);
   }, [uploading, rename.isPending, remove.isPending, onBusyChange]);
+  const completed = useRef(false);
+  useEffect(() => {
+    if (
+      !completed.current &&
+      started.current &&
+      !uploading &&
+      uploads.length > 0 &&
+      uploads.every((job) => job.status === "done")
+    ) {
+      completed.current = true;
+      onUploadsComplete?.();
+    }
+  }, [uploading, uploads, onUploadsComplete]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"newest" | "name">("newest");
   const [view, setView] = useState<"list" | "grid">("list");

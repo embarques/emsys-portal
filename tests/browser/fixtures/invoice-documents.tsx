@@ -22,6 +22,13 @@ createRoot(document.getElementById("root")!).render(
         }}
       />
       <InvoiceDocumentsSection
+        initialFiles={(window as unknown as { wizardUploads?: boolean }).wizardUploads
+          ? [new File(["agreement"], "agreement.png", { type: "image/png" }), new File(["receipt"], "retry.pdf", { type: "application/pdf" })]
+          : []}
+        onUploadsComplete={() => {
+          const state = window as unknown as { completedUploads?: number };
+          state.completedUploads = (state.completedUploads ?? 0) + 1;
+        }}
         invoice={
           {
             invoiceId: "invoice",

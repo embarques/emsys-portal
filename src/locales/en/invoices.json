@@ -1,7 +1,6 @@
 {
   "title": "Invoices",
   "registrationStatus": {
-    "legend": "* The invoice is pending registration and its information is incomplete.",
     "pending": "Pending",
     "completed": "Completed"
   },
@@ -706,7 +705,7 @@
     "drop": "Drop files here or browse",
     "draftHint": "Choose attachments now. They will upload after the invoice is saved.",
     "editHint": "Document changes are saved immediately, independently of invoice changes.",
-    "savedHint": "Invoice saved. Review your uploads below. Failed uploads can be retried without creating another invoice.",
+    "savedHint": "Saving invoice documents. This workflow will finish automatically when all uploads succeed. Retry any failed uploads below.",
     "finish": "Finish documents",
     "invalidSize": "Files must be non-empty and no larger than 25 MB.",
     "removeQueued": "Remove {name}",

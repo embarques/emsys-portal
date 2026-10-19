@@ -60,6 +60,11 @@ export async function uploadInvoiceDocument(
   file: File,
   progress: (percent: number) => void,
 ) {
+  const state = window as unknown as { failUploadOnce?: boolean };
+  if (file.name === "retry.pdf" && state.failUploadOnce) {
+    state.failUploadOnce = false;
+    throw new Error("Upload failed; please retry");
+  }
   progress(50);
   await new Promise((resolve) => setTimeout(resolve, 150));
   const item = {

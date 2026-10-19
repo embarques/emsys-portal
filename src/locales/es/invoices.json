@@ -1,7 +1,6 @@
 {
   "title": "Facturas",
   "registrationStatus": {
-    "legend": "* La factura está pendiente por registrar y su información está incompleta.",
     "pending": "Pendiente",
     "completed": "Completado"
   },
@@ -706,7 +705,7 @@
     "drop": "Arrastre archivos aquí o seleccione archivos",
     "draftHint": "Seleccione archivos ahora. Se subirán después de guardar la factura.",
     "editHint": "Los cambios en documentos se guardan de inmediato, independientemente de los cambios en la factura.",
-    "savedHint": "Factura guardada. Revise los archivos abajo. Puede reintentar las cargas fallidas sin crear otra factura.",
+    "savedHint": "Guardando los documentos de la factura. El proceso finalizará automáticamente cuando se completen todas las cargas. Reintente las cargas fallidas abajo.",
     "finish": "Finalizar documentos",
     "invalidSize": "Los archivos no pueden estar vacíos ni superar los 25 MB.",
     "removeQueued": "Quitar {name}",

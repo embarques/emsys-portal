@@ -154,15 +154,18 @@ export function InvoiceFormWizard({
   const activePolicies = activePoliciesQuery.data ?? [];
   const policiesUnavailable = requirePolicySignature && !activePoliciesQuery.isSuccess;
   const includePoliciesStep = requirePolicySignature && (policiesUnavailable || activePolicies.length > 0);
+  const canUploadDocuments = hasPermission("canUpdateInvoice", "invoice");
+  const includeDocumentsStep = Boolean(isEditing && initialValues?.invoiceId) || canUploadDocuments;
   const layout = useMemo(
     () =>
       resolveInvoiceWizardLayout({
         requireDailyIncomeRegistration,
         requirePolicySignature: includePoliciesStep,
+        includeDocumentsStep,
       }),
-    [includePoliciesStep, requireDailyIncomeRegistration],
+    [includeDocumentsStep, includePoliciesStep, requireDailyIncomeRegistration],
   );
-  const { previewStep, paymentStep: paymentStepId, policiesStep: policiesStepId } = layout;
+  const { previewStep, documentsStep: documentsStepId, paymentStep: paymentStepId, policiesStep: policiesStepId } = layout;
 
   const [step, setStep] = useState<InvoiceWizardStep>(() =>
     resolveInitialWizardStep(
@@ -170,6 +173,7 @@ export function InvoiceFormWizard({
       resolveInvoiceWizardLayout({
         requireDailyIncomeRegistration,
         requirePolicySignature,
+        includeDocumentsStep,
       }).previewStep,
     ),
   );
@@ -180,9 +184,10 @@ export function InvoiceFormWizard({
   );
   const documentDraft = useInvoiceDocumentDraft();
   const [pendingUploadFiles, setPendingUploadFiles] = useState<File[] | null>(null);
+  const savingRef = useRef(false);
+  const [preparingSave, setPreparingSave] = useState(false);
   const [documentStage, setDocumentStage] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
-  const canUploadDocuments = hasPermission("canUpdateInvoice", "invoice");
   const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [stepError, setStepError] = useState<string | null>(null);
@@ -345,6 +350,7 @@ export function InvoiceFormWizard({
   }, [focusFieldId, focusFieldKey, step]);
 
   async function handleNext() {
+    if (savingRef.current || documentsBusy || isSubmitting || documentStage) return;
     if (policiesUnavailable && step === policiesStepId) return;
     const currentValues = valuesRef.current;
     const issue =
@@ -378,13 +384,13 @@ export function InvoiceFormWizard({
   }
 
   function handleBack() {
-    if (documentsBusy || isSubmitting) return;
+    if (savingRef.current || documentsBusy || isSubmitting || documentStage) return;
     clearErrors();
     setStep((current) => (current - 1) as InvoiceWizardStep);
   }
 
   function goToStep(target: InvoiceWizardStep) {
-    if (documentsBusy || isSubmitting) return;
+    if (savingRef.current || documentsBusy || isSubmitting || documentStage) return;
     clearErrors();
     setStep(target);
   }
@@ -411,78 +417,84 @@ export function InvoiceFormWizard({
   }
 
   async function handleSave() {
-    if (isSubmitting || documentsBusy || documentStage || policiesUnavailable) return;
+    if (savingRef.current || isSubmitting || documentsBusy || documentStage || policiesUnavailable) return;
     const issue = findSaveIssue(values);
     if (issue) {
       revealIssue(issue);
       return;
     }
 
-    const result = await onSubmit(
-      {
-        ...values,
-        amountPaid: String(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0),
-      },
-      toInvoiceFormSubmitContext(dailyIncomeContext),
-    );
-    if (result.error) {
-      if (isMissingOpenIncomeStatementError(result.error) && paymentStepId != null) {
-        revealIssue({
-          step: paymentStepId,
-          fieldId: INVOICE_WIZARD_FIELDS.dailyIncome,
-          message: result.error,
-        });
+    savingRef.current = true;
+    setPreparingSave(true);
+    try {
+      const draftFiles = [...documentDraft.files];
+      if (
+        !isEditing &&
+        includePoliciesStep &&
+        policiesAgreement.signatureDataUrl
+      ) {
+        try {
+          const agreementFile = await buildPolicyAgreementDocument({
+            policies: activePolicies,
+            signatureDataUrl: policiesAgreement.signatureDataUrl,
+            invoiceNumber: values.invoiceNumber || values.generatedInvoiceNumber || undefined,
+          });
+          draftFiles.push(agreementFile);
+        } catch (cause) {
+          setSubmitError(
+            cause instanceof Error ? cause.message : t("invoices.wizard.validation.policiesSignatureRequired"),
+          );
+          return;
+        }
+      }
+
+      const result = await onSubmit(
+        {
+          ...values,
+          amountPaid: String(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0),
+        },
+        toInvoiceFormSubmitContext(dailyIncomeContext),
+      );
+      if (result.error) {
+        if (isMissingOpenIncomeStatementError(result.error) && paymentStepId != null) {
+          revealIssue({
+            step: paymentStepId,
+            fieldId: INVOICE_WIZARD_FIELDS.dailyIncome,
+            message: result.error,
+          });
+          return;
+        }
+        setSubmitError(result.error);
+        setStepError(null);
         return;
       }
-      setSubmitError(result.error);
+
+      setSubmitError(null);
       setStepError(null);
-      return;
-    }
 
-    setSubmitError(null);
-    setStepError(null);
-
-    if (result.deferClose) {
-      return;
-    }
-
-    if (result.savedInvoiceId) {
-      setSavedInvoiceId(result.savedInvoiceId);
-    }
-
-    const draftFiles = [...documentDraft.files];
-    if (
-      !isEditing &&
-      result.savedInvoiceId &&
-      includePoliciesStep &&
-      policiesAgreement.signatureDataUrl
-    ) {
-      try {
-        const agreementFile = await buildPolicyAgreementDocument({
-          policies: activePolicies,
-          signatureDataUrl: policiesAgreement.signatureDataUrl,
-          invoiceNumber: values.invoiceNumber || values.generatedInvoiceNumber || undefined,
-        });
-        documentDraft.add([agreementFile]);
-        draftFiles.push(agreementFile);
-      } catch (cause) {
-        setSubmitError(
-          cause instanceof Error ? cause.message : t("invoices.wizard.validation.policiesSignatureRequired"),
-        );
+      if (result.deferClose) {
         return;
       }
-    }
 
-    if (!isEditing && result.savedInvoiceId && draftFiles.length) {
-      setPendingUploadFiles(draftFiles);
-      setDocumentsBusy(true);
-      setDocumentStage(true);
-      return;
+      if (result.savedInvoiceId) {
+        setSavedInvoiceId(result.savedInvoiceId);
+      }
+
+      if (!isEditing && result.savedInvoiceId && draftFiles.length) {
+        setPendingUploadFiles(draftFiles);
+        setDocumentsBusy(true);
+        setDocumentStage(true);
+        return;
+      }
+      finishSave();
+    } finally {
+      savingRef.current = false;
+      setPreparingSave(false);
     }
-    finishSave();
   }
 
   function finishSave() {
+    setDocumentsBusy(false);
     documentDraft.reset();
     setPendingUploadFiles(null);
     setDocumentStage(false);
@@ -512,7 +524,7 @@ export function InvoiceFormWizard({
   const registeredCostMismatchError = hasRegisteredCostMismatch
     ? t("invoices.wizard.validation.registeredCostMismatch")
     : null;
-  const saveDisabled = isSubmitting || documentsBusy || policiesUnavailable || hasNegativeBalance || hasRegisteredCostMismatch;
+  const saveDisabled = preparingSave || isSubmitting || documentsBusy || documentStage || policiesUnavailable || hasNegativeBalance || hasRegisteredCostMismatch;
   const bannerError =
     step === previewStep
       ? submitError ?? negativeBalanceError ?? registeredCostMismatchError ?? externalError
@@ -583,9 +595,11 @@ export function InvoiceFormWizard({
       ? "invoices.form.design.reviewHint"
       : stepKind === "payment"
         ? "invoices.form.design.paymentHint"
-        : stepKind === "policies"
-          ? "invoices.form.design.policiesHint"
-          : "invoices.form.design.navigationHint";
+        : stepKind === "documents"
+          ? "invoices.documents.formats"
+          : stepKind === "policies"
+            ? "invoices.form.design.policiesHint"
+            : "invoices.form.design.navigationHint";
 
   const formStep = (
     <InvoiceForm
@@ -650,6 +664,29 @@ export function InvoiceFormWizard({
       />
     ) : null;
 
+  const documentsStepContent = (
+    <div className="min-w-0 p-3 sm:p-4">
+      {isEditing && initialValues?.invoiceId ? (
+        <div className="rounded-lg border p-3 sm:p-4">
+          <p className="mb-3 text-sm text-muted-foreground">{t("invoices.documents.editHint")}</p>
+          <InvoiceDocumentsSection
+            compact
+            invoice={initialValues}
+            onBusyChange={setDocumentsBusy}
+          />
+        </div>
+      ) : canUploadDocuments ? (
+        <InvoiceDocumentPicker
+          files={documentDraft.files}
+          invalid={documentDraft.invalid}
+          disabled={isSubmitting || documentsBusy}
+          onAdd={documentDraft.add}
+          onRemove={documentDraft.remove}
+        />
+      ) : null}
+    </div>
+  );
+
   const previewContent = (
     <div className="min-w-0 space-y-4">
     <InvoiceFormPreviewStep
@@ -667,29 +704,34 @@ export function InvoiceFormWizard({
           : undefined
       }
       onEditPayment={
-        paymentStepId != null ? () => setStep(paymentStepId) : undefined
+        paymentStepId != null ? () => goToStep(paymentStepId) : undefined
       }
-      canApplyInvoiceDiscount={allowDiscountEditing}
-      onDiscountChange={allowDiscountEditing ? handleDiscountChange : undefined}
+      canApplyInvoiceDiscount={allowDiscountEditing && !documentStage && !preparingSave}
+      onDiscountChange={allowDiscountEditing && !documentStage && !preparingSave ? handleDiscountChange : undefined}
     />
-    {isEditing && initialValues?.invoiceId ? (
-      <div className="rounded-lg border p-3 sm:p-4">
-        <p className="mb-3 text-sm text-muted-foreground">{t("invoices.documents.editHint")}</p>
-        <InvoiceDocumentsSection
-          compact
-          invoice={initialValues}
-          onBusyChange={setDocumentsBusy}
-        />
-      </div>
-    ) : canUploadDocuments ? (
-      <InvoiceDocumentPicker
-        files={documentDraft.files}
-        invalid={documentDraft.invalid}
-        disabled={isSubmitting || documentsBusy}
-        onAdd={documentDraft.add}
-        onRemove={documentDraft.remove}
+    {includePoliciesStep ? (
+      <InvoicePoliciesStep
+        policies={activePolicies}
+        value={policiesAgreement}
+        onChange={setPoliciesAgreement}
+        disabled
       />
     ) : null}
+    {documentStage && savedInvoiceId ? (
+      <div className="rounded-lg border p-3 sm:p-4">
+        <p role="status" className="mb-3 text-sm text-muted-foreground">
+          {t("invoices.documents.savedHint")}
+        </p>
+        <InvoiceDocumentsSection
+          key={savedInvoiceId}
+          compact
+          invoice={{ ...values, invoiceId: savedInvoiceId }}
+          initialFiles={pendingUploadFiles ?? []}
+          onBusyChange={setDocumentsBusy}
+          onUploadsComplete={finishSave}
+        />
+      </div>
+    ) : documentsStepContent}
     </div>
   );
 
@@ -722,40 +764,11 @@ export function InvoiceFormWizard({
           </Button>
         ) : null}
         <Button data-wizard-primary type="button" className="max-sm:px-3" onClick={handleSave} disabled={saveDisabled}>
-          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          {isSubmitting ? t("common.actions.saving") : submitLabel}
+          {isSubmitting || preparingSave || documentsBusy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+          {isSubmitting || preparingSave || documentsBusy ? t("common.actions.saving") : submitLabel}
         </Button>
       </>
     );
-
-  if (documentStage && savedInvoiceId) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:p-5 sm:pb-5">
-          <p role="status" className="rounded-lg bg-muted p-3 text-sm">
-            {t("invoices.documents.savedHint")}
-          </p>
-          <InvoiceDocumentsSection
-            key={savedInvoiceId}
-            compact
-            invoice={{ ...values, invoiceId: savedInvoiceId }}
-            initialFiles={pendingUploadFiles ?? documentDraft.files}
-            onBusyChange={setDocumentsBusy}
-          />
-        </div>
-        <div className="shrink-0 border-t bg-background p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-4">
-          <Button
-            type="button"
-            className="min-h-11 w-full"
-            disabled={documentsBusy}
-            onClick={finishSave}
-          >
-            {t("invoices.documents.finish")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   if (isMobileLayout) {
     const steps = layout.steps.map((entry) => entry.id);
@@ -790,14 +803,14 @@ export function InvoiceFormWizard({
             {isPrinting ? <Loader2 className="size-4 animate-spin" /> : <Printer className="size-4" />}
           </Button>
           <Button data-wizard-primary type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
-            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {isSubmitting ? t("common.actions.saving") : submitLabel}
+            {isSubmitting || preparingSave || documentsBusy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {isSubmitting || preparingSave || documentsBusy ? t("common.actions.saving") : submitLabel}
           </Button>
         </div>
       ) : (
         <Button data-wizard-primary type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
-          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          {isSubmitting ? t("common.actions.saving") : submitLabel}
+          {isSubmitting || preparingSave || documentsBusy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+          {isSubmitting || preparingSave || documentsBusy ? t("common.actions.saving") : submitLabel}
         </Button>
       );
     const phoneBackControl = (
@@ -849,6 +862,10 @@ export function InvoiceFormWizard({
           ) : paymentStepId != null && step === paymentStepId ? (
             <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
               {paymentStepContent}
+            </div>
+          ) : step === documentsStepId ? (
+            <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
+              {documentsStepContent}
             </div>
           ) : policiesStepId != null && step === policiesStepId ? (
             <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
@@ -927,6 +944,10 @@ export function InvoiceFormWizard({
             {paymentStepId != null && step === paymentStepId ? (
               <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">
                 {paymentStepContent}
+              </div>
+            ) : step === documentsStepId ? (
+              <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">
+                {documentsStepContent}
               </div>
             ) : policiesStepId != null && step === policiesStepId ? (
               <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 pb-6">

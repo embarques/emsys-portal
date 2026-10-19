@@ -71,7 +71,7 @@ after(async () => {
   if (directory) await rm(directory, { recursive: true, force: true });
 });
 
-async function fixture(width = 1440, readOnly = false, multipleDocs = false) {
+async function fixture(width = 1440, readOnly = false, multipleDocs = false, wizardUploads = false, failUploadOnce = false) {
   const page = await browser.newPage({ viewport: { width, height: 950 } });
   page.on("pageerror", (error) => console.error("UI error:", error.message));
   await page.setContent(
@@ -83,11 +83,13 @@ async function fixture(width = 1440, readOnly = false, multipleDocs = false) {
   }, readOnly);
   await page.addStyleTag({ content: css });
   await page.evaluate(
-    ({ mobile, multipleDocs }) => {
+    ({ mobile, multipleDocs, wizardUploads, failUploadOnce }) => {
+      window.wizardUploads = wizardUploads;
+      window.failUploadOnce = failUploadOnce;
       window.mobileDocs = mobile;
       window.multipleDocs = multipleDocs;
     },
-    { mobile: width < 768, multipleDocs },
+    { mobile: width < 768, multipleDocs, wizardUploads, failUploadOnce },
   );
   await page.addScriptTag({ content: script });
   await page
@@ -309,3 +311,21 @@ test("document info exposes upload and modification metadata in list and thumbna
     await page.close();
   }
 });
+
+for (const failOnce of [false, true]) {
+  test(`wizard documents complete automatically after all uploads succeed (retry=${failOnce})`, async () => {
+    const page = await fixture(1440, false, false, true, failOnce);
+    try {
+      if (failOnce) {
+        await page.getByText("Upload failed; please retry", { exact: true }).waitFor();
+        assert.equal(await page.evaluate(() => window.completedUploads ?? 0), 0);
+        await page.getByRole("button", { name: "Retry", exact: true }).click();
+      }
+      await page.waitForFunction(() => window.completedUploads === 1);
+      assert.equal(await page.getByText("Uploaded", { exact: true }).count(), 2);
+      assert.equal(await page.getByRole("button", { name: "agreement.png", exact: true }).count(), 1);
+    } finally {
+      await page.close();
+    }
+  });
+}
