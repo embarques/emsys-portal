@@ -27,3 +27,5 @@ export const CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS = [
 
 export type CustomerPartyPickerOrSearchField =
   (typeof CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS)[number];
+
+export const CUSTOMER_PARTY_SEARCH_MIN_LENGTH = 3;

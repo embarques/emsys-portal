@@ -33,6 +33,8 @@ import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
 import type { NewCustomerStatPeriod } from "@/lib/customers/new-customer-stats";
 import { queryKeys } from "@/lib/query/query-keys";
 
+import { CUSTOMER_PARTY_SEARCH_MIN_LENGTH } from "@/lib/customers/search-fields";
+
 function hasCustomerChipFilters(params: CustomerListParams): boolean {
   return (
     (params.branch !== undefined && params.branch !== "all") ||
@@ -52,7 +54,7 @@ export function useCustomerAutocomplete(
 ) {
   const trimmed = query.trim();
   const limit = options.limit ?? 20;
-  const enabled = (options.enabled ?? true) && trimmed.length > 0;
+  const enabled = (options.enabled ?? true) && trimmed.length >= CUSTOMER_PARTY_SEARCH_MIN_LENGTH;
 
   return useWorkspaceQuery({
     queryKey: queryKeys.customers.autocomplete(trimmed, customerType, limit),

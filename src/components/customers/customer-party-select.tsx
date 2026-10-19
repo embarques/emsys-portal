@@ -21,10 +21,9 @@ import {
   useCustomer,
   useCustomerAutocomplete,
   useCustomerDetailsBatch,
-  useCustomerPicker,
   useEnsureCustomerDetail,
 } from "@/lib/customers/hooks/use-customers";
-import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
+import { CUSTOMER_PARTY_SEARCH_MIN_LENGTH } from "@/lib/customers/search-fields";
 import type { Customer, CustomerSearchResult } from "@/lib/customers/types";
 import {
   resolveCustomerAddressCount,
@@ -64,10 +63,6 @@ type CollapsedAddressPreview = {
   primaryLine?: string;
   showMatchedBadge: boolean;
 };
-
-function toSearchResults(customers: Customer[]): CustomerSearchResult[] {
-  return customers.map((customer) => ({ customer }));
-}
 
 function buildCollapsedPreview(result: CustomerSearchResult): CollapsedAddressPreview {
   const { customer, matchedAddressId, matchedBy } = result;
@@ -205,10 +200,9 @@ export function CustomerPartySelect({
 
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebouncedValue(query, 300).trim();
-  const isSearchPending = trimmedQuery.length > 0 && trimmedQuery !== debouncedQuery;
-  const isSearching = debouncedQuery.length > 0;
-
-  const pickerQuery = useCustomerPicker(200);
+  const hasMinimumQuery = trimmedQuery.length >= CUSTOMER_PARTY_SEARCH_MIN_LENGTH;
+  const isSearchPending = hasMinimumQuery && trimmedQuery !== debouncedQuery;
+  const isSearching = hasMinimumQuery && !isSearchPending;
   const autocompleteQuery = useCustomerAutocomplete(debouncedQuery, partyType, {
     enabled: open && isSearching,
     limit: 20,
@@ -218,26 +212,9 @@ export function CustomerPartySelect({
     open && Boolean(detailCustomerId && expandedIds.has(detailCustomerId)),
   );
 
-  const pickerCustomers = useMemo(() => {
-    const items = pickerQuery.data?.items ?? [];
-    return items.filter(
-      (customer) =>
-        customer.active &&
-        (partyType === "sender"
-          ? isCustomerSenderType(customer.customerType)
-          : isCustomerReceiverType(customer.customerType)),
-    );
-  }, [partyType, pickerQuery.data?.items]);
-
   const results = useMemo(() => {
-    if (isSearchPending) {
-      return [];
-    }
-    if (isSearching) {
-      return autocompleteQuery.data ?? [];
-    }
-    return toSearchResults(pickerCustomers);
-  }, [autocompleteQuery.data, isSearchPending, isSearching, pickerCustomers]);
+    return isSearching ? autocompleteQuery.data ?? [] : [];
+  }, [autocompleteQuery.data, isSearching]);
 
   const visibleCustomerIds = useMemo(
     () => results.slice(0, 20).map((result) => result.customer.id),
@@ -246,7 +223,7 @@ export function CustomerPartySelect({
 
   useCustomerDetailsBatch(visibleCustomerIds, open);
 
-  const loading = isSearchPending || (isSearching ? autocompleteQuery.isFetching : pickerQuery.isFetching);
+  const loading = isSearchPending || (isSearching && autocompleteQuery.isFetching);
   const displayLabel = selectedCustomer?.name ?? "";
   const hasSelection = Boolean(value && selectedCustomer);
 
@@ -429,7 +406,7 @@ export function CustomerPartySelect({
 
         {!loading && results.length === 0 ? (
           <p className="px-4 py-3 text-sm text-muted-foreground">
-            {t("customers.addresses.emptyResults")}
+            {t(hasMinimumQuery ? "customers.addresses.emptyResults" : "customers.addresses.minimumSearch")}
           </p>
         ) : null}
 

@@ -26,6 +26,7 @@
     "moreOne": "+1 more address",
     "moreMany": "+{{count}} more addresses",
     "searchPlaceholder": "Search customers",
+    "minimumSearch": "Type at least 3 characters to search.",
     "emptyResults": "No customers found.",
     "loading": "Searching customers…",
     "viewAll": "View addresses",
