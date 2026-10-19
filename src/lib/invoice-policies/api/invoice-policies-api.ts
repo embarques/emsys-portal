@@ -24,7 +24,7 @@ export async function fetchInvoicePolicies(
     `${endpoint}?page=${page}&limit=${limit}&sort=sortOrder:asc,title:asc`,
   );
   assertMutationSuccess(response, "Unable to load invoice policies.");
-  const items = invoicePolicySchema.array().parse(response.data);
+  const items = invoicePolicySchema.array().parse(response.data === null ? [] : response.data);
   return {
     items,
     page: response.page ?? page,
@@ -45,7 +45,7 @@ export async function fetchAllInvoicePolicies(): Promise<InvoicePolicy[]> {
 export async function fetchActiveInvoicePolicies(): Promise<InvoicePolicy[]> {
   const response = await apiClient.get<ApiSuccessEnvelope<unknown>>(`${endpoint}/active`);
   assertMutationSuccess(response, "Unable to load invoice policies.");
-  const list = unwrapApiData(response);
+  const list = response.data === null ? [] : unwrapApiData(response);
   return invoicePolicySchema
     .array()
     .parse(list)

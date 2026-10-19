@@ -48,6 +48,14 @@ test("empty active policies are allowed, but failed and malformed responses cann
     const api = loadFeature(feature, { get: async () => response });
     await assert.rejects(() => api.fetchActiveInvoicePolicies());
   }
-  const api = loadFeature(feature, { get: async () => ({ success: true, data: [] }) });
-  assert.deepEqual(await api.fetchActiveInvoicePolicies(), []);
+  for (const data of [[], null]) {
+    const api = loadFeature(feature, { get: async () => ({ success: true, data }) });
+    assert.deepEqual(await api.fetchActiveInvoicePolicies(), []);
+  }
+});
+
+test("policy list treats a null data payload as an empty list", async () => {
+  const api = loadFeature(feature, { get: async () => ({ success: true, data: null, total: 0 }) });
+  assert.deepEqual(await api.fetchInvoicePolicies(), { items: [], page: 1, resultsPerPage: 0, total: 0 });
+  assert.deepEqual(await api.fetchAllInvoicePolicies(), []);
 });
