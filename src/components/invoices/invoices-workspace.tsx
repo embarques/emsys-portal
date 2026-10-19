@@ -54,6 +54,7 @@ import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   computeInvoiceKpis,
+  formatInvoiceCount,
   formatInvoiceDate,
   formatInvoiceMoney,
   formatInvoicePartyAddressLine,
@@ -853,7 +854,7 @@ export function InvoicesWorkspace() {
   const stats = [
     {
       label: "Total invoices",
-      value: isLoading ? "…" : totalInvoices.toString(),
+      value: isLoading ? "…" : formatInvoiceCount(totalInvoices),
       description: "Invoices on record",
       icon: FileText,
       details: [
@@ -864,13 +865,13 @@ export function InvoicesWorkspace() {
     },
     {
       label: "Outstanding invoices",
-      value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
+      value: invoiceStats.isLoading ? "…" : formatInvoiceCount(invoiceStats.outstanding),
       description: "Invoices with open balance",
       icon: CircleAlert,
       details: [
         {
           label: "Open invoices",
-          value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
+          value: invoiceStats.isLoading ? "…" : formatInvoiceCount(invoiceStats.outstanding),
         },
         {
           label: "Share of total",
@@ -892,7 +893,7 @@ export function InvoicesWorkspace() {
       details: [
         {
           label: "Open invoices",
-          value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
+          value: invoiceStats.isLoading ? "…" : formatInvoiceCount(invoiceStats.outstanding),
         },
         {
           label: "Average balance",
@@ -1251,8 +1252,6 @@ export function InvoicesWorkspace() {
           ) : null}
         </div>
 
-        <p className="text-sm text-muted-foreground">{t("invoices.registrationStatus.legend")}</p>
-
         {mobileFiltersOpen ? (
           <TableFilterPanel
             resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
@@ -1427,7 +1426,6 @@ export function InvoicesWorkspace() {
                   }}
                   placeholder={t("invoices.search.placeholder")}
                 />
-                <p className="text-sm text-muted-foreground">{t("invoices.registrationStatus.legend")}</p>
               </div>
             }
             filterPanel={

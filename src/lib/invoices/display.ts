@@ -104,6 +104,14 @@ export function formatInvoiceMoney(amount: number): string {
   return formatItemPrice(amount);
 }
 
+const invoiceCountFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 0,
+});
+
+export function formatInvoiceCount(count: number): string {
+  return invoiceCountFormatter.format(count);
+}
+
 export function getInvoiceTotalMoneyClass(): string {
   return "font-medium tabular-nums text-blue-700 dark:text-blue-300";
 }

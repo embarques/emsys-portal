@@ -19,7 +19,7 @@ import { NewCustomersStatCard } from "@/components/customers/new-customers-stat-
 import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
 import { NewAppointmentsStatCard } from "@/components/orders/new-appointments-stat-card";
 import { useCustomerStats } from "@/lib/customers/hooks/use-customers";
-import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { formatInvoiceCount, formatInvoiceMoney } from "@/lib/invoices/display";
 import { useInvoiceStats, useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { DEFAULT_INVOICE_LIST_PARAMS } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
@@ -82,13 +82,13 @@ export function DashboardInvoicesStats() {
   const cards = [
     {
       label: t("invoices.stats.total.label"),
-      value: isTotalLoading ? "…" : totalInvoices.toString(),
+      value: isTotalLoading ? "…" : formatInvoiceCount(totalInvoices),
       description: t("invoices.stats.total.description"),
       icon: FileText,
     },
     {
       label: t("invoices.stats.outstandingCount.label"),
-      value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
+      value: invoiceStats.isLoading ? "…" : formatInvoiceCount(invoiceStats.outstanding),
       description: t("invoices.stats.outstandingCount.description"),
       icon: CircleAlert,
     },
