@@ -392,6 +392,23 @@ export async function requestReportGeneration(
     console.info("[Reports Portal] Normalized report request", request);
   }
 
+  if (request.reportKey === "payment-receipt") {
+    const reference = request.filters.receiptNumber?.trim();
+    if (!reference) throw new Error("Receipt number is required.");
+    const response = await apiClient.post<PaginatedApiEnvelope<Array<{ id?: string; _id?: string }>>>(
+      `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search?${buildApiSearchPaginationQuery({ page: 1, limit: 2, offset: 0 })}`,
+      buildStripeStyleSearchBody({ filterGroups: [{ operator: "and", filters: [{ field: "refNumber", operator: "eq", value: reference }] }] }),
+    );
+    const matches = Array.isArray(response.data) ? response.data : [];
+    if (matches.length !== 1 || Number(response.total) > 1) {
+      throw new Error(matches.length === 0 ? "No receipt matched that number." : "Receipt number matches multiple transactions.");
+    }
+    const id = stringValue(matches[0].id) || stringValue(matches[0]._id);
+    if (!/^[a-f0-9]{24}$/i.test(id)) throw new Error("The receipt has an invalid transaction identifier.");
+    const result = await generateReport({ type: "transaction", collection: "journals", values: [id], lookupField: "id", format: "pdf" });
+    return { status: "generated", request, result };
+  }
+
   if (request.reportKey === "customs-form") {
     const payload = buildCustomsFormReportRequest(request);
     const result = await generateCustomsFormReport(payload);
@@ -698,6 +715,7 @@ export function buildPublicReportUrl(token: string): string {
 }
 
 const REPORT_GENERATORS: Record<ReportType, (request: ReportRequest) => Promise<ReportResult>> = {
+  transaction: (request) => postReport(API_ENDPOINTS.REPORTS_TRANSACTIONS, request),
   income: generateIncomeReport,
   invoice: generateInvoiceReport,
   "invoice-details": generateInvoiceDetailsReport,

@@ -65,7 +65,7 @@ import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useTranslation } from "@/lib/i18n";
-import { useGenerateIncomeReport } from "@/lib/reports/hooks/use-reports";
+import { useGenerateReport, useGenerateIncomeReport } from "@/lib/reports/hooks/use-reports";
 import {
   buildTableSelectionResetKey,
   useTableSelectionReset,
@@ -75,6 +75,8 @@ import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+
+import { buildPaymentReceiptRequest, canPrintPaymentReceipt } from "@/lib/accounting/daily-income/print-payment-receipt";
 
 function today() {
   const date = new Date();
@@ -429,6 +431,7 @@ export function DailyIncomeWorkspace() {
   const updateJournal = useUpdateDailyIncomeJournal();
   const deleteMutation = useDeleteDailyIncomeJournal();
   const generateIncomeReportMutation = useGenerateIncomeReport();
+  const generateReceiptMutation = useGenerateReport();
   const rows = journalsQuery.data?.items ?? [];
   const total = journalsQuery.data?.total ?? rows.length;
   rememberTotal(total);
@@ -624,6 +627,17 @@ export function DailyIncomeWorkspace() {
       );
       openIncomeReportUrl(report.url);
       setPrintDialog(false);
+      feedback.notifySuccess(t("accounting.dailyIncome.toasts.reportReady"));
+    } catch (error) {
+      feedback.notifyError(normalizeApiError(error).message);
+    }
+  }
+
+  async function handlePrintReceipt() {
+    if (selectedIds.length !== 1 || !selectedJournal || generateReceiptMutation.isPending) return;
+    try {
+      const receipt = await generateReceiptMutation.mutateAsync(buildPaymentReceiptRequest(selectedJournal));
+      openIncomeReportUrl(receipt.url);
       feedback.notifySuccess(t("accounting.dailyIncome.toasts.reportReady"));
     } catch (error) {
       feedback.notifyError(normalizeApiError(error).message);
@@ -931,6 +945,14 @@ export function DailyIncomeWorkspace() {
     <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={buildToolbarSearchSummary({ isFiltered: Boolean(deferredQuery.trim()), query: deferredQuery, isSearchPending: query !== deferredQuery, matched: total, catalogTotal: total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isLoading, catalogLoading: journalsQuery.isLoading }, t)} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")} />} /></CardHeader>
       {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title={t("accounting.dailyIncome.transactions.loadingTitle")} description={t("accounting.dailyIncome.transactions.loadingDescription")} columns={[t("accounting.dailyIncome.columns.date"), t("accounting.dailyIncome.columns.accountInvoice"), t("accounting.dailyIncome.columns.assignedTo"), t("accounting.dailyIncome.columns.type"), t("accounting.dailyIncome.columns.reference"), t("accounting.dailyIncome.columns.amount")]} /> : <>
         <TableSelectionToolbar
+          actions={selectedJournal && canPrintPaymentReceipt(selectedJournal) ? (
+            <Button type="button" variant="outline" size="sm" className={tableSelectionActionStyles.print}
+              disabled={selectedIds.length !== 1 || generateReceiptMutation.isPending}
+              onClick={handlePrintReceipt}>
+              {generateReceiptMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+              {t("accounting.dailyIncome.actions.printReceipt")}
+            </Button>
+          ) : null}
           selectedIds={selectedIds}
           pageRowIds={rows.map((row) => row.id)}
           totalCount={total}

@@ -90,6 +90,7 @@ const FILTER_VALUE_KEYS: Record<string, string[]> = {
   "port-destination": ["portDestination"],
   status: ["status"],
   "customer-type": ["customerType"],
+  "receipt-number": ["receiptNumber"],
   "delivery-number": ["deliveryNumber"],
   rate: ["rate"],
 };
@@ -744,6 +745,8 @@ function DynamicReportFilter({
           options={CUSTOMER_TYPE_SEGMENT_OPTIONS}
         />
       );
+    case "receipt-number":
+      return <TextFilter context={context} icon={ReceiptText} label="Internal Receipt Number" valueKey="receiptNumber" placeholder="Enter receipt number" />;
     case "delivery-number":
       return <DeliveryNumberFilter context={context} />;
     case "rate":
@@ -1205,6 +1208,9 @@ function normalizeSearch(value: string): string {
 
 function validateReportFilters(report: ReportDefinition, values: ReportFilterValues) {
   const errors: Record<string, string> = {};
+  if (report.key === "payment-receipt" && !values.receiptNumber?.trim()) {
+    errors.receiptNumber = "Receipt number is required.";
+  }
   const invoiceReport = isInvoiceReportKey(report.key);
   const invoiceDetailsReport = isInvoiceDetailsReportKey(report.key);
   const dateSearchDisabled = invoiceReport && values.dateSearchDisabled === "true";
