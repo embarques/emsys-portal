@@ -362,7 +362,8 @@
     "actions": {
       "createCloseout": "Create closeout",
       "editCloseout": "Edit closeout",
-      "printReport": "Print report",
+      "printReceipt": "Print receipt",
+        "printReport": "Print report",
       "closeDay": "Close day",
       "reopenDay": "Reopen day",
       "addTransaction": "Add transaction",

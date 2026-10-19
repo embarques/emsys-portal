@@ -5,6 +5,7 @@ export type ReportType =
   | "income"
   | "invoice"
   | "invoice-details"
+  | "transaction"
   | "journal"
   | "loan"
   | "label"
@@ -127,6 +128,7 @@ export type ReportFilterKey =
   | "port-destination"
   | "status"
   | "customer-type"
+  | "receipt-number"
   | "delivery-number"
   | "rate"
   | (string & {});

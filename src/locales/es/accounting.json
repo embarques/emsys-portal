@@ -362,7 +362,8 @@
     "actions": {
       "createCloseout": "Crear cierre",
       "editCloseout": "Editar cierre",
-      "printReport": "Imprimir reporte",
+      "printReceipt": "Imprimir recibo",
+        "printReport": "Imprimir reporte",
       "closeDay": "Cerrar día",
       "reopenDay": "Reabrir día",
       "addTransaction": "Agregar transacción",

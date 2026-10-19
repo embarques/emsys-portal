@@ -1,5 +1,13 @@
 "use client";
 
+import { Printer, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useGenerateReport } from "@/lib/reports/hooks/use-reports";
+import { buildPaymentReceiptRequest } from "@/lib/accounting/daily-income/print-payment-receipt";
+import { openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
+import { normalizeApiError } from "@/lib/api/axios";
+
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import {
   formatInvoiceCommentDateTime,
@@ -31,6 +39,17 @@ function paymentDateLabel(iso: string): string | undefined {
 
 export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps) {
   const { t } = useTranslation();
+  const feedback = useFeedback();
+  const printReceipt = useGenerateReport();
+  async function handlePrintReceipt(id: string) {
+    if (printReceipt.isPending) return;
+    try {
+      const receipt = await printReceipt.mutateAsync(buildPaymentReceiptRequest({ id, transactionType: "PAYMENT" }));
+      openIncomeReportUrl(receipt.url);
+    } catch (error) {
+      feedback.notifyError(normalizeApiError(error).message);
+    }
+  }
 
   const sortedPayments = [...invoice.payments].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -52,6 +71,7 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b bg-muted/40 text-muted-foreground">
+              <th className="w-8 px-1 py-2"><span className="sr-only">{t("accounting.dailyIncome.actions.printReceipt")}</span></th>
               <th className="px-3 py-2 font-medium">
                 {t("invoices.view.payments.fields.description")}
               </th>
@@ -81,6 +101,17 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
               const createdBy = payment.createdBy?.trim() ?? "";
               return (
                 <tr key={payment.id} className="border-b last:border-b-0 even:bg-muted/25">
+                  <td className="px-1 py-1">
+                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+                      aria-label={t("accounting.dailyIncome.actions.printReceipt")}
+                      title={t("accounting.dailyIncome.actions.printReceipt")}
+                      disabled={printReceipt.isPending || !/^[a-f0-9]{24}$/i.test(payment.id)}
+                      onClick={() => handlePrintReceipt(payment.id)}>
+                      {printReceipt.isPending && printReceipt.variables?.values?.[0] === payment.id
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <Printer className="h-3.5 w-3.5" />}
+                    </Button>
+                  </td>
                   <td className="min-w-[8rem] px-3 py-2 leading-snug text-foreground [overflow-wrap:anywhere]">
                     {isFilled(description) ? description : empty}
                   </td>
