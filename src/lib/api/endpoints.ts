@@ -27,6 +27,8 @@ export const API_ENDPOINTS = {
   BARCODE_STATUSES: "/barcode-statuses",
   VEHICLES: "/vehicles",
   ROUTES: "/routes",
+  /** Orders one route's stops between a start and end address. */
+  ROUTE_OPTIMIZER_SINGLE: "/route-optimizer/single",
   /** Scheduled pickup/delivery route (unified endpoint; `routeType` in payload). */
   VEHICLE_ROUTES: "/vehicle-routes",
   /** @deprecated Use VEHICLE_ROUTES. */

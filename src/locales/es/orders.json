@@ -31,6 +31,10 @@
     "unassignRoute": "Desasignar ruta",
     "clearRoute": "Limpiar ruta",
     "clearingRoute": "Limpiando…",
+    "optimizeRoute": "Optimizar ruta",
+    "optimizingRoute": "Optimizando…",
+    "viewRoute": "Ver ruta",
+    "viewRouteMultiple": "Las citas seleccionadas pertenecen a rutas diferentes. Seleccione citas de una sola ruta para verla.",
     "noAssignedRoute": "Ninguna de las citas seleccionadas está asignada a una ruta.",
     "map": "Mapa",
     "manageCompletion": "Gestionar completado",
@@ -318,8 +322,10 @@
     "legacySyncPermissionMissing": "Falta el permiso: Access legacy pickups. Pida a un administrador que otorgue el permiso requerido e intente nuevamente."
   },
   "map": {
-    "title": "Mapa de recogidas",
-    "description": "Solo se trazan en el mapa las paradas de recogida verificadas que estén seleccionadas. Seleccione recogidas en la lista o use Seleccionar todo.",
+    "title": "Vista de mapa de citas",
+    "description": "Visualice las citas seleccionadas en un mapa para facilitar la asignación de rutas.",
+    "dailyRouteTitle": "Vista de mapa de ruta diaria",
+    "dailyRouteDescription": "Visualice las citas de la ruta en un mapa para facilitar la optimización de la ruta.",
     "loading": "Cargando paradas de recogida verificadas…",
     "empty": "No hay paradas de recogida verificadas que coincidan con los filtros actuales.",
     "stopsShown": "{{count}} en el mapa",
@@ -334,12 +340,32 @@
     "legend": {
       "unassigned": "Sin asignar",
       "assigned": "Asignada",
-      "selected": "Seleccionada"
+      "selected": "Seleccionada",
+      "stopOrder": "Orden de paradas"
     },
     "errors": {
       "notConfigured": "Google Maps no está configurado para esta empresa.",
       "loadFailed": "No se pudo cargar Google Maps.",
       "loadOrdersFailed": "No se pudieron cargar las recogidas para el mapa."
+    }
+  },
+  "optimize": {
+    "success": "Ruta optimizada: {{count}} parada ordenada ({{distance}}).",
+    "success_plural": "Ruta optimizada: {{count}} paradas ordenadas ({{distance}}).",
+    "totalDistance": "Optimizada · {{distance}}",
+    "stopTitle": "Parada {{number}}: {{name}}",
+    "stopNumber": "Parada {{number}}",
+    "stopNumberShort": "Parada #",
+    "stopNumberInput": "Número de parada para {{name}}",
+    "manualOrder": "Orden manual",
+    "clearOrder": "Limpiar orden",
+    "errors": {
+      "notEnoughStops": "Seleccione al menos dos citas con dirección verificada para optimizar una ruta.",
+      "routeRequired": "Asigne las citas seleccionadas a una ruta antes de optimizar.",
+      "multipleRoutes": "Las citas seleccionadas pertenecen a rutas diferentes. Seleccione citas de una sola ruta para optimizar.",
+      "multipleBranches": "Las citas seleccionadas pertenecen a sucursales diferentes. Seleccione citas de una sola sucursal para optimizar.",
+      "branchAddressMissing": "La sucursal no tiene una dirección para iniciar y terminar la ruta. Agregue la dirección de la sucursal e intente nuevamente.",
+      "emptyResult": "El optimizador de rutas no devolvió un orden de paradas para las citas seleccionadas."
     }
   },
   "filters": {

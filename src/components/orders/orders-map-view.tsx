@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckSquare, ListChecks, Loader2, MapPin, Route as RouteIcon, RouteOff, Square, X } from "lucide-react";
+import {
+  CheckSquare,
+  Eraser,
+  ListChecks,
+  ListOrdered,
+  Loader2,
+  MapPin,
+  Route as RouteIcon,
+  RouteOff,
+  Sparkles,
+  Square,
+  X,
+} from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
@@ -27,6 +39,13 @@ import {
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatOrderRouteName } from "@/lib/orders/display";
 import { useOrders } from "@/lib/orders/hooks/use-orders";
+import { useOptimizeAppointmentRoute } from "@/lib/orders/hooks/use-optimize-appointment-route";
+import {
+  formatRouteDistance,
+  planAppointmentRouteOptimization,
+  resolveAppointmentRouteOptimizationErrorMessage,
+  type AppointmentRouteStopOrder,
+} from "@/lib/orders/utils/appointment-route-optimization";
 import {
   buildOrderListParams,
   getOrderRecordId,
@@ -35,8 +54,11 @@ import {
   type OrderListParams,
 } from "@/lib/orders/types";
 import { buildPickupMapStops, type PickupMapStop } from "@/lib/orders/utils/pickup-map";
+import { assignManualStopNumber } from "@/lib/route-optimizer/stop-numbers";
+import { buildPickupRouteColors, getPickupRouteColor } from "@/lib/orders/utils/pickup-map-colors";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { useTranslation } from "@/lib/i18n";
 import { useGoogleMapsApiKey } from "@/lib/company/hooks/use-current-company";
 import { cn } from "@/lib/utils";
@@ -72,7 +94,9 @@ type GoogleMapInstance = {
 type GoogleMarker = {
   addListener: (event: string, handler: () => void) => void;
   setIcon: (icon: unknown) => void;
+  setLabel: (label: unknown) => void;
   setMap: (map: GoogleMapInstance | null) => void;
+  setTitle: (title: string) => void;
   setZIndex: (zIndex: number) => void;
 };
 
@@ -93,6 +117,11 @@ export type OrdersMapViewProps = {
   sort: OrderListParams["sort"];
   /** Fixed set of orders mapped from the orders/pickups table selection. */
   baseSelectedIds: string[];
+  /** Optimized stop numbers carried over from the appointments table, if any. */
+  initialStopOrder?: AppointmentRouteStopOrder | null;
+  /** Set when opened for a daily route; stop ordering (manual or optimized) is offered only then. */
+  dailyRouteId?: string | null;
+  onStopOrderChange?: (stopOrder: AppointmentRouteStopOrder | null) => void;
   getRouteByKey: (routeId: string | undefined) => ActiveRoute | undefined;
   onUnassignRoute: (orders: Order[]) => Promise<void>;
   isUnassigning: boolean;
@@ -100,18 +129,38 @@ export type OrdersMapViewProps = {
 
 function buildMarkerIcon(
   maps: GoogleMapsCore,
-  options: { selected: boolean; hasRoute: boolean },
+  options: { selected: boolean; color: string; numbered?: boolean },
 ) {
-  const { selected, hasRoute } = options;
+  const { selected, color, numbered = false } = options;
 
   return {
     path: maps.SymbolPath.CIRCLE,
-    fillColor: hasRoute ? "#7c3aed" : "#2563eb",
+    fillColor: color,
     fillOpacity: 1,
     strokeColor: selected ? "#ea580c" : "#ffffff",
     strokeWeight: selected ? 4 : 2,
-    scale: selected ? 12 : 9,
+    // Numbered dots need room for two digits inside the circle.
+    scale: numbered ? (selected ? 13 : 11) : selected ? 12 : 9,
   };
+}
+
+function buildMarkerLabel(stopNumber: number | undefined) {
+  if (stopNumber === undefined) return null;
+
+  return {
+    text: String(stopNumber),
+    color: "#ffffff",
+    fontSize: stopNumber >= 100 ? "9px" : "11px",
+    fontWeight: "700",
+  };
+}
+
+function getStopNumber(
+  stop: PickupMapStop,
+  stopOrder: AppointmentRouteStopOrder | null,
+): number | undefined {
+  if (!stopOrder || stop.routeId?.trim() !== stopOrder.routeId) return undefined;
+  return stopOrder.stopNumbers[stop.orderRecordId];
 }
 
 function buildStopsBoundsLiteral(stops: PickupMapStop[]): LatLngBoundsLiteral | null {
@@ -137,13 +186,17 @@ export function OrdersMapView({
   filters,
   sort,
   baseSelectedIds,
+  initialStopOrder = null,
+  dailyRouteId = null,
+  onStopOrderChange,
   getRouteByKey,
   onUnassignRoute,
   isUnassigning,
 }: OrdersMapViewProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const googleMapsApiKey = useGoogleMapsApiKey();
-  const { notifyError } = useFeedback();
+  const { notifyError, notifySuccess } = useFeedback();
+  const optimizeRouteMutation = useOptimizeAppointmentRoute();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
   const mapsLibRef = useRef<GoogleMapsCore | null>(null);
@@ -155,6 +208,13 @@ export function OrdersMapView({
   const [unassignOpen, setUnassignOpen] = useState(false);
   /** Map-local selection, independent from the table selection that seeded the map. */
   const [mapSelectedIds, setMapSelectedIds] = useState<string[]>([]);
+  /** Not persisted by the API — lives only while this map is open. */
+  const [stopOrder, setStopOrder] = useState<AppointmentRouteStopOrder | null>(initialStopOrder);
+  const [stopOrderSource, setStopOrderSource] = useState(initialStopOrder);
+  if (stopOrderSource !== initialStopOrder) {
+    setStopOrderSource(initialStopOrder);
+    setStopOrder(initialStopOrder);
+  }
 
   const mapListParams = useMemo(
     () =>
@@ -190,6 +250,18 @@ export function OrdersMapView({
     [allStops, baseSelectedIds],
   );
 
+  const routeColors = useMemo(
+    () => buildPickupRouteColors(mappedStops.map((stop) => stop.routeId)),
+    [mappedStops],
+  );
+  const routeLegend = useMemo(
+    () => {
+      const names = new Map(mappedStops.map((stop) => [stop.routeId?.trim(), stop.routeName]));
+      return [...routeColors].map(([routeId, color]) => ({ routeId, color, routeName: names.get(routeId) }));
+    },
+    [mappedStops, routeColors],
+  );
+
   const baseIds = useMemo(() => mappedStops.map((stop) => stop.orderRecordId), [mappedStops]);
   const selectedStops = useMemo(
     () => mappedStops.filter((stop) => mapSelectedIds.includes(stop.orderRecordId)),
@@ -209,6 +281,31 @@ export function OrdersMapView({
     () => selectedStops.filter((stop) => Boolean(stop.routeId?.trim())),
     [selectedStops],
   );
+  /** Optimizing needs 2+ stops, every one assigned to the same route. */
+  const selectionOnSingleRoute = useMemo(() => {
+    if (selectedStops.length < 2) return false;
+    const routeId = selectedStops[0].routeId?.trim();
+    return Boolean(routeId) && selectedStops.every((stop) => stop.routeId?.trim() === routeId);
+  }, [selectedStops]);
+
+  /** Stop numbers apply only while the stop is still on the optimized route. */
+  const stopNumbers = useMemo(() => {
+    const lookup = new Map<string, number>();
+    for (const stop of mappedStops) {
+      const stopNumber = getStopNumber(stop, stopOrder);
+      if (stopNumber !== undefined) lookup.set(stop.orderRecordId, stopNumber);
+    }
+    return lookup;
+  }, [mappedStops, stopOrder]);
+
+  const listedStops = useMemo(() => {
+    if (stopNumbers.size === 0) return mappedStops;
+    return [...mappedStops].sort(
+      (left, right) =>
+        (stopNumbers.get(left.orderRecordId) ?? Number.POSITIVE_INFINITY) -
+        (stopNumbers.get(right.orderRecordId) ?? Number.POSITIVE_INFINITY),
+    );
+  }, [mappedStops, stopNumbers]);
 
   const allBaseSelected = baseIds.length > 0 && baseIds.every((id) => mapSelectedIds.includes(id));
   const othersAvailable = canSelectAllOthers(baseIds, mapSelectedIds);
@@ -268,6 +365,8 @@ export function OrdersMapView({
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: true,
+          zoomControl: true,
+          gestureHandling: "greedy",
           clickableIcons: false,
           styles: PLAIN_MAP_STYLES,
         });
@@ -312,7 +411,7 @@ export function OrdersMapView({
         title: stop.senderName,
         icon: buildMarkerIcon(maps, {
           selected: false,
-          hasRoute: Boolean(stop.routeId?.trim()),
+          color: getPickupRouteColor(routeColors, stop.routeId),
         }),
         zIndex: 1,
       });
@@ -335,24 +434,32 @@ export function OrdersMapView({
       map.setCenter(DEFAULT_MAP_CENTER);
       map.setZoom(DEFAULT_MAP_ZOOM);
     }
-  }, [active, mapReady, mappedStops]);
+  }, [active, mapReady, mappedStops, routeColors]);
 
-  // Repaint marker styling when the map selection (or plotted set) changes.
+  // Repaint marker styling when the map selection, plotted set, or stop order changes.
   useEffect(() => {
     const maps = mapsLibRef.current;
     if (!maps) return;
 
     for (const binding of markersRef.current) {
       const selected = mapSelectedIds.includes(binding.stop.orderRecordId);
+      const stopNumber = stopNumbers.get(binding.stop.orderRecordId);
       binding.marker.setIcon(
         buildMarkerIcon(maps, {
           selected,
-          hasRoute: Boolean(binding.stop.routeId?.trim()),
+          color: getPickupRouteColor(routeColors, binding.stop.routeId),
+          numbered: stopNumber !== undefined,
         }),
+      );
+      binding.marker.setLabel(buildMarkerLabel(stopNumber));
+      binding.marker.setTitle(
+        stopNumber !== undefined
+          ? t("orders.optimize.stopTitle", { number: stopNumber, name: binding.stop.senderName })
+          : binding.stop.senderName,
       );
       binding.marker.setZIndex(selected ? 2 : 1);
     }
-  }, [mapSelectedIds, mappedStops]);
+  }, [mapReady, mapSelectedIds, mappedStops, routeColors, stopNumbers, t]);
 
   function openAssignRouteDialog() {
     if (selectedStops.length === 0) return;
@@ -381,12 +488,72 @@ export function OrdersMapView({
     }
   }
 
-  const isMutating = isUnassigning;
+  function updateStopOrder(next: AppointmentRouteStopOrder | null) {
+    setStopOrder(next);
+    onStopOrderChange?.(next);
+  }
+
+  /** Manual entry: an empty value removes the stop's number; others shift to close gaps. */
+  function setManualStopNumber(stop: PickupMapStop, rawValue: string): boolean {
+    if (!dailyRouteId || stop.routeId?.trim() !== dailyRouteId) return false;
+
+    const trimmed = rawValue.trim();
+    const position = trimmed === "" ? null : Number(trimmed);
+    if (position !== null && (!Number.isInteger(position) || position < 1)) return false;
+    if (position === (stopNumbers.get(stop.orderRecordId) ?? null)) return true;
+
+    const next = assignManualStopNumber(
+      Object.fromEntries(stopNumbers),
+      stop.orderRecordId,
+      position,
+    );
+    updateStopOrder(
+      Object.keys(next).length > 0
+        ? { routeId: dailyRouteId, stopNumbers: next, totalDistanceMeters: null }
+        : null,
+    );
+    return true;
+  }
+
+  async function optimizeSelectedRoute() {
+    if (!routeOrderingEnabled) return;
+    const ordersToOptimize = selectedStops
+      .map((stop) => orderByRecordId.get(stop.orderRecordId))
+      .filter((order): order is Order => Boolean(order));
+
+    const { plan, issue } = planAppointmentRouteOptimization(ordersToOptimize);
+    if (!plan) {
+      notifyError(t(`orders.optimize.errors.${issue}`));
+      return;
+    }
+
+    try {
+      const result = await optimizeRouteMutation.mutateAsync(plan);
+      updateStopOrder(result);
+      notifyOptimizedRoute(result);
+    } catch (mutationError) {
+      notifyError(resolveAppointmentRouteOptimizationErrorMessage(mutationError, t));
+    }
+  }
+
+  function notifyOptimizedRoute(result: AppointmentRouteStopOrder) {
+    const count = Object.keys(result.stopNumbers).length;
+    const distance = formatRouteDistance(result.totalDistanceMeters ?? 0, locale);
+    notifySuccess(
+      count === 1
+        ? t("orders.optimize.success", { count, distance })
+        : t("orders.optimize.success_plural", { count, distance }),
+    );
+  }
+
+  const routeOrderingEnabled = Boolean(dailyRouteId);
+  const isOptimizing = optimizeRouteMutation.isPending;
+  const isMutating = isUnassigning || isOptimizing;
 
   return (
     <>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border shadow-md ring-1 ring-black/5 bg-card dark:ring-white/10">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 font-medium text-foreground shadow-sm">
               <MapPin className="h-3.5 w-3.5" />
@@ -403,6 +570,23 @@ export function OrdersMapView({
               ) : (
                 <span>{t("orders.map.clickToSelect")}</span>
               )
+            ) : null}
+            {stopNumbers.size > 0 && stopOrder ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1 font-medium text-violet-700 dark:text-violet-300">
+                {stopOrder.totalDistanceMeters !== null ? (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {t("orders.optimize.totalDistance", {
+                      distance: formatRouteDistance(stopOrder.totalDistanceMeters, locale),
+                    })}
+                  </>
+                ) : (
+                  <>
+                    <ListOrdered className="h-3.5 w-3.5" />
+                    {t("orders.optimize.manualOrder")}
+                  </>
+                )}
+              </span>
             ) : null}
           </div>
 
@@ -447,6 +631,33 @@ export function OrdersMapView({
                 <RouteIcon className="h-4 w-4" />
                 {t("orders.actions.assignRoute")}
               </Button>
+              {routeOrderingEnabled ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!selectionOnSingleRoute || isMutating}
+                  onClick={() => void optimizeSelectedRoute()}
+                  className={tableSelectionActionStyles.optimize}
+                >
+                  {isOptimizing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {isOptimizing ? t("orders.actions.optimizingRoute") : t("orders.actions.optimizeRoute")}
+                </Button>
+              ) : null}
+              {routeOrderingEnabled && stopNumbers.size > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isMutating}
+                  onClick={() => updateStopOrder(null)}
+                >
+                  <Eraser className="h-4 w-4" />
+                  {t("orders.optimize.clearOrder")}
+                </Button>
+              ) : null}
               <Button
                 variant="outline"
                 size="sm"
@@ -462,7 +673,7 @@ export function OrdersMapView({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <div className="relative min-h-[min(72vh,48rem)] flex-1">
+          <div className="relative min-h-0 min-w-0 flex-1">
             <div ref={mapContainerRef} className="absolute inset-0 bg-muted" aria-label={t("orders.map.title")} />
             <div className="pointer-events-none absolute inset-0 z-[5] rounded-sm shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]" />
 
@@ -493,27 +704,37 @@ export function OrdersMapView({
               </div>
             ) : null}
 
-            <div className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg border border-border bg-background px-3 py-2 text-xs shadow-md ring-1 ring-black/5 dark:ring-white/10">
+            <div className="absolute bottom-4 left-4 z-10 max-h-32 max-w-[calc(100%-2rem)] overflow-y-auto rounded-lg border border-border bg-background px-3 py-2 text-xs shadow-md ring-1 ring-black/5 dark:ring-white/10">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5">
                   <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-1 ring-blue-900/40")} />
                   {t("orders.map.legend.unassigned")}
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-violet-600 ring-1 ring-violet-900/40")} />
-                  {t("orders.map.legend.assigned")}
-                </span>
+                {routeLegend.map(({ routeId, routeName, color }) => (
+                  <span key={routeId} className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                    {formatOrderRouteName({ routeId, routeName }, getRouteByKey(routeId), t)}
+                  </span>
+                ))}
                 <span className="inline-flex items-center gap-1.5">
                   <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-orange-500")} />
                   {t("orders.map.legend.selected")}
                 </span>
+                {stopNumbers.size > 0 ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[9px] font-bold leading-none text-white">
+                      1
+                    </span>
+                    {t("orders.map.legend.stopOrder")}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
 
           {mappedStops.length > 0 ? (
-            <aside className="flex w-full shrink-0 flex-col border-t border-border bg-muted/25 lg:w-80 lg:border-l lg:border-t-0 lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.12)] dark:lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.45)]">
-              <div className="border-b border-border bg-muted/50 px-4 py-3">
+            <aside className="flex min-h-0 w-full basis-2/5 flex-col overflow-hidden border-t border-border bg-muted/25 lg:w-80 lg:shrink-0 lg:basis-auto lg:border-l lg:border-t-0 lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.12)] dark:lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.45)]">
+              <div className="shrink-0 border-b border-border bg-muted/50 px-4 py-3">
                 <h3 className="text-sm font-semibold text-foreground">{t("orders.map.mappedStopsTitle")}</h3>
                 <p className="text-xs text-foreground/70">
                   {t("common.table.selected", {
@@ -522,18 +743,22 @@ export function OrdersMapView({
                   })}
                 </p>
               </div>
-              <ul className="max-h-[min(40vh,24rem)] flex-1 space-y-2 overflow-y-auto p-3 lg:max-h-none">
-                {mappedStops.map((stop) => {
+              <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3" tabIndex={0} aria-label={t("orders.map.mappedStopsTitle")}>
+                {listedStops.map((stop) => {
                   const selected = mapSelectedIds.includes(stop.orderRecordId);
                   const assigned = Boolean(stop.routeId?.trim());
+                  const stopNumber = stopNumbers.get(stop.orderRecordId);
+                  const routeColor = getPickupRouteColor(routeColors, stop.routeId);
+                  const numberable =
+                    routeOrderingEnabled && stop.routeId?.trim() === dailyRouteId;
                   return (
-                    <li key={stop.orderRecordId}>
+                    <li key={stop.orderRecordId} className="flex items-stretch gap-2">
                       <button
                         type="button"
                         onClick={() => toggleMapSelection(stop.orderRecordId)}
                         aria-pressed={selected}
                         className={cn(
-                          "flex w-full items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left shadow-sm ring-1 transition",
+                          "flex min-w-0 flex-1 items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left shadow-sm ring-1 transition",
                           selected
                             ? "border-orange-500/60 bg-orange-500/[0.06] ring-orange-500/25"
                             : "border-border bg-background ring-black/5 hover:bg-muted/50 dark:ring-white/10",
@@ -552,13 +777,21 @@ export function OrdersMapView({
                             {stop.addressLine}
                           </span>
                           <span className="mt-1 inline-flex items-center gap-1.5">
-                            <span
-                              className={cn(
-                                "h-2 w-2 shrink-0 rounded-full",
-                                assigned ? "bg-violet-600" : "bg-blue-600",
-                              )}
-                              aria-hidden
-                            />
+                            {stopNumber !== undefined ? (
+                              <span
+                                className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none text-white"
+                                style={{ backgroundColor: routeColor }}
+                                aria-label={t("orders.optimize.stopNumber", { number: stopNumber })}
+                              >
+                                {stopNumber}
+                              </span>
+                            ) : (
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full"
+                                style={{ backgroundColor: routeColor }}
+                                aria-hidden
+                              />
+                            )}
                             <span className="text-xs text-foreground/70">
                               {assigned
                                 ? formatOrderRouteName(
@@ -571,6 +804,36 @@ export function OrdersMapView({
                           </span>
                         </span>
                       </button>
+                      {numberable ? (
+                        <label className="flex w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-border bg-background px-1.5 py-1.5 shadow-sm">
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-foreground/60">
+                            {t("orders.optimize.stopNumberShort")}
+                          </span>
+                          <input
+                            // Remount when the number changes elsewhere so the field never shows a stale draft.
+                            key={`${stop.orderRecordId}:${stopNumber ?? ""}`}
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={mappedStops.length}
+                            defaultValue={stopNumber ?? ""}
+                            disabled={isMutating}
+                            aria-label={t("orders.optimize.stopNumberInput", { name: stop.senderName })}
+                            className="h-7 w-full rounded-md border border-input bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            onBlur={(event) => {
+                              if (!setManualStopNumber(stop, event.currentTarget.value)) {
+                                event.currentTarget.value = stopNumber?.toString() ?? "";
+                              }
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                event.currentTarget.blur();
+                              }
+                            }}
+                          />
+                        </label>
+                      ) : null}
                     </li>
                   );
                 })}

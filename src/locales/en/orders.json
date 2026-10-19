@@ -31,6 +31,10 @@
     "unassignRoute": "Unassign route",
     "clearRoute": "Clear route",
     "clearingRoute": "Clearing…",
+    "optimizeRoute": "Optimize route",
+    "optimizingRoute": "Optimizing…",
+    "viewRoute": "View route",
+    "viewRouteMultiple": "The selected appointments belong to different routes. Select appointments from one route to view it.",
     "noAssignedRoute": "None of the selected appointments are assigned to a route.",
     "map": "Map",
     "manageCompletion": "Manage completion",
@@ -318,8 +322,10 @@
     "legacySyncPermissionMissing": "Missing permission: Access legacy pickups. Ask an administrator to grant the required permission, then try again."
   },
   "map": {
-    "title": "Pickup map",
-    "description": "Only multi-selected verified pickup stops are plotted on the map. Select pickups in the appointments list or use Select all.",
+    "title": "Appointments map view",
+    "description": "Visualize the selected appointments on a map to make route assignment easier.",
+    "dailyRouteTitle": "Daily route map view",
+    "dailyRouteDescription": "Visualize the route's appointments on a map to make route optimization easier.",
     "loading": "Loading verified pickup stops…",
     "empty": "No verified pickup stops match the current filters.",
     "stopsShown": "{{count}} on map",
@@ -334,12 +340,32 @@
     "legend": {
       "unassigned": "Unassigned",
       "assigned": "Assigned",
-      "selected": "Selected"
+      "selected": "Selected",
+      "stopOrder": "Stop order"
     },
     "errors": {
       "notConfigured": "Google Maps is not configured for this company.",
       "loadFailed": "Failed to load Google Maps.",
       "loadOrdersFailed": "Failed to load pickups for the map."
+    }
+  },
+  "optimize": {
+    "success": "Route optimized: {{count}} stop in order ({{distance}}).",
+    "success_plural": "Route optimized: {{count}} stops in order ({{distance}}).",
+    "totalDistance": "Optimized · {{distance}}",
+    "stopTitle": "Stop {{number}}: {{name}}",
+    "stopNumber": "Stop {{number}}",
+    "stopNumberShort": "Stop #",
+    "stopNumberInput": "Stop number for {{name}}",
+    "manualOrder": "Manual order",
+    "clearOrder": "Clear order",
+    "errors": {
+      "notEnoughStops": "Select at least two appointments with a verified address to optimize a route.",
+      "routeRequired": "Assign the selected appointments to a route before optimizing.",
+      "multipleRoutes": "The selected appointments belong to different routes. Select appointments from one route to optimize.",
+      "multipleBranches": "The selected appointments belong to different branches. Select appointments from one branch to optimize.",
+      "branchAddressMissing": "The branch has no address to start and end the route. Add a branch address, then try again.",
+      "emptyResult": "The route optimizer did not return a stop order for the selected appointments."
     }
   },
   "filters": {

@@ -102,6 +102,8 @@
       "preparing": "Preparing…",
       "optimize": "Optimize route",
       "viewRoute": "View route",
+      "loadingMap": "Loading map…",
+      "noMappableStops": "None of the appointments on this route have a verified address with map coordinates, so there is nothing to map.",
       "clearRoute": "Clear route",
       "clearing": "Clearing…"
     },

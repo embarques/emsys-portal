@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Printer, RouteOff, Sparkles } from "lucide-react";
+import { Eye, Loader2, Printer, RouteOff, Sparkles } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
@@ -21,7 +21,9 @@ import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { fetchAllPickupsByRoutes } from "@/lib/orders/api/orders-api";
 import { buildPickupRouteFilterRows } from "@/lib/orders/pickup-route-filter";
 import { writeOrdersListContext } from "@/lib/orders/store/orders-list-context";
-import { getOrderRecordId } from "@/lib/orders/types";
+import { writeOrdersMapContext } from "@/lib/orders/store/orders-map-context";
+import { DEFAULT_ORDER_LIST_SORT, getOrderRecordId } from "@/lib/orders/types";
+import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
 import { resolveActiveRouteReportIds } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
@@ -46,8 +48,10 @@ export function PickupRoutesSelectionActions({
   const generatePickupReportMutation = useGeneratePickupReport();
   const clearPickupRouteMutation = useClearPickupRoute();
   const [clearRouteOpen, setClearRouteOpen] = useState(false);
+  const [isOpeningMap, setIsOpeningMap] = useState(false);
   const isPrinting = generatePickupReportMutation.isPending;
   const isClearing = clearPickupRouteMutation.isPending;
+  const isBusy = isPrinting || isClearing || isOpeningMap;
   const singleSelectedRouteId =
     selectedIds.length === 1 ? resolveActiveRouteReportIds(activeRoutes, selectedIds)[0] : "";
 
@@ -111,14 +115,6 @@ export function PickupRoutesSelectionActions({
     }
   }
 
-  function optimizeSelectedPickupRoutes() {
-    notifySuccess(
-      t("routes.pickupRoutes.toasts.comingSoon", {
-        label: t("routes.pickupRoutes.actions.optimize"),
-      }),
-    );
-  }
-
   function viewSelectedPickupRoute() {
     if (!singleSelectedRouteId) return;
 
@@ -130,6 +126,37 @@ export function PickupRoutesSelectionActions({
       openFilters: true,
     });
     openTab("/appointments", t("navigation.items.orders"));
+  }
+
+  /** Optimization happens on the map, scoped to this daily route. */
+  async function optimizeSelectedPickupRoute() {
+    if (!singleSelectedRouteId || isOpeningMap) return;
+
+    setIsOpeningMap(true);
+    try {
+      const pickups = await fetchAllPickupsByRoutes([singleSelectedRouteId]);
+      if (pickups.length === 0) {
+        notifyError(t("routes.pickupRoutes.actions.noPickupsOnRoute"));
+        return;
+      }
+      if (!pickups.some(isOrderMappable)) {
+        notifyError(t("routes.pickupRoutes.actions.noMappableStops"));
+        return;
+      }
+
+      writeOrdersMapContext({
+        filters: { query: "", rows: buildPickupRouteFilterRows(singleSelectedRouteId) },
+        sort: DEFAULT_ORDER_LIST_SORT,
+        selectedIds: pickups.map((order) => getOrderRecordId(order)),
+        stopOrder: null,
+        dailyRouteId: singleSelectedRouteId,
+      });
+      openTab("/appointments/map", t("orders.map.dailyRouteTitle"));
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    } finally {
+      setIsOpeningMap(false);
+    }
   }
 
   async function confirmClearRoute() {
@@ -173,11 +200,17 @@ export function PickupRoutesSelectionActions({
         variant="outline"
         size="sm"
         className={cn("whitespace-nowrap", tableSelectionActionStyles.optimize)}
-        onClick={optimizeSelectedPickupRoutes}
-        disabled={isPrinting || isClearing}
+        onClick={() => void optimizeSelectedPickupRoute()}
+        disabled={!singleSelectedRouteId || isBusy}
       >
-        <Sparkles className="h-4 w-4" />
-        {t("routes.pickupRoutes.actions.optimize")}
+        {isOpeningMap ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Sparkles className="h-4 w-4" />
+        )}
+        {isOpeningMap
+          ? t("routes.pickupRoutes.actions.loadingMap")
+          : t("routes.pickupRoutes.actions.optimize")}
       </Button>
       {singleSelectedRouteId ? (
         <Button

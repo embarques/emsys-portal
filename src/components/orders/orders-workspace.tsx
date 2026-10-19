@@ -8,6 +8,7 @@ import {
   Clock,
   DollarSign,
   Edit,
+  Eye,
   FileText,
   Filter,
   Map as MapIcon,
@@ -119,6 +120,7 @@ import {
   areOrderFormValuesEquivalent,
 } from "@/lib/orders/types";
 import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
+import { buildPickupRouteFilterRows } from "@/lib/orders/pickup-route-filter";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { useLegacyLastSynced } from "@/lib/legacy-sync/use-legacy-last-synced";
@@ -747,6 +749,22 @@ export function OrdersWorkspace() {
     openTab("/appointments/map", t("orders.map.title"));
   }
 
+  function viewSelectedRoute() {
+    const routeIds = new Set(selectedOrdersWithRoute.map((order) => order.routeId!.trim()));
+    if (routeIds.size === 0) {
+      notifyError(t("orders.actions.noAssignedRoute"));
+      return;
+    }
+    if (routeIds.size > 1) {
+      notifyError(t("orders.actions.viewRouteMultiple"));
+      return;
+    }
+
+    setFilters({ query: "", rows: buildPickupRouteFilterRows([...routeIds][0]) });
+    setPage(1);
+    setFiltersOpen(true);
+  }
+
   function openClearRoute() {
     if (selectedOrdersWithRoute.length === 0) {
       notifyError(t("orders.actions.noAssignedRoute"));
@@ -1319,6 +1337,17 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
+                disabled={selectedOrdersWithRoute.length === 0}
+                onClick={viewSelectedRoute}
+              >
+                <Eye className="size-4" />
+                {t("orders.actions.viewRoute")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
                 disabled={isSaving || selectedOrdersWithRoute.length === 0}
                 onClick={openClearRoute}
@@ -1592,6 +1621,16 @@ export function OrdersWorkspace() {
                 >
                   <RouteIcon className="h-4 w-4" />
                   {t("orders.actions.assignRoute")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={selectedOrdersWithRoute.length === 0}
+                  onClick={viewSelectedRoute}
+                  className={tableSelectionActionStyles.view}
+                >
+                  <Eye className="h-4 w-4" />
+                  {t("orders.actions.viewRoute")}
                 </Button>
                 <Button
                   variant="outline"
