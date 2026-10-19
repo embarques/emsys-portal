@@ -1755,7 +1755,7 @@ export function OrdersWorkspace() {
       <AssignAppointmentRouteDialog
         open={assignRouteOpen}
         onOpenChange={setAssignRouteOpen}
-        pickupIds={selectedOrders.map((order) => order.id)}
+        appointments={selectedOrders}
       />
 
       <Dialog

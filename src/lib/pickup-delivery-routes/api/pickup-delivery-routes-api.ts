@@ -406,6 +406,7 @@ function normalizePaginatedVehicleRoutes(
 function buildVehicleRouteSearchBody(params: ActiveRouteListParams) {
   const tableFilterFields = getActiveRouteTableFilterFields(params.routeType);
   const branchCode = params.branchCode?.trim();
+  const date = params.date?.trim().slice(0, 10);
   const filterGroups: ApiSearchFilterGroup[] = [
     ...(params.routeType ? [routeTypeFilterGroup(params.routeType)] : []),
     ...(branchCode
@@ -416,6 +417,7 @@ function buildVehicleRouteSearchBody(params: ActiveRouteListParams) {
           },
         ]
       : []),
+    ...(date ? [{ operator: "and" as const, filters: buildDayRangeFilters(date) }] : []),
     ...buildResourceSearchFilterGroups({
       search: params.search,
       barOrSearchFields: VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS,

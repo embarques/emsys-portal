@@ -195,6 +195,16 @@ export function OrdersMapView({
     () => mappedStops.filter((stop) => mapSelectedIds.includes(stop.orderRecordId)),
     [mappedStops, mapSelectedIds],
   );
+  const selectedAssignRouteAppointments = useMemo(
+    () =>
+      selectedStops.map((stop) => ({
+        id: stop.orderId,
+        date: stop.date,
+        completed: stop.completed,
+        branch: stop.branch,
+      })),
+    [selectedStops],
+  );
   const selectedAssignedStops = useMemo(
     () => selectedStops.filter((stop) => Boolean(stop.routeId?.trim())),
     [selectedStops],
@@ -573,7 +583,7 @@ export function OrdersMapView({
       <AssignAppointmentRouteDialog
         open={assignRouteOpen}
         onOpenChange={setAssignRouteOpen}
-        pickupIds={selectedStops.map((stop) => stop.orderId)}
+        appointments={selectedAssignRouteAppointments}
       />
 
       <Dialog

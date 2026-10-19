@@ -21,16 +21,40 @@ import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatOrderRouteName } from "@/lib/orders/display";
 import { useAssignPickupsToRoute } from "@/lib/orders/hooks/use-orders";
-import { DAILY_ROUTES_DIRECTORY_VARIANT, PICKUP_BRANCH_CODE } from "@/lib/pickup-delivery-routes/directory-variant";
+import type { Order } from "@/lib/orders/types";
+import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { formatRouteDate } from "@/lib/route-manager/display";
 import { todayDateInputValue } from "@/lib/route-manager/types";
+
+export type AssignableAppointment = Pick<Order, "id" | "date" | "completed" | "branch">;
 
 type AssignAppointmentRouteDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pickupIds: number[];
+  appointments: AssignableAppointment[];
 };
+
+function uniqueValues(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+/** The API only accepts active pickup daily routes on the appointment's date and branch. */
+function isRouteAssignableTo(
+  route: ActiveRoute,
+  date: string,
+  branch: AssignableAppointment["branch"],
+): boolean {
+  if (!route.active || route.routeType !== "pickup") return false;
+  if (route.date.slice(0, 10) !== date) return false;
+
+  const routeCode = route.branch?.code?.trim().toUpperCase() ?? "";
+  const appointmentCode = branch.code.trim().toUpperCase();
+  if (routeCode && appointmentCode) return routeCode === appointmentCode;
+  return route.branch?.id === branch.id;
+}
 
 export function sharedAppointmentDate(dates: Array<string | undefined | null>): string {
   const unique = [
@@ -46,7 +70,7 @@ export function sharedAppointmentDate(dates: Array<string | undefined | null>): 
 export function AssignAppointmentRouteDialog({
   open,
   onOpenChange,
-  pickupIds,
+  appointments,
 }: AssignAppointmentRouteDialogProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -54,13 +78,52 @@ export function AssignAppointmentRouteDialog({
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
+  const incompleteAppointments = useMemo(
+    () => appointments.filter((appointment) => appointment.id > 0 && !appointment.completed),
+    [appointments],
+  );
+  const pickupIds = useMemo(
+    () => incompleteAppointments.map((appointment) => appointment.id),
+    [incompleteAppointments],
+  );
+  const skippedCompletedCount = appointments.length - incompleteAppointments.length;
+  const routeDate = todayDateInputValue();
+  const hasFutureAppointment = incompleteAppointments.some(
+    (appointment) => appointment.date.trim().slice(0, 10) > routeDate,
+  );
+  const appointmentBranchCodes = uniqueValues(
+    incompleteAppointments.map((appointment) => appointment.branch.code.trim().toUpperCase()),
+  );
+  const routeBranch =
+    appointmentBranchCodes.length === 1 ? incompleteAppointments[0]?.branch ?? null : null;
+  const routeBranchCode = appointmentBranchCodes[0] ?? "";
+
+  const scopeError =
+    incompleteAppointments.length === 0
+      ? t("orders.dialogs.assignRouteAllCompleted")
+      : hasFutureAppointment
+        ? t("orders.dialogs.assignRouteFutureAppointment")
+        : !routeBranch
+          ? t("orders.dialogs.assignRouteMixedBranch")
+          : null;
+
   const dailyRoutesQuery = useDailyRoutePicker(200, {
-    enabled: open,
-    branchCode: PICKUP_BRANCH_CODE,
+    enabled: open && !scopeError,
+    routeType: "pickup",
+    branchCode: routeBranchCode,
+    date: routeDate,
   });
   const assignPickupsMutation = useAssignPickupsToRoute();
 
-  const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
+  const dailyRoutes = useMemo(
+    () =>
+      routeBranch
+        ? (dailyRoutesQuery.data?.items ?? []).filter((route) =>
+            isRouteAssignableTo(route, routeDate, routeBranch),
+          )
+        : [],
+    [dailyRoutesQuery.data, routeDate, routeBranch],
+  );
   const routeOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(dailyRoutes, t),
     [dailyRoutes, t],
@@ -75,7 +138,7 @@ export function AssignAppointmentRouteDialog({
   }, [open]);
 
   const isSaving = assignPickupsMutation.isPending;
-  const canSubmit = pickupIds.length > 0 && Boolean(routeId) && !isSaving;
+  const canSubmit = !scopeError && pickupIds.length > 0 && Boolean(routeId) && !isSaving;
 
   function handleOpenChange(nextOpen: boolean) {
     if (isSaving) return;
@@ -119,9 +182,22 @@ export function AssignAppointmentRouteDialog({
   }
 
   const description =
-    pickupIds.length === 1
-      ? t("orders.dialogs.assignRouteDescription", { count: pickupIds.length })
-      : t("orders.dialogs.assignRouteDescription_plural", { count: pickupIds.length });
+    appointments.length === 1
+      ? t("orders.dialogs.assignRouteDescription", { count: appointments.length })
+      : t("orders.dialogs.assignRouteDescription_plural", { count: appointments.length });
+  const scopeHint =
+    !scopeError && routeDate
+      ? t("orders.dialogs.assignRouteScope", {
+          date: formatRouteDate(routeDate),
+          branch: routeBranchCode,
+        })
+      : null;
+  const skippedCompletedNotice =
+    !scopeError && skippedCompletedCount > 0
+      ? skippedCompletedCount === 1
+        ? t("orders.dialogs.assignRouteSkippedCompleted", { count: skippedCompletedCount })
+        : t("orders.dialogs.assignRouteSkippedCompleted_plural", { count: skippedCompletedCount })
+      : null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -158,14 +234,20 @@ export function AssignAppointmentRouteDialog({
               emptyMessage={
                 dailyRoutesQuery.isLoading
                   ? t("orders.dialogs.loadingRoutes")
-                  : t("orders.dialogs.noRoutesFound")
+                  : t("orders.dialogs.noAssignableRoutesFound")
               }
               options={routeOptions}
+              disabled={Boolean(scopeError) || isSaving}
               contentClassName="z-[80]"
               mobileSheet
             />
+            {scopeHint ? <p className="text-xs text-muted-foreground">{scopeHint}</p> : null}
           </div>
 
+          {skippedCompletedNotice ? (
+            <p className="text-sm text-muted-foreground">{skippedCompletedNotice}</p>
+          ) : null}
+          {scopeError ? <p className="text-sm text-destructive">{scopeError}</p> : null}
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </div>
 

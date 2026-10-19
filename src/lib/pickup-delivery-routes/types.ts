@@ -130,6 +130,8 @@ export type ActiveRouteListParams = {
   routeType?: RouteType;
   /** When set, scopes the list to `branch.code`. Empty/omitted lists every branch. */
   branchCode?: string;
+  /** When set (`YYYY-MM-DD`), scopes the list to routes scheduled on that calendar day. */
+  date?: string;
 };
 
 export type ActiveRouteSearchFilter = ApiListTextSearch;
