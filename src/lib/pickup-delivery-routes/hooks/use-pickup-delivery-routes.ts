@@ -47,13 +47,16 @@ export function useActiveRoutePicker(
 
 export function useDailyRoutePicker(
   limit = 200,
-  options: { enabled?: boolean; branchCode?: string } = {},
+  options: { enabled?: boolean; branchCode?: string; routeType?: RouteType; date?: string } = {},
 ) {
   const branchCode = options.branchCode?.trim() || undefined;
+  const date = options.date?.trim().slice(0, 10) || undefined;
   const listParams = {
     ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
     limit,
     ...(branchCode ? { branchCode } : {}),
+    ...(options.routeType ? { routeType: options.routeType } : {}),
+    ...(date ? { date } : {}),
   };
 
   return useWorkspaceQuery({

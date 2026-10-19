@@ -17,6 +17,8 @@ export type PickupMapStop = {
   routeId?: string;
   routeName?: string;
   completed: boolean;
+  date: Order["date"];
+  branch: Order["branch"];
 };
 
 export type PickupMapBuildResult = {
@@ -58,6 +60,8 @@ export function getOrderPickupMapStop(order: Order, orderRecordId: string): Pick
     routeId: order.routeId,
     routeName: order.routeName,
     completed: order.completed,
+    date: order.date,
+    branch: order.branch,
   };
 }
 
