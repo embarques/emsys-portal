@@ -12,6 +12,7 @@ import {
   RouteOff,
   Sparkles,
   Square,
+  Truck,
   X,
 } from "lucide-react";
 
@@ -61,6 +62,7 @@ import {
 import { buildPickupMapStops, type PickupMapStop } from "@/lib/orders/utils/pickup-map";
 import { assignManualStopNumber } from "@/lib/route-optimizer/stop-numbers";
 import { buildPickupRouteColors, getPickupRouteColor } from "@/lib/orders/utils/pickup-map-colors";
+import { buildPickupTruckMarkerUrl } from "@/lib/orders/utils/pickup-map-marker";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
@@ -108,7 +110,8 @@ type GoogleMarker = {
 type GoogleMapsCore = {
   Map: new (element: HTMLElement, options: Record<string, unknown>) => GoogleMapInstance;
   Marker: new (options: Record<string, unknown>) => GoogleMarker;
-  SymbolPath: { CIRCLE: number };
+  Point: new (x: number, y: number) => { x: number; y: number };
+  Size: new (width: number, height: number) => { width: number; height: number };
 };
 
 type MarkerBinding = {
@@ -134,18 +137,16 @@ export type OrdersMapViewProps = {
 
 function buildMarkerIcon(
   maps: GoogleMapsCore,
-  options: { selected: boolean; color: string; numbered?: boolean },
+  options: { selected: boolean; color: string },
 ) {
-  const { selected, color, numbered = false } = options;
+  const { selected, color } = options;
 
   return {
-    path: maps.SymbolPath.CIRCLE,
-    fillColor: color,
-    fillOpacity: 1,
-    strokeColor: selected ? "#ea580c" : "#ffffff",
-    strokeWeight: selected ? 4 : 2,
-    // Numbered dots need room for two digits inside the circle.
-    scale: numbered ? (selected ? 13 : 11) : selected ? 12 : 9,
+    url: buildPickupTruckMarkerUrl(color, selected),
+    scaledSize: new maps.Size(48, 48),
+    anchor: new maps.Point(24, 24),
+    // Keep stop numbers inside the cargo area, clear of the cab and wheels.
+    labelOrigin: new maps.Point(17, 22),
   };
 }
 
@@ -154,7 +155,7 @@ function buildMarkerLabel(stopNumber: number | undefined) {
 
   return {
     text: String(stopNumber),
-    color: "#ffffff",
+    color: "#111827",
     fontSize: stopNumber >= 100 ? "9px" : "11px",
     fontWeight: "700",
   };
@@ -469,7 +470,6 @@ export function OrdersMapView({
         buildMarkerIcon(maps, {
           selected,
           color: getPickupRouteColor(routeColors, binding.stop.routeId),
-          numbered: stopNumber !== undefined,
         }),
       );
       binding.marker.setLabel(buildMarkerLabel(stopNumber));
@@ -733,17 +733,17 @@ export function OrdersMapView({
             <div className="absolute bottom-4 left-4 z-10 max-h-32 max-w-[calc(100%-2rem)] overflow-y-auto rounded-lg border border-border bg-background px-3 py-2 text-xs shadow-md ring-1 ring-black/5 dark:ring-white/10">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-1 ring-blue-900/40")} />
+                  <Truck className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
                   {t("orders.map.legend.unassigned")}
                 </span>
                 {routeLegend.map(({ routeId, routeName, color }) => (
                   <span key={routeId} className="inline-flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                    <Truck className="h-4 w-4 shrink-0" style={{ color }} aria-hidden="true" />
                     {formatOrderRouteName({ routeId, routeName }, getRouteByKey(routeId), t)}
                   </span>
                 ))}
                 <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-orange-500")} />
+                  <Truck className="h-4 w-4 shrink-0 text-blue-600 [filter:drop-shadow(1px_0_0_#ea580c)_drop-shadow(-1px_0_0_#ea580c)_drop-shadow(0_1px_0_#ea580c)_drop-shadow(0_-1px_0_#ea580c)]" aria-hidden="true" />
                   {t("orders.map.legend.selected")}
                 </span>
                 {stopNumbers.size > 0 ? (
