@@ -1,7 +1,5 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -375,7 +373,6 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   return (
     <div className="space-y-4">
       <form id={formId} className="space-y-4" onKeyDown={navigateOnEnter} onSubmit={handleSubmit(submit, handleInvalid)}>
-        <FormKeyboardHint />
         <RegisterInvoiceTransactionFields
           employees={employees}
           dailyRoutes={dailyRoutes}

@@ -1,7 +1,5 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -65,7 +63,6 @@ export function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-5">
-          <FormKeyboardHint />
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-slate-200">
               Email

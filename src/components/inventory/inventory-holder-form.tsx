@@ -3,7 +3,7 @@
 import { Warehouse } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { FormBody, FormFooter, FormSection, FormWorkflowHints } from "@/components/forms/form-shell";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -127,8 +127,7 @@ export function InventoryHolderForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-        <FormWorkflowHints requiredHint={t("inventory.form.workflow.requiredHint")} keyboardHint={t("inventory.form.workflow.keyboardHint")} />
+      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <FormSection
           icon={Warehouse}
           title={`01 · ${t("inventory.form.sections.holder")}`}

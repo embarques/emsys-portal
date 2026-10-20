@@ -26,7 +26,7 @@
     "moreOne": "+1 dirección más",
     "moreMany": "+{{count}} direcciones más",
     "searchPlaceholder": "Buscar clientes",
-    "minimumSearch": "Escribe al menos 3 caracteres para buscar.",
+    "minimumSearch": "Busca por nombre o teléfono (mínimo 3 caracteres).",
     "emptyResults": "No se encontraron clientes.",
     "loading": "Buscando clientes…",
     "viewAll": "Ver direcciones",
@@ -115,8 +115,6 @@
     "noChanges": "No hay cambios de cliente para guardar.",
     "notFound": "No se encontró este cliente.",
     "workflow": {
-      "requiredHint": "* Campos obligatorios",
-      "keyboardHint": "Tab recorre los controles · Enter avanza entre campos",
       "contactTitle": "Cliente y contacto",
       "contactHint": "Confirma el nombre del cliente y su teléfono de contacto.",
       "addressHint": "Agrega lugares de recogida o entrega y usa la estrella para elegir la dirección principal.",

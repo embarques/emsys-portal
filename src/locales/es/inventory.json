@@ -334,8 +334,6 @@
     "removeEmail": "Quitar correo",
     "readOnlyStockHint": "El inventario proviene de los movimientos contabilizados de todos los custodios.",
     "workflow": {
-      "requiredHint": "* Campos obligatorios",
-      "keyboardHint": "Tab recorre los controles · Enter avanza entre campos",
       "optional": "Opcional",
       "itemHint": "Nombra el suministro o material interno para encontrarlo en las entradas y salidas.",
       "reorderHint": "Define el nivel de existencias a partir del cual se debe reponer este artículo.",

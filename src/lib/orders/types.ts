@@ -55,6 +55,7 @@ export type Order = ApiTableRecord & {
   employee: Employee | null;
   sender: Customer;
   receiver: Customer | null;
+  receivers?: Customer[];
   purpose: string;
   comments: PickupComment[];
   sector: PickupSector | null;
@@ -169,6 +170,16 @@ export function isOrderCommentComplete(comment: OrderCommentFormValues): boolean
   return true;
 }
 
+export type OrderReceiverFormValue = {
+  key: string;
+  customer: Customer | null;
+  addressIndex: number;
+};
+
+export function getOrderReceivers(order: Pick<Order, "receiver" | "receivers">): Customer[] {
+  return order.receivers ?? (order.receiver ? [order.receiver] : []);
+}
+
 export type OrderFormValues = {
   id: number;
   date: string;
@@ -176,12 +187,10 @@ export type OrderFormValues = {
   purpose: string;
   branchId: number;
   senderId: string;
-  receiverId: string;
   sender: Customer | null;
-  receiver: Customer | null;
+  receivers: OrderReceiverFormValue[];
   /** Index into the selected party's addresses with content. */
   senderAddressIndex: number;
-  receiverAddressIndex: number;
   employeeId: number | "";
   sectorId: number | "";
   comments: OrderCommentFormValues[];
@@ -603,11 +612,9 @@ export function createEmptyOrderForm(): OrderFormValues {
     purpose: "",
     branchId: 1,
     senderId: "",
-    receiverId: "",
     sender: null,
-    receiver: null,
+    receivers: [],
     senderAddressIndex: 0,
-    receiverAddressIndex: 0,
     employeeId: "",
     sectorId: "",
     comments: [],
@@ -665,13 +672,13 @@ export function orderToFormValues(order: Order): OrderFormValues {
     purpose: order.purpose,
     branchId: order.branch.id,
     senderId: order.sender.id,
-    receiverId: order.receiver?.id ?? "",
     sender: order.sender,
-    receiver: order.receiver,
+    receivers: getOrderReceivers(order).map((customer, index) => ({
+      key: `receiver-${index}`,
+      customer,
+      addressIndex: resolveOrderPartyAddressIndex(customer, 0),
+    })),
     senderAddressIndex: resolveOrderPartyAddressIndex(order.sender, 0),
-    receiverAddressIndex: order.receiver
-      ? resolveOrderPartyAddressIndex(order.receiver, 0)
-      : 0,
     employeeId: order.employee?.id ?? "",
     sectorId: order.sector?.id ?? "",
     comments: order.comments.map(orderCommentToFormValues),
@@ -682,7 +689,11 @@ export function areOrderFormValuesEquivalent(
   left: OrderFormValues,
   right: OrderFormValues,
 ): boolean {
-  return areFormValuesEquivalent(left, right);
+  const comparable = (values: OrderFormValues) => ({
+    ...values,
+    receivers: values.receivers.map(({ customer, addressIndex }) => ({ customer, addressIndex })),
+  });
+  return areFormValuesEquivalent(comparable(left), comparable(right));
 }
 
 

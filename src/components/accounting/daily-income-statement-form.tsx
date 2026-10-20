@@ -1,7 +1,5 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
@@ -91,7 +89,6 @@ export function DailyIncomeStatementForm({
       )}
       aria-disabled={disabled || undefined}
     >
-      <FormKeyboardHint />
       <fieldset disabled={fieldsDisabled} className="min-w-0 space-y-4 border-0 p-0">
         <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <div className="space-y-2">

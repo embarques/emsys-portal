@@ -839,7 +839,7 @@ export function InvoiceFormPreviewStep({
   }
 
   return (
-    <FormBody keyboardHint={false}>
+    <FormBody>
       {errorMessage ? (
         <InvoiceWizardNotice tone="error" message={errorMessage} className="rounded-lg border" />
       ) : null}

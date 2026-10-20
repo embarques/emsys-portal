@@ -73,12 +73,12 @@ test("optimizer rejects invalid depot or stop coordinates before HTTP", async ()
 
 test("endpoint form requires both coordinate pairs and preserves GeoJSON order", () => {
   const { routeEndpointsSchema, toRouteEndpointLocations } = loadFeature("src/lib/orders/schemas/route-endpoints.schema.ts", {});
-  const values = { startLongitude: "-73.9", startLatitude: "40.7", endLongitude: "0", endLatitude: "0" };
+  const values = { startAddress: "Depot", endAddress: "Destination", startLongitude: "-73.9", startLatitude: "40.7", endLongitude: "0", endLatitude: "0" };
   assert.deepEqual(toRouteEndpointLocations(values), {
     start: { type: "Point", coordinates: [-73.9, 40.7] },
     end: { type: "Point", coordinates: [0, 0] },
   });
-  for (const field of Object.keys(values)) {
+  for (const field of ["startLongitude", "startLatitude", "endLongitude", "endLatitude"]) {
     for (const invalid of ["", " ", "NaN", "Infinity", "181", "-181"]) {
       assert.equal(routeEndpointsSchema.safeParse({ ...values, [field]: invalid }).success, false);
     }
@@ -120,4 +120,32 @@ test("optimizer defaults to branch coordinates and accepts manual endpoints with
   assert.equal(branchReads, 2);
   assert.deepEqual(posts[1].start.location, endpoints.start);
   assert.deepEqual(posts[1].end.location, endpoints.end);
+});
+
+test("legacy zero IDs and depot entries preserve the API's optimized order and displayed miles", async () => {
+  // Synthetic addresses reproduce the live nine-stop response shape without customer data.
+  const zeroId = "000000000000000000000000";
+  const address = (n) => ({ id: zeroId, location: { type: "Point", coordinates: [-73 + n / 100, 40] } });
+  const stops = Array.from({ length: 9 }, (_, n) => address(n + 1));
+  const depot = address(0);
+  const permutation = [1, 8, 6, 7, 4, 3, 2, 5, 0];
+  const responseAddresses = [depot, ...permutation.map((n) => stops[n]), depot]
+    .map((entry, index) => ({ ...entry, routeOrder: index + 1 }));
+  let sent;
+  const api = { post: async (url, body) => {
+    assert.equal(url, "/route-optimizer/single");
+    sent = body;
+    return { success: true, data: { numRoutes: 1, totalDistanceMeters: 232200,
+      routes: [{ routeNumber: 1, distanceMeters: 232200, addresses: [...responseAddresses].reverse() }] } };
+  } };
+  const optimizer = loadFeature("src/lib/route-optimizer/api/route-optimizer-api.ts", api);
+  const utils = loadFeature("src/lib/orders/utils/appointment-route-optimization.ts", api, {
+    "@/lib/api/axios": { normalizeApiError: (error) => error },
+  });
+  const result = await optimizer.optimizeSingleRoute({ start: depot, end: depot, stops });
+  assert.deepEqual(sent, { start: depot, end: depot, stops });
+  const display = utils.buildAppointmentRouteStopOrder({ routeId: "daily-route", branchId: 1,
+    stops: stops.map((entry, n) => ({ orderRecordId: `pickup-${n}`, address: entry })) }, result);
+  assert.deepEqual(display.stopNumbers, Object.fromEntries(permutation.map((n, index) => [`pickup-${n}`, index + 1])));
+  assert.equal(utils.formatRouteDistance(display.totalDistanceMeters, "en-US"), "144.3 mi");
 });

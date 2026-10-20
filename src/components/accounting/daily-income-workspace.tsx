@@ -633,10 +633,10 @@ export function DailyIncomeWorkspace() {
     }
   }
 
-  async function handlePrintReceipt() {
-    if (selectedIds.length !== 1 || !selectedJournal || generateReceiptMutation.isPending) return;
+  async function printReceipt(journal: DailyIncomeJournal) {
+    if (generateReceiptMutation.isPending) return;
     try {
-      const receipt = await generateReceiptMutation.mutateAsync(buildPaymentReceiptRequest(selectedJournal));
+      const receipt = await generateReceiptMutation.mutateAsync(buildPaymentReceiptRequest(journal));
       openIncomeReportUrl(receipt.url);
       feedback.notifySuccess(t("accounting.dailyIncome.toasts.reportReady"));
     } catch (error) {
@@ -948,7 +948,7 @@ export function DailyIncomeWorkspace() {
           actions={selectedJournal && canPrintPaymentReceipt(selectedJournal) ? (
             <Button type="button" variant="outline" size="sm" className={tableSelectionActionStyles.print}
               disabled={selectedIds.length !== 1 || generateReceiptMutation.isPending}
-              onClick={handlePrintReceipt}>
+              onClick={() => { if (selectedIds.length === 1 && selectedJournal) void printReceipt(selectedJournal); }}>
               {generateReceiptMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
               {t("accounting.dailyIncome.actions.printReceipt")}
             </Button>
@@ -1051,6 +1051,8 @@ export function DailyIncomeWorkspace() {
       }}
       onEdit={openEditTransactionForm}
       onDelete={openDeleteTransaction}
+      onPrintReceipt={(journal) => void printReceipt(journal)}
+      isPrintingReceipt={generateReceiptMutation.isPending}
       canEdit={statementOpen}
       canDelete={statementOpen}
     />

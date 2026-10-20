@@ -137,7 +137,7 @@ type ApiPickupWritePayload = {
   date: string;
   branch: ApiBranchDtoPayload;
   sender: ApiPickupCustomerRef;
-  receiver?: ApiPickupCustomerRef;
+  receivers: ApiPickupCustomerRef[];
   purpose?: string;
   comments?: ApiComment[];
   sector?: { id: number; name?: string };
@@ -347,7 +347,8 @@ function normalizeOrder(raw: unknown): Order | null {
   const id = readNumericId(item.id);
   if (id == null || id <= 0) return null;
 
-  const receiverRaw = item.receiver ?? (Array.isArray(item.receivers) ? item.receivers[0] : null);
+  const receivers = (Array.isArray(item.receivers) ? item.receivers : item.receiver ? [item.receiver] : [])
+    .map((receiver) => normalizePickupCustomer(receiver, "Receiver"));
   const comments = Array.isArray(item.comments) ? item.comments.map(normalizePickupComment) : [];
   // Live pickups expose the scheduled vehicle-route as `route: { id }` only.
   // Do not fall back to legacy `routeAssignmentId` — that field is for `/routes`
@@ -370,7 +371,8 @@ function normalizeOrder(raw: unknown): Order | null {
     branch: normalizePickupBranch(item.branch),
     employee: normalizePickupEmployee(item.employee),
     sender: normalizePickupCustomer(item.sender, "Sender"),
-    receiver: receiverRaw ? normalizePickupCustomer(receiverRaw, "Receiver") : null,
+    receiver: receivers[0] ?? null,
+    receivers,
     purpose: String(item.purpose ?? "").trim(),
     comments,
     sector: normalizePickupSector(item.sector),
@@ -927,6 +929,10 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
   const payload: ApiPickupWritePayload = {
     date,
     branch: resolvePickupBranchRef(values.branchId),
+    receivers: values.receivers.map(({ customer, addressIndex }) => {
+      if (!customer) throw new Error("Select a receiver or remove the empty receiver row.");
+      return buildPickupCustomerRef(customer, getOrderPartyAddressAtIndex(customer, addressIndex));
+    }),
     sender: buildPickupCustomerRef(
       values.sender,
       getOrderPartyAddressAtIndex(values.sender, values.senderAddressIndex),
@@ -939,13 +945,6 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
 
   if (comments.length > 0) {
     payload.comments = comments;
-  }
-
-  if (values.receiver) {
-    payload.receiver = buildPickupCustomerRef(
-      values.receiver,
-      getOrderPartyAddressAtIndex(values.receiver, values.receiverAddressIndex),
-    );
   }
 
   if (values.sectorId !== "" && values.sectorId > 0) {

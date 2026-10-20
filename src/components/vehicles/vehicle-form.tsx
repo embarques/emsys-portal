@@ -130,8 +130,8 @@ export function VehicleForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody workflow isBusy={isSubmitting}>
-        <div className="grid items-start gap-5 @4xl:grid-cols-2">
-          <FormSection variant="card" className="@4xl:row-span-3" icon={Car} title={`01 · ${t("vehicles.form.sections.vehicle")}`} description={t("vehicles.form.design.vehicle")}>
+        <div className="grid gap-5 @4xl:grid-cols-2">
+          <FormSection variant="card" icon={Car} title={`01 · ${t("vehicles.form.sections.vehicle")}`} description={t("vehicles.form.design.vehicle")}>
             <div className="space-y-2.5">
               <div className="space-y-1">
                 <Label htmlFor="status">{t("vehicles.form.fields.status")}</Label>
@@ -231,44 +231,46 @@ export function VehicleForm({
             </div>
           </FormSection>
 
-          <FormSection variant="card" icon={CalendarCheck} title={`02 · ${t("vehicles.form.sections.compliance")}`} description={t("vehicles.form.design.compliance")}>
-            <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-5">
+            <FormSection variant="card" icon={CalendarCheck} title={`02 · ${t("vehicles.form.sections.compliance")}`} description={t("vehicles.form.design.compliance")}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="inspectionDate">{t("vehicles.form.fields.inspectionDate")}</Label>
+                  <DateInput
+                    id="inspectionDate"
+                    value={values.inspectionDate}
+                    onChange={(event) => updateField("inspectionDate", event.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="registrationDate">{t("vehicles.form.fields.registrationDate")}</Label>
+                  <DateInput
+                    id="registrationDate"
+                    value={values.registrationDate}
+                    onChange={(event) => updateField("registrationDate", event.target.value)}
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection variant="card" className="flex-1" icon={Building2} title={`03 · ${t("vehicles.form.sections.branch")}`} description={t("vehicles.form.design.branch")}>
               <div className="space-y-1">
-                <Label htmlFor="inspectionDate">{t("vehicles.form.fields.inspectionDate")}</Label>
-                <DateInput
-                  id="inspectionDate"
-                  value={values.inspectionDate}
-                  onChange={(event) => updateField("inspectionDate", event.target.value)}
+                <Label htmlFor="branch">
+                  {t("vehicles.form.fields.branch")} <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="branch"
+                  value={values.branch.id > 0 ? String(values.branch.id) : ""}
+                  onValueChange={handleBranchChange}
+                  placeholder={t("vehicles.form.placeholders.branch")}
+                  searchPlaceholder={t("vehicles.form.placeholders.branchSearch")}
+                  loading={branchesQuery.isLoading}
+                  options={branchOptions}
                 />
               </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="registrationDate">{t("vehicles.form.fields.registrationDate")}</Label>
-                <DateInput
-                  id="registrationDate"
-                  value={values.registrationDate}
-                  onChange={(event) => updateField("registrationDate", event.target.value)}
-                />
-              </div>
-            </div>
-          </FormSection>
-
-          <FormSection variant="card" icon={Building2} title={`03 · ${t("vehicles.form.sections.branch")}`} description={t("vehicles.form.design.branch")}>
-            <div className="space-y-1">
-              <Label htmlFor="branch">
-                {t("vehicles.form.fields.branch")} <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                id="branch"
-                value={values.branch.id > 0 ? String(values.branch.id) : ""}
-                onValueChange={handleBranchChange}
-                placeholder={t("vehicles.form.placeholders.branch")}
-                searchPlaceholder={t("vehicles.form.placeholders.branchSearch")}
-                loading={branchesQuery.isLoading}
-                options={branchOptions}
-              />
-            </div>
-          </FormSection>
+            </FormSection>
+          </div>
         </div>
       </FormBody>
 

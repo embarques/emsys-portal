@@ -26,7 +26,7 @@
     "moreOne": "+1 more address",
     "moreMany": "+{{count}} more addresses",
     "searchPlaceholder": "Search customers",
-    "minimumSearch": "Type at least 3 characters to search.",
+    "minimumSearch": "Search by name or phone (at least 3 characters).",
     "emptyResults": "No customers found.",
     "loading": "Searching customers…",
     "viewAll": "View addresses",
@@ -115,8 +115,6 @@
     "noChanges": "No customer changes to save.",
     "notFound": "This customer could not be found.",
     "workflow": {
-      "requiredHint": "* Required fields",
-      "keyboardHint": "Tab moves between controls · Enter advances through fields",
       "contactTitle": "Customer & contact",
       "contactHint": "Confirm the customer’s name and best phone number.",
       "addressHint": "Add pickup or delivery locations and use the star to choose the primary address.",

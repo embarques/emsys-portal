@@ -27,7 +27,8 @@ import {
 } from "@/lib/orders/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { coreAddressHasContent, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
-import type { Order } from "@/lib/orders/types";
+import { getOrderReceivers, type Order } from "@/lib/orders/types";
+import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { useTranslation } from "@/lib/i18n";
 
 type OrderViewSheetProps = {
@@ -145,6 +146,13 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
               <p className="text-sm text-muted-foreground">{t("orders.empty.noComments")}</p>
             )}
           </RecordViewSheetSection>
+
+          {getOrderReceivers(order).map((receiver, index) => (
+            <RecordViewSheetSection key={`${receiver.id}-${index}`} title={`${t("orders.columns.receiver")} ${index + 1}`} padding="relaxed">
+              <p className="text-sm font-medium">{receiver.name}</p>
+              <CustomerContactSummary customer={receiver} addressIndex={0} />
+            </RecordViewSheetSection>
+          ))}
 
           <SenderOrderHistorySection
             sender={order.sender}

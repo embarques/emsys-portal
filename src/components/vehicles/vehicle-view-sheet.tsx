@@ -18,8 +18,6 @@ import {
   getBranchBadgeClass,
   getFuelTypeBadgeClass,
   getVehicleActiveBadgeClass,
-  truncateObjectId,
-  truncateVehicleId,
 } from "@/lib/vehicles/display";
 import { useVehicleLabels } from "@/lib/vehicles/hooks/use-vehicle-labels";
 import type { Vehicle } from "@/lib/vehicles/types";
@@ -65,11 +63,6 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("vehicles.view.sections.vehicle")}>
-            <RecordViewSheetDetailRow label={t("vehicles.view.recordId")} value={truncateObjectId(vehicle.id)} />
-            <RecordViewSheetDetailRow
-              label={t("vehicles.view.vehicleId")}
-              value={truncateVehicleId(vehicle.vehicleId)}
-            />
             <RecordViewSheetDetailRow label={t("vehicles.columns.name")} value={vehicle.name} />
             <RecordViewSheetDetailRow label={t("vehicles.columns.vin")} value={vehicle.vin} />
             <RecordViewSheetDetailRow
@@ -100,6 +93,8 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("vehicles.view.sections.audit")}>
+            <RecordViewSheetDetailRow label={t("vehicles.view.recordId")} value={vehicle.id} />
+            <RecordViewSheetDetailRow label={t("vehicles.view.vehicleId")} value={vehicle.vehicleId} />
             <RecordViewSheetDetailRow
               label={t("vehicles.columns.createdAt")}
               value={vehicle.createdAt ? formatAuditDateTime(vehicle.createdAt) : dash}

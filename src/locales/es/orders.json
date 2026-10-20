@@ -149,16 +149,13 @@
     "addDescription": "Crear una nueva cita.",
     "notFound": "No se encontró esta cita.",
     "workflow": {
-      "requiredHint": "* Campos obligatorios",
-      "keyboardHint": "Tab recorre los controles · Enter avanza entre campos",
       "scheduleTitle": "01 · Programa la visita",
       "scheduleHint": "Confirma la fecha de la cita con el cliente.",
       "customersTitle": "02 · Confirma los datos del cliente",
       "senderHint": "Busca por nombre o teléfono y confirma la dirección de la visita.",
       "receiverHint": "Agrega un destinatario si la visita lo requiere.",
-      "optional": "Opcional",
       "visitTitle": "03 · Detalles de la visita",
-      "visitHint": "Registra el propósito de la visita, los artículos, las cantidades y las instrucciones.",
+      "visitHint": "Registra el propósito de la visita.",
       "commentsEmpty": "Agrega al menos un comentario para describir lo que necesita el cliente."
     },
     "sections": {
@@ -191,12 +188,15 @@
       "addSender": "Agregar remitente",
       "addReceiver": "Agregar destinatario",
       "editSender": "Editar remitente",
+      "removeReceiver": "Quitar destinatario {{number}}",
       "editReceiver": "Editar destinatario"
     },
     "validation": {
       "pickupDateRequired": "Seleccione una fecha de cita válida.",
       "senderRequired": "Seleccione un remitente.",
       "senderAddressRequired": "Seleccione la dirección del remitente.",
+      "receiverRequired": "Selecciona un destinatario o elimina la fila vacía.",
+      "duplicateReceiver": "Cada destinatario solo se puede agregar una vez.",
       "receiverAddressRequired": "Seleccione la dirección del destinatario.",
       "unverifiedSenderAddress": "Verifique la dirección del remitente antes de guardar. Abra el remitente y actualícela con una sugerencia de Google.",
       "commentRequired": "Agregue al menos un comentario.",

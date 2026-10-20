@@ -1,7 +1,5 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FirebaseError } from "firebase/app";
 import { KeyRound } from "lucide-react";
@@ -85,7 +83,6 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
         </DialogHeader>
 
         <form onSubmit={handleSubmit(submit)} className="space-y-5">
-          <FormKeyboardHint />
           <PasswordField
             id="new-password"
             label={t("settings.password.fields.new")}

@@ -1,9 +1,7 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
-import { CalendarDays, UserPlus, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CalendarDays, ChevronsDown, UserPlus, Users, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 
@@ -11,6 +9,7 @@ import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 
 import { DateInput } from "@/components/ui/date-input";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -117,9 +116,17 @@ export function OrderForm({
   const [values, setValues] = useState<OrderFormValues>(initialValues ?? createEmptyOrderForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+  const [receiverToFocus, setReceiverToFocus] = useState<string | null>(null);
+  const receiverPanelRef = useRef<HTMLDivElement>(null);
+  const addReceiverButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (receiverToFocus) {
+      receiverPanelRef.current?.querySelector<HTMLElement>(`[id="receiver-${receiverToFocus}"]`)?.focus();
+    }
+  }, [receiverToFocus]);
   const handleEnterNavigation = useFormEnterNavigation();
   const { markPendingPartyEdit, markPendingPartyAdd } = useApplyCustomerOnTabReturn(
-    (side, customer, { mode, previousCustomer }) => {
+    (side, customer, { mode, previousCustomer, contextKey }) => {
       const addedAddressIndex =
         previousCustomer && customer.addresses.length > previousCustomer.addresses.length
           ? resolveAddedAddressIndex(previousCustomer, customer)
@@ -148,23 +155,19 @@ export function OrderForm({
                 : getInitialOrderPartyAddressIndex(customer)),
           };
         }
-        const currentId = current.receiverId?.trim() || current.receiver?.id?.trim() || "";
-        if (mode === "edit" && currentId && currentId !== customer.id) {
-          return current;
-        }
         return {
           ...current,
-          receiverId: customer.id,
-          receiver: customer,
-          receiverAddressIndex:
-            addedAddressIndex ??
-            (mode === "edit"
-              ? rematchOrderPartyAddressIndex(
-                  current.receiver,
-                  current.receiverAddressIndex,
-                  customer,
-                )
-              : getInitialOrderPartyAddressIndex(customer)),
+          receivers: current.receivers.map((row) => {
+            if (row.key !== contextKey) return row;
+            if (mode === "edit" && row.customer?.id && row.customer.id !== customer.id) return row;
+            return {
+              ...row,
+              customer,
+              addressIndex: addedAddressIndex ?? (mode === "edit"
+                ? rematchOrderPartyAddressIndex(row.customer, row.addressIndex, customer)
+                : getInitialOrderPartyAddressIndex(customer)),
+            };
+          }),
         };
       });
       setFormError(null);
@@ -175,6 +178,7 @@ export function OrderForm({
   useEffect(() => {
     setValues(initialValues ?? createEmptyOrderForm());
     setFormError(null);
+    setReceiverToFocus(null);
   }, [initialValues]);
 
   function updateField<K extends keyof OrderFormValues>(key: K, value: OrderFormValues[K]) {
@@ -194,20 +198,38 @@ export function OrderForm({
     setFormError(null);
   }
 
-  function updateReceiver(_receiverId: string, receiver: Customer, addressId?: string) {
+  function addReceiver() {
+    const key = crypto.randomUUID();
     setValues((current) => ({
       ...current,
-      receiverId: receiver.id,
-      receiver,
-      receiverAddressIndex: resolveSelectedOrderPartyAddressIndex(receiver, addressId),
+      receivers: [...current.receivers, { key, customer: null, addressIndex: 0 }],
+    }));
+    setReceiverToFocus(key);
+    setFormError(null);
+  }
+
+  function removeReceiver(key: string) {
+    setValues((current) => ({ ...current, receivers: current.receivers.filter((row) => row.key !== key) }));
+    setFormError(null);
+    addReceiverButtonRef.current?.focus();
+  }
+
+  function updateReceiver(key: string, receiver: Customer, addressId?: string) {
+    setValues((current) => ({
+      ...current,
+      receivers: current.receivers.map((row) => row.key === key ? {
+        ...row,
+        customer: receiver,
+        addressIndex: resolveSelectedOrderPartyAddressIndex(receiver, addressId),
+      } : row),
     }));
     setFormError(null);
   }
 
-  function openAddCustomer(side: PartySide) {
+  function openAddCustomer(side: PartySide, receiverKey?: string) {
     const isReceiver = side === "receiver";
     const partyCustomerType = isReceiver ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER;
-    markPendingPartyAdd(side, partyCustomerType);
+    markPendingPartyAdd(side, partyCustomerType, receiverKey);
     openFormTab({
       feature: "customers",
       baseHref: "/customers",
@@ -219,11 +241,11 @@ export function OrderForm({
     });
   }
 
-  function openEditCustomer(side: PartySide, addressIndex?: number) {
-    const current = side === "sender" ? values.sender : values.receiver;
+  function openEditCustomer(side: PartySide, addressIndex?: number, receiverKey?: string) {
+    const current = side === "sender" ? values.sender : values.receivers.find((row) => row.key === receiverKey)?.customer;
     if (!current?.id) return;
 
-    markPendingPartyEdit(side, current.id);
+    markPendingPartyEdit(side, current.id, undefined, receiverKey);
     openFormTab({
       feature: "customers",
       baseHref: "/customers",
@@ -238,9 +260,9 @@ export function OrderForm({
     });
   }
 
-  function openAddAddress(side: PartySide, customer: Customer) {
+  function openAddAddress(side: PartySide, customer: Customer, receiverKey?: string) {
     if (!customer.id) return;
-    markPendingPartyEdit(side, customer.id, customer);
+    markPendingPartyEdit(side, customer.id, customer, receiverKey);
     openFormTab({
       feature: "customers",
       baseHref: "/customers",
@@ -262,6 +284,7 @@ export function OrderForm({
     );
 
   const hasValidDate = Boolean(values.date.trim()) && !Number.isNaN(new Date(values.date).getTime());
+  const hasMultipleReceivers = values.receivers.length > 1;
 
   // The single reason the appointment can't be saved yet, evaluated in field order:
   // appointment date → sender → sender address → verified sender → receiver address → comment.
@@ -278,7 +301,13 @@ export function OrderForm({
     if (blockForUnverifiedParty) {
       return unverifiedPartyMessage;
     }
-    if (values.receiver && !isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex)) {
+    if (values.receivers.some((row) => !row.customer)) {
+      return t("orders.form.validation.receiverRequired");
+    }
+    if (new Set(values.receivers.map((row) => row.customer?.id)).size !== values.receivers.length) {
+      return t("orders.form.validation.duplicateReceiver");
+    }
+    if (values.receivers.some((row) => row.customer && !isOrderPartyAddressChosen(row.customer, row.addressIndex))) {
       return t("orders.form.validation.receiverAddressRequired");
     }
     if (!values.comments.some(isOrderCommentComplete)) {
@@ -307,6 +336,7 @@ export function OrderForm({
       onFormErrorChange?.(result.error);
       if (!result.error && !isEditing) {
         setValues(resetOrderFormForNextEntry(values));
+        setReceiverToFocus(null);
       }
     } finally {
       setIsLocalSubmitting(false);
@@ -315,174 +345,193 @@ export function OrderForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p>{t("orders.form.workflow.requiredHint")}</p>
-          <FormKeyboardHint />
-        </div>
-        <FormSection icon={CalendarDays} title={t("orders.form.workflow.scheduleTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div
-            className={
-              isEditing
-                ? "grid items-end gap-4 @2xl:grid-cols-2 @4xl:grid-cols-4"
-                : "w-full"
-            }
+      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+        <div className={isEditing ? "grid gap-5" : "grid items-stretch gap-5 @4xl:grid-cols-2"}>
+          <FormSection icon={CalendarDays} title={t("orders.form.workflow.scheduleTitle")} className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div
+              className={
+                isEditing
+                  ? "grid items-end gap-4 @2xl:grid-cols-2 @4xl:grid-cols-4"
+                  : "w-full"
+              }
+            >
+              <div className="w-full space-y-1.5">
+                <Label htmlFor="date">
+                  {t("orders.form.sections.pickupDate")} <span className="text-destructive">*</span>
+                </Label>
+                <DateInput
+                  id="date"
+                  value={values.date}
+                  onChange={(event) => updateField("date", event.target.value)}
+                  required
+                />
+
+              </div>
+              {isEditing ? (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="branchId">
+                      {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
+                    </Label>
+                    <SearchableSelect
+                      id="branchId"
+                      value={String(values.branchId)}
+                      onValueChange={(next) => updateField("branchId", Number(next))}
+                      searchPlaceholder={t("orders.form.placeholders.searchBranches")}
+                      required
+                      mobileSheet
+                      options={branches.map((branch) => ({
+                        value: String(branch.id),
+                        label: `${branch.name} · ${branch.code}`,
+                      }))}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="employeeId">{t("orders.form.fields.employee")}</Label>
+                    <SearchableSelect
+                      id="employeeId"
+                      value={String(values.employeeId)}
+                      onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
+                      placeholder={t("orders.form.fields.noEmployee")}
+                      searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
+                      mobileSheet
+                      options={[
+                        { value: "", label: t("orders.form.fields.noEmployee") },
+                        ...employees.map((employee) => ({
+                          value: String(employee.id),
+                          label: `${employee.name} · ${employee.department}`,
+                        })),
+                      ]}
+                    />
+                  </div>
+
+                  <div className="hidden space-y-1 md:block">
+                    <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
+                    <Input
+                      id="sectorId"
+                      type="number"
+                      min="0"
+                      value={values.sectorId}
+                      onChange={(event) =>
+                        updateField("sectorId", event.target.value ? Number(event.target.value) : "")
+                      }
+                    />
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </FormSection>
+
+          <FormSection
+            icon={Users}
+            title={t("orders.form.workflow.customersTitle")}
+            className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            action={(
+              <Button ref={addReceiverButtonRef} type="button" variant="outline" size="sm" onClick={addReceiver}>
+                <UserPlus className="size-4" />
+                {t("orders.form.partyActions.addReceiver")}
+              </Button>
+            )}
           >
-            <div className="w-full space-y-1.5">
-              <Label htmlFor="date">
-                {t("orders.form.sections.pickupDate")} <span className="text-destructive">*</span>
-              </Label>
-              <DateInput
-                id="date"
-                value={values.date}
-                onChange={(event) => updateField("date", event.target.value)}
-                required
-              />
-              {isEditing ? null : (
-                <p className="text-sm text-muted-foreground">
-                  {t("orders.form.workflow.scheduleHint")}
-                </p>
-              )}
-            </div>
-            {isEditing ? (
-              <>
-                <div className="space-y-1">
-                  <Label htmlFor="branchId">
-                    {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
+            <div ref={receiverPanelRef} className={isEditing ? "grid gap-4 @2xl:grid-cols-2" : "grid gap-4"}>
+              <div className="min-w-0 space-y-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="senderId">
+                    {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
                   </Label>
-                  <SearchableSelect
-                    id="branchId"
-                    value={String(values.branchId)}
-                    onValueChange={(next) => updateField("branchId", Number(next))}
-                    searchPlaceholder={t("orders.form.placeholders.searchBranches")}
-                    required
-                    mobileSheet
-                    options={branches.map((branch) => ({
-                      value: String(branch.id),
-                      label: `${branch.name} · ${branch.code}`,
-                    }))}
+                  <PartyFieldActions
+                    hasSelection={Boolean(values.sender)}
+                    onAdd={() => openAddCustomer("sender")}
+                    onEdit={() => openEditCustomer("sender")}
                   />
                 </div>
+                <CustomerPartySelect
+                  id="senderId"
+                  partyType="sender"
+                  value={values.senderId}
+                  selectedCustomer={values.sender}
+                  onValueChange={updateSender}
+                  onAddAddress={(customer) => void openAddAddress("sender", customer)}
+                  placeholder={t("orders.form.placeholders.selectSender")}
+                  required
+                  showAddressLabels={false}
+                />
+                {values.sender && isOrderPartyAddressChosen(values.sender, values.senderAddressIndex) ? (
+                  <>
+                    <CustomerContactSummary
+                      customer={values.sender}
+                      addressIndex={values.senderAddressIndex}
+                    />
+                    <UnverifiedAddressNotice
+                      customer={values.sender}
+                      addressIndex={values.senderAddressIndex}
+                      onUpdateAddress={() => openEditCustomer("sender", values.senderAddressIndex)}
+                    />
+                  </>
+                ) : null}
+              </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="employeeId">{t("orders.form.fields.employee")}</Label>
-                  <SearchableSelect
-                    id="employeeId"
-                    value={String(values.employeeId)}
-                    onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
-                    placeholder={t("orders.form.fields.noEmployee")}
-                    searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
-                    mobileSheet
-                    options={[
-                      { value: "", label: t("orders.form.fields.noEmployee") },
-                      ...employees.map((employee) => ({
-                        value: String(employee.id),
-                        label: `${employee.name} · ${employee.department}`,
-                      })),
-                    ]}
-                  />
-                </div>
-
-                <div className="hidden space-y-1 md:block">
-                  <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
-                  <Input
-                    id="sectorId"
-                    type="number"
-                    min="0"
-                    value={values.sectorId}
-                    onChange={(event) =>
-                      updateField("sectorId", event.target.value ? Number(event.target.value) : "")
+              {values.receivers.length > 0 ? (
+                <div className="min-w-0 space-y-2">
+                  {hasMultipleReceivers ? (
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
+                      <ChevronsDown className="size-3.5 shrink-0" aria-hidden="true" />
+                      {t("orders.form.workflow.receiversScrollHint", { count: values.receivers.length })}
+                    </p>
+                  ) : null}
+                  <div
+                    className={
+                      hasMultipleReceivers
+                        ? "max-h-80 space-y-4 overflow-y-auto overscroll-contain rounded-lg pr-1"
+                        : "space-y-4"
                     }
-                  />
+                  >
+                    {values.receivers.map((row, index) => (
+                      <div key={row.key} className="min-w-0 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label htmlFor={`receiver-${row.key}`}>
+                            {t("orders.form.fields.receiver")} {index + 1}
+                          </Label>
+                          <div className="flex items-center gap-1">
+                            <PartyFieldActions
+                              hasSelection={Boolean(row.customer)}
+                              onAdd={() => openAddCustomer("receiver", row.key)}
+                              onEdit={() => openEditCustomer("receiver", undefined, row.key)}
+                            />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeReceiver(row.key)}
+                              aria-label={t("orders.form.partyActions.removeReceiver", { number: index + 1 })}>
+                              <X className="size-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <CustomerPartySelect
+                          id={`receiver-${row.key}`}
+                          partyType="receiver"
+                          value={row.customer?.id ?? ""}
+                          selectedCustomer={row.customer}
+                          onValueChange={(_id, customer, addressId) => updateReceiver(row.key, customer, addressId)}
+                          onAddAddress={(customer) => openAddAddress("receiver", customer, row.key)}
+                          placeholder={t("orders.form.placeholders.selectReceiver")}
+                          pickerTitle={t("orders.form.placeholders.selectReceiver")}
+                          searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
+                          showAddressLabels={false}
+                        />
+                        {row.customer && isOrderPartyAddressChosen(row.customer, row.addressIndex) ? (
+                          <CustomerContactSummary customer={row.customer} addressIndex={row.addressIndex} />
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </>
-            ) : null}
-          </div>
-        </FormSection>
-
-        <FormSection icon={Users} title={t("orders.form.workflow.customersTitle")} className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="grid gap-4 @2xl:grid-cols-2">
-            <div className="min-w-0 space-y-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-4">
-              <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="senderId">
-                  {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
-                </Label>
-                <PartyFieldActions
-                  hasSelection={Boolean(values.sender)}
-                  onAdd={() => openAddCustomer("sender")}
-                  onEdit={() => openEditCustomer("sender")}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">{t("orders.form.workflow.senderHint")}</p>
-              <CustomerPartySelect
-                id="senderId"
-                partyType="sender"
-                value={values.senderId}
-                selectedCustomer={values.sender}
-                onValueChange={updateSender}
-                onAddAddress={(customer) => void openAddAddress("sender", customer)}
-                placeholder={t("orders.form.placeholders.selectSender")}
-                required
-                showAddressLabels={false}
-              />
-              {values.sender && isOrderPartyAddressChosen(values.sender, values.senderAddressIndex) ? (
-                <>
-                  <CustomerContactSummary
-                    customer={values.sender}
-                    addressIndex={values.senderAddressIndex}
-                  />
-                  <UnverifiedAddressNotice
-                    customer={values.sender}
-                    addressIndex={values.senderAddressIndex}
-                    onUpdateAddress={() => openEditCustomer("sender", values.senderAddressIndex)}
-                  />
-                </>
               ) : null}
             </div>
+          </FormSection>
 
-            <div className="min-w-0 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="receiverId">
-                  {t("orders.form.fields.receiver")}
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">{t("orders.form.workflow.optional")}</span>
-                </Label>
-                <PartyFieldActions
-                  hasSelection={Boolean(values.receiver)}
-                  onAdd={() => openAddCustomer("receiver")}
-                  onEdit={() => openEditCustomer("receiver")}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">{t("orders.form.workflow.receiverHint")}</p>
-              <CustomerPartySelect
-                id="receiverId"
-                partyType="receiver"
-                value={values.receiverId}
-                selectedCustomer={values.receiver}
-                onValueChange={updateReceiver}
-                onAddAddress={(customer) => void openAddAddress("receiver", customer)}
-                placeholder={t("orders.form.placeholders.noReceiver")}
-                pickerTitle={t("orders.form.placeholders.selectReceiver")}
-                searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
-                showAddressLabels={false}
-              />
-              {values.receiver && isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex) ? (
-                <>
-                  <CustomerContactSummary
-                    customer={values.receiver}
-                    addressIndex={values.receiverAddressIndex}
-                  />
-                  <UnverifiedAddressNotice
-                    customer={values.receiver}
-                    addressIndex={values.receiverAddressIndex}
-                    onUpdateAddress={() => openEditCustomer("receiver", values.receiverAddressIndex)}
-                  />
-                </>
-              ) : null}
-            </div>
+          <div className={isEditing ? "min-w-0" : "min-w-0 @4xl:col-span-2"}>
+            <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
           </div>
-        </FormSection>
-
-        <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
+        </div>
 
         {values.sender ? (
           <div className="rounded-xl border border-border bg-card p-5">

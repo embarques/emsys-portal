@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
-import { FormBody, FormFooter, FormSection, FormWorkflowHints } from "@/components/forms/form-shell";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { InventoryDocumentLinesEditor } from "@/components/inventory/inventory-document-lines-editor";
 import { InventoryHolderSelect } from "@/components/inventory/inventory-holder-select";
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
@@ -159,8 +159,7 @@ export function InventoryReceiptForm({
   return (
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-          <FormWorkflowHints requiredHint={t("inventory.form.workflow.requiredHint")} keyboardHint={t("inventory.form.workflow.keyboardHint")} />
+        <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
           <FormSection
             icon={Building2}
             title={`01 · ${t("inventory.form.sections.header")}`}

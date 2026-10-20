@@ -22,6 +22,7 @@ export function DailyRoutesWorkspace() {
         const deliveryIds = selectedIds.filter((id) =>
           activeRoutes.some((record) => record.id === id && isDeliveryRoutePrint(record)),
         );
+        const isMultiSelect = selectedIds.length > 1;
 
         return (
           <>
@@ -29,14 +30,14 @@ export function DailyRoutesWorkspace() {
               <PickupRoutesSelectionActions
                 activeRoutes={activeRoutes}
                 selectedIds={pickupIds}
-                printDisabled={selectedIds.length !== 1}
+                actionsDisabled={isMultiSelect}
               />
             ) : null}
             {deliveryIds.length > 0 ? (
               <DeliveryRoutesSelectionActions
                 activeRoutes={activeRoutes}
                 selectedIds={deliveryIds}
-                printDisabled={selectedIds.length !== 1}
+                printDisabled={isMultiSelect}
               />
             ) : null}
           </>

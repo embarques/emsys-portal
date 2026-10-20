@@ -14,6 +14,7 @@ import type { User } from "@/lib/users/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 
 import {
+  getOrderReceivers,
   formatOrderCommentSentence,
   orderCommentToFormValues,
   type Order,
@@ -195,11 +196,11 @@ export function getCustomerPhone(customer: Customer, index = 0): string {
 }
 
 export function getReceiverSummary(order: Order): string {
-  return order.receiver?.name.trim() || "—";
+  return getOrderReceivers(order).map((receiver) => receiver.name.trim()).filter(Boolean).join(", ") || "—";
 }
 
 export function getReceiverAddressLine(order: Order): string {
-  return order.receiver ? getCustomerAddressLine(order.receiver) : "—";
+  return getOrderReceivers(order).map(getCustomerAddressLine).join("; ") || "—";
 }
 
 export function computeOrderKpis(orders: Order[]) {

@@ -1,7 +1,5 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -229,7 +227,6 @@ function MobileCreateDailyIncomePage({
       </div>
 
       <form className="space-y-5" onKeyDown={navigateOnEnter} onSubmit={form.handleSubmit(createDailyIncome)}>
-        <FormKeyboardHint />
         <div className="space-y-2" data-invoice-wizard-focus="daily-income">
           <Label htmlFor="invoice-mobile-statement-branch">
             {t("invoices.wizard.dailyIncome.dialog.branch")}

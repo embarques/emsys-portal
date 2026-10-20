@@ -1,7 +1,5 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
 import {
   MapPin,
   Phone as PhoneIcon,
@@ -796,11 +794,7 @@ export function CustomerForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p>{t("customers.form.workflow.requiredHint")}</p>
-          <FormKeyboardHint />
-        </div>
+      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <div className="grid items-start gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
           <div className="min-w-0 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm">
             <FormSection icon={User} title={`01 · ${t("customers.form.workflow.contactTitle")}`}>

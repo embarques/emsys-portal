@@ -72,7 +72,8 @@ export function assignManualStopNumber(
 /**
  * Map optimized addresses back to request stops as 1-based stop numbers.
  * Several stops may share one address, so matches are consumed in request
- * order by address id, then by coordinates.
+ * order by address id, then by coordinates. Zero IDs are not identities;
+ * repeated IDs with returned coordinates are resolved by location.
  */
 export function assignOptimizedStopNumbers(
   stops: readonly OptimizerRequestStop[],
@@ -88,10 +89,18 @@ export function assignOptimizedStopNumbers(
 
   const assigned = new Set<string>();
   const stopNumbers: Record<string, number> = {};
+  const ambiguousIds = new Set(
+    [...byId].filter(([, keys]) => keys.length > 1).map(([id]) => id),
+  );
 
   for (const address of result.routes.flatMap((route) => route.addresses)) {
+    // Legacy addresses (including depots) may all carry the zero ObjectID.
+    // Repeated IDs with coordinates must match by location, not request order.
+    const canMatchId =
+      address.id !== "000000000000000000000000" &&
+      (!ambiguousIds.has(address.id) || !address.coordinates);
     const key =
-      takeUnassigned(byId, address.id, assigned) ??
+      (canMatchId ? takeUnassigned(byId, address.id, assigned) : undefined) ??
       takeUnassigned(byCoordinates, coordinatesKey(address.coordinates), assigned);
     if (!key) continue;
 

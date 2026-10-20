@@ -15,6 +15,7 @@ import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income
 import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
 import { transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { useDailyIncomeJournal } from "@/lib/accounting/daily-income/hooks";
+import { canPrintPaymentReceipt } from "@/lib/accounting/daily-income/print-payment-receipt";
 import { getTransactionTypeOption } from "@/lib/accounting/daily-income/transaction-type-config";
 import type { DailyIncomeJournal, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { formatAccountingDate } from "@/lib/accounting/display";
@@ -28,6 +29,8 @@ type DailyIncomeTransactionViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   onEdit: (journal: DailyIncomeJournal) => void;
   onDelete: (journal: DailyIncomeJournal) => void;
+  onPrintReceipt?: (journal: DailyIncomeJournal) => void;
+  isPrintingReceipt?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
 };
@@ -73,6 +76,8 @@ export function DailyIncomeTransactionViewSheet({
   onOpenChange,
   onEdit,
   onDelete,
+  onPrintReceipt,
+  isPrintingReceipt = false,
   canEdit = true,
   canDelete = true,
 }: DailyIncomeTransactionViewSheetProps) {
@@ -201,10 +206,14 @@ export function DailyIncomeTransactionViewSheet({
         </RecordViewSheetBody>
 
         <RecordViewSheetActions
-          editLabel={t("accounting.dailyIncome.actions.editTransaction")}
+          editLabel={t("common.actions.edit")}
           deleteLabel={t("common.actions.delete")}
+          printLabel={t("accounting.dailyIncome.actions.printReceipt")}
           onEdit={canEdit ? () => onEdit(resolved) : undefined}
           onDelete={canDelete ? () => onDelete(resolved) : undefined}
+          onPrint={onPrintReceipt && canPrintPaymentReceipt(resolved) ? () => onPrintReceipt(resolved) : undefined}
+          printDisabled={!/^[a-f0-9]{24}$/i.test(resolved.id)}
+          isPrinting={isPrintingReceipt}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

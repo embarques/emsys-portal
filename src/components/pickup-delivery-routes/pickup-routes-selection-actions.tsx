@@ -34,13 +34,14 @@ import { cn } from "@/lib/utils";
 type PickupRoutesSelectionActionsProps = {
   activeRoutes: ActiveRoute[];
   selectedIds: string[];
-  printDisabled?: boolean;
+  /** Keeps every action visible but disabled (e.g. multi-select on daily routes). */
+  actionsDisabled?: boolean;
 };
 
 export function PickupRoutesSelectionActions({
   activeRoutes,
   selectedIds,
-  printDisabled = false,
+  actionsDisabled = false,
 }: PickupRoutesSelectionActionsProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -201,7 +202,7 @@ export function PickupRoutesSelectionActions({
         size="sm"
         className={cn("whitespace-nowrap", tableSelectionActionStyles.optimize)}
         onClick={() => void mapSelectedPickupRoute()}
-        disabled={!singleSelectedRouteId || isBusy}
+        disabled={actionsDisabled || !singleSelectedRouteId || isBusy}
       >
         {isOpeningMap ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -212,13 +213,13 @@ export function PickupRoutesSelectionActions({
           ? t("routes.pickupRoutes.actions.loadingMap")
           : t("routes.pickupRoutes.actions.mapRoute")}
       </Button>
-      {singleSelectedRouteId ? (
+      {singleSelectedRouteId || actionsDisabled ? (
         <Button
           variant="outline"
           size="sm"
           className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
           onClick={viewSelectedPickupRoute}
-          disabled={isPrinting || isClearing}
+          disabled={actionsDisabled || isPrinting || isClearing}
         >
           <Eye className="h-4 w-4" />
           {t("routes.pickupRoutes.actions.viewRoute")}
@@ -229,14 +230,14 @@ export function PickupRoutesSelectionActions({
         size="sm"
         className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
         onClick={() => void printSelectedPickupRoutes()}
-        disabled={printDisabled || isPrinting || isClearing}
+        disabled={actionsDisabled || isPrinting || isClearing}
       >
         <Printer className="h-4 w-4" />
         {isPrinting
           ? t("routes.pickupRoutes.actions.preparing")
           : t("routes.pickupRoutes.actions.print")}
       </Button>
-      {singleSelectedRouteId ? (
+      {singleSelectedRouteId || actionsDisabled ? (
         <Button
           variant="outline"
           size="sm"
@@ -245,7 +246,7 @@ export function PickupRoutesSelectionActions({
             "border-amber-500/30 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300",
           )}
           onClick={() => setClearRouteOpen(true)}
-          disabled={isPrinting || isClearing}
+          disabled={actionsDisabled || isPrinting || isClearing}
         >
           <RouteOff className="h-4 w-4" />
           {isClearing

@@ -334,8 +334,6 @@
     "removeEmail": "Remove email",
     "readOnlyStockHint": "Stock comes from posted ledger movements across all holders.",
     "workflow": {
-      "requiredHint": "* Required fields",
-      "keyboardHint": "Tab moves between controls · Enter advances through fields",
       "optional": "Optional",
       "itemHint": "Name the internal supply or material so staff can find it in receipts and dispatches.",
       "reorderHint": "Set the stock level at which this item needs reordering.",

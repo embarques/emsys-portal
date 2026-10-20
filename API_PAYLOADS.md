@@ -524,7 +524,7 @@ phone list with an empty array.
       "verification": { "is_verified": true, "verified_at": "2026-07-08T16:15:36.233Z" }
     }
   },
-  "receiver": {
+  "receivers": [{
     "name": "Receiver Name",
     "customerType": 2,
     "phones": [
@@ -535,7 +535,7 @@ phone list with an empty array.
       "state": "FL",
       "zipcode": "33101"
     }
-  },
+  }],
   "purpose": "Pickup boxes",
   "sector": { "id": 1, "name": "North" },
   "comments": [
@@ -549,7 +549,14 @@ phone list with an empty array.
 }
 ```
 
-Party address snapshots (`sender.address` / `receiver.address`) should round-trip `id`, `location`, and `verification` when provided. Portal sends them on create/update; live create responses have been observed returning only street fields plus placeholder `id` `000000000000000000000000` (tracked in GitHub #73).
+Party address snapshots (`sender.address` / `receivers[].address`) should round-trip `id`, `location`, and `verification` when provided. Portal sends them on create/update; live create responses have been observed returning only street fields plus placeholder `id` `000000000000000000000000` (tracked in GitHub #73).
+
+The published Swagger contract (verified October 20, 2026) accepts `receivers[]`
+on both create and update. Each entry is a customer party object with its customer
+`id`, name, phone list, and selected address snapshot, not a bare ID string.
+The portal preserves every receiver on read/edit and sends `receivers: []` to
+explicitly clear the list. Legacy singular `receiver` is accepted only as a read
+fallback when `receivers` is absent; an explicit empty array takes precedence.
 
 ### `PUT /v1/pickups/{id}`
 

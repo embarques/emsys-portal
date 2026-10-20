@@ -15,17 +15,21 @@ type PartySide = "sender" | "receiver";
 type PendingPartyReturn =
   | {
       side: PartySide;
+      contextKey?: string;
       mode: "edit";
       customerId: string;
       previousCustomer?: Customer;
     }
   | {
       side: PartySide;
+      contextKey?: string;
       mode: "add";
       customerType: number;
     };
 
 export type ApplyCustomerOnTabReturnMeta = {
+  /** Caller-owned row identity for forms with multiple parties of the same side. */
+  contextKey?: string;
   mode: "add" | "edit";
   previousCustomer?: Customer;
 };
@@ -44,17 +48,17 @@ export function useApplyCustomerOnTabReturn(
   const applyRef = useRef(apply);
   applyRef.current = apply;
 
-  const markPendingPartyEdit = useCallback((side: PartySide, customerId: string, previousCustomer?: Customer) => {
+  const markPendingPartyEdit = useCallback((side: PartySide, customerId: string, previousCustomer?: Customer, contextKey?: string) => {
     pendingRef.current = [
       ...pendingRef.current.filter((entry) => entry.side !== side),
-      { side, mode: "edit", customerId, previousCustomer },
+      { side, mode: "edit", customerId, previousCustomer, contextKey },
     ];
   }, []);
 
-  const markPendingPartyAdd = useCallback((side: PartySide, customerType: number) => {
+  const markPendingPartyAdd = useCallback((side: PartySide, customerType: number, contextKey?: string) => {
     pendingRef.current = [
       ...pendingRef.current.filter((entry) => entry.side !== side),
-      { side, mode: "add", customerType },
+      { side, mode: "add", customerType, contextKey },
     ];
   }, []);
 
@@ -103,6 +107,7 @@ export function useApplyCustomerOnTabReturn(
         });
         applyRef.current(pending.side, customer, {
           mode: pending.mode,
+          contextKey: pending.contextKey,
           previousCustomer: pending.mode === "edit" ? pending.previousCustomer : undefined,
         });
       }),

@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Printer, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -64,11 +64,15 @@ function isPlaceholderValue(value: React.ReactNode): boolean {
 type RecordViewSheetActionsProps = {
   onEdit?: () => void;
   onDelete?: () => void;
+  onPrint?: () => void;
   editLabel?: string;
   deleteLabel?: string;
+  printLabel?: string;
   isDisabled?: boolean;
   editDisabled?: boolean;
   deleteDisabled?: boolean;
+  printDisabled?: boolean;
+  isPrinting?: boolean;
 };
 
 export function RecordViewSheet({ open, onOpenChange, children }: RecordViewSheetProps) {
@@ -178,17 +182,27 @@ export function RecordViewSheetDetailRow({ label, value }: RecordViewSheetDetail
 export function RecordViewSheetActions({
   onEdit,
   onDelete,
+  onPrint,
   editLabel = "Edit",
   deleteLabel = "Delete",
+  printLabel = "Print",
   isDisabled = false,
   editDisabled = false,
   deleteDisabled = false,
+  printDisabled = false,
+  isPrinting = false,
 }: RecordViewSheetActionsProps) {
-  if (!onEdit && !onDelete) return null;
+  if (!onEdit && !onDelete && !onPrint) return null;
 
   return (
     <div className="shrink-0 border-t border-border bg-card px-6 py-4">
       <div className="flex gap-2">
+        {onPrint ? (
+          <Button variant="outline" onClick={onPrint} disabled={isDisabled || printDisabled || isPrinting}>
+            {isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            {printLabel}
+          </Button>
+        ) : null}
         {onEdit ? (
           <Button className="flex-1" onClick={onEdit} disabled={isDisabled || editDisabled}>
             <Pencil className="h-4 w-4" />

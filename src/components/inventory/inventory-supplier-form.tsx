@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { FormBody, FormFooter, FormSection, FormWorkflowHints } from "@/components/forms/form-shell";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -144,8 +144,7 @@ export function InventorySupplierForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-        <FormWorkflowHints requiredHint={t("inventory.form.workflow.requiredHint")} keyboardHint={t("inventory.form.workflow.keyboardHint")} />
+      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <FormSection
           icon={Building2}
           title={`01 · ${t("inventory.form.sections.supplier")}`}

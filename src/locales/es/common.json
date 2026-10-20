@@ -23,9 +23,7 @@
     "fieldActions": {
       "new": "Nuevo",
       "edit": "Editar"
-    },
-    "requiredHint": "* Campos obligatorios",
-    "keyboardHint": "Tab recorre los controles · Enter avanza entre campos"
+    }
   },
   "address": {
     "useManual": "Ingresar dirección manualmente",

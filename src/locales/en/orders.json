@@ -149,16 +149,13 @@
     "addDescription": "Create a new appointment.",
     "notFound": "This appointment could not be found.",
     "workflow": {
-      "requiredHint": "* Required fields",
-      "keyboardHint": "Tab moves between controls · Enter advances through fields",
       "scheduleTitle": "01 · Schedule the visit",
       "scheduleHint": "Confirm the appointment date with the caller.",
       "customersTitle": "02 · Confirm customer details",
       "senderHint": "Search by name or phone, then confirm the visit address.",
       "receiverHint": "Add a receiver if this visit needs one.",
-      "optional": "Optional",
       "visitTitle": "03 · Visit details",
-      "visitHint": "Record the purpose of the visit, items, quantities, and any instructions.",
+      "visitHint": "Record the purpose of the visit.",
       "commentsEmpty": "Add at least one comment to describe what the customer needs."
     },
     "sections": {
@@ -191,12 +188,15 @@
       "addSender": "Add sender",
       "addReceiver": "Add receiver",
       "editSender": "Edit sender",
+      "removeReceiver": "Remove receiver {{number}}",
       "editReceiver": "Edit receiver"
     },
     "validation": {
       "pickupDateRequired": "Select a valid appointment date.",
       "senderRequired": "Select a sender.",
       "senderAddressRequired": "Select the sender's address.",
+      "receiverRequired": "Select a receiver or remove the empty row.",
+      "duplicateReceiver": "Each receiver can only be added once.",
       "receiverAddressRequired": "Select the receiver's address.",
       "unverifiedSenderAddress": "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.",
       "commentRequired": "Add at least one comment.",

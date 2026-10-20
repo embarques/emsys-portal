@@ -1,7 +1,5 @@
 "use client";
 
-import { FormKeyboardHint } from "@/components/forms/form-shell";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo } from "react";
@@ -96,7 +94,6 @@ export function ConfigurationWorkspace() {
       <PageHeader title={t("settings.title")} description={t("settings.pages.description")} />
       <div className="mx-auto max-w-3xl space-y-6">
         <form onSubmit={handleSubmit(save)} className="space-y-6">
-          <FormKeyboardHint />
         <Card>
           <CardHeader>
             <CardTitle>{t("settings.appearance.title")}</CardTitle>

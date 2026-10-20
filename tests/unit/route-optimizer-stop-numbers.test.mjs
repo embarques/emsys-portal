@@ -96,3 +96,14 @@ test("unmatched optimizer addresses do not consume stop numbers", () => {
 
   assert.deepEqual(numbers, { 402: 1, 401: 2 });
 });
+
+test("repeated nonzero address IDs use coordinates to identify each appointment", () => {
+  const stops = [
+    { key: "a", addressId: "shared", coordinates: [-73, 40] },
+    { key: "b", addressId: "shared", coordinates: [-74, 41] },
+  ];
+  assert.deepEqual(assignOptimizedStopNumbers(stops, result([
+    { id: "shared", routeOrder: 1, coordinates: [-74, 41] },
+    { id: "shared", routeOrder: 2, coordinates: [-73, 40] },
+  ])), { b: 1, a: 2 });
+});

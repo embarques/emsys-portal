@@ -15,7 +15,6 @@ import { TablePaginationControls } from "@/components/app-shell/table-pagination
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
-import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
@@ -141,32 +140,13 @@ export function ItemsWorkspace() {
     setSelectedIds((current) => (checked ? [...current, itemId] : current.filter((entry) => entry !== itemId)));
   }
 
-  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
-
   function openAddForm() {
-    if (isDesktopTabs) {
-      openFormTab({ feature: "items", baseHref: "/items", mode: "add", label: t("items.actions.add") });
-      return;
-    }
     setEditingItem(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(item: Item) {
-    if (isDesktopTabs) {
-      setViewItem(null);
-      openFormTab({
-        feature: "items",
-        baseHref: "/items",
-        mode: "edit",
-        entityId: item.itemId,
-        label: t("items.actions.editNamed", {
-          name: item.description || truncateItemId(item.itemId),
-        }),
-      });
-      return;
-    }
     setEditingItem(item);
     setFormMode("edit");
     setViewItem(null);
@@ -501,6 +481,11 @@ export function ItemsWorkspace() {
             <DialogTitle>
               {formMode === "edit" ? t("items.form.editTitle") : t("items.form.addTitle")}
             </DialogTitle>
+            <DialogDescription>
+              {formMode === "edit" && editingItem
+                ? editingItem.description || truncateItemId(editingItem.itemId)
+                : t("items.form.addDescription")}
+            </DialogDescription>
           </DialogHeader>
           <ItemForm
             key={editingItem?.itemId ?? "new"}
