@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Building2, Plus } from "lucide-react";
+import { Archive, Building2, Plus } from "lucide-react";
 
+import { InventoryActiveToggleDialog, type InventoryActiveToggleTarget } from "@/components/inventory/inventory-active-toggle-dialog";
+import { InventoryActiveBadge } from "@/components/inventory/inventory-status-badge";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
 import { InventorySupplierMobileList } from "@/components/inventory/inventory-supplier-mobile-list";
 import { InventorySupplierViewSheet } from "@/components/inventory/inventory-supplier-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -19,30 +20,28 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { INVENTORY_SUPPLIER_API_TABLE_FIELDS } from "@/lib/inventory/suppliers/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
-import { formatSupplierList, formatSupplierPhones, supplierMatchesQuery } from "@/lib/inventory/display";
+import {
+  formatSupplierContactNames,
+  formatSupplierEmails,
+  formatSupplierList,
+  formatSupplierPhones,
+  supplierMatchesQuery,
+} from "@/lib/inventory/display";
 import {
   useCreateSupplier,
-  useDeleteSuppliers,
   useInventorySnapshotData,
   useInventorySuppliers,
+  useSetSuppliersActive,
   useUpdateSupplier,
 } from "@/lib/inventory/hooks/use-inventory";
 import {
-  createEmptySupplierForm,
   supplierToFormValues,
   type InventorySupplier,
   type SupplierFormValues,
@@ -58,22 +57,21 @@ export function InventorySuppliersWorkspace() {
   const { hasPermission } = useAuth();
   const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess, notifyError } = useFeedback();
   const { data: suppliers = [], isLoading, isError, error } = useInventorySuppliers();
   const snapshot = useInventorySnapshotData();
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
-  const deleteSuppliers = useDeleteSuppliers();
+  const setSuppliersActive = useSetSuppliersActive();
   const canCreate = hasPermission(PERMISSIONS.inventorySuppliersCreate.name, PERMISSIONS.inventorySuppliersCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.inventorySuppliersUpdate.name, PERMISSIONS.inventorySuppliersUpdate.resourceType);
-  const canDelete = hasPermission(PERMISSIONS.inventorySuppliersDelete.name, PERMISSIONS.inventorySuppliersDelete.resourceType);
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, changePageSize } = useTablePageSize();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<InventorySupplier | InventorySupplier[] | null>(null);
+  const [toggleTarget, setToggleTarget] = useState<InventoryActiveToggleTarget<InventorySupplier>>(null);
   const [viewSupplier, setViewSupplier] = useState<InventorySupplier | null>(null);
 
   useTableSelectionReset(buildTableSelectionResetKey(query), setSelectedIds);
@@ -89,6 +87,8 @@ export function InventorySuppliersWorkspace() {
   const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
   const listErrorMessage = isError ? toErrorMessage(error) : null;
+  const selectedActive = suppliers.filter((row) => selectedIds.includes(row.id) && row.isActive);
+  const editingSupplierValues = useMemo(() => (editingSupplier ? supplierToFormValues(editingSupplier) : undefined), [editingSupplier]);
 
   const columns: DataTableColumn<InventorySupplier>[] = [
     {
@@ -97,26 +97,11 @@ export function InventorySuppliersWorkspace() {
       cellClassName: "font-medium",
       renderCell: (row) => row.companyName,
     },
-    {
-      id: "contactNames",
-      label: t("inventory.form.fields.contactNames"),
-      renderCell: (row) => formatSupplierList(row.contactNames) || dash,
-    },
-    {
-      id: "addresses",
-      label: t("inventory.form.fields.addresses"),
-      renderCell: (row) => formatSupplierList(row.addresses) || dash,
-    },
-    {
-      id: "phones",
-      label: t("inventory.form.fields.phones"),
-      renderCell: (row) => formatSupplierPhones(row) || dash,
-    },
-    {
-      id: "emails",
-      label: t("inventory.form.fields.emails"),
-      renderCell: (row) => formatSupplierList(row.emails) || dash,
-    },
+    { id: "contacts", label: t("inventory.columns.contacts"), renderCell: (row) => formatSupplierContactNames(row) || dash },
+    { id: "phones", label: t("inventory.form.fields.phones"), renderCell: (row) => formatSupplierPhones(row) || dash },
+    { id: "emails", label: t("inventory.form.fields.emails"), renderCell: (row) => formatSupplierEmails(row) || dash },
+    { id: "addresses", label: t("inventory.form.fields.addresses"), renderCell: (row) => formatSupplierList(row.addresses) || dash },
+    { id: "status", label: t("inventory.columns.status"), renderCell: (row) => <InventoryActiveBadge isActive={row.isActive} /> },
   ];
 
   const columnVisibility = useApiTableColumns("inventory-suppliers", columns, INVENTORY_SUPPLIER_API_TABLE_FIELDS);
@@ -150,7 +135,7 @@ export function InventorySuppliersWorkspace() {
           setEditingSupplier(null);
           return;
         }
-        const updated = await updateSupplier.mutateAsync({ id: editingSupplier.id, values });
+        const updated = await updateSupplier.mutateAsync({ supplier: editingSupplier, values });
         notifyUpdated(t("inventory.submenus.suppliers"), updated.companyName);
       } else {
         const created = await createSupplier.mutateAsync(values);
@@ -158,29 +143,30 @@ export function InventorySuppliersWorkspace() {
       }
       setFormMode(null);
       setEditingSupplier(null);
-    } catch (error) {
-      window.alert(toErrorMessage(error));
+    } catch (saveError) {
+      notifyError(toErrorMessage(saveError));
     }
   }
 
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((row) => row.id) : [deleteTarget.id];
+  async function confirmToggleActive() {
+    if (!toggleTarget) return;
     try {
-      const result = await deleteSuppliers.mutateAsync(ids);
-
+      const result = await setSuppliersActive.mutateAsync({
+        suppliers: toggleTarget.records,
+        isActive: toggleTarget.isActive,
+      });
       reportBulkSettled({
         result,
         t,
-        entityLabel: t("inventory.submenus.suppliers"),
-        notifyDeleted,
         notifyError,
-        onAllFailed: (message) => {
-          notifyError(message);
-        },
+        onSucceeded: (count) =>
+          notifySuccess(
+            t(toggleTarget.isActive ? "inventory.toasts.reactivated" : "inventory.toasts.deactivated", { count }),
+          ),
+        onAllFailed: notifyError,
         onDone: () => {
           setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
-          setDeleteTarget(null);
+          setToggleTarget(null);
           setViewSupplier(null);
         },
       });
@@ -216,7 +202,11 @@ export function InventorySuppliersWorkspace() {
         onPageChange={setPage}
         onOpen={setViewSupplier}
         onEdit={canUpdate ? openEditForm : undefined}
-        onDelete={canDelete ? setDeleteTarget : undefined}
+        onDeactivate={
+          canUpdate
+            ? (target) => setToggleTarget({ records: Array.isArray(target) ? target : [target], isActive: false })
+            : undefined
+        }
         onSelectedIdsChange={setSelectedIds}
         onAddSupplier={openAddForm}
       />
@@ -251,7 +241,10 @@ export function InventorySuppliersWorkspace() {
             const supplier = pageRows.find((row) => row.id === selectedIds[0]);
             if (supplier) openEditForm(supplier);
           } : undefined}
-          onDelete={canDelete ? () => setDeleteTarget(suppliers.filter((row) => selectedIds.includes(row.id))) : undefined}
+          onDelete={canUpdate ? () => setToggleTarget({ records: selectedActive, isActive: false }) : undefined}
+          deleteDisabled={selectedActive.length === 0}
+          deleteLabel={t("inventory.actions.deactivate")}
+          deleteIcon={<Archive className="size-4" />}
         />
 
         {listErrorMessage ? (
@@ -263,7 +256,7 @@ export function InventorySuppliersWorkspace() {
             description={t("inventory.loading.suppliers.description")}
             columns={[
               t("inventory.form.fields.companyName"),
-              t("inventory.form.fields.contactNames"),
+              t("inventory.columns.contacts"),
               t("inventory.form.fields.phones"),
             ]}
           />
@@ -322,12 +315,14 @@ export function InventorySuppliersWorkspace() {
         snapshot={snapshot}
         open={Boolean(viewSupplier)}
         onOpenChange={(open) => !open && setViewSupplier(null)}
-        onEdit={openEditForm}
-        onDelete={(supplier) => setDeleteTarget(supplier)}
+        onEdit={canUpdate ? openEditForm : undefined}
+        onToggleActive={
+          canUpdate ? (supplier) => setToggleTarget({ records: [supplier], isActive: !supplier.isActive }) : undefined
+        }
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
           <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
@@ -335,7 +330,7 @@ export function InventorySuppliersWorkspace() {
           </DialogHeader>
           <InventorySupplierForm
             key={editingSupplier?.id ?? "new"}
-            initialValues={editingSupplier ? supplierToFormValues(editingSupplier) : createEmptySupplierForm()}
+            initialValues={editingSupplierValues}
             submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.addSupplier")}
             isSubmitting={createSupplier.isPending || updateSupplier.isPending}
             onSubmit={saveSupplier}
@@ -344,24 +339,14 @@ export function InventorySuppliersWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("inventory.delete.suppliersTitle")}</DialogTitle>
-            <DialogDescription>
-              {Array.isArray(deleteTarget)
-                ? t("inventory.delete.suppliersDescription", { count: deleteTarget.length })
-                : t("inventory.delete.supplierDescription", { name: deleteTarget?.companyName ?? "" })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              {t("common.actions.cancel")}
-            </Button>
-            <ConfirmDeleteButton isPending={deleteSuppliers.isPending} onClick={confirmDelete} />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <InventoryActiveToggleDialog
+        target={toggleTarget}
+        copyKey="inventory.activeToggle.suppliers"
+        getName={(supplier) => supplier.companyName}
+        isPending={setSuppliersActive.isPending}
+        onConfirm={confirmToggleActive}
+        onOpenChange={(open) => !open && setToggleTarget(null)}
+      />
     </div>
   );
 }

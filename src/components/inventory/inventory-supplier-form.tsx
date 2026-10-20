@@ -1,18 +1,21 @@
 "use client";
 
-import { Building2, Mail, MapPin, Phone, Plus, Trash2, User } from "lucide-react";
+import { Building2, MapPin, Plus, Trash2, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection, FormWorkflowHints } from "@/components/forms/form-shell";
-import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useTranslation } from "@/lib/i18n";
+import { buildInventorySupplierPayload } from "@/lib/inventory/schemas/inventory.schema";
 import {
+  createEmptySupplierContact,
   createEmptySupplierForm,
+  type InventorySupplierContact,
   type SupplierFormValues,
 } from "@/lib/inventory/types/suppliers";
 import type { ParsedPlaceAddress } from "@/lib/customers/types";
@@ -31,89 +34,81 @@ function formatSelectedAddress(place: ParsedPlaceAddress): string {
     .join(", ");
 }
 
-function RepeatableTextList({
-  id,
-  label,
-  addLabel,
-  removeLabel,
-  values,
-  placeholder,
-  type = "text",
+function SupplierContactsEditor({
+  contacts,
   onChange,
 }: {
-  id: string;
-  label: string;
-  addLabel: string;
-  removeLabel: string;
-  values: string[];
-  placeholder: string;
-  type?: "text" | "email";
-  onChange: (values: string[]) => void;
+  contacts: InventorySupplierContact[];
+  onChange: (contacts: InventorySupplierContact[]) => void;
 }) {
-  const entries = values.length > 0 ? values : [""];
+  const { t } = useTranslation();
+  const entries = contacts.length > 0 ? contacts : [createEmptySupplierContact()];
+
+  function patch(index: number, next: Partial<InventorySupplierContact>) {
+    onChange(entries.map((entry, entryIndex) => (entryIndex === index ? { ...entry, ...next } : entry)));
+  }
 
   return (
-    <div className="space-y-2">
-      {entries.map((value, index) => {
-        const isOnly = entries.length <= 1;
-
-        return (
-          <div key={`${id}-${index}`} className="flex items-center gap-2">
-            {id === "address" ? (
-              <AddressAutocompleteInput
-                id={`${id}-${index}`}
-                value={value}
-                placeholder={placeholder}
-                onValueChange={(nextValue) =>
-                  onChange(entries.map((entry, entryIndex) => (entryIndex === index ? nextValue : entry)))
-                }
-                onPlaceSelected={(place) =>
-                  onChange(
-                    entries.map((entry, entryIndex) =>
-                      entryIndex === index ? formatSelectedAddress(place) : entry,
-                    ),
-                  )
-                }
-                allowManualEntry
-              />
-            ) : (
-              <Input
-                id={`${id}-${index}`}
-                type={type}
-                value={value}
-                placeholder={placeholder}
-                aria-label={entries.length > 1 ? `${label} ${index + 1}` : label}
-                onChange={(event) =>
-                  onChange(entries.map((entry, entryIndex) => (entryIndex === index ? event.target.value : entry)))
-                }
-                onFocus={selectFormFieldTextOnFocus}
-              />
-            )}
+    <div className="space-y-3">
+      {entries.map((contact, index) => (
+        <fieldset key={index} className="grid gap-3 rounded-lg border border-border p-3 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <legend className="px-1 text-xs font-medium text-muted-foreground">
+            {t("inventory.form.contactNumber", { number: index + 1 })}
+          </legend>
+          <div className="space-y-1">
+            <Label htmlFor={`supplier-contact-name-${index}`}>{t("inventory.form.fields.contactName")}</Label>
+            <Input
+              id={`supplier-contact-name-${index}`}
+              value={contact.name}
+              placeholder={t("inventory.form.placeholders.contactName")}
+              onChange={(event) => patch(index, { name: event.target.value })}
+              onFocus={selectFormFieldTextOnFocus}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`supplier-contact-phone-${index}`}>{t("inventory.form.fields.contactPhone")}</Label>
+            <PhoneInput
+              id={`supplier-contact-phone-${index}`}
+              value={contact.phone}
+              onChange={(phone) => patch(index, { phone })}
+              onFocus={selectFormFieldTextOnFocus}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`supplier-contact-email-${index}`}>{t("inventory.form.fields.contactEmail")}</Label>
+            <Input
+              id={`supplier-contact-email-${index}`}
+              type="email"
+              value={contact.email}
+              placeholder={t("inventory.form.placeholders.email")}
+              onChange={(event) => patch(index, { email: event.target.value })}
+              onFocus={selectFormFieldTextOnFocus}
+            />
+          </div>
+          <div className="flex items-end">
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              title={removeLabel}
-              disabled={isOnly}
+              disabled={entries.length <= 1}
               className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              onClick={() =>
-                onChange(entries.length > 1 ? entries.filter((_, entryIndex) => entryIndex !== index) : [""])
-              }
-              aria-label={removeLabel}
+              title={t("inventory.form.removeContact")}
+              aria-label={t("inventory.form.removeContact")}
+              onClick={() => onChange(entries.filter((_, entryIndex) => entryIndex !== index))}
             >
               <Trash2 className="size-4" />
             </Button>
           </div>
-        );
-      })}
+        </fieldset>
+      ))}
       <Button
         type="button"
         variant="outline"
         className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
-        onClick={() => onChange([...entries, ""])}
+        onClick={() => onChange([...entries, createEmptySupplierContact()])}
       >
         <Plus className="size-4" />
-        {addLabel}
+        {t("inventory.form.addContact")}
       </Button>
     </div>
   );
@@ -130,6 +125,7 @@ export function InventorySupplierForm({
   const [values, setValues] = useState<SupplierFormValues>(initialValues ?? createEmptySupplierForm());
   const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
+  const validation = buildInventorySupplierPayload(values);
 
   useEffect(() => {
     setValues(initialValues ?? createEmptySupplierForm());
@@ -138,8 +134,8 @@ export function InventorySupplierForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!values.companyName.trim()) {
-      setValidationError(t("inventory.form.validation.companyNameRequired"));
+    if (!validation.ok) {
+      setValidationError(t(validation.error));
       return;
     }
     setValidationError(null);
@@ -150,113 +146,76 @@ export function InventorySupplierForm({
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody keyboardHint={false} isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <FormWorkflowHints requiredHint={t("inventory.form.workflow.requiredHint")} keyboardHint={t("inventory.form.workflow.keyboardHint")} />
-        <div className="grid items-start gap-5 @4xl:grid-cols-2">
-          <div className="min-w-0 space-y-5">
-            <FormSection
-              icon={Building2}
-              title={`01 · ${t("inventory.form.sections.supplier")}`}
-              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-            >
-              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.supplierDetailsHint")}</p>
-              <div className="space-y-1">
-                <Label htmlFor="companyName">
-                  {t("inventory.form.fields.companyName")} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="companyName"
-                  autoComplete="organization"
-                  autoFocus
-                  value={values.companyName}
-                  onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
-                  onFocus={selectFormFieldTextOnFocus}
-                  required
-                />
-              </div>
-            </FormSection>
-
-            <FormSection
-              icon={User}
-              title={`02 · ${t("inventory.form.sections.contacts")}`}
-              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-              action={<span className="text-xs text-muted-foreground"
-            >{t("inventory.form.workflow.optional")}</span>}>
-              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.contactsDetailsHint")}</p>
-              <RepeatableTextList
-                id="contactName"
-                label={t("inventory.form.fields.contactNames")}
-                addLabel={t("inventory.form.addContact")}
-                removeLabel={t("inventory.form.removeContact")}
-                values={values.contactNames}
-                placeholder={t("inventory.form.placeholders.contactName")}
-                onChange={(contactNames) => setValues((current) => ({ ...current, contactNames }))}
-              />
-            </FormSection>
-
-            <FormSection
-              icon={MapPin}
-              title={`03 · ${t("inventory.form.sections.addresses")}`}
-              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-              action={<span className="text-xs text-muted-foreground"
-            >{t("inventory.form.workflow.optional")}</span>}>
-              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.addressesDetailsHint")}</p>
-              <Label htmlFor="supplier-address">{t("inventory.form.fields.address")}</Label>
-              <AddressAutocompleteInput
-                id="supplier-address"
-                value={values.addresses[0] ?? ""}
-                placeholder={t("inventory.form.placeholders.address")}
-                allowManualEntry
-                className="w-full"
-                manualEntryTogglePosition="label"
-                onValueChange={(address) => setValues((current) => ({ ...current, addresses: [address] }))}
-                onPlaceSelected={(place) =>
-                  setValues((current) => ({
-                    ...current,
-                    addresses: [formatSelectedAddress(place)],
-                  }))
-                }
-              />
-            </FormSection>
-
+        <FormSection
+          icon={Building2}
+          title={`01 · ${t("inventory.form.sections.supplier")}`}
+          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+        >
+          <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.supplierDetailsHint")}</p>
+          <div className="space-y-1">
+            <Label htmlFor="companyName">
+              {t("inventory.form.fields.companyName")} <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="companyName"
+              autoComplete="organization"
+              autoFocus
+              value={values.companyName}
+              onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
+              onFocus={selectFormFieldTextOnFocus}
+              required
+            />
           </div>
-          <div className="min-w-0 space-y-5">
-            <FormSection
-              icon={Phone}
-              title={`04 · ${t("inventory.form.sections.phones")}`}
-              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-              action={<span className="text-xs text-muted-foreground"
-            >{t("inventory.form.workflow.optional")}</span>}>
-              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.phonesDetailsHint")}</p>
-              <PhoneListEditor
-                idPrefix="supplier-phone"
-                phones={values.phones}
-                compact
-                onChange={(phones) => setValues((current) => ({ ...current, phones }))}
-              />
-            </FormSection>
+        </FormSection>
 
-            <FormSection
-              icon={Mail}
-              title={`05 · ${t("inventory.form.sections.emails")}`}
-              className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-              action={<span className="text-xs text-muted-foreground"
-            >{t("inventory.form.workflow.optional")}</span>}>
-              <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.emailsDetailsHint")}</p>
-              <RepeatableTextList
-                id="email"
-                label={t("inventory.form.fields.emails")}
-                addLabel={t("inventory.form.addEmail")}
-                removeLabel={t("inventory.form.removeEmail")}
-                values={values.emails}
-                placeholder={t("inventory.form.placeholders.email")}
-                type="email"
-                onChange={(emails) => setValues((current) => ({ ...current, emails }))}
-              />
-            </FormSection>
-          </div>
-        </div>
+        <FormSection
+          icon={User}
+          title={`02 · ${t("inventory.form.sections.contacts")}`}
+          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+          action={<span className="text-xs text-muted-foreground">{t("inventory.form.workflow.optional")}</span>}
+        >
+          <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.contactsDetailsHint")}</p>
+          <SupplierContactsEditor
+            contacts={values.contacts}
+            onChange={(contacts) => setValues((current) => ({ ...current, contacts }))}
+          />
+        </FormSection>
+
+        <FormSection
+          icon={MapPin}
+          title={`03 · ${t("inventory.form.sections.addresses")}`}
+          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+          action={<span className="text-xs text-muted-foreground">{t("inventory.form.workflow.optional")}</span>}
+        >
+          <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.addressesDetailsHint")}</p>
+          <Label htmlFor="supplier-address">{t("inventory.form.fields.address")}</Label>
+          <AddressAutocompleteInput
+            id="supplier-address"
+            value={values.addresses[0] ?? ""}
+            placeholder={t("inventory.form.placeholders.address")}
+            allowManualEntry
+            className="w-full"
+            manualEntryTogglePosition="label"
+            onValueChange={(address) =>
+              setValues((current) => ({ ...current, addresses: [address, ...current.addresses.slice(1)] }))
+            }
+            onPlaceSelected={(place) =>
+              setValues((current) => ({
+                ...current,
+                addresses: [formatSelectedAddress(place), ...current.addresses.slice(1)],
+              }))
+            }
+          />
+        </FormSection>
       </FormBody>
 
-      <FormFooter error={validationError} warning={!values.companyName.trim() ? t("inventory.form.validation.companyNameRequired") : null} submitLabel={submitLabel} onCancel={onCancel} isSubmitting={isSubmitting} />
+      <FormFooter
+        error={validationError}
+        warning={validation.ok ? null : t(validation.error)}
+        submitLabel={submitLabel}
+        onCancel={onCancel}
+        isSubmitting={isSubmitting}
+      />
     </form>
   );
 }

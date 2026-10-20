@@ -166,41 +166,22 @@ Scanned numbers are merchandise labels that originated on an invoice. Resolve by
 
 ### Inventory
 
-**Holder workflow (proposed contract):** `inventory.md` defines the new supply
-operations model implemented at `/inventory/workflow`. Enable it only against an
-API implementing that contract with `NEXT_PUBLIC_INVENTORY_WORKFLOW_ENABLED=true`.
-See `docs/inventory-workflow.md` for deployment requirements and remaining integration work.
+Inventory manages the company's **internal supplies and materials**, separate from customer merchandise. It follows the ledger model in `inventory.md`, which the live Swagger now publishes under `/v1/inventory/...` (see `docs/inventory-swagger-verification.md`).
 
-In this model, stock belongs to a persistent warehouse, employee, vehicle, or route
-crew holder; a daily route is context only. Dispatch transfers stock without
-recognizing sales. Returns, aggregate supply sales, categorized dispositions,
-physical counts, payment verification, office handovers and obligation settlements
-are separate documents. Posted documents are immutable. Closeout requires physical
-counts for available and quarantined stock and a fresh server reconciliation;
-financial differences require an explanation. Reopening uses a permissioned reason,
-corrective postings and immutable revisions. Retained stock persists overnight.
+Stock belongs to a persistent **holder**: a warehouse, employee, vehicle, or route crew (`/inventory/holders`). A daily route is context only, never a stock destination. Quantities are never stored on items; they come from read-only **stock balances** per item, holder and condition (`AVAILABLE` / `QUARANTINED`).
 
-The following describes the **existing legacy API/workspaces**, which remain available
-for historical context. Live Swagger now documents multi-line, versioned receipts
-and dispatches at those same `/inventory/...` paths; the legacy portal adapter
-requires migration (see `docs/inventory-swagger-verification.md`). Do not combine their journal
-inventory changes with the new workflow for the same supply movements.
+The sub-tables under Inventory use that contract:
 
-Inventory manages the company's internal supplies and materials.
+- **Stock** (`/inventory/items`): supply catalog (`name`, `sku`, `category`, `unitOfMeasure`, `defaultSellingPriceMinor`, `reorderThreshold`, `isActive`). Available / quarantined quantities are summed from `/inventory/stock`. Items are **deactivated**, not deleted (the API has no DELETE). "Adjust stock" creates and posts an `/inventory/adjustments` document.
+- **Receipts**: multi-line purchases from a supplier into a **warehouse** holder (`lines[]` of item, quantity, `unitCostMinor`). Posting increases stock and valuation.
+- **Dispatches**: multi-line transfers from a warehouse to an employee, vehicle or crew holder (optional responsible employee and daily-route context). Dispatches record **no revenue**.
+- **Suppliers**: `companyName`, `contacts[]` (`{name, phone, email}`), `addresses[]`, `isActive`. Deactivated, not deleted.
 
-It is separate from customer merchandise and is used to:
+Receipts and dispatches are versioned documents: created as **DRAFT**, edited with PATCH + `If-Match`, then **posted** (`If-Match` + `Idempotency-Key`) or **cancelled** (`If-Match`). Posted and cancelled documents are read-only. Money is integer USD cents (`…Minor`); `receivedAt` / `dispatchedAt` / `occurredAt` are UTC instants; `businessDate` is a calendar date. The server-owned `audit` block (`createdAt`, `createdBy`, `updatedAt`, `updatedBy`) is never sent.
 
-- Track stock items (item, quantity left, reorder threshold)
-- Maintain suppliers (company name, contacts, addresses, phones, emails)
-- Record receipts (item, quantity received, average cost, supplier, date)
-- Record dispatches (item, quantity dispatched, income gained, dispatched to employee or daily route, date)
-- Derive on-hand stock and average cost from those movements
+**Supply operations** (`/inventory/workflow`, behind `NEXT_PUBLIC_INVENTORY_WORKFLOW_ENABLED=true`) covers the rest of the lifecycle: returns, loss & damage dispositions, physical counts, adjustments, aggregate supply sales, payments and allocations, office cash handovers, collection obligations and settlements, daily closeouts (preview, close, reopen, revisions), holder custody and reassignment, item price history, route crews, daily routes, and the stock-valuation / sales / obligations / discrepancy reports, audit events and journal entries. Closeout requires available and quarantined counts that reconcile with a fresh server preview; financial differences require an explanation. Reopening needs `closeout.reopen` and a reason, and creates a new immutable revision. Retained stock persists overnight with its holder.
 
-Every inventory record stores **createdAt / createdBy / updatedAt / updatedBy**. `createdAt` / `updatedAt` are datetimes. Receipt `receivedAt` and dispatch `dispatchedAt` are **dates only**. `createdBy` and `updatedBy` are user refs `{ id, name }`.
-
-Company-scoped inventory API (`/v1/inventory/...`): items, stock (read-only), receipts, dispatches, and suppliers. Catalog stores only `item` and `reorderThreshold`; `quantity` and `averageCost` are read-only from stock. Stock is receipts minus dispatches, with weighted average cost from receipts. Dispatch is rejected when quantity exceeds available stock. Item delete is rejected if referenced by receipts or dispatches. Supplier delete is rejected if referenced by receipts.
-
-**Dispatched to** (`dispatchedTo`) is who received the supplies: a **daily vehicle-route** `{ id, name, route?: { id, name } }` **or** a **single employee** `{ id, name }` (same shape as invoice `receivedBy`). The portal picker uses a local `assigneeSource` (`employee` | `route`); do **not** persist that discriminator. Discriminate by shape: numeric employee `id` vs Mongo daily-route `id` / nested crew `route`.
+Daily Income **Register inventory change** still posts a journal with `transactionType: "INVENTORY"` (its own journal contract). Do not record the same supply movement both there and through receipts/dispatches.
 
 ### Routes
 

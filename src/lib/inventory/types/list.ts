@@ -11,18 +11,19 @@ export type InventoryListParams = {
   search?: InventorySearchFilter;
   itemId?: string;
   supplierId?: string;
+  holderId?: string;
 };
 
 export const DEFAULT_INVENTORY_ITEM_LIST_PARAMS = {
   page: 1,
   limit: 200,
-  sort: "item:asc",
+  sort: "name:asc",
 } as const satisfies Pick<InventoryListParams, "page" | "limit" | "sort">;
 
 export const DEFAULT_INVENTORY_STOCK_LIST_PARAMS = {
   page: 1,
-  limit: 200,
-  sort: "item.item:asc",
+  limit: 500,
+  sort: "itemId:asc",
 } as const satisfies Pick<InventoryListParams, "page" | "limit" | "sort">;
 
 export const DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS = {
@@ -41,6 +42,12 @@ export const DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS = {
   page: 1,
   limit: 200,
   sort: "companyName:asc",
+} as const satisfies Pick<InventoryListParams, "page" | "limit" | "sort">;
+
+export const DEFAULT_INVENTORY_HOLDER_LIST_PARAMS = {
+  page: 1,
+  limit: 200,
+  sort: "displayName:asc",
 } as const satisfies Pick<InventoryListParams, "page" | "limit" | "sort">;
 
 export function createInventorySearchFilter(value: string): InventorySearchFilter | undefined {

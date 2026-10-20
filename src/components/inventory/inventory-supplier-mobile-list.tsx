@@ -22,7 +22,7 @@ type InventorySupplierMobileListProps = {
   onPageChange: (page: number) => void;
   onOpen: (supplier: InventorySupplier) => void;
   onEdit?: (supplier: InventorySupplier) => void;
-  onDelete?: (supplier: InventorySupplier | InventorySupplier[]) => void;
+  onDeactivate?: (supplier: InventorySupplier | InventorySupplier[]) => void;
   onSelectedIdsChange: (ids: string[]) => void;
   onAddSupplier: () => void;
 };
@@ -39,7 +39,7 @@ export function InventorySupplierMobileList({
   onPageChange,
   onOpen,
   onEdit,
-  onDelete,
+  onDeactivate,
   onSelectedIdsChange,
   onAddSupplier,
 }: InventorySupplierMobileListProps) {
@@ -104,11 +104,11 @@ export function InventorySupplierMobileList({
         selectedCount={selectedIds.length}
         canEdit={selectedIds.length === 1}
         onClear={() => onSelectedIdsChange([])}
-        onEdit={() => {
+        onEdit={onEdit ? () => {
           const supplier = selectedSuppliers[0];
-          if (supplier && onEdit) onEdit(supplier);
-        }}
-        onDelete={() => onDelete?.(selectedSuppliers)}
+          if (supplier) onEdit(supplier);
+        } : undefined}
+        onDeactivate={onDeactivate ? () => onDeactivate(selectedSuppliers.filter((supplier) => supplier.isActive)) : undefined}
       />
 
       <div className="rounded-3xl border border-border bg-card px-4 shadow-sm">
@@ -119,8 +119,8 @@ export function InventorySupplierMobileList({
             description={t("inventory.loading.suppliers.description")}
             columns={[
               t("inventory.form.fields.companyName"),
-              t("inventory.form.fields.contactNames"),
-              t("inventory.form.fields.phones"),
+              t("inventory.columns.contacts"),
+              t("inventory.form.fields.addresses"),
             ]}
           />
         ) : pageRows.length > 0 ? (
@@ -131,8 +131,8 @@ export function InventorySupplierMobileList({
               selected={selectedIds.includes(supplier.id)}
               selectionMode={selectionMode}
               onOpen={onOpen}
-              onEdit={onEdit ?? (() => undefined)}
-              onDelete={onDelete ?? (() => undefined)}
+              onEdit={onEdit}
+              onDeactivate={onDeactivate}
               onToggleSelected={toggleSelected}
             />
           ))

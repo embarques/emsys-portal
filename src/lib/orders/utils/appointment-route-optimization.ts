@@ -1,5 +1,5 @@
 import { normalizeApiError } from "@/lib/api/axios";
-import { buildApiAddressPayload, type ApiAddressPayload } from "@/lib/api/payloads";
+import { buildApiAddressPayload, isApiGeoLocation, type ApiAddressPayload } from "@/lib/api/payloads";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 import { getOrderRecordId, type Order } from "@/lib/orders/types";
@@ -16,6 +16,8 @@ export type AppointmentRouteOptimizationIssue =
   | "multipleRoutes"
   | "multipleBranches"
   | "branchAddressMissing"
+  | "branchCoordinatesMissing"
+  | "stopCoordinatesMissing"
   | "emptyResult";
 
 export class AppointmentRouteOptimizationError extends Error {
@@ -71,9 +73,10 @@ export function planAppointmentRouteOptimization(
   const stops: AppointmentRouteOptimizationStop[] = [];
   for (const order of mappable) {
     const address = buildApiAddressPayload(getCustomerPrimaryCoreAddress(order.sender));
-    if (address) {
-      stops.push({ orderRecordId: getOrderRecordId(order), address });
+    if (!address || !isApiGeoLocation(address.location)) {
+      return { issue: "stopCoordinatesMissing" };
     }
+    stops.push({ orderRecordId: getOrderRecordId(order), address });
   }
   if (stops.length < 2) return { issue: "notEnoughStops" };
 

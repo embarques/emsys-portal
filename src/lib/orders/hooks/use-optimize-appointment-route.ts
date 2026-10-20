@@ -2,7 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { buildApiAddressPayload } from "@/lib/api/payloads";
+import type { RouteEndpointLocations } from "@/lib/orders/schemas/route-endpoints.schema";
+import { buildApiAddressPayload, isApiGeoLocation, type ApiAddressPayload } from "@/lib/api/payloads";
 import { fetchBranchById } from "@/lib/branches/api/branches-api";
 import {
   AppointmentRouteOptimizationError,
@@ -16,7 +17,7 @@ import { optimizeSingleRoute } from "@/lib/route-optimizer/api/route-optimizer-a
 import type { Branch } from "@/lib/branches/types";
 
 export class BranchDepotRequiredError extends AppointmentRouteOptimizationError {
-  constructor(readonly branch: Branch) { super("branchAddressMissing"); }
+  constructor(readonly branch: Branch) { super("branchCoordinatesMissing"); }
 }
 
 const BRANCH_DEPOT_STALE_TIME_MS = 5 * 60_000;
@@ -30,22 +31,30 @@ export function useOptimizeAppointmentRoute() {
 
   return useMutation({
     mutationFn: async (
-      plan: AppointmentRouteOptimizationPlan,
+      plan: AppointmentRouteOptimizationPlan & { endpoints?: RouteEndpointLocations },
     ): Promise<AppointmentRouteStopOrder> => {
-      const branch = await queryClient.fetchQuery({
-        queryKey: queryKeys.branches.detail(plan.branchId),
-        queryFn: () => fetchBranchById(plan.branchId),
-        staleTime: BRANCH_DEPOT_STALE_TIME_MS,
-      });
-
-      const depot = buildApiAddressPayload(branch.address);
-      if (!depot?.address1 || !depot.location) {
-        throw new BranchDepotRequiredError(branch);
+      let start: ApiAddressPayload;
+      let end: ApiAddressPayload;
+      if (plan.endpoints) {
+        start = { location: plan.endpoints.start };
+        end = { location: plan.endpoints.end };
+      } else {
+        const branch = await queryClient.fetchQuery({
+          queryKey: queryKeys.branches.detail(plan.branchId),
+          queryFn: () => fetchBranchById(plan.branchId),
+          staleTime: BRANCH_DEPOT_STALE_TIME_MS,
+        });
+        const depot = buildApiAddressPayload(branch.address);
+        if (!depot || !isApiGeoLocation(depot.location)) {
+          throw new BranchDepotRequiredError(branch);
+        }
+        start = depot;
+        end = depot;
       }
 
       const result = await optimizeSingleRoute({
-        start: depot,
-        end: depot,
+        start,
+        end,
         stops: plan.stops.map((stop) => stop.address),
       });
 

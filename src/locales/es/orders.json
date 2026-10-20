@@ -324,8 +324,9 @@
   "map": {
     "title": "Vista de mapa de citas",
     "description": "Visualice las citas seleccionadas en un mapa para facilitar la asignación de rutas.",
-    "dailyRouteTitle": "Vista de mapa de ruta diaria",
-    "dailyRouteDescription": "Visualice las citas de la ruta en un mapa para facilitar la optimización de la ruta.",
+    "dailyRouteTitle": "Mapa de rutas diarias",
+    "dailyRouteDescription": "Visualice las paradas de la ruta y organice su orden de visita.",
+    "dailyRouteSelectionHint": "Seleccione paradas para optimizar su orden de visita",
     "loading": "Cargando paradas de recogida verificadas…",
     "empty": "No hay paradas de recogida verificadas que coincidan con los filtros actuales.",
     "stopsShown": "{{count}} en el mapa",
@@ -350,6 +351,16 @@
     }
   },
   "optimize": {
+    "endpoints": {
+      "title": "Ingrese el inicio y fin de la ruta",
+      "description": "La sucursal no tiene coordenadas válidas. Ingrese las coordenadas de inicio y fin para esta optimización. Estos valores no cambiarán la dirección de la sucursal.",
+      "start": "Inicio",
+      "end": "Fin",
+      "longitude": "Longitud",
+      "latitude": "Latitud",
+      "invalidLongitude": "Ingrese una longitud entre −180 y 180.",
+      "invalidLatitude": "Ingrese una latitud entre −90 y 90."
+    },
     "success": "Ruta optimizada: {{count}} parada ordenada ({{distance}}).",
     "success_plural": "Ruta optimizada: {{count}} paradas ordenadas ({{distance}}).",
     "totalDistance": "Optimizada · {{distance}}",
@@ -359,11 +370,17 @@
     "stopNumberInput": "Número de parada para {{name}}",
     "manualOrder": "Orden manual",
     "clearOrder": "Limpiar orden",
+    "finalizeOrder": "Finalizar orden de ruta",
+    "finalizingOrder": "Guardando orden de ruta…",
+    "finalizeSuccess": "Orden de ruta guardado para {{count}} parada.",
+    "finalizeSuccess_plural": "Orden de ruta guardado para {{count}} paradas.",
     "errors": {
       "notEnoughStops": "Seleccione al menos dos citas con dirección verificada para optimizar una ruta.",
       "routeRequired": "Asigne las citas seleccionadas a una ruta antes de optimizar.",
       "multipleRoutes": "Las citas seleccionadas pertenecen a rutas diferentes. Seleccione citas de una sola ruta para optimizar.",
       "multipleBranches": "Las citas seleccionadas pertenecen a sucursales diferentes. Seleccione citas de una sola sucursal para optimizar.",
+      "branchCoordinatesMissing": "La dirección de la sucursal no tiene coordenadas válidas. Actualice su ubicación GeoJSON antes de optimizar esta ruta.",
+      "stopCoordinatesMissing": "Una parada seleccionada no tiene coordenadas válidas. Verifique su dirección antes de optimizar.",
       "branchAddressMissing": "La sucursal necesita una dirección con coordenadas guardadas. Seleccione la dirección en Google, guarde y optimice otra vez. Si no tiene permiso para editar sucursales, solicite la actualización a un administrador.",
       "emptyResult": "El optimizador de rutas no devolvió un orden de paradas para las citas seleccionadas."
     }

@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, Edit, Trash2 } from "lucide-react";
+import { Archive, Check, Edit } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { formatSupplierList, formatSupplierPhones } from "@/lib/inventory/display";
+import { InventoryActiveBadge } from "@/components/inventory/inventory-status-badge";
+import { formatSupplierContactNames, formatSupplierEmails, formatSupplierPhones } from "@/lib/inventory/display";
 import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 import { useTranslation } from "@/lib/i18n";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
@@ -14,8 +15,8 @@ type InventorySupplierMobileRowProps = {
   selected: boolean;
   selectionMode: boolean;
   onOpen: (supplier: InventorySupplier) => void;
-  onEdit: (supplier: InventorySupplier) => void;
-  onDelete: (supplier: InventorySupplier) => void;
+  onEdit?: (supplier: InventorySupplier) => void;
+  onDeactivate?: (supplier: InventorySupplier) => void;
   onToggleSelected: (supplierId: string, checked: boolean) => void;
 };
 
@@ -31,7 +32,7 @@ export function InventorySupplierMobileRow({
   selectionMode,
   onOpen,
   onEdit,
-  onDelete,
+  onDeactivate,
   onToggleSelected,
 }: InventorySupplierMobileRowProps) {
   const { t } = useTranslation();
@@ -55,7 +56,7 @@ export function InventorySupplierMobileRow({
             selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
           )}
           onClick={() => onToggleSelected(supplier.id, !selected)}
-          aria-label={selected ? "Deselect supplier" : "Select supplier"}
+          aria-label={t(selected ? "inventory.selection.deselect" : "inventory.selection.select", { name: supplier.companyName })}
         >
           {selected ? <Check className="size-4" /> : null}
         </button>
@@ -69,39 +70,48 @@ export function InventorySupplierMobileRow({
         </button>
 
         <button type="button" className="min-w-0 text-left" onClick={handleOpen}>
-          <span className="block truncate text-xl font-bold leading-tight text-foreground">{supplier.companyName}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="block truncate text-xl font-bold leading-tight text-foreground">{supplier.companyName}</span>
+            {!supplier.isActive ? <InventoryActiveBadge isActive={false} /> : null}
+          </span>
           <span className="mt-2 block break-words text-sm leading-relaxed text-muted-foreground">
-            {formatSupplierList(supplier.contactNames) || dash}
+            {formatSupplierContactNames(supplier) || dash}
           </span>
           <span className="mt-1 block break-words text-sm leading-relaxed text-muted-foreground">
             {formatSupplierPhones(supplier) || dash}
           </span>
           <span className="mt-1 block line-clamp-2 break-words text-sm leading-relaxed text-muted-foreground">
-            {formatSupplierList(supplier.emails) || dash}
+            {formatSupplierEmails(supplier) || dash}
           </span>
         </button>
       </div>
 
-      <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
-        <Button
-          type="button"
-          variant="outline"
-          className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
-          onClick={() => onEdit(supplier)}
-        >
-          <Edit className="size-4" />
-          {t("common.actions.edit")}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
-          onClick={() => onDelete(supplier)}
-        >
-          <Trash2 className="size-4" />
-          {t("common.actions.delete")}
-        </Button>
-      </div>
+      {onEdit || (onDeactivate && supplier.isActive) ? (
+        <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
+          {onEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
+              onClick={() => onEdit(supplier)}
+            >
+              <Edit className="size-4" />
+              {t("common.actions.edit")}
+            </Button>
+          ) : null}
+          {onDeactivate && supplier.isActive ? (
+            <Button
+              type="button"
+              variant="outline"
+              className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
+              onClick={() => onDeactivate(supplier)}
+            >
+              <Archive className="size-4" />
+              {t("inventory.actions.deactivate")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }

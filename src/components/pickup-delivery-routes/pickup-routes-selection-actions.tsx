@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Loader2, Printer, RouteOff, Sparkles } from "lucide-react";
+import { Eye, Loader2, Map, Printer, RouteOff } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
@@ -129,7 +129,7 @@ export function PickupRoutesSelectionActions({
   }
 
   /** Optimization happens on the map, scoped to this daily route. */
-  async function optimizeSelectedPickupRoute() {
+  async function mapSelectedPickupRoute() {
     if (!singleSelectedRouteId || isOpeningMap) return;
 
     setIsOpeningMap(true);
@@ -200,17 +200,17 @@ export function PickupRoutesSelectionActions({
         variant="outline"
         size="sm"
         className={cn("whitespace-nowrap", tableSelectionActionStyles.optimize)}
-        onClick={() => void optimizeSelectedPickupRoute()}
+        onClick={() => void mapSelectedPickupRoute()}
         disabled={!singleSelectedRouteId || isBusy}
       >
         {isOpeningMap ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <Sparkles className="h-4 w-4" />
+          <Map className="h-4 w-4" />
         )}
         {isOpeningMap
           ? t("routes.pickupRoutes.actions.loadingMap")
-          : t("routes.pickupRoutes.actions.optimize")}
+          : t("routes.pickupRoutes.actions.mapRoute")}
       </Button>
       {singleSelectedRouteId ? (
         <Button

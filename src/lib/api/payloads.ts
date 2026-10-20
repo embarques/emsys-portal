@@ -89,6 +89,16 @@ export type AddressInput = {
   verification?: AddressVerificationInput;
 };
 
+/** Validate a GeoJSON point without coercing or swapping longitude and latitude. */
+export function isApiGeoLocation(value: unknown): value is ApiGeoLocationPayload {
+  if (!value || typeof value !== "object" || !("type" in value) || value.type !== "Point" || !("coordinates" in value)) return false;
+  const coordinates = value.coordinates;
+  if (!Array.isArray(coordinates) || coordinates.length !== 2) return false;
+  const [longitude, latitude] = coordinates;
+  return typeof longitude === "number" && Number.isFinite(longitude) && Math.abs(longitude) <= 180 &&
+    typeof latitude === "number" && Number.isFinite(latitude) && Math.abs(latitude) <= 90;
+}
+
 export function buildApiGeoLocationPayload(
   location: AddressLocationInput,
 ): ApiGeoLocationPayload | undefined {

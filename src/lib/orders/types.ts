@@ -60,6 +60,8 @@ export type Order = ApiTableRecord & {
   sector: PickupSector | null;
   routeId?: string;
   routeName?: string;
+  /** Finalized stop position on the assigned route (API `orderNumber`). */
+  orderNumber?: number;
 };
 
 export const ORDER_COMMENT_PURPOSES = [

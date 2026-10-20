@@ -20,7 +20,7 @@ import { BRANCH_TABLE_FILTER_FIELDS } from "@/lib/branches/filter-fields";
 import { BRANCH_BAR_OR_SEARCH_FIELDS } from "@/lib/branches/search-fields";
 import {
   buildApiAddressPayload,
-  buildApiGeoLocationPayload,
+  isApiGeoLocation,
   type ApiAddressPayload,
   type ApiBranchSettingsPayload,
 } from "@/lib/api/payloads";
@@ -81,7 +81,7 @@ function buildBranchesQuery(params: BranchListParams): string {
 }
 
 type ApiAddress = {
-  location?: { type: "Point"; coordinates: [number, number] } | null;
+  location?: { type?: string; coordinates?: unknown } | null;
   address1?: string;
   address2?: string;
   apartment?: string;
@@ -159,7 +159,9 @@ function normalizeAddress(raw?: ApiAddress): BranchAddress {
   const address = raw ?? {};
 
   return {
-    location: buildApiGeoLocationPayload(address.location ?? null) ?? null,
+    location: isApiGeoLocation(address.location)
+      ? { type: "Point", coordinates: [...address.location.coordinates] as [number, number] }
+      : null,
     address1: String(address.address1 ?? "").trim(),
     address2: String(address.address2 ?? "").trim(),
     apartment: String(address.apartment ?? "").trim(),

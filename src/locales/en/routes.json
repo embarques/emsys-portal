@@ -100,7 +100,7 @@
       "noPickupsOnRoute": "No pickups are assigned to the selected route.",
       "print": "Print route",
       "preparing": "Preparing…",
-      "optimize": "Optimize route",
+      "mapRoute": "Map route",
       "viewRoute": "View route",
       "loadingMap": "Loading map…",
       "noMappableStops": "None of the appointments on this route have a verified address with map coordinates, so there is nothing to map.",

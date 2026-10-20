@@ -8,14 +8,17 @@ import { FormBody, FormFooter, FormSection, FormWorkflowHints } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/lib/i18n";
+import { buildInventoryItemPayload } from "@/lib/inventory/schemas/inventory.schema";
 import {
   createEmptyInventoryForm,
+  EMPTY_ITEM_STOCK_SUMMARY,
   type InventoryFormValues,
+  type InventoryItemStockSummary,
 } from "@/lib/inventory/types";
 
 type InventoryItemFormProps = {
   initialValues?: InventoryFormValues;
-  quantityLeft?: number;
+  stock?: InventoryItemStockSummary;
   isSubmitting?: boolean;
   submitLabel: string;
   onSubmit: (values: InventoryFormValues) => void;
@@ -24,7 +27,7 @@ type InventoryItemFormProps = {
 
 export function InventoryItemForm({
   initialValues,
-  quantityLeft = 0,
+  stock = EMPTY_ITEM_STOCK_SUMMARY,
   isSubmitting = false,
   submitLabel,
   onSubmit,
@@ -34,6 +37,7 @@ export function InventoryItemForm({
   const [values, setValues] = useState<InventoryFormValues>(initialValues ?? createEmptyInventoryForm());
   const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
+  const validation = buildInventoryItemPayload(values);
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyInventoryForm());
@@ -45,19 +49,12 @@ export function InventoryItemForm({
     setValidationError(null);
   }
 
-  function getValidationError(): string | null {
-    if (!values.item.trim()) return t("inventory.form.validation.itemRequired");
-    return null;
-  }
-
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const error = getValidationError();
-    if (error) {
-      setValidationError(error);
+    if (!validation.ok) {
+      setValidationError(t(validation.error));
       return;
     }
-
     setValidationError(null);
     onSubmit(values);
   }
@@ -72,17 +69,59 @@ export function InventoryItemForm({
           className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
         >
           <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.itemHint")}</p>
-          <div className="space-y-2.5">
-            <div className="space-y-1">
-              <Label htmlFor="item">{t("inventory.form.fields.item")} <span className="text-destructive">*</span></Label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="item-name">{t("inventory.form.fields.name")} <span className="text-destructive">*</span></Label>
               <Input
-                id="item"
+                id="item-name"
                 autoFocus
-                value={values.item}
-                onChange={(event) => updateField("item", event.target.value)}
+                value={values.name}
+                onChange={(event) => updateField("name", event.target.value)}
                 onFocus={selectFormFieldTextOnFocus}
                 required
               />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="item-sku">{t("inventory.form.fields.sku")}</Label>
+              <Input
+                id="item-sku"
+                value={values.sku}
+                placeholder={t("inventory.form.placeholders.sku")}
+                onChange={(event) => updateField("sku", event.target.value)}
+                onFocus={selectFormFieldTextOnFocus}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="item-category">{t("inventory.form.fields.category")}</Label>
+              <Input
+                id="item-category"
+                value={values.category}
+                placeholder={t("inventory.form.placeholders.categoryText")}
+                onChange={(event) => updateField("category", event.target.value)}
+                onFocus={selectFormFieldTextOnFocus}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="item-unit">{t("inventory.form.fields.unit")}</Label>
+              <Input
+                id="item-unit"
+                value={values.unitOfMeasure}
+                placeholder={t("inventory.form.placeholders.unit")}
+                onChange={(event) => updateField("unitOfMeasure", event.target.value)}
+                onFocus={selectFormFieldTextOnFocus}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="item-price">{t("inventory.form.fields.defaultSellingPrice")}</Label>
+              <Input
+                id="item-price"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={values.defaultSellingPrice}
+                onChange={(event) => updateField("defaultSellingPrice", event.target.value)}
+                onFocus={selectFormFieldTextOnFocus}
+              />
+              <p className="text-xs text-muted-foreground">{t("inventory.form.workflow.priceHint")}</p>
             </div>
           </div>
         </FormSection>
@@ -91,11 +130,14 @@ export function InventoryItemForm({
           title={`02 · ${t("inventory.form.sections.stockLevels")}`}
           className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1">
-              <Label htmlFor="quantityLeft">{t("inventory.form.fields.quantityLeft")}</Label>
-              <Input className="bg-muted/40 tabular-nums" id="quantityLeft" readOnly value={String(quantityLeft)} />
-              <p className="text-xs text-muted-foreground">{t("inventory.form.readOnlyStockHint")}</p>
+              <Label htmlFor="item-available">{t("inventory.columns.available")}</Label>
+              <Input className="bg-muted/40 tabular-nums" id="item-available" readOnly value={String(stock.available)} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="item-quarantined">{t("inventory.columns.quarantined")}</Label>
+              <Input className="bg-muted/40 tabular-nums" id="item-quarantined" readOnly value={String(stock.quarantined)} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="reorderThreshold">{t("inventory.form.fields.reorderThreshold")}</Label>
@@ -103,18 +145,26 @@ export function InventoryItemForm({
                 id="reorderThreshold"
                 type="number"
                 min={0}
+                step={1}
                 aria-describedby="reorder-threshold-hint"
                 value={values.reorderThreshold}
                 onChange={(event) => updateField("reorderThreshold", event.target.value)}
                 onFocus={selectFormFieldTextOnFocus}
               />
-              <p id="reorder-threshold-hint" className="text-xs text-muted-foreground">{t("inventory.form.workflow.reorderHint")}</p>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground">{t("inventory.form.readOnlyStockHint")}</p>
+          <p id="reorder-threshold-hint" className="text-xs text-muted-foreground">{t("inventory.form.workflow.reorderHint")}</p>
         </FormSection>
       </FormBody>
 
-      <FormFooter error={validationError} warning={getValidationError()} isSubmitting={isSubmitting} submitLabel={submitLabel} onCancel={onCancel} />
+      <FormFooter
+        error={validationError}
+        warning={validation.ok ? null : t(validation.error)}
+        isSubmitting={isSubmitting}
+        submitLabel={submitLabel}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

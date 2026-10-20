@@ -1,17 +1,19 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["inventory.Dispatch"]. */
+/** Directory coverage for Swagger definitions["inventory.Dispatch"]. */
 export const INVENTORY_DISPATCH_API_TABLE_FIELDS = [
-  { field: "createdAt", format: "date" },
-  { field: "createdBy" },
+  { field: "assigneeEmployeeId", defaultVisible: false },
+  { field: "correctsSourceId", defaultVisible: false },
+  { field: "dailyRouteId", defaultVisible: false },
   { field: "dispatchedAt", columnId: "date", format: "date" },
-  { field: "dispatchedTo" },
-  { field: "id" },
-  { field: "incomeGained" },
-  { field: "item" },
-  { field: "itemId" },
-  { field: "journal" },
-  { field: "quantity" },
-  { field: "updatedAt", format: "date" },
-  { field: "updatedBy" },
+  { field: "fromHolderId", columnId: "fromHolder" },
+  { field: "id", defaultVisible: false },
+  { field: "lines", columnId: "lines" },
+  { field: "notes", defaultVisible: false },
+  { field: "postedAt", columnId: "postedAt", format: "date" },
+  { field: "postedBy", defaultVisible: false },
+  { field: "postingRevision", defaultVisible: false },
+  { field: "status", columnId: "status" },
+  { field: "toHolderId", columnId: "toHolder" },
+  { field: "version", defaultVisible: false },
 ] as const satisfies readonly ApiTableField[];

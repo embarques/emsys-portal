@@ -342,15 +342,16 @@ export const queryKeys = {
     snapshot: () => [...queryKeys.inventory.all, "snapshot"] as const,
     items: (params?: InventoryListParams) => [...queryKeys.inventory.all, "items", params ?? {}] as const,
     item: (itemId: string) => [...queryKeys.inventory.all, "item", itemId] as const,
-    movements: (itemId?: string) =>
-      [...queryKeys.inventory.all, "movements", itemId ?? "all"] as const,
     receipts: (params?: InventoryListParams) =>
       [...queryKeys.inventory.all, "receipts", params ?? {}] as const,
     dispatches: (params?: InventoryListParams) =>
       [...queryKeys.inventory.all, "dispatches", params ?? {}] as const,
     suppliers: (params?: InventoryListParams) =>
       [...queryKeys.inventory.all, "suppliers", params ?? {}] as const,
-    stock: (itemId: string) => [...queryKeys.inventory.all, "stock", itemId] as const,
+    stock: (params?: InventoryListParams) => [...queryKeys.inventory.all, "stock", params ?? {}] as const,
+    holders: (params?: InventoryListParams) => [...queryKeys.inventory.all, "holders", params ?? {}] as const,
+    holderStock: (holderId: string) => [...queryKeys.inventory.all, "holder-stock", holderId] as const,
+    routeCrews: () => [...queryKeys.inventory.all, "route-crews"] as const,
   },
 } as const;
 

@@ -7,13 +7,15 @@ import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { InventoryItemMobileRow } from "@/components/inventory/inventory-item-mobile-row";
 import { InventoryItemMobileSelectionToolbar } from "@/components/inventory/inventory-item-mobile-selection-toolbar";
 import { Button } from "@/components/ui/button";
-import type { InventoryItem } from "@/lib/inventory/types";
+import { getItemStockSummary } from "@/lib/inventory/display";
+import type { InventoryItem, InventoryItemStockSummary } from "@/lib/inventory/types";
 import { useTranslation } from "@/lib/i18n";
 
 type InventoryItemMobileListProps = {
   query: string;
   items: InventoryItem[];
   pageItems: InventoryItem[];
+  summaries: Map<string, InventoryItemStockSummary>;
   selectedIds: string[];
   isLoading: boolean;
   page: number;
@@ -21,12 +23,12 @@ type InventoryItemMobileListProps = {
   onQueryChange: (query: string) => void;
   onPageChange: (page: number) => void;
   onOpen: (item: InventoryItem) => void;
-  onEdit: (item: InventoryItem) => void;
-  onDelete: (item: InventoryItem | InventoryItem[]) => void;
+  onEdit?: (item: InventoryItem) => void;
+  onDeactivate?: (item: InventoryItem | InventoryItem[]) => void;
   onSelectedIdsChange: (ids: string[]) => void;
   onNewReceipt: () => void;
   onNewDispatch: () => void;
-  onAdjustStock: () => void;
+  onAdjustStock?: () => void;
   onAddItem: () => void;
 };
 
@@ -34,6 +36,7 @@ export function InventoryItemMobileList({
   query,
   items,
   pageItems,
+  summaries,
   selectedIds,
   isLoading,
   page,
@@ -42,7 +45,7 @@ export function InventoryItemMobileList({
   onPageChange,
   onOpen,
   onEdit,
-  onDelete,
+  onDeactivate,
   onSelectedIdsChange,
   onNewReceipt,
   onNewDispatch,
@@ -79,10 +82,12 @@ export function InventoryItemMobileList({
           <Truck className="size-5" />
           <span className="sr-only">{t("inventory.actions.newDispatch")}</span>
         </Button>
-        <Button type="button" variant="outline" size="icon" className="size-11 rounded-xl" onClick={onAdjustStock}>
-          <SlidersHorizontal className="size-5" />
-          <span className="sr-only">{t("inventory.actions.adjustStock")}</span>
-        </Button>
+        {onAdjustStock ? (
+          <Button type="button" variant="outline" size="icon" className="size-11 rounded-xl" onClick={onAdjustStock}>
+            <SlidersHorizontal className="size-5" />
+            <span className="sr-only">{t("inventory.actions.adjustStock")}</span>
+          </Button>
+        ) : null}
       </div>
 
       <TableSearchInput
@@ -125,11 +130,11 @@ export function InventoryItemMobileList({
         selectedCount={selectedIds.length}
         canEdit={selectedIds.length === 1}
         onClear={() => onSelectedIdsChange([])}
-        onEdit={() => {
+        onEdit={onEdit ? () => {
           const item = selectedItems[0];
           if (item) onEdit(item);
-        }}
-        onDelete={() => onDelete(selectedItems)}
+        } : undefined}
+        onDeactivate={onDeactivate ? () => onDeactivate(selectedItems.filter((item) => item.isActive)) : undefined}
       />
 
       <div className="rounded-3xl border border-border bg-card px-4 shadow-sm">
@@ -140,7 +145,7 @@ export function InventoryItemMobileList({
             description={t("inventory.loading.items.description")}
             columns={[
               t("inventory.columns.item"),
-              t("inventory.columns.quantityLeft"),
+              t("inventory.columns.available"),
               t("inventory.columns.reorderThreshold"),
             ]}
           />
@@ -149,11 +154,12 @@ export function InventoryItemMobileList({
             <InventoryItemMobileRow
               key={item.id}
               item={item}
+              available={getItemStockSummary(item.id, summaries).available}
               selected={selectedIds.includes(item.id)}
               selectionMode={selectionMode}
               onOpen={onOpen}
               onEdit={onEdit}
-              onDelete={onDelete}
+              onDeactivate={onDeactivate}
               onToggleSelected={toggleSelected}
             />
           ))

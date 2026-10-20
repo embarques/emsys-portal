@@ -16,7 +16,13 @@
     "saveAndSend": "Save & mark sent",
     "submitAdjustment": "Submit adjustment",
     "markSent": "Mark sent",
-    "markConfirmed": "Mark confirmed"
+    "markConfirmed": "Mark confirmed",
+    "addHolder": "Add holder",
+    "cancelDraft": "Cancel draft",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "post": "Post",
+    "saveDraft": "Save draft"
   },
   "submenus": {
     "items": "Stock",
@@ -27,8 +33,8 @@
   },
   "pages": {
     "items": "Track the company's internal supplies and materials, separate from customer merchandise.",
-    "receipts": "Record incoming company supplies and materials to update stock levels.",
-    "dispatches": "Record outgoing company supplies, including transfers and replenishment.",
+    "receipts": "Record supplies received into a warehouse. Drafts change stock only after they are posted.",
+    "dispatches": "Transfer supplies from a warehouse to an employee, vehicle or crew. Posting moves the stock; dispatches record no revenue.",
     "recipients": "Maintain destinations used when sending company supplies out of stock.",
     "suppliers": "Maintain suppliers used when receiving company supplies into stock."
   },
@@ -99,7 +105,17 @@
     "dateCreated": "Created at",
     "userCreated": "User created",
     "dateModified": "Updated at",
-    "userModified": "User updated"
+    "userModified": "User updated",
+    "category": "Category",
+    "contacts": "Contacts",
+    "lines": "Items",
+    "postedAt": "Posted at",
+    "postedBy": "Posted by",
+    "quarantined": "Quarantined",
+    "reserved": "Reserved",
+    "totalCost": "Total cost",
+    "totalQuantity": "Total quantity",
+    "warehouse": "Warehouse"
   },
   "search": {
     "items": "Search inventory…",
@@ -107,12 +123,14 @@
     "dispatches": "Search dispatches…",
     "recipients": "Search recipients…",
     "suppliers": "Search suppliers…",
-    "movements": "Search movements…"
+    "movements": "Search movements…",
+    "holders": "Search holders…",
+    "options": "Search…"
   },
   "loading": {
     "items": {
       "title": "Loading inventory",
-      "description": "Counting stock from receipts and dispatches…"
+      "description": "Loading the supply catalog and stock balances…"
     },
     "receipts": {
       "title": "Loading receipts",
@@ -137,7 +155,10 @@
     "dispatches": "No dispatches match your search.",
     "recipients": "No recipients match your search.",
     "suppliers": "No suppliers match your search.",
-    "movements": "No movements recorded for this item yet."
+    "movements": "No movements recorded for this item yet.",
+    "holders": "No holders found. Add one to continue.",
+    "noOptions": "No matching options.",
+    "stockByHolder": "No stock is held for this item."
   },
   "nav": {
     "reorderAlert": "{{count}} item needs reorder",
@@ -176,7 +197,8 @@
       "contacts": "Contacts",
       "addresses": "Addresses",
       "phones": "Phones",
-      "emails": "Emails"
+      "emails": "Emails",
+      "holder": "Holder"
     },
     "fields": {
       "sku": "SKU",
@@ -201,8 +223,8 @@
       "addresses": "Addresses",
       "phones": "Phones",
       "emails": "Emails",
-      "receivedAt": "Date",
-      "dispatchedAt": "Date",
+      "receivedAt": "Received at",
+      "dispatchedAt": "Dispatched at",
       "dispatchedTo": "Dispatched to",
       "employee": "Employee",
       "route": "Daily route",
@@ -223,7 +245,26 @@
       "movementDate": "Adjustment date",
       "contactInfo": "Contact info",
       "address": "Address",
-      "type": "Type"
+      "type": "Type",
+      "assigneeEmployee": "Responsible employee",
+      "condition": "Condition",
+      "contactName": "Name",
+      "contactPhone": "Phone",
+      "contactEmail": "Email",
+      "dailyRouteId": "Daily route",
+      "defaultSellingPrice": "Default selling price",
+      "fromHolder": "Source warehouse",
+      "toHolder": "Destination holder",
+      "holder": "Holder",
+      "holderName": "Display name",
+      "holderType": "Holder type",
+      "holderEntity": {
+        "EMPLOYEE": "Employee",
+        "VEHICLE": "Vehicle",
+        "ROUTE_CREW": "Route crew"
+      },
+      "lineTotal": "Line total",
+      "warehouse": "Warehouse"
     },
     "placeholders": {
       "notes": "Optional notes about stock, vendor, or recounts",
@@ -241,7 +282,15 @@
       "selectRoute": "Select a daily route",
       "searchRoutes": "Search daily routes…",
       "contactName": "Contact name",
-      "email": "name@company.com"
+      "email": "name@company.com",
+      "categoryText": "e.g. Packaging",
+      "holder": "Select holder",
+      "holderEntity": "Select who holds the stock",
+      "holderType": "Select holder type",
+      "sku": "e.g. BOX-SM",
+      "toHolder": "Select employee, vehicle or crew",
+      "unit": "e.g. box, roll, unit",
+      "warehouse": "Select warehouse"
     },
     "validation": {
       "nameRequired": "Item name is required.",
@@ -250,11 +299,26 @@
       "categoryRequired": "Category is required.",
       "branchRequired": "Branch is required.",
       "itemRequired": "Item is required.",
-      "quantityRequired": "Quantity is required.",
+      "quantityRequired": "Quantity must be a whole number greater than zero.",
       "supplierRequired": "Supplier is required.",
       "dateRequired": "Date is required.",
       "dispatchedToRequired": "Dispatched to is required.",
-      "companyNameRequired": "Company name is required."
+      "companyNameRequired": "Company name is required.",
+      "invalid": "Check the highlighted fields.",
+      "priceInvalid": "Enter a USD price with at most two decimals.",
+      "reorderInvalid": "Reorder threshold must be a whole number of 0 or more.",
+      "emailInvalid": "Enter a valid contact email.",
+      "warehouseRequired": "Warehouse is required.",
+      "unitCostRequired": "Enter a unit cost in USD with at most two decimals.",
+      "linesRequired": "Add at least one line.",
+      "duplicateItem": "Each item can appear only once. Combine duplicate lines.",
+      "sourceRequired": "Source warehouse is required.",
+      "destinationRequired": "Destination holder is required.",
+      "sameHolder": "Source and destination must be different.",
+      "holderRequired": "Holder is required.",
+      "reasonRequired": "Reason is required.",
+      "holderNameRequired": "Display name is required.",
+      "holderEntityRequired": "Choose the employee, vehicle or crew for this holder."
     },
     "adjustmentSign": {
       "increase": "Increase (+)",
@@ -268,15 +332,15 @@
     "removeContact": "Remove contact",
     "removeAddress": "Remove address",
     "removeEmail": "Remove email",
-    "readOnlyStockHint": "Stock is calculated from receipts and dispatches.",
+    "readOnlyStockHint": "Stock comes from posted ledger movements across all holders.",
     "workflow": {
       "requiredHint": "* Required fields",
       "keyboardHint": "Tab moves between controls · Enter advances through fields",
       "optional": "Optional",
       "itemHint": "Name the internal supply or material so staff can find it in receipts and dispatches.",
       "reorderHint": "Set the stock level at which this item needs reordering.",
-      "receiptHint": "Choose the supply received, then enter its quantity and cost per unit.",
-      "dispatchHint": "Choose the supply leaving stock and confirm the quantity available.",
+      "receiptHint": "Add one line per supply received with its quantity and cost per unit.",
+      "dispatchHint": "Add one line per supply leaving the warehouse. Available quantities come from the source warehouse.",
       "supplierHint": "Choose who supplied these items and the date they were received.",
       "recipientHint": "Confirm the dispatch date, then choose the employee or daily route receiving the supplies.",
       "costHint": "Cost per unit for this receipt.",
@@ -286,8 +350,22 @@
       "contactsDetailsHint": "Add the people to contact for orders or questions.",
       "addressesDetailsHint": "Search for the supplier’s address or enter it manually.",
       "phonesDetailsHint": "Add contact numbers and use the star to choose the main number.",
-      "emailsDetailsHint": "Add email addresses for supplier correspondence."
-    }
+      "emailsDetailsHint": "Add email addresses for supplier correspondence.",
+      "receiptDraftHint": "Saved as a draft. Stock and valuation change only when the receipt is posted.",
+      "dispatchDraftHint": "Saved as a draft. Posting moves stock from the warehouse to the destination holder; dispatches record no revenue.",
+      "holderHint": "Stock always belongs to a persistent holder: a warehouse, employee, vehicle or route crew.",
+      "priceHint": "Used as the suggested price for supply sales.",
+      "adjustmentHint": "Corrects a holder's ledger balance. The adjustment is posted immediately and cannot be edited.",
+      "readOnlyPosted": "Posted and cancelled documents are read-only. Record a correcting document instead."
+    },
+    "addHolderTitle": "Add inventory holder",
+    "editReceiptTitle": "Edit draft receipt",
+    "editDispatchTitle": "Edit draft dispatch",
+    "availableAtSource": "Available at source: {{count}}",
+    "contactNumber": "Contact {{number}}",
+    "lineNumber": "Line {{number}}",
+    "totalQuantity": "Total quantity: {{count}}",
+    "totalCost": "Total cost"
   },
   "view": {
     "stock": "Stock",
@@ -297,7 +375,9 @@
     "lines": "Line items",
     "movements": "Generated movements",
     "dispatchHistory": "Dispatch history",
-    "audit": "Audit"
+    "audit": "Audit",
+    "details": "Details",
+    "stockByHolder": "Stock by holder"
   },
   "delete": {
     "itemsTitle": "Delete inventory items?",
@@ -359,5 +439,519 @@
     "recount": "Recount",
     "lost": "Lost",
     "other": "Other"
+  },
+  "activeStatuses": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "documentStatuses": {
+    "DRAFT": "Draft",
+    "POSTED": "Posted",
+    "CANCELLED": "Cancelled"
+  },
+  "holderTypes": {
+    "WAREHOUSE": "Warehouse",
+    "EMPLOYEE": "Employee",
+    "VEHICLE": "Vehicle",
+    "ROUTE_CREW": "Route crew"
+  },
+  "stockConditions": {
+    "AVAILABLE": "Available",
+    "QUARANTINED": "Quarantined"
+  },
+  "commands": {
+    "receipt": {
+      "postTitle": "Post receipt?",
+      "postDescription": "Posting the receipt from {{name}} adds its lines to warehouse stock and valuation. Posted receipts cannot be edited.",
+      "cancelTitle": "Cancel draft receipt?",
+      "cancelDescription": "The draft receipt from {{name}} will be cancelled. Stock is not affected."
+    },
+    "dispatch": {
+      "postTitle": "Post dispatch?",
+      "postDescription": "Posting moves the dispatched lines from the source warehouse to {{name}}. Posted dispatches cannot be edited.",
+      "cancelTitle": "Cancel draft dispatch?",
+      "cancelDescription": "The draft dispatch to {{name}} will be cancelled. Stock is not affected."
+    }
+  },
+  "activeToggle": {
+    "items": {
+      "deactivateTitle": "Deactivate inventory items?",
+      "deactivateOne": "{{name}} will be hidden from new receipts and dispatches. Its history and stock are kept.",
+      "deactivateMany": "{{count}} items will be hidden from new receipts and dispatches. Their history and stock are kept.",
+      "reactivateTitle": "Reactivate inventory item?",
+      "reactivateOne": "{{name}} will be available again for receipts and dispatches.",
+      "reactivateMany": "{{count}} items will be available again for receipts and dispatches."
+    },
+    "suppliers": {
+      "deactivateTitle": "Deactivate suppliers?",
+      "deactivateOne": "{{name}} will be hidden from new receipts. Its receipt history is kept.",
+      "deactivateMany": "{{count}} suppliers will be hidden from new receipts. Their receipt history is kept.",
+      "reactivateTitle": "Reactivate supplier?",
+      "reactivateOne": "{{name}} will be available again for receipts.",
+      "reactivateMany": "{{count}} suppliers will be available again for receipts."
+    }
+  },
+  "toasts": {
+    "deactivated": "{{count}} record(s) deactivated.",
+    "reactivated": "{{count}} record(s) reactivated.",
+    "receiptPosted": "Receipt posted. Stock updated.",
+    "receiptCancelled": "Draft receipt cancelled.",
+    "dispatchPosted": "Dispatch posted. Stock moved to the destination holder.",
+    "dispatchCancelled": "Draft dispatch cancelled."
+  },
+  "selection": {
+    "select": "Select {{name}}",
+    "deselect": "Deselect {{name}}"
+  },
+  "operations": {
+    "fields": {
+      "accountId": "Account",
+      "accountableEmployeeId": "Accountable employee",
+      "action": "Action",
+      "actorId": "Actor",
+      "addresses": "Addresses",
+      "after": "After",
+      "allocationTargetId": "Allocate to",
+      "allocationTargetType": "Allocation target",
+      "amountMinor": "Amount (USD)",
+      "approvedAt": "Approved at",
+      "approvedBy": "Approved by",
+      "assignedBy": "Assigned by",
+      "assigneeEmployeeId": "Responsible employee",
+      "at": "At",
+      "audit": "Audit",
+      "available": "Available",
+      "before": "Before",
+      "businessDate": "Business date",
+      "category": "Category",
+      "closedAt": "Closed at",
+      "closedBy": "Closed by",
+      "closeoutId": "Closeout",
+      "collectedAt": "Collected at",
+      "collectedByEmployeeId": "Collected by",
+      "collectionsRecordedMinor": "Collections recorded",
+      "collectionsRemittedMinor": "Collections remitted",
+      "collectionsVerifiedMinor": "Collections verified",
+      "companyName": "Company name",
+      "condition": "Condition",
+      "contacts": "Contacts",
+      "correctionSourceIds": "Correction sources",
+      "correctsSourceId": "Corrects",
+      "correlationId": "Correlation ID",
+      "countId": "Count",
+      "countedAvailableEnding": "Counted available",
+      "countedQuantity": "Counted quantity",
+      "countedQuarantinedEnding": "Counted quarantined",
+      "createdAt": "Created at",
+      "createdBy": "Created by",
+      "creditMinor": "Credit",
+      "crewId": "Route crew",
+      "crewName": "Crew name",
+      "crewRole": "Role",
+      "currency": "Currency",
+      "customerReference": "Customer reference",
+      "cutoffAt": "Cutoff time",
+      "dailyRouteId": "Daily route (context)",
+      "damageResolution": "Damage resolution",
+      "damagedQuarantinedQuantity": "Damaged (quarantined)",
+      "damagedWrittenOffQuantity": "Damaged (written off)",
+      "data": "Data",
+      "debitMinor": "Debit",
+      "defaultSellingPriceMinor": "Default selling price (USD)",
+      "description": "Explanation",
+      "destinationHolderId": "Destination holder",
+      "difference": "Difference",
+      "dispatchedAt": "Dispatched at",
+      "displayName": "Name",
+      "dispositionType": "Disposition",
+      "effectiveFrom": "Effective from",
+      "effectiveTo": "Effective to",
+      "email": "Email",
+      "employeeId": "Employee",
+      "entityId": "Employee, vehicle or crew",
+      "entityType": "Record type",
+      "expectedAvailableEnding": "Expected available",
+      "expectedQuantity": "Expected quantity",
+      "expectedQuarantinedEnding": "Expected quarantined",
+      "expectedRevenueMinor": "Expected revenue",
+      "financialDifferenceMinor": "Financial difference",
+      "financialDifferenceReason": "Financial difference explanation",
+      "fromCondition": "From condition",
+      "fromEmployeeId": "Giver",
+      "fromHolderId": "From holder",
+      "groupQuantity": "Group quantity",
+      "handedAt": "Handed over at",
+      "handoverId": "Received handover",
+      "holderId": "Holder",
+      "holderType": "Holder type",
+      "id": "ID",
+      "inventoryLines": "Inventory lines",
+      "isActive": "Active",
+      "itemId": "Item",
+      "kind": "Kind",
+      "lineDescription": "Line explanation",
+      "lines": "Lines",
+      "lostQuantity": "Lost",
+      "members": "Members",
+      "method": "Payment method",
+      "missingQuantity": "Missing",
+      "moneyHeldMinor": "Money held",
+      "movementRole": "Movement role",
+      "name": "Name",
+      "needsReconciliation": "Needs reconciliation",
+      "notes": "Notes",
+      "obligationId": "Obligation",
+      "obligationIds": "Obligations",
+      "occurredAt": "Occurred at",
+      "openingQuantity": "Opening quantity",
+      "openingQuarantinedQuantity": "Opening quarantined",
+      "originHolderId": "Origin holder",
+      "otherNetMovementQuantity": "Other net movements",
+      "outstandingMinor": "Outstanding",
+      "paymentId": "Verified payment",
+      "paymentIds": "Payment IDs (comma separated)",
+      "paymentMethod": "Payment method",
+      "periodStart": "Period start",
+      "phone": "Phone",
+      "postedAt": "Posted at",
+      "postedBy": "Posted by",
+      "postedMovements": "Posted movements",
+      "postingRevision": "Posting revision",
+      "previousRevision": "Previous revision",
+      "priceBreakdowns": "Price groups",
+      "priceMinor": "Price (USD)",
+      "pricingMode": "Pricing mode",
+      "quantity": "Quantity",
+      "quantityDelta": "Quantity change (+/−)",
+      "quantityOnHand": "On hand",
+      "quantityReserved": "Reserved",
+      "quantitySold": "Quantity sold",
+      "quarantined": "Quarantined",
+      "reason": "Reason",
+      "receivedAt": "Received at",
+      "receivedBy": "Received by",
+      "receivedQuantity": "Received",
+      "recordedBy": "Recorded by",
+      "reference": "Payment reference",
+      "reopenReason": "Reason for reopening",
+      "reopenedAt": "Reopened at",
+      "reopenedBy": "Reopened by",
+      "reorderThreshold": "Reorder threshold",
+      "responsibleEmployeeId": "Responsible employee",
+      "returnedAt": "Returned at",
+      "returnedQuantity": "Returned",
+      "revenueMinor": "Revenue",
+      "reversesEntryId": "Reverses entry",
+      "reversesMovementId": "Reverses movement",
+      "revision": "Revision",
+      "role": "Role",
+      "routeTemplateId": "Route template",
+      "salesLineId": "Sales line",
+      "salesReportId": "Sales report",
+      "scopeEmployeeIds": "Employees in scope",
+      "scopeHolderIds": "Holders in scope",
+      "settledAt": "Settled at",
+      "settledMinor": "Settled",
+      "sku": "SKU",
+      "snapshot": "Snapshot",
+      "soldQuantity": "Sold",
+      "sourceId": "Source document",
+      "sourceLineId": "Source line",
+      "sourcePaymentId": "Source payment",
+      "sourceSalesReportId": "Source sales report",
+      "sourceType": "Source type",
+      "sourceWarehouseId": "Source warehouse",
+      "status": "Status",
+      "stolenQuantity": "Stolen",
+      "submittedAt": "Submitted at",
+      "submittedBy": "Submitted by",
+      "supplierId": "Supplier",
+      "targetId": "Target",
+      "targetType": "Target type",
+      "timezone": "Timezone",
+      "toCondition": "To condition",
+      "toEmployeeId": "Receiver",
+      "toHolderId": "To holder",
+      "toWarehouseHolderId": "Destination warehouse",
+      "totalMinor": "Total",
+      "totalRevenueMinor": "Actual revenue (USD)",
+      "type": "Type",
+      "unitCostMinor": "Unit cost (USD)",
+      "unitOfMeasure": "Unit",
+      "unitPriceMinor": "Unit price (USD)",
+      "unpaidApproval": "Unpaid sale approval",
+      "updatedAt": "Updated at",
+      "updatedBy": "Updated by",
+      "valueMinor": "Value",
+      "vehicleId": "Vehicle",
+      "verifiedAt": "Verified at",
+      "verifiedBy": "Verified by",
+      "version": "Version",
+      "warehouseHolderId": "Warehouse"
+    },
+    "options": {
+      "WAREHOUSE": "Warehouse",
+      "EMPLOYEE": "Employee",
+      "VEHICLE": "Vehicle",
+      "ROUTE_CREW": "Route crew",
+      "DRAFT": "Draft",
+      "POSTED": "Posted",
+      "CANCELLED": "Cancelled",
+      "SUBMITTED": "Submitted",
+      "AVAILABLE": "Available",
+      "QUARANTINED": "Quarantined",
+      "CASH": "Cash",
+      "CHECK": "Check",
+      "BANK_DEPOSIT": "Bank deposit",
+      "ZELLE": "Zelle",
+      "CREDIT_CARD": "Credit card",
+      "RECORDED": "Recorded",
+      "VERIFIED": "Verified",
+      "REJECTED": "Rejected",
+      "VOIDED": "Voided",
+      "PENDING": "Pending",
+      "RECEIVED": "Received",
+      "OPEN": "Open",
+      "PARTIALLY_SETTLED": "Partially settled",
+      "SETTLED": "Settled",
+      "CLOSED": "Closed",
+      "REOPENED": "Reopened",
+      "SOLD": "Sold",
+      "LOST": "Lost",
+      "MISSING": "Missing",
+      "STOLEN": "Stolen",
+      "DAMAGED": "Damaged",
+      "QUARANTINE": "Quarantine",
+      "WRITE_OFF": "Write off",
+      "TOTAL_PER_ITEM": "Total per item",
+      "PRICE_GROUPS": "Price groups",
+      "SALES_REPORT": "Sales report",
+      "COLLECTION_OBLIGATION": "Collection obligation",
+      "UNPAID_SALE": "Unpaid sale",
+      "UNREMITTED_COLLECTION": "Unremitted collection",
+      "RECEIPT": "Receipt",
+      "DISPATCH": "Dispatch",
+      "RETURN_TO_WAREHOUSE": "Return to warehouse",
+      "SALE": "Sale",
+      "DISPOSITION": "Disposition",
+      "CUSTODY_REASSIGNMENT": "Custody reassignment",
+      "ADJUSTMENT": "Adjustment",
+      "REVERSAL": "Reversal",
+      "driver": "Driver",
+      "appraiser": "Appraiser",
+      "helper": "Helper"
+    },
+    "resources": {
+      "holders": {
+        "label": "Holders",
+        "description": "Stock stays with its persistent holder overnight. Daily routes are context only."
+      },
+      "items": {
+        "label": "Supply catalog",
+        "description": "Catalog and effective-dated prices. Quantities come from the inventory ledger."
+      },
+      "suppliers": {
+        "label": "Supply vendors",
+        "description": "Vendors of company supplies."
+      },
+      "stock": {
+        "label": "Stock balances",
+        "description": "Read-only balances per item, holder and condition."
+      },
+      "receipts": {
+        "label": "Receiving",
+        "description": "Receive purchased supplies into a warehouse. Posting increases stock and valuation."
+      },
+      "dispatches": {
+        "label": "Dispatches",
+        "description": "Transfer supplies from a warehouse to an employee, vehicle or persistent crew. Dispatch does not record revenue."
+      },
+      "returns": {
+        "label": "Returns",
+        "description": "Return some or all supplies to a warehouse. To move stock between employees, return first, then dispatch."
+      },
+      "dispositions": {
+        "label": "Loss & damage",
+        "description": "Classify missing, lost, stolen or damaged supplies. Quarantine remains company-owned. Sales are recorded separately."
+      },
+      "counts": {
+        "label": "Physical counts",
+        "description": "Submit a physical snapshot. A count never silently adjusts inventory."
+      },
+      "adjustments": {
+        "label": "Adjustments",
+        "description": "Authorized ledger corrections require a reason. Posted movements are immutable."
+      },
+      "sales-reports": {
+        "label": "Supply sales",
+        "description": "Daily aggregate supply sales. Posting deducts stock once; collection and handover are separate."
+      },
+      "payments": {
+        "label": "Collections",
+        "description": "Record each tender separately for mixed payments. Collected funds are not automatically received by the office."
+      },
+      "cash-handovers": {
+        "label": "Office handovers",
+        "description": "Transfer custody of verified cash or checks. The receiver must acknowledge receipt."
+      },
+      "collection-obligations": {
+        "label": "Outstanding obligations",
+        "description": "Unpaid sales and unremitted collections carry forward until settled. Settlement does not create revenue."
+      },
+      "closeouts": {
+        "label": "Daily closeouts",
+        "description": "Count available and quarantined stock. Classify physical differences before closing and explain financial differences. Retained stock carries forward."
+      },
+      "route-crews": {
+        "label": "Persistent crews",
+        "description": "Persistent crews can own stock through a holder. Membership is effective-dated."
+      },
+      "daily-routes": {
+        "label": "Daily route context",
+        "description": "Dated schedule only; never an inventory destination. One route per employee per business date."
+      },
+      "reports/stock-valuation": {
+        "label": "Stock valuation",
+        "description": "Quantity and carrying value per holder, item and condition."
+      },
+      "reports/sales": {
+        "label": "Sales summary",
+        "description": "Supply quantity sold and revenue per holder, item and date."
+      },
+      "reports/obligations": {
+        "label": "Obligations summary",
+        "description": "Outstanding and settled amounts per obligation."
+      },
+      "reports/discrepancies": {
+        "label": "Count discrepancies",
+        "description": "Expected versus counted quantities from physical counts."
+      },
+      "audit-events": {
+        "label": "Audit trail",
+        "description": "Immutable server-recorded actions."
+      },
+      "journal-entries": {
+        "label": "Journal entries",
+        "description": "Accounting entries linked to their source documents."
+      }
+    },
+    "commands": {
+      "post": "Post",
+      "cancel": "Cancel draft",
+      "submit": "Submit count",
+      "verify": "Verify payment",
+      "reject": "Reject payment",
+      "void": "Void payment",
+      "allocate": "Allocate",
+      "receive": "Acknowledge receipt",
+      "settlements": "Settle obligation",
+      "reopen": "Reopen closeout",
+      "custody-assignments": "Assign responsibility",
+      "reassign": "Administrative reassignment",
+      "prices": "Add price",
+      "members": "Add member"
+    },
+    "commandHints": {
+      "post": "Posting writes this document to the inventory ledger. Posted documents cannot be edited.",
+      "cancel": "Cancelling the draft keeps it for reference without changing stock.",
+      "submit": "Submits the counted lines as a snapshot. It does not adjust stock.",
+      "verify": "Marks the payment as verified so it can be handed over and allocated.",
+      "reject": "Marks the payment as rejected.",
+      "void": "Voids the payment. Its allocations must be released first.",
+      "receive": "Confirms that you received this cash or check handover."
+    },
+    "children": {
+      "stock": "Stock by condition",
+      "movements": "Movement history",
+      "custody-assignments": "Custody assignments",
+      "prices": "Price history",
+      "members": "Members",
+      "allocations": "Allocations",
+      "settlements": "Settlements"
+    },
+    "title": "Supply operations",
+    "subtitle": "Warehouse → accountable holder → sales, returns and daily closeout",
+    "disabled": "Supply operations is not available for this deployment.",
+    "noAccess": "Your account has no access to supply operations.",
+    "navLabel": "Supply operations sections",
+    "groups": {
+      "setup": "Setup",
+      "stock": "Stock",
+      "money": "Sales & money",
+      "closeout": "Closeout",
+      "reports": "Reports & audit"
+    },
+    "create": "Create",
+    "createTitle": "New {{resource}}",
+    "editTitle": "Edit {{resource}}",
+    "filter": "Filter",
+    "clear": "Clear",
+    "empty": "No records match these filters.",
+    "loadMore": "Load more",
+    "loadMoreOptions": "Load more options",
+    "retry": "Retry",
+    "row": "Record",
+    "closeDetail": "Close detail",
+    "select": "Select…",
+    "review": "Review",
+    "confirm": "Confirm",
+    "backToEdit": "Back to edit",
+    "reviewHint": "Review before confirming. Posted transactions cannot be edited.",
+    "confirmCommand": "Confirm to continue.",
+    "saved": "Saved successfully.",
+    "noRecords": "No records",
+    "yes": "Yes",
+    "no": "No",
+    "priceGroupsHint": "Actual price groups (must match quantity sold and revenue)",
+    "addGroup": "Add price group",
+    "removeGroup": "Remove group",
+    "currentHolderStock": "Current holder stock",
+    "releaseAllocation": "Release",
+    "errors": {
+      "versionRequired": "Reload this record to get its current version, then try again.",
+      "listContract": "The API returned an unexpected list response.",
+      "offline": "Reconnect before saving or posting.",
+      "requestFailed": "Request failed. Retry after checking your connection."
+    },
+    "validation": {
+      "required": "Required.",
+      "money": "Enter a USD amount with at most two decimals.",
+      "integer": "Enter a whole number.",
+      "min": "Value is below the minimum.",
+      "option": "Choose an option.",
+      "instant": "Enter a valid date and time.",
+      "date": "Enter a valid date.",
+      "linesRequired": "Add at least one line.",
+      "duplicateLine": "Combine duplicate item/condition lines.",
+      "damageResolution": "Choose quarantine or write-off for damaged lines.",
+      "nonZero": "Adjustment must be non-zero.",
+      "priceGroups": "Price groups must match quantity sold and actual revenue.",
+      "positiveAmount": "Amount must be greater than zero.",
+      "settlementSource": "Choose exactly one verified payment or received handover.",
+      "uniqueEmployee": "List each employee once.",
+      "holderEntity": "An employee, vehicle or crew is required.",
+      "sameHolder": "Source and destination must differ.",
+      "countRequired": "Enter a count, including zero.",
+      "countOnce": "Count each item once."
+    },
+    "closeout": {
+      "previewTitle": "Reconciliation preview",
+      "previewHint": "Post sales, returns and classified losses before closing. Retained stock stays with this holder.",
+      "refreshPreview": "Refresh preview",
+      "revisionsTitle": "Immutable revisions",
+      "physicalCount": "Physical count",
+      "addFoundItem": "Add unexpectedly found item",
+      "bothCountsRequired": "Enter both available and quarantined counts for every item, including zero.",
+      "previewIncomplete": "The server preview is incomplete. Refresh before closing.",
+      "countEveryItem": "Count every item, including quarantined stock.",
+      "classifyDifferences": "Classify physical differences through posted dispositions or adjustments, then refresh.",
+      "unexpectedStock": "Post an adjustment for unexpectedly found stock before closing.",
+      "explainDifference": "Explain the financial difference before closing.",
+      "reconciled": "Counts reconcile with the preview. Confirm to create an immutable revision. Sales and returns are not posted again.",
+      "readOnly": "Read-only reconciliation. Closing requires closeout permission.",
+      "checking": "Checking…",
+      "confirmClose": "Confirm closeout",
+      "reviewClose": "Review & close"
+    }
   }
 }

@@ -100,7 +100,7 @@
       "noPickupsOnRoute": "No hay recogidas asignadas a la ruta seleccionada.",
       "print": "Imprimir ruta",
       "preparing": "Preparando…",
-      "optimize": "Optimizar ruta",
+      "mapRoute": "Ver ruta en el mapa",
       "viewRoute": "Ver ruta",
       "loadingMap": "Cargando mapa…",
       "noMappableStops": "Ninguna de las citas de esta ruta tiene una dirección verificada con coordenadas, por lo que no hay nada que trazar en el mapa.",

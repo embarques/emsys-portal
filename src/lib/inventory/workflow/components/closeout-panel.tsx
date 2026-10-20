@@ -2,66 +2,119 @@
 import { useState } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { areFormValuesEquivalent } from '@/lib/forms/are-form-values-equivalent';
-import { useFeedback } from '@/components/app-shell/feedback-provider';
-import { useTranslation } from '@/lib/i18n';
 import { Input } from '@/components/ui/input';
-import { useWorkflowAccess, useWorkflowDetail, useWorkflowWrite } from '../hooks/use-workflow';
-import { workflowError } from '../api/workflow-api';
+import { useTranslation } from '@/lib/i18n';
+import { useWorkflowAccess, useWorkflowDetail, useWorkflowErrorMessage, useWorkflowWrite } from '../hooks/use-workflow';
 import { closeoutSchema, validateCloseout, type CloseoutPreview } from '../utils/closeout';
 import type { WorkflowRecord } from '../types/workflow';
 import { WorkflowData } from './workflow-data';
-import { WorkflowField } from './workflow-form';
+import { WorkflowField } from './workflow-field';
+
+const OPEN_STATES = ['OPEN', 'REOPENED'];
 
 export function CloseoutPanel({ entity }: { entity: WorkflowRecord }) {
-  const preview = useWorkflowDetail('closeouts', entity.id, 'preview', entity.status !== 'CLOSED');
+  const { t } = useTranslation();
+  const toMessage = useWorkflowErrorMessage();
+  const isOpen = OPEN_STATES.includes(String(entity.status));
+  const preview = useWorkflowDetail('closeouts', entity.id, 'preview', isOpen);
   const revisions = useWorkflowDetail('closeouts', entity.id, 'revisions');
-  return <div className="space-y-4">
-    {entity.status !== 'CLOSED' && <section className="space-y-3 rounded-xl border p-4"><h3 className="font-semibold">Reconciliation preview</h3><p className="text-sm text-muted-foreground">Post sales, returns and classified losses before closing. Retained stock stays with this holder.</p><Button variant="outline" onClick={() => preview.refetch()} disabled={preview.isFetching}>Refresh preview</Button>{preview.isError && <p role="alert">{workflowError(preview.error)}</p>}{preview.isPending && <p role="status">Loading preview…</p>}{preview.data && <><WorkflowData value={preview.data.data} /><CountForm entity={entity} initial={preview.data.data} refresh={async () => { const result = await preview.refetch(); if (result.error) throw result.error; if (!result.data) throw new Error('Preview unavailable.'); return { ...result.data.data, version: result.data.version ?? result.data.data.version } as unknown as CloseoutPreview; }} /></>}</section>}
-    <section className="space-y-3 rounded-xl border p-4"><h3 className="font-semibold">Immutable revisions</h3>{revisions.isPending ? <p role="status">Loading history…</p> : revisions.isError ? <p role="alert">{workflowError(revisions.error)} <Button variant="link" onClick={() => revisions.refetch()}>Retry</Button></p> : <WorkflowData value={revisions.data?.data} />}</section>
-  </div>;
+  return (
+    <div className="space-y-4">
+      {isOpen ? (
+        <section className="space-y-3 rounded-xl border p-4">
+          <h3 className="font-semibold">{t('inventory.operations.closeout.previewTitle')}</h3>
+          <p className="text-sm text-muted-foreground">{t('inventory.operations.closeout.previewHint')}</p>
+          <Button variant="outline" onClick={() => preview.refetch()} disabled={preview.isFetching}>{t('inventory.operations.closeout.refreshPreview')}</Button>
+          {preview.isError ? <p role="alert">{toMessage(preview.error)}</p> : null}
+          {preview.isPending ? <p role="status">{t('common.loading')}</p> : null}
+          {preview.data ? (
+            <>
+              <WorkflowData value={preview.data.data} />
+              <CountForm
+                entity={entity}
+                initial={preview.data.data}
+                refresh={async () => {
+                  const result = await preview.refetch();
+                  if (result.error) throw result.error;
+                  if (!result.data) throw new Error('inventory.operations.closeout.previewIncomplete');
+                  return { ...result.data.data, version: result.data.version ?? result.data.data.version } as unknown as CloseoutPreview;
+                }}
+              />
+            </>
+          ) : null}
+        </section>
+      ) : null}
+      <section className="space-y-3 rounded-xl border p-4">
+        <h3 className="font-semibold">{t('inventory.operations.closeout.revisionsTitle')}</h3>
+        {revisions.isPending ? <p role="status">{t('common.loading')}</p> : revisions.isError ? (
+          <p role="alert">{toMessage(revisions.error)} <Button variant="link" onClick={() => revisions.refetch()}>{t('inventory.operations.retry')}</Button></p>
+        ) : <WorkflowData value={revisions.data?.data} />}
+      </section>
+    </div>
+  );
 }
+
 function CountForm({ entity, initial, refresh }: { entity: WorkflowRecord; initial: WorkflowRecord; refresh: () => Promise<CloseoutPreview> }) {
+  const { t } = useTranslation();
+  const toMessage = useWorkflowErrorMessage();
   const inventoryLines = Array.isArray(initial.inventoryLines) ? initial.inventoryLines as Record<string, unknown>[] : [];
-  const form = useForm({ defaultValues: { countedItems: inventoryLines.map(line => ({ itemId: String(line.itemId), available: line.countedAvailableEnding === undefined ? '' : String(line.countedAvailableEnding), quarantined: line.countedQuarantinedEnding === undefined ? '' : String(line.countedQuarantinedEnding) })), financialDifferenceReason: String(entity.financialDifferenceReason ?? ''), notes: String(entity.notes ?? '') } });
-  const counts = useFieldArray({ control: form.control, name: 'countedItems' });
+  const form = useForm({
+    defaultValues: {
+      lines: inventoryLines.map(line => ({
+        itemId: String(line.itemId),
+        available: line.countedAvailableEnding == null ? '' : String(line.countedAvailableEnding),
+        quarantined: line.countedQuarantinedEnding == null ? '' : String(line.countedQuarantinedEnding),
+      })),
+      financialDifferenceReason: String(entity.financialDifferenceReason ?? ''),
+      notes: String(entity.notes ?? ''),
+    },
+  });
+  const counts = useFieldArray({ control: form.control, name: 'lines' });
   const can = useWorkflowAccess();
   const mutation = useWorkflowWrite();
-  const { notifySuccess } = useFeedback();
-  const { t } = useTranslation();
   const [error, setError] = useState('');
   const [reviewed, setReviewed] = useState<string>();
+
   const submit = form.handleSubmit(async raw => {
     setError('');
-    if (!can('closeout.finalize')) return;
-    if (raw.countedItems.some(line => line.available.trim() === '' || line.quarantined.trim() === '')) { setError('Enter both available and quarantined counts for every item, including zero.'); return; }
+    if (raw.lines.some(line => line.available.trim() === '' || line.quarantined.trim() === '')) { setError(t('inventory.operations.closeout.bothCountsRequired')); return; }
     const parsed = closeoutSchema.safeParse(raw);
-    if (!parsed.success) { setError(parsed.error.issues.map(issue => issue.message).join('\n')); return; }
+    if (!parsed.success) { setError(parsed.error.issues.map(issue => t(issue.message)).join('\n')); return; }
     try {
       const current = await refresh();
       const problem = validateCloseout(parsed.data, current);
-      if (problem) { setError(problem); setReviewed(undefined); return; }
+      if (problem) { setError(t(problem)); setReviewed(undefined); return; }
       const signature = JSON.stringify([parsed.data, current]);
       if (reviewed !== signature) { setReviewed(signature); return; }
-      await mutation.mutateAsync({ resource: 'closeouts', id: entity.id, action: 'close', version: current.version, data: parsed.data });
+      await mutation.mutateAsync({ resource: 'closeouts', id: entity.id, path: 'close', method: 'post', versioned: true, version: current.version, data: parsed.data });
       setReviewed(undefined);
-    } catch (failure) { setError(workflowError(failure)); }
+    } catch (failure) {
+      setError(toMessage(failure));
+    }
   });
-  const saveDraft = form.handleSubmit(async raw => {
-    setError('');
-    if (areFormValuesEquivalent(raw, form.formState.defaultValues)) { notifySuccess(t('common.form.noChanges')); return; }
-    const parsed = closeoutSchema.safeParse({ ...raw, countedItems: raw.countedItems.filter(line => line.available !== '' || line.quarantined !== '') });
-    if (!parsed.success) { setError(parsed.error.issues.map(issue => issue.message).join('\n')); return; }
-    try {
-      await mutation.mutateAsync({ resource: 'closeouts', id: entity.id, update: true, version: entity.version, data: parsed.data });
-      form.reset(raw); notifySuccess('Closeout progress saved');
-    } catch (failure) { setError(workflowError(failure)); }
-  });
-  if (!can('closeout.finalize') && !can('closeout.record')) return <p className="text-sm text-muted-foreground">Read-only reconciliation. Finalizing requires closeout permission.</p>;
-  return <FormProvider {...form}><form onSubmit={submit} className="space-y-4 border-t pt-4"><h4 className="font-medium">Physical count</h4>{error && <p role="alert" className="text-destructive">{error}</p>}
-    {counts.fields.map((line, index) => <fieldset key={line.id} className="grid gap-3 rounded border p-3 sm:grid-cols-3"><legend>Count {index + 1}</legend><WorkflowField field={{ name: 'itemId', label: 'Item', reference: 'items' }} path={`countedItems.${index}.itemId`} /><label className="grid gap-1 text-sm">Available<Input type="number" min={0} step={1} {...form.register(`countedItems.${index}.available`)} /></label><label className="grid gap-1 text-sm">Quarantined<Input type="number" min={0} step={1} {...form.register(`countedItems.${index}.quarantined`)} /></label></fieldset>)}
-    <Button type="button" variant="outline" onClick={() => counts.append({ itemId: '', available: '', quarantined: '' })}>Add unexpectedly found item</Button>
-    <label className="grid gap-1 text-sm">Financial difference explanation<textarea {...form.register('financialDifferenceReason')} className="min-h-20 rounded border bg-background p-2" /></label><label className="grid gap-1 text-sm">Notes<textarea {...form.register('notes')} className="min-h-20 rounded border bg-background p-2" /></label>
-    {reviewed && <p role="status">Counts reconcile with the preview. Confirm to create an immutable revision. Sales and returns will not be posted again.</p>}{can('closeout.record') && <Button type="button" variant="outline" disabled={mutation.isPending || form.formState.isSubmitting} onClick={saveDraft}>Save progress</Button>} {can('closeout.finalize') && <Button type="submit" disabled={mutation.isPending || form.formState.isSubmitting}>{form.formState.isSubmitting ? 'Checking…' : reviewed ? 'Confirm closeout' : 'Review & close'}</Button>}
-  </form></FormProvider>;
+
+  if (!can('closeout.finalize')) return <p className="text-sm text-muted-foreground">{t('inventory.operations.closeout.readOnly')}</p>;
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={submit} className="space-y-4 border-t pt-4">
+        <h4 className="font-medium">{t('inventory.operations.closeout.physicalCount')}</h4>
+        {error ? <p role="alert" className="whitespace-pre-line text-destructive">{error}</p> : null}
+        {counts.fields.map((line, index) => (
+          <fieldset key={line.id} className="grid gap-3 rounded border p-3 sm:grid-cols-3">
+            <legend className="px-1 text-xs text-muted-foreground">{t('inventory.form.lineNumber', { number: index + 1 })}</legend>
+            <WorkflowField field={{ name: 'itemId', reference: 'items' }} path={`lines.${index}.itemId`} />
+            <label className="grid gap-1 text-sm">{t('inventory.operations.fields.available')}<Input type="number" min={0} step={1} {...form.register(`lines.${index}.available`)} /></label>
+            <label className="grid gap-1 text-sm">{t('inventory.operations.fields.quarantined')}<Input type="number" min={0} step={1} {...form.register(`lines.${index}.quarantined`)} /></label>
+          </fieldset>
+        ))}
+        <Button type="button" variant="outline" onClick={() => counts.append({ itemId: '', available: '', quarantined: '' })}>{t('inventory.operations.closeout.addFoundItem')}</Button>
+        <label className="grid gap-1 text-sm">{t('inventory.operations.fields.financialDifferenceReason')}<textarea {...form.register('financialDifferenceReason')} className="min-h-20 rounded border bg-background p-2" /></label>
+        <label className="grid gap-1 text-sm">{t('inventory.operations.fields.notes')}<textarea {...form.register('notes')} className="min-h-20 rounded border bg-background p-2" /></label>
+        {reviewed ? <p role="status">{t('inventory.operations.closeout.reconciled')}</p> : null}
+        <Button type="submit" disabled={mutation.isPending || form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? t('inventory.operations.closeout.checking') : reviewed ? t('inventory.operations.closeout.confirmClose') : t('inventory.operations.closeout.reviewClose')}
+        </Button>
+      </form>
+    </FormProvider>
+  );
 }

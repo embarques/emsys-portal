@@ -1,18 +1,17 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["inventory.Receipt"]. */
+/** Directory coverage for Swagger definitions["inventory.Receipt"]. */
 export const INVENTORY_RECEIPT_API_TABLE_FIELDS = [
-  { field: "averageCost" },
-  { field: "createdAt", format: "date" },
-  { field: "createdBy" },
-  { field: "id" },
-  { field: "item" },
-  { field: "itemId" },
-  { field: "journal" },
-  { field: "quantity" },
+  { field: "correctsSourceId", defaultVisible: false },
+  { field: "id", defaultVisible: false },
+  { field: "lines", columnId: "lines" },
+  { field: "notes", defaultVisible: false },
+  { field: "postedAt", columnId: "postedAt", format: "date" },
+  { field: "postedBy", defaultVisible: false },
+  { field: "postingRevision", defaultVisible: false },
   { field: "receivedAt", columnId: "date", format: "date" },
-  { field: "supplier" },
-  { field: "supplierId" },
-  { field: "updatedAt", format: "date" },
-  { field: "updatedBy" },
+  { field: "status", columnId: "status" },
+  { field: "supplierId", columnId: "supplier" },
+  { field: "toHolderId", columnId: "holder" },
+  { field: "version", defaultVisible: false },
 ] as const satisfies readonly ApiTableField[];

@@ -557,6 +557,14 @@ Uses the full `pickup.Pickup` model (Swagger), not `CreatePickupRequest`. `{id}`
 Include party/branch fields from a fresh GET when patching. Set `"route": null` to clear a
 scheduled vehicle-route (appointment route) assignment.
 
+Updates are merge-aware (omitted fields keep their values). The Daily Routes Map
+**Finalize route order** action sends `{ "orderNumber": <stop position> }` per pickup to
+persist the stop sequence; `orderNumber` is read back onto the portal `Order` model.
+
+`orderNumber` lifecycle: `PUT /v1/pickups/route/{id}` clears it server-side when a pickup
+moves to a different daily route (same-route reassign keeps it). Unassigning
+(`DELETE /v1/pickups/{id}/route`) also clears it server-side.
+
 ### Pickup routes — `POST /v1/pickups/route`
 
 At least one of `states`, `cities`, `zipCodes`, `zipRanges` is required.
@@ -1159,3 +1167,20 @@ Same write shape. `{id}` = ObjectID hex.
 | `/vehicle-routes`                    | `vehicle_route`         |
 
 Actions: `view`, `create`, `update`, `delete`, `print` (checked via seeded permissions on the user's role).
+
+## Route optimizer — single daily route
+
+`POST /route-optimizer/single` accepts `start`, `end`, `stops` (at least two addresses),
+and optional `numRoutes`. Each address must include
+`location: { "type": "Point", "coordinates": [longitude, latitude] }`.
+Street text or verification metadata alone is insufficient. Zero coordinates are valid;
+longitude must be within −180…180 and latitude within −90…90.
+
+The appointment optimizer uses the branch address for both `start` and `end`, and
+pickup sender address snapshots for `stops`. Preserve branch coordinates when reading
+API responses; do not derive them from street text or substitute a stop for the depot.
+When branch coordinates are missing or invalid, prompt for separate start and end
+longitude/latitude pairs. These overrides apply only to the optimization request and
+do not update the branch. Valid branch coordinates are used even without street text.
+
+Contract: https://api.embarqueros.com/swagger/index.html#/route_optimizer/post_route_optimizer_single

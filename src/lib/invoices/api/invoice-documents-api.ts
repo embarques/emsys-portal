@@ -18,11 +18,15 @@ export async function fetchInvoiceDocuments(
   invoiceId: string,
   cursor?: string,
 ): Promise<DocumentPage> {
-  const response = await axiosInstance.get<Envelope<DocumentPage>>(
+  const response = await axiosInstance.get<Envelope<DocumentPage | null>>(
     path(invoiceId),
     { params: { cursor } },
   );
-  return unwrap(response.data);
+  const page = unwrap(response.data);
+  return {
+    items: Array.isArray(page?.items) ? page.items : [],
+    nextCursor: page?.nextCursor || undefined,
+  };
 }
 export async function uploadInvoiceDocument(
   invoiceId: string,

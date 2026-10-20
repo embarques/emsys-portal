@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import { Plus, Truck } from "lucide-react";
 
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
-import { InventoryDispatchMobileList } from "@/components/inventory/inventory-dispatch-mobile-list";
 import { InventoryDispatchViewSheet } from "@/components/inventory/inventory-dispatch-view-sheet";
+import { InventoryDocumentCommandDialog, type InventoryDocumentCommand } from "@/components/inventory/inventory-document-command-dialog";
+import { InventoryDocumentMobileList } from "@/components/inventory/inventory-document-mobile-list";
+import { InventoryDocumentMobileRow } from "@/components/inventory/inventory-document-mobile-row";
+import { InventoryDocumentStatusBadge } from "@/components/inventory/inventory-status-badge";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
-import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
@@ -19,64 +20,88 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { INVENTORY_DISPATCH_API_TABLE_FIELDS } from "@/lib/inventory/dispatches/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
+import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
-import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getDispatchItemLabel, dispatchMatchesQuery } from "@/lib/inventory/display";
+import {
+  dispatchMatchesQuery,
+  formatInventoryDateTime,
+  getDocumentStatusLabel,
+  getHolderNameById,
+  summarizeDocumentLines,
+} from "@/lib/inventory/display";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
+  useCancelDispatch,
   useCreateDispatch,
-  useDeleteDispatches,
   useInventoryDispatches,
+  useInventoryHolders,
   useInventoryItems,
+  usePostDispatch,
   useUpdateDispatch,
 } from "@/lib/inventory/hooks/use-inventory";
-import { dispatchToFormValues, type DispatchFormValues, type InventoryDispatch } from "@/lib/inventory/types/documents";
+import {
+  dispatchToFormValues,
+  sumLineQuantities,
+  type DispatchFormValues,
+  type InventoryDispatch,
+} from "@/lib/inventory/types/documents";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { resolveClientTablePageLimit } from "@/lib/table/page-size";
-import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
 
 export function InventoryDispatchesWorkspace() {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
   const { hasPermission } = useAuth();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess, notifyError } = useFeedback();
   const { data: dispatches = [], isLoading, isError, error } = useInventoryDispatches();
   const { data: items = [] } = useInventoryItems();
+  const { data: holders = [] } = useInventoryHolders();
+  const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
   const createDispatch = useCreateDispatch();
   const updateDispatch = useUpdateDispatch();
-  const deleteDispatches = useDeleteDispatches();
+  const postDispatch = usePostDispatch();
+  const cancelDispatch = useCancelDispatch();
   const canCreate = hasPermission(PERMISSIONS.inventoryDispatchesCreate.name, PERMISSIONS.inventoryDispatchesCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.inventoryDispatchesUpdate.name, PERMISSIONS.inventoryDispatchesUpdate.resourceType);
-  const canDelete = hasPermission(PERMISSIONS.inventoryDispatchesDelete.name, PERMISSIONS.inventoryDispatchesDelete.resourceType);
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, changePageSize } = useTablePageSize();
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingDispatch, setEditingDispatch] = useState<InventoryDispatch | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<InventoryDispatch | InventoryDispatch[] | null>(null);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewDispatch, setViewDispatch] = useState<InventoryDispatch | null>(null);
+  const [commandTarget, setCommandTarget] = useState<{ command: InventoryDocumentCommand; dispatch: InventoryDispatch } | null>(null);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return dispatches;
-    return dispatches.filter((dispatch) => {
-      return dispatchMatchesQuery(dispatch, getDispatchItemLabel(dispatch, items), normalized);
-    });
-  }, [dispatches, items, query]);
+  const employeeNames = useMemo(
+    () => new Map((employeesQuery.data?.items ?? []).map((employee) => [String(employee.id), employee.name])),
+    [employeesQuery.data?.items],
+  );
+
+  const filtered = useMemo(
+    () =>
+      dispatches.filter((dispatch) =>
+        dispatchMatchesQuery(dispatch, query, {
+          items,
+          holders,
+          statusLabel: getDocumentStatusLabel(dispatch.status, t),
+        }),
+      ),
+    [dispatches, holders, items, query, t],
+  );
 
   const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const listErrorMessage = isError ? toErrorMessage(error) : null;
-  const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
-  useTableSelectionReset(buildTableSelectionResetKey(query), setSelectedIds);
+  const commandPending = postDispatch.isPending || cancelDispatch.isPending;
+  const editingDispatchValues = useMemo(() => (editingDispatch ? dispatchToFormValues(editingDispatch) : undefined), [editingDispatch]);
 
   function openAddForm() {
     if (!canCreate) return;
@@ -85,7 +110,7 @@ export function InventoryDispatchesWorkspace() {
   }
 
   function openEditForm(dispatch: InventoryDispatch) {
-    if (!canUpdate) return;
+    if (!canUpdate || dispatch.status !== "DRAFT") return;
     setEditingDispatch(dispatch);
     setViewDispatch(null);
     setFormMode("edit");
@@ -99,47 +124,55 @@ export function InventoryDispatchesWorkspace() {
           setFormMode(null);
           return;
         }
-        const updated = await updateDispatch.mutateAsync({ id: editingDispatch.id, values });
-        notifyUpdated(t("inventory.references.dispatch"), getDispatchItemLabel(updated, items));
+        const updated = await updateDispatch.mutateAsync({ dispatch: editingDispatch, values });
+        notifyUpdated(t("inventory.references.dispatch"), getHolderNameById(updated.toHolderId, holders));
       } else {
         const created = await createDispatch.mutateAsync(values);
-        notifyAdded(t("inventory.references.dispatch"), getDispatchItemLabel(created, items));
+        notifyAdded(t("inventory.references.dispatch"), getHolderNameById(created.toHolderId, holders));
       }
       setFormMode(null);
       setEditingDispatch(null);
     } catch (mutationError) {
-      window.alert(toErrorMessage(mutationError));
+      notifyError(toErrorMessage(mutationError));
     }
   }
 
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((row) => row.id) : [deleteTarget.id];
+  async function confirmCommand() {
+    if (!commandTarget) return;
+    const { command, dispatch } = commandTarget;
     try {
-      const result = await deleteDispatches.mutateAsync(ids);
-      notifyDeleted(t("inventory.references.dispatch"), result.succeededIds.length);
-      setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
-      setDeleteTarget(null);
+      if (command === "post") {
+        await postDispatch.mutateAsync(dispatch);
+        notifySuccess(t("inventory.toasts.dispatchPosted"));
+      } else {
+        await cancelDispatch.mutateAsync(dispatch);
+        notifySuccess(t("inventory.toasts.dispatchCancelled"));
+      }
+      setCommandTarget(null);
       setViewDispatch(null);
     } catch (mutationError) {
-      window.alert(toErrorMessage(mutationError));
+      notifyError(toErrorMessage(mutationError));
     }
   }
 
   const columns: DataTableColumn<InventoryDispatch>[] = [
     {
-      id: "item",
-      label: t("inventory.columns.item"),
-      renderCell: (row) => getDispatchItemLabel(row, items),
+      id: "toHolder",
+      label: t("inventory.form.fields.toHolder"),
+      cellClassName: "font-medium",
+      renderCell: (row) => getHolderNameById(row.toHolderId, holders) || dash,
     },
-    { id: "quantity", label: t("inventory.form.fields.quantityDispatched"), renderCell: (row) => row.quantity },
+    { id: "fromHolder", label: t("inventory.form.fields.fromHolder"), renderCell: (row) => getHolderNameById(row.fromHolderId, holders) || dash },
+    { id: "lines", label: t("inventory.columns.lines"), renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
+    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
     {
-      id: "dispatchedTo",
-      label: t("inventory.columns.dispatchedTo"),
-      renderCell: (row) => getInventoryDispatchToLabel(row.dispatchedTo),
+      id: "assignee",
+      label: t("inventory.form.fields.assigneeEmployee"),
+      defaultVisible: false,
+      renderCell: (row) => (row.assigneeEmployeeId ? employeeNames.get(row.assigneeEmployeeId) ?? row.assigneeEmployeeId : dash),
     },
-    { id: "incomeGained", label: t("inventory.columns.incomeGained"), renderCell: (row) => formatInventoryMoney(row.incomeGained) },
-    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDate(row.dispatchedAt) },
+    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDateTime(row.dispatchedAt) },
+    { id: "status", label: t("inventory.columns.status"), renderCell: (row) => <InventoryDocumentStatusBadge status={row.status} /> },
   ];
 
   const columnVisibility = useApiTableColumns("inventory-dispatches", columns, INVENTORY_DISPATCH_API_TABLE_FIELDS);
@@ -158,7 +191,7 @@ export function InventoryDispatchesWorkspace() {
           title={t("inventory.submenus.dispatches")}
           description={t("inventory.pages.dispatches")}
           actions={
-          canCreate ? <Button onClick={openAddForm}>
+            canCreate ? <Button onClick={openAddForm}>
               <Plus className="h-4 w-4" />
               {t("inventory.actions.newDispatch")}
             </Button> : null
@@ -166,19 +199,40 @@ export function InventoryDispatchesWorkspace() {
         />
       </div>
 
-      <InventoryDispatchMobileList
+      <InventoryDocumentMobileList
+        title={t("inventory.submenus.dispatches")}
+        description={t("inventory.pages.dispatches")}
+        addLabel={t("inventory.actions.newDispatch")}
+        searchPlaceholder={t("inventory.search.dispatches")}
+        emptyMessage={t("inventory.empty.dispatches")}
+        loadingTitle={t("inventory.loading.dispatches.title")}
+        loadingDescription={t("inventory.loading.dispatches.description")}
+        loadingColumns={[t("inventory.form.fields.toHolder"), t("inventory.columns.lines"), t("inventory.columns.status")]}
+        icon={Truck}
         query={query}
         pageRows={pageRows}
-        items={items}
         isLoading={isLoading}
         page={currentPage}
         totalPages={totalPages}
         onQueryChange={setQuery}
         onPageChange={setPage}
-        onOpen={setViewDispatch}
-        onAddDispatch={openAddForm}
-        onEdit={canUpdate ? openEditForm : undefined}
-        onDelete={canDelete ? setDeleteTarget : undefined}
+        onAdd={canCreate ? openAddForm : undefined}
+        renderRow={(dispatch) => (
+          <InventoryDocumentMobileRow
+            key={dispatch.id}
+            icon={Truck}
+            iconClassName="bg-sky-100 text-sky-700"
+            title={getHolderNameById(dispatch.toHolderId, holders) || dash}
+            subtitle={formatInventoryDateTime(dispatch.dispatchedAt)}
+            detail={summarizeDocumentLines(dispatch.lines, items) || dash}
+            amount={String(sumLineQuantities(dispatch.lines))}
+            amountLabel={t("inventory.columns.totalQuantity")}
+            status={dispatch.status}
+            onOpen={() => setViewDispatch(dispatch)}
+            onEdit={canUpdate && dispatch.status === "DRAFT" ? () => openEditForm(dispatch) : undefined}
+            onPost={canUpdate && dispatch.status === "DRAFT" ? () => setCommandTarget({ command: "post", dispatch }) : undefined}
+          />
+        )}
       />
 
       {listErrorMessage ? <p className="mt-4 text-sm text-destructive md:hidden">{listErrorMessage}</p> : null}
@@ -202,18 +256,6 @@ export function InventoryDispatchesWorkspace() {
           />
         </CardHeader>
 
-        <TableSelectionToolbar
-          selectedIds={selectedIds}
-          pageRowIds={pageRows.map((row) => row.id)}
-          totalCount={filtered.length}
-          onSelectedIdsChange={setSelectedIds}
-          onEdit={canUpdate ? () => {
-            const row = pageRows.find((entry) => entry.id === selectedIds[0]);
-            if (row) openEditForm(row);
-          } : undefined}
-          onDelete={canDelete ? () => setDeleteTarget(dispatches.filter((row) => selectedIds.includes(row.id))) : undefined}
-        />
-
         {listErrorMessage ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : isLoading ? (
@@ -221,7 +263,7 @@ export function InventoryDispatchesWorkspace() {
             icon={Truck}
             title={t("inventory.loading.dispatches.title")}
             description={t("inventory.loading.dispatches.description")}
-            columns={[t("inventory.columns.item"), t("inventory.form.fields.quantityDispatched"), t("inventory.columns.date")]}
+            columns={[t("inventory.form.fields.toHolder"), t("inventory.columns.lines"), t("inventory.columns.status")]}
           />
         ) : (
           <DataTable
@@ -229,23 +271,10 @@ export function InventoryDispatchesWorkspace() {
             rows={pageRows}
             page={currentPage}
             rowKey={(row) => row.id}
-            rowLabel={(row) => getDispatchItemLabel(row, items)}
+            rowLabel={(row) => getHolderNameById(row.toHolderId, holders)}
             columnLayout={columnVisibility}
             sortUnavailable
-            minWidth={800}
-            selectable
-            selectedIds={selectedIds}
-            allPageSelected={allPageSelected}
-            onToggleSelectAll={(checked) =>
-              setSelectedIds((current) =>
-                checked
-                  ? Array.from(new Set([...current, ...pageRows.map((row) => row.id)]))
-                  : current.filter((id) => !pageRows.some((row) => row.id === id)),
-              )
-            }
-            onToggleSelect={(id, checked) =>
-              setSelectedIds((current) => (checked ? [...current, id] : current.filter((entry) => entry !== id)))
-            }
+            minWidth={960}
             onRowClick={setViewDispatch}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewDispatch?.id}
@@ -256,11 +285,7 @@ export function InventoryDispatchesWorkspace() {
         {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", {
-                count: pageRows.length,
-                total: filtered.length,
-                noun: t("inventory.submenus.dispatches").toLowerCase(),
-              })}
+              {t("common.pagination.showingOf", { count: pageRows.length, total: filtered.length, noun: t("inventory.submenus.dispatches").toLowerCase() })}
             </p>
             <TablePaginationControls
               page={currentPage}
@@ -276,45 +301,42 @@ export function InventoryDispatchesWorkspace() {
       <InventoryDispatchViewSheet
         dispatch={viewDispatch}
         items={items}
+        holders={holders}
+        employeeName={(employeeId) => employeeNames.get(employeeId) ?? employeeId}
         open={Boolean(viewDispatch)}
+        isBusy={commandPending}
         onOpenChange={(open) => !open && setViewDispatch(null)}
         onEdit={canUpdate ? openEditForm : undefined}
-        onDelete={canDelete ? setDeleteTarget : undefined}
+        onPost={canUpdate ? (dispatch) => setCommandTarget({ command: "post", dispatch }) : undefined}
+        onCancelDraft={canUpdate ? (dispatch) => setCommandTarget({ command: "cancel", dispatch }) : undefined}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-5xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
           <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
-            <DialogTitle>{formMode === "edit" ? t("common.actions.edit") : t("inventory.form.newDispatchTitle")}</DialogTitle>
+            <DialogTitle>{formMode === "edit" ? t("inventory.form.editDispatchTitle") : t("inventory.form.newDispatchTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryDispatchForm
+            key={editingDispatch?.id ?? "new"}
             items={items}
-            initialValues={editingDispatch ? dispatchToFormValues(editingDispatch) : undefined}
-            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.saveDispatch")}
+            holders={holders}
+            initialValues={editingDispatchValues}
+            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.saveDraft")}
             isSubmitting={createDispatch.isPending || updateDispatch.isPending}
             onCancel={() => setFormMode(null)}
             onSubmit={saveDispatch}
           />
         </DialogContent>
       </Dialog>
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("common.actions.delete")}</DialogTitle>
-            <DialogDescription>
-              {Array.isArray(deleteTarget)
-                ? `${deleteTarget.length} ${t("inventory.submenus.dispatches").toLowerCase()}`
-                : deleteTarget
-                  ? getDispatchItemLabel(deleteTarget, items)
-                  : ""}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t("common.actions.cancel")}</Button>
-            <ConfirmDeleteButton isPending={deleteDispatches.isPending} onClick={confirmDelete} />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+      <InventoryDocumentCommandDialog
+        command={commandTarget?.command ?? null}
+        copyKey="inventory.commands.dispatch"
+        label={commandTarget ? getHolderNameById(commandTarget.dispatch.toHolderId, holders) : ""}
+        isPending={commandPending}
+        onConfirm={confirmCommand}
+        onOpenChange={(open) => !open && setCommandTarget(null)}
+      />
     </div>
   );
 }

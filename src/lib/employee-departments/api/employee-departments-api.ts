@@ -14,7 +14,7 @@ function detailPath(id: number) {
 export async function fetchEmployeeDepartments(page = 1, limit = 40): Promise<PaginatedResult<EmployeeDepartment>> {
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(`${endpoint}?page=${page}&limit=${limit}&sort=name:asc`);
   assertMutationSuccess(response, "Unable to load departments.");
-  const items = departmentSchema.array().parse(response.data);
+  const items = departmentSchema.array().parse(response.data ?? []);
   return { items, page: response.page ?? page, resultsPerPage: response.resultsPerPage ?? items.length, total: response.total ?? items.length };
 }
 export async function fetchAllEmployeeDepartments(): Promise<EmployeeDepartment[]> {

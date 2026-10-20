@@ -1,3 +1,5 @@
+import type { AxiosRequestConfig } from "axios";
+
 import { INVENTORY_DISPATCH_API_TABLE_FIELDS } from "@/lib/inventory/dispatches/table-fields";
 import { INVENTORY_RECEIPT_API_TABLE_FIELDS } from "@/lib/inventory/receipts/table-fields";
 import { INVENTORY_SUPPLIER_API_TABLE_FIELDS } from "@/lib/inventory/suppliers/table-fields";
@@ -6,10 +8,7 @@ import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-tabl
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
-import {
-  runSettledIdsWithConcurrency,
-  type BulkSettledResult,
-} from "@/lib/api/run-settled-with-concurrency";
+import { runSettledWithConcurrency, type BulkSettledResult } from "@/lib/api/run-settled-with-concurrency";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
@@ -19,41 +18,52 @@ import {
   type ApiSearchFilter,
 } from "@/lib/api/search-query";
 import { resolvePaginatedListTotal, type PaginatedApiEnvelope, type PaginatedResult } from "@/lib/api/types";
-import { buildApiPhonesPayload, normalizeRecordPhonesFromApi, validateRecordPhones } from "@/lib/phones/phones";
 import {
   INVENTORY_DISPATCH_BAR_OR_SEARCH_FIELDS,
+  INVENTORY_HOLDER_BAR_OR_SEARCH_FIELDS,
   INVENTORY_ITEM_BAR_OR_SEARCH_FIELDS,
   INVENTORY_RECEIPT_BAR_OR_SEARCH_FIELDS,
   INVENTORY_STOCK_BAR_OR_SEARCH_FIELDS,
   INVENTORY_SUPPLIER_BAR_OR_SEARCH_FIELDS,
 } from "@/lib/inventory/search-fields";
-import { parseInventoryFormNumber, type InventoryFormValues, type InventoryItem, type InventoryStock } from "@/lib/inventory/types/catalog";
 import {
-  dispatchedToFromFormValues,
-  type DispatchFormValues,
-  type InventoryDispatch,
-  type InventoryDispatchTo,
-  type InventoryItemRef,
-  type InventoryReceipt,
-  type InventorySupplierRef,
-  type ReceiptFormValues,
+  buildInventoryAdjustmentPayload,
+  buildInventoryDispatchPayload,
+  buildInventoryHolderPayload,
+  buildInventoryItemPayload,
+  buildInventoryReceiptPayload,
+  buildInventorySupplierPayload,
+  type InventoryPayloadResult,
+} from "@/lib/inventory/schemas/inventory.schema";
+import type { InventoryFormValues, InventoryItem, InventoryStockBalance } from "@/lib/inventory/types/catalog";
+import {
+  isInventoryDocumentStatus,
+  isInventoryStockCondition,
+  type InventoryAuditFields,
+} from "@/lib/inventory/types/common";
+import type {
+  DispatchFormValues,
+  InventoryDispatch,
+  InventoryReceipt,
+  ReceiptFormValues,
 } from "@/lib/inventory/types/documents";
 import {
+  isInventoryHolderType,
+  type InventoryHolder,
+  type InventoryHolderFormValues,
+  type InventoryRouteCrew,
+} from "@/lib/inventory/types/holders";
+import {
   DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
+  DEFAULT_INVENTORY_HOLDER_LIST_PARAMS,
   DEFAULT_INVENTORY_ITEM_LIST_PARAMS,
   DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS,
   DEFAULT_INVENTORY_STOCK_LIST_PARAMS,
   DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS,
   type InventoryListParams,
 } from "@/lib/inventory/types/list";
-import { compactStringList, type InventorySupplier, type SupplierFormValues } from "@/lib/inventory/types/suppliers";
-
-type ApiUser = {
-  id?: number | string;
-  name?: string;
-  userName?: string;
-  fullName?: string;
-};
+import type { AdjustmentFormValues } from "@/lib/inventory/types/movements";
+import type { InventorySupplier, InventorySupplierContact, SupplierFormValues } from "@/lib/inventory/types/suppliers";
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
@@ -61,10 +71,17 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
+/** Minimal reference for commands that need the current optimistic-lock version. */
+export type InventoryVersionedRef = { id: string; version: number | null };
+
 function readStringId(value: unknown): string | undefined {
   if (value == null) return undefined;
   const id = String(value).trim();
   return id || undefined;
+}
+
+function readString(value: unknown): string {
+  return value == null ? "" : String(value).trim();
 }
 
 function readNumber(value: unknown, fallback = 0): number {
@@ -72,14 +89,31 @@ function readNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function readUserName(user: unknown): string {
-  if (!user) return "";
-  if (typeof user === "string") return user.trim();
-  if (typeof user === "object") {
-    const entry = user as ApiUser;
-    return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
-  }
-  return "";
+function readOptionalMinor(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+function readVersion(value: unknown): number | null {
+  const parsed = typeof value === "string" && value.trim() ? Number(value) : value;
+  return typeof parsed === "number" && Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function readAudit(entry: Record<string, unknown>): InventoryAuditFields {
+  const audit = entry.audit && typeof entry.audit === "object" ? (entry.audit as Record<string, unknown>) : {};
+  return {
+    createdAt: readString(audit.createdAt ?? entry.createdAt),
+    createdBy: readApiUserUsername(audit.createdBy ?? entry.createdBy),
+    updatedAt: readString(audit.updatedAt ?? entry.updatedAt),
+    updatedBy: readApiUserUsername(audit.updatedBy ?? entry.updatedBy),
+  };
+}
+
+function readLines(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter((line): line is Record<string, unknown> => Boolean(line) && typeof line === "object")
+    : [];
 }
 
 function unwrapRecord(payload: unknown): unknown {
@@ -95,7 +129,35 @@ function parseInventoryPathId(id: string): string {
   if (!trimmed) {
     throw new Error("Invalid inventory ID.");
   }
-  return trimmed;
+  return encodeURIComponent(trimmed);
+}
+
+/** Swagger requires `If-Match` with the current entity version on PATCH, post and cancel. */
+export function inventoryIfMatchHeaders(version: number | null): Record<string, string> {
+  if (version == null || !Number.isSafeInteger(version) || version < 0) {
+    throw new Error("Reload this record to get its current version, then try again.");
+  }
+  return { "If-Match": String(version) };
+}
+
+/**
+ * Posting is retried safely with the same key; a new version is a new command.
+ * Keys are scoped by document and version so a double-click cannot post twice.
+ */
+export function inventoryPostHeaders(kind: string, ref: InventoryVersionedRef): Record<string, string> {
+  return {
+    ...inventoryIfMatchHeaders(ref.version),
+    "Idempotency-Key": `inventory-${kind}-post:${ref.id}:v${ref.version}`,
+  };
+}
+
+function headers(values: Record<string, string>): AxiosRequestConfig {
+  return { headers: values };
+}
+
+function requirePayload<T>(result: InventoryPayloadResult<T>): T {
+  if (!result.ok) throw new Error(result.error);
+  return result.payload;
 }
 
 function extractCreatedId(response: ApiMutationEnvelope<unknown>): string | null {
@@ -109,61 +171,12 @@ function extractCreatedId(response: ApiMutationEnvelope<unknown>): string | null
   return null;
 }
 
-function normalizeItemRef(raw: unknown, fallbackId?: string): InventoryItemRef | undefined {
-  if (raw && typeof raw === "object") {
-    const entry = raw as { id?: unknown; item?: unknown; name?: unknown };
-    const id = readStringId(entry.id) ?? fallbackId;
-    const item = String(entry.item ?? entry.name ?? "").trim();
-    if (id) return { id, item };
-  }
-  return fallbackId ? { id: fallbackId, item: "" } : undefined;
-}
-
-function normalizeSupplierRef(raw: unknown, fallbackId?: string): InventorySupplierRef | undefined {
-  if (raw && typeof raw === "object") {
-    const entry = raw as { id?: unknown; companyName?: unknown; name?: unknown };
-    const id = readStringId(entry.id) ?? fallbackId;
-    const companyName = String(entry.companyName ?? entry.name ?? "").trim();
-    if (id) return { id, companyName };
-  }
-  return fallbackId ? { id: fallbackId, companyName: "" } : undefined;
-}
-
-function normalizeDispatchTo(raw: unknown): InventoryDispatchTo | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as {
-    id?: unknown;
-    _id?: unknown;
-    name?: unknown;
-    route?: { id?: unknown; _id?: unknown; name?: unknown };
-  };
-  const id = entry.id ?? entry._id;
-  const name = String(entry.name ?? "").trim();
-  if (id == null || id === "" || !name) return null;
-
-  const nested = entry.route;
-  const nestedId = nested?.id ?? nested?._id;
-  const nestedName = String(nested?.name ?? "").trim();
-  const numericId = typeof id === "number" ? id : Number(id);
-  return {
-    id: typeof id === "number" || Number.isFinite(numericId) ? (typeof id === "number" ? id : numericId) : String(id),
-    name,
-    ...(nestedId != null && nestedId !== "" && nestedName
-      ? {
-          route: {
-            id: typeof nestedId === "number" ? nestedId : String(nestedId),
-            name: nestedName,
-          },
-        }
-      : {}),
-  };
-}
-
 function hasInventoryListFilters(params: InventoryListParams): boolean {
   return (
     hasResourceListFilters({ search: params.search }) ||
     Boolean(params.itemId?.trim()) ||
-    Boolean(params.supplierId?.trim())
+    Boolean(params.supplierId?.trim()) ||
+    Boolean(params.holderId?.trim())
   );
 }
 
@@ -178,11 +191,9 @@ function buildInventoryListQuery(params: InventoryListParams, fallback: Pick<Inv
 
 function extraInventoryFilters(params: InventoryListParams): ApiSearchFilter[] {
   const filters: ApiSearchFilter[] = [];
-  if (params.itemId?.trim()) {
-    filters.push({ field: "itemId", operator: "eq", value: params.itemId.trim() });
-  }
-  if (params.supplierId?.trim()) {
-    filters.push({ field: "supplierId", operator: "eq", value: params.supplierId.trim() });
+  for (const field of ["itemId", "supplierId", "holderId"] as const) {
+    const value = params[field]?.trim();
+    if (value) filters.push({ field, operator: "eq", value });
   }
   return filters;
 }
@@ -223,120 +234,146 @@ function normalizePaginated<T>(
   };
 }
 
-function normalizeInventoryItem(raw: unknown): InventoryItem | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as Record<string, unknown>;
-  const id = readStringId(entry.id);
-  if (!id) return null;
+function asRecord(raw: unknown): Record<string, unknown> | null {
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+}
+
+export function normalizeInventoryItem(raw: unknown): InventoryItem | null {
+  const entry = asRecord(raw);
+  const id = readStringId(entry?.id);
+  if (!entry || !id) return null;
 
   return {
     ...captureApiTableFields(raw, INVENTORY_ITEM_API_TABLE_FIELDS),
+    ...readAudit(entry),
     id,
-    item: String(entry.item ?? "").trim(),
+    sku: readString(entry.sku),
+    name: readString(entry.name),
+    unitOfMeasure: readString(entry.unitOfMeasure),
+    category: readString(entry.category),
+    defaultSellingPriceMinor: readOptionalMinor(entry.defaultSellingPriceMinor),
+    currency: readString(entry.currency) || "USD",
     reorderThreshold: readNumber(entry.reorderThreshold),
-    quantity: readNumber(entry.quantity),
-    averageCost: readNumber(entry.averageCost),
-    createdAt: String(entry.createdAt ?? "").trim(),
-    createdBy: readUserName(entry.createdBy),
-    updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readApiUserUsername(entry.updatedBy),
+    isActive: entry.isActive !== false,
+    version: readVersion(entry.version),
   };
 }
 
-function normalizeInventoryStock(raw: unknown): InventoryStock | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as Record<string, unknown>;
-  const id = readStringId(entry.id);
-  const itemId = readStringId(entry.itemId) ?? id;
-  if (!id || !itemId) return null;
+export function normalizeInventoryStockBalance(raw: unknown): InventoryStockBalance | null {
+  const entry = asRecord(raw);
+  const itemId = readStringId(entry?.itemId);
+  const holderId = readStringId(entry?.holderId);
+  if (!entry || !itemId || !holderId) return null;
+  const condition = isInventoryStockCondition(entry.condition) ? entry.condition : "AVAILABLE";
 
   return {
-    id,
+    id: readStringId(entry.id) ?? `${holderId}:${itemId}:${condition}`,
+    holderId,
     itemId,
-    item: normalizeItemRef(entry.item, itemId),
-    quantity: readNumber(entry.quantity),
-    averageCost: readNumber(entry.averageCost),
-    reorderThreshold: readNumber(entry.reorderThreshold),
-    createdAt: String(entry.createdAt ?? "").trim(),
-    createdBy: readUserName(entry.createdBy),
-    updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readApiUserUsername(entry.updatedBy),
+    condition,
+    quantityOnHand: readNumber(entry.quantityOnHand),
+    quantityReserved: readNumber(entry.quantityReserved),
+    updatedAt: readString(entry.updatedAt),
+    version: readVersion(entry.version),
   };
 }
 
-function normalizeInventoryReceipt(raw: unknown): InventoryReceipt | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as Record<string, unknown>;
-  const id = readStringId(entry.id);
-  const itemId = readStringId(entry.itemId) ?? readStringId((entry.item as { id?: unknown } | undefined)?.id);
-  const supplierId =
-    readStringId(entry.supplierId) ?? readStringId((entry.supplier as { id?: unknown } | undefined)?.id);
-  if (!id || !itemId || !supplierId) return null;
+export function normalizeInventoryHolder(raw: unknown): InventoryHolder | null {
+  const entry = asRecord(raw);
+  const id = readStringId(entry?.id);
+  if (!entry || !id || !isInventoryHolderType(entry.type)) return null;
+
+  return {
+    ...readAudit(entry),
+    id,
+    type: entry.type,
+    displayName: readString(entry.displayName) || id,
+    entityId: readString(entry.entityId),
+    isActive: entry.isActive !== false,
+    version: readVersion(entry.version),
+  };
+}
+
+function readDocumentBase(entry: Record<string, unknown>, id: string) {
+  return {
+    ...readAudit(entry),
+    id,
+    status: isInventoryDocumentStatus(entry.status) ? entry.status : "DRAFT",
+    notes: readString(entry.notes),
+    postedAt: readString(entry.postedAt),
+    postedBy: readApiUserUsername(entry.postedBy),
+    correctsSourceId: readString(entry.correctsSourceId),
+    version: readVersion(entry.version),
+  } as const;
+}
+
+export function normalizeInventoryReceipt(raw: unknown): InventoryReceipt | null {
+  const entry = asRecord(raw);
+  const id = readStringId(entry?.id);
+  if (!entry || !id) return null;
 
   return {
     ...captureApiTableFields(raw, INVENTORY_RECEIPT_API_TABLE_FIELDS),
-    id,
-    itemId,
-    item: normalizeItemRef(entry.item, itemId),
-    quantity: readNumber(entry.quantity),
-    averageCost: readNumber(entry.averageCost),
-    supplierId,
-    supplier: normalizeSupplierRef(entry.supplier, supplierId),
-    receivedAt: String(entry.receivedAt ?? "").trim().slice(0, 10),
-    createdAt: String(entry.createdAt ?? "").trim(),
-    createdBy: readUserName(entry.createdBy),
-    updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readApiUserUsername(entry.updatedBy),
+    ...readDocumentBase(entry, id),
+    supplierId: readString(entry.supplierId),
+    toHolderId: readString(entry.toHolderId),
+    receivedAt: readString(entry.receivedAt),
+    lines: readLines(entry.lines).map((line) => ({
+      ...(readStringId(line.id) ? { id: readStringId(line.id) } : {}),
+      itemId: readString(line.itemId),
+      quantity: readNumber(line.quantity),
+      unitCostMinor: readNumber(line.unitCostMinor),
+    })),
   };
 }
 
-function normalizeInventoryDispatch(raw: unknown): InventoryDispatch | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as Record<string, unknown>;
-  const id = readStringId(entry.id);
-  const itemId = readStringId(entry.itemId) ?? readStringId((entry.item as { id?: unknown } | undefined)?.id);
-  const dispatchedTo = normalizeDispatchTo(entry.dispatchedTo);
-  if (!id || !itemId || !dispatchedTo) return null;
+export function normalizeInventoryDispatch(raw: unknown): InventoryDispatch | null {
+  const entry = asRecord(raw);
+  const id = readStringId(entry?.id);
+  if (!entry || !id) return null;
 
   return {
     ...captureApiTableFields(raw, INVENTORY_DISPATCH_API_TABLE_FIELDS),
-    id,
-    itemId,
-    item: normalizeItemRef(entry.item, itemId),
-    quantity: readNumber(entry.quantity),
-    incomeGained: readNumber(entry.incomeGained),
-    dispatchedAt: String(entry.dispatchedAt ?? "").trim().slice(0, 10),
-    dispatchedTo,
-    createdAt: String(entry.createdAt ?? "").trim(),
-    createdBy: readUserName(entry.createdBy),
-    updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readApiUserUsername(entry.updatedBy),
+    ...readDocumentBase(entry, id),
+    fromHolderId: readString(entry.fromHolderId),
+    toHolderId: readString(entry.toHolderId),
+    assigneeEmployeeId: readString(entry.assigneeEmployeeId),
+    dailyRouteId: readString(entry.dailyRouteId),
+    dispatchedAt: readString(entry.dispatchedAt),
+    lines: readLines(entry.lines).map((line) => ({
+      ...(readStringId(line.id) ? { id: readStringId(line.id) } : {}),
+      itemId: readString(line.itemId),
+      quantity: readNumber(line.quantity),
+    })),
   };
 }
 
-function normalizeInventorySupplier(raw: unknown): InventorySupplier | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as Record<string, unknown>;
-  const id = readStringId(entry.id);
-  if (!id) return null;
+function normalizeSupplierContact(raw: Record<string, unknown>): InventorySupplierContact {
+  return { name: readString(raw.name), phone: readString(raw.phone), email: readString(raw.email) };
+}
+
+export function normalizeInventorySupplier(raw: unknown): InventorySupplier | null {
+  const entry = asRecord(raw);
+  const id = readStringId(entry?.id);
+  if (!entry || !id) return null;
 
   return {
     ...captureApiTableFields(raw, INVENTORY_SUPPLIER_API_TABLE_FIELDS),
+    ...readAudit(entry),
     id,
-    companyName: String(entry.companyName ?? "").trim(),
-    contactNames: Array.isArray(entry.contactNames)
-      ? entry.contactNames.map((value) => String(value).trim()).filter(Boolean)
-      : [],
-    addresses: Array.isArray(entry.addresses)
-      ? entry.addresses.map((value) => String(value).trim()).filter(Boolean)
-      : [],
-    phones: normalizeRecordPhonesFromApi(entry),
-    emails: Array.isArray(entry.emails) ? entry.emails.map((value) => String(value).trim()).filter(Boolean) : [],
-    createdAt: String(entry.createdAt ?? "").trim(),
-    createdBy: readUserName(entry.createdBy),
-    updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readApiUserUsername(entry.updatedBy),
+    companyName: readString(entry.companyName),
+    contacts: readLines(entry.contacts).map(normalizeSupplierContact),
+    addresses: Array.isArray(entry.addresses) ? entry.addresses.map(readString).filter(Boolean) : [],
+    isActive: entry.isActive !== false,
+    version: readVersion(entry.version),
   };
+}
+
+function normalizeRouteCrew(raw: unknown): InventoryRouteCrew | null {
+  const entry = asRecord(raw);
+  const id = readStringId(entry?.id);
+  if (!entry || !id) return null;
+  return { id, name: readString(entry.name) || id, isActive: entry.isActive !== false };
 }
 
 async function fetchById<T>(
@@ -360,216 +397,265 @@ async function resolveCreated<T>(
   fetchOne: (id: string) => Promise<T>,
   fallbackMessage: string,
 ): Promise<T> {
-  const createdId = extractCreatedId(response);
-  if (createdId) {
-    return fetchOne(createdId);
-  }
-
   const entity = normalizeOne(response.data);
-  if (entity) {
-    return entity;
-  }
+  if (entity) return entity;
+
+  const createdId = extractCreatedId(response);
+  if (createdId) return fetchOne(createdId);
 
   throw new Error(response.message?.trim() || response.error?.trim() || fallbackMessage);
 }
 
-function buildItemWritePayload(values: InventoryFormValues) {
-  return {
-    item: values.item.trim(),
-    reorderThreshold: parseInventoryFormNumber(values.reorderThreshold),
-  };
+async function createRecord<T>(
+  endpoint: string,
+  payload: unknown,
+  normalizeOne: (raw: unknown) => T | null,
+  fetchOne: (id: string) => Promise<T>,
+  fallbackMessage: string,
+): Promise<T> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(endpoint, payload);
+  assertMutationSuccess(response, fallbackMessage);
+  return resolveCreated(response, normalizeOne, fetchOne, fallbackMessage);
 }
 
-function buildReceiptWritePayload(values: ReceiptFormValues) {
-  return {
-    itemId: values.itemId.trim(),
-    quantity: parseInventoryFormNumber(values.quantity),
-    averageCost: parseInventoryFormNumber(values.averageCost),
-    supplierId: values.supplierId.trim(),
-    receivedAt: values.receivedAt.trim().slice(0, 10),
-  };
+async function patchRecord<T>(
+  endpoint: string,
+  ref: InventoryVersionedRef,
+  payload: unknown,
+  normalizeOne: (raw: unknown) => T | null,
+  fetchOne: (id: string) => Promise<T>,
+  fallbackMessage: string,
+): Promise<T> {
+  const id = parseInventoryPathId(ref.id);
+  const response = await apiClient.patch<ApiMutationEnvelope<unknown>>(
+    `${endpoint}/${id}`,
+    payload,
+    headers(inventoryIfMatchHeaders(ref.version)),
+  );
+  assertMutationSuccess(response, fallbackMessage);
+  return normalizeOne(response.data) ?? fetchOne(ref.id);
 }
 
-function buildDispatchWritePayload(values: DispatchFormValues) {
-  const dispatchedTo = dispatchedToFromFormValues(values);
-  if (!dispatchedTo) {
-    throw new Error("Dispatched to is required");
-  }
-
-  return {
-    itemId: values.itemId.trim(),
-    quantity: parseInventoryFormNumber(values.quantity),
-    incomeGained: parseInventoryFormNumber(values.incomeGained),
-    dispatchedAt: values.dispatchedAt.trim().slice(0, 10),
-    dispatchedTo,
-  };
+async function runDocumentCommand(
+  endpoint: string,
+  kind: string,
+  action: "post" | "cancel",
+  ref: InventoryVersionedRef,
+  fallbackMessage: string,
+): Promise<void> {
+  const id = parseInventoryPathId(ref.id);
+  const commandHeaders = action === "post" ? inventoryPostHeaders(kind, ref) : inventoryIfMatchHeaders(ref.version);
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    `${endpoint}/${id}/${action}`,
+    undefined,
+    headers(commandHeaders),
+  );
+  assertMutationSuccess(response, fallbackMessage);
 }
 
-function buildSupplierWritePayload(values: SupplierFormValues) {
-  const phones = values.phones.filter((phone) => phone.number.trim());
-  if (phones.length > 0) {
-    validateRecordPhones(phones, { required: false });
-  }
-
-  return {
-    companyName: values.companyName.trim(),
-    contactNames: compactStringList(values.contactNames),
-    addresses: compactStringList(values.addresses),
-    phones: phones.length > 0 ? buildApiPhonesPayload(phones) : [],
-    emails: compactStringList(values.emails),
-  };
-}
-
-export async function fetchInventoryItems(
-  params: InventoryListParams = {},
-): Promise<PaginatedResult<InventoryItem>> {
+function listResource<T>(
+  endpoint: string,
+  params: InventoryListParams,
+  defaults: Pick<InventoryListParams, "page" | "limit" | "sort">,
+  searchFields: readonly string[],
+  normalizeOne: (raw: unknown) => T | null,
+): Promise<PaginatedResult<T>> {
   return fetchPaginatedResourceList({
-    endpoint: API_ENDPOINTS.INVENTORY_ITEMS,
-    page: params.page ?? DEFAULT_INVENTORY_ITEM_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_INVENTORY_ITEM_LIST_PARAMS.limit,
+    endpoint,
+    page: params.page ?? defaults.page,
+    limit: params.limit ?? defaults.limit,
     offset: params.offset,
     isFiltered: hasInventoryListFilters(params),
-    buildGetQuery: () => buildInventoryListQuery(params, DEFAULT_INVENTORY_ITEM_LIST_PARAMS),
-    buildSearchBody: () =>
-      buildInventorySearchBody(params, DEFAULT_INVENTORY_ITEM_LIST_PARAMS.sort, INVENTORY_ITEM_BAR_OR_SEARCH_FIELDS),
-    normalize: (payload, context) => normalizePaginated(payload, normalizeInventoryItem, context),
+    buildGetQuery: () => buildInventoryListQuery(params, defaults),
+    buildSearchBody: () => buildInventorySearchBody(params, defaults.sort, searchFields),
+    normalize: (payload, context) => normalizePaginated(payload, normalizeOne, context),
   });
 }
 
-export async function fetchInventoryItemById(itemId: string): Promise<InventoryItem> {
+async function setActiveMany<T extends InventoryVersionedRef>(
+  endpoint: string,
+  records: T[],
+  isActive: boolean,
+  fallbackMessage: string,
+): Promise<BulkSettledResult<string>> {
+  const unique = [...new Map(records.map((record) => [record.id, record])).values()];
+  return runSettledWithConcurrency(unique, {
+    getId: (record) => record.id,
+    run: async (record) => {
+      const id = parseInventoryPathId(record.id);
+      const response = await apiClient.patch<ApiMutationEnvelope<unknown>>(
+        `${endpoint}/${id}`,
+        { isActive },
+        headers(inventoryIfMatchHeaders(record.version)),
+      );
+      assertMutationSuccess(response, fallbackMessage);
+    },
+  });
+}
+
+/* ----------------------------------------------------------------- Items */
+
+export function fetchInventoryItems(params: InventoryListParams = {}): Promise<PaginatedResult<InventoryItem>> {
+  return listResource(
+    API_ENDPOINTS.INVENTORY_ITEMS,
+    params,
+    DEFAULT_INVENTORY_ITEM_LIST_PARAMS,
+    INVENTORY_ITEM_BAR_OR_SEARCH_FIELDS,
+    normalizeInventoryItem,
+  );
+}
+
+export function fetchInventoryItemById(itemId: string): Promise<InventoryItem> {
   return fetchById(API_ENDPOINTS.INVENTORY_ITEMS, itemId, normalizeInventoryItem, "Inventory item not found.");
 }
 
 export async function createInventoryItem(values: InventoryFormValues): Promise<InventoryItem> {
-  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+  return createRecord(
     API_ENDPOINTS.INVENTORY_ITEMS,
-    buildItemWritePayload(values),
+    { ...requirePayload(buildInventoryItemPayload(values)), isActive: true },
+    normalizeInventoryItem,
+    fetchInventoryItemById,
+    "Unable to create inventory item.",
   );
-  assertMutationSuccess(response, "Unable to create inventory item.");
-  return resolveCreated(response, normalizeInventoryItem, fetchInventoryItemById, "Unable to create inventory item.");
 }
 
-export async function updateInventoryItem(itemId: string, values: InventoryFormValues): Promise<InventoryItem> {
-  const id = parseInventoryPathId(itemId);
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.INVENTORY_ITEMS}/${id}`,
-    buildItemWritePayload(values),
+export async function updateInventoryItem(item: InventoryVersionedRef, values: InventoryFormValues): Promise<InventoryItem> {
+  return patchRecord(
+    API_ENDPOINTS.INVENTORY_ITEMS,
+    item,
+    requirePayload(buildInventoryItemPayload(values)),
+    normalizeInventoryItem,
+    fetchInventoryItemById,
+    "Unable to update inventory item.",
   );
-  assertMutationSuccess(response, "Unable to update inventory item.");
-  return normalizeInventoryItem(response.data) ?? fetchInventoryItemById(id);
 }
 
-export async function deleteInventoryItem(itemId: string): Promise<void> {
-  const id = parseInventoryPathId(itemId);
-  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(`${API_ENDPOINTS.INVENTORY_ITEMS}/${id}`);
-  assertMutationSuccess(response, "Unable to delete inventory item.");
+/** The API has no item DELETE; items are retired by deactivating them. */
+export function setInventoryItemsActive(
+  items: InventoryVersionedRef[],
+  isActive: boolean,
+): Promise<BulkSettledResult<string>> {
+  return setActiveMany(API_ENDPOINTS.INVENTORY_ITEMS, items, isActive, "Unable to update inventory item.");
 }
 
-export async function deleteInventoryItems(itemIds: string[]): Promise<BulkSettledResult<string>> {
-  const uniqueIds = [...new Set(itemIds.map((id) => id.trim()).filter(Boolean))];
-  return runSettledIdsWithConcurrency(uniqueIds, deleteInventoryItem);
-}
+/* ----------------------------------------------------------------- Stock */
 
-export async function fetchInventoryStock(
+export function fetchInventoryStock(
   params: InventoryListParams = {},
-): Promise<PaginatedResult<InventoryStock>> {
-  return fetchPaginatedResourceList({
-    endpoint: API_ENDPOINTS.INVENTORY_STOCK,
-    page: params.page ?? DEFAULT_INVENTORY_STOCK_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_INVENTORY_STOCK_LIST_PARAMS.limit,
-    offset: params.offset,
-    isFiltered: hasInventoryListFilters(params),
-    buildGetQuery: () => buildInventoryListQuery(params, DEFAULT_INVENTORY_STOCK_LIST_PARAMS),
-    buildSearchBody: () =>
-      buildInventorySearchBody(params, DEFAULT_INVENTORY_STOCK_LIST_PARAMS.sort, INVENTORY_STOCK_BAR_OR_SEARCH_FIELDS),
-    normalize: (payload, context) => normalizePaginated(payload, normalizeInventoryStock, context),
-  });
+): Promise<PaginatedResult<InventoryStockBalance>> {
+  return listResource(
+    API_ENDPOINTS.INVENTORY_STOCK,
+    params,
+    DEFAULT_INVENTORY_STOCK_LIST_PARAMS,
+    INVENTORY_STOCK_BAR_OR_SEARCH_FIELDS,
+    normalizeInventoryStockBalance,
+  );
 }
 
-export async function fetchInventoryStockById(stockId: string): Promise<InventoryStock> {
-  return fetchById(API_ENDPOINTS.INVENTORY_STOCK, stockId, normalizeInventoryStock, "Inventory stock not found.");
+export async function fetchHolderStock(holderId: string): Promise<InventoryStockBalance[]> {
+  const id = parseInventoryPathId(holderId);
+  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(`${API_ENDPOINTS.INVENTORY_HOLDERS}/${id}/stock`);
+  return Array.isArray(response.data)
+    ? response.data.map(normalizeInventoryStockBalance).filter((row): row is InventoryStockBalance => row != null)
+    : [];
 }
 
-export async function fetchInventoryReceipts(
-  params: InventoryListParams = {},
-): Promise<PaginatedResult<InventoryReceipt>> {
-  return fetchPaginatedResourceList({
-    endpoint: API_ENDPOINTS.INVENTORY_RECEIPTS,
-    page: params.page ?? DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS.limit,
-    offset: params.offset,
-    isFiltered: hasInventoryListFilters(params),
-    buildGetQuery: () => buildInventoryListQuery(params, DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS),
-    buildSearchBody: () =>
-      buildInventorySearchBody(
-        params,
-        DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS.sort,
-        INVENTORY_RECEIPT_BAR_OR_SEARCH_FIELDS,
-      ),
-    normalize: (payload, context) => normalizePaginated(payload, normalizeInventoryReceipt, context),
-  });
+/* --------------------------------------------------------------- Holders */
+
+export function fetchInventoryHolders(params: InventoryListParams = {}): Promise<PaginatedResult<InventoryHolder>> {
+  return listResource(
+    API_ENDPOINTS.INVENTORY_HOLDERS,
+    params,
+    DEFAULT_INVENTORY_HOLDER_LIST_PARAMS,
+    INVENTORY_HOLDER_BAR_OR_SEARCH_FIELDS,
+    normalizeInventoryHolder,
+  );
 }
 
-export async function fetchInventoryReceiptById(receiptId: string): Promise<InventoryReceipt> {
+export function fetchInventoryHolderById(holderId: string): Promise<InventoryHolder> {
+  return fetchById(API_ENDPOINTS.INVENTORY_HOLDERS, holderId, normalizeInventoryHolder, "Inventory holder not found.");
+}
+
+export async function createInventoryHolder(values: InventoryHolderFormValues): Promise<InventoryHolder> {
+  return createRecord(
+    API_ENDPOINTS.INVENTORY_HOLDERS,
+    requirePayload(buildInventoryHolderPayload(values)),
+    normalizeInventoryHolder,
+    fetchInventoryHolderById,
+    "Unable to create inventory holder.",
+  );
+}
+
+export async function fetchRouteCrews(): Promise<InventoryRouteCrew[]> {
+  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.ROUTE_CREWS}?${buildApiListQuery({ page: 1, limit: 200, sort: "name:asc" })}`,
+  );
+  return Array.isArray(response.data)
+    ? response.data.map(normalizeRouteCrew).filter((crew): crew is InventoryRouteCrew => crew != null)
+    : [];
+}
+
+/* -------------------------------------------------------------- Receipts */
+
+export function fetchInventoryReceipts(params: InventoryListParams = {}): Promise<PaginatedResult<InventoryReceipt>> {
+  return listResource(
+    API_ENDPOINTS.INVENTORY_RECEIPTS,
+    params,
+    DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS,
+    INVENTORY_RECEIPT_BAR_OR_SEARCH_FIELDS,
+    normalizeInventoryReceipt,
+  );
+}
+
+export function fetchInventoryReceiptById(receiptId: string): Promise<InventoryReceipt> {
   return fetchById(API_ENDPOINTS.INVENTORY_RECEIPTS, receiptId, normalizeInventoryReceipt, "Inventory receipt not found.");
 }
 
+/** Creates a DRAFT receipt; stock changes only when it is posted. */
 export async function createInventoryReceipt(values: ReceiptFormValues): Promise<InventoryReceipt> {
-  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+  return createRecord(
     API_ENDPOINTS.INVENTORY_RECEIPTS,
-    buildReceiptWritePayload(values),
-  );
-  assertMutationSuccess(response, "Unable to create inventory receipt.");
-  return resolveCreated(
-    response,
+    requirePayload(buildInventoryReceiptPayload(values)),
     normalizeInventoryReceipt,
     fetchInventoryReceiptById,
     "Unable to create inventory receipt.",
   );
 }
 
-export async function updateInventoryReceipt(receiptId: string, values: ReceiptFormValues): Promise<InventoryReceipt> {
-  const id = parseInventoryPathId(receiptId);
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.INVENTORY_RECEIPTS}/${id}`,
-    buildReceiptWritePayload(values),
+export async function updateInventoryReceipt(receipt: InventoryVersionedRef, values: ReceiptFormValues): Promise<InventoryReceipt> {
+  return patchRecord(
+    API_ENDPOINTS.INVENTORY_RECEIPTS,
+    receipt,
+    requirePayload(buildInventoryReceiptPayload(values)),
+    normalizeInventoryReceipt,
+    fetchInventoryReceiptById,
+    "Unable to update inventory receipt.",
   );
-  assertMutationSuccess(response, "Unable to update inventory receipt.");
-  return normalizeInventoryReceipt(response.data) ?? fetchInventoryReceiptById(id);
 }
 
-export async function deleteInventoryReceipt(receiptId: string): Promise<void> {
-  const id = parseInventoryPathId(receiptId);
-  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(`${API_ENDPOINTS.INVENTORY_RECEIPTS}/${id}`);
-  assertMutationSuccess(response, "Unable to delete inventory receipt.");
+export function postInventoryReceipt(receipt: InventoryVersionedRef): Promise<void> {
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", "post", receipt, "Unable to post inventory receipt.");
 }
 
-export async function deleteInventoryReceipts(receiptIds: string[]): Promise<BulkSettledResult<string>> {
-  const uniqueIds = [...new Set(receiptIds.map((id) => id.trim()).filter(Boolean))];
-  return runSettledIdsWithConcurrency(uniqueIds, deleteInventoryReceipt);
+export function cancelInventoryReceipt(receipt: InventoryVersionedRef): Promise<void> {
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", "cancel", receipt, "Unable to cancel inventory receipt.");
 }
 
-export async function fetchInventoryDispatches(
+/* ------------------------------------------------------------ Dispatches */
+
+export function fetchInventoryDispatches(
   params: InventoryListParams = {},
 ): Promise<PaginatedResult<InventoryDispatch>> {
-  return fetchPaginatedResourceList({
-    endpoint: API_ENDPOINTS.INVENTORY_DISPATCHES,
-    page: params.page ?? DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS.limit,
-    offset: params.offset,
-    isFiltered: hasInventoryListFilters(params),
-    buildGetQuery: () => buildInventoryListQuery(params, DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS),
-    buildSearchBody: () =>
-      buildInventorySearchBody(
-        params,
-        DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS.sort,
-        INVENTORY_DISPATCH_BAR_OR_SEARCH_FIELDS,
-      ),
-    normalize: (payload, context) => normalizePaginated(payload, normalizeInventoryDispatch, context),
-  });
+  return listResource(
+    API_ENDPOINTS.INVENTORY_DISPATCHES,
+    params,
+    DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
+    INVENTORY_DISPATCH_BAR_OR_SEARCH_FIELDS,
+    normalizeInventoryDispatch,
+  );
 }
 
-export async function fetchInventoryDispatchById(dispatchId: string): Promise<InventoryDispatch> {
+export function fetchInventoryDispatchById(dispatchId: string): Promise<InventoryDispatch> {
   return fetchById(
     API_ENDPOINTS.INVENTORY_DISPATCHES,
     dispatchId,
@@ -578,14 +664,11 @@ export async function fetchInventoryDispatchById(dispatchId: string): Promise<In
   );
 }
 
+/** Creates a DRAFT dispatch; stock moves between holders only when it is posted. */
 export async function createInventoryDispatch(values: DispatchFormValues): Promise<InventoryDispatch> {
-  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+  return createRecord(
     API_ENDPOINTS.INVENTORY_DISPATCHES,
-    buildDispatchWritePayload(values),
-  );
-  assertMutationSuccess(response, "Unable to create inventory dispatch.");
-  return resolveCreated(
-    response,
+    requirePayload(buildInventoryDispatchPayload(values)),
     normalizeInventoryDispatch,
     fetchInventoryDispatchById,
     "Unable to create inventory dispatch.",
@@ -593,50 +676,71 @@ export async function createInventoryDispatch(values: DispatchFormValues): Promi
 }
 
 export async function updateInventoryDispatch(
-  dispatchId: string,
+  dispatch: InventoryVersionedRef,
   values: DispatchFormValues,
 ): Promise<InventoryDispatch> {
-  const id = parseInventoryPathId(dispatchId);
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.INVENTORY_DISPATCHES}/${id}`,
-    buildDispatchWritePayload(values),
+  return patchRecord(
+    API_ENDPOINTS.INVENTORY_DISPATCHES,
+    dispatch,
+    requirePayload(buildInventoryDispatchPayload(values)),
+    normalizeInventoryDispatch,
+    fetchInventoryDispatchById,
+    "Unable to update inventory dispatch.",
   );
-  assertMutationSuccess(response, "Unable to update inventory dispatch.");
-  return normalizeInventoryDispatch(response.data) ?? fetchInventoryDispatchById(id);
 }
 
-export async function deleteInventoryDispatch(dispatchId: string): Promise<void> {
-  const id = parseInventoryPathId(dispatchId);
-  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(`${API_ENDPOINTS.INVENTORY_DISPATCHES}/${id}`);
-  assertMutationSuccess(response, "Unable to delete inventory dispatch.");
+export function postInventoryDispatch(dispatch: InventoryVersionedRef): Promise<void> {
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", "post", dispatch, "Unable to post inventory dispatch.");
 }
 
-export async function deleteInventoryDispatches(dispatchIds: string[]): Promise<BulkSettledResult<string>> {
-  const uniqueIds = [...new Set(dispatchIds.map((id) => id.trim()).filter(Boolean))];
-  return runSettledIdsWithConcurrency(uniqueIds, deleteInventoryDispatch);
+export function cancelInventoryDispatch(dispatch: InventoryVersionedRef): Promise<void> {
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", "cancel", dispatch, "Unable to cancel inventory dispatch.");
 }
 
-export async function fetchInventorySuppliers(
+/* ----------------------------------------------------------- Adjustments */
+
+/**
+ * Creates a DRAFT adjustment and posts it. When posting fails the draft
+ * remains available under Supply operations → Adjustments.
+ */
+export async function createAndPostInventoryAdjustment(values: AdjustmentFormValues): Promise<void> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    API_ENDPOINTS.INVENTORY_ADJUSTMENTS,
+    requirePayload(buildInventoryAdjustmentPayload(values)),
+  );
+  assertMutationSuccess(response, "Unable to create stock adjustment.");
+  const created = asRecord(response.data);
+  const id = readStringId(created?.id) ?? extractCreatedId(response);
+  if (!id) throw new Error("Unable to create stock adjustment.");
+  let version = readVersion(created?.version);
+  if (version == null) {
+    const fresh = asRecord(unwrapRecord(await apiClient.get<unknown>(`${API_ENDPOINTS.INVENTORY_ADJUSTMENTS}/${parseInventoryPathId(id)}`)));
+    version = readVersion(fresh?.version);
+  }
+  await runDocumentCommand(
+    API_ENDPOINTS.INVENTORY_ADJUSTMENTS,
+    "adjustment",
+    "post",
+    { id, version },
+    "Unable to post stock adjustment.",
+  );
+}
+
+/* ------------------------------------------------------------- Suppliers */
+
+export function fetchInventorySuppliers(
   params: InventoryListParams = {},
 ): Promise<PaginatedResult<InventorySupplier>> {
-  return fetchPaginatedResourceList({
-    endpoint: API_ENDPOINTS.INVENTORY_SUPPLIERS,
-    page: params.page ?? DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS.limit,
-    offset: params.offset,
-    isFiltered: hasInventoryListFilters(params),
-    buildGetQuery: () => buildInventoryListQuery(params, DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS),
-    buildSearchBody: () =>
-      buildInventorySearchBody(
-        params,
-        DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS.sort,
-        INVENTORY_SUPPLIER_BAR_OR_SEARCH_FIELDS,
-      ),
-    normalize: (payload, context) => normalizePaginated(payload, normalizeInventorySupplier, context),
-  });
+  return listResource(
+    API_ENDPOINTS.INVENTORY_SUPPLIERS,
+    params,
+    DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS,
+    INVENTORY_SUPPLIER_BAR_OR_SEARCH_FIELDS,
+    normalizeInventorySupplier,
+  );
 }
 
-export async function fetchInventorySupplierById(supplierId: string): Promise<InventorySupplier> {
+export function fetchInventorySupplierById(supplierId: string): Promise<InventorySupplier> {
   return fetchById(
     API_ENDPOINTS.INVENTORY_SUPPLIERS,
     supplierId,
@@ -646,13 +750,9 @@ export async function fetchInventorySupplierById(supplierId: string): Promise<In
 }
 
 export async function createInventorySupplier(values: SupplierFormValues): Promise<InventorySupplier> {
-  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+  return createRecord(
     API_ENDPOINTS.INVENTORY_SUPPLIERS,
-    buildSupplierWritePayload(values),
-  );
-  assertMutationSuccess(response, "Unable to create inventory supplier.");
-  return resolveCreated(
-    response,
+    { ...requirePayload(buildInventorySupplierPayload(values)), isActive: true },
     normalizeInventorySupplier,
     fetchInventorySupplierById,
     "Unable to create inventory supplier.",
@@ -660,29 +760,23 @@ export async function createInventorySupplier(values: SupplierFormValues): Promi
 }
 
 export async function updateInventorySupplier(
-  supplierId: string,
+  supplier: InventoryVersionedRef,
   values: SupplierFormValues,
 ): Promise<InventorySupplier> {
-  const id = parseInventoryPathId(supplierId);
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.INVENTORY_SUPPLIERS}/${id}`,
-    buildSupplierWritePayload(values),
+  return patchRecord(
+    API_ENDPOINTS.INVENTORY_SUPPLIERS,
+    supplier,
+    requirePayload(buildInventorySupplierPayload(values)),
+    normalizeInventorySupplier,
+    fetchInventorySupplierById,
+    "Unable to update inventory supplier.",
   );
-  assertMutationSuccess(response, "Unable to update inventory supplier.");
-  return normalizeInventorySupplier(response.data) ?? fetchInventorySupplierById(id);
 }
 
-export async function deleteInventorySupplier(supplierId: string): Promise<void> {
-  const id = parseInventoryPathId(supplierId);
-  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.INVENTORY_SUPPLIERS}/${id}`,
-  );
-  assertMutationSuccess(response, "Unable to delete inventory supplier.");
-}
-
-export async function deleteInventorySuppliers(
-  supplierIds: string[],
+/** The API has no supplier DELETE; suppliers are retired by deactivating them. */
+export function setInventorySuppliersActive(
+  suppliers: InventoryVersionedRef[],
+  isActive: boolean,
 ): Promise<BulkSettledResult<string>> {
-  const uniqueIds = [...new Set(supplierIds.map((id) => id.trim()).filter(Boolean))];
-  return runSettledIdsWithConcurrency(uniqueIds, deleteInventorySupplier);
+  return setActiveMany(API_ENDPOINTS.INVENTORY_SUPPLIERS, suppliers, isActive, "Unable to update inventory supplier.");
 }

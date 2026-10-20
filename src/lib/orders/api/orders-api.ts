@@ -106,6 +106,7 @@ type ApiPickup = {
   route?: ApiRouteRef | null;
   routeNumber?: number;
   routeAssignmentId?: string;
+  orderNumber?: number;
 };
 
 type ApiRouteRef = {
@@ -352,6 +353,7 @@ function normalizeOrder(raw: unknown): Order | null {
   // Do not fall back to legacy `routeAssignmentId` — that field is for `/routes`
   // templates and can keep showing a route after `route: null` clears the assignment.
   const routeRef = normalizePickupRouteRef(item.route);
+  const orderNumber = readNumericId(item.orderNumber);
 
   return {
     ...captureApiTableFields(raw, ORDER_API_TABLE_FIELDS),
@@ -375,6 +377,7 @@ function normalizeOrder(raw: unknown): Order | null {
     /** Vehicle-route record id (`GET /vehicle-routes`, `routeType: pickup`), not `/routes`. */
     routeId: routeRef?.id || undefined,
     routeName: routeRef?.name || undefined,
+    orderNumber: orderNumber != null && orderNumber > 0 ? orderNumber : undefined,
   };
 }
 
@@ -623,6 +626,8 @@ function buildRoutePickupsFilter(routeId: string): TableFilterRowState[] {
 /**
  * Assign appointments to a scheduled vehicle route via
  * `PUT /pickups/route/{routeId}` with `{ pickupIds }` (Swagger AssignRouteRequest).
+ * The API clears `orderNumber` when a pickup moves to a different route and keeps it
+ * when reassigned to the same route.
  */
 export async function assignPickupsToRoute(
   vehicleRouteId: string,
@@ -747,7 +752,7 @@ async function putPickupWithLiveRecordPatch(
  * Unassign an appointment from its scheduled route.
  *
  * Prefer the dedicated endpoint: `DELETE /pickups/{id}/route` clears `route`
- * (and `routeNumber`) without rewriting the pickup payload. `PUT` with
+ * (plus `routeNumber` and `orderNumber`) without rewriting the pickup payload. `PUT` with
  * `route: null` also works now that updates are JSON merge-aware.
  */
 export async function clearPickupRouteAssignment(order: Order): Promise<void> {
@@ -805,6 +810,37 @@ export async function unassignAllPickupsFromRoute(
     return { succeededIds: [], failedIds: [] };
   }
   return clearPickupRouteAssignments(pickups);
+}
+
+export type PickupOrderNumberUpdate = {
+  pickupId: number;
+  orderNumber: number;
+};
+
+/**
+ * Persist a stop's position on its route via `PUT /pickups/{id}` with
+ * `{ orderNumber }` — updates are merge-aware, so omitted fields are kept.
+ */
+export async function setPickupOrderNumber({ pickupId, orderNumber }: PickupOrderNumberUpdate): Promise<void> {
+  if (pickupId <= 0) {
+    throw new Error("A valid appointment is required.");
+  }
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${pickupId}`,
+    { orderNumber },
+  );
+  assertMutationSuccess(response, "Unable to save the stop order.");
+}
+
+/** Persist the stop order for every given pickup. */
+export async function setPickupOrderNumbers(
+  updates: PickupOrderNumberUpdate[],
+): Promise<BulkSettledResult<string>> {
+  return runSettledWithConcurrency(updates, {
+    getId: (update) => String(update.pickupId),
+    run: setPickupOrderNumber,
+  });
 }
 
 function resolvePickupBranchRef(branchId: number): ApiBranchDtoPayload {

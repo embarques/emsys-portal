@@ -324,8 +324,9 @@
   "map": {
     "title": "Appointments map view",
     "description": "Visualize the selected appointments on a map to make route assignment easier.",
-    "dailyRouteTitle": "Daily route map view",
-    "dailyRouteDescription": "Visualize the route's appointments on a map to make route optimization easier.",
+    "dailyRouteTitle": "Daily Routes Map",
+    "dailyRouteDescription": "Visualize route stops and arrange their visit order.",
+    "dailyRouteSelectionHint": "Select stops to optimize their visit order",
     "loading": "Loading verified pickup stops…",
     "empty": "No verified pickup stops match the current filters.",
     "stopsShown": "{{count}} on map",
@@ -350,6 +351,16 @@
     }
   },
   "optimize": {
+    "endpoints": {
+      "title": "Enter route start and end",
+      "description": "The branch has no valid map coordinates. Enter the start and end coordinates for this optimization. These values will not change the branch address.",
+      "start": "Start",
+      "end": "End",
+      "longitude": "Longitude",
+      "latitude": "Latitude",
+      "invalidLongitude": "Enter a longitude from −180 to 180.",
+      "invalidLatitude": "Enter a latitude from −90 to 90."
+    },
     "success": "Route optimized: {{count}} stop in order ({{distance}}).",
     "success_plural": "Route optimized: {{count}} stops in order ({{distance}}).",
     "totalDistance": "Optimized · {{distance}}",
@@ -359,11 +370,17 @@
     "stopNumberInput": "Stop number for {{name}}",
     "manualOrder": "Manual order",
     "clearOrder": "Clear order",
+    "finalizeOrder": "Finalize route order",
+    "finalizingOrder": "Saving route order…",
+    "finalizeSuccess": "Route order saved for {{count}} stop.",
+    "finalizeSuccess_plural": "Route order saved for {{count}} stops.",
     "errors": {
       "notEnoughStops": "Select at least two appointments with a verified address to optimize a route.",
       "routeRequired": "Assign the selected appointments to a route before optimizing.",
       "multipleRoutes": "The selected appointments belong to different routes. Select appointments from one route to optimize.",
       "multipleBranches": "The selected appointments belong to different branches. Select appointments from one branch to optimize.",
+      "branchCoordinatesMissing": "The branch address is missing valid map coordinates. Update its GeoJSON location before optimizing this route.",
+      "stopCoordinatesMissing": "A selected stop is missing valid map coordinates. Verify its address before optimizing.",
       "branchAddressMissing": "The branch needs an address with saved map coordinates. Select its address from Google suggestions, save, then optimize again. Users without branch edit access must ask an administrator to update it.",
       "emptyResult": "The route optimizer did not return a stop order for the selected appointments."
     }

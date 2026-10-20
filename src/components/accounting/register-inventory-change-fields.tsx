@@ -132,7 +132,7 @@ export function RegisterInventoryChangeFields({
         items.map((item) => ({
           value: item.id,
           label: getInventoryItemLabel(item),
-          keywords: [item.item],
+          keywords: [item.sku, item.category],
         })),
         itemId,
         itemName,
@@ -145,7 +145,7 @@ export function RegisterInventoryChangeFields({
         suppliers.map((supplier) => ({
           value: supplier.id,
           label: supplier.companyName,
-          keywords: [...supplier.contactNames, ...supplier.emails],
+          keywords: supplier.contacts.flatMap((contact) => [contact.name, contact.email]),
         })),
         supplierId,
         supplierName,
@@ -226,7 +226,7 @@ export function RegisterInventoryChangeFields({
     try {
       setEntityError(null);
       const saved = editingSupplier
-        ? await updateSupplier.mutateAsync({ id: editingSupplier.id, values })
+        ? await updateSupplier.mutateAsync({ supplier: editingSupplier, values })
         : await createSupplier.mutateAsync(values);
       setValue("inventorySupplierId", saved.id, { shouldValidate: true });
       setValue("inventorySupplierName", saved.companyName);

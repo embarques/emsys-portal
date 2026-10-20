@@ -1,6 +1,6 @@
-import type { InventoryItem } from "./catalog";
+import type { InventoryItem, InventoryStockBalance } from "./catalog";
 import type { InventoryDispatch, InventoryReceipt } from "./documents";
-import type { InventoryMovement } from "./movements";
+import type { InventoryHolder } from "./holders";
 import type { InventorySupplier } from "./suppliers";
 
 export type InventorySnapshot = {
@@ -8,7 +8,8 @@ export type InventorySnapshot = {
   receipts: InventoryReceipt[];
   dispatches: InventoryDispatch[];
   suppliers: InventorySupplier[];
-  movements: InventoryMovement[];
+  holders: InventoryHolder[];
+  stock: InventoryStockBalance[];
 };
 
 export const EMPTY_INVENTORY_SNAPSHOT: InventorySnapshot = {
@@ -16,5 +17,6 @@ export const EMPTY_INVENTORY_SNAPSHOT: InventorySnapshot = {
   receipts: [],
   dispatches: [],
   suppliers: [],
-  movements: [],
+  holders: [],
+  stock: [],
 };

@@ -16,7 +16,13 @@
     "saveAndSend": "Guardar y marcar enviado",
     "submitAdjustment": "Enviar ajuste",
     "markSent": "Marcar enviado",
-    "markConfirmed": "Marcar confirmado"
+    "markConfirmed": "Marcar confirmado",
+    "addHolder": "Agregar custodio",
+    "cancelDraft": "Anular borrador",
+    "deactivate": "Desactivar",
+    "reactivate": "Reactivar",
+    "post": "Contabilizar",
+    "saveDraft": "Guardar borrador"
   },
   "submenus": {
     "items": "Stock",
@@ -27,8 +33,8 @@
   },
   "pages": {
     "items": "Controle los insumos y materiales internos de la empresa, aparte de la mercancía del cliente.",
-    "receipts": "Registre entradas de insumos y materiales de la empresa para actualizar existencias.",
-    "dispatches": "Registre salidas de insumos internos, incluidas transferencias y reposición.",
+    "receipts": "Registre los suministros recibidos en un almacén. Los borradores solo cambian el inventario al contabilizarse.",
+    "dispatches": "Transfiera suministros de un almacén a un empleado, vehículo o cuadrilla. Al contabilizar se mueve el inventario; los despachos no registran ingresos.",
     "recipients": "Mantenga los destinos usados al enviar insumos internos fuera de inventario.",
     "suppliers": "Mantenga los proveedores usados al recibir insumos internos en inventario."
   },
@@ -99,7 +105,17 @@
     "dateCreated": "Creado el",
     "userCreated": "Usuario creador",
     "dateModified": "Actualizado el",
-    "userModified": "Actualizado por"
+    "userModified": "Actualizado por",
+    "category": "Categoría",
+    "contacts": "Contactos",
+    "lines": "Artículos",
+    "postedAt": "Contabilizado el",
+    "postedBy": "Contabilizado por",
+    "quarantined": "En cuarentena",
+    "reserved": "Reservado",
+    "totalCost": "Costo total",
+    "totalQuantity": "Cantidad total",
+    "warehouse": "Almacén"
   },
   "search": {
     "items": "Buscar inventario…",
@@ -107,12 +123,14 @@
     "dispatches": "Buscar despachos…",
     "recipients": "Buscar destinatarios…",
     "suppliers": "Buscar proveedores…",
-    "movements": "Buscar movimientos…"
+    "movements": "Buscar movimientos…",
+    "holders": "Buscar custodios…",
+    "options": "Buscar…"
   },
   "loading": {
     "items": {
       "title": "Cargando inventario",
-      "description": "Contando stock a partir de ingresos y despachos…"
+      "description": "Cargando el catálogo de suministros y los saldos de inventario…"
     },
     "receipts": {
       "title": "Cargando ingresos",
@@ -137,7 +155,10 @@
     "dispatches": "Ningún despacho coincide con su búsqueda.",
     "recipients": "Ningún destinatario coincide con su búsqueda.",
     "suppliers": "Ningún proveedor coincide con su búsqueda.",
-    "movements": "Aún no hay movimientos para este artículo."
+    "movements": "Aún no hay movimientos para este artículo.",
+    "holders": "No se encontraron custodios. Agregue uno para continuar.",
+    "noOptions": "No hay opciones que coincidan.",
+    "stockByHolder": "Ningún custodio tiene inventario de este artículo."
   },
   "nav": {
     "reorderAlert": "{{count}} artículo necesita reorden",
@@ -176,7 +197,8 @@
       "contacts": "Contactos",
       "addresses": "Direcciones",
       "phones": "Teléfonos",
-      "emails": "Correos"
+      "emails": "Correos",
+      "holder": "Custodio"
     },
     "fields": {
       "sku": "SKU",
@@ -201,8 +223,8 @@
       "addresses": "Direcciones",
       "phones": "Teléfonos",
       "emails": "Correos",
-      "receivedAt": "Fecha",
-      "dispatchedAt": "Fecha",
+      "receivedAt": "Recibido el",
+      "dispatchedAt": "Despachado el",
       "dispatchedTo": "Despachado a",
       "employee": "Empleado",
       "route": "Ruta diaria",
@@ -223,7 +245,26 @@
       "movementDate": "Fecha de ajuste",
       "contactInfo": "Contacto",
       "address": "Dirección",
-      "type": "Tipo"
+      "type": "Tipo",
+      "assigneeEmployee": "Empleado responsable",
+      "condition": "Condición",
+      "contactName": "Nombre",
+      "contactPhone": "Teléfono",
+      "contactEmail": "Correo electrónico",
+      "dailyRouteId": "Ruta diaria",
+      "defaultSellingPrice": "Precio de venta predeterminado",
+      "fromHolder": "Almacén de origen",
+      "toHolder": "Custodio de destino",
+      "holder": "Custodio",
+      "holderName": "Nombre visible",
+      "holderType": "Tipo de custodio",
+      "holderEntity": {
+        "EMPLOYEE": "Empleado",
+        "VEHICLE": "Vehículo",
+        "ROUTE_CREW": "Cuadrilla de ruta"
+      },
+      "lineTotal": "Total de la línea",
+      "warehouse": "Almacén"
     },
     "placeholders": {
       "notes": "Notas opcionales sobre stock, proveedor o reconteo",
@@ -241,7 +282,15 @@
       "selectRoute": "Seleccionar una ruta diaria",
       "searchRoutes": "Buscar rutas diarias…",
       "contactName": "Nombre de contacto",
-      "email": "nombre@empresa.com"
+      "email": "nombre@empresa.com",
+      "categoryText": "p. ej., Empaque",
+      "holder": "Seleccione un custodio",
+      "holderEntity": "Seleccione quién custodia el inventario",
+      "holderType": "Seleccione el tipo de custodio",
+      "sku": "p. ej., CAJA-PEQ",
+      "toHolder": "Seleccione empleado, vehículo o cuadrilla",
+      "unit": "p. ej., caja, rollo, unidad",
+      "warehouse": "Seleccione un almacén"
     },
     "validation": {
       "nameRequired": "El nombre del artículo es obligatorio.",
@@ -250,11 +299,26 @@
       "categoryRequired": "La categoría es obligatoria.",
       "branchRequired": "La sucursal es obligatoria.",
       "itemRequired": "El artículo es obligatorio.",
-      "quantityRequired": "La cantidad es obligatoria.",
+      "quantityRequired": "La cantidad debe ser un número entero mayor que cero.",
       "supplierRequired": "El proveedor es obligatorio.",
       "dateRequired": "La fecha es obligatoria.",
       "dispatchedToRequired": "Despachado a es obligatorio.",
-      "companyNameRequired": "El nombre de la empresa es obligatorio."
+      "companyNameRequired": "El nombre de la empresa es obligatorio.",
+      "invalid": "Revise los campos marcados.",
+      "priceInvalid": "Ingrese un precio en USD con máximo dos decimales.",
+      "reorderInvalid": "El punto de reorden debe ser un número entero igual o mayor que 0.",
+      "emailInvalid": "Ingrese un correo de contacto válido.",
+      "warehouseRequired": "El almacén es obligatorio.",
+      "unitCostRequired": "Ingrese un costo unitario en USD con máximo dos decimales.",
+      "linesRequired": "Agregue al menos una línea.",
+      "duplicateItem": "Cada artículo solo puede aparecer una vez. Combine las líneas duplicadas.",
+      "sourceRequired": "El almacén de origen es obligatorio.",
+      "destinationRequired": "El custodio de destino es obligatorio.",
+      "sameHolder": "El origen y el destino deben ser distintos.",
+      "holderRequired": "El custodio es obligatorio.",
+      "reasonRequired": "El motivo es obligatorio.",
+      "holderNameRequired": "El nombre visible es obligatorio.",
+      "holderEntityRequired": "Elija el empleado, vehículo o cuadrilla de este custodio."
     },
     "adjustmentSign": {
       "increase": "Aumentar (+)",
@@ -268,15 +332,15 @@
     "removeContact": "Quitar contacto",
     "removeAddress": "Quitar dirección",
     "removeEmail": "Quitar correo",
-    "readOnlyStockHint": "El stock se calcula a partir de ingresos y despachos.",
+    "readOnlyStockHint": "El inventario proviene de los movimientos contabilizados de todos los custodios.",
     "workflow": {
       "requiredHint": "* Campos obligatorios",
       "keyboardHint": "Tab recorre los controles · Enter avanza entre campos",
       "optional": "Opcional",
       "itemHint": "Nombra el suministro o material interno para encontrarlo en las entradas y salidas.",
       "reorderHint": "Define el nivel de existencias a partir del cual se debe reponer este artículo.",
-      "receiptHint": "Elige el suministro recibido e ingresa su cantidad y costo por unidad.",
-      "dispatchHint": "Elige el suministro que sale del inventario y confirma la cantidad disponible.",
+      "receiptHint": "Agregue una línea por suministro recibido con su cantidad y costo unitario.",
+      "dispatchHint": "Agregue una línea por suministro que sale del almacén. Las cantidades disponibles provienen del almacén de origen.",
       "supplierHint": "Elige quién suministró estos artículos y la fecha de recepción.",
       "recipientHint": "Confirma la fecha de salida y elige el empleado o la ruta diaria que recibe los suministros.",
       "costHint": "Costo por unidad de esta entrada.",
@@ -286,8 +350,22 @@
       "contactsDetailsHint": "Agrega las personas de contacto para pedidos o consultas.",
       "addressesDetailsHint": "Busca la dirección del proveedor o ingrésala manualmente.",
       "phonesDetailsHint": "Agrega teléfonos de contacto y usa la estrella para elegir el principal.",
-      "emailsDetailsHint": "Agrega correos para comunicarte con el proveedor."
-    }
+      "emailsDetailsHint": "Agrega correos para comunicarte con el proveedor.",
+      "receiptDraftHint": "Se guarda como borrador. El inventario y la valoración cambian solo al contabilizar la recepción.",
+      "dispatchDraftHint": "Se guarda como borrador. Al contabilizar, el inventario pasa del almacén al custodio de destino; los despachos no registran ingresos.",
+      "holderHint": "El inventario siempre pertenece a un custodio permanente: un almacén, empleado, vehículo o cuadrilla de ruta.",
+      "priceHint": "Se usa como precio sugerido en las ventas de suministros.",
+      "adjustmentHint": "Corrige el saldo de un custodio. El ajuste se contabiliza de inmediato y no se puede editar.",
+      "readOnlyPosted": "Los documentos contabilizados o anulados son de solo lectura. Registre un documento de corrección."
+    },
+    "addHolderTitle": "Agregar custodio de inventario",
+    "editReceiptTitle": "Editar recepción en borrador",
+    "editDispatchTitle": "Editar despacho en borrador",
+    "availableAtSource": "Disponible en origen: {{count}}",
+    "contactNumber": "Contacto {{number}}",
+    "lineNumber": "Línea {{number}}",
+    "totalQuantity": "Cantidad total: {{count}}",
+    "totalCost": "Costo total"
   },
   "view": {
     "stock": "Stock",
@@ -297,7 +375,9 @@
     "lines": "Líneas",
     "movements": "Movimientos generados",
     "dispatchHistory": "Historial de despachos",
-    "audit": "Auditoría"
+    "audit": "Auditoría",
+    "details": "Detalles",
+    "stockByHolder": "Inventario por custodio"
   },
   "delete": {
     "itemsTitle": "¿Eliminar artículos de inventario?",
@@ -359,5 +439,519 @@
     "recount": "Reconteo",
     "lost": "Perdido",
     "other": "Otro"
+  },
+  "activeStatuses": {
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "documentStatuses": {
+    "DRAFT": "Borrador",
+    "POSTED": "Contabilizado",
+    "CANCELLED": "Anulado"
+  },
+  "holderTypes": {
+    "WAREHOUSE": "Almacén",
+    "EMPLOYEE": "Empleado",
+    "VEHICLE": "Vehículo",
+    "ROUTE_CREW": "Cuadrilla de ruta"
+  },
+  "stockConditions": {
+    "AVAILABLE": "Disponible",
+    "QUARANTINED": "En cuarentena"
+  },
+  "commands": {
+    "receipt": {
+      "postTitle": "¿Contabilizar recepción?",
+      "postDescription": "Al contabilizar la recepción de {{name}} se suman sus líneas al inventario y la valoración del almacén. Las recepciones contabilizadas no se pueden editar.",
+      "cancelTitle": "¿Anular la recepción en borrador?",
+      "cancelDescription": "Se anulará la recepción en borrador de {{name}}. El inventario no cambia."
+    },
+    "dispatch": {
+      "postTitle": "¿Contabilizar despacho?",
+      "postDescription": "Al contabilizar se mueven las líneas despachadas del almacén de origen a {{name}}. Los despachos contabilizados no se pueden editar.",
+      "cancelTitle": "¿Anular el despacho en borrador?",
+      "cancelDescription": "Se anulará el despacho en borrador para {{name}}. El inventario no cambia."
+    }
+  },
+  "activeToggle": {
+    "items": {
+      "deactivateTitle": "¿Desactivar artículos de inventario?",
+      "deactivateOne": "{{name}} dejará de aparecer en nuevas recepciones y despachos. Se conservan su historial y su inventario.",
+      "deactivateMany": "{{count}} artículos dejarán de aparecer en nuevas recepciones y despachos. Se conservan su historial y su inventario.",
+      "reactivateTitle": "¿Reactivar artículo de inventario?",
+      "reactivateOne": "{{name}} volverá a estar disponible para recepciones y despachos.",
+      "reactivateMany": "{{count}} artículos volverán a estar disponibles para recepciones y despachos."
+    },
+    "suppliers": {
+      "deactivateTitle": "¿Desactivar proveedores?",
+      "deactivateOne": "{{name}} dejará de aparecer en nuevas recepciones. Se conserva su historial de recepciones.",
+      "deactivateMany": "{{count}} proveedores dejarán de aparecer en nuevas recepciones. Se conserva su historial de recepciones.",
+      "reactivateTitle": "¿Reactivar proveedor?",
+      "reactivateOne": "{{name}} volverá a estar disponible para recepciones.",
+      "reactivateMany": "{{count}} proveedores volverán a estar disponibles para recepciones."
+    }
+  },
+  "toasts": {
+    "deactivated": "{{count}} registro(s) desactivado(s).",
+    "reactivated": "{{count}} registro(s) reactivado(s).",
+    "receiptPosted": "Recepción contabilizada. Inventario actualizado.",
+    "receiptCancelled": "Recepción en borrador anulada.",
+    "dispatchPosted": "Despacho contabilizado. El inventario pasó al custodio de destino.",
+    "dispatchCancelled": "Despacho en borrador anulado."
+  },
+  "selection": {
+    "select": "Seleccionar {{name}}",
+    "deselect": "Quitar selección de {{name}}"
+  },
+  "operations": {
+    "fields": {
+      "accountId": "Cuenta",
+      "accountableEmployeeId": "Empleado responsable",
+      "action": "Acción",
+      "actorId": "Actor",
+      "addresses": "Direcciones",
+      "after": "Después",
+      "allocationTargetId": "Asignar a",
+      "allocationTargetType": "Destino de la asignación",
+      "amountMinor": "Monto (USD)",
+      "approvedAt": "Aprobado el",
+      "approvedBy": "Aprobado por",
+      "assignedBy": "Asignado por",
+      "assigneeEmployeeId": "Empleado responsable",
+      "at": "Fecha",
+      "audit": "Auditoría",
+      "available": "Disponible",
+      "before": "Antes",
+      "businessDate": "Fecha operativa",
+      "category": "Categoría",
+      "closedAt": "Cerrado el",
+      "closedBy": "Cerrado por",
+      "closeoutId": "Cierre",
+      "collectedAt": "Cobrado el",
+      "collectedByEmployeeId": "Cobrado por",
+      "collectionsRecordedMinor": "Cobros registrados",
+      "collectionsRemittedMinor": "Cobros entregados",
+      "collectionsVerifiedMinor": "Cobros verificados",
+      "companyName": "Nombre de la empresa",
+      "condition": "Condición",
+      "contacts": "Contactos",
+      "correctionSourceIds": "Documentos de corrección",
+      "correctsSourceId": "Corrige a",
+      "correlationId": "ID de correlación",
+      "countId": "Conteo",
+      "countedAvailableEnding": "Disponible contado",
+      "countedQuantity": "Cantidad contada",
+      "countedQuarantinedEnding": "Cuarentena contada",
+      "createdAt": "Creado el",
+      "createdBy": "Creado por",
+      "creditMinor": "Crédito",
+      "crewId": "Cuadrilla de ruta",
+      "crewName": "Nombre de la cuadrilla",
+      "crewRole": "Rol",
+      "currency": "Moneda",
+      "customerReference": "Referencia del cliente",
+      "cutoffAt": "Hora de corte",
+      "dailyRouteId": "Ruta diaria (contexto)",
+      "damageResolution": "Resolución del daño",
+      "damagedQuarantinedQuantity": "Dañado (en cuarentena)",
+      "damagedWrittenOffQuantity": "Dañado (dado de baja)",
+      "data": "Datos",
+      "debitMinor": "Débito",
+      "defaultSellingPriceMinor": "Precio de venta predeterminado (USD)",
+      "description": "Explicación",
+      "destinationHolderId": "Custodio de destino",
+      "difference": "Diferencia",
+      "dispatchedAt": "Despachado el",
+      "displayName": "Nombre",
+      "dispositionType": "Clasificación",
+      "effectiveFrom": "Vigente desde",
+      "effectiveTo": "Vigente hasta",
+      "email": "Correo electrónico",
+      "employeeId": "Empleado",
+      "entityId": "Empleado, vehículo o cuadrilla",
+      "entityType": "Tipo de registro",
+      "expectedAvailableEnding": "Disponible esperado",
+      "expectedQuantity": "Cantidad esperada",
+      "expectedQuarantinedEnding": "Cuarentena esperada",
+      "expectedRevenueMinor": "Ingreso esperado",
+      "financialDifferenceMinor": "Diferencia financiera",
+      "financialDifferenceReason": "Explicación de la diferencia financiera",
+      "fromCondition": "Condición de origen",
+      "fromEmployeeId": "Entrega",
+      "fromHolderId": "Custodio de origen",
+      "groupQuantity": "Cantidad del grupo",
+      "handedAt": "Entregado el",
+      "handoverId": "Entrega recibida",
+      "holderId": "Custodio",
+      "holderType": "Tipo de custodio",
+      "id": "ID",
+      "inventoryLines": "Líneas de inventario",
+      "isActive": "Activo",
+      "itemId": "Artículo",
+      "kind": "Tipo",
+      "lineDescription": "Explicación de la línea",
+      "lines": "Líneas",
+      "lostQuantity": "Perdido",
+      "members": "Integrantes",
+      "method": "Método de pago",
+      "missingQuantity": "Faltante",
+      "moneyHeldMinor": "Dinero en custodia",
+      "movementRole": "Rol del movimiento",
+      "name": "Nombre",
+      "needsReconciliation": "Requiere conciliación",
+      "notes": "Notas",
+      "obligationId": "Obligación",
+      "obligationIds": "Obligaciones",
+      "occurredAt": "Ocurrió el",
+      "openingQuantity": "Cantidad inicial",
+      "openingQuarantinedQuantity": "Cuarentena inicial",
+      "originHolderId": "Custodio de origen",
+      "otherNetMovementQuantity": "Otros movimientos netos",
+      "outstandingMinor": "Pendiente",
+      "paymentId": "Pago verificado",
+      "paymentIds": "ID de pagos (separados por comas)",
+      "paymentMethod": "Método de pago",
+      "periodStart": "Inicio del período",
+      "phone": "Teléfono",
+      "postedAt": "Contabilizado el",
+      "postedBy": "Contabilizado por",
+      "postedMovements": "Movimientos contabilizados",
+      "postingRevision": "Revisión contable",
+      "previousRevision": "Revisión anterior",
+      "priceBreakdowns": "Grupos de precio",
+      "priceMinor": "Precio (USD)",
+      "pricingMode": "Modo de precio",
+      "quantity": "Cantidad",
+      "quantityDelta": "Cambio de cantidad (+/−)",
+      "quantityOnHand": "En existencia",
+      "quantityReserved": "Reservado",
+      "quantitySold": "Cantidad vendida",
+      "quarantined": "En cuarentena",
+      "reason": "Motivo",
+      "receivedAt": "Recibido el",
+      "receivedBy": "Recibido por",
+      "receivedQuantity": "Recibido",
+      "recordedBy": "Registrado por",
+      "reference": "Referencia del pago",
+      "reopenReason": "Motivo de la reapertura",
+      "reopenedAt": "Reabierto el",
+      "reopenedBy": "Reabierto por",
+      "reorderThreshold": "Punto de reorden",
+      "responsibleEmployeeId": "Empleado responsable",
+      "returnedAt": "Devuelto el",
+      "returnedQuantity": "Devuelto",
+      "revenueMinor": "Ingreso",
+      "reversesEntryId": "Revierte el asiento",
+      "reversesMovementId": "Revierte el movimiento",
+      "revision": "Revisión",
+      "role": "Rol",
+      "routeTemplateId": "Plantilla de ruta",
+      "salesLineId": "Línea de venta",
+      "salesReportId": "Reporte de ventas",
+      "scopeEmployeeIds": "Empleados involucrados",
+      "scopeHolderIds": "Custodios involucrados",
+      "settledAt": "Liquidado el",
+      "settledMinor": "Liquidado",
+      "sku": "SKU",
+      "snapshot": "Instantánea",
+      "soldQuantity": "Vendido",
+      "sourceId": "Documento de origen",
+      "sourceLineId": "Línea de origen",
+      "sourcePaymentId": "Pago de origen",
+      "sourceSalesReportId": "Reporte de ventas de origen",
+      "sourceType": "Tipo de origen",
+      "sourceWarehouseId": "Almacén de origen",
+      "status": "Estado",
+      "stolenQuantity": "Robado",
+      "submittedAt": "Enviado el",
+      "submittedBy": "Enviado por",
+      "supplierId": "Proveedor",
+      "targetId": "Destino",
+      "targetType": "Tipo de destino",
+      "timezone": "Zona horaria",
+      "toCondition": "Condición de destino",
+      "toEmployeeId": "Recibe",
+      "toHolderId": "Custodio de destino",
+      "toWarehouseHolderId": "Almacén de destino",
+      "totalMinor": "Total",
+      "totalRevenueMinor": "Ingreso real (USD)",
+      "type": "Tipo",
+      "unitCostMinor": "Costo unitario (USD)",
+      "unitOfMeasure": "Unidad",
+      "unitPriceMinor": "Precio unitario (USD)",
+      "unpaidApproval": "Aprobación de venta no pagada",
+      "updatedAt": "Actualizado el",
+      "updatedBy": "Actualizado por",
+      "valueMinor": "Valor",
+      "vehicleId": "Vehículo",
+      "verifiedAt": "Verificado el",
+      "verifiedBy": "Verificado por",
+      "version": "Versión",
+      "warehouseHolderId": "Almacén"
+    },
+    "options": {
+      "WAREHOUSE": "Almacén",
+      "EMPLOYEE": "Empleado",
+      "VEHICLE": "Vehículo",
+      "ROUTE_CREW": "Cuadrilla de ruta",
+      "DRAFT": "Borrador",
+      "POSTED": "Contabilizado",
+      "CANCELLED": "Anulado",
+      "SUBMITTED": "Enviado",
+      "AVAILABLE": "Disponible",
+      "QUARANTINED": "En cuarentena",
+      "CASH": "Efectivo",
+      "CHECK": "Cheque",
+      "BANK_DEPOSIT": "Depósito bancario",
+      "ZELLE": "Zelle",
+      "CREDIT_CARD": "Tarjeta de crédito",
+      "RECORDED": "Registrado",
+      "VERIFIED": "Verificado",
+      "REJECTED": "Rechazado",
+      "VOIDED": "Anulado",
+      "PENDING": "Pendiente",
+      "RECEIVED": "Recibido",
+      "OPEN": "Abierto",
+      "PARTIALLY_SETTLED": "Liquidado parcialmente",
+      "SETTLED": "Liquidado",
+      "CLOSED": "Cerrado",
+      "REOPENED": "Reabierto",
+      "SOLD": "Vendido",
+      "LOST": "Perdido",
+      "MISSING": "Faltante",
+      "STOLEN": "Robado",
+      "DAMAGED": "Dañado",
+      "QUARANTINE": "Cuarentena",
+      "WRITE_OFF": "Dar de baja",
+      "TOTAL_PER_ITEM": "Total por artículo",
+      "PRICE_GROUPS": "Grupos de precio",
+      "SALES_REPORT": "Reporte de ventas",
+      "COLLECTION_OBLIGATION": "Obligación de cobro",
+      "UNPAID_SALE": "Venta no pagada",
+      "UNREMITTED_COLLECTION": "Cobro no entregado",
+      "RECEIPT": "Recepción",
+      "DISPATCH": "Despacho",
+      "RETURN_TO_WAREHOUSE": "Devolución al almacén",
+      "SALE": "Venta",
+      "DISPOSITION": "Clasificación",
+      "CUSTODY_REASSIGNMENT": "Reasignación de custodia",
+      "ADJUSTMENT": "Ajuste",
+      "REVERSAL": "Reversión",
+      "driver": "Chofer",
+      "appraiser": "Tasador",
+      "helper": "Ayudante"
+    },
+    "resources": {
+      "holders": {
+        "label": "Custodios",
+        "description": "El inventario permanece con su custodio permanente de un día a otro. Las rutas diarias son solo contexto."
+      },
+      "items": {
+        "label": "Catálogo de suministros",
+        "description": "Catálogo y precios con vigencia. Las cantidades provienen del libro de inventario."
+      },
+      "suppliers": {
+        "label": "Proveedores de suministros",
+        "description": "Proveedores de los suministros de la empresa."
+      },
+      "stock": {
+        "label": "Saldos de inventario",
+        "description": "Saldos de solo lectura por artículo, custodio y condición."
+      },
+      "receipts": {
+        "label": "Recepción",
+        "description": "Reciba suministros comprados en un almacén. Al contabilizar aumentan el inventario y la valoración."
+      },
+      "dispatches": {
+        "label": "Despachos",
+        "description": "Transfiera suministros de un almacén a un empleado, vehículo o cuadrilla permanente. El despacho no registra ingresos."
+      },
+      "returns": {
+        "label": "Devoluciones",
+        "description": "Devuelva parte o todos los suministros a un almacén. Para mover inventario entre empleados, primero devuelva y luego despache."
+      },
+      "dispositions": {
+        "label": "Pérdidas y daños",
+        "description": "Clasifique suministros faltantes, perdidos, robados o dañados. La cuarentena sigue siendo de la empresa. Las ventas se registran aparte."
+      },
+      "counts": {
+        "label": "Conteos físicos",
+        "description": "Envíe una instantánea física. Un conteo nunca ajusta el inventario de forma automática."
+      },
+      "adjustments": {
+        "label": "Ajustes",
+        "description": "Las correcciones autorizadas requieren un motivo. Los movimientos contabilizados son inmutables."
+      },
+      "sales-reports": {
+        "label": "Ventas de suministros",
+        "description": "Ventas diarias agregadas de suministros. Al contabilizar se descuenta el inventario una vez; el cobro y la entrega son aparte."
+      },
+      "payments": {
+        "label": "Cobros",
+        "description": "Registre cada forma de pago por separado en pagos mixtos. Los fondos cobrados no se reciben automáticamente en la oficina."
+      },
+      "cash-handovers": {
+        "label": "Entregas a oficina",
+        "description": "Transfiera la custodia de efectivo o cheques verificados. Quien recibe debe confirmar la recepción."
+      },
+      "collection-obligations": {
+        "label": "Obligaciones pendientes",
+        "description": "Las ventas no pagadas y los cobros no entregados se arrastran hasta liquidarse. La liquidación no genera ingresos."
+      },
+      "closeouts": {
+        "label": "Cierres diarios",
+        "description": "Cuente el inventario disponible y en cuarentena. Clasifique las diferencias físicas antes de cerrar y explique las diferencias financieras. El inventario retenido se arrastra."
+      },
+      "route-crews": {
+        "label": "Cuadrillas permanentes",
+        "description": "Las cuadrillas permanentes pueden tener inventario mediante un custodio. La membresía tiene vigencia."
+      },
+      "daily-routes": {
+        "label": "Contexto de ruta diaria",
+        "description": "Solo programación por fecha; nunca es un destino de inventario. Una ruta por empleado por fecha operativa."
+      },
+      "reports/stock-valuation": {
+        "label": "Valoración del inventario",
+        "description": "Cantidad y valor contable por custodio, artículo y condición."
+      },
+      "reports/sales": {
+        "label": "Resumen de ventas",
+        "description": "Cantidad vendida e ingresos de suministros por custodio, artículo y fecha."
+      },
+      "reports/obligations": {
+        "label": "Resumen de obligaciones",
+        "description": "Montos pendientes y liquidados por obligación."
+      },
+      "reports/discrepancies": {
+        "label": "Diferencias de conteo",
+        "description": "Cantidades esperadas frente a contadas en los conteos físicos."
+      },
+      "audit-events": {
+        "label": "Registro de auditoría",
+        "description": "Acciones inmutables registradas por el servidor."
+      },
+      "journal-entries": {
+        "label": "Asientos contables",
+        "description": "Asientos contables vinculados a sus documentos de origen."
+      }
+    },
+    "commands": {
+      "post": "Contabilizar",
+      "cancel": "Anular borrador",
+      "submit": "Enviar conteo",
+      "verify": "Verificar pago",
+      "reject": "Rechazar pago",
+      "void": "Anular pago",
+      "allocate": "Asignar",
+      "receive": "Confirmar recepción",
+      "settlements": "Liquidar obligación",
+      "reopen": "Reabrir cierre",
+      "custody-assignments": "Asignar responsable",
+      "reassign": "Reasignación administrativa",
+      "prices": "Agregar precio",
+      "members": "Agregar integrante"
+    },
+    "commandHints": {
+      "post": "Al contabilizar, este documento se registra en el libro de inventario. Los documentos contabilizados no se pueden editar.",
+      "cancel": "Al anular el borrador se conserva como referencia sin cambiar el inventario.",
+      "submit": "Envía las líneas contadas como una instantánea. No ajusta el inventario.",
+      "verify": "Marca el pago como verificado para que pueda entregarse y asignarse.",
+      "reject": "Marca el pago como rechazado.",
+      "void": "Anula el pago. Primero deben liberarse sus asignaciones.",
+      "receive": "Confirma que recibió esta entrega de efectivo o cheques."
+    },
+    "children": {
+      "stock": "Inventario por condición",
+      "movements": "Historial de movimientos",
+      "custody-assignments": "Asignaciones de custodia",
+      "prices": "Historial de precios",
+      "members": "Integrantes",
+      "allocations": "Asignaciones",
+      "settlements": "Liquidaciones"
+    },
+    "title": "Operaciones de suministros",
+    "subtitle": "Almacén → custodio responsable → ventas, devoluciones y cierre diario",
+    "disabled": "Operaciones de suministros no está disponible en este entorno.",
+    "noAccess": "Su cuenta no tiene acceso a operaciones de suministros.",
+    "navLabel": "Secciones de operaciones de suministros",
+    "groups": {
+      "setup": "Configuración",
+      "stock": "Inventario",
+      "money": "Ventas y dinero",
+      "closeout": "Cierre",
+      "reports": "Reportes y auditoría"
+    },
+    "create": "Crear",
+    "createTitle": "Nuevo registro: {{resource}}",
+    "editTitle": "Editar: {{resource}}",
+    "filter": "Filtrar",
+    "clear": "Limpiar",
+    "empty": "Ningún registro coincide con estos filtros.",
+    "loadMore": "Cargar más",
+    "loadMoreOptions": "Cargar más opciones",
+    "retry": "Reintentar",
+    "row": "Registro",
+    "closeDetail": "Cerrar detalle",
+    "select": "Seleccione…",
+    "review": "Revisar",
+    "confirm": "Confirmar",
+    "backToEdit": "Volver a editar",
+    "reviewHint": "Revise antes de confirmar. Las transacciones contabilizadas no se pueden editar.",
+    "confirmCommand": "Confirme para continuar.",
+    "saved": "Guardado correctamente.",
+    "noRecords": "Sin registros",
+    "yes": "Sí",
+    "no": "No",
+    "priceGroupsHint": "Grupos de precio reales (deben coincidir con la cantidad vendida y el ingreso)",
+    "addGroup": "Agregar grupo de precio",
+    "removeGroup": "Quitar grupo",
+    "currentHolderStock": "Inventario actual del custodio",
+    "releaseAllocation": "Liberar",
+    "errors": {
+      "versionRequired": "Vuelva a cargar este registro para obtener su versión actual e intente de nuevo.",
+      "listContract": "La API devolvió una lista con un formato inesperado.",
+      "offline": "Vuelva a conectarse antes de guardar o contabilizar.",
+      "requestFailed": "La solicitud falló. Revise su conexión e intente de nuevo."
+    },
+    "validation": {
+      "required": "Obligatorio.",
+      "money": "Ingrese un monto en USD con máximo dos decimales.",
+      "integer": "Ingrese un número entero.",
+      "min": "El valor es menor que el mínimo.",
+      "option": "Elija una opción.",
+      "instant": "Ingrese una fecha y hora válidas.",
+      "date": "Ingrese una fecha válida.",
+      "linesRequired": "Agregue al menos una línea.",
+      "duplicateLine": "Combine las líneas duplicadas de artículo y condición.",
+      "damageResolution": "Elija cuarentena o baja para las líneas dañadas.",
+      "nonZero": "El ajuste no puede ser cero.",
+      "priceGroups": "Los grupos de precio deben coincidir con la cantidad vendida y el ingreso real.",
+      "positiveAmount": "El monto debe ser mayor que cero.",
+      "settlementSource": "Elija exactamente un pago verificado o una entrega recibida.",
+      "uniqueEmployee": "Incluya a cada empleado una sola vez.",
+      "holderEntity": "Se requiere un empleado, vehículo o cuadrilla.",
+      "sameHolder": "El origen y el destino deben ser distintos.",
+      "countRequired": "Ingrese un conteo, incluido cero.",
+      "countOnce": "Cuente cada artículo una sola vez."
+    },
+    "closeout": {
+      "previewTitle": "Vista previa de conciliación",
+      "previewHint": "Contabilice ventas, devoluciones y pérdidas clasificadas antes de cerrar. El inventario retenido se queda con este custodio.",
+      "refreshPreview": "Actualizar vista previa",
+      "revisionsTitle": "Revisiones inmutables",
+      "physicalCount": "Conteo físico",
+      "addFoundItem": "Agregar artículo encontrado inesperadamente",
+      "bothCountsRequired": "Ingrese los conteos disponible y en cuarentena de cada artículo, incluido cero.",
+      "previewIncomplete": "La vista previa del servidor está incompleta. Actualícela antes de cerrar.",
+      "countEveryItem": "Cuente todos los artículos, incluido el inventario en cuarentena.",
+      "classifyDifferences": "Clasifique las diferencias físicas con clasificaciones o ajustes contabilizados y luego actualice.",
+      "unexpectedStock": "Contabilice un ajuste por el inventario encontrado inesperadamente antes de cerrar.",
+      "explainDifference": "Explique la diferencia financiera antes de cerrar.",
+      "reconciled": "Los conteos coinciden con la vista previa. Confirme para crear una revisión inmutable. Las ventas y devoluciones no se contabilizan de nuevo.",
+      "readOnly": "Conciliación de solo lectura. Cerrar requiere permiso de cierre.",
+      "checking": "Verificando…",
+      "confirmClose": "Confirmar cierre",
+      "reviewClose": "Revisar y cerrar"
+    }
   }
 }

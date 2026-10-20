@@ -1,14 +1,15 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["inventory.Item"]. */
+/** Directory coverage for Swagger definitions["inventory.Item"]. */
 export const INVENTORY_ITEM_API_TABLE_FIELDS = [
-  { field: "averageCost" },
-  { field: "createdAt", format: "date" },
-  { field: "createdBy" },
-  { field: "id" },
-  { field: "item" },
-  { field: "quantity", columnId: "quantityLeft" },
+  { field: "category", columnId: "category" },
+  { field: "currency", defaultVisible: false },
+  { field: "defaultSellingPriceMinor", columnId: "defaultSellingPrice" },
+  { field: "id", defaultVisible: false },
+  { field: "isActive", columnId: "status" },
+  { field: "name", columnId: "item" },
   { field: "reorderThreshold" },
-  { field: "updatedAt", format: "date" },
-  { field: "updatedBy" },
+  { field: "sku", columnId: "sku" },
+  { field: "unitOfMeasure", columnId: "unitOfMeasure" },
+  { field: "version", defaultVisible: false },
 ] as const satisfies readonly ApiTableField[];

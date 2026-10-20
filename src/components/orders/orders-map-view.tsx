@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  CheckCheck,
   CheckSquare,
   Eraser,
   ListChecks,
@@ -35,6 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RouteEndpointsDialog } from "@/components/orders/route-endpoints-dialog";
+import type { RouteEndpointLocations } from "@/lib/orders/schemas/route-endpoints.schema";
 import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
 import {
   getGoogleMapsCoreApi,
@@ -42,10 +45,14 @@ import {
   loadGoogleMaps,
 } from "@/lib/maps/load-google-maps";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
+import type { PickupOrderNumberUpdate } from "@/lib/orders/api/orders-api";
 import { formatOrderRouteName } from "@/lib/orders/display";
-import { useOrders } from "@/lib/orders/hooks/use-orders";
+import { useFinalizePickupRouteOrder, useOrders } from "@/lib/orders/hooks/use-orders";
 import { BranchDepotRequiredError, useOptimizeAppointmentRoute } from "@/lib/orders/hooks/use-optimize-appointment-route";
 import {
+  AppointmentRouteOptimizationError,
+  type AppointmentRouteOptimizationPlan,
   formatRouteDistance,
   planAppointmentRouteOptimization,
   resolveAppointmentRouteOptimizationErrorMessage,
@@ -218,18 +225,21 @@ export function OrdersMapView({
       setDepotError(null);
     } catch (error) { setDepotError(normalizeApiError(error).message); }
   }
+  const finalizeRouteOrderMutation = useFinalizePickupRouteOrder();
+  const [endpointPlan, setEndpointPlan] = useState<AppointmentRouteOptimizationPlan | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
   const mapsLibRef = useRef<GoogleMapsCore | null>(null);
   const markersRef = useRef<MarkerBinding[]>([]);
   const initializedSelectionRef = useRef(false);
+  const stopListRef = useRef<HTMLUListElement | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [unassignOpen, setUnassignOpen] = useState(false);
   /** Map-local selection, independent from the table selection that seeded the map. */
   const [mapSelectedIds, setMapSelectedIds] = useState<string[]>([]);
-  /** Not persisted by the API — lives only while this map is open. */
+  /** Draft order for this browser session; saved to the API only via Finalize route order. */
   const [stopOrder, setStopOrder] = useState<AppointmentRouteStopOrder | null>(initialStopOrder);
   const [stopOrderSource, setStopOrderSource] = useState(initialStopOrder);
   if (stopOrderSource !== initialStopOrder) {
@@ -536,8 +546,22 @@ export function OrdersMapView({
     return true;
   }
 
+  /** Runs after the list re-sorts and inputs remount, so "next" reflects the updated stop order. */
+  function focusNextStopNumberInput(orderRecordId: string) {
+    requestAnimationFrame(() => {
+      const inputs = Array.from(
+        stopListRef.current?.querySelectorAll<HTMLInputElement>("input[data-stop-number-input]") ?? [],
+      );
+      const index = inputs.findIndex((input) => input.dataset.stopNumberInput === orderRecordId);
+      const next = index >= 0 ? inputs[index + 1] : undefined;
+      if (!next) return;
+      next.focus();
+      next.select();
+    });
+  }
+
   async function optimizeSelectedRoute() {
-    if (!routeOrderingEnabled) return;
+    if (!routeOrderingEnabled || optimizeRouteMutation.isPending) return;
     const ordersToOptimize = selectedStops
       .map((stop) => orderByRecordId.get(stop.orderRecordId))
       .filter((order): order is Order => Boolean(order));
@@ -558,7 +582,61 @@ export function OrdersMapView({
         setDepotError(null);
         return;
       }
+      if (mutationError instanceof AppointmentRouteOptimizationError && mutationError.code === "branchCoordinatesMissing") {
+        setEndpointPlan(plan);
+        return;
+      }
       notifyError(resolveAppointmentRouteOptimizationErrorMessage(mutationError, t));
+    }
+  }
+
+  async function optimizeWithEndpoints(endpoints: RouteEndpointLocations) {
+    if (!endpointPlan || endpointPlan.routeId !== dailyRouteId || optimizeRouteMutation.isPending) return;
+    try {
+      const result = await optimizeRouteMutation.mutateAsync({ ...endpointPlan, endpoints });
+      updateStopOrder(result);
+      notifyOptimizedRoute(result);
+      setEndpointPlan(null);
+    } catch (mutationError) {
+      notifyError(resolveAppointmentRouteOptimizationErrorMessage(mutationError, t));
+    }
+  }
+
+  async function finalizeRouteOrder() {
+    if (!routeOrderingEnabled || !everyRouteStopNumbered || finalizeRouteOrderMutation.isPending) return;
+
+    const updates: PickupOrderNumberUpdate[] = [];
+    for (const [orderRecordId, orderNumber] of stopNumbers) {
+      const order = orderByRecordId.get(orderRecordId);
+      if (order && order.orderNumber !== orderNumber) {
+        updates.push({ pickupId: order.id, orderNumber });
+      }
+    }
+
+    if (updates.length === 0) {
+      notifySuccess(t("common.form.noChanges"));
+      return;
+    }
+
+    try {
+      const result = await finalizeRouteOrderMutation.mutateAsync(updates);
+      reportBulkSettled({
+        result,
+        total: updates.length,
+        t,
+        notifyError,
+        onSucceeded: (count) => {
+          notifySuccess(
+            count === 1
+              ? t("orders.optimize.finalizeSuccess", { count })
+              : t("orders.optimize.finalizeSuccess_plural", { count }),
+          );
+        },
+        onAllFailed: notifyError,
+        onDone: () => {},
+      });
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
     }
   }
 
@@ -573,8 +651,12 @@ export function OrdersMapView({
   }
 
   const routeOrderingEnabled = Boolean(dailyRouteId);
+  const routeStops = mappedStops.filter((stop) => stop.routeId?.trim() === dailyRouteId);
+  const everyRouteStopNumbered =
+    routeStops.length > 0 && routeStops.every((stop) => stopNumbers.has(stop.orderRecordId));
   const isOptimizing = optimizeRouteMutation.isPending;
-  const isMutating = isUnassigning || isOptimizing;
+  const isFinalizing = finalizeRouteOrderMutation.isPending;
+  const isMutating = isUnassigning || isOptimizing || isFinalizing;
 
   return (
     <>
@@ -594,7 +676,7 @@ export function OrdersMapView({
                   })}
                 </span>
               ) : (
-                <span>{t("orders.map.clickToSelect")}</span>
+                <span>{t(routeOrderingEnabled ? "orders.map.dailyRouteSelectionHint" : "orders.map.clickToSelect")}</span>
               )
             ) : null}
             {stopNumbers.size > 0 && stopOrder ? (
@@ -647,17 +729,8 @@ export function OrdersMapView({
               </Button>
             </TableSelectionActionGroup>
             <TableSelectionActionDivider />
-            <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={selectedStops.length === 0 || isMutating}
-                onClick={openAssignRouteDialog}
-              >
-                <RouteIcon className="h-4 w-4" />
-                {t("orders.actions.assignRoute")}
-              </Button>
-              {routeOrderingEnabled ? (
+            {routeOrderingEnabled ? (
+              <TableSelectionActionGroup aria-label={t("orders.map.legend.stopOrder")}>
                 <Button
                   variant="outline"
                   size="sm"
@@ -672,16 +745,30 @@ export function OrdersMapView({
                   )}
                   {isOptimizing ? t("orders.actions.optimizingRoute") : t("orders.actions.optimizeRoute")}
                 </Button>
-              ) : null}
-              {routeOrderingEnabled && stopNumbers.size > 0 ? (
+                {stopNumbers.size > 0 ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isMutating}
+                    onClick={() => updateStopOrder(null)}
+                  >
+                    <Eraser className="h-4 w-4" />
+                    {t("orders.optimize.clearOrder")}
+                  </Button>
+                ) : null}
+              </TableSelectionActionGroup>
+            ) : null}
+            {routeOrderingEnabled ? <TableSelectionActionDivider /> : null}
+            <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
+              {!routeOrderingEnabled ? (
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={isMutating}
-                  onClick={() => updateStopOrder(null)}
+                  disabled={selectedStops.length === 0 || isMutating}
+                  onClick={openAssignRouteDialog}
                 >
-                  <Eraser className="h-4 w-4" />
-                  {t("orders.optimize.clearOrder")}
+                  <RouteIcon className="h-4 w-4" />
+                  {t("orders.actions.assignRoute")}
                 </Button>
               ) : null}
               <Button
@@ -732,18 +819,22 @@ export function OrdersMapView({
 
             <div className="absolute bottom-4 left-4 z-10 max-h-32 max-w-[calc(100%-2rem)] overflow-y-auto rounded-lg border border-border bg-background px-3 py-2 text-xs shadow-md ring-1 ring-black/5 dark:ring-white/10">
               <div className="flex flex-wrap items-center gap-3">
+                {!routeOrderingEnabled ? (
+                  <>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-1 ring-blue-900/40")} />
+                      {t("orders.map.legend.unassigned")}
+                    </span>
+                    {routeLegend.map(({ routeId, routeName, color }) => (
+                      <span key={routeId} className="inline-flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                        {formatOrderRouteName({ routeId, routeName }, getRouteByKey(routeId), t)}
+                      </span>
+                    ))}
+                  </>
+                ) : null}
                 <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-1 ring-blue-900/40")} />
-                  {t("orders.map.legend.unassigned")}
-                </span>
-                {routeLegend.map(({ routeId, routeName, color }) => (
-                  <span key={routeId} className="inline-flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-                    {formatOrderRouteName({ routeId, routeName }, getRouteByKey(routeId), t)}
-                  </span>
-                ))}
-                <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-orange-500")} />
+                  <span className="h-2.5 w-2.5 rounded-full ring-2 ring-orange-500" />
                   {t("orders.map.legend.selected")}
                 </span>
                 {stopNumbers.size > 0 ? (
@@ -769,7 +860,7 @@ export function OrdersMapView({
                   })}
                 </p>
               </div>
-              <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3" tabIndex={0} aria-label={t("orders.map.mappedStopsTitle")}>
+              <ul ref={stopListRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3" tabIndex={0} aria-label={t("orders.map.mappedStopsTitle")}>
                 {listedStops.map((stop) => {
                   const selected = mapSelectedIds.includes(stop.orderRecordId);
                   const assigned = Boolean(stop.routeId?.trim());
@@ -844,6 +935,7 @@ export function OrdersMapView({
                             max={mappedStops.length}
                             defaultValue={stopNumber ?? ""}
                             disabled={isMutating}
+                            data-stop-number-input={stop.orderRecordId}
                             aria-label={t("orders.optimize.stopNumberInput", { name: stop.senderName })}
                             className="h-7 w-full rounded-md border border-input bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             onBlur={(event) => {
@@ -855,6 +947,7 @@ export function OrdersMapView({
                               if (event.key === "Enter") {
                                 event.preventDefault();
                                 event.currentTarget.blur();
+                                focusNextStopNumberInput(stop.orderRecordId);
                               }
                             }}
                           />
@@ -864,10 +957,35 @@ export function OrdersMapView({
                   );
                 })}
               </ul>
+              {routeOrderingEnabled ? (
+                <div className="shrink-0 border-t border-border bg-muted/50 p-3">
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    disabled={!everyRouteStopNumbered || isMutating}
+                    onClick={() => void finalizeRouteOrder()}
+                  >
+                    {isFinalizing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCheck className="h-4 w-4" />
+                    )}
+                    {isFinalizing ? t("orders.optimize.finalizingOrder") : t("orders.optimize.finalizeOrder")}
+                  </Button>
+                </div>
+              ) : null}
             </aside>
           ) : null}
         </div>
       </div>
+
+      {endpointPlan && endpointPlan.routeId === dailyRouteId ? (
+        <RouteEndpointsDialog
+          onClose={() => setEndpointPlan(null)}
+          onSubmit={optimizeWithEndpoints}
+          isPending={isOptimizing}
+        />
+      ) : null}
 
       <AssignAppointmentRouteDialog
         open={assignRouteOpen}

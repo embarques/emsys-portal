@@ -3,45 +3,58 @@
 import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { useTranslation } from "@/lib/i18n";
 import {
+  cancelInventoryDispatch,
+  cancelInventoryReceipt,
+  createAndPostInventoryAdjustment,
   createInventoryDispatch,
+  createInventoryHolder,
   createInventoryItem,
   createInventoryReceipt,
   createInventorySupplier,
-  deleteInventoryDispatches,
-  deleteInventoryItems,
-  deleteInventoryReceipts,
-  deleteInventorySuppliers,
+  fetchHolderStock,
   fetchInventoryDispatches,
+  fetchInventoryHolders,
   fetchInventoryItemById,
   fetchInventoryItems,
   fetchInventoryReceipts,
-  fetchInventoryStockById,
+  fetchInventoryStock,
   fetchInventorySuppliers,
-  updateInventoryItem,
+  fetchRouteCrews,
+  postInventoryDispatch,
+  postInventoryReceipt,
+  setInventoryItemsActive,
+  setInventorySuppliersActive,
   updateInventoryDispatch,
+  updateInventoryItem,
   updateInventoryReceipt,
   updateInventorySupplier,
+  type InventoryVersionedRef,
 } from "@/lib/inventory/api/inventory-api";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
-import type { InventoryFormValues } from "@/lib/inventory/types/catalog";
+import { summarizeItemStock, type InventoryFormValues } from "@/lib/inventory/types/catalog";
 import type { DispatchFormValues, ReceiptFormValues } from "@/lib/inventory/types/documents";
+import type { InventoryHolderFormValues } from "@/lib/inventory/types/holders";
 import {
   DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
+  DEFAULT_INVENTORY_HOLDER_LIST_PARAMS,
   DEFAULT_INVENTORY_ITEM_LIST_PARAMS,
   DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS,
+  DEFAULT_INVENTORY_STOCK_LIST_PARAMS,
   DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS,
   type InventoryListParams,
 } from "@/lib/inventory/types/list";
 import type { AdjustmentFormValues } from "@/lib/inventory/types/movements";
 import { EMPTY_INVENTORY_SNAPSHOT } from "@/lib/inventory/types/snapshot";
 import type { SupplierFormValues } from "@/lib/inventory/types/suppliers";
-import { movementsFromInventoryDocuments } from "@/lib/inventory/utils/movements";
 
+/** Inventory and the Supply operations workspace share the same ledger. */
 function invalidateInventory(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
+    queryClient.invalidateQueries({ queryKey: ["inventory-workflow"] }),
+  ]);
 }
 
 export function useInventoryItems(params: InventoryListParams = DEFAULT_INVENTORY_ITEM_LIST_PARAMS) {
@@ -56,6 +69,43 @@ export function useInventoryItem(itemId: string | undefined) {
     queryKey: queryKeys.inventory.item(itemId ?? ""),
     queryFn: () => fetchInventoryItemById(itemId!),
     enabled: Boolean(itemId),
+  });
+}
+
+export function useInventoryStockBalances(params: InventoryListParams = DEFAULT_INVENTORY_STOCK_LIST_PARAMS) {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.inventory.stock(params),
+    queryFn: async () => (await fetchInventoryStock(params)).items,
+  });
+}
+
+/** Company-wide available / quarantined / reserved quantity per item. */
+export function useInventoryStockSummary() {
+  const stockQuery = useInventoryStockBalances();
+  const summaries = useMemo(() => summarizeItemStock(stockQuery.data ?? []), [stockQuery.data]);
+  return { ...stockQuery, summaries };
+}
+
+export function useInventoryHolders(params: InventoryListParams = DEFAULT_INVENTORY_HOLDER_LIST_PARAMS) {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.inventory.holders(params),
+    queryFn: async () => (await fetchInventoryHolders(params)).items,
+  });
+}
+
+export function useHolderStock(holderId: string | undefined) {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.inventory.holderStock(holderId ?? ""),
+    queryFn: () => fetchHolderStock(holderId!),
+    enabled: Boolean(holderId),
+  });
+}
+
+export function useRouteCrews(enabled = true) {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.inventory.routeCrews(),
+    queryFn: fetchRouteCrews,
+    enabled,
   });
 }
 
@@ -80,70 +130,31 @@ export function useInventorySuppliers(params: InventoryListParams = DEFAULT_INVE
   });
 }
 
-export function useInventoryMovements(itemId?: string) {
-  const receiptsQuery = useInventoryReceipts(itemId ? { ...DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS, itemId } : DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS);
-  const dispatchesQuery = useInventoryDispatches(
-    itemId ? { ...DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS, itemId } : DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
-  );
-
-  const movements = useMemo(() => {
-    const receipts = itemId
-      ? (receiptsQuery.data ?? []).filter((receipt) => receipt.itemId === itemId)
-      : (receiptsQuery.data ?? []);
-    const dispatches = itemId
-      ? (dispatchesQuery.data ?? []).filter((dispatch) => dispatch.itemId === itemId)
-      : (dispatchesQuery.data ?? []);
-    return movementsFromInventoryDocuments(receipts, dispatches);
-  }, [dispatchesQuery.data, itemId, receiptsQuery.data]);
-
-  return {
-    data: movements,
-    isLoading: receiptsQuery.isLoading || dispatchesQuery.isLoading,
-    isError: receiptsQuery.isError || dispatchesQuery.isError,
-  };
-}
-
-export function useItemStock(itemId: string | undefined) {
-  const itemsQuery = useInventoryItems();
-  const stockFromItems = itemsQuery.data?.find((item) => item.id === itemId)?.quantity;
-
-  const stockQuery = useWorkspaceQuery({
-    queryKey: queryKeys.inventory.stock(itemId ?? ""),
-    queryFn: async () => (await fetchInventoryStockById(itemId!)).quantity,
-    enabled: Boolean(itemId) && stockFromItems == null,
-  });
-
-  return {
-    ...stockQuery,
-    data: stockFromItems ?? stockQuery.data ?? 0,
-  };
-}
-
 export function useInventorySnapshot() {
   const itemsQuery = useInventoryItems();
   const receiptsQuery = useInventoryReceipts();
   const dispatchesQuery = useInventoryDispatches();
   const suppliersQuery = useInventorySuppliers();
+  const holdersQuery = useInventoryHolders();
+  const stockQuery = useInventoryStockBalances();
 
-  const data = useMemo(() => {
-    const items = itemsQuery.data ?? [];
-    const receipts = receiptsQuery.data ?? [];
-    const dispatches = dispatchesQuery.data ?? [];
-    const suppliers = suppliersQuery.data ?? [];
-    return {
-      items,
-      receipts,
-      dispatches,
-      suppliers,
-      movements: movementsFromInventoryDocuments(receipts, dispatches),
-    };
-  }, [dispatchesQuery.data, itemsQuery.data, receiptsQuery.data, suppliersQuery.data]);
+  const data = useMemo(
+    () => ({
+      items: itemsQuery.data ?? [],
+      receipts: receiptsQuery.data ?? [],
+      dispatches: dispatchesQuery.data ?? [],
+      suppliers: suppliersQuery.data ?? [],
+      holders: holdersQuery.data ?? [],
+      stock: stockQuery.data ?? [],
+    }),
+    [dispatchesQuery.data, holdersQuery.data, itemsQuery.data, receiptsQuery.data, stockQuery.data, suppliersQuery.data],
+  );
 
+  const queries = [itemsQuery, receiptsQuery, dispatchesQuery, suppliersQuery, holdersQuery, stockQuery];
   return {
     data,
-    isLoading:
-      itemsQuery.isLoading || receiptsQuery.isLoading || dispatchesQuery.isLoading || suppliersQuery.isLoading,
-    isError: itemsQuery.isError || receiptsQuery.isError || dispatchesQuery.isError || suppliersQuery.isError,
+    isLoading: queries.some((query) => query.isLoading),
+    isError: queries.some((query) => query.isError),
   };
 }
 
@@ -152,108 +163,86 @@ export function useInventorySnapshotData() {
   return data ?? EMPTY_INVENTORY_SNAPSHOT;
 }
 
-export function useCreateInventoryItem() {
+function useInventoryMutation<TInput, TResult>(mutationFn: (input: TInput) => Promise<TResult>) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (values: InventoryFormValues) => createInventoryItem(values),
+    mutationFn,
     onSuccess: () => invalidateInventory(queryClient),
   });
+}
+
+export function useCreateInventoryItem() {
+  return useInventoryMutation((values: InventoryFormValues) => createInventoryItem(values));
 }
 
 export function useUpdateInventoryItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: InventoryFormValues }) => updateInventoryItem(id, values),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+  return useInventoryMutation(({ item, values }: { item: InventoryVersionedRef; values: InventoryFormValues }) =>
+    updateInventoryItem(item, values),
+  );
 }
 
-export function useDeleteInventoryItems() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (ids: string[]) => deleteInventoryItems(ids),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+export function useSetInventoryItemsActive() {
+  return useInventoryMutation(({ items, isActive }: { items: InventoryVersionedRef[]; isActive: boolean }) =>
+    setInventoryItemsActive(items, isActive),
+  );
+}
+
+export function useCreateInventoryHolder() {
+  return useInventoryMutation((values: InventoryHolderFormValues) => createInventoryHolder(values));
 }
 
 export function useCreateReceipt() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (values: ReceiptFormValues) => createInventoryReceipt(values),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
-}
-
-export function useCreateDispatch() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (values: DispatchFormValues) => createInventoryDispatch(values),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
-}
-
-export function useUpdateDispatch() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: DispatchFormValues }) => updateInventoryDispatch(id, values),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
-}
-
-export function useDeleteDispatches() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (ids: string[]) => deleteInventoryDispatches(ids),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+  return useInventoryMutation((values: ReceiptFormValues) => createInventoryReceipt(values));
 }
 
 export function useUpdateReceipt() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: ReceiptFormValues }) => updateInventoryReceipt(id, values),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+  return useInventoryMutation(({ receipt, values }: { receipt: InventoryVersionedRef; values: ReceiptFormValues }) =>
+    updateInventoryReceipt(receipt, values),
+  );
 }
 
-export function useDeleteReceipts() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (ids: string[]) => deleteInventoryReceipts(ids),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+export function usePostReceipt() {
+  return useInventoryMutation((receipt: InventoryVersionedRef) => postInventoryReceipt(receipt));
+}
+
+export function useCancelReceipt() {
+  return useInventoryMutation((receipt: InventoryVersionedRef) => cancelInventoryReceipt(receipt));
+}
+
+export function useCreateDispatch() {
+  return useInventoryMutation((values: DispatchFormValues) => createInventoryDispatch(values));
+}
+
+export function useUpdateDispatch() {
+  return useInventoryMutation(({ dispatch, values }: { dispatch: InventoryVersionedRef; values: DispatchFormValues }) =>
+    updateInventoryDispatch(dispatch, values),
+  );
+}
+
+export function usePostDispatch() {
+  return useInventoryMutation((dispatch: InventoryVersionedRef) => postInventoryDispatch(dispatch));
+}
+
+export function useCancelDispatch() {
+  return useInventoryMutation((dispatch: InventoryVersionedRef) => cancelInventoryDispatch(dispatch));
 }
 
 export function useCreateAdjustment() {
-  const { t } = useTranslation();
-  return useMutation({
-    mutationFn: async (values: AdjustmentFormValues): Promise<never> => {
-      void values;
-      throw new Error(t("inventory.errors.adjustmentsUnavailable"));
-    },
-  });
+  return useInventoryMutation((values: AdjustmentFormValues) => createAndPostInventoryAdjustment(values));
 }
 
 export function useCreateSupplier() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (values: SupplierFormValues) => createInventorySupplier(values),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+  return useInventoryMutation((values: SupplierFormValues) => createInventorySupplier(values));
 }
 
 export function useUpdateSupplier() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: SupplierFormValues }) => updateInventorySupplier(id, values),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+  return useInventoryMutation(({ supplier, values }: { supplier: InventoryVersionedRef; values: SupplierFormValues }) =>
+    updateInventorySupplier(supplier, values),
+  );
 }
 
-export function useDeleteSuppliers() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (ids: string[]) => deleteInventorySuppliers(ids),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
+export function useSetSuppliersActive() {
+  return useInventoryMutation(({ suppliers, isActive }: { suppliers: InventoryVersionedRef[]; isActive: boolean }) =>
+    setInventorySuppliersActive(suppliers, isActive),
+  );
 }

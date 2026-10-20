@@ -1,18 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Boxes, PackageCheck, Plus, SlidersHorizontal, Truck, Warehouse } from "lucide-react";
+import { Archive, Boxes, PackageCheck, Plus, SlidersHorizontal, Truck, Warehouse } from "lucide-react";
 
+import { InventoryActiveToggleDialog, type InventoryActiveToggleTarget } from "@/components/inventory/inventory-active-toggle-dialog";
 import { InventoryAdjustmentForm } from "@/components/inventory/inventory-adjustment-form";
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryItemMobileList } from "@/components/inventory/inventory-item-mobile-list";
 import { InventoryReceiptForm } from "@/components/inventory/inventory-receipt-form";
+import { InventoryActiveBadge } from "@/components/inventory/inventory-status-badge";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
@@ -23,14 +24,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { INVENTORY_ITEM_API_TABLE_FIELDS } from "@/lib/inventory/items/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
@@ -39,6 +33,8 @@ import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
 import {
   computeInventoryKpis,
+  formatInventoryMinor,
+  getItemStockSummary,
   inventoryMatchesQuery,
 } from "@/lib/inventory/display";
 import {
@@ -46,10 +42,12 @@ import {
   useCreateDispatch,
   useCreateInventoryItem,
   useCreateReceipt,
-  useDeleteInventoryItems,
+  useInventoryHolders,
   useInventoryItems,
   useInventorySnapshotData,
+  useInventoryStockSummary,
   useInventorySuppliers,
+  useSetInventoryItemsActive,
   useUpdateInventoryItem,
 } from "@/lib/inventory/hooks/use-inventory";
 import {
@@ -70,22 +68,25 @@ type DocumentDialog = "receipt" | "dispatch" | "adjustment" | null;
 
 export function InventoryItemsWorkspace() {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
   const { hasPermission } = useAuth();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess, notifyError } = useFeedback();
   const { data: items = [], isLoading, isError, error } = useInventoryItems();
+  const { summaries } = useInventoryStockSummary();
   const { data: suppliers = [] } = useInventorySuppliers();
+  const { data: holders = [] } = useInventoryHolders();
   const snapshot = useInventorySnapshotData();
 
   const createItem = useCreateInventoryItem();
   const updateItem = useUpdateInventoryItem();
-  const deleteItems = useDeleteInventoryItems();
+  const setItemsActive = useSetInventoryItemsActive();
   const createReceipt = useCreateReceipt();
   const createDispatch = useCreateDispatch();
   const createAdjustment = useCreateAdjustment();
   const canCreate = hasPermission(PERMISSIONS.inventoryItemsCreate.name, PERMISSIONS.inventoryItemsCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.inventoryItemsUpdate.name, PERMISSIONS.inventoryItemsUpdate.resourceType);
-  const canDelete = hasPermission(PERMISSIONS.inventoryItemsDelete.name, PERMISSIONS.inventoryItemsDelete.resourceType);
+  const canAdjust = hasPermission(PERMISSIONS.inventoryStockUpdate.name, PERMISSIONS.inventoryStockUpdate.resourceType);
 
   const [filters, setFilters] = useState<InventoryFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -93,22 +94,23 @@ export function InventoryItemsWorkspace() {
   const [viewItem, setViewItem] = useState<InventoryItem | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<InventoryItem | InventoryItem[] | null>(null);
+  const [toggleTarget, setToggleTarget] = useState<InventoryActiveToggleTarget<InventoryItem>>(null);
   const [documentDialog, setDocumentDialog] = useState<DocumentDialog>(null);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const filteredItems = useMemo(
     () => items.filter((item) => inventoryMatchesQuery(item, filters.query)),
     [filters.query, items],
   );
 
-  const kpis = useMemo(() => computeInventoryKpis(items), [items]);
+  const kpis = useMemo(() => computeInventoryKpis(items, summaries), [items, summaries]);
   const listErrorMessage = isError ? toErrorMessage(error) : null;
   const pageLimit = resolveClientTablePageLimit(pageSize, filteredItems.length);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const pageItems = filteredItems.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const allPageSelected = pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.id));
+  const selectedActive = items.filter((item) => selectedIds.includes(item.id) && item.isActive);
+  const editingItemValues = useMemo(() => (editingItem ? inventoryItemToFormValues(editingItem) : undefined), [editingItem]);
 
   useTableSelectionReset(buildTableSelectionResetKey(filters.query), setSelectedIds);
 
@@ -134,38 +136,36 @@ export function InventoryItemsWorkspace() {
           setEditingItem(null);
           return;
         }
-        const nextItem = await updateItem.mutateAsync({ id: editingItem.id, values });
-        notifyUpdated(t("inventory.entity"), nextItem.item);
+        const nextItem = await updateItem.mutateAsync({ item: editingItem, values });
+        notifyUpdated(t("inventory.entity"), nextItem.name);
       } else {
         const nextItem = await createItem.mutateAsync(values);
-        notifyAdded(t("inventory.entity"), nextItem.item);
+        notifyAdded(t("inventory.entity"), nextItem.name);
       }
       setFormMode(null);
       setEditingItem(null);
       setPage(1);
-    } catch (error) {
-      setFormError(toErrorMessage(error));
+    } catch (saveError) {
+      notifyError(toErrorMessage(saveError));
     }
   }
 
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((item) => item.id) : [deleteTarget.id];
+  async function confirmToggleActive() {
+    if (!toggleTarget) return;
     try {
-      const result = await deleteItems.mutateAsync(ids);
-
+      const result = await setItemsActive.mutateAsync({ items: toggleTarget.records, isActive: toggleTarget.isActive });
       reportBulkSettled({
         result,
         t,
-        entityLabel: t("inventory.entity"),
-        notifyDeleted,
         notifyError,
-        onAllFailed: (message) => {
-          notifyError(message);
-        },
+        onSucceeded: (count) =>
+          notifySuccess(
+            t(toggleTarget.isActive ? "inventory.toasts.reactivated" : "inventory.toasts.deactivated", { count }),
+          ),
+        onAllFailed: notifyError,
         onDone: () => {
           setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
-          setDeleteTarget(null);
+          setToggleTarget(null);
           setViewItem(null);
         },
       });
@@ -202,13 +202,36 @@ export function InventoryItemsWorkspace() {
   ];
 
   const tableColumns: DataTableColumn<InventoryItem>[] = [
-    { id: "item", label: t("inventory.columns.item"), cellClassName: "font-medium", renderCell: (item) => item.item },
-    { id: "quantityLeft", label: t("inventory.columns.quantityLeft"), renderCell: (item) => item.quantity },
+    { id: "item", label: t("inventory.columns.item"), cellClassName: "font-medium", renderCell: (item) => item.name },
+    { id: "sku", label: t("inventory.columns.sku"), renderCell: (item) => item.sku || dash },
+    { id: "category", label: t("inventory.columns.category"), renderCell: (item) => item.category || dash },
+    {
+      id: "quantityLeft",
+      label: t("inventory.columns.available"),
+      cellClassName: "tabular-nums",
+      renderCell: (item) => getItemStockSummary(item.id, summaries).available,
+    },
+    {
+      id: "quarantined",
+      label: t("inventory.columns.quarantined"),
+      cellClassName: "tabular-nums",
+      defaultVisible: false,
+      renderCell: (item) => getItemStockSummary(item.id, summaries).quarantined,
+    },
     {
       id: "reorderThreshold",
       label: t("inventory.columns.reorderThreshold"),
+      cellClassName: "tabular-nums",
       renderCell: (item) => item.reorderThreshold,
     },
+    { id: "unitOfMeasure", label: t("inventory.form.fields.unit"), defaultVisible: false, renderCell: (item) => item.unitOfMeasure || dash },
+    {
+      id: "defaultSellingPrice",
+      label: t("inventory.form.fields.defaultSellingPrice"),
+      cellClassName: "tabular-nums",
+      renderCell: (item) => formatInventoryMinor(item.defaultSellingPriceMinor),
+    },
+    { id: "status", label: t("inventory.columns.status"), renderCell: (item) => <InventoryActiveBadge isActive={item.isActive} /> },
   ];
 
   const columnVisibility = useApiTableColumns("inventory-items", tableColumns, INVENTORY_ITEM_API_TABLE_FIELDS);
@@ -236,10 +259,12 @@ export function InventoryItemsWorkspace() {
                 <Truck className="h-4 w-4" />
                 {t("inventory.actions.newDispatch")}
               </Button>
-              <Button variant="outline" onClick={() => setDocumentDialog("adjustment")}>
-                <SlidersHorizontal className="h-4 w-4" />
-                {t("inventory.actions.adjustStock")}
-              </Button>
+              {canAdjust ? (
+                <Button variant="outline" onClick={() => setDocumentDialog("adjustment")}>
+                  <SlidersHorizontal className="h-4 w-4" />
+                  {t("inventory.actions.adjustStock")}
+                </Button>
+              ) : null}
               {canCreate ? <Button onClick={openAddForm}>
                 <Plus className="h-4 w-4" />
                 {t("inventory.actions.addItem")}
@@ -254,6 +279,7 @@ export function InventoryItemsWorkspace() {
         query={filters.query}
         items={items}
         pageItems={pageItems}
+        summaries={summaries}
         selectedIds={selectedIds}
         isLoading={isLoading}
         page={currentPage}
@@ -264,12 +290,16 @@ export function InventoryItemsWorkspace() {
         }}
         onPageChange={setPage}
         onOpen={setViewItem}
-        onEdit={openEditForm}
-        onDelete={setDeleteTarget}
+        onEdit={canUpdate ? openEditForm : undefined}
+        onDeactivate={
+          canUpdate
+            ? (target) => setToggleTarget({ records: Array.isArray(target) ? target : [target], isActive: false })
+            : undefined
+        }
         onSelectedIdsChange={setSelectedIds}
         onNewReceipt={() => setDocumentDialog("receipt")}
         onNewDispatch={() => setDocumentDialog("dispatch")}
-        onAdjustStock={() => setDocumentDialog("adjustment")}
+        onAdjustStock={canAdjust ? () => setDocumentDialog("adjustment") : undefined}
         onAddItem={openAddForm}
       />
 
@@ -303,7 +333,10 @@ export function InventoryItemsWorkspace() {
             const item = pageItems.find((entry) => entry.id === selectedIds[0]);
             if (item) openEditForm(item);
           } : undefined}
-          onDelete={canDelete ? () => setDeleteTarget(items.filter((item) => selectedIds.includes(item.id))) : undefined}
+          onDelete={canUpdate ? () => setToggleTarget({ records: selectedActive, isActive: false }) : undefined}
+          deleteDisabled={selectedActive.length === 0}
+          deleteLabel={t("inventory.actions.deactivate")}
+          deleteIcon={<Archive className="size-4" />}
         />
 
         {listErrorMessage ? (
@@ -315,7 +348,7 @@ export function InventoryItemsWorkspace() {
             description={t("inventory.loading.items.description")}
             columns={[
               t("inventory.columns.item"),
-              t("inventory.columns.quantityLeft"),
+              t("inventory.columns.available"),
               t("inventory.columns.reorderThreshold"),
             ]}
           />
@@ -325,10 +358,10 @@ export function InventoryItemsWorkspace() {
             rows={pageItems}
             page={currentPage}
             rowKey={(row) => row.id}
-            rowLabel={(row) => row.item}
+            rowLabel={(row) => row.name}
             columnLayout={columnVisibility}
             sortUnavailable
-            minWidth={800}
+            minWidth={900}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -375,7 +408,7 @@ export function InventoryItemsWorkspace() {
         open={Boolean(viewItem)}
         onOpenChange={(open) => !open && setViewItem(null)}
         onEdit={canUpdate ? openEditForm : undefined}
-        onDelete={canDelete ? (item) => setDeleteTarget(item) : undefined}
+        onToggleActive={canUpdate ? (item) => setToggleTarget({ records: [item], isActive: !item.isActive }) : undefined}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
@@ -387,8 +420,8 @@ export function InventoryItemsWorkspace() {
           </DialogHeader>
           <InventoryItemForm
             key={editingItem?.id ?? "new"}
-            initialValues={editingItem ? inventoryItemToFormValues(editingItem) : undefined}
-            quantityLeft={editingItem?.quantity ?? 0}
+            initialValues={editingItemValues}
+            stock={editingItem ? getItemStockSummary(editingItem.id, summaries) : undefined}
             isSubmitting={createItem.isPending || updateItem.isPending}
             submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.addItem")}
             onSubmit={saveItem}
@@ -397,24 +430,14 @@ export function InventoryItemsWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("inventory.delete.itemsTitle")}</DialogTitle>
-            <DialogDescription>
-              {Array.isArray(deleteTarget)
-                ? t("inventory.delete.itemsDescription", { count: deleteTarget.length })
-                : t("inventory.delete.itemDescription", { name: deleteTarget?.item ?? "" })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              {t("common.actions.cancel")}
-            </Button>
-            <ConfirmDeleteButton isPending={deleteItems.isPending} onClick={confirmDelete} />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <InventoryActiveToggleDialog
+        target={toggleTarget}
+        copyKey="inventory.activeToggle.items"
+        getName={(item) => item.name}
+        isPending={setItemsActive.isPending}
+        onConfirm={confirmToggleActive}
+        onOpenChange={(open) => !open && setToggleTarget(null)}
+      />
 
       <Dialog open={documentDialog === "receipt"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
@@ -424,17 +447,17 @@ export function InventoryItemsWorkspace() {
           <InventoryReceiptForm
             items={items}
             suppliers={suppliers}
-            submitLabel={t("inventory.actions.saveReceipt")}
+            holders={holders}
+            submitLabel={t("inventory.actions.saveDraft")}
             isSubmitting={createReceipt.isPending}
             onCancel={() => setDocumentDialog(null)}
             onSubmit={async (values) => {
               try {
                 await createReceipt.mutateAsync(values);
-                const item = items.find((entry) => entry.id === values.itemId);
-                notifyAdded(t("inventory.references.receipt"), item?.item ?? values.itemId);
+                notifyAdded(t("inventory.references.receipt"), t("inventory.documentStatuses.DRAFT"));
                 setDocumentDialog(null);
-              } catch (error) {
-                setFormError(toErrorMessage(error));
+              } catch (saveError) {
+                notifyError(toErrorMessage(saveError));
               }
             }}
           />
@@ -448,17 +471,17 @@ export function InventoryItemsWorkspace() {
           </DialogHeader>
           <InventoryDispatchForm
             items={items}
-            submitLabel={t("inventory.actions.saveDispatch")}
+            holders={holders}
+            submitLabel={t("inventory.actions.saveDraft")}
             isSubmitting={createDispatch.isPending}
             onCancel={() => setDocumentDialog(null)}
             onSubmit={async (values) => {
               try {
                 await createDispatch.mutateAsync(values);
-                const item = items.find((entry) => entry.id === values.itemId);
-                notifyAdded(t("inventory.references.dispatch"), item?.item ?? values.itemId);
+                notifyAdded(t("inventory.references.dispatch"), t("inventory.documentStatuses.DRAFT"));
                 setDocumentDialog(null);
-              } catch (error) {
-                setFormError(toErrorMessage(error));
+              } catch (saveError) {
+                notifyError(toErrorMessage(saveError));
               }
             }}
           />
@@ -472,6 +495,7 @@ export function InventoryItemsWorkspace() {
           </DialogHeader>
           <InventoryAdjustmentForm
             items={items}
+            holders={holders}
             submitLabel={t("inventory.actions.submitAdjustment")}
             isSubmitting={createAdjustment.isPending}
             onCancel={() => setDocumentDialog(null)}
@@ -479,16 +503,15 @@ export function InventoryItemsWorkspace() {
               try {
                 await createAdjustment.mutateAsync(values);
                 const item = items.find((entry) => entry.id === values.itemId);
-                notifyAdded(t("inventory.references.adjustment"), item?.item ?? "");
+                notifyAdded(t("inventory.references.adjustment"), item?.name ?? "");
                 setDocumentDialog(null);
-              } catch (error) {
-                setFormError(toErrorMessage(error));
+              } catch (saveError) {
+                notifyError(toErrorMessage(saveError));
               }
             }}
           />
         </DialogContent>
       </Dialog>
-      {formError ? <p className="sr-only">{formError}</p> : null}
     </div>
   );
 }

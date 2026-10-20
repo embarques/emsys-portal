@@ -1,19 +1,26 @@
+export type WorkflowWriteMethod = 'post' | 'patch' | 'put' | 'delete';
+
 type WorkflowWrite = {
-  resource: string;
-  action?: string;
-  update?: boolean;
+  method: WorkflowWriteMethod;
+  /** Swagger requires `If-Match` for draft updates and most state commands. */
+  versioned: boolean;
   version?: number;
   idempotencyKey: string;
 };
 
-/** Swagger requires a version for draft PATCH, posting and cancellation. */
+export const VERSION_REQUIRED_ERROR = 'inventory.operations.errors.versionRequired';
+
+export function isWorkflowVersion(version: unknown): version is number {
+  return typeof version === 'number' && Number.isSafeInteger(version) && version >= 0;
+}
+
+/** Builds `If-Match` / `Idempotency-Key` headers; fails closed when a required version is missing. */
 export function workflowWriteHeaders(input: WorkflowWrite): Record<string, string> {
-  const draftCommand = ['receipts', 'dispatches'].includes(input.resource)
-    && ['post', 'cancel'].includes(input.action ?? '');
-  if ((input.update || draftCommand) && (!Number.isSafeInteger(input.version) || Number(input.version) < 1)) {
-    throw new Error('Reload this record to obtain its current version before saving, posting or cancelling.');
+  if (input.versioned && !isWorkflowVersion(input.version)) {
+    throw new Error(VERSION_REQUIRED_ERROR);
   }
-  const headers: Record<string, string> = { 'Idempotency-Key': input.idempotencyKey };
-  if (input.version !== undefined) headers['If-Match'] = String(input.version);
+  const headers: Record<string, string> = {};
+  if (input.method === 'post' || input.method === 'delete') headers['Idempotency-Key'] = input.idempotencyKey;
+  if (input.versioned) headers['If-Match'] = String(input.version);
   return headers;
 }

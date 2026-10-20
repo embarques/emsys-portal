@@ -1,165 +1,166 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
-export type InventoryItemRef = {
-  id: string;
-  item: string;
+import { toDateTimeLocalInput } from "@/lib/inventory/utils/date-time";
+import { minorToUsdInput } from "@/lib/inventory/utils/money";
+
+import {
+  createInventoryLineKey,
+  type InventoryAuditFields,
+  type InventoryDocumentStatus,
+  type InventoryVersioned,
+} from "./common";
+
+/** Fields shared by versioned stock documents (receipts, dispatches). */
+type InventoryDocumentBase = ApiTableRecord &
+  InventoryAuditFields &
+  InventoryVersioned & {
+    id: string;
+    status: InventoryDocumentStatus;
+    notes: string;
+    postedAt: string;
+    postedBy: string;
+    /** Set when this document corrects an earlier posted one. */
+    correctsSourceId: string;
+  };
+
+export type InventoryReceiptLine = {
+  id?: string;
+  itemId: string;
+  quantity: number;
+  unitCostMinor: number;
 };
 
-export type InventorySupplierRef = {
-  id: string;
-  companyName: string;
+/** Purchase received into a warehouse (`inventory.Receipt`). Posting increases stock and valuation. */
+export type InventoryReceipt = InventoryDocumentBase & {
+  supplierId: string;
+  toHolderId: string;
+  receivedAt: string;
+  lines: InventoryReceiptLine[];
+};
+
+export type InventoryDispatchLine = {
+  id?: string;
+  itemId: string;
+  quantity: number;
+};
+
+/** Warehouse → custodian transfer (`inventory.Dispatch`). Records no revenue. */
+export type InventoryDispatch = InventoryDocumentBase & {
+  fromHolderId: string;
+  toHolderId: string;
+  assigneeEmployeeId: string;
+  /** Daily route context only; the destination is always `toHolderId`. */
+  dailyRouteId: string;
+  dispatchedAt: string;
+  lines: InventoryDispatchLine[];
+};
+
+export type ReceiptLineFormValues = {
+  key: string;
+  id?: string;
+  itemId: string;
+  quantity: string;
+  /** USD text; converted exactly to `unitCostMinor`. */
+  unitCost: string;
 };
 
 export type ReceiptFormValues = {
+  supplierId: string;
+  toHolderId: string;
+  /** `datetime-local` value; sent as a UTC instant. */
+  receivedAt: string;
+  notes: string;
+  lines: ReceiptLineFormValues[];
+};
+
+export type DispatchLineFormValues = {
+  key: string;
+  id?: string;
   itemId: string;
   quantity: string;
-  averageCost: string;
-  supplierId: string;
-  receivedAt: string;
-};
-
-export type InventoryReceipt = ApiTableRecord & {
-  id: string;
-  itemId: string;
-  item?: InventoryItemRef;
-  quantity: number;
-  averageCost: number;
-  supplierId: string;
-  supplier?: InventorySupplierRef;
-  receivedAt: string;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
-};
-
-export type InventoryDispatchAssigneeSource = "employee" | "route";
-
-/** Employee or daily vehicle-route. Same shape as invoice `receivedBy`. */
-export type InventoryDispatchTo = {
-  id: string | number;
-  name: string;
-  route?: { id: string | number; name: string };
 };
 
 export type DispatchFormValues = {
-  itemId: string;
-  quantity: string;
-  incomeGained: string;
+  fromHolderId: string;
+  toHolderId: string;
+  assigneeEmployeeId: string;
+  dailyRouteId: string;
+  /** `datetime-local` value; sent as a UTC instant. */
   dispatchedAt: string;
-  /** Portal-only so the form can pick employee vs route. Do not persist. */
-  assigneeSource: InventoryDispatchAssigneeSource;
-  employeeId: string;
-  employeeName: string;
-  routeId: string;
-  routeName: string;
-  routeCrewId: string;
-  routeCrewName: string;
+  notes: string;
+  lines: DispatchLineFormValues[];
 };
 
-export type InventoryDispatch = ApiTableRecord & {
-  id: string;
-  itemId: string;
-  item?: InventoryItemRef;
-  quantity: number;
-  incomeGained: number;
-  dispatchedAt: string;
-  dispatchedTo: InventoryDispatchTo;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
-};
+export function createEmptyReceiptLine(): ReceiptLineFormValues {
+  return { key: createInventoryLineKey(), itemId: "", quantity: "", unitCost: "" };
+}
 
-export function createEmptyReceiptForm(receivedAt = ""): ReceiptFormValues {
+export function createEmptyDispatchLine(): DispatchLineFormValues {
+  return { key: createInventoryLineKey(), itemId: "", quantity: "" };
+}
+
+export function createEmptyReceiptForm(receivedAt = toDateTimeLocalInput()): ReceiptFormValues {
   return {
-    itemId: "",
-    quantity: "",
-    averageCost: "",
     supplierId: "",
+    toHolderId: "",
     receivedAt,
+    notes: "",
+    lines: [createEmptyReceiptLine()],
+  };
+}
+
+export function createEmptyDispatchForm(dispatchedAt = toDateTimeLocalInput()): DispatchFormValues {
+  return {
+    fromHolderId: "",
+    toHolderId: "",
+    assigneeEmployeeId: "",
+    dailyRouteId: "",
+    dispatchedAt,
+    notes: "",
+    lines: [createEmptyDispatchLine()],
   };
 }
 
 export function receiptToFormValues(receipt: InventoryReceipt): ReceiptFormValues {
   return {
-    itemId: receipt.itemId,
-    quantity: String(receipt.quantity),
-    averageCost: receipt.averageCost > 0 ? String(receipt.averageCost) : "",
     supplierId: receipt.supplierId,
-    receivedAt: receipt.receivedAt.slice(0, 10),
-  };
-}
-
-export function createEmptyDispatchForm(dispatchedAt = ""): DispatchFormValues {
-  return {
-    itemId: "",
-    quantity: "",
-    incomeGained: "",
-    dispatchedAt,
-    assigneeSource: "employee",
-    employeeId: "",
-    employeeName: "",
-    routeId: "",
-    routeName: "",
-    routeCrewId: "",
-    routeCrewName: "",
+    toHolderId: receipt.toHolderId,
+    receivedAt: toDateTimeLocalInput(receipt.receivedAt),
+    notes: receipt.notes,
+    lines: receipt.lines.map((line, index) => ({
+      key: line.id ?? `line-${index}`,
+      id: line.id,
+      itemId: line.itemId,
+      quantity: String(line.quantity),
+      unitCost: minorToUsdInput(line.unitCostMinor),
+    })),
   };
 }
 
 export function dispatchToFormValues(dispatch: InventoryDispatch): DispatchFormValues {
-  const isRoute = isInventoryDispatchToRoute(dispatch.dispatchedTo);
   return {
-    ...createEmptyDispatchForm(dispatch.dispatchedAt.slice(0, 10)),
-    itemId: dispatch.itemId,
-    quantity: String(dispatch.quantity),
-    incomeGained: dispatch.incomeGained > 0 ? String(dispatch.incomeGained) : "",
-    assigneeSource: isRoute ? "route" : "employee",
-    ...(isRoute
-      ? {
-          routeId: String(dispatch.dispatchedTo.id),
-          routeName: dispatch.dispatchedTo.name,
-          routeCrewId: dispatch.dispatchedTo.route ? String(dispatch.dispatchedTo.route.id) : "",
-          routeCrewName: dispatch.dispatchedTo.route?.name ?? "",
-        }
-      : {
-          employeeId: String(dispatch.dispatchedTo.id),
-          employeeName: dispatch.dispatchedTo.name,
-        }),
+    fromHolderId: dispatch.fromHolderId,
+    toHolderId: dispatch.toHolderId,
+    assigneeEmployeeId: dispatch.assigneeEmployeeId,
+    dailyRouteId: dispatch.dailyRouteId,
+    dispatchedAt: toDateTimeLocalInput(dispatch.dispatchedAt),
+    notes: dispatch.notes,
+    lines: dispatch.lines.map((line, index) => ({
+      key: line.id ?? `line-${index}`,
+      id: line.id,
+      itemId: line.itemId,
+      quantity: String(line.quantity),
+    })),
   };
 }
 
-function looksLikeDailyRouteId(id: unknown): boolean {
-  if (id == null || id === "") return false;
-  return /^[a-f\d]{24}$/i.test(String(id).trim());
+export function isInventoryDocumentDraft(document: { status: InventoryDocumentStatus }): boolean {
+  return document.status === "DRAFT";
 }
 
-export function isInventoryDispatchToRoute(value: InventoryDispatchTo): boolean {
-  return Boolean(value.route) || looksLikeDailyRouteId(value.id);
+export function sumReceiptLinesMinor(lines: InventoryReceiptLine[]): number {
+  return lines.reduce((sum, line) => sum + line.quantity * line.unitCostMinor, 0);
 }
 
-export function getInventoryDispatchToLabel(value: InventoryDispatchTo | null | undefined): string {
-  return value?.name?.trim() || "";
-}
-
-export function dispatchedToFromFormValues(values: DispatchFormValues): InventoryDispatchTo | null {
-  if (values.assigneeSource === "route") {
-    const routeId = values.routeId.trim();
-    if (!routeId) return null;
-    const crewId = values.routeCrewId.trim();
-    return {
-      id: routeId,
-      name: values.routeName.trim() || routeId,
-      ...(crewId
-        ? { route: { id: crewId, name: values.routeCrewName.trim() || crewId } }
-        : {}),
-    };
-  }
-
-  const employeeId = values.employeeId.trim();
-  if (!employeeId) return null;
-  const numericId = Number(employeeId);
-  return {
-    id: Number.isFinite(numericId) ? numericId : employeeId,
-    name: values.employeeName.trim() || employeeId,
-  };
+export function sumLineQuantities(lines: { quantity: number }[]): number {
+  return lines.reduce((sum, line) => sum + line.quantity, 0);
 }

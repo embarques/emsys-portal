@@ -16,11 +16,13 @@ import {
   previewLegacyPickupSync,
   retryOrderLegacySync,
   setOrdersCompleted,
+  setPickupOrderNumbers,
   syncLegacyPickups,
   unassignAllPickupsFromRoute,
   unassignOrdersFromRoutes,
   unassignPickupsFromRoute,
   updateOrder,
+  type PickupOrderNumberUpdate,
 } from "@/lib/orders/api/orders-api";
 import {
   buildOrderStatsCountParams,
@@ -384,6 +386,16 @@ export function useAssignPickupsToRoute() {
   return useMutation({
     mutationFn: ({ routeId, pickupIds }: { routeId: string; pickupIds: number[] }) =>
       assignPickupsToRoute(routeId, pickupIds),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+/** Save each stop's position on its route (`PUT /pickups/{id}` with `orderNumber`). */
+export function useFinalizePickupRouteOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (updates: PickupOrderNumberUpdate[]) => setPickupOrderNumbers(updates),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }

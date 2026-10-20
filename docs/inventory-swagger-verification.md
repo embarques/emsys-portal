@@ -1,67 +1,64 @@
 # Inventory Swagger verification
 
 Source: [live Swagger JSON](https://api.embarqueros.com/swagger/doc.json), loaded
-from the [Swagger UI initializer](https://api.embarqueros.com/swagger/swagger-initializer.js).
-A trimmed snapshot, including its retrieval timestamp, is stored in
-`tests/fixtures/inventory-swagger-contract.json`. Swagger version: 2.0; API version:
-0.1.0; host: `api.embarqueros.com`; base path: `/v1`.
+from the [Swagger UI](https://api.embarqueros.com/swagger/index.html). A trimmed
+snapshot with its retrieval timestamp is stored in
+`tests/fixtures/inventory-swagger-contract.json`. Swagger 2.0; API version 0.1.0;
+host `api.embarqueros.com`; base path `/v1`.
 
-This is a documentation/contract comparison. No authenticated records were read,
-created, posted, cancelled or modified. Absence from Swagger means **undocumented**;
-it does not prove a route is absent from the running server.
+This is a documentation/contract comparison. Unauthenticated `GET` requests
+confirmed that every documented route exists on the running server (HTTP 401
+rather than 404). No authenticated records were read, created, posted, cancelled
+or modified.
 
 ## Result
 
-The complete `inventory.md` workflow is **not verified as deployable**. Swagger
-contains 22 inventory paths / 31 operations, covering catalog, suppliers, holders,
-stock, receipts and dispatches. Keep the workflow deployment flag disabled until
-the remaining contracts and authenticated acceptance tests are resolved.
+Swagger now documents the full `inventory.md` model: 96 inventory-related paths /
+123 operations, covering catalog, prices, suppliers, holders (stock, movements,
+custody, reassignment), stock, receipts, dispatches, returns, dispositions, counts,
+adjustments, sales reports, payments and allocations, cash handovers, collection
+obligations and settlements, closeouts (preview, close, reopen, revisions), the four
+inventory reports, `/route-crews`, `/daily-routes`, `/audit-events` and
+`/journal-entries`. The portal now targets those paths.
 
-| Area | Published Swagger | Workspace finding |
+| Area | Published Swagger | Portal |
 | --- | --- | --- |
-| Base URL | `/v1` | Use configured API base URL; do not add `/api/v1` in feature paths. |
-| Items/suppliers/holders | `/inventory/items`, `/inventory/suppliers`, `/inventory/holders` | Corrected the new workspace's root-level paths. |
-| Receipts/dispatches | `/inventory/receipts`, `/inventory/dispatches`; POST create, GET detail, PATCH edit, POST post/cancel | Corrected paths. Multi-line documents, version and draft/posted/cancelled states match. |
-| Default item price | Integer `defaultSellingPriceMinor` | Corrected form/payload field from `defaultSellingPrice`. |
-| Holder kinds | WAREHOUSE, EMPLOYEE, VEHICLE, ROUTE_CREW | Matches; daily route remains a separate dispatch context field. |
-| Draft concurrency | Required `If-Match` on PATCH, post and cancel | Added a local preflight guard for post/cancel without a valid version. |
-| Posting retry | Required `Idempotency-Key` on receipt/dispatch post | Existing key support matches; post/cancel response is only a generic success envelope. |
-| Stock | GET `/inventory/stock`, GET `/inventory/stock/{id}`, POST `/inventory/stock/search` | Workspace holder stock/movement subresources are not documented. Needs a stock adapter once filtering is confirmed. |
-| Pagination | `responses.Success`: `page`, `resultsPerPage`, `subtotal`, `total` | Workspace expects `nextCursor`; no cursor field is documented. Inventory list/search request parameters are omitted from Swagger. |
-| Errors | `responses.Error`: string `error`, `message`, `success` | Added support for string errors; structured proposal error codes/details remain unverified. |
-| Permissions | `/users/permissions` returns `{role, permissions:[{name, resourceType}]}` | Shape matches. Specific `inventory.read`, `inventory.post`, `closeout.*` grants are not documented. |
-| Authentication | Authorization / X-Company-ID security definitions | Central Axios attaches both. Swagger expresses them as separate alternatives, although its description says tenant company is required; clarify the Swagger security declaration. |
+| Base URL | `/v1` | Configured API base URL; feature paths never repeat the version. |
+| Lists | `GET` with `responses.Success` (`page`, `resultsPerPage`, `total`); filters via `POST …/search` (`query.Request`) | Page-based loading. Supply operations filters use the search DSL (`eq` filters). Null `data` is an empty page. |
+| Catalog / suppliers | `PATCH` + `If-Match`; no DELETE | Stock and Suppliers edit with PATCH and **deactivate** (`isActive: false`) instead of deleting. |
+| Receipts / dispatches | `lines[]`, `toHolderId` / `fromHolderId`, `status`, `version`; PATCH, post, cancel | Stock, Receipts and Dispatches screens create drafts and post/cancel them. Dispatches send no revenue. |
+| Adjustments | Draft + post with `If-Match` + `Idempotency-Key` | "Adjust stock" creates and posts an adjustment. |
+| Commands | `If-Match` on post/cancel/submit/receive/close/reopen/status/allocations/settlements; `Idempotency-Key` on post-type commands | Headers are derived per command; the contract test compares them with Swagger's required headers. |
+| Updates | PATCH for items, suppliers, receipts, dispatches; PUT for route crews, daily routes | Matches. Returns, dispositions, counts, adjustments and sales reports have no update route, so drafts are cancelled and recreated. |
+| Enums | HolderType, StockCondition, PaymentMethod/Status, HandoverStatus (`PENDING`/`RECEIVED`), AllocationTarget (`SALES_REPORT`/`COLLECTION_OBLIGATION`), DispositionType, PricingMode | Matches; `SOLD` dispositions are never entered manually. |
+| Errors | `responses.APIResponse`: string `error`, `message`, `success` | Shown as returned. |
+| Permissions | `inventory.read`, `sales.read`, `payments.read`, `payments.allocate`, `payments.handover`, `payments.handover.receive`, `collections.read`, `closeout.read`, `closeout.reopen`, `reports.read`, `audit.read`, `routes.read` | Supply operations gates on these; other write capabilities follow `inventory.md`. The Stock/Receipts/Dispatches/Suppliers screens keep their existing `canList…`/`canUpdate…` grants (post/cancel use the update grant). |
 
-## Not documented in the published schema
+## Still unconfirmed
 
-- Returns, dispositions, physical counts and adjustments.
-- Supply sales reports, payments, allocations, cash handovers, collection obligations
-  and settlements.
-- Closeout creation, preview, close, reopen and revisions.
-- Holder stock/movement subresources, custody assignments and administrative stock
-  reassignment.
-- Item price-history endpoints.
-- `/route-crews` and `/daily-routes`. Existing `/routes` and `/vehicle-routes` use
-  different payloads, so changing names alone would not integrate them.
-- Inventory stock valuation, sales, discrepancy and obligation report endpoints;
-  `/audit-events` and `/journal-entries`. Existing report-generation, user-activity
-  and journal routes are not assumed to be interchangeable.
+- Swagger leaves most write capabilities as "the documented named capability".
+  `inventory.create`, `inventory.post`, `inventory.adjust`, `inventory.count`,
+  `catalog.manage`, `sales.record`, `sales.post`, `payments.record`,
+  `payments.verify`, `payments.manage`, `collections.manage`, `collections.settle`,
+  `closeout.record`, `closeout.finalize`, `inventory.holder.manage`,
+  `inventory.reassign` and `routes.manage` come from `inventory.md`.
+- Crew `role` is a free string; the portal offers `driver`, `appraiser`, `helper`.
+- Whether entity versions start at 0 or 1. The portal accepts any non-negative
+  integer and blocks commands only when the version is missing.
+- Holder `entityId` for vehicles uses the vehicle record `id`.
+- Supported search/sort fields are not listed in Swagger.
 
-The proposal's allocation target type and handover statuses cannot be confirmed
-because those operations/models are not present in this Swagger document.
+## Checks
 
-## Existing portal compatibility
+- `tests/unit/inventory-swagger-contract.test.mjs`: every workflow resource, create,
+  edit method, child list and command route exists with Swagger's method and
+  required headers; create bodies only use documented properties; select options
+  match Swagger enums; legacy screens use no undocumented DELETE/PUT.
+- `tests/unit/inventory-api.test.mjs`: the Stock/Receipts/Dispatches/Suppliers API
+  module sends documented multi-line payloads, `If-Match` / `Idempotency-Key`
+  headers, deactivation instead of delete, and reads the nested `audit` block.
+- `tests/unit/inventory-workflow.test.mjs`: business rules (multi-line dispatch,
+  exact cents, damage resolution, price groups, closeout reconciliation, PUT
+  preservation).
 
-The original inventory adapter also needs migration. It still parses single-item
-receipt/dispatch records and writes fields such as `incomeGained` / `dispatchedTo`,
-while Swagger now describes `lines[]`, `fromHolderId`, `toHolderId`, `status` and
-`version`. Its PUT and DELETE operations are not documented for these inventory
-resources; Swagger exposes PATCH and draft cancellation instead. The new feature
-flag does not make those existing screens compatible with the changed contract.
-
-## Checks added
-
-`tests/unit/inventory-swagger-contract.test.mjs` compares the supported workspace
-paths and item payload against the captured Swagger subset and verifies that
-posting/cancellation include its required headers. Run together with the workflow
-unit tests. These are local contract checks, not production transaction tests.
+These are local contract checks, not production transaction tests.

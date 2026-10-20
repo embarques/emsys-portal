@@ -7,66 +7,97 @@ import {
   RecordViewSheetDetailRow,
   RecordViewSheetHeader,
   RecordViewSheetSection,
-  RecordViewSheetActions,
 } from "@/components/app-shell/record-view-sheet";
+import { InventoryRecordActions } from "@/components/inventory/inventory-record-actions";
+import { InventoryDocumentStatusBadge } from "@/components/inventory/inventory-status-badge";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
-import { formatInventoryDate, formatInventoryMoney, getReceiptItemLabel, getReceiptSupplierLabel } from "@/lib/inventory/display";
+import {
+  formatInventoryDateTime,
+  formatInventoryMinor,
+  getHolderNameById,
+  getItemNameById,
+  getSupplierNameById,
+} from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types";
-import type { InventoryReceipt } from "@/lib/inventory/types/documents";
+import { sumLineQuantities, sumReceiptLinesMinor, type InventoryReceipt } from "@/lib/inventory/types/documents";
+import type { InventoryHolder } from "@/lib/inventory/types/holders";
 import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 
 type InventoryReceiptViewSheetProps = {
   receipt: InventoryReceipt | null;
   items: InventoryItem[];
   suppliers: InventorySupplier[];
+  holders: InventoryHolder[];
   open: boolean;
+  isBusy?: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit?: (receipt: InventoryReceipt) => void;
-  onDelete?: (receipt: InventoryReceipt) => void;
+  onPost?: (receipt: InventoryReceipt) => void;
+  onCancelDraft?: (receipt: InventoryReceipt) => void;
 };
 
 export function InventoryReceiptViewSheet({
   receipt,
   items,
   suppliers,
+  holders,
   open,
+  isBusy = false,
   onOpenChange,
   onEdit,
-  onDelete,
+  onPost,
+  onCancelDraft,
 }: InventoryReceiptViewSheetProps) {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
   if (!receipt) return null;
-
-  const itemLabel = getReceiptItemLabel(receipt, items);
-  const supplierLabel = getReceiptSupplierLabel(receipt, suppliers);
+  const isDraft = receipt.status === "DRAFT";
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={itemLabel}
+          title={getSupplierNameById(receipt.supplierId, suppliers) || t("inventory.references.receipt")}
           description={t("inventory.references.receipt")}
         />
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("inventory.form.sections.received")}>
-            <RecordViewSheetDetailRow label={t("inventory.form.fields.quantityReceived")} value={String(receipt.quantity)} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.averageCost")} value={formatInventoryMoney(receipt.averageCost)} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.supplier")} value={supplierLabel} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.date")} value={formatInventoryDate(receipt.receivedAt)} />
+          <RecordViewSheetSection title={t("inventory.form.sections.header")}>
+            <RecordViewSheetDetailRow label={t("inventory.columns.status")} value={<InventoryDocumentStatusBadge status={receipt.status} />} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.warehouse")} value={getHolderNameById(receipt.toHolderId, holders) || dash} />
+            <RecordViewSheetDetailRow label={t("inventory.form.fields.receivedAt")} value={formatInventoryDateTime(receipt.receivedAt)} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.postedAt")} value={receipt.postedAt ? formatInventoryDateTime(receipt.postedAt) : dash} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.postedBy")} value={receipt.postedBy || dash} />
+            <RecordViewSheetDetailRow label={t("inventory.form.fields.notes")} value={receipt.notes || dash} />
+          </RecordViewSheetSection>
+          <RecordViewSheetSection title={t("inventory.view.lines")}>
+            {receipt.lines.map((line, index) => (
+              <RecordViewSheetDetailRow
+                key={line.id ?? `${line.itemId}-${index}`}
+                label={getItemNameById(line.itemId, items)}
+                value={`${line.quantity} × ${formatInventoryMinor(line.unitCostMinor)} = ${formatInventoryMinor(line.quantity * line.unitCostMinor)}`}
+              />
+            ))}
+            <RecordViewSheetDetailRow
+              label={t("inventory.form.totalCost")}
+              value={`${sumLineQuantities(receipt.lines)} · ${formatInventoryMinor(sumReceiptLinesMinor(receipt.lines))}`}
+            />
           </RecordViewSheetSection>
           <RecordViewSheetSection title={t("inventory.view.audit")}>
             <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDateTime(receipt.createdAt)} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.userCreated")} value={receipt.createdBy} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.userCreated")} value={receipt.createdBy || dash} />
             <RecordViewSheetDetailRow label={t("inventory.columns.dateModified")} value={formatAuditDateTime(receipt.updatedAt)} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.userModified")} value={receipt.updatedBy} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.userModified")} value={receipt.updatedBy || dash} />
           </RecordViewSheetSection>
+          {!isDraft ? (
+            <p className="px-6 pb-4 text-xs text-muted-foreground">{t("inventory.form.workflow.readOnlyPosted")}</p>
+          ) : null}
         </RecordViewSheetBody>
-        <RecordViewSheetActions
-          editLabel={t("common.actions.edit")}
-          deleteLabel={t("common.actions.delete")}
-          onEdit={onEdit ? () => onEdit(receipt) : undefined}
-          onDelete={onDelete ? () => onDelete(receipt) : undefined}
+        <InventoryRecordActions
+          disabled={isBusy}
+          onPost={isDraft && onPost ? () => onPost(receipt) : undefined}
+          onEdit={isDraft && onEdit ? () => onEdit(receipt) : undefined}
+          onCancelDraft={isDraft && onCancelDraft ? () => onCancelDraft(receipt) : undefined}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

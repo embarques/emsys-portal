@@ -1,3 +1,4 @@
+import { isApiGeoLocation } from "@/lib/api/payloads";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -68,6 +69,16 @@ export async function optimizeSingleRoute(
 ): Promise<OptimizeRouteResult> {
   if (request.stops.length < 2) {
     throw new Error("At least two stops are required to optimize a route.");
+  }
+
+  for (const [label, address] of [
+    ["start", request.start],
+    ["end", request.end],
+    ...request.stops.map((stop, index) => [`stops[${index}]`, stop] as const),
+  ] as const) {
+    if (!isApiGeoLocation(address.location)) {
+      throw new Error(`Route optimizer ${label} requires a GeoJSON Point with valid [longitude, latitude] coordinates.`);
+    }
   }
 
   const response = await apiClient.post<PaginatedApiEnvelope<ApiOptimizeResponse>>(
