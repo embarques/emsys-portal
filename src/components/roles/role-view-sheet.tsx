@@ -50,11 +50,6 @@ export function RoleViewSheet({
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("roles.view.sections.role")}>
             <RecordViewSheetDetailRow label={t("roles.view.roleId")} value={truncateRoleId(role.roleId)} />
-            <RecordViewSheetDetailRow label={t("roles.view.roleName")} value={role.name} />
-            <RecordViewSheetDetailRow
-              label={t("roles.view.permissionCount")}
-              value={role.permissions.length}
-            />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection padding="relaxed">

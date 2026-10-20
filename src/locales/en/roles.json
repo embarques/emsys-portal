@@ -107,8 +107,6 @@
       "audit": "Audit"
     },
     "roleId": "Role ID",
-    "roleName": "Role name",
-    "permissionCount": "Permission count",
     "permissionsAssigned": "{{count}} permissions assigned",
     "edit": "Edit role"
   },

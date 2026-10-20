@@ -15,7 +15,8 @@ export const ORDER_API_TABLE_FIELDS = [
   { field: "legacySyncStatus", defaultVisible: false },
   { field: "legacySyncedAt", format: "date", defaultVisible: false },
   { field: "purpose", defaultVisible: false },
-  { field: "receivers", defaultVisible: false },
+  // An appointment can have several receivers; they are shown in the view sheet instead.
+  { field: "receivers", column: false },
   { field: "route", columnId: "route.name", defaultVisible: false },
   { field: "routeNumber", defaultVisible: false },
   { field: "sender", columnId: "sender.name" },

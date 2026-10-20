@@ -84,19 +84,6 @@ export function EmployeeViewSheet({
               label={t("employees.view.employeeId")}
               value={formatEmployeeId(employee.id)}
             />
-            <RecordViewSheetDetailRow label={t("employees.columns.name")} value={employee.name} />
-            <RecordViewSheetDetailRow
-              label={t("employees.columns.title")}
-              value={employeeLabels.title(employee.title) || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.columns.department")}
-              value={employeeLabels.department(employee.department) || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.columns.active")}
-              value={employeeLabels.active(employee.active)}
-            />
             <RecordViewSheetDetailRow
               label={t("employees.columns.startDate")}
               value={employee.startDate ? formatAuditDate(employee.startDate) : dash}

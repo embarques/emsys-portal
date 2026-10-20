@@ -154,6 +154,7 @@
       "customersTitle": "02 · Confirm customer details",
       "senderHint": "Search by name or phone, then confirm the visit address.",
       "receiverHint": "Add a receiver if this visit needs one.",
+      "receiversScrollHint": "{{count}} receivers — scroll down to see them all.",
       "visitTitle": "03 · Visit details",
       "visitHint": "Record the purpose of the visit.",
       "commentsEmpty": "Add at least one comment to describe what the customer needs."
@@ -244,6 +245,7 @@
     "senderAddress": "{{party}} address",
     "senderPhones": "{{party}} phones",
     "commentsCount": "Comments ({{count}})",
+    "receiversCount": "Receivers ({{count}})",
     "primaryAddress": "Primary address",
     "additionalAddress": "Additional address {{index}}",
     "phonePrimary": "{{type}} (primary)",

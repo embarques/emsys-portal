@@ -139,7 +139,7 @@ export function ContainerForm({
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="itn">{t("containers.form.fields.itn")}</Label>
                 <Input
                   id="itn"
@@ -174,7 +174,7 @@ export function ContainerForm({
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="cost">{t("containers.form.fields.cost")}</Label>
                 <Input
                   id="cost"

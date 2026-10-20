@@ -107,8 +107,6 @@
       "audit": "Auditoría"
     },
     "roleId": "ID de rol",
-    "roleName": "Nombre del rol",
-    "permissionCount": "Cantidad de permisos",
     "permissionsAssigned": "{{count}} permisos asignados",
     "edit": "Editar rol"
   },

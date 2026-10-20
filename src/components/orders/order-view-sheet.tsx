@@ -100,6 +100,8 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
 
   if (!order) return null;
 
+  const receivers = getOrderReceivers(order);
+
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
@@ -147,12 +149,26 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
             )}
           </RecordViewSheetSection>
 
-          {getOrderReceivers(order).map((receiver, index) => (
-            <RecordViewSheetSection key={`${receiver.id}-${index}`} title={`${t("orders.columns.receiver")} ${index + 1}`} padding="relaxed">
-              <p className="text-sm font-medium">{receiver.name}</p>
-              <CustomerContactSummary customer={receiver} addressIndex={0} />
-            </RecordViewSheetSection>
-          ))}
+          <RecordViewSheetSection
+            title={
+              receivers.length > 1
+                ? t("orders.view.receiversCount", { count: receivers.length })
+                : t("orders.columns.receiver")
+            }
+            padding="relaxed"
+          >
+            {receivers.length > 0 ? (
+              <ul className="space-y-2">
+                {receivers.map((receiver, index) => (
+                  <li key={`${receiver.id}-${index}`}>
+                    <CustomerContactSummary customer={receiver} addressIndex={0} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("orders.empty.noReceiver")}</p>
+            )}
+          </RecordViewSheetSection>
 
           <SenderOrderHistorySection
             sender={order.sender}

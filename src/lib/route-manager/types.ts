@@ -3,6 +3,7 @@ import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type RouteVehicleRef = {
   id: string;
@@ -180,6 +181,7 @@ export type RouteListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: ApiListTextSearch;
+  filterRows?: TableFilterRowState[];
   branchCode?: string;
 };
 
@@ -191,10 +193,9 @@ export const DEFAULT_ROUTE_LIST_PARAMS = {
   sort: "date:desc",
 } as const satisfies RouteListParams;
 
-/** Fields the bar search fans out across with an OR group. */
+/** Fields the bar search fans out across with an OR group (must be in the `/routes/search` allow-list). */
 export const ROUTE_BAR_OR_SEARCH_FIELDS = [
   "name",
-  "routeId",
   "branch.code",
   "employees.name",
 ] as const;

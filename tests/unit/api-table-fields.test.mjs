@@ -44,6 +44,14 @@ test("existing business renderers and API aliases remain one column per concept"
   assert.equal(columns[0].defaultVisible, false);
 });
 
+test("fields opted out with column: false get no generated column and are not captured", () => {
+  const fields = [{ field: "receivers", column: false }, { field: "updatedBy" }];
+  const columns = completeApiTableColumns([], fields, formatters);
+  assert.deepEqual(columns.map(c => c.id), ["updatedBy"]);
+  const row = captureApiTableFields({ receivers: [{ name: "Ana" }], updatedBy: "ana" }, fields);
+  assert.deepEqual(row.apiTableValues, { updatedBy: "ana" });
+});
+
 test("a conditional column absent from the base table is restored from its API field", () => {
   const fields = [{ field: "container", columnId: "container.name" }];
   const [column] = completeApiTableColumns([], fields, formatters);

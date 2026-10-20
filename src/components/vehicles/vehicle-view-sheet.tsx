@@ -45,7 +45,6 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           title={vehicle.name}
-          description={<span className="font-mono text-xs">{vehicle.vehicleId}</span>}
           meta={
             <>
               <Badge className={getFuelTypeBadgeClass(vehicle.fuelType)}>

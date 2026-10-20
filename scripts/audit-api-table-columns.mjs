@@ -24,7 +24,10 @@ for (const file of modules.filter(file => file.endsWith("/table-fields.ts"))) {
   const symbol = declaration.name.getText(ast);
   let initializer = declaration.initializer;
   while (ts.isAsExpression(initializer) || ts.isSatisfiesExpression(initializer)) initializer = initializer.expression;
-  const fields = initializer.elements.map(element => Object.fromEntries(element.properties.map(prop => [prop.name.getText(ast), prop.initializer.text])));
+  const fields = initializer.elements.map(element => Object.fromEntries(element.properties.map(prop => [
+    prop.name.getText(ast),
+    prop.initializer.kind === ts.SyntaxKind.FalseKeyword ? false : prop.initializer.text,
+  ])));
   const expected = Object.keys(definitions[definition].properties).sort();
   assert.deepEqual(fields.map(field => field.field).sort(), expected, `${definition}: table contract drifted from API definitions`);
   const component = components.find(file => read(file).includes(`, ${symbol})`));
@@ -33,7 +36,9 @@ for (const file of modules.filter(file => file.endsWith("/table-fields.ts"))) {
   assert.ok(adapter, `${symbol}: API adapter discards display values`);
   const componentSource = read(component);
   const existing = new Set([...componentSource.matchAll(/\bid:\s*"([^"]+)"/g)].map(match => match[1]));
-  const added = fields.filter(field => !existing.has(field.columnId ?? field.field)).map(field => field.field);
+  const added = fields
+    .filter(field => field.column !== false && !existing.has(field.columnId ?? field.field))
+    .map(field => field.field);
   records.push({ definition, component, fields: fields.length, added });
 }
 

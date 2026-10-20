@@ -1,5 +1,6 @@
 "use client";
 
+import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -15,9 +16,10 @@ import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { formatRecordPhoneTypeLabel, getOrderedRecordPhones } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
 import {
-  formatBranchAddress,
   formatBranchId,
   getBranchTypeBadgeClass,
+  hasBranchAddress,
+  toBranchActionAddress,
 } from "@/lib/branches/display";
 import type { Branch } from "@/lib/branches/types";
 
@@ -47,7 +49,6 @@ export function BranchViewSheet({
   const dash = t("common.empty.dash");
   const booleanLabel = (value: boolean) =>
     t(value ? "branches.enums.boolean.true" : "branches.enums.boolean.false");
-
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
@@ -79,8 +80,6 @@ export function BranchViewSheet({
               label={t("branches.view.fields.branchId")}
               value={formatBranchId(branch.id)}
             />
-            <RecordViewSheetDetailRow label={t("branches.view.fields.name")} value={branch.name} />
-            <RecordViewSheetDetailRow label={t("branches.view.fields.code")} value={branch.code || dash} />
             <RecordViewSheetDetailRow label={t("branches.view.fields.type")} value={branch.type || dash} />
             <RecordViewSheetDetailRow label={t("branches.view.fields.logo")} value={branch.logo || dash} />
             <RecordViewSheetDetailRow
@@ -115,45 +114,17 @@ export function BranchViewSheet({
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("branches.view.sections.address")}>
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.address1")}
-              value={branch.address.address1 || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.address2")}
-              value={branch.address.address2 || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.apartment")}
-              value={branch.address.apartment || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.city")}
-              value={branch.address.city || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.state")}
-              value={branch.address.state || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.zipcode")}
-              value={branch.address.zipcode || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.country")}
-              value={branch.address.country || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.fullAddress")}
-              value={formatBranchAddress(branch)}
-            />
+            {hasBranchAddress(branch) ? (
+              <AddressActionRow
+                label={t("branches.view.fields.fullAddress")}
+                address={toBranchActionAddress(branch)}
+              />
+            ) : (
+              <RecordViewSheetDetailRow label={t("branches.view.fields.fullAddress")} value={dash} />
+            )}
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("branches.view.sections.settings")}>
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.labelPrefix")}
-              value={branch.settings.labelPrefix || dash}
-            />
             <RecordViewSheetDetailRow
               label={t("branches.view.fields.defaultLabelStatus")}
               value={String(branch.settings.defaultLabelStatus)}

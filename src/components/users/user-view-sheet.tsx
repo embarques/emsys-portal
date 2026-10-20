@@ -44,7 +44,6 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           title={user.name}
-          description={user.email}
           meta={
             <>
               <Badge className={getUserRoleBadgeClass(user.role.name)}>
@@ -59,7 +58,6 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("users.view.sections.profile")}>
             <RecordViewSheetDetailRow label={t("users.view.userId")} value={truncateUserId(user.id)} />
-            <RecordViewSheetDetailRow label={t("users.view.name")} value={user.name} />
             <RecordViewSheetDetailRow label={t("users.view.email")} value={user.email} />
             <RecordViewSheetDetailRow
               label={t("users.view.status")}

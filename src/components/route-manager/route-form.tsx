@@ -180,7 +180,7 @@ export function RouteForm({
             </FormSection>
           ) : null}
 
-          <FormSection variant="card" className="h-full" icon={CircleCheck} title={t("routes.activeRoute.status")}>
+          <FormSection variant="card" className="h-full" description={t("routes.form.design.status")} icon={CircleCheck} title={t("routes.activeRoute.status")}>
             <div
               className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
               role="radiogroup"

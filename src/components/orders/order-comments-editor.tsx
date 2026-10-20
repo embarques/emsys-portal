@@ -17,6 +17,7 @@ import {
   type OrderCommentItemType,
 } from "@/lib/orders/types";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 /** Purposes that may only appear once per order. */
 const SINGLE_USE_PURPOSES = new Set<string>(["ESTIMATE", "PAYMENT", "OTHER"]);
@@ -133,7 +134,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   function mobileCommentDescription(comment: OrderCommentFormValues): string {
     if (!comment.purpose) return t("common.empty.dash");
     if (!orderCommentPurposeRequiresItem(comment.purpose)) {
-      return comment.description || t("common.empty.dash");
+      return comment.description.trim();
     }
     if (comment.itemType === "other") {
       return comment.customItem || t("common.empty.dash");
@@ -484,9 +485,11 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                         </p>
                       ) : null}
                     </div>
-                    <p className="break-words text-sm text-muted-foreground">
-                      {mobileCommentDescription(comment)}
-                    </p>
+                    {mobileCommentDescription(comment) ? (
+                      <p className="break-words text-sm text-muted-foreground">
+                        {mobileCommentDescription(comment)}
+                      </p>
+                    ) : null}
                   </div>
                 ) : (
                   <>
@@ -723,16 +726,18 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                       ) : (
                         <button
                           type="button"
-                          className={cellButtonClassName}
+                          className={cn(cellButtonClassName, "group")}
                           onDoubleClick={() => setEditing({ index, field: "note" })}
                         >
                           {comment[noteField] ? (
                             comment[noteField]
-                          ) : (
+                          ) : noteField === "customItem" ? (
                             <span className="text-muted-foreground">
-                              {noteField === "customItem"
-                                ? t("orders.comments.placeholders.customItem")
-                                : t("orders.comments.placeholders.addComment")}
+                              {t("orders.comments.placeholders.customItem")}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground opacity-0 group-focus-visible:opacity-100">
+                              {t("orders.comments.placeholders.addComment")}
                             </span>
                           )}
                         </button>

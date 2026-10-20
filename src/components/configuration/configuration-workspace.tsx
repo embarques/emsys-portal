@@ -93,7 +93,7 @@ export function ConfigurationWorkspace() {
     <div>
       <PageHeader title={t("settings.title")} description={t("settings.pages.description")} />
       <div className="mx-auto max-w-3xl space-y-6">
-        <form onSubmit={handleSubmit(save)} className="space-y-6">
+        <form onSubmit={handleSubmit(save)} className="space-y-6" data-form-autofocus="off">
         <Card>
           <CardHeader>
             <CardTitle>{t("settings.appearance.title")}</CardTitle>

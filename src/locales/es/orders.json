@@ -154,6 +154,7 @@
       "customersTitle": "02 · Confirma los datos del cliente",
       "senderHint": "Busca por nombre o teléfono y confirma la dirección de la visita.",
       "receiverHint": "Agrega un destinatario si la visita lo requiere.",
+      "receiversScrollHint": "{{count}} destinatarios: desplázate hacia abajo para verlos todos.",
       "visitTitle": "03 · Detalles de la visita",
       "visitHint": "Registra el propósito de la visita.",
       "commentsEmpty": "Agrega al menos un comentario para describir lo que necesita el cliente."
@@ -244,6 +245,7 @@
     "senderAddress": "Dirección de {{party}}",
     "senderPhones": "Teléfonos de {{party}}",
     "commentsCount": "Comentarios ({{count}})",
+    "receiversCount": "Destinatarios ({{count}})",
     "primaryAddress": "Dirección principal",
     "additionalAddress": "Dirección adicional {{index}}",
     "phonePrimary": "{{type}} (principal)",

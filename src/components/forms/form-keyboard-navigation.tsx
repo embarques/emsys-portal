@@ -27,7 +27,7 @@ export function FormKeyboardNavigation() {
         .filter(isDisplayed);
       const topDialog = dialogs.at(-1);
       const candidates = forms.filter((form) => !activatedForms.has(form) && isDisplayed(form) &&
-        (!topDialog || topDialog.contains(form)));
+        form.dataset.formAutofocus !== "off" && (!topDialog || topDialog.contains(form)));
       const ready = candidates.map((form) => ({ form, fields: getNavigableFormFields(form) }))
         .filter(({ fields }) => fields.length > 0);
       for (const { form } of ready) activatedForms.add(form);

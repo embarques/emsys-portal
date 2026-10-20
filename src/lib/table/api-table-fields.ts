@@ -8,6 +8,8 @@ export type ApiTableField = {
   format?: "date";
   /** When false, generated API columns start hidden until enabled in the Columns menu. */
   defaultVisible?: boolean;
+  /** When false, the field is documented but intentionally has no directory column. */
+  column?: false;
 };
 
 export type ApiTableRecord = {
@@ -56,7 +58,7 @@ export function captureApiTableFields(raw: unknown, fields: readonly ApiTableFie
   return {
     apiTableValues: Object.fromEntries(
       fields
-        .filter(({ field }) => Object.hasOwn(record, field) && !PRIVATE_FIELDS.test(field))
+        .filter(({ field, column }) => column !== false && Object.hasOwn(record, field) && !PRIVATE_FIELDS.test(field))
         .map(({ field }) => [field, sanitizeValue(record[field])]),
     ),
   };
@@ -109,8 +111,8 @@ export function completeApiTableColumns<T extends ApiTableRecord>(
 ): DataTableColumn<T>[] {
   const result = columns.map((column) => ({ ...column }));
   const ids = new Set(columns.map((column) => column.id));
-  for (const { field, columnId = field, format, defaultVisible = true } of fields) {
-    if (ids.has(columnId) || PRIVATE_FIELDS.test(field)) continue;
+  for (const { field, columnId = field, format, defaultVisible = true, column } of fields) {
+    if (column === false || ids.has(columnId) || PRIVATE_FIELDS.test(field)) continue;
     ids.add(columnId);
     const renderValue = (row: T) => {
       const value = row.apiTableValues && Object.hasOwn(row.apiTableValues, field)

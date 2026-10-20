@@ -286,6 +286,26 @@
       "rate": {
         "label": "Exchange rate",
         "placeholder": "Enter rate…"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter creator name…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter updater name…"
+        }
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
       }
     },
     "enums": {
@@ -473,6 +493,7 @@
       "vehicleRequired": "Vehicle is required."
     },
     "design": {
+      "status": "Set to Inactive to retire this crew without deleting it.",
       "branch": "Choose the branch this reusable crew belongs to.",
       "crew": "Select the employees in this crew. Assign their working roles when creating a daily route."
     }

@@ -11,12 +11,20 @@ import {
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
+  buildApiFilterNodeFromTableRows,
   buildApiSearchPaginationQuery,
   buildStripeStyleSearchBody,
+  coerceTypedFilterNode,
   createOrTextSearchFilterGroup,
   createTextSearchFilter,
+  isApiSearchFilter,
   type ApiSearchFilterGroup,
 } from "@/lib/api/search-query";
+import {
+  ROUTE_BOOLEAN_FIELDS,
+  ROUTE_NUMERIC_FIELDS,
+  ROUTE_TABLE_FILTER_FIELDS,
+} from "@/lib/route-manager/filter-fields";
 import { buildApiBranchDto, type ApiBranchDtoPayload } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
@@ -223,30 +231,44 @@ function buildRouteSearchBody(params: RouteListParams) {
     });
   }
 
-  if (!search?.value.trim()) {
-    return buildStripeStyleSearchBody({ sort, filterGroups });
-  }
-
-  if (search.field) {
-    const explicitFilter = createTextSearchFilter(
-      search.field,
-      search.value,
-      search.operator ?? "contains",
-    );
-    if (explicitFilter) {
-      filterGroups.push({ operator: "and", filters: [explicitFilter] });
+  if (search?.value.trim()) {
+    if (search.field) {
+      const explicitFilter = createTextSearchFilter(
+        search.field,
+        search.value,
+        search.operator ?? "contains",
+      );
+      if (explicitFilter) {
+        filterGroups.push({ operator: "and", filters: [explicitFilter] });
+      }
+    } else {
+      const orGroup = createOrTextSearchFilterGroup(
+        search.value,
+        [...ROUTE_BAR_OR_SEARCH_FIELDS],
+        search.operator ?? "contains",
+      );
+      if (orGroup) {
+        filterGroups.push(orGroup);
+      }
     }
-    return buildStripeStyleSearchBody({ sort, filterGroups });
   }
 
-  const orGroup = createOrTextSearchFilterGroup(
-    search.value,
-    [...ROUTE_BAR_OR_SEARCH_FIELDS],
-    search.operator ?? "contains",
+  const rowFilterNode = buildApiFilterNodeFromTableRows(
+    params.filterRows ?? [],
+    ROUTE_TABLE_FILTER_FIELDS,
   );
-
-  if (orGroup) {
-    filterGroups.push(orGroup);
+  const typedRowFilter = rowFilterNode
+    ? coerceTypedFilterNode(rowFilterNode, {
+        numericFields: ROUTE_NUMERIC_FIELDS,
+        booleanFields: ROUTE_BOOLEAN_FIELDS,
+      })
+    : null;
+  if (typedRowFilter) {
+    filterGroups.push(
+      isApiSearchFilter(typedRowFilter)
+        ? { operator: "and", filters: [typedRowFilter] }
+        : typedRowFilter,
+    );
   }
 
   return buildStripeStyleSearchBody({

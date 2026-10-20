@@ -25,7 +25,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+} from "@/components/app-shell/table-directory-toolbar";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -34,6 +38,13 @@ import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatBranchCodeOnly, getBranchCodeBadgeClass } from "@/lib/branches/display";
 import { useDirectoryBranchFilter } from "@/lib/branches/hooks/use-directory-branch-filter";
 import { createApiListTextSearch } from "@/lib/api/search-query";
+import {
+  countCompleteFilterRows,
+  isCompleteFilterRow,
+  type TableFilterRowState,
+} from "@/lib/table/filter-builder";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { useRouteFilterFields } from "@/lib/route-manager/hooks/use-route-filter-fields";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
@@ -70,6 +81,9 @@ export function RouteManagerWorkspace() {
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [query, setQuery] = useState("");
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const routeFilterFields = useRouteFilterFields();
   const {
     branchCode,
     selectValue,
@@ -88,16 +102,17 @@ export function RouteManagerWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Route | Route[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const listParams = useMemo(
-    () => ({
+  const listParams = useMemo(() => {
+    const completeRows = filterRows.filter((row) => isCompleteFilterRow(row));
+    return {
       ...DEFAULT_ROUTE_LIST_PARAMS,
       page,
       limit: pageLimit,
       search: createApiListTextSearch(debouncedQuery),
+      ...(completeRows.length > 0 ? { filterRows: completeRows } : {}),
       ...(branchCode.trim() ? { branchCode: branchCode.trim() } : {}),
-    }),
-    [branchCode, debouncedQuery, page, pageLimit],
-  );
+    };
+  }, [branchCode, debouncedQuery, filterRows, page, pageLimit]);
 
   const { data, isLoading, isError, error, isFetching } = useRoutes(listParams, {
     enabled: isBranchFilterReady,
@@ -122,7 +137,7 @@ export function RouteManagerWorkspace() {
     createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(debouncedQuery, branchCode),
+    buildTableSelectionResetKey(debouncedQuery, branchCode, filterRows),
     setSelectedIds,
   );
 
@@ -297,7 +312,26 @@ export function RouteManagerWorkspace() {
 
   const columnVisibility = useApiTableColumns("routes-v4", tableColumns, ROUTE_API_TABLE_FIELDS);
 
-  const hasActiveFilters = Boolean(query.trim()) || Boolean(branchCode.trim());
+  const advancedFilterCount = countCompleteFilterRows(filterRows, routeFilterFields);
+  const hasSearchOrAdvancedFilters = Boolean(query.trim()) || advancedFilterCount > 0;
+  const hasActiveFilters = hasSearchOrAdvancedFilters || Boolean(branchCode.trim());
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: assignments.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalAssignments,
+      noun: t("routes.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: isFetching || !isBranchFilterReady,
+    },
+    t,
+  );
+
+  function updateFilterRows(rows: TableFilterRowState[]) {
+    setFilterRows(rows);
+    setPage(1);
+  }
 
   return (
     <div className="flex min-h-[calc(100vh-11rem)] flex-col">
@@ -315,7 +349,9 @@ export function RouteManagerWorkspace() {
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={advancedFilterCount}
             columnLayout={columnVisibility}
             search={
               <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -347,6 +383,32 @@ export function RouteManagerWorkspace() {
                   className="max-w-full shrink-0"
                 />
               </div>
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={listSummary}
+                presets={{
+                  storageKey: "routes",
+                  rows: filterRows,
+                  fields: routeFilterFields,
+                  onApply: updateFilterRows,
+                }}
+                onClearAll={
+                  hasSearchOrAdvancedFilters
+                    ? () => {
+                        setQuery("");
+                        updateFilterRows([]);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filterRows}
+                  fields={routeFilterFields}
+                  onChange={updateFilterRows}
+                />
+              </TableFilterPanel>
             }
           />
         </CardHeader>

@@ -1,4 +1,5 @@
 import type { Branch } from "@/lib/branches/types";
+import type { CustomerCoreAddress } from "@/lib/customers/types";
 import { formatRecordPhoneList } from "@/lib/phones/phones";
 
 type BranchRef = Pick<Branch, "id" | "name" | "code">;
@@ -79,6 +80,27 @@ export function formatBranchAddress(branch: Pick<Branch, "address">): string {
   ].filter((part) => part.trim());
 
   return parts.length > 0 ? parts.join(", ") : "—";
+}
+
+/** Shapes a branch address for the shared `AddressActionRow` (copy / maps / directions). */
+export function toBranchActionAddress(branch: Pick<Branch, "address">): CustomerCoreAddress {
+  const { address } = branch;
+  return {
+    address1: address.address1,
+    address2: address.address2,
+    apartment: address.apartment,
+    city: address.city,
+    state: address.state,
+    zipcode: address.zipcode,
+    country: address.country,
+    isPrimary: true,
+    location: address.location ?? null,
+    verification: null,
+  };
+}
+
+export function hasBranchAddress(branch: Pick<Branch, "address">): boolean {
+  return formatBranchAddress(branch) !== "—";
 }
 
 export function formatBranchPhones(branch: Pick<Branch, "phones">): string {

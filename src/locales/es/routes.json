@@ -286,6 +286,26 @@
       "rate": {
         "label": "Tasa de cambio",
         "placeholder": "Ingrese la tarifa…"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Creado por",
+          "placeholder": "Ingrese el nombre del creador…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Actualizado por",
+          "placeholder": "Ingrese el nombre de quien actualizó…"
+        }
+      },
+      "createdAt": {
+        "label": "Fecha de creación",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Fecha de actualización",
+        "placeholder": "AAAA-MM-DD"
       }
     },
     "enums": {
@@ -473,6 +493,7 @@
       "vehicleRequired": "El vehículo es obligatorio."
     },
     "design": {
+      "status": "Márcala como inactiva para retirar esta cuadrilla sin eliminarla.",
       "branch": "Elige la sucursal de este equipo reutilizable.",
       "crew": "Selecciona los empleados del equipo. Asigna sus funciones al crear una ruta diaria."
     }

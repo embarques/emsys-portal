@@ -138,7 +138,6 @@
     },
     "userId": "User ID",
     "firebaseUid": "Firebase UID",
-    "name": "Name",
     "email": "Email",
     "status": "Status",
     "role": "Role",
