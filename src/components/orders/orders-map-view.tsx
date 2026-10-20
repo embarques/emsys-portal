@@ -15,6 +15,11 @@ import {
   X,
 } from "lucide-react";
 
+import { BranchForm } from "@/components/branches/branch-form";
+import { useUpdateBranch } from "@/lib/branches/hooks/use-branches";
+import { branchToFormValues, areBranchFormValuesEquivalent, type Branch, type BranchFormValues } from "@/lib/branches/types";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import {
@@ -39,7 +44,7 @@ import {
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatOrderRouteName } from "@/lib/orders/display";
 import { useOrders } from "@/lib/orders/hooks/use-orders";
-import { useOptimizeAppointmentRoute } from "@/lib/orders/hooks/use-optimize-appointment-route";
+import { BranchDepotRequiredError, useOptimizeAppointmentRoute } from "@/lib/orders/hooks/use-optimize-appointment-route";
 import {
   formatRouteDistance,
   planAppointmentRouteOptimization,
@@ -197,6 +202,22 @@ export function OrdersMapView({
   const googleMapsApiKey = useGoogleMapsApiKey();
   const { notifyError, notifySuccess } = useFeedback();
   const optimizeRouteMutation = useOptimizeAppointmentRoute();
+  const { hasPermission } = useAuth();
+  const canUpdateBranch = hasPermission(PERMISSIONS.branchesUpdate.name, PERMISSIONS.branchesUpdate.resourceType);
+  const [depotBranch, setDepotBranch] = useState<Branch | null>(null);
+  const [depotError, setDepotError] = useState<string | null>(null);
+  const updateDepotBranch = useUpdateBranch();
+
+  async function saveDepotBranch(values: BranchFormValues) {
+    if (!depotBranch || updateDepotBranch.isPending) return;
+    if (!values.address.location) { setDepotError(t("orders.optimize.errors.branchAddressMissing")); return; }
+    if (areBranchFormValuesEquivalent(values, branchToFormValues(depotBranch))) { setDepotBranch(null); return; }
+    try {
+      await updateDepotBranch.mutateAsync({ branchId: depotBranch.id, values });
+      setDepotBranch(null);
+      setDepotError(null);
+    } catch (error) { setDepotError(normalizeApiError(error).message); }
+  }
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
   const mapsLibRef = useRef<GoogleMapsCore | null>(null);
@@ -532,6 +553,11 @@ export function OrdersMapView({
       updateStopOrder(result);
       notifyOptimizedRoute(result);
     } catch (mutationError) {
+      if (mutationError instanceof BranchDepotRequiredError && canUpdateBranch) {
+        setDepotBranch(mutationError.branch);
+        setDepotError(null);
+        return;
+      }
       notifyError(resolveAppointmentRouteOptimizationErrorMessage(mutationError, t));
     }
   }
@@ -848,6 +874,18 @@ export function OrdersMapView({
         onOpenChange={setAssignRouteOpen}
         appointments={selectedAssignRouteAppointments}
       />
+
+      <Dialog open={Boolean(depotBranch)} onOpenChange={(open) => { if (!open && !updateDepotBranch.isPending) setDepotBranch(null); }}>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b px-6 py-4">
+            <DialogTitle>{t("branches.form.editTitle")}</DialogTitle>
+            <DialogDescription>{t("orders.optimize.errors.branchAddressMissing")}</DialogDescription>
+          </DialogHeader>
+          {depotBranch ? <BranchForm initialValues={branchToFormValues(depotBranch)} isEditing
+            submitLabel={t("common.actions.saveChanges")} isSubmitting={updateDepotBranch.isPending}
+            externalError={depotError} onSubmit={saveDepotBranch} onCancel={() => setDepotBranch(null)} /> : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={unassignOpen}

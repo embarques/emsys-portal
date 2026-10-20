@@ -13,6 +13,12 @@ import {
 import { queryKeys } from "@/lib/query/query-keys";
 import { optimizeSingleRoute } from "@/lib/route-optimizer/api/route-optimizer-api";
 
+import type { Branch } from "@/lib/branches/types";
+
+export class BranchDepotRequiredError extends AppointmentRouteOptimizationError {
+  constructor(readonly branch: Branch) { super("branchAddressMissing"); }
+}
+
 const BRANCH_DEPOT_STALE_TIME_MS = 5 * 60_000;
 
 /**
@@ -33,15 +39,14 @@ export function useOptimizeAppointmentRoute() {
       });
 
       const depot = buildApiAddressPayload(branch.address);
-      if (!depot?.address1) {
-        throw new AppointmentRouteOptimizationError("branchAddressMissing");
+      if (!depot?.address1 || !depot.location) {
+        throw new BranchDepotRequiredError(branch);
       }
 
       const result = await optimizeSingleRoute({
         start: depot,
         end: depot,
         stops: plan.stops.map((stop) => stop.address),
-        numRoutes: 1,
       });
 
       const stopOrder = buildAppointmentRouteStopOrder(plan, result);

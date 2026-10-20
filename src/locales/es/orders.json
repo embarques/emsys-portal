@@ -364,7 +364,7 @@
       "routeRequired": "Asigne las citas seleccionadas a una ruta antes de optimizar.",
       "multipleRoutes": "Las citas seleccionadas pertenecen a rutas diferentes. Seleccione citas de una sola ruta para optimizar.",
       "multipleBranches": "Las citas seleccionadas pertenecen a sucursales diferentes. Seleccione citas de una sola sucursal para optimizar.",
-      "branchAddressMissing": "La sucursal no tiene una dirección para iniciar y terminar la ruta. Agregue la dirección de la sucursal e intente nuevamente.",
+      "branchAddressMissing": "La sucursal necesita una dirección con coordenadas guardadas. Seleccione la dirección en Google, guarde y optimice otra vez. Si no tiene permiso para editar sucursales, solicite la actualización a un administrador.",
       "emptyResult": "El optimizador de rutas no devolvió un orden de paradas para las citas seleccionadas."
     }
   },

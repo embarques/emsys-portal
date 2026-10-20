@@ -7,6 +7,7 @@ import { createDefaultRecordPhones } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
 
 export type BranchAddress = {
+  location?: { type: "Point"; coordinates: [number, number] } | null;
   address1: string;
   address2: string;
   apartment: string;
