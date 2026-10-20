@@ -12,8 +12,10 @@ import { TableSelectionActionDivider } from "@/components/app-shell/table-select
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { CHECK_API_TABLE_FIELDS } from "@/lib/accounting/checks/table-fields";
+import { CHECK_TABLE_FILTER_FIELDS } from "@/lib/accounting/checks/filter-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,11 +42,23 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+function localizeCheckFilterOption(
+  field: string,
+  option: { value: string; label: string },
+  t: (key: string) => string,
+) {
+  return field === "status"
+    ? { ...option, label: t(`accounting.checks.status.${option.value.toLowerCase()}`) }
+    : option;
+}
 
 export function ChecksWorkspace() {
   const { t } = useTranslation();
@@ -58,8 +72,16 @@ export function ChecksWorkspace() {
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CHECK_LIST_PARAMS.sort, () => setPage(1));
   const [query, setQuery] = useState("");
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(
+    CHECK_TABLE_FILTER_FIELDS,
+    "accounting.checks.filters.fields",
+    localizeCheckFilterOption,
+  );
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
-  const hasActiveSearch = Boolean(query.trim());
+  const hasActiveSearch = Boolean(query.trim()) || activeFilterCount > 0;
   const isSearchPending = query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewCheck, setViewCheck] = useState<Check | null>(null);
@@ -70,9 +92,10 @@ export function ChecksWorkspace() {
         page,
         limit: pageLimit,
         query: debouncedQuery,
+        rows: filterRows,
         sort,
       }),
-    [debouncedQuery, page, pageLimit, sort],
+    [debouncedQuery, filterRows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useChecks(listParams);
@@ -87,7 +110,7 @@ export function ChecksWorkspace() {
   const selectedOutstandingChecks = selectedChecks.filter((check) => check.status === "OUTSTANDING");
   const isSaving = updateCheckMutation.isPending;
 
-  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, sort), setSelectedIds);
+  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, filterRows, sort), setSelectedIds);
 
   const columns: DataTableColumn<Check>[] = useMemo(
     () => [
@@ -226,7 +249,31 @@ export function ChecksWorkspace() {
             <CardDescription>{t("accounting.checks.description")}</CardDescription>
           </div>
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            filterPanel={
+              <TableAdvancedFilterPanel
+                presetScope="accounting-checks"
+                open={filtersOpen}
+                rows={filterRows}
+                fields={filterFields}
+                resultSummary={listSummary}
+                onRowsChange={(rows) => {
+                  setFilterRows(rows);
+                  setPage(1);
+                }}
+                onClearAll={
+                  hasActiveSearch
+                    ? () => {
+                        setQuery("");
+                        setFilterRows([]);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              />
+            }
             columnLayout={columnLayout}
             searchSummary={searchSummary}
             search={

@@ -16,8 +16,20 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVENTORY_DISPATCH_API_TABLE_FIELDS } from "@/lib/inventory/dispatches/table-fields";
+import {
+  INVENTORY_DISPATCH_TABLE_FILTER_FIELDS,
+  INVENTORY_FILTER_OPTION_SOURCES,
+  localizeInventoryFilterOption,
+  matchReferenceIds,
+} from "@/lib/inventory/filter-fields";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
+import { createInventorySearchFilter, DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS } from "@/lib/inventory/types/list";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,9 +38,7 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
-  dispatchMatchesQuery,
   formatInventoryDateTime,
-  getDocumentStatusLabel,
   getHolderNameById,
   summarizeDocumentLines,
 } from "@/lib/inventory/display";
@@ -37,6 +47,7 @@ import { useTranslation } from "@/lib/i18n";
 import {
   useCancelDispatch,
   useCreateDispatch,
+  useInventoryDirectoryPage,
   useInventoryDispatches,
   useInventoryHolders,
   useInventoryItems,
@@ -52,7 +63,8 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
-import { resolveClientTablePageLimit } from "@/lib/table/page-size";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function InventoryDispatchesWorkspace() {
   const { t } = useTranslation();
@@ -60,7 +72,7 @@ export function InventoryDispatchesWorkspace() {
   const { hasPermission } = useAuth();
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifySuccess, notifyError } = useFeedback();
-  const { data: dispatches = [], isLoading, isError, error } = useInventoryDispatches();
+  const { data: dispatches = [], isError, error } = useInventoryDispatches();
   const { data: items = [] } = useInventoryItems();
   const { data: holders = [] } = useInventoryHolders();
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
@@ -72,7 +84,7 @@ export function InventoryDispatchesWorkspace() {
   const canUpdate = hasPermission(PERMISSIONS.inventoryDispatchesUpdate.name, PERMISSIONS.inventoryDispatchesUpdate.resourceType);
 
   const [query, setQuery] = useState("");
-  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingDispatch, setEditingDispatch] = useState<InventoryDispatch | null>(null);
   const [viewDispatch, setViewDispatch] = useState<InventoryDispatch | null>(null);
@@ -83,23 +95,54 @@ export function InventoryDispatchesWorkspace() {
     [employeesQuery.data?.items],
   );
 
-  const filtered = useMemo(
-    () =>
-      dispatches.filter((dispatch) =>
-        dispatchMatchesQuery(dispatch, query, {
-          items,
-          holders,
-          statusLabel: getDocumentStatusLabel(dispatch.status, t),
-        }),
-      ),
-    [dispatches, holders, items, query, t],
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(
+    INVENTORY_DISPATCH_TABLE_FILTER_FIELDS,
+    "inventory.filters.dispatches.fields",
+    localizeInventoryFilterOption,
+  );
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
+  const hasActiveFilters = Boolean(query.trim()) || activeFilterCount > 0;
+
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+  const dynamicOptions = useMemo(
+    () => ({
+      [INVENTORY_FILTER_OPTION_SOURCES.holders]: holders.map((holder) => ({ value: holder.id, label: holder.displayName })),
+    }),
+    [holders],
   );
 
-  const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
+  const directoryParams = useMemo(() => {
+    const holderIds = debouncedQuery.trim()
+      ? matchReferenceIds(holders, debouncedQuery, (holder) => holder.displayName, (holder) => holder.id)
+      : [];
+    return {
+      ...DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
+      page,
+      limit: pageLimit,
+      search: createInventorySearchFilter(debouncedQuery),
+      searchReferenceMatches: holderIds.length
+        ? [
+            { field: "toHolderId", ids: holderIds },
+            { field: "fromHolderId", ids: holderIds },
+          ]
+        : undefined,
+      ...(filterRows.length ? { filterRows } : {}),
+    };
+  }, [debouncedQuery, filterRows, holders, page, pageLimit]);
+  const directoryQuery = useInventoryDirectoryPage("dispatches", directoryParams);
+  const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);
+  const totalMatched = directoryQuery.data?.total ?? 0;
+  rememberTotal(totalMatched);
+  const totalPages = Math.max(1, Math.ceil(totalMatched / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
-  const listErrorMessage = isError ? toErrorMessage(error) : null;
+  const isLoading = directoryQuery.isLoading;
+  const listErrorMessage = directoryQuery.isError
+    ? toErrorMessage(directoryQuery.error)
+    : isError
+      ? toErrorMessage(error)
+      : null;
   const commandPending = postDispatch.isPending || cancelDispatch.isPending;
   const editingDispatchValues = useMemo(() => (editingDispatch ? dispatchToFormValues(editingDispatch) : undefined), [editingDispatch]);
 
@@ -177,9 +220,9 @@ export function InventoryDispatchesWorkspace() {
 
   const columnVisibility = useApiTableColumns("inventory-dispatches", columns, INVENTORY_DISPATCH_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary({
-    isFiltered: Boolean(query.trim()),
+    isFiltered: hasActiveFilters,
     query,
-    matched: filtered.length,
+    matched: totalMatched,
     catalogTotal: dispatches.length,
     noun: t("inventory.submenus.dispatches").toLowerCase(),
   });
@@ -240,7 +283,31 @@ export function InventoryDispatchesWorkspace() {
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            filterPanel={
+              <TableAdvancedFilterPanel
+                presetScope="inventory-dispatches"
+                dynamicOptions={dynamicOptions}
+                open={filtersOpen}
+                rows={filterRows}
+                fields={filterFields}
+                onRowsChange={(rows) => {
+                  setFilterRows(rows);
+                  setPage(1);
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setQuery("");
+                        setFilterRows([]);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              />
+            }
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
@@ -285,7 +352,7 @@ export function InventoryDispatchesWorkspace() {
         {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", { count: pageRows.length, total: filtered.length, noun: t("inventory.submenus.dispatches").toLowerCase() })}
+              {t("common.pagination.showingOf", { count: pageRows.length, total: totalMatched, noun: t("inventory.submenus.dispatches").toLowerCase() })}
             </p>
             <TablePaginationControls
               page={currentPage}

@@ -14,6 +14,10 @@ import {
   hasResourceListFilters,
 } from "@/lib/api/search-query";
 import { CLEARABLE_PAYMENT_BAR_OR_SEARCH_FIELDS } from "@/lib/accounting/clearable-payments/search-fields";
+import {
+  CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS,
+  expandClearablePaymentFilterNode,
+} from "@/lib/accounting/clearable-payments/filter-fields";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import {
@@ -83,6 +87,8 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 function hasClearablePaymentListFilters(params: ClearablePaymentListParams): boolean {
   return hasResourceListFilters({
     search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS,
   });
 }
 
@@ -92,7 +98,9 @@ function buildClearablePaymentSearchBody(params: ClearablePaymentListParams) {
     filterGroups: buildResourceSearchFilterGroups({
       search: params.search,
       barOrSearchFields: CLEARABLE_PAYMENT_BAR_OR_SEARCH_FIELDS,
-      tableFilterFields: [],
+      filterRows: params.filterRows,
+      tableFilterFields: CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS,
+      expandNode: expandClearablePaymentFilterNode,
     }),
   });
 }

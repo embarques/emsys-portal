@@ -43,10 +43,12 @@ inventory reports, `/route-crews`, `/daily-routes`, `/audit-events` and
   `closeout.record`, `closeout.finalize`, `inventory.holder.manage`,
   `inventory.reassign` and `routes.manage` come from `inventory.md`.
 - Crew `role` is a free string; the portal offers `driver`, `appraiser`, `helper`.
-- Whether entity versions start at 0 or 1. The portal accepts any non-negative
-  integer and blocks commands only when the version is missing.
 - Holder `entityId` for vehicles uses the vehicle record `id`.
-- Supported search/sort fields are not listed in Swagger.
+
+Decided in `docs/INVENTORY_FEATURE_BACKEND.md` (target contract): versions start
+at 1 (the portal still accepts any non-negative integer), PATCH is a JSON merge
+patch, ids are UUIDs, and each `/search` endpoint’s allowed fields are listed
+there until Swagger publishes them.
 
 ## Checks
 

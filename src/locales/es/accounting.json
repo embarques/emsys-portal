@@ -82,12 +82,118 @@
     "toasts": {
       "created": "Cuenta creada.",
       "updated": "Cuenta actualizada."
+    },
+    "filters": {
+      "fields": {
+        "type": {
+          "label": "Tipo"
+        },
+        "displayName": {
+          "label": "Cuenta",
+          "placeholder": "Ingrese el nombre de la cuenta…"
+        },
+        "name": {
+          "label": "Nombre interno",
+          "placeholder": "Ingrese el nombre interno…"
+        },
+        "id": {
+          "label": "Cuenta #",
+          "placeholder": "Ingrese el número de cuenta…"
+        },
+        "branch": {
+          "code": {
+            "label": "Código de sucursal",
+            "placeholder": "p. ej. NY"
+          },
+          "name": {
+            "label": "Nombre de sucursal",
+            "placeholder": "Ingrese el nombre de la sucursal…"
+          }
+        },
+        "createdAt": {
+          "label": "Creado el",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "createdAtRange": {
+          "label": "Rango de creación",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "updatedAt": {
+          "label": "Actualizado el",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "updatedAtRange": {
+          "label": "Rango de actualización",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        }
+      }
     }
   },
   "clearablePayments": {
     "nav": {
       "outstandingAlert": "{{count}} pago pendiente",
       "outstandingAlert_plural": "{{count}} pagos pendientes"
+    },
+    "filters": {
+      "fields": {
+        "status": {
+          "label": "Estado"
+        },
+        "paymentReference": {
+          "label": "Referencia de pago",
+          "placeholder": "Ingrese la referencia…"
+        },
+        "invoice": {
+          "number": {
+            "label": "Factura #",
+            "placeholder": "Ingrese el número de factura…"
+          }
+        },
+        "refNumber": {
+          "label": "Referencia interna",
+          "placeholder": "Ingrese la referencia interna…"
+        },
+        "paymentAmount": {
+          "label": "Monto",
+          "placeholder": "0.00"
+        },
+        "datePosted": {
+          "label": "Fecha de registro",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "datePostedRange": {
+          "label": "Rango de fecha de registro",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "clearedAt": {
+          "label": "Compensado el",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "clearedAtRange": {
+          "label": "Rango de compensación",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "createdAt": {
+          "label": "Creado el",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "createdAtRange": {
+          "label": "Rango de creación",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "Creado por",
+            "placeholder": "Ingrese el nombre del creador…"
+          }
+        },
+        "updatedBy": {
+          "name": {
+            "label": "Actualizado por",
+            "placeholder": "Ingrese el nombre de quien actualizó…"
+          }
+        }
+      }
     }
   },
   "zellePayments": {
@@ -337,6 +443,67 @@
       "markedOutstanding_plural": "{{count}} cheques marcados como pendientes.",
       "markedCleared": "{{count}} cheque marcado como cobrado.",
       "markedCleared_plural": "{{count}} cheques marcados como cobrados."
+    },
+    "filters": {
+      "fields": {
+        "status": {
+          "label": "Estado"
+        },
+        "paymentReference": {
+          "label": "Número de cheque",
+          "placeholder": "Ingrese el número de cheque…"
+        },
+        "invoice": {
+          "number": {
+            "label": "Factura #",
+            "placeholder": "Ingrese el número de factura…"
+          }
+        },
+        "refNumber": {
+          "label": "Referencia interna",
+          "placeholder": "Ingrese la referencia interna…"
+        },
+        "paymentAmount": {
+          "label": "Monto",
+          "placeholder": "0.00"
+        },
+        "datePosted": {
+          "label": "Fecha de registro",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "datePostedRange": {
+          "label": "Rango de fecha de registro",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "clearedAt": {
+          "label": "Compensado el",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "clearedAtRange": {
+          "label": "Rango de compensación",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "createdAt": {
+          "label": "Creado el",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "createdAtRange": {
+          "label": "Rango de creación",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "Creado por",
+            "placeholder": "Ingrese el nombre del creador…"
+          }
+        },
+        "updatedBy": {
+          "name": {
+            "label": "Actualizado por",
+            "placeholder": "Ingrese el nombre de quien actualizó…"
+          }
+        }
+      }
     }
   },
   "dailyIncome": {
@@ -363,7 +530,7 @@
       "createCloseout": "Crear cierre",
       "editCloseout": "Editar cierre",
       "printReceipt": "Imprimir recibo",
-        "printReport": "Imprimir reporte",
+      "printReport": "Imprimir reporte",
       "closeDay": "Cerrar día",
       "reopenDay": "Reabrir día",
       "addTransaction": "Agregar transacción",
@@ -403,7 +570,11 @@
       "dop": "Peso",
       "select": "Seleccionar moneda"
     },
-    "quickEntry": {"label": "Entrada rápida", "yes": "Sí", "no": "No"},
+    "quickEntry": {
+      "label": "Entrada rápida",
+      "yes": "Sí",
+      "no": "No"
+    },
     "sessionPanel": {
       "total": "Total",
       "show": "Mostrar transacciones",

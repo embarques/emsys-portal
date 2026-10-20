@@ -1,6 +1,7 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 /** API-owned severity; frontend only displays it. */
 export type UserActivitySeverity = "common" | "uncommon" | "rare";
@@ -42,6 +43,7 @@ export type UserActivityListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: UserActivitySearchFilter;
+  filterRows?: TableFilterRowState[];
 };
 
 export const DEFAULT_USER_ACTIVITY_LIST_PARAMS = {
@@ -58,6 +60,7 @@ export function buildUserActivityListParams(input: {
   page: number;
   limit?: number;
   query: string;
+  rows?: TableFilterRowState[];
   sort?: ApiListSortInput;
 }): UserActivityListParams {
   const params: UserActivityListParams = {
@@ -66,6 +69,10 @@ export function buildUserActivityListParams(input: {
     limit: input.limit ?? DEFAULT_USER_ACTIVITY_LIST_PARAMS.limit,
     sort: input.sort ?? DEFAULT_USER_ACTIVITY_LIST_PARAMS.sort,
   };
+
+  if (input.rows?.length) {
+    params.filterRows = input.rows;
+  }
 
   const search = createUserActivitySearchFilter(input.query);
   if (search) {

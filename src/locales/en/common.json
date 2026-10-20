@@ -126,7 +126,9 @@
       "deleteTitle": "Delete preset?",
       "deleteDescription": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",
       "emptyState": "No saved presets yet. Build a filter and use “Save preset”."
-    }
+    },
+    "noMatches": "No records match your search or filters.",
+    "matchCount": "{{count}} matches"
   },
   "filterOperators": {
     "eq": "Equals",

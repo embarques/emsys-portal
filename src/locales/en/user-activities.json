@@ -21,5 +21,42 @@
     "loading": "Loading activities…",
     "noResults": "No user activities yet.",
     "noMatches": "No activities match your search."
+  },
+  "filters": {
+    "fields": {
+      "severity": {
+        "label": "Severity"
+      },
+      "origin": {
+        "label": "Origin",
+        "placeholder": "e.g. invoices, journals…"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Enter description…"
+      },
+      "user": {
+        "name": {
+          "label": "User",
+          "placeholder": "Enter user name…"
+        },
+        "id": {
+          "label": "User ID",
+          "placeholder": "Enter user ID…"
+        }
+      },
+      "id": {
+        "label": "Record ID",
+        "placeholder": "Enter record ID…"
+      },
+      "timestamp": {
+        "label": "Date",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "timestampRange": {
+        "label": "Date range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
+    }
   }
 }

@@ -77,6 +77,8 @@ function parseArgs(argv) {
       opts.baseUrl = String(argv[++i] ?? "").replace(/\/$/, "");
     } else if (arg === "--bearer") {
       opts.useBearer = true;
+    } else if (arg === "--skip-crud") {
+      // Forwarded by test-all-apis; this suite is read-only already.
     } else if (arg === "--skip-readonly-check") {
       opts.skipReadonlyCheck = true;
     } else if (arg.startsWith("-")) {

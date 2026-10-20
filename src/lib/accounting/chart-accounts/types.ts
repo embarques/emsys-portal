@@ -1,6 +1,7 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type ChartAccountType = "ASSET" | "EXPENSE" | "REVENUE" | "BANK" | "LOAN";
 
@@ -48,6 +49,7 @@ export type ChartAccountListParams = {
   /** @deprecated Prefer `search`. Kept for existing callers. */
   query?: string;
   type?: ChartAccountType;
+  filterRows?: TableFilterRowState[];
 };
 
 export type ChartAccountList = {

@@ -173,9 +173,9 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
-const CUSTOMER_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["branch.id"]);
+const CUSTOMER_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["branch.id", "createdBy.id", "updatedBy.id"]);
 
-/** Coerces numeric customer leaf fields to JSON numbers (branch.id is numeric). */
+/** Coerces numeric customer leaf fields to JSON numbers (branch and user ids are numeric). */
 function coerceCustomerNumericNode(node: ApiSearchFilterNode): ApiSearchFilterNode {
   if (isApiSearchFilter(node)) {
     if (!CUSTOMER_NUMERIC_FIELDS.has(node.field)) return node;

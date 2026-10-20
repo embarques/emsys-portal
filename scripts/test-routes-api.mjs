@@ -30,11 +30,13 @@
  *   EMSYS_SKIP_CRUD=1, EMSYS_SKIP_CREWS=1, EMSYS_SKIP_DAILY=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
-/** Portal route-crew directory bar search. */
-const CREW_BAR_FIELDS = ["name", "routeId", "branch.code", "employees.name"];
+/** Portal route-crew bar search (ROUTE_BAR_OR_SEARCH_FIELDS); `routeId` is not searchable. */
+const CREW_BAR_FIELDS = ["name", "branch.code", "employees.name"];
 
 /** Portal daily-route directory bar search. */
 const DAILY_BAR_FIELDS = [
@@ -276,6 +278,63 @@ let existingCrew = null;
   }
 }
 
+// Seed throwaway crews (employees the CRUD block does not use, since the API
+// rejects duplicate branch + employee sets) and one daily route per seed crew.
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+let seedCrews = [];
+let seedDailyRoutes = [];
+if (!opts.skipCrud) {
+  const seedEmployees = listOf(await request("GET", "/employees?page=1&limit=10&sort=id:desc"))
+    .filter((emp) => Number(emp?.id) > 0)
+    .map(employeeRef);
+  const seedVehicle = listOf(await request("GET", "/vehicles?page=1&limit=1&sort=id:desc"))[0];
+  const crewSets = [seedEmployees.slice(2, 4), seedEmployees.slice(4, 6)].filter((set) => set.length > 0);
+  if (!opts.skipCrews && crewSets.length > 0) {
+    seedCrews = await seeder.seed({
+      label: "route crew",
+      path: "/routes",
+      count: crewSets.length,
+      body: (index) => ({ active: true, branch: normalizeBranch({ id: 1, code: "NY", name: "USA" }), employees: crewSets[index - 1] }),
+      lookup: (_body, id) => (id == null ? null : [{ field: "id", operator: "eq", value: id }]),
+    });
+  } else if (!opts.skipCrews) {
+    note("Seed crews skipped: need at least 3 employees not used by the CRUD block.");
+  }
+  if (!opts.skipDaily && seedCrews.length > 0 && seedVehicle?.id) {
+    seedDailyRoutes = await seeder.seed({
+      label: "daily route",
+      path: "/vehicle-routes",
+      count: seedCrews.length,
+      body: (index) => {
+        const crew = seedCrews[index - 1];
+        const crewEmployees = (crew.employees ?? []).map(employeeRef);
+        const driver = crewEmployees[0];
+        const appraiser = crewEmployees[1] ?? driver;
+        return {
+          routeType: "pickup",
+          active: true,
+          name: `ZZ_PROBE_SEED_DAILY_${stamp}_${index}`,
+          branch: normalizeBranch(crew.branch ?? { id: 1, code: "NY", name: "USA" }),
+          date: `2099-02-0${index}T00:00:00Z`,
+          route: { id: String(crew.id), name: String(crew.name ?? crew.id) },
+          vehicle: { id: String(seedVehicle.id), name: String(seedVehicle.name ?? seedVehicle.id) },
+          employees: crewEmployees.map((emp, position) => ({
+            id: emp.id,
+            name: emp.name,
+            role: position === 0 ? "driver" : position === 1 ? "appraiser" : "helper",
+          })),
+          driver: { id: driver.id, name: driver.name },
+          appraiser: { id: appraiser.id, name: appraiser.name },
+        };
+      },
+      lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+    });
+  } else if (!opts.skipDaily) {
+    note("Seed daily routes skipped: need a seeded crew and a vehicle.");
+  }
+  console.log("");
+}
+
 // ---------------------------------------------------------------------------
 // Route crews (/routes)
 // ---------------------------------------------------------------------------
@@ -286,7 +345,7 @@ if (!opts.skipCrews) {
     fail("GET /routes", list.status, errDetail(list));
   } else {
     pass("GET /routes", summarizeList(list));
-    existingCrew = firstOf(list);
+    existingCrew = seedCrews[0] ?? firstOf(list);
     if (existingCrew?.id) {
       const read = await request("GET", `/routes/${existingCrew.id}`);
       if (ok(read)) {
@@ -359,7 +418,7 @@ if (!opts.skipDaily) {
     fail("GET /vehicle-routes", list.status, errDetail(list));
   } else {
     pass("GET /vehicle-routes", summarizeList(list));
-    const sample = firstOf(list);
+    const sample = seedDailyRoutes[0] ?? firstOf(list);
     if (sample?.id) {
       const read = await request("GET", `/vehicle-routes/${sample.id}`);
       if (ok(read)) {
@@ -676,6 +735,9 @@ if (shouldDeleteCrew && usableCrewId) {
   else fail(`DELETE /routes/${usableCrewId}`, del.status, errDetail(del));
   await expectGone(`/routes/${usableCrewId}`, `GET /routes/${usableCrewId}`);
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

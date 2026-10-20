@@ -126,7 +126,9 @@
       "deleteTitle": "¿Eliminar preajuste?",
       "deleteDescription": "Esto eliminará permanentemente \"{{name}}\". {{cannotBeUndone}}",
       "emptyState": "Aún no hay preajustes guardados. Configure un filtro y use «Guardar preajuste»."
-    }
+    },
+    "noMatches": "Ningún registro coincide con la búsqueda o los filtros.",
+    "matchCount": "{{count}} coincidencias"
   },
   "filterOperators": {
     "eq": "Igual a",

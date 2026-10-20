@@ -17,8 +17,6 @@ const NUMERIC_FIELDS: ReadonlySet<string> = new Set([
   "surcharge",
   "container.id",
   "employee.id",
-  "sender.id",
-  "receiver.id",
 ]);
 const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["isArchive", "isVoid"]);
 

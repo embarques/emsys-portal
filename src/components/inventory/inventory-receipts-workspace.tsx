@@ -16,8 +16,20 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVENTORY_RECEIPT_API_TABLE_FIELDS } from "@/lib/inventory/receipts/table-fields";
+import {
+  INVENTORY_FILTER_OPTION_SOURCES,
+  INVENTORY_RECEIPT_TABLE_FILTER_FIELDS,
+  localizeInventoryFilterOption,
+  matchReferenceIds,
+} from "@/lib/inventory/filter-fields";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
+import { createInventorySearchFilter, DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS } from "@/lib/inventory/types/list";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -27,10 +39,8 @@ import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent"
 import {
   formatInventoryDateTime,
   formatInventoryMinor,
-  getDocumentStatusLabel,
   getHolderNameById,
   getSupplierNameById,
-  receiptMatchesQuery,
   summarizeDocumentLines,
 } from "@/lib/inventory/display";
 import { useUserError } from "@/lib/errors";
@@ -40,6 +50,7 @@ import {
   useCreateReceipt,
   useInventoryHolders,
   useInventoryItems,
+  useInventoryDirectoryPage,
   useInventoryReceipts,
   useInventorySuppliers,
   usePostReceipt,
@@ -55,7 +66,8 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
-import { resolveClientTablePageLimit } from "@/lib/table/page-size";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function InventoryReceiptsWorkspace() {
   const { t } = useTranslation();
@@ -63,7 +75,7 @@ export function InventoryReceiptsWorkspace() {
   const { hasPermission } = useAuth();
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifySuccess, notifyError } = useFeedback();
-  const { data: receipts = [], isLoading, isError, error } = useInventoryReceipts();
+  const { data: receipts = [], isError, error } = useInventoryReceipts();
   const { data: items = [] } = useInventoryItems();
   const { data: suppliers = [] } = useInventorySuppliers();
   const { data: holders = [] } = useInventoryHolders();
@@ -75,30 +87,64 @@ export function InventoryReceiptsWorkspace() {
   const canUpdate = hasPermission(PERMISSIONS.inventoryReceiptsUpdate.name, PERMISSIONS.inventoryReceiptsUpdate.resourceType);
 
   const [query, setQuery] = useState("");
-  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingReceipt, setEditingReceipt] = useState<InventoryReceipt | null>(null);
   const [viewReceipt, setViewReceipt] = useState<InventoryReceipt | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ command: InventoryDocumentCommand; receipt: InventoryReceipt } | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      receipts.filter((receipt) =>
-        receiptMatchesQuery(receipt, query, {
-          items,
-          suppliers,
-          holders,
-          statusLabel: getDocumentStatusLabel(receipt.status, t),
-        }),
-      ),
-    [holders, items, query, receipts, suppliers, t],
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(
+    INVENTORY_RECEIPT_TABLE_FILTER_FIELDS,
+    "inventory.filters.receipts.fields",
+    localizeInventoryFilterOption,
+  );
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
+  const hasActiveFilters = Boolean(query.trim()) || activeFilterCount > 0;
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+  const dynamicOptions = useMemo(
+    () => ({
+      [INVENTORY_FILTER_OPTION_SOURCES.suppliers]: suppliers.map((supplier) => ({ value: supplier.id, label: supplier.companyName })),
+      [INVENTORY_FILTER_OPTION_SOURCES.holders]: holders.map((holder) => ({ value: holder.id, label: holder.displayName })),
+    }),
+    [holders, suppliers],
   );
 
-  const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
+  const directoryParams = useMemo(
+    () => ({
+      ...DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS,
+      page,
+      limit: pageLimit,
+      search: createInventorySearchFilter(debouncedQuery),
+      searchReferenceMatches: debouncedQuery.trim()
+        ? [
+            {
+              field: "supplierId",
+              ids: matchReferenceIds(suppliers, debouncedQuery, (supplier) => supplier.companyName, (supplier) => supplier.id),
+            },
+            {
+              field: "toHolderId",
+              ids: matchReferenceIds(holders, debouncedQuery, (holder) => holder.displayName, (holder) => holder.id),
+            },
+          ]
+        : undefined,
+      ...(filterRows.length ? { filterRows } : {}),
+    }),
+    [debouncedQuery, filterRows, holders, page, pageLimit, suppliers],
+  );
+  const directoryQuery = useInventoryDirectoryPage("receipts", directoryParams);
+  const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);
+  const totalMatched = directoryQuery.data?.total ?? 0;
+  rememberTotal(totalMatched);
+  const totalPages = Math.max(1, Math.ceil(totalMatched / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
-  const listErrorMessage = isError ? toErrorMessage(error) : null;
+  const isLoading = directoryQuery.isLoading;
+  const listErrorMessage = directoryQuery.isError
+    ? toErrorMessage(directoryQuery.error)
+    : isError
+      ? toErrorMessage(error)
+      : null;
   const commandPending = postReceipt.isPending || cancelReceipt.isPending;
   const editingReceiptValues = useMemo(() => (editingReceipt ? receiptToFormValues(editingReceipt) : undefined), [editingReceipt]);
 
@@ -171,9 +217,9 @@ export function InventoryReceiptsWorkspace() {
 
   const columnVisibility = useApiTableColumns("inventory-receipts", columns, INVENTORY_RECEIPT_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary({
-    isFiltered: Boolean(query.trim()),
+    isFiltered: hasActiveFilters,
     query,
-    matched: filtered.length,
+    matched: totalMatched,
     catalogTotal: receipts.length,
     noun: t("inventory.submenus.receipts").toLowerCase(),
   });
@@ -233,7 +279,31 @@ export function InventoryReceiptsWorkspace() {
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            filterPanel={
+              <TableAdvancedFilterPanel
+                presetScope="inventory-receipts"
+                dynamicOptions={dynamicOptions}
+                open={filtersOpen}
+                rows={filterRows}
+                fields={filterFields}
+                onRowsChange={(rows) => {
+                  setFilterRows(rows);
+                  setPage(1);
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setQuery("");
+                        setFilterRows([]);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              />
+            }
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
@@ -278,7 +348,7 @@ export function InventoryReceiptsWorkspace() {
         {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", { count: pageRows.length, total: filtered.length, noun: t("inventory.submenus.receipts").toLowerCase() })}
+              {t("common.pagination.showingOf", { count: pageRows.length, total: totalMatched, noun: t("inventory.submenus.receipts").toLowerCase() })}
             </p>
             <TablePaginationControls
               page={currentPage}

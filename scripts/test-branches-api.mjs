@@ -28,6 +28,8 @@
  *   EMSYS_SKIP_CRUD=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 const RESOURCE = "/branches";
@@ -227,7 +229,28 @@ console.log(`CRUD:     ${opts.skipCrud ? "skipped" : "enabled"}\n`);
 // ---------------------------------------------------------------------------
 // Auth + list / read
 // ---------------------------------------------------------------------------
-console.log("=== List / read ===");
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+const seeds = opts.skipCrud
+  ? []
+  : await seeder.seed({
+      label: "branch",
+      path: RESOURCE,
+      body: (index) => {
+        const code = `Y${stamp.toString(36).slice(-2).toUpperCase()}${index}`;
+        return {
+          name: `ZZ_PROBE_SEED_BRANCH_${stamp}_${index}`,
+          code,
+          type: "usa",
+          phones: [{ number: `555-010${index}`, type: "business", isPrimary: true }],
+          disclaimer: "API smoke test seed branch",
+          address: { address1: `${index} Seed Plaza`, city: "Bronx", state: "NY", zipcode: "10451", country: "US" },
+          settings: { ...defaultSettings(), labelPrefix: code, defaultLabelStatus: 1 },
+        };
+      },
+      lookup: (body) => [{ field: "code", operator: "eq", value: body.code }],
+    });
+
+console.log("\n=== List / read ===");
 const list = await request("GET", `${RESOURCE}?page=1&offset=0&limit=40&sort=name:asc`);
 if (!ok(list)) {
   fail(`GET ${RESOURCE} (auth check)`, list.status, errDetail(list));
@@ -236,7 +259,7 @@ if (!ok(list)) {
 }
 pass(`GET ${RESOURCE}`, summarizeList(list));
 
-const sample = firstOf(list);
+const sample = seeds[0] ?? firstOf(list);
 const sampleId = sample?.id ?? null;
 if (sampleId != null) {
   const read = await request("GET", `${RESOURCE}/${sampleId}`);
@@ -401,6 +424,7 @@ if (!opts.skipCrud) {
       id: Number(createdId),
       name: createdName,
       disclaimer: "API smoke test branch updated",
+      logo: "",
       phones: [{ number: "555-0199", type: "business", isPrimary: true }],
       address: {
         ...createBody.address,
@@ -437,6 +461,9 @@ if (createdId != null) {
   if (gone.status === 404) pass(`GET ${RESOURCE}/${createdId} after delete`, "404 as expected");
   else fail(`GET ${RESOURCE}/${createdId} after delete`, gone.status, "expected 404");
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

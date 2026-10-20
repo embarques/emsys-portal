@@ -30,6 +30,8 @@
  * Env equivalents:
  *   EMSYS_TOKEN, EMSYS_COMPANY_ID, EMSYS_API_BASE_URL, EMSYS_AUTH_BEARER=1
  *   EMSYS_SKIP_CRUD=1
+ *   EMSYS_TEST_INVOICE_ID   disposable invoice for accounting-payments CRUD (skipped when unset)
+ *   EMSYS_TEST_USER_UID     optional Firebase uid for the users CRUD throwaway
  *   EMSYS_API_CONCURRENCY, EMSYS_API_STAGGER_MS, EMSYS_API_RETRIES
  *   EMSYS_API_RETRY_DELAY_MS, EMSYS_API_FAIL_FAST=1, EMSYS_API_QUIET=1
  */
@@ -62,6 +64,13 @@ const SUITES = [
   { id: "barcodes", script: "test-barcodes-api.mjs", label: "Barcodes" },
   { id: "routes", script: "test-routes-api.mjs", label: "Routes" },
   { id: "user-activities", script: "test-user-activities-api.mjs", label: "User activities" },
+  { id: "users", script: "test-users-api.mjs", label: "Users" },
+  { id: "invoice-policies", script: "test-invoice-policies-api.mjs", label: "Invoice policies" },
+  { id: "chart-accounts", script: "test-chart-accounts-api.mjs", label: "Chart of accounts" },
+  { id: "accounting-payments", script: "test-accounting-payments-api.mjs", label: "Checks, deposits, Zelle, credit cards" },
+  { id: "loans", script: "test-loans-api.mjs", label: "Loans (read-only)" },
+  { id: "reports", script: "test-reports-api.mjs", label: "Reports catalog (read-only)" },
+  { id: "table-filters", script: "test-table-filters-api.mjs", label: "Table search & filters (all tables)" },
 ];
 
 const RATE_LIMIT_RE = /\b(429|rate.?limit|too many requests|throttl)/i;

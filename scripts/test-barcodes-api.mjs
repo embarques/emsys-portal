@@ -28,6 +28,8 @@
  *   EMSYS_SKIP_REPORT=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
@@ -242,7 +244,42 @@ let statusOptions = [];
 let sampleBarcode = null;
 let createdBarcodeId = null;
 let createdStatusId = null;
-let reportBarcodeId = null;
+
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+const seedStatuses =
+  opts.skipCrud || opts.skipStatuses
+    ? []
+    : await seeder.seed({
+        label: "barcode status",
+        path: "/barcode-statuses",
+        body: (index) => ({ name: `ZZ_PROBE_SEED_STATUS_${stamp}_${index}`, prevStatus: "" }),
+        lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+      });
+let seedBarcodeStatus;
+function listOfStatuses(res) {
+  const data = res.json?.data;
+  return Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+}
+const seedBarcodes =
+  opts.skipCrud || opts.skipBarcodes
+    ? []
+    : await seeder.seed({
+        label: "barcode",
+        path: "/barcodes",
+        body: async (index) => {
+          if (seedBarcodeStatus === undefined) {
+            const statuses = listOfStatuses(await request("GET", "/barcode-statuses?page=1&offset=0&limit=40&sort=id:asc"));
+            const status = statuses.find((entry) => String(entry?.name ?? "").toUpperCase() === "ALM-NY") ?? statuses[0];
+            seedBarcodeStatus = status ? { id: Number(status.id), name: status.name } : null;
+          }
+          return {
+            number: `ZZ_PROBE_SEED_BC_${stamp}_${index}`,
+            ...(seedBarcodeStatus ? { status: seedBarcodeStatus } : {}),
+          };
+        },
+        lookup: (body) => [{ field: "number", operator: "eq", value: body.number }],
+      });
+if (seedStatuses.length || seedBarcodes.length) console.log("");
 
 // ---------------------------------------------------------------------------
 // Barcode statuses catalog (/barcode-statuses)
@@ -262,7 +299,7 @@ if (!opts.skipStatuses) {
     note("Continuing without barcode-statuses CRUD (list failed).");
   } else {
     pass("GET /barcode-statuses", summarizeList(statusList));
-    const sampleStatus = firstOf(statusList);
+    const sampleStatus = seedStatuses[0] ?? firstOf(statusList);
     if (sampleStatus?.id != null) {
       const read = await request("GET", `/barcode-statuses/${sampleStatus.id}`);
       if (ok(read)) {
@@ -377,9 +414,8 @@ if (!opts.skipBarcodes) {
   }
   pass("GET /barcodes", summarizeList(list));
 
-  sampleBarcode = firstOf(list);
+  sampleBarcode = seedBarcodes[0] ?? firstOf(list);
   const sampleId = sampleBarcode?.id ?? null;
-  reportBarcodeId = sampleId;
 
   if (sampleId != null) {
     const read = await request("GET", `/barcodes/${sampleId}`);
@@ -483,9 +519,11 @@ if (!opts.skipBarcodes) {
       statusOptions.find((s) => Number(s?.id) !== Number(defaultStatus?.id)) ??
       defaultStatus;
 
-    // Omit status on create to verify API defaults (expected ALM-NY).
+    // Mirrors buildBarcodeWritePayload: the portal always sends a status.
+    const createStatus = defaultStatus ? { id: Number(defaultStatus.id), name: defaultStatus.name } : null;
     const createBody = {
       number: `ZZ_PROBE_BC_${stamp}`,
+      ...(createStatus ? { status: createStatus } : {}),
       ...(container
         ? { container: { id: container.id, name: container.name ?? String(container.id) } }
         : {}),
@@ -500,14 +538,13 @@ if (!opts.skipBarcodes) {
         "POST /barcodes",
         `id=${createdBarcodeId} number=${createBody.number} status=${createdStatusName}`,
       );
-      reportBarcodeId = createdBarcodeId;
 
-      if (String(createdStatusName).toUpperCase() === "ALM-NY") {
-        pass("create default status", "ALM-NY");
-      } else if (!create.json?.data?.status) {
-        note("Created barcode has no status; expected API default ALM-NY.");
+      if (!createStatus) {
+        note("No barcode status options available; created without a status.");
+      } else if (String(createdStatusName) === createStatus.name) {
+        pass("create status persisted", createStatus.name);
       } else {
-        note(`Created barcode status is ${createdStatusName} (expected ALM-NY when omitted).`);
+        fail("create status persisted", create.status, `sent ${createStatus.name}, got ${createdStatusName}`);
       }
 
       const createdRead = await request("GET", `/barcodes/${createdBarcodeId}`);
@@ -553,18 +590,24 @@ if (!opts.skipBarcodes) {
 // ---------------------------------------------------------------------------
 // Labels report (print selection)
 // ---------------------------------------------------------------------------
-if (!opts.skipReport && !opts.skipBarcodes && reportBarcodeId != null) {
+// Labels print for invoice merchandise: standalone/seed barcodes have no invoice
+// ("no invoices matched"), so report on a listed barcode that belongs to one.
+const reportList = !opts.skipReport && !opts.skipBarcodes
+  ? await request("GET", "/barcodes?page=1&offset=0&limit=40&sort=id:desc")
+  : null;
+const reportRecord = Array.isArray(reportList?.json?.data)
+  ? reportList.json.data.find(
+      (barcode) => barcode?.barcodeId && barcode?.invoice?.id && !String(barcode?.number ?? "").startsWith("ZZ_PROBE"),
+    )
+  : null;
+if (!opts.skipReport && !opts.skipBarcodes && !reportRecord) {
+  note("No barcode with an invoice found; skipping POST /reports/labels.");
+}
+if (!opts.skipReport && !opts.skipBarcodes && reportRecord) {
   console.log("\n=== Report ===");
-  // Prefer ObjectID barcodeId when present; fall back to numeric package id.
-  const fresh =
-    createdBarcodeId != null
-      ? await request("GET", `/barcodes/${createdBarcodeId}`)
-      : sampleBarcode
-        ? { status: 200, json: { success: true, data: sampleBarcode } }
-        : null;
-  const record = ok(fresh) ? fresh.json?.data : null;
-  const lookupValue =
-    String(record?.barcodeId ?? record?.id ?? reportBarcodeId).trim();
+  // Same request as buildSelectedLabelReportRequest: lookup by ObjectID barcodeId
+  // (the numeric package id matches no invoices).
+  const lookupValue = String(reportRecord.barcodeId).trim();
 
   const report = await request("POST", "/reports/labels", {
     type: "label",
@@ -618,6 +661,9 @@ if (createdStatusId != null) {
     );
   }
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

@@ -1,4 +1,6 @@
 import { apiClient } from "@/lib/api/client";
+import { fetchCatalogPage, type CatalogPageParams } from "@/lib/api/fetch-catalog-page";
+import { INVOICE_POLICY_BAR_OR_SEARCH_FIELDS, INVOICE_POLICY_TABLE_FILTER_FIELDS, expandInvoicePolicyFilterNode } from "@/lib/invoice-policies/filter-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
@@ -82,4 +84,18 @@ export async function updateInvoicePolicy(
 export async function deleteInvoicePolicy(id: number): Promise<void> {
   const response = await apiClient.delete<ApiSuccessEnvelope<unknown>>(detailPath(id));
   assertMutationSuccess(response, "Unable to delete invoice policy.");
+}
+
+/** One server page for the directory table (search + filters applied by the API). */
+export function fetchInvoicePoliciesPage(params: CatalogPageParams): Promise<PaginatedResult<InvoicePolicy>> {
+  return fetchCatalogPage(
+    {
+      endpoint,
+      barOrSearchFields: INVOICE_POLICY_BAR_OR_SEARCH_FIELDS,
+      filterFields: INVOICE_POLICY_TABLE_FILTER_FIELDS,
+      expandNode: expandInvoicePolicyFilterNode,
+      parseRows: (data) => invoicePolicySchema.array().parse(Array.isArray(data) ? data : []),
+    },
+    params,
+  );
 }

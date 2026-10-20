@@ -24,6 +24,8 @@
  *   EMSYS_RUN_LEGACY_PREVIEW=1
  */
 
+import { cleanupAutoCreatedCustomers, createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
@@ -207,7 +209,30 @@ console.log(`Report:   ${opts.skipReport ? "skipped" : "enabled"}\n`);
 // ---------------------------------------------------------------------------
 // Auth + list / read
 // ---------------------------------------------------------------------------
-console.log("=== List / read ===");
+// Seeds use a far-future date so they never appear on today's appointment map/routes.
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+const seeds = opts.skipCrud
+  ? []
+  : await seeder.seed({
+      label: "appointment",
+      path: "/pickups",
+      body: (index) => ({
+        date: `2099-03-0${index}`,
+        branch: { id: 1, code: "NY", name: "USA" },
+        receivers: [],
+        sender: {
+          name: `ZZ_PROBE_SEED_APPT_${stamp}_${index}`,
+          customerType: 1,
+          phones: [{ number: `555-013${index}`, type: "mobile", isPrimary: true }],
+          address: { address1: `${index} Seed St`, city: "Bronx", state: "NY", zipcode: "10451" },
+        },
+        purpose: "API smoke test seed",
+        comments: [{ purpose: "PICKUP", unit: "box", quantity: index, description: "seed appointment" }],
+      }),
+      lookup: (body) => [{ field: "sender.name", operator: "eq", value: body.sender.name }],
+    });
+
+console.log("\n=== List / read ===");
 const list = await request("GET", "/pickups?page=1&offset=0&limit=40");
 if (!ok(list)) {
   fail("GET /pickups (auth check)", list.status, errDetail(list));
@@ -216,7 +241,7 @@ if (!ok(list)) {
 }
 pass("GET /pickups", summarizeList(list));
 
-const samplePickup = Array.isArray(list.json?.data) ? list.json.data[0] : null;
+const samplePickup = seeds[0] ?? (Array.isArray(list.json?.data) ? list.json.data[0] : null);
 const sampleId = samplePickup?.id ?? null;
 if (sampleId != null) {
   const read = await request("GET", `/pickups/${sampleId}`);
@@ -301,13 +326,15 @@ let createdId = null;
 
 if (!opts.skipCrud) {
   console.log("\n=== CRUD ===");
+  // Mirrors buildPickupWritePayload: branch DTO, receivers[], sender phones[].
   const createBody = {
     date: today,
-    branch: { id: 1, code: "NY" },
+    branch: { id: 1, code: "NY", name: "USA" },
+    receivers: [],
     sender: {
       name: `ZZ_PROBE_APPT_${stamp}`,
       customerType: 1,
-      phone1: "555-0100",
+      phones: [{ number: "555-0100", type: "mobile", isPrimary: true }],
       address: {
         address1: "1 Probe St",
         city: "Bronx",
@@ -362,13 +389,14 @@ if (!opts.skipCrud) {
     if (ok(complete)) pass(`PUT /pickups/${createdId} completed=true`);
     else fail(`PUT /pickups/${createdId} completed=true`, complete.status, errDetail(complete));
 
-    // Re-open so route assign / report still work on an incomplete-ish record if needed
-    const reopen = await request("PUT", `/pickups/${createdId}`, {
-      ...updateBody,
-      completed: false,
-    });
+    // buildPickupWritePayload sends an explicit `completed` on every update (the
+    // API keeps the stored value when the field is omitted).
+    const reopen = await request("PUT", `/pickups/${createdId}`, { ...updateBody, completed: false });
     if (ok(reopen)) pass(`PUT /pickups/${createdId} completed=false`);
     else fail(`PUT /pickups/${createdId} completed=false`, reopen.status, errDetail(reopen));
+    const reopened = await request("GET", `/pickups/${createdId}`);
+    if (ok(reopened) && reopened.json?.data?.completed !== true) pass("appointment reopened", "completed=false");
+    else fail("appointment reopened", reopened.status, `completed=${reopened.json?.data?.completed}`);
   } else {
     fail("POST /pickups", create.status, errDetail(create));
   }
@@ -457,6 +485,10 @@ if (createdId != null) {
   if (gone.status === 404) pass(`GET /pickups/${createdId} after delete`, "404 as expected");
   else fail(`GET /pickups/${createdId} after delete`, gone.status, "expected 404");
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
+await cleanupAutoCreatedCustomers({ request, ok, pass, fail, errDetail }, stamp);
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

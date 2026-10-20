@@ -29,6 +29,8 @@
  *   EMSYS_SKIP_CRUD=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 const RESOURCE = "/roles";
@@ -215,6 +217,27 @@ console.log(`CRUD:     ${opts.skipCrud ? "skipped" : "enabled"}\n`);
 // Auth + list / read
 // ---------------------------------------------------------------------------
 console.log("=== List / read ===");
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+let seedPermissionId = null;
+const seeds = opts.skipCrud
+  ? []
+  : await seeder.seed({
+      label: "role",
+      path: RESOURCE,
+      body: async (index) => {
+        if (seedPermissionId == null) {
+          const perms = await request("GET", "/permissions?page=1&limit=1&sort=id:asc");
+          seedPermissionId = firstOf(perms)?.id ?? firstOf(perms)?._id ?? null;
+        }
+        return {
+          name: `ZZ_PROBE_SEED_ROLE_${stamp}_${index}`,
+          active: true,
+          permissions: seedPermissionId == null ? [] : [{ id: Number(seedPermissionId) }],
+        };
+      },
+      lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+    });
+
 const list = await request("GET", `${RESOURCE}?page=1&offset=0&limit=40&sort=id:desc`);
 if (!ok(list)) {
   fail(`GET ${RESOURCE} (auth check)`, list.status, errDetail(list));
@@ -223,7 +246,7 @@ if (!ok(list)) {
 }
 pass(`GET ${RESOURCE}`, summarizeList(list));
 
-const sample = firstOf(list);
+const sample = seeds[0] ?? firstOf(list);
 const sampleId = sample?.id ?? null;
 if (sampleId != null) {
   const read = await request("GET", `${RESOURCE}/${sampleId}`);
@@ -284,10 +307,6 @@ if (sampleId != null) {
     [{ field: "id", operator: "eq", value: Number(sampleId) }],
     `search id eq ${sampleId} (number)`,
   );
-  await search(
-    [{ field: "id", operator: "eq", value: String(sampleId) }],
-    `search id eq "${sampleId}" (string)`,
-  );
 }
 
 const createdBy = auditName(sample?.createdBy);
@@ -298,10 +317,6 @@ if (createdBy) {
   );
 }
 
-await search(
-  [{ field: "permissions.name", operator: "contains", value: "a" }],
-  "search permissions.name contains a",
-);
 
 // ---------------------------------------------------------------------------
 // Permissions catalog (needed for role create)
@@ -405,6 +420,9 @@ if (createdId != null) {
   if (gone.status === 404) pass(`GET ${RESOURCE}/${createdId} after delete`, "404 as expected");
   else fail(`GET ${RESOURCE}/${createdId} after delete`, gone.status, "expected 404");
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

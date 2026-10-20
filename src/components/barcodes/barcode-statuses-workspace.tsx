@@ -18,10 +18,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBarcodeStatusesWorkspace } from "@/lib/barcodes/hooks/use-barcode-statuses-workspace";
+import { fetchBarcodeStatusesPage } from "@/lib/barcodes/api/barcode-statuses-api";
+import { BARCODE_STATUS_TABLE_FILTER_FIELDS } from "@/lib/barcodes/barcode-status-filter-fields";
+import { queryKeys } from "@/lib/query/query-keys";
+import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
+import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 
 export function BarcodeStatusesWorkspace() {
   const handleEnterNavigation = useFormEnterNavigation();
-  const { t, statusesQuery, statuses, isSaving, isDeleting, dialogOpen, setDialogOpen, editing, form, error, openCreate, openEdit, save, remove } = useBarcodeStatusesWorkspace();
+  const { t, isSaving, isDeleting, dialogOpen, setDialogOpen, editing, form, error, openCreate, openEdit, save, remove } = useBarcodeStatusesWorkspace();
+  const table = useCatalogTable({
+    fields: BARCODE_STATUS_TABLE_FILTER_FIELDS,
+    keyPrefix: "barcodeStatuses.filters.fields",
+    sort: "name:asc",
+    queryKey: queryKeys.barcodeStatuses.page,
+    fetchPage: fetchBarcodeStatusesPage,
+  });
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -37,12 +49,21 @@ export function BarcodeStatusesWorkspace() {
       />
 
       <div className="mt-6 overflow-hidden rounded-xl border bg-card">
-        {statusesQuery.isLoading ? (
+        <div className="border-b px-4 py-3">
+          <CatalogTableToolbar
+            state={table}
+            presetScope="barcode-statuses"
+            searchPlaceholder={t("barcodeStatuses.searchPlaceholder")}
+          />
+        </div>
+        {table.isLoading ? (
           <p className="p-6 text-sm text-muted-foreground">{t("common.loading")}</p>
-        ) : statusesQuery.isError ? (
-          <p className="p-6 text-sm text-destructive">{normalizeApiError(statusesQuery.error).message}</p>
-        ) : statuses.length === 0 ? (
-          <p className="p-6 text-sm text-muted-foreground">{t("barcodeStatuses.empty")}</p>
+        ) : table.isError ? (
+          <p className="p-6 text-sm text-destructive">{normalizeApiError(table.error).message}</p>
+        ) : table.items.length === 0 ? (
+          <p className="p-6 text-sm text-muted-foreground">
+            {table.hasActiveFilters ? t("common.table.noMatches") : t("barcodeStatuses.empty")}
+          </p>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/40 text-left">
@@ -54,7 +75,7 @@ export function BarcodeStatusesWorkspace() {
               </tr>
             </thead>
             <tbody>
-              {statuses.map((status) => (
+              {table.items.map((status) => (
                 <tr key={status.id} className="border-b last:border-0">
                   <td className="px-4 py-3">{status.id}</td>
                   <td className="px-4 py-3 font-medium">{status.name}</td>
@@ -74,6 +95,7 @@ export function BarcodeStatusesWorkspace() {
             </tbody>
           </table>
         )}
+        {!table.isLoading && !table.isError ? <CatalogTablePagination state={table} /> : null}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

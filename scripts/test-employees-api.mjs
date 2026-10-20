@@ -38,6 +38,8 @@
  *   EMSYS_SKIP_EMPLOYEES=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
@@ -234,14 +236,14 @@ async function search(path, filters, sortField, label) {
   return res;
 }
 
-async function listAndRead(basePath, sort, labelPrefix) {
+async function listAndRead(basePath, sort, labelPrefix, preferredSample = null) {
   const list = await request("GET", `${basePath}?page=1&offset=0&limit=40&sort=${sort}`);
   if (!ok(list)) {
     fail(`GET ${basePath}`, list.status, errDetail(list));
     return { list, sample: null };
   }
   pass(`GET ${basePath}`, summarizeList(list));
-  const sample = firstOf(list);
+  const sample = preferredSample ?? firstOf(list);
   if (sample?.id != null) {
     const read = await request("GET", `${basePath}/${sample.id}`);
     if (ok(read)) pass(`GET ${basePath}/${sample.id}`, labelPrefix?.(read.json?.data) ?? "");
@@ -256,17 +258,6 @@ async function expectGone(path, label) {
   const gone = await request("GET", path);
   if (gone.status === 404) pass(`${label} after delete`, "404 as expected");
   else fail(`${label} after delete`, gone.status, "expected 404");
-}
-
-/** Employees historically accept client-assigned ids (maxId+1). */
-async function nextId(resourcePath) {
-  const res = await request("POST", `${resourcePath}/search?page=1&limit=1&offset=0`, {
-    sort: [{ field: "id", direction: "desc" }],
-    filters: [],
-  });
-  const top = firstOf(res);
-  const max = Number(top?.id);
-  return Number.isFinite(max) && max > 0 ? max + 1 : 1;
 }
 
 console.log("Employees API smoke test (employees / departments / titles)");
@@ -296,6 +287,49 @@ let probeEmployeeName = `ZZ_PROBE_EMP_${stamp}`;
   }
 }
 
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+const seedDepartments =
+  opts.skipCrud || opts.skipDepartments
+    ? []
+    : await seeder.seed({
+        label: "department",
+        path: "/employee-departments",
+        body: (index) => ({ name: `ZZ_PROBE_SEED_DEPT_${stamp}_${index}`, active: true }),
+        lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+      });
+const seedTitles =
+  opts.skipCrud || opts.skipTitles
+    ? []
+    : await seeder.seed({
+        label: "title",
+        path: "/employee-titles",
+        body: (index) => ({ name: `ZZ_PROBE_SEED_TITLE_${stamp}_${index}`, active: true }),
+        lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+      });
+let seedBranch = null;
+const seedEmployees =
+  opts.skipCrud || opts.skipEmployees
+    ? []
+    : await seeder.seed({
+        label: "employee",
+        path: "/employees",
+        body: async (index) => {
+          if (!seedBranch) seedBranch = firstOf(await request("GET", "/branches?page=1&limit=1&sort=name:asc"));
+          return {
+            name: `ZZ_PROBE_SEED_EMP_${stamp}_${index}`,
+            title: seedTitles[0]?.name ?? "Driver",
+            department: seedDepartments[0]?.name ?? "Operations",
+            active: false,
+            phones: [{ number: `555-012${index}`, type: "mobile", isPrimary: true }],
+            branch: { id: Number(seedBranch?.id ?? 1), code: String(seedBranch?.code ?? "NY") },
+            email: `probe-seed-emp-${stamp}-${index}@example.com`,
+            address: { address1: `${index} Seed Ave`, city: "Bronx", state: "NY", zipcode: "10451", country: "US" },
+          };
+        },
+        lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+      });
+console.log("");
+
 // ---------------------------------------------------------------------------
 // Employee departments
 // ---------------------------------------------------------------------------
@@ -305,6 +339,7 @@ if (!opts.skipDepartments) {
     "/employee-departments",
     "name:asc",
     (data) => `name=${data?.name ?? "?"} active=${data?.active ?? "?"}`,
+    seedDepartments[0],
   );
 
   const barTerm =
@@ -420,6 +455,7 @@ if (!opts.skipTitles) {
     "/employee-titles",
     "name:asc",
     (data) => `name=${data?.name ?? "?"} active=${data?.active ?? "?"}`,
+    seedTitles[0],
   );
 
   const barTerm =
@@ -530,6 +566,7 @@ if (!opts.skipEmployees) {
     "name:asc",
     (data) =>
       `name=${data?.name ?? "?"} title=${data?.title ?? "?"} dept=${data?.department ?? "?"} active=${data?.active ?? "?"}`,
+    seedEmployees[0],
   );
 
   const barTerm =
@@ -642,10 +679,8 @@ if (!opts.skipEmployees) {
           ? probeTitleName
           : String(sample?.title ?? "Driver").trim() || "Driver";
 
-      const nextEmployeeId = await nextId("/employees");
       // API create keeps explicit `"active": false` (omitted active still defaults to true).
       const createBody = {
-        id: nextEmployeeId,
         name: probeEmployeeName,
         title: titleName,
         department: departmentName,
@@ -663,7 +698,7 @@ if (!opts.skipEmployees) {
       };
 
       const create = await request("POST", "/employees", createBody);
-      createdEmployeeId = extractId(create.json) ?? (ok(create) ? nextEmployeeId : null);
+      createdEmployeeId = extractId(create.json);
 
       if (ok(create) && createdEmployeeId == null) {
         const found = await search(
@@ -775,6 +810,9 @@ if (createdEmployeeId != null || createdTitleId != null || createdDepartmentId !
     );
   }
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

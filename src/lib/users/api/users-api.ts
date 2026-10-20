@@ -121,7 +121,8 @@ function normalizeUser(raw: unknown): User | null {
     uid: String(item.uid ?? "").trim(),
     email: String(item.email ?? "").trim(),
     name: String(item.name ?? item.email ?? "").trim(),
-    active: item.active !== false,
+    // The API omits `active` for inactive users (active ones always carry `true`).
+    active: item.active === true,
     branch: normalizeUserBranch(item.branch),
     role: normalizeReference(item.role),
     startTime: String(item.startTime ?? "").trim(),

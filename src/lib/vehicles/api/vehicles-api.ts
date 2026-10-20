@@ -107,8 +107,6 @@ type ApiVehicleWritePayload = {
   inspectionDate?: string;
   registrationDate?: string;
   id?: string;
-  createdAt?: string;
-  updatedAt?: string;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -226,18 +224,10 @@ function buildVehicleWritePayload(
     payload.registrationDate = registrationDateValue;
   }
 
+  // Audit fields (createdAt/By, updatedAt/By) are server-managed: the API sets
+  // and preserves them, so they are never sent.
   if (options.recordId) {
     payload.id = options.recordId;
-
-    if (values.createdAt.trim()) {
-      payload.createdAt = values.createdAt.trim();
-    }
-
-    // createdBy is a server-managed audit field (core.User on the backend).
-    // We only hold its display name on the client, so we must not send it back
-    // as a string — the API preserves the existing value on its own.
-
-    payload.updatedAt = new Date().toISOString();
   }
 
   return payload;

@@ -3,6 +3,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { parseMoneyFormInput } from "@/lib/accounting/daily-income/money-input";
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type ClearablePaymentStatus = "OUTSTANDING" | "CLEARED";
 
@@ -52,6 +53,7 @@ export type ClearablePaymentListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: ClearablePaymentSearchFilter;
+  filterRows?: TableFilterRowState[];
 };
 
 export const DEFAULT_CLEARABLE_PAYMENT_LIST_PARAMS = {
@@ -117,6 +119,7 @@ export function buildClearablePaymentListParams(input: {
   page: number;
   limit?: number;
   query: string;
+  rows?: TableFilterRowState[];
   sort?: ApiListSortInput;
 }): ClearablePaymentListParams {
   const params: ClearablePaymentListParams = {
@@ -125,6 +128,10 @@ export function buildClearablePaymentListParams(input: {
     limit: input.limit ?? DEFAULT_CLEARABLE_PAYMENT_LIST_PARAMS.limit,
     sort: input.sort ?? DEFAULT_CLEARABLE_PAYMENT_LIST_PARAMS.sort,
   };
+
+  if (input.rows?.length) {
+    params.filterRows = input.rows;
+  }
 
   const search = createClearablePaymentSearchFilter(input.query);
   if (search) {

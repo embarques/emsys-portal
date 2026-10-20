@@ -30,6 +30,8 @@
  *   EMSYS_SKIP_CRUD=1, EMSYS_SKIP_STATS=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
@@ -225,7 +227,34 @@ console.log(`Stats:    ${opts.skipStats ? "skipped" : "enabled"}\n`);
 // ---------------------------------------------------------------------------
 // Auth + list / read
 // ---------------------------------------------------------------------------
-console.log("=== List / read ===");
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+const seeds = opts.skipCrud
+  ? []
+  : await seeder.seed({
+      label: "container",
+      path: "/containers",
+      body: (index) => {
+        const depart = new Date();
+        depart.setUTCDate(depart.getUTCDate() - 7 * index);
+        const arrive = new Date();
+        arrive.setUTCDate(arrive.getUTCDate() + 7 * index);
+        return {
+          name: `ZZ_PROBE_SEED_${stamp}_${index}`,
+          booking: `BK-SEED-${stamp}-${index}`,
+          containerNumber: `SEED${String(stamp).slice(-6)}${index}`,
+          sealNumber: `SEAL-SEED-${stamp}-${index}`,
+          itn: `ITN-SEED-${stamp}-${index}`,
+          broker: "Probe Broker",
+          company: "Probe Co",
+          cost: 1000 + index,
+          departureDate: depart.toISOString(),
+          arrivalDate: arrive.toISOString(),
+        };
+      },
+      lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+    });
+
+console.log("\n=== List / read ===");
 const list = await request("GET", "/containers?page=1&offset=0&limit=40&sort=id:desc");
 if (!ok(list)) {
   fail("GET /containers (auth check)", list.status, errDetail(list));
@@ -234,7 +263,7 @@ if (!ok(list)) {
 }
 pass("GET /containers", summarizeList(list));
 
-const sample = firstOf(list);
+const sample = seeds[0] ?? firstOf(list);
 const sampleId = sample?.id ?? null;
 if (sampleId != null) {
   const read = await request("GET", `/containers/${sampleId}`);
@@ -449,6 +478,9 @@ if (createdId != null) {
   if (gone.status === 404) pass(`GET /containers/${createdId} after delete`, "404 as expected");
   else fail(`GET /containers/${createdId} after delete`, gone.status, "expected 404");
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

@@ -1,4 +1,11 @@
 import { apiClient } from "@/lib/api/client";
+import { fetchCatalogPage, type CatalogPageParams } from "@/lib/api/fetch-catalog-page";
+import type { PaginatedResult } from "@/lib/api/types";
+import {
+  BARCODE_STATUS_BAR_OR_SEARCH_FIELDS,
+  BARCODE_STATUS_TABLE_FILTER_FIELDS,
+  expandBarcodeStatusFilterNode,
+} from "@/lib/barcodes/barcode-status-filter-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
@@ -78,4 +85,25 @@ export async function deleteBarcodeStatus(id: number): Promise<void> {
     `${API_ENDPOINTS.BARCODE_STATUSES}/${id}`,
   );
   assertMutationSuccess(response, "Unable to delete barcode status.");
+}
+
+/** One server page for the barcode statuses directory (search + filters applied by the API). */
+export function fetchBarcodeStatusesPage(params: CatalogPageParams): Promise<PaginatedResult<BarcodeStatusOption>> {
+  return fetchCatalogPage(
+    {
+      endpoint: API_ENDPOINTS.BARCODE_STATUSES,
+      barOrSearchFields: BARCODE_STATUS_BAR_OR_SEARCH_FIELDS,
+      filterFields: BARCODE_STATUS_TABLE_FILTER_FIELDS,
+      expandNode: expandBarcodeStatusFilterNode,
+      parseRows: (data) => {
+        const rows = Array.isArray(data)
+          ? data
+          : data && typeof data === "object" && Array.isArray((data as { items?: unknown }).items)
+            ? (data as { items: unknown[] }).items
+            : [];
+        return rows.map(normalizeStatus).filter((item): item is BarcodeStatusOption => item != null);
+      },
+    },
+    params,
+  );
 }

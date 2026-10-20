@@ -16,8 +16,17 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVENTORY_SUPPLIER_API_TABLE_FIELDS } from "@/lib/inventory/suppliers/table-fields";
+import {
+  INVENTORY_SUPPLIER_TABLE_FILTER_FIELDS,
+  localizeInventoryFilterOption,
+} from "@/lib/inventory/filter-fields";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { createInventorySearchFilter, DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS } from "@/lib/inventory/types/list";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,11 +41,11 @@ import {
   formatSupplierEmails,
   formatSupplierList,
   formatSupplierPhones,
-  supplierMatchesQuery,
 } from "@/lib/inventory/display";
 import {
   useCreateSupplier,
   useInventorySnapshotData,
+  useInventoryDirectoryPage,
   useInventorySuppliers,
   useSetSuppliersActive,
   useUpdateSupplier,
@@ -48,9 +57,14 @@ import {
 } from "@/lib/inventory/types/suppliers";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
-import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
-import { resolveClientTablePageLimit } from "@/lib/table/page-size";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function InventorySuppliersWorkspace() {
   const { t } = useTranslation();
@@ -58,7 +72,7 @@ export function InventorySuppliersWorkspace() {
   const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifySuccess, notifyError } = useFeedback();
-  const { data: suppliers = [], isLoading, isError, error } = useInventorySuppliers();
+  const { data: suppliers = [], isError, error } = useInventorySuppliers();
   const snapshot = useInventorySnapshotData();
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
@@ -67,26 +81,49 @@ export function InventorySuppliersWorkspace() {
   const canUpdate = hasPermission(PERMISSIONS.inventorySuppliersUpdate.name, PERMISSIONS.inventorySuppliersUpdate.resourceType);
 
   const [query, setQuery] = useState("");
-  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
   const [toggleTarget, setToggleTarget] = useState<InventoryActiveToggleTarget<InventorySupplier>>(null);
   const [viewSupplier, setViewSupplier] = useState<InventorySupplier | null>(null);
 
-  useTableSelectionReset(buildTableSelectionResetKey(query), setSelectedIds);
-
-  const filtered = useMemo(
-    () => suppliers.filter((supplier) => supplierMatchesQuery(supplier, query)),
-    [query, suppliers],
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(
+    INVENTORY_SUPPLIER_TABLE_FILTER_FIELDS,
+    "inventory.filters.suppliers.fields",
+    localizeInventoryFilterOption,
   );
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
+  const hasActiveFilters = Boolean(query.trim()) || activeFilterCount > 0;
 
-  const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
+
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+  const directoryParams = useMemo(
+    () => ({
+      ...DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS,
+      page,
+      limit: pageLimit,
+      search: createInventorySearchFilter(debouncedQuery),
+      ...(filterRows.length ? { filterRows } : {}),
+    }),
+    [debouncedQuery, filterRows, page, pageLimit],
+  );
+  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, filterRows), setSelectedIds);
+  const directoryQuery = useInventoryDirectoryPage("suppliers", directoryParams);
+  const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);
+  const totalMatched = directoryQuery.data?.total ?? 0;
+  rememberTotal(totalMatched);
+  const totalPages = Math.max(1, Math.ceil(totalMatched / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
-  const listErrorMessage = isError ? toErrorMessage(error) : null;
+  const isLoading = directoryQuery.isLoading;
+  const listErrorMessage = directoryQuery.isError
+    ? toErrorMessage(directoryQuery.error)
+    : isError
+      ? toErrorMessage(error)
+      : null;
   const selectedActive = suppliers.filter((row) => selectedIds.includes(row.id) && row.isActive);
   const editingSupplierValues = useMemo(() => (editingSupplier ? supplierToFormValues(editingSupplier) : undefined), [editingSupplier]);
 
@@ -106,9 +143,9 @@ export function InventorySuppliersWorkspace() {
 
   const columnVisibility = useApiTableColumns("inventory-suppliers", columns, INVENTORY_SUPPLIER_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary({
-    isFiltered: Boolean(query.trim()),
+    isFiltered: hasActiveFilters,
     query,
-    matched: filtered.length,
+    matched: totalMatched,
     catalogTotal: suppliers.length,
     noun: t("inventory.submenus.suppliers").toLowerCase(),
   });
@@ -216,7 +253,30 @@ export function InventorySuppliersWorkspace() {
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            filterPanel={
+              <TableAdvancedFilterPanel
+                presetScope="inventory-suppliers"
+                open={filtersOpen}
+                rows={filterRows}
+                fields={filterFields}
+                onRowsChange={(rows) => {
+                  setFilterRows(rows);
+                  setPage(1);
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setQuery("");
+                        setFilterRows([]);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              />
+            }
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
@@ -235,7 +295,7 @@ export function InventorySuppliersWorkspace() {
         <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={pageRows.map((row) => row.id)}
-          totalCount={filtered.length}
+          totalCount={totalMatched}
           onSelectedIdsChange={setSelectedIds}
           onEdit={canUpdate ? () => {
             const supplier = pageRows.find((row) => row.id === selectedIds[0]);
@@ -295,7 +355,7 @@ export function InventorySuppliersWorkspace() {
             <p className="text-sm text-muted-foreground">
               {t("common.pagination.showingOf", {
                 count: pageRows.length,
-                total: filtered.length,
+                total: totalMatched,
                 noun: t("inventory.submenus.suppliers").toLowerCase(),
               })}
             </p>

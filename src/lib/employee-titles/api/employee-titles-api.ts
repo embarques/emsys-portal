@@ -1,4 +1,6 @@
 import { apiClient } from "@/lib/api/client";
+import { fetchCatalogPage, type CatalogPageParams } from "@/lib/api/fetch-catalog-page";
+import { NAMED_CATALOG_BAR_OR_SEARCH_FIELDS, NAMED_CATALOG_TABLE_FILTER_FIELDS, expandNamedCatalogFilterNode } from "@/lib/table/named-catalog-filter-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
@@ -42,4 +44,18 @@ export async function updateEmployeeTitle(id: number, values: EmployeeTitleFormV
 export async function deleteEmployeeTitle(id: number): Promise<void> {
   const response = await apiClient.delete<ApiSuccessEnvelope<unknown>>(detailPath(id));
   assertMutationSuccess(response, "Unable to delete title.");
+}
+
+/** One server page for the directory table (search + filters applied by the API). */
+export function fetchEmployeeTitlesPage(params: CatalogPageParams): Promise<PaginatedResult<EmployeeTitle>> {
+  return fetchCatalogPage(
+    {
+      endpoint,
+      barOrSearchFields: NAMED_CATALOG_BAR_OR_SEARCH_FIELDS,
+      filterFields: NAMED_CATALOG_TABLE_FILTER_FIELDS,
+      expandNode: expandNamedCatalogFilterNode,
+      parseRows: (data) => titleSchema.array().parse(Array.isArray(data) ? data : []),
+    },
+    params,
+  );
 }

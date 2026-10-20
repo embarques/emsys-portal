@@ -16,8 +16,10 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { CHART_ACCOUNT_API_TABLE_FIELDS } from "@/lib/accounting/chart-accounts/table-fields";
+import { CHART_ACCOUNT_TABLE_FILTER_FIELDS } from "@/lib/accounting/chart-accounts/filter-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,9 +64,19 @@ import {
   formatPaginatedListSummary,
 } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+
+function localizeChartAccountFilterOption(
+  field: string,
+  option: { value: string; label: string },
+  t: (key: string) => string,
+) {
+  return field === "type" ? { ...option, label: t(`accounting.chartOfAccounts.types.${option.value}`) } : option;
+}
 
 const EMPTY_ACCOUNT: ChartAccountValues = {
   displayName: "",
@@ -208,13 +220,23 @@ export function ChartOfAccountsWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<ChartAccount | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(
+    CHART_ACCOUNT_TABLE_FILTER_FIELDS,
+    "accounting.chartOfAccounts.filters.fields",
+    localizeChartAccountFilterOption,
+  );
   const activeTypeFilter = isMobileViewport ? mobileTypeFilter : "";
-  const hasActiveFilters = hasActiveSearch || Boolean(activeTypeFilter);
+  const activeFilterRows = isMobileViewport ? [] : filterRows;
+  const activeFilterCount = countCompleteFilterRows(activeFilterRows, filterFields);
+  const hasActiveFilters = hasActiveSearch || Boolean(activeTypeFilter) || activeFilterCount > 0;
   const accountsQuery = useChartAccounts({
     page,
     limit: pageLimit,
     query: deferredQuery,
     type: activeTypeFilter || undefined,
+    ...(activeFilterRows.length ? { filterRows: activeFilterRows } : {}),
   });
   const accountOptionsQuery = useChartAccounts(
     { page: 1, limit: 500 },
@@ -242,7 +264,7 @@ export function ChartOfAccountsWorkspace() {
   );
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(deferredQuery, activeTypeFilter, page),
+    buildTableSelectionResetKey(deferredQuery, activeTypeFilter, activeFilterRows, page),
     setSelectedIds,
   );
 
@@ -539,7 +561,31 @@ export function ChartOfAccountsWorkspace() {
               </CardDescription>
             </div>
             <TableDirectoryToolbar
-              showFilterToggle={false}
+              filtersOpen={filtersOpen}
+              onFiltersOpenChange={setFiltersOpen}
+              activeFilterCount={activeFilterCount}
+              filterPanel={
+                <TableAdvancedFilterPanel
+                  presetScope="chart-of-accounts"
+                  open={filtersOpen}
+                  rows={filterRows}
+                  fields={filterFields}
+                  resultSummary={listSummary}
+                  onRowsChange={(rows) => {
+                    setFilterRows(rows);
+                    setPage(1);
+                  }}
+                  onClearAll={
+                    hasActiveFilters
+                      ? () => {
+                          setQuery("");
+                          setFilterRows([]);
+                          setPage(1);
+                        }
+                      : undefined
+                  }
+                />
+              }
               columnLayout={columnLayout}
               searchSummary={searchSummary}
               search={

@@ -12,6 +12,10 @@ import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import { USER_ACTIVITY_BAR_OR_SEARCH_FIELDS } from "@/lib/user-activities/search-fields";
 import {
+  expandUserActivityFilterNode,
+  USER_ACTIVITY_TABLE_FILTER_FIELDS,
+} from "@/lib/user-activities/filter-fields";
+import {
   DEFAULT_USER_ACTIVITY_LIST_PARAMS,
   type UserActivity,
   type UserActivityListParams,
@@ -47,6 +51,8 @@ type ApiUserActivity = {
 function hasUserActivityListFilters(params: UserActivityListParams): boolean {
   return hasResourceListFilters({
     search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: USER_ACTIVITY_TABLE_FILTER_FIELDS,
   });
 }
 
@@ -56,7 +62,9 @@ function buildUserActivitySearchBody(params: UserActivityListParams) {
     filterGroups: buildResourceSearchFilterGroups({
       search: params.search,
       barOrSearchFields: USER_ACTIVITY_BAR_OR_SEARCH_FIELDS,
-      tableFilterFields: [],
+      filterRows: params.filterRows,
+      tableFilterFields: USER_ACTIVITY_TABLE_FILTER_FIELDS,
+      expandNode: expandUserActivityFilterNode,
     }),
   });
 }

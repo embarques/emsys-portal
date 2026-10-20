@@ -13,5 +13,29 @@
   "form": {
     "details": "01 · Datos del departamento",
     "hint": "Usa un nombre claro que se pueda seleccionar al crear o editar un empleado."
-  }
+  },
+  "filters": {
+    "fields": {
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Ingrese el nombre…"
+      },
+      "active": {
+        "label": "Estado"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Ingrese el ID…"
+      },
+      "createdAt": {
+        "label": "Creado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Actualizado el",
+        "placeholder": "AAAA-MM-DD"
+      }
+    }
+  },
+  "searchPlaceholder": "Buscar departamentos…"
 }

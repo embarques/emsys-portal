@@ -172,7 +172,83 @@
     "allDirections": "All directions",
     "status": "Status",
     "location": "Branch",
-    "category": "Category"
+    "category": "Category",
+    "items": {
+      "fields": {
+        "name": {
+          "label": "Item",
+          "placeholder": "Enter item name…"
+        },
+        "sku": {
+          "label": "SKU",
+          "placeholder": "Enter SKU…"
+        },
+        "category": {
+          "label": "Category",
+          "placeholder": "Enter category…"
+        },
+        "reorderThreshold": {
+          "label": "Reorder threshold",
+          "placeholder": "0"
+        },
+        "isActive": {
+          "label": "Status"
+        }
+      }
+    },
+    "receipts": {
+      "fields": {
+        "status": {
+          "label": "Status"
+        },
+        "supplierId": {
+          "label": "Supplier"
+        },
+        "toHolderId": {
+          "label": "Warehouse"
+        },
+        "receivedAt": {
+          "label": "Received",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "receivedAtRange": {
+          "label": "Received range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        }
+      }
+    },
+    "dispatches": {
+      "fields": {
+        "status": {
+          "label": "Status"
+        },
+        "toHolderId": {
+          "label": "Dispatched to"
+        },
+        "fromHolderId": {
+          "label": "From"
+        },
+        "dispatchedAt": {
+          "label": "Dispatched",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "dispatchedAtRange": {
+          "label": "Dispatched range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        }
+      }
+    },
+    "suppliers": {
+      "fields": {
+        "companyName": {
+          "label": "Company",
+          "placeholder": "Enter company name…"
+        },
+        "isActive": {
+          "label": "Status"
+        }
+      }
+    }
   },
   "form": {
     "addItemTitle": "Add inventory item",

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { PaginatedResult } from "@/lib/api/types";
 
 import {
   cancelInventoryDispatch,
@@ -33,7 +34,7 @@ import {
 } from "@/lib/inventory/api/inventory-api";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
-import { summarizeItemStock, type InventoryFormValues } from "@/lib/inventory/types/catalog";
+import { summarizeItemStock, type InventoryFormValues, type InventoryItem } from "@/lib/inventory/types/catalog";
 import type { DispatchFormValues, ReceiptFormValues } from "@/lib/inventory/types/documents";
 import type { InventoryHolderFormValues } from "@/lib/inventory/types/holders";
 import {
@@ -47,7 +48,7 @@ import {
 } from "@/lib/inventory/types/list";
 import type { AdjustmentFormValues } from "@/lib/inventory/types/movements";
 import { EMPTY_INVENTORY_SNAPSHOT } from "@/lib/inventory/types/snapshot";
-import type { SupplierFormValues } from "@/lib/inventory/types/suppliers";
+import type { InventorySupplier, SupplierFormValues } from "@/lib/inventory/types/suppliers";
 
 /** Inventory and the Supply operations workspace share the same ledger. */
 function invalidateInventory(queryClient: ReturnType<typeof useQueryClient>) {
@@ -130,6 +131,28 @@ export function useInventorySuppliers(params: InventoryListParams = DEFAULT_INVE
   });
 }
 
+const INVENTORY_DIRECTORY_FETCHERS = {
+  items: fetchInventoryItems,
+  receipts: fetchInventoryReceipts,
+  dispatches: fetchInventoryDispatches,
+  suppliers: fetchInventorySuppliers,
+} as const;
+
+type InventoryDirectoryResource = keyof typeof INVENTORY_DIRECTORY_FETCHERS;
+type InventoryDirectoryRecord<R extends InventoryDirectoryResource> = Awaited<
+  ReturnType<(typeof INVENTORY_DIRECTORY_FETCHERS)[R]>
+>["items"][number];
+
+/** One server page of an inventory directory (search, filters and pagination applied by the API). */
+export function useInventoryDirectoryPage<R extends InventoryDirectoryResource>(resource: R, params: InventoryListParams) {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.inventory.directory(resource, params),
+    queryFn: () =>
+      INVENTORY_DIRECTORY_FETCHERS[resource](params) as Promise<PaginatedResult<InventoryDirectoryRecord<R>>>,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useInventorySnapshot() {
   const itemsQuery = useInventoryItems();
   const receiptsQuery = useInventoryReceipts();
@@ -176,13 +199,13 @@ export function useCreateInventoryItem() {
 }
 
 export function useUpdateInventoryItem() {
-  return useInventoryMutation(({ item, values }: { item: InventoryVersionedRef; values: InventoryFormValues }) =>
+  return useInventoryMutation(({ item, values }: { item: InventoryItem; values: InventoryFormValues }) =>
     updateInventoryItem(item, values),
   );
 }
 
 export function useSetInventoryItemsActive() {
-  return useInventoryMutation(({ items, isActive }: { items: InventoryVersionedRef[]; isActive: boolean }) =>
+  return useInventoryMutation(({ items, isActive }: { items: InventoryItem[]; isActive: boolean }) =>
     setInventoryItemsActive(items, isActive),
   );
 }
@@ -236,13 +259,13 @@ export function useCreateSupplier() {
 }
 
 export function useUpdateSupplier() {
-  return useInventoryMutation(({ supplier, values }: { supplier: InventoryVersionedRef; values: SupplierFormValues }) =>
+  return useInventoryMutation(({ supplier, values }: { supplier: InventorySupplier; values: SupplierFormValues }) =>
     updateInventorySupplier(supplier, values),
   );
 }
 
 export function useSetSuppliersActive() {
-  return useInventoryMutation(({ suppliers, isActive }: { suppliers: InventoryVersionedRef[]; isActive: boolean }) =>
+  return useInventoryMutation(({ suppliers, isActive }: { suppliers: InventorySupplier[]; isActive: boolean }) =>
     setInventorySuppliersActive(suppliers, isActive),
   );
 }

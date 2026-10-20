@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 
 import { ClearablePaymentViewSheet } from "@/components/accounting/clearable-payment-view-sheet";
@@ -12,8 +12,10 @@ import { TableSelectionActionDivider } from "@/components/app-shell/table-select
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { CLEARABLE_PAYMENT_API_TABLE_FIELDS } from "@/lib/accounting/clearable-payments/table-fields";
+import { CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS } from "@/lib/accounting/clearable-payments/filter-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +45,8 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -68,8 +72,32 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
     setPage(1),
   );
   const [query, setQuery] = useState("");
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const localizeStatusOption = useCallback(
+    (field: string, option: { value: string; label: string }, translate: (key: string) => string) =>
+      field === "status"
+        ? { ...option, label: translate(`${i18n}.status.${option.value.toLowerCase()}`) }
+        : option,
+    [i18n],
+  );
+  const sharedFilterFields = useLocalizedFilterFields(
+    CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS,
+    "accounting.clearablePayments.filters.fields",
+    localizeStatusOption,
+  );
+  const filterFields = useMemo(
+    () =>
+      sharedFilterFields.map((field) =>
+        field.field === "paymentReference"
+          ? { ...field, label: t(`${i18n}.columns.paymentReference`) }
+          : field,
+      ),
+    [i18n, sharedFilterFields, t],
+  );
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
-  const hasActiveSearch = Boolean(query.trim());
+  const hasActiveSearch = Boolean(query.trim()) || activeFilterCount > 0;
   const isSearchPending = query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewPayment, setViewPayment] = useState<ClearablePayment | null>(null);
@@ -80,9 +108,10 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
         page,
         limit: pageLimit,
         query: debouncedQuery,
+        rows: filterRows,
         sort,
       }),
-    [debouncedQuery, page, pageLimit, sort],
+    [debouncedQuery, filterRows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useClearablePayments(config, listParams);
@@ -97,7 +126,7 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
   const selectedOutstanding = selectedPayments.filter((payment) => payment.status === "OUTSTANDING");
   const isSaving = updateMutation.isPending;
 
-  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, sort), setSelectedIds);
+  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, filterRows, sort), setSelectedIds);
 
   const columns: DataTableColumn<ClearablePayment>[] = useMemo(
     () => [
@@ -236,7 +265,31 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
             <CardDescription>{t(`${i18n}.description`)}</CardDescription>
           </div>
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            filterPanel={
+              <TableAdvancedFilterPanel
+                presetScope={`accounting-${config.queryKeySegment}`}
+                open={filtersOpen}
+                rows={filterRows}
+                fields={filterFields}
+                resultSummary={listSummary}
+                onRowsChange={(rows) => {
+                  setFilterRows(rows);
+                  setPage(1);
+                }}
+                onClearAll={
+                  hasActiveSearch
+                    ? () => {
+                        setQuery("");
+                        setFilterRows([]);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              />
+            }
             columnLayout={columnLayout}
             searchSummary={searchSummary}
             search={

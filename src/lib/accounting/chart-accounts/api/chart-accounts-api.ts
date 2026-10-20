@@ -6,11 +6,18 @@ import { apiClient } from "@/lib/api/client";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
+  buildApiFilterNodeFromTableRows,
   buildStripeStyleSearchBody,
   createOrTextSearchFilterGroup,
   hasListTextSearch,
+  isApiSearchFilter,
   type ApiSearchFilterGroup,
+  type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
+import {
+  CHART_ACCOUNT_TABLE_FILTER_FIELDS,
+  expandChartAccountFilterNode,
+} from "@/lib/accounting/chart-accounts/filter-fields";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import {
@@ -172,8 +179,13 @@ function typeFilter(params: ChartAccountListParams): ApiListFieldFilter | null {
   return { field: "type", operator: "eq", value: params.type };
 }
 
+function chartAccountRowFilter(params: ChartAccountListParams): ApiSearchFilterNode | null {
+  const node = buildApiFilterNodeFromTableRows(params.filterRows ?? [], CHART_ACCOUNT_TABLE_FILTER_FIELDS);
+  return node ? expandChartAccountFilterNode(node) : null;
+}
+
 function hasChartAccountListFilters(params: ChartAccountListParams): boolean {
-  return Boolean(listSearchText(params) || params.type);
+  return Boolean(listSearchText(params) || params.type || chartAccountRowFilter(params));
 }
 
 function buildChartAccountSearchBody(params: ChartAccountListParams) {
@@ -197,6 +209,11 @@ function buildChartAccountSearchBody(params: ChartAccountListParams) {
       operator: "and",
       filters: [type],
     });
+  }
+
+  const rowFilter = chartAccountRowFilter(params);
+  if (rowFilter) {
+    filterGroups.push(isApiSearchFilter(rowFilter) ? { operator: "and", filters: [rowFilter] } : rowFilter);
   }
 
   return buildStripeStyleSearchBody({

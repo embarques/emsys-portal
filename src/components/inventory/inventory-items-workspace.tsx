@@ -20,8 +20,16 @@ import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVENTORY_ITEM_API_TABLE_FIELDS } from "@/lib/inventory/items/table-fields";
+import {
+  INVENTORY_ITEM_TABLE_FILTER_FIELDS,
+  localizeInventoryFilterOption,
+} from "@/lib/inventory/filter-fields";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,7 +43,6 @@ import {
   computeInventoryKpis,
   formatInventoryMinor,
   getItemStockSummary,
-  inventoryMatchesQuery,
 } from "@/lib/inventory/display";
 import {
   useCreateAdjustment,
@@ -43,6 +50,7 @@ import {
   useCreateInventoryItem,
   useCreateReceipt,
   useInventoryHolders,
+  useInventoryDirectoryPage,
   useInventoryItems,
   useInventorySnapshotData,
   useInventoryStockSummary,
@@ -51,6 +59,8 @@ import {
   useUpdateInventoryItem,
 } from "@/lib/inventory/hooks/use-inventory";
 import {
+  createInventorySearchFilter,
+  DEFAULT_INVENTORY_ITEM_LIST_PARAMS,
   type InventoryFilterState,
   type InventoryFormValues,
   type InventoryItem,
@@ -58,11 +68,15 @@ import {
 } from "@/lib/inventory/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
-import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
-import { resolveClientTablePageLimit } from "@/lib/table/page-size";
 
 const defaultFilters: InventoryFilterState = { query: "" };
+const SEARCH_DEBOUNCE_MS = 300;
 
 type DocumentDialog = "receipt" | "dispatch" | "adjustment" | null;
 
@@ -72,7 +86,7 @@ export function InventoryItemsWorkspace() {
   const { hasPermission } = useAuth();
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifySuccess, notifyError } = useFeedback();
-  const { data: items = [], isLoading, isError, error } = useInventoryItems();
+  const { data: items = [], isLoading: isItemsLoading, isError, error } = useInventoryItems();
   const { summaries } = useInventoryStockSummary();
   const { data: suppliers = [] } = useInventorySuppliers();
   const { data: holders = [] } = useInventoryHolders();
@@ -90,29 +104,57 @@ export function InventoryItemsWorkspace() {
 
   const [filters, setFilters] = useState<InventoryFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [viewItem, setViewItem] = useState<InventoryItem | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [toggleTarget, setToggleTarget] = useState<InventoryActiveToggleTarget<InventoryItem>>(null);
   const [documentDialog, setDocumentDialog] = useState<DocumentDialog>(null);
 
-  const filteredItems = useMemo(
-    () => items.filter((item) => inventoryMatchesQuery(item, filters.query)),
-    [filters.query, items],
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(
+    INVENTORY_ITEM_TABLE_FILTER_FIELDS,
+    "inventory.filters.items.fields",
+    localizeInventoryFilterOption,
   );
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+
+  const directoryParams = useMemo(
+    () => ({
+      ...DEFAULT_INVENTORY_ITEM_LIST_PARAMS,
+      page,
+      limit: pageLimit,
+      search: createInventorySearchFilter(debouncedQuery),
+      ...(filterRows.length ? { filterRows } : {}),
+    }),
+    [debouncedQuery, filterRows, page, pageLimit],
+  );
+  const directoryQuery = useInventoryDirectoryPage("items", directoryParams);
+  const pageItems = useResolvedPaginatedItems(
+    directoryQuery.data?.items,
+    directoryQuery.data?.total,
+    directoryQuery.isFetching,
+  );
+  const totalMatched = directoryQuery.data?.total ?? 0;
+  rememberTotal(totalMatched);
 
   const kpis = useMemo(() => computeInventoryKpis(items, summaries), [items, summaries]);
-  const listErrorMessage = isError ? toErrorMessage(error) : null;
-  const pageLimit = resolveClientTablePageLimit(pageSize, filteredItems.length);
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageLimit));
+  const listErrorMessage = isError
+    ? toErrorMessage(error)
+    : directoryQuery.isError
+      ? toErrorMessage(directoryQuery.error)
+      : null;
+  const totalPages = Math.max(1, Math.ceil(totalMatched / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageItems = filteredItems.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
+  const isLoading = isItemsLoading || directoryQuery.isLoading;
   const allPageSelected = pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.id));
   const selectedActive = items.filter((item) => selectedIds.includes(item.id) && item.isActive);
   const editingItemValues = useMemo(() => (editingItem ? inventoryItemToFormValues(editingItem) : undefined), [editingItem]);
 
-  useTableSelectionReset(buildTableSelectionResetKey(filters.query), setSelectedIds);
+  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, filterRows), setSelectedIds);
 
   function openAddForm() {
     if (!canCreate) return;
@@ -236,9 +278,9 @@ export function InventoryItemsWorkspace() {
 
   const columnVisibility = useApiTableColumns("inventory-items", tableColumns, INVENTORY_ITEM_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary({
-    isFiltered: Boolean(filters.query.trim()),
+    isFiltered: hasActiveFilters,
     query: filters.query,
-    matched: filteredItems.length,
+    matched: totalMatched,
     catalogTotal: items.length,
     noun: t("inventory.noun"),
   });
@@ -308,7 +350,30 @@ export function InventoryItemsWorkspace() {
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            filterPanel={
+              <TableAdvancedFilterPanel
+                presetScope="inventory-items"
+                open={filtersOpen}
+                rows={filterRows}
+                fields={filterFields}
+                onRowsChange={(rows) => {
+                  setFilterRows(rows);
+                  setPage(1);
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setFilterRows([]);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              />
+            }
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
@@ -327,7 +392,7 @@ export function InventoryItemsWorkspace() {
         <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={pageItems.map((item) => item.id)}
-          totalCount={filteredItems.length}
+          totalCount={totalMatched}
           onSelectedIdsChange={setSelectedIds}
           onEdit={canUpdate ? () => {
             const item = pageItems.find((entry) => entry.id === selectedIds[0]);
@@ -387,7 +452,7 @@ export function InventoryItemsWorkspace() {
             <p className="text-sm text-muted-foreground">
               {t("common.pagination.showingOf", {
                 count: pageItems.length,
-                total: filteredItems.length,
+                total: totalMatched,
                 noun: t("inventory.noun"),
               })}
             </p>

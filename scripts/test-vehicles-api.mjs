@@ -28,6 +28,8 @@
  *   EMSYS_SKIP_CRUD=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 const RESOURCE = "/vehicles";
@@ -218,7 +220,25 @@ console.log(`CRUD:     ${opts.skipCrud ? "skipped" : "enabled"}\n`);
 // ---------------------------------------------------------------------------
 // Auth + list / read
 // ---------------------------------------------------------------------------
-console.log("=== List / read ===");
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+const seeds = opts.skipCrud
+  ? []
+  : await seeder.seed({
+      label: "vehicle",
+      path: RESOURCE,
+      body: (index) => ({
+        name: `ZZ_PROBE_SEED_VEHICLE_${stamp}_${index}`,
+        vin: `ZZSEEDVIN${stamp}${index}`.toUpperCase(),
+        year: 2020 + index,
+        fuelType: index === 1 ? "diesel" : "gas",
+        licensePlate: `ZS${String(stamp).slice(-4)}${index}`,
+        active: true,
+        branch: { id: 1, code: "NY" },
+      }),
+      lookup: (body) => [{ field: "vin", operator: "eq", value: body.vin }],
+    });
+
+console.log("\n=== List / read ===");
 const list = await request("GET", `${RESOURCE}?page=1&offset=0&limit=40&sort=name:asc`);
 if (!ok(list)) {
   fail(`GET ${RESOURCE} (auth check)`, list.status, errDetail(list));
@@ -227,7 +247,7 @@ if (!ok(list)) {
 }
 pass(`GET ${RESOURCE}`, summarizeList(list));
 
-const sample = firstOf(list);
+const sample = seeds[0] ?? firstOf(list);
 const sampleId = sample?.id ?? null;
 if (sampleId != null) {
   const read = await request("GET", `${RESOURCE}/${sampleId}`);
@@ -306,8 +326,8 @@ if (sample?.year != null && Number.isFinite(Number(sample.year))) {
     `search year eq ${year} (number)`,
   );
   await search(
-    [{ field: "year", operator: "gte", value: String(year) }],
-    `search year gte "${year}" (string)`,
+    [{ field: "year", operator: "gte", value: year }],
+    `search year gte ${year} (number)`,
   );
 }
 
@@ -341,7 +361,7 @@ if (!opts.skipCrud) {
     fuelType: "diesel",
     licensePlate: `ZZ${String(stamp).slice(-5)}`,
     active: true,
-    branch: { id: 1, code: "NY", name: "USA" },
+    branch: { id: 1, code: "NY" },
   };
 
   const create = await request("POST", RESOURCE, createBody);
@@ -412,6 +432,9 @@ if (createdId != null) {
   if (gone.status === 404) pass(`GET ${RESOURCE}/${createdId} after delete`, "404 as expected");
   else fail(`GET ${RESOURCE}/${createdId} after delete`, gone.status, "expected 404");
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

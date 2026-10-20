@@ -1,7 +1,18 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type InventorySearchFilter = ApiListTextSearch;
+
+/**
+ * Extra bar-search matches by reference id: documents only store supplier /
+ * holder ids, so the workspace resolves names matching the query to ids and
+ * the search ORs `field eq id` for each.
+ */
+export type InventorySearchReferenceMatch = {
+  field: string;
+  ids: string[];
+};
 
 export type InventoryListParams = {
   page?: number;
@@ -9,6 +20,8 @@ export type InventoryListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: InventorySearchFilter;
+  searchReferenceMatches?: InventorySearchReferenceMatch[];
+  filterRows?: TableFilterRowState[];
   itemId?: string;
   supplierId?: string;
   holderId?: string;

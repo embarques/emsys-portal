@@ -14,9 +14,19 @@ import { buildApiListQuery } from "@/lib/api/list-query";
 import {
   buildResourceSearchFilterGroups,
   buildStripeStyleSearchBody,
+  createOrTextSearchFilterGroup,
   hasResourceListFilters,
   type ApiSearchFilter,
+  type ApiSearchFilterGroup,
+  type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
+import {
+  INVENTORY_DISPATCH_FILTER_CONFIG,
+  INVENTORY_ITEM_FILTER_CONFIG,
+  INVENTORY_RECEIPT_FILTER_CONFIG,
+  INVENTORY_SUPPLIER_FILTER_CONFIG,
+} from "@/lib/inventory/filter-fields";
+import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 import { resolvePaginatedListTotal, type PaginatedApiEnvelope, type PaginatedResult } from "@/lib/api/types";
 import {
   INVENTORY_DISPATCH_BAR_OR_SEARCH_FIELDS,
@@ -35,7 +45,12 @@ import {
   buildInventorySupplierPayload,
   type InventoryPayloadResult,
 } from "@/lib/inventory/schemas/inventory.schema";
-import type { InventoryFormValues, InventoryItem, InventoryStockBalance } from "@/lib/inventory/types/catalog";
+import {
+  inventoryItemToFormValues,
+  type InventoryFormValues,
+  type InventoryItem,
+  type InventoryStockBalance,
+} from "@/lib/inventory/types/catalog";
 import {
   isInventoryDocumentStatus,
   isInventoryStockCondition,
@@ -63,7 +78,12 @@ import {
   type InventoryListParams,
 } from "@/lib/inventory/types/list";
 import type { AdjustmentFormValues } from "@/lib/inventory/types/movements";
-import type { InventorySupplier, InventorySupplierContact, SupplierFormValues } from "@/lib/inventory/types/suppliers";
+import {
+  supplierToFormValues,
+  type InventorySupplier,
+  type InventorySupplierContact,
+  type SupplierFormValues,
+} from "@/lib/inventory/types/suppliers";
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
@@ -171,9 +191,18 @@ function extractCreatedId(response: ApiMutationEnvelope<unknown>): string | null
   return null;
 }
 
-function hasInventoryListFilters(params: InventoryListParams): boolean {
+type InventoryFilterConfig = {
+  fields: TableFilterFieldDefinition[];
+  expandNode: (node: ApiSearchFilterNode) => ApiSearchFilterNode | null;
+};
+
+function hasInventoryListFilters(params: InventoryListParams, filterConfig?: InventoryFilterConfig): boolean {
   return (
-    hasResourceListFilters({ search: params.search }) ||
+    hasResourceListFilters({
+      search: params.search,
+      filterRows: params.filterRows,
+      tableFilterFields: filterConfig?.fields,
+    }) ||
     Boolean(params.itemId?.trim()) ||
     Boolean(params.supplierId?.trim()) ||
     Boolean(params.holderId?.trim())
@@ -198,19 +227,41 @@ function extraInventoryFilters(params: InventoryListParams): ApiSearchFilter[] {
   return filters;
 }
 
+const MAX_SEARCH_REFERENCE_IDS = 25;
+
+function buildInventoryBarSearchGroup(
+  params: InventoryListParams,
+  barOrSearchFields: readonly string[],
+): ApiSearchFilterGroup | null {
+  const value = params.search?.value.trim();
+  if (!value) return null;
+
+  const group = createOrTextSearchFilterGroup(value, [...barOrSearchFields]) ?? { operator: "or" as const, filters: [] };
+  for (const match of params.searchReferenceMatches ?? []) {
+    for (const id of match.ids.slice(0, MAX_SEARCH_REFERENCE_IDS)) {
+      group.filters.push({ field: match.field, operator: "eq", value: id });
+    }
+  }
+  return group.filters.length > 0 ? group : null;
+}
+
 function buildInventorySearchBody(
   params: InventoryListParams,
   fallbackSort: InventoryListParams["sort"],
   barOrSearchFields: readonly string[],
+  filterConfig?: InventoryFilterConfig,
 ) {
   const extraFilters = extraInventoryFilters(params);
+  const barGroup = buildInventoryBarSearchGroup(params, barOrSearchFields);
   return buildStripeStyleSearchBody({
     sort: params.sort ?? fallbackSort,
     filterGroups: [
+      ...(barGroup ? [barGroup] : []),
       ...buildResourceSearchFilterGroups({
-        search: params.search,
         barOrSearchFields,
-        tableFilterFields: [],
+        filterRows: params.filterRows,
+        tableFilterFields: filterConfig?.fields ?? [],
+        expandNode: filterConfig?.expandNode,
       }),
       ...(extraFilters.length > 0 ? [{ operator: "and" as const, filters: extraFilters }] : []),
     ],
@@ -459,23 +510,29 @@ function listResource<T>(
   defaults: Pick<InventoryListParams, "page" | "limit" | "sort">,
   searchFields: readonly string[],
   normalizeOne: (raw: unknown) => T | null,
+  filterConfig?: InventoryFilterConfig,
 ): Promise<PaginatedResult<T>> {
   return fetchPaginatedResourceList({
     endpoint,
     page: params.page ?? defaults.page,
     limit: params.limit ?? defaults.limit,
     offset: params.offset,
-    isFiltered: hasInventoryListFilters(params),
+    isFiltered: hasInventoryListFilters(params, filterConfig),
     buildGetQuery: () => buildInventoryListQuery(params, defaults),
-    buildSearchBody: () => buildInventorySearchBody(params, defaults.sort, searchFields),
+    buildSearchBody: () => buildInventorySearchBody(params, defaults.sort, searchFields, filterConfig),
     normalize: (payload, context) => normalizePaginated(payload, normalizeOne, context),
   });
 }
 
+/**
+ * PATCH requires the record's catalog fields (`required inventory catalog
+ * fields missing` otherwise), so each toggle sends the full write payload.
+ */
 async function setActiveMany<T extends InventoryVersionedRef>(
   endpoint: string,
   records: T[],
   isActive: boolean,
+  buildPayload: (record: T) => object,
   fallbackMessage: string,
 ): Promise<BulkSettledResult<string>> {
   const unique = [...new Map(records.map((record) => [record.id, record])).values()];
@@ -485,7 +542,7 @@ async function setActiveMany<T extends InventoryVersionedRef>(
       const id = parseInventoryPathId(record.id);
       const response = await apiClient.patch<ApiMutationEnvelope<unknown>>(
         `${endpoint}/${id}`,
-        { isActive },
+        { ...buildPayload(record), isActive },
         headers(inventoryIfMatchHeaders(record.version)),
       );
       assertMutationSuccess(response, fallbackMessage);
@@ -502,6 +559,7 @@ export function fetchInventoryItems(params: InventoryListParams = {}): Promise<P
     DEFAULT_INVENTORY_ITEM_LIST_PARAMS,
     INVENTORY_ITEM_BAR_OR_SEARCH_FIELDS,
     normalizeInventoryItem,
+    INVENTORY_ITEM_FILTER_CONFIG,
   );
 }
 
@@ -519,11 +577,15 @@ export async function createInventoryItem(values: InventoryFormValues): Promise<
   );
 }
 
-export async function updateInventoryItem(item: InventoryVersionedRef, values: InventoryFormValues): Promise<InventoryItem> {
+/** PATCH resets an omitted `isActive` to false, so edits carry the current status. */
+export async function updateInventoryItem(
+  item: InventoryVersionedRef & Pick<InventoryItem, "isActive">,
+  values: InventoryFormValues,
+): Promise<InventoryItem> {
   return patchRecord(
     API_ENDPOINTS.INVENTORY_ITEMS,
     item,
-    requirePayload(buildInventoryItemPayload(values)),
+    { ...requirePayload(buildInventoryItemPayload(values)), isActive: item.isActive },
     normalizeInventoryItem,
     fetchInventoryItemById,
     "Unable to update inventory item.",
@@ -532,10 +594,16 @@ export async function updateInventoryItem(item: InventoryVersionedRef, values: I
 
 /** The API has no item DELETE; items are retired by deactivating them. */
 export function setInventoryItemsActive(
-  items: InventoryVersionedRef[],
+  items: InventoryItem[],
   isActive: boolean,
 ): Promise<BulkSettledResult<string>> {
-  return setActiveMany(API_ENDPOINTS.INVENTORY_ITEMS, items, isActive, "Unable to update inventory item.");
+  return setActiveMany(
+    API_ENDPOINTS.INVENTORY_ITEMS,
+    items,
+    isActive,
+    (item) => requirePayload(buildInventoryItemPayload(inventoryItemToFormValues(item))),
+    "Unable to update inventory item.",
+  );
 }
 
 /* ----------------------------------------------------------------- Stock */
@@ -604,6 +672,7 @@ export function fetchInventoryReceipts(params: InventoryListParams = {}): Promis
     DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS,
     INVENTORY_RECEIPT_BAR_OR_SEARCH_FIELDS,
     normalizeInventoryReceipt,
+    INVENTORY_RECEIPT_FILTER_CONFIG,
   );
 }
 
@@ -652,6 +721,7 @@ export function fetchInventoryDispatches(
     DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
     INVENTORY_DISPATCH_BAR_OR_SEARCH_FIELDS,
     normalizeInventoryDispatch,
+    INVENTORY_DISPATCH_FILTER_CONFIG,
   );
 }
 
@@ -737,6 +807,7 @@ export function fetchInventorySuppliers(
     DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS,
     INVENTORY_SUPPLIER_BAR_OR_SEARCH_FIELDS,
     normalizeInventorySupplier,
+    INVENTORY_SUPPLIER_FILTER_CONFIG,
   );
 }
 
@@ -759,14 +830,15 @@ export async function createInventorySupplier(values: SupplierFormValues): Promi
   );
 }
 
+/** PATCH resets an omitted `isActive` to false, so edits carry the current status. */
 export async function updateInventorySupplier(
-  supplier: InventoryVersionedRef,
+  supplier: InventoryVersionedRef & Pick<InventorySupplier, "isActive">,
   values: SupplierFormValues,
 ): Promise<InventorySupplier> {
   return patchRecord(
     API_ENDPOINTS.INVENTORY_SUPPLIERS,
     supplier,
-    requirePayload(buildInventorySupplierPayload(values)),
+    { ...requirePayload(buildInventorySupplierPayload(values)), isActive: supplier.isActive },
     normalizeInventorySupplier,
     fetchInventorySupplierById,
     "Unable to update inventory supplier.",
@@ -775,8 +847,14 @@ export async function updateInventorySupplier(
 
 /** The API has no supplier DELETE; suppliers are retired by deactivating them. */
 export function setInventorySuppliersActive(
-  suppliers: InventoryVersionedRef[],
+  suppliers: InventorySupplier[],
   isActive: boolean,
 ): Promise<BulkSettledResult<string>> {
-  return setActiveMany(API_ENDPOINTS.INVENTORY_SUPPLIERS, suppliers, isActive, "Unable to update inventory supplier.");
+  return setActiveMany(
+    API_ENDPOINTS.INVENTORY_SUPPLIERS,
+    suppliers,
+    isActive,
+    (supplier) => requirePayload(buildInventorySupplierPayload(supplierToFormValues(supplier))),
+    "Unable to update inventory supplier.",
+  );
 }

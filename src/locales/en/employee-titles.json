@@ -13,5 +13,29 @@
   "form": {
     "details": "01 · Title details",
     "hint": "Use a clear name that staff can select when creating or editing an employee."
-  }
+  },
+  "filters": {
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter name…"
+      },
+      "active": {
+        "label": "Status"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Enter ID…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      }
+    }
+  },
+  "searchPlaceholder": "Search titles…"
 }

@@ -19,5 +19,18 @@
     "description": "Create or update a status in the barcode catalog.",
     "details": "01 · Status details",
     "optional": "Optional"
-  }
+  },
+  "filters": {
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter status name…"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Enter ID…"
+      }
+    }
+  },
+  "searchPlaceholder": "Search statuses…"
 }

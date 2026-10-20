@@ -19,6 +19,7 @@ import {
   hasResourceListFilters,
 } from "@/lib/api/search-query";
 import { CHECK_BAR_OR_SEARCH_FIELDS } from "@/lib/accounting/checks/search-fields";
+import { CHECK_TABLE_FILTER_FIELDS, expandCheckFilterNode } from "@/lib/accounting/checks/filter-fields";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import {
@@ -92,6 +93,8 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 function hasCheckListFilters(params: CheckListParams): boolean {
   return hasResourceListFilters({
     search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: CHECK_TABLE_FILTER_FIELDS,
   });
 }
 
@@ -101,7 +104,9 @@ function buildCheckSearchBody(params: CheckListParams) {
     filterGroups: buildResourceSearchFilterGroups({
       search: params.search,
       barOrSearchFields: CHECK_BAR_OR_SEARCH_FIELDS,
-      tableFilterFields: [],
+      filterRows: params.filterRows,
+      tableFilterFields: CHECK_TABLE_FILTER_FIELDS,
+      expandNode: expandCheckFilterNode,
     }),
   });
 }

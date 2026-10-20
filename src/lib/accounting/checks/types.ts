@@ -3,6 +3,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { parseMoneyFormInput } from "@/lib/accounting/daily-income/money-input";
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type CheckStatus = "OUTSTANDING" | "CLEARED";
 
@@ -55,6 +56,7 @@ export type CheckListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: CheckSearchFilter;
+  filterRows?: TableFilterRowState[];
 };
 
 export const DEFAULT_CHECK_LIST_PARAMS = {
@@ -115,6 +117,7 @@ export function buildCheckListParams(input: {
   page: number;
   limit?: number;
   query: string;
+  rows?: TableFilterRowState[];
   sort?: ApiListSortInput;
 }): CheckListParams {
   const params: CheckListParams = {
@@ -123,6 +126,10 @@ export function buildCheckListParams(input: {
     limit: input.limit ?? DEFAULT_CHECK_LIST_PARAMS.limit,
     sort: input.sort ?? DEFAULT_CHECK_LIST_PARAMS.sort,
   };
+
+  if (input.rows?.length) {
+    params.filterRows = input.rows;
+  }
 
   const search = createCheckSearchFilter(input.query);
   if (search) {

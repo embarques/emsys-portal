@@ -82,12 +82,118 @@
     "toasts": {
       "created": "Account created.",
       "updated": "Account updated."
+    },
+    "filters": {
+      "fields": {
+        "type": {
+          "label": "Type"
+        },
+        "displayName": {
+          "label": "Account",
+          "placeholder": "Enter account name…"
+        },
+        "name": {
+          "label": "Internal name",
+          "placeholder": "Enter internal name…"
+        },
+        "id": {
+          "label": "Account #",
+          "placeholder": "Enter account number…"
+        },
+        "branch": {
+          "code": {
+            "label": "Branch code",
+            "placeholder": "e.g. NY"
+          },
+          "name": {
+            "label": "Branch name",
+            "placeholder": "Enter branch name…"
+          }
+        },
+        "createdAt": {
+          "label": "Created at",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "createdAtRange": {
+          "label": "Created at range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "updatedAt": {
+          "label": "Updated at",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "updatedAtRange": {
+          "label": "Updated at range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        }
+      }
     }
   },
   "clearablePayments": {
     "nav": {
       "outstandingAlert": "{{count}} outstanding payment",
       "outstandingAlert_plural": "{{count}} outstanding payments"
+    },
+    "filters": {
+      "fields": {
+        "status": {
+          "label": "Status"
+        },
+        "paymentReference": {
+          "label": "Payment reference",
+          "placeholder": "Enter reference…"
+        },
+        "invoice": {
+          "number": {
+            "label": "Invoice #",
+            "placeholder": "Enter invoice number…"
+          }
+        },
+        "refNumber": {
+          "label": "Internal reference",
+          "placeholder": "Enter internal reference…"
+        },
+        "paymentAmount": {
+          "label": "Amount",
+          "placeholder": "0.00"
+        },
+        "datePosted": {
+          "label": "Date posted",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "datePostedRange": {
+          "label": "Date posted range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "clearedAt": {
+          "label": "Cleared on",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "clearedAtRange": {
+          "label": "Cleared range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "createdAt": {
+          "label": "Created at",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "createdAtRange": {
+          "label": "Created at range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "Created by",
+            "placeholder": "Enter creator name…"
+          }
+        },
+        "updatedBy": {
+          "name": {
+            "label": "Updated by",
+            "placeholder": "Enter updater name…"
+          }
+        }
+      }
     }
   },
   "zellePayments": {
@@ -337,6 +443,67 @@
       "markedOutstanding_plural": "Marked {{count}} checks as outstanding.",
       "markedCleared": "Marked {{count}} check as cleared.",
       "markedCleared_plural": "Marked {{count}} checks as cleared."
+    },
+    "filters": {
+      "fields": {
+        "status": {
+          "label": "Status"
+        },
+        "paymentReference": {
+          "label": "Check number",
+          "placeholder": "Enter check number…"
+        },
+        "invoice": {
+          "number": {
+            "label": "Invoice #",
+            "placeholder": "Enter invoice number…"
+          }
+        },
+        "refNumber": {
+          "label": "Internal reference",
+          "placeholder": "Enter internal reference…"
+        },
+        "paymentAmount": {
+          "label": "Amount",
+          "placeholder": "0.00"
+        },
+        "datePosted": {
+          "label": "Date posted",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "datePostedRange": {
+          "label": "Date posted range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "clearedAt": {
+          "label": "Cleared on",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "clearedAtRange": {
+          "label": "Cleared range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "createdAt": {
+          "label": "Created at",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "createdAtRange": {
+          "label": "Created at range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "Created by",
+            "placeholder": "Enter creator name…"
+          }
+        },
+        "updatedBy": {
+          "name": {
+            "label": "Updated by",
+            "placeholder": "Enter updater name…"
+          }
+        }
+      }
     }
   },
   "dailyIncome": {
@@ -363,7 +530,7 @@
       "createCloseout": "Create closeout",
       "editCloseout": "Edit closeout",
       "printReceipt": "Print receipt",
-        "printReport": "Print report",
+      "printReport": "Print report",
       "closeDay": "Close day",
       "reopenDay": "Reopen day",
       "addTransaction": "Add transaction",
@@ -403,7 +570,11 @@
       "dop": "Peso",
       "select": "Select currency"
     },
-    "quickEntry": {"label": "Quick entry", "yes": "Yes", "no": "No"},
+    "quickEntry": {
+      "label": "Quick entry",
+      "yes": "Yes",
+      "no": "No"
+    },
     "sessionPanel": {
       "total": "Total",
       "show": "Show transactions",

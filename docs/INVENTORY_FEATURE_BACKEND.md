@@ -1,411 +1,228 @@
-# Inventory — Backend data models & permissions
+# Inventory — API contract (target)
 
-Handoff for EMSYS API. Matches the **current portal** (`src/lib/inventory/types/`), not the older SKU / recipient / line-item design.
+Single source of truth for the inventory data model shared by EMSYS API and the
+portal (`src/lib/inventory/`). Inventory is the company’s **internal supplies**,
+not customer merchandise. Company-scoped via `x-company-id`.
 
-Inventory is the company’s **internal supplies**, not customer merchandise.
+Existing inventory records are disposable mock data: **wipe them** when this
+contract ships. There is no legacy format to support.
 
-Company-scoped via `x-company-id`. Follow `API_PAYLOADS.md` (camelCase, success envelope, Mongo ObjectIDs).
-
----
-
-## Tables
-
-| Table | Resource type | Purpose |
-| --- | --- | --- |
-| `inventory_items` | `inventory_item` | Catalog (name + reorder threshold) |
-| `inventory_stock` | `inventory_stock` | On-hand projection, 1:1 with item |
-| `inventory_receipts` | `inventory_receipt` | Stock in (received) |
-| `inventory_dispatches` | `inventory_dispatch` | Stock out (dispatched) |
-| `inventory_suppliers` | `inventory_supplier` | Vendors for receipts |
-
-**Do not persist `quantity` / `averageCost` on the item catalog.** Maintain them on `inventory_stock` (or compute on read from receipts − dispatches). Clients must not write stock quantity directly.
-
-Recommended: also keep an append-only `inventory_movements` ledger internally (one IN per receipt, one OUT per dispatch). Not a user-facing resource.
-
-Every table below includes:
-
-```txt
-createdAt   ISO 8601
-createdBy   { id, name }   // core.User — set from session, not the request body
-updatedAt   ISO 8601
-updatedBy   { id, name }   // core.User — set from session on every write
-```
-
-On create, `updatedAt` / `updatedBy` equal `createdAt` / `createdBy`.
-
-Shared user ref:
-
-```json
-{ "id": "42", "name": "Hector Mejia" }
-```
+The model follows the published Swagger `inventory.*` definitions (ledger of
+holders, stock balances and versioned documents). Sections marked **Decision**
+define behavior that Swagger leaves open or that the API currently does
+differently; the portal already conforms to every decision unless noted.
 
 ---
 
-## 1. Inventory item (`inventory_items`)
+## Conventions (all inventory resources)
 
-Catalog only. Creating an item also creates its `inventory_stock` row at quantity `0`, average cost `0`.
+| Topic | Rule |
+| --- | --- |
+| IDs | UUID v4 strings, server-generated, accepted by every `/{id}` route. References (`itemId`, `supplierId`, `holderId`, …) are stored and returned as the same UUID strings, so `eq` filters match them. |
+| Money | Integer minor units (`…Minor`, USD cents). Never floats. |
+| Quantities | Integers. Line quantities `> 0`; balances `>= 0`. |
+| Dates | RFC 3339 UTC instants (`2026-10-20T14:30:00Z`). Date-only filter values (`2026-10-20`) are accepted and compare against the instant (`gte` = start of day, `lte` = end of day). |
+| `version` | Integer, starts at `1`, increments on every write or command. |
+| Audit | `audit: { createdAt, createdBy, updatedAt, updatedBy }`, server-set from the session; never accepted in request bodies. `createdBy` / `updatedBy` are `{ id, name }` like other EMSYS resources. |
+| Booleans | Always present in responses — never omitted when `false` (`isActive: false` must be serialized). |
+| Envelope | Standard success envelope; lists return `data`, `page`, `resultsPerPage`, `total`. Empty lists return `data: []`, not `null`. |
 
-| Field | Type | Required | Notes |
+### Decision: writes and concurrency
+
+- **`PATCH` is a JSON merge patch.** Only fields present in the body change;
+  omitted fields keep their stored value. `PATCH { "isActive": false }` alone is
+  valid. (Today an omitted `isActive` resets to `false`, and `{ isActive }`
+  alone is rejected with “required inventory catalog fields missing”.)
+- Every `PATCH` and command requires `If-Match: <version>`. A stale version
+  returns **409** with the current `version` in the error body.
+- Post-type commands also require `Idempotency-Key`; replays return the
+  original result.
+- The portal sends full payloads plus `isActive` on edits; this stays valid
+  under merge semantics.
+
+### Decision: no DELETE
+
+Nothing in inventory is deleted. Catalog records (items, suppliers, holders)
+retire with `isActive: false`; documents retire with `cancel` (drafts) or a
+correcting document (posted). Inactive records stay readable and filterable.
+
+### Errors
+
+| Status | When |
+| --- | --- |
+| 400 | Validation (`error` names the field), unknown search field or wrong value type |
+| 404 | Unknown id (in the caller’s company) |
+| 409 | `If-Match` version conflict; duplicate unique key (`sku`, `companyName`) |
+| 422 | Business rule: insufficient stock, posting a non-draft, same source/destination holder |
+
+---
+
+## Catalog
+
+### Item (`inventory.Item`) — `/inventory/items`
+
+| Field | Type | Write | Notes |
 | --- | --- | --- | --- |
-| `id` | ObjectID | PK | Server-generated |
-| `companyId` | ObjectID | yes | Tenant |
-| `item` | string | yes | Display name. Unique per company (case-insensitive) |
-| `reorderThreshold` | number | yes | `>= 0`. Low-stock threshold |
-| `createdAt` | datetime | yes | |
-| `createdBy` | `{ id, name }` | yes | |
-| `updatedAt` | datetime | yes | |
-| `updatedBy` | `{ id, name }` | yes | |
+| `id` | uuid | — | |
+| `sku` | string | optional | Unique per company when set (case-insensitive) |
+| `name` | string | **required** | Unique per company (case-insensitive) |
+| `unitOfMeasure` | string | optional | e.g. `box`, `roll` |
+| `category` | string | optional | |
+| `defaultSellingPriceMinor` | integer \| null | optional | Cents |
+| `currency` | string | optional | `USD` |
+| `reorderThreshold` | integer | optional, default `0` | `>= 0`; low-stock flag |
+| `isActive` | boolean | optional, default `true` | |
+| `version`, `audit` | | — | |
 
-### Read shape
+Stock is never stored on the item; read it from `/inventory/stock`.
 
-Include the stock projection so the Stock page does not need a second call:
+### Supplier (`inventory.Supplier`) — `/inventory/suppliers`
 
-```json
-{
-  "id": "674a1b2c3d4e5f6789012345",
-  "item": "Medium boxes",
-  "reorderThreshold": 80,
-  "quantity": 420,
-  "averageCost": 2.15,
-  "createdAt": "2026-06-04T14:22:00Z",
-  "createdBy": { "id": "42", "name": "Hector Mejia" },
-  "updatedAt": "2026-06-04T14:22:00Z",
-  "updatedBy": { "id": "42", "name": "Hector Mejia" }
-}
-```
-
-`quantity` and `averageCost` are **read-only** (from `inventory_stock`).
-
-### Write shape (create / update)
-
-```json
-{
-  "item": "Medium boxes",
-  "reorderThreshold": 80
-}
-```
-
-PUT updates catalog fields only. Do not accept `quantity` or `averageCost`.
-
-**Delete:** reject if the item is referenced by any receipt or dispatch.
-
----
-
-## 2. Stock (`inventory_stock`)
-
-One row per item. Backend maintains this when receipts/dispatches change.
-
-| Field | Type | Required | Notes |
+| Field | Type | Write | Notes |
 | --- | --- | --- | --- |
-| `id` | ObjectID | PK | May equal `itemId` |
-| `companyId` | ObjectID | yes | |
-| `itemId` | ObjectID | yes | Unique per company. FK → `inventory_items` |
-| `quantity` | number | yes | Quantity left. `>= 0` |
-| `averageCost` | number | yes | Weighted avg unit cost from receipts. `>= 0` |
-| `createdAt` | datetime | yes | When the stock row was created (item create) |
-| `createdBy` | `{ id, name }` | yes | Same as item create |
-| `updatedAt` | datetime | yes | Last receipt/dispatch that changed stock |
-| `updatedBy` | `{ id, name }` | yes | User of that last movement |
+| `companyName` | string | **required** | Unique per company (case-insensitive) |
+| `contacts` | `{ name, phone, email }[]` | optional | Blank contacts dropped; `email` validated |
+| `addresses` | string[] | optional | Blank entries dropped |
+| `isActive` | boolean | optional, default `true` | |
 
-### Formulas
+### Holder (`inventory.InventoryHolder`) — `/inventory/holders`
 
-```txt
-quantity     = SUM(receipt.quantity) − SUM(dispatch.quantity)
-averageCost  = SUM(receipt.quantity × receipt.averageCost) / SUM(receipt.quantity)
-               (0 if no receipts)
-```
-
-Reject a dispatch when `quantity requested > quantity left`.
-
-### Read shape
-
-```json
-{
-  "id": "674a1b2c3d4e5f6789012345",
-  "itemId": "674a1b2c3d4e5f6789012345",
-  "item": { "id": "674a1b2c3d4e5f6789012345", "item": "Medium boxes" },
-  "quantity": 420,
-  "averageCost": 2.15,
-  "reorderThreshold": 80,
-  "createdAt": "2026-06-04T14:22:00Z",
-  "createdBy": { "id": "42", "name": "Hector Mejia" },
-  "updatedAt": "2026-06-04T14:05:00Z",
-  "updatedBy": { "id": "42", "name": "Hector Mejia" }
-}
-```
-
-`reorderThreshold` is copied from the item for the Stock list.
-
-**Writes:** do not expose client PUT of `quantity` / `averageCost`. Stock create/delete follows the item. Seed CRUD permissions anyway so roles can grant the Stock workspace.
-
----
-
-## 3. Received / receipt (`inventory_receipts`)
-
-One item per receipt (no line-item table).
-
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| `id` | ObjectID | PK | |
-| `companyId` | ObjectID | yes | |
-| `itemId` | ObjectID | yes | FK → `inventory_items` |
-| `quantity` | number | yes | `> 0` |
-| `averageCost` | number | yes | Unit cost of this receipt. `>= 0` |
-| `supplierId` | ObjectID | yes | FK → `inventory_suppliers` |
-| `receivedAt` | date | yes | Business date received (`YYYY-MM-DD`) |
-| `createdAt` | datetime | yes | When the record was saved |
-| `createdBy` | `{ id, name }` | yes | |
-| `updatedAt` | datetime | yes | |
-| `updatedBy` | `{ id, name }` | yes | |
-
-**On create / update / delete:** in the same transaction, update `inventory_stock` (and append/rewrite the IN movement if you keep a ledger). Recalculate weighted `averageCost` for that item.
-
-### Write shape
-
-```json
-{
-  "itemId": "674a1b2c3d4e5f6789012345",
-  "quantity": 12,
-  "averageCost": 18.5,
-  "supplierId": "674a1b2c3d4e5f6789012346",
-  "receivedAt": "2026-06-03"
-}
-```
-
-### Read shape
-
-```json
-{
-  "id": "674a1b2c3d4e5f6789012347",
-  "itemId": "674a1b2c3d4e5f6789012345",
-  "item": { "id": "674a1b2c3d4e5f6789012345", "item": "Thermal labels" },
-  "quantity": 12,
-  "averageCost": 18.5,
-  "supplierId": "674a1b2c3d4e5f6789012346",
-  "supplier": { "id": "674a1b2c3d4e5f6789012346", "companyName": "PackRight Supplies" },
-  "receivedAt": "2026-06-03",
-  "createdAt": "2026-06-03T10:05:00Z",
-  "createdBy": { "id": "42", "name": "Hector Mejia" },
-  "updatedAt": "2026-06-03T10:05:00Z",
-  "updatedBy": { "id": "42", "name": "Hector Mejia" }
-}
-```
-
-**Update / delete:** recalc stock. Reject delete/update that would make `quantity left` negative because of existing dispatches.
-
----
-
-## 4. Dispatched (`inventory_dispatches`)
-
-One item per dispatch (no line-item table, no recipient, no pending/sent status).
-
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| `id` | ObjectID | PK | |
-| `companyId` | ObjectID | yes | |
-| `itemId` | ObjectID | yes | FK → `inventory_items` |
-| `quantity` | number | yes | `> 0` |
-| `incomeGained` | number | yes | Money from this dispatch. `>= 0` |
-| `dispatchedAt` | date | yes | Business date dispatched (`YYYY-MM-DD`) |
-| `dispatchedTo` | object | yes | Employee `{ id, name }` **or** daily vehicle-route `{ id, name, route?: { id, name } }` — same shape as invoice `receivedBy` |
-| `createdAt` | datetime | yes | |
-| `createdBy` | `{ id, name }` | yes | |
-| `updatedAt` | datetime | yes | |
-| `updatedBy` | `{ id, name }` | yes | |
-
-**On create:** reject if `quantity > stock.quantity` for that item. Then decrement stock.
-
-`dispatchedTo` is required. Discriminate employee vs daily route by shape (numeric employee `id` vs Mongo daily-route `id` / nested crew `route`). Do **not** persist a portal `assigneeSource` discriminator. On write, replace the previous assignee — do not leave leftover employee on route dispatches, or leftover route on employee dispatches.
-
-### Write shape
-
-```json
-{
-  "itemId": "674a1b2c3d4e5f6789012345",
-  "quantity": 48,
-  "incomeGained": 96,
-  "dispatchedAt": "2026-06-04",
-  "dispatchedTo": {
-    "id": "674a1b2c3d4e5f6789012301",
-    "name": "NY Pickup A",
-    "route": { "id": "674a1b2c3d4e5f6789012302", "name": "Crew A" }
-  }
-}
-```
-
-Employee example:
-
-```json
-{
-  "dispatchedTo": { "id": 12, "name": "Hector Mejia" }
-}
-```
-
-### Read shape
-
-```json
-{
-  "id": "674a1b2c3d4e5f6789012348",
-  "itemId": "674a1b2c3d4e5f6789012345",
-  "item": { "id": "674a1b2c3d4e5f6789012345", "item": "Medium boxes" },
-  "quantity": 48,
-  "incomeGained": 96,
-  "dispatchedAt": "2026-06-04",
-  "dispatchedTo": {
-    "id": "674a1b2c3d4e5f6789012301",
-    "name": "NY Pickup A",
-    "route": { "id": "674a1b2c3d4e5f6789012302", "name": "Crew A" }
-  },
-  "createdAt": "2026-06-04T14:05:00Z",
-  "createdBy": { "id": "42", "name": "Hector Mejia" },
-  "updatedAt": "2026-06-04T14:05:00Z",
-  "updatedBy": { "id": "42", "name": "Hector Mejia" }
-}
-```
-
-Insufficient stock:
-
-```json
-{
-  "success": false,
-  "message": "Insufficient stock for Medium boxes: requested 48, available 32"
-}
-```
-
----
-
-## 5. Supplier (`inventory_suppliers`)
-
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| `id` | ObjectID | PK | |
-| `companyId` | ObjectID | yes | |
-| `companyName` | string | yes | Unique per company (case-insensitive) |
-| `contactNames` | string[] | yes | Empty array allowed. Trim blanks |
-| `addresses` | string[] | yes | Empty array allowed. Trim blanks |
-| `phones` | `RecordPhone[]` | yes | Same phone shape as customers |
-| `emails` | string[] | yes | Empty array allowed. Trim blanks |
-| `createdAt` | datetime | yes | |
-| `createdBy` | `{ id, name }` | yes | |
-| `updatedAt` | datetime | yes | |
-| `updatedBy` | `{ id, name }` | yes | |
-
-### Phone (`RecordPhone`)
+Where stock physically sits.
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `type` | `mobile` \| `business` \| `home` \| `other` | |
-| `number` | string | E.164 on write (e.g. `+19015550100`) |
-| `displayNumber` | string | Response-only formatted. Ignore on write |
-| `isPrimary` | boolean | One primary per supplier |
+| `type` | `WAREHOUSE \| EMPLOYEE \| VEHICLE \| ROUTE_CREW` | |
+| `displayName` | string | Required |
+| `entityId` | string | Employee / vehicle / route-crew id; empty for warehouses |
+| `isActive` | boolean | |
 
-### Write shape
-
-```json
-{
-  "companyName": "PackRight Supplies",
-  "contactNames": ["Maria Santos", "Luis Perez"],
-  "addresses": ["88 Industrial Pkwy, Elizabeth, NJ"],
-  "phones": [
-    { "type": "business", "number": "+19015550100", "isPrimary": true }
-  ],
-  "emails": ["sales@packright.com"]
-}
-```
-
-### Read shape
-
-```json
-{
-  "id": "674a1b2c3d4e5f6789012346",
-  "companyName": "PackRight Supplies",
-  "contactNames": ["Maria Santos", "Luis Perez"],
-  "addresses": ["88 Industrial Pkwy, Elizabeth, NJ"],
-  "phones": [
-    {
-      "type": "business",
-      "number": "+19015550100",
-      "displayNumber": "(901) 555-0100",
-      "isPrimary": true
-    }
-  ],
-  "emails": ["sales@packright.com"],
-  "createdAt": "2026-05-20T14:30:00Z",
-  "createdBy": { "id": "42", "name": "Hector Mejia" },
-  "updatedAt": "2026-05-20T14:30:00Z",
-  "updatedBy": { "id": "42", "name": "Hector Mejia" }
-}
-```
-
-**Delete:** reject if referenced by any receipt.
+**Decision:** company onboarding creates one active `WAREHOUSE` holder
+(“Main warehouse”). Receipts and dispatches need it; today the tenant has none.
 
 ---
 
-## Relationships
+## Stock (`inventory.StockBalance`) — `/inventory/stock` (read-only)
+
+One row per `(holderId, itemId, condition)`; `condition` is
+`AVAILABLE | QUARANTINED`. Fields: `quantityOnHand`, `quantityReserved`
+(integers), `updatedAt`, `version`. Balances change **only** when a document is
+posted; clients never write them. The Stock page sums balances per item.
+
+---
+
+## Documents
+
+Shared shape: `status` (`DRAFT | POSTED | CANCELLED`), `lines[]`, `notes`,
+`postedAt`, `postedBy`, `postingRevision`, `correctsSourceId`, `version`,
+`audit`.
+
+Lifecycle:
 
 ```txt
-inventory_items 1 ── 1 inventory_stock
-inventory_items 1 ── * inventory_receipts
-inventory_items 1 ── * inventory_dispatches
-inventory_suppliers 1 ── * inventory_receipts
+create → DRAFT ──PATCH (If-Match)──▶ DRAFT
+DRAFT ──post (If-Match + Idempotency-Key)──▶ POSTED   (writes movements + balances)
+DRAFT ──cancel (If-Match)──▶ CANCELLED
+POSTED ── immutable; correct with a new document whose correctsSourceId = original id
 ```
+
+### Receipt (`inventory.Receipt`) — `/inventory/receipts`
+
+Stock **in** from a supplier.
+
+| Field | Type | Write | Rules |
+| --- | --- | --- | --- |
+| `supplierId` | uuid | **required** | Active supplier |
+| `toHolderId` | uuid | **required** | Active `WAREHOUSE` holder |
+| `receivedAt` | instant | **required** | |
+| `notes` | string | optional | |
+| `lines[]` | `{ id?, itemId, quantity, unitCostMinor }` | **required**, ≥ 1 | One line per item; `quantity > 0`; `unitCostMinor >= 0` |
+
+Posting adds `quantity` to `(toHolderId, itemId, AVAILABLE)`.
+
+### Dispatch (`inventory.Dispatch`) — `/inventory/dispatches`
+
+Stock **transfer** between holders (warehouse → custodian). Records no revenue.
+
+| Field | Type | Write | Rules |
+| --- | --- | --- | --- |
+| `fromHolderId` | uuid | **required** | Active holder |
+| `toHolderId` | uuid | **required** | Active holder, ≠ `fromHolderId` |
+| `assigneeEmployeeId` | string | optional | |
+| `dailyRouteId` | string | optional | Context only |
+| `dispatchedAt` | instant | **required** | |
+| `notes` | string | optional | |
+| `lines[]` | `{ id?, itemId, quantity }` | **required**, ≥ 1 | One line per item; `quantity > 0` |
+
+Posting moves quantities; **422** when `fromHolderId` lacks available stock.
+
+Adjustments, returns, dispositions, counts, sales, payments and closeouts keep
+the Swagger shapes and the same conventions (see `docs/inventory-workflow.md`).
 
 ---
 
-## Endpoints (CRUD + list + search)
+## Search contract
 
-All under `/v1`. Same list/search conventions as customers (`page`, `limit`, `offset`, `sort`; `POST …/search`).
+`POST /inventory/<resource>/search` with the shared DSL (`operator`,
+`filters[]` of `{ field, operator, value }`, nested `and`/`or` groups).
+Operators: `eq neq contains startsWith gt gte lt lte in notIn`. Values must be
+JSON-typed (numbers, booleans, strings). `contains` / `startsWith` are
+case-insensitive.
 
-| Resource | List | Search | Get | Create | Update | Delete |
-| --- | --- | --- | --- | --- | --- | --- |
-| Items | `GET /inventory/items` | `POST /inventory/items/search` | `GET /inventory/items/:id` | `POST /inventory/items` | `PUT /inventory/items/:id` | `DELETE /inventory/items/:id` |
-| Stock | `GET /inventory/stock` | `POST /inventory/stock/search` | `GET /inventory/stock/:id` | — (created with item) | — (via receipt/dispatch) | — (deleted with item) |
-| Receipts | `GET /inventory/receipts` | `POST /inventory/receipts/search` | `GET /inventory/receipts/:id` | `POST /inventory/receipts` | `PUT /inventory/receipts/:id` | `DELETE /inventory/receipts/:id` |
-| Dispatches | `GET /inventory/dispatches` | `POST /inventory/dispatches/search` | `GET /inventory/dispatches/:id` | `POST /inventory/dispatches` | `PUT /inventory/dispatches/:id` | `DELETE /inventory/dispatches/:id` |
-| Suppliers | `GET /inventory/suppliers` | `POST /inventory/suppliers/search` | `GET /inventory/suppliers/:id` | `POST /inventory/suppliers` | `PUT /inventory/suppliers/:id` | `DELETE /inventory/suppliers/:id` |
+**Decision:** each resource accepts at least these fields, and Swagger lists
+them per endpoint. Fields marked † are rejected today and must be added.
 
-`GET /inventory/items` should return catalog **plus** `quantity` and `averageCost` (stock page).
+| Resource | Searchable fields |
+| --- | --- |
+| Items | `id`, `sku`, `name`, `category`, `unitOfMeasure`†, `currency`†, `defaultSellingPriceMinor`†, `reorderThreshold`, `isActive`, `audit.createdAt`, `audit.updatedAt` |
+| Suppliers | `id`, `companyName`, `contacts.name`†, `contacts.phone`†, `contacts.email`†, `addresses`†, `isActive`, `audit.createdAt` |
+| Holders | `id`, `type`, `displayName`, `entityId`, `isActive` |
+| Stock | `itemId`, `holderId`, `condition`, `quantityOnHand`, `quantityReserved` |
+| Receipts | `id`, `status`, `supplierId`, `toHolderId`, `receivedAt`, `postedAt`, `notes`†, `lines.itemId`†, `audit.createdAt` |
+| Dispatches | `id`, `status`, `fromHolderId`, `toHolderId`, `assigneeEmployeeId`, `dailyRouteId`, `dispatchedAt`, `postedAt`, `notes`†, `lines.itemId`†, `audit.createdAt` |
+
+Must hold today but don’t: `isActive eq false` matches inactive records, and
+`supplierId eq <uuid>` matches receipts carrying that supplier.
+
+Default sorts: items `name:asc`, suppliers `companyName:asc`, holders
+`displayName:asc`, receipts `receivedAt:desc`, dispatches `dispatchedAt:desc`.
+
+---
+
+## Portal alignment
+
+| Contract point | Portal (`src/lib/inventory/api/inventory-api.ts`) |
+| --- | --- |
+| UUID ids, opaque | Treated as opaque strings; `encodeURIComponent` on paths |
+| `If-Match` / `Idempotency-Key` | `inventoryIfMatchHeaders`, `inventoryPostHeaders`; commands blocked without a version |
+| Merge PATCH | Sends full payload + current `isActive` (safe under merge) |
+| No DELETE | Deactivate (`setInventoryItemsActive` / `setInventorySuppliersActive`), cancel drafts |
+| Cents / integers | `defaultSellingPriceMinor`, `unitCostMinor` via exact USD parsing |
+| Audit user object | `readApiUserUsername` accepts `{ id, name }` or a string |
+| Search | Server pagination + filters (`INVENTORY_*_FILTER_CONFIG`); only fields the API accepts today |
+
+When the † fields ship, the portal adds: item filters for unit / price, supplier
+contact and address search, and receipt/dispatch search by note and by item
+(`lines.itemId`, resolved from item names like suppliers are today).
+
+Automated checks: `npm run test:api:inventory` (live CRUD through the portal
+module), `npm run test:api:filters` (every advanced filter replayed live),
+`tests/unit/inventory-api.test.mjs`, `tests/unit/inventory-swagger-contract.test.mjs`.
 
 ---
 
 ## Permissions
 
-Seed **list + view + create + update + delete** for each resource. Portal expands CRUD flags the same way as checks/customers:
+Unchanged resource types; the portal expands CRUD flags to `canListX` /
+`canViewX` / `canCreateX` / `canUpdateX` / `canDeleteX`.
 
-```txt
-{ resourceType, list, view, create, update, delete }
-  → canListX / canViewX / canCreateX / canUpdateX / canDeleteX
-```
-
-| resourceType | list | view | create | update | delete |
-| --- | --- | --- | --- | --- | --- |
-| `inventory_item` | `canListInventoryItem` | `canViewInventoryItem` | `canCreateInventoryItem` | `canUpdateInventoryItem` | `canDeleteInventoryItem` |
-| `inventory_stock` | `canListInventoryStock` | `canViewInventoryStock` | `canCreateInventoryStock` | `canUpdateInventoryStock` | `canDeleteInventoryStock` |
-| `inventory_receipt` | `canListInventoryReceipt` | `canViewInventoryReceipt` | `canCreateInventoryReceipt` | `canUpdateInventoryReceipt` | `canDeleteInventoryReceipt` |
-| `inventory_dispatch` | `canListInventoryDispatch` | `canViewInventoryDispatch` | `canCreateInventoryDispatch` | `canUpdateInventoryDispatch` | `canDeleteInventoryDispatch` |
-| `inventory_supplier` | `canListInventorySupplier` | `canViewInventorySupplier` | `canCreateInventorySupplier` | `canUpdateInventorySupplier` | `canDeleteInventorySupplier` |
-
-Seed example:
-
-```json
-[
-  { "resourceType": "inventory_item", "list": true, "view": true, "create": true, "update": true, "delete": true },
-  { "resourceType": "inventory_stock", "list": true, "view": true, "create": true, "update": true, "delete": true },
-  { "resourceType": "inventory_receipt", "list": true, "view": true, "create": true, "update": true, "delete": true },
-  { "resourceType": "inventory_dispatch", "list": true, "view": true, "create": true, "update": true, "delete": true },
-  { "resourceType": "inventory_supplier", "list": true, "view": true, "create": true, "update": true, "delete": true }
-]
-```
-
-Portal workspace gates:
-
-| Route | Permission |
+| resourceType | Used for |
 | --- | --- |
-| `/inventory/items` (Stock) | `canListInventoryStock` |
-| `/inventory/receipts` | `canListInventoryReceipt` |
-| `/inventory/dispatches` | `canListInventoryDispatch` |
-| `/inventory/suppliers` | `canListInventorySupplier` |
+| `inventory_item` | Item create / edit / deactivate (`update`) |
+| `inventory_stock` | Stock page list (`canListInventoryStock`), adjustments (`update`) |
+| `inventory_receipt` | Receipts list / create / edit; post & cancel use `update` |
+| `inventory_dispatch` | Dispatches list / create / edit; post & cancel use `update` |
+| `inventory_supplier` | Suppliers list / create / edit / deactivate (`update`) |
 
-Item add/edit/delete on the Stock page uses `inventory_item` create/update/delete.
-
-Until these are seeded, the portal still accepts the legacy `delivery:canViewDelivery` / `inventory:canViewInventory` grants.
+`delete` grants stay seeded for compatibility but no inventory route deletes.
+Supply-operations capabilities (`inventory.read`, `inventory.post`, …) follow
+`docs/inventory-workflow.md`.

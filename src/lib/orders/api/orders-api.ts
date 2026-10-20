@@ -955,8 +955,10 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
     payload.employee = { id: values.employeeId };
   }
 
-  if (values.id > 0 && values.completed) {
-    payload.completed = true;
+  // Always explicit on update: the API keeps the stored value when the field is
+  // omitted, so leaving out `false` would make a completed appointment unreopenable.
+  if (values.id > 0) {
+    payload.completed = values.completed;
   }
 
   return payload;

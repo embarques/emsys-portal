@@ -30,6 +30,8 @@
  *   EMSYS_SKIP_CRUD=1, EMSYS_SKIP_AUTOCOMPLETE=1
  */
 
+import { createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
@@ -222,6 +224,27 @@ console.log(`Autocomplete: ${opts.skipAutocomplete ? "skipped" : "enabled"}\n`);
 // Auth + list / read
 // ---------------------------------------------------------------------------
 console.log("=== List / read ===");
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+const seeds = opts.skipCrud
+  ? []
+  : await seeder.seed({
+      label: "customer",
+      path: "/customers",
+      body: (index) => ({
+        name: `ZZ_PROBE_SEED_CUSTOMER_${stamp}_${index}`,
+        customerType: index === 1 ? 1 : 2,
+        phone1: `555-011${index}`,
+        phones: [{ number: `555-011${index}`, type: "mobile", isPrimary: true }],
+        active: true,
+        branch: { id: 1, code: "NY", name: "USA" },
+        email: `probe-seed-${stamp}-${index}@example.com`,
+        IDNumber: `PROBE-SEED-${stamp}-${index}`,
+        notes: "API smoke test seed",
+        addresses: [{ address1: `${index} Seed St`, city: "Bronx", state: "NY", zipcode: "10451", country: "US", isPrimary: true }],
+      }),
+      lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
+    });
+
 const list = await request("GET", "/customers?page=1&offset=0&limit=40&sort=name:asc");
 if (!ok(list)) {
   fail("GET /customers (auth check)", list.status, errDetail(list));
@@ -230,7 +253,7 @@ if (!ok(list)) {
 }
 pass("GET /customers", summarizeList(list));
 
-const sample = firstOf(list);
+const sample = seeds[0] ?? firstOf(list);
 const sampleId = sample?.id ?? null;
 if (sampleId != null) {
   const read = await request("GET", `/customers/${sampleId}`);
@@ -461,6 +484,9 @@ if (createdId != null) {
   if (gone.status === 404) pass(`GET /customers/${createdId} after delete`, "404 as expected");
   else fail(`GET /customers/${createdId} after delete`, gone.status, "expected 404");
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

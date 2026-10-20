@@ -172,7 +172,83 @@
     "allDirections": "Todas las direcciones",
     "status": "Estado",
     "location": "Sucursal",
-    "category": "Categoría"
+    "category": "Categoría",
+    "items": {
+      "fields": {
+        "name": {
+          "label": "Artículo",
+          "placeholder": "Ingrese el nombre del artículo…"
+        },
+        "sku": {
+          "label": "SKU",
+          "placeholder": "Ingrese el SKU…"
+        },
+        "category": {
+          "label": "Categoría",
+          "placeholder": "Ingrese la categoría…"
+        },
+        "reorderThreshold": {
+          "label": "Punto de reorden",
+          "placeholder": "0"
+        },
+        "isActive": {
+          "label": "Estado"
+        }
+      }
+    },
+    "receipts": {
+      "fields": {
+        "status": {
+          "label": "Estado"
+        },
+        "supplierId": {
+          "label": "Proveedor"
+        },
+        "toHolderId": {
+          "label": "Almacén"
+        },
+        "receivedAt": {
+          "label": "Recibido",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "receivedAtRange": {
+          "label": "Rango de recepción",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        }
+      }
+    },
+    "dispatches": {
+      "fields": {
+        "status": {
+          "label": "Estado"
+        },
+        "toHolderId": {
+          "label": "Despachado a"
+        },
+        "fromHolderId": {
+          "label": "Desde"
+        },
+        "dispatchedAt": {
+          "label": "Despachado",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "dispatchedAtRange": {
+          "label": "Rango de despacho",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        }
+      }
+    },
+    "suppliers": {
+      "fields": {
+        "companyName": {
+          "label": "Empresa",
+          "placeholder": "Ingrese el nombre de la empresa…"
+        },
+        "isActive": {
+          "label": "Estado"
+        }
+      }
+    }
   },
   "form": {
     "addItemTitle": "Agregar artículo de inventario",

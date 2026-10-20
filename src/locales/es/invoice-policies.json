@@ -20,5 +20,37 @@
     "details": "01 · Datos de la política",
     "hint": "Escribe un lenguaje claro. Solo las políticas activas se muestran al crear una factura.",
     "activeHint": "Las políticas inactivas permanecen en el catálogo pero se ocultan del asistente de creación."
-  }
+  },
+  "filters": {
+    "fields": {
+      "title": {
+        "label": "Título",
+        "placeholder": "Ingrese el título…"
+      },
+      "body": {
+        "label": "Texto de la política",
+        "placeholder": "Ingrese el texto de la política…"
+      },
+      "active": {
+        "label": "Estado"
+      },
+      "sortOrder": {
+        "label": "Orden",
+        "placeholder": "0"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Ingrese el ID…"
+      },
+      "createdAt": {
+        "label": "Creado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Actualizado el",
+        "placeholder": "AAAA-MM-DD"
+      }
+    }
+  },
+  "searchPlaceholder": "Buscar políticas…"
 }

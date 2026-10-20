@@ -138,6 +138,30 @@ const FILTER_SPECS = [
     alwaysPlaceholder: false,
   },
   {
+    file: "src/lib/accounting/checks/filter-fields.ts",
+    ns: "accounting.checks",
+    remap: (field) => field,
+    alwaysPlaceholder: false,
+  },
+  {
+    file: "src/lib/accounting/clearable-payments/filter-fields.ts",
+    ns: "accounting.clearablePayments",
+    remap: (field) => field,
+    alwaysPlaceholder: false,
+  },
+  {
+    file: "src/lib/accounting/chart-accounts/filter-fields.ts",
+    ns: "accounting.chartOfAccounts",
+    remap: (field) => field,
+    alwaysPlaceholder: false,
+  },
+  {
+    file: "src/lib/user-activities/filter-fields.ts",
+    ns: "user-activities",
+    remap: (field) => field,
+    alwaysPlaceholder: false,
+  },
+  {
     file: "src/lib/memo-pads/filter-fields.ts",
     ns: null,
     remap: (field) => field,

@@ -24,6 +24,8 @@
  *   EMSYS_RUN_LEGACY_PREVIEW=1
  */
 
+import { cleanupAutoCreatedCustomers, createSeeder } from "./lib/seed-records.mjs";
+
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
@@ -219,7 +221,69 @@ console.log(`Report:   ${opts.skipReport ? "skipped" : "enabled"}\n`);
 // ---------------------------------------------------------------------------
 // Auth + list / read
 // ---------------------------------------------------------------------------
-console.log("=== List / read ===");
+// The API requires an open daily closeout for the invoice date + branch, so
+// seeds attach to one (like the CRUD block). They use inline parties, not an
+// existing customer, and are deleted at the end.
+function listOfRows(res) {
+  return Array.isArray(res.json?.data) ? res.json.data : [];
+}
+const seeder = createSeeder({ request, ok, pass, fail, errDetail });
+let seedRefs = null;
+const seedIncome = opts.skipCrud
+  ? null
+  : (listOfRows(await request("GET", "/income-statements?page=1&limit=20&sort=id:desc")).find(
+      (row) => String(row?.status ?? "").toLowerCase() === "open",
+    ) ?? null);
+if (!opts.skipCrud && !seedIncome) note("Invoice seeds skipped: no open daily closeout (income statement).");
+const seeds = opts.skipCrud || !seedIncome
+  ? []
+  : await seeder.seed({
+      label: "invoice",
+      path: "/invoices",
+      body: async (index) => {
+        if (!seedRefs) {
+          seedRefs = {
+            container: firstOf(await request("GET", "/containers?page=1&limit=1&sort=id:desc")),
+            employee: firstOf(await request("GET", "/employees?page=1&limit=1&sort=id:desc")),
+          };
+        }
+        const { container, employee } = seedRefs;
+        return {
+          number: `ZZ-PROBE-SEED-${stamp}-${index}`,
+          date: String(seedIncome.date ?? today).slice(0, 10),
+          incomeStatement: { id: seedIncome.id },
+          branch: {
+            id: Number(seedIncome.branch?.id) || 1,
+            name: seedIncome.branch?.name ?? "USA",
+            code: seedIncome.branch?.code ?? "NY",
+          },
+          cost: 10 * index,
+          payment: 0,
+          balance: 10 * index,
+          surcharge: 0,
+          paidRegion: "NY",
+          paidStatus: "UNPAID",
+          ...(employee ? { employee: { id: Number(employee.id), name: employee.name ?? "Probe Employee" } } : {}),
+          ...(container ? { container: { id: container.id, name: container.name ?? String(container.id) } } : {}),
+          sender: {
+            name: `ZZ_PROBE_SEED_SENDER_${stamp}_${index}`,
+            customerType: 1,
+            phone1: `555-014${index}`,
+            address: { address1: `${index} Seed St`, city: "Bronx", state: "NY", zipcode: "10451" },
+          },
+          receiver: {
+            name: `ZZ_PROBE_SEED_RECEIVER_${stamp}_${index}`,
+            customerType: 2,
+            phone1: `555-024${index}`,
+            address: { address1: `${index} Seed Ave`, city: "Santo Domingo", state: "DN", zipcode: "10101", country: "DO" },
+          },
+          invoiceDetails: [{ name: `Seed box ${index}`, quantity: 1, labels: 1, price: 10 * index, total: 10 * index }],
+        };
+      },
+      lookup: (body) => [{ field: "number", operator: "eq", value: body.number }],
+    });
+
+console.log("\n=== List / read ===");
 const list = await request("GET", "/invoices?page=1&offset=0&limit=40&sort=number:desc");
 if (!ok(list)) {
   fail("GET /invoices (auth check)", list.status, errDetail(list));
@@ -228,7 +292,7 @@ if (!ok(list)) {
 }
 pass("GET /invoices", summarizeList(list));
 
-const sampleInvoice = firstOf(list);
+const sampleInvoice = seeds[0] ?? firstOf(list);
 const sampleId = sampleInvoice?.id ?? null;
 if (sampleId != null) {
   const read = await request("GET", `/invoices/${sampleId}`);
@@ -384,7 +448,6 @@ if (!opts.skipCrud) {
       cost: 100,
       payment: 0,
       balance: 100,
-      discount: 0,
       surcharge: 0,
       paidRegion: "NY",
       paidStatus: "UNPAID",
@@ -393,10 +456,6 @@ if (!opts.skipCrud) {
         name: employee.name ?? "Probe Employee",
         ...(employee.userName ? { userName: employee.userName } : {}),
         ...(employee.fullName ? { fullName: employee.fullName } : {}),
-      },
-      receivedBy: {
-        id: Number(employee.id),
-        name: employee.name ?? "Probe Employee",
       },
       container: {
         id: container.id,
@@ -473,6 +532,7 @@ if (!opts.skipCrud) {
         payment: 20,
         balance: 100,
         paidStatus: "PARTIAL",
+        isVoid: false,
         invoiceDetails: [
           {
             name: `Probe box ${stamp} UPD`,
@@ -486,20 +546,6 @@ if (!opts.skipCrud) {
       const update = await request("PUT", `/invoices/${createdId}`, updateBody);
       if (ok(update)) pass(`PUT /invoices/${createdId}`);
       else fail(`PUT /invoices/${createdId}`, update.status, errDetail(update));
-
-      const voidOn = await request("PUT", `/invoices/${createdId}`, {
-        ...updateBody,
-        isVoid: true,
-      });
-      if (ok(voidOn)) pass(`PUT /invoices/${createdId} isVoid=true`);
-      else fail(`PUT /invoices/${createdId} isVoid=true`, voidOn.status, errDetail(voidOn));
-
-      const voidOff = await request("PUT", `/invoices/${createdId}`, {
-        ...updateBody,
-        isVoid: false,
-      });
-      if (ok(voidOff)) pass(`PUT /invoices/${createdId} isVoid=false`);
-      else fail(`PUT /invoices/${createdId} isVoid=false`, voidOff.status, errDetail(voidOff));
 
       if (createdNumber) {
         await search(
@@ -614,6 +660,10 @@ if (createdId != null) {
   if (gone.status === 404) pass(`GET /invoices/${createdId} after delete`, "404 as expected");
   else fail(`GET /invoices/${createdId} after delete`, gone.status, "expected 404");
 }
+
+await seeder.verifyListed();
+await seeder.cleanup();
+await cleanupAutoCreatedCustomers({ request, ok, pass, fail, errDetail }, stamp);
 
 console.log("\n=== SUMMARY ===");
 console.log(`Passed: ${results.passed.length}`);

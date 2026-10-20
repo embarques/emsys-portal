@@ -105,16 +105,44 @@ test("dispatch drafts transfer between holders and never send revenue", async ()
   assert.equal(calls.length, 1);
 });
 
-test("items and suppliers are deactivated with PATCH isActive, not deleted", async () => {
+test("items and suppliers are deactivated with PATCH (full catalog fields + isActive), not deleted", async () => {
   const { calls, client } = recordingClient();
   const api = loadFeature("src/lib/inventory/api/inventory-api.ts", client);
-  const result = await api.setInventoryItemsActive([{ id: "item-1", version: 4 }, { id: "item-1", version: 4 }, { id: "item-2", version: null }], false);
+  const item = {
+    id: "item-1", version: 4, sku: "BOX", name: "Small box", unitOfMeasure: "unit", category: "",
+    defaultSellingPriceMinor: 250, currency: "USD", reorderThreshold: 2, isActive: true,
+  };
+  const result = await api.setInventoryItemsActive([item, item, { ...item, id: "item-2", version: null }], false);
   assert.deepEqual(result.succeededIds, ["item-1"]);
   assert.deepEqual(result.failedIds, ["item-2"]);
-  assert.deepEqual(calls, [["patch", "/inventory/items/item-1", { isActive: false }, { headers: { "If-Match": "4" } }]]);
-  await api.setInventorySuppliersActive([{ id: "sup-1", version: 1 }], true);
-  assert.deepEqual(calls[1], ["patch", "/inventory/suppliers/sup-1", { isActive: true }, { headers: { "If-Match": "1" } }]);
+  // The API rejects `{ isActive }` alone ("required inventory catalog fields missing").
+  assert.deepEqual(calls, [[
+    "patch",
+    "/inventory/items/item-1",
+    { sku: "BOX", name: "Small box", unitOfMeasure: "unit", category: "", currency: "USD", reorderThreshold: 2, defaultSellingPriceMinor: 250, isActive: false },
+    { headers: { "If-Match": "4" } },
+  ]]);
+  const supplier = { id: "sup-1", version: 1, companyName: "Acme", contacts: [], addresses: ["1 Main St"], isActive: false };
+  await api.setInventorySuppliersActive([supplier], true);
+  assert.deepEqual(calls[1], [
+    "patch",
+    "/inventory/suppliers/sup-1",
+    { companyName: "Acme", contacts: [], addresses: ["1 Main St"], isActive: true },
+    { headers: { "If-Match": "1" } },
+  ]);
   assert.equal(calls.some(([method]) => method === "delete"), false);
+});
+
+test("editing an item or supplier keeps its current active status", async () => {
+  const { calls, client } = recordingClient((method, url, body) => ({ success: true, data: { id: "x", version: 2, ...body } }));
+  const api = loadFeature("src/lib/inventory/api/inventory-api.ts", client);
+  await api.updateInventoryItem(
+    { id: "item-1", version: 1, isActive: true },
+    { sku: "BOX", name: "Box", unitOfMeasure: "", category: "", defaultSellingPrice: "", reorderThreshold: "0" },
+  );
+  assert.equal(calls[0][2].isActive, true, "PATCH without isActive deactivates the record");
+  await api.updateInventorySupplier({ id: "sup-1", version: 1, isActive: false }, { companyName: "Acme", contacts: [], addresses: [] });
+  assert.equal(calls[1][2].isActive, false);
 });
 
 test("catalog and supplier payloads match inventory.Item and inventory.Supplier", async () => {

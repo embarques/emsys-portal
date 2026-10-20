@@ -18,6 +18,7 @@ import type { LoanListParams } from "@/lib/accounting/loans/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { InventoryListParams } from "@/lib/inventory/types/list";
+import type { CatalogPageParams } from "@/lib/api/fetch-catalog-page";
 import type { UserActivityListParams } from "@/lib/user-activities/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 
@@ -28,17 +29,20 @@ export const queryKeys = {
     all: ["employee-titles"] as const,
     list: () => ["employee-titles", "list"] as const,
     detail: (id: number) => ["employee-titles", "detail", id] as const,
+    page: (params: CatalogPageParams) => ["employee-titles", "page", params] as const,
   },
   employeeDepartments: {
     all: ["employee-departments"] as const,
     list: () => ["employee-departments", "list"] as const,
     detail: (id: number) => ["employee-departments", "detail", id] as const,
+    page: (params: CatalogPageParams) => ["employee-departments", "page", params] as const,
   },
   invoicePolicies: {
     all: ["invoice-policies"] as const,
     list: () => ["invoice-policies", "list"] as const,
     active: () => ["invoice-policies", "active"] as const,
     detail: (id: number) => ["invoice-policies", "detail", id] as const,
+    page: (params: CatalogPageParams) => ["invoice-policies", "page", params] as const,
   },
   api: {
     health: () => ["api", "health"] as const,
@@ -176,6 +180,7 @@ export const queryKeys = {
     all: ["barcode-statuses"] as const,
     list: () => [...queryKeys.barcodeStatuses.all, "list"] as const,
     detail: (id: number) => [...queryKeys.barcodeStatuses.all, "detail", id] as const,
+    page: (params: CatalogPageParams) => [...queryKeys.barcodeStatuses.all, "page", params] as const,
   },
   containers: {
     all: ["containers"] as const,
@@ -351,6 +356,9 @@ export const queryKeys = {
     stock: (params?: InventoryListParams) => [...queryKeys.inventory.all, "stock", params ?? {}] as const,
     holders: (params?: InventoryListParams) => [...queryKeys.inventory.all, "holders", params ?? {}] as const,
     holderStock: (holderId: string) => [...queryKeys.inventory.all, "holder-stock", holderId] as const,
+    /** Paginated directory pages (distinct from the full-list keys used by pickers/KPIs). */
+    directory: (resource: "items" | "receipts" | "dispatches" | "suppliers", params: InventoryListParams) =>
+      [...queryKeys.inventory.all, "directory", resource, params] as const,
     routeCrews: () => [...queryKeys.inventory.all, "route-crews"] as const,
   },
 } as const;

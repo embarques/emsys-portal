@@ -20,5 +20,37 @@
     "details": "01 · Policy details",
     "hint": "Write clear policy language. Only active policies are shown during invoice creation.",
     "activeHint": "Inactive policies stay in the catalog but are hidden from the create wizard."
-  }
+  },
+  "filters": {
+    "fields": {
+      "title": {
+        "label": "Title",
+        "placeholder": "Enter title…"
+      },
+      "body": {
+        "label": "Policy text",
+        "placeholder": "Enter policy text…"
+      },
+      "active": {
+        "label": "Status"
+      },
+      "sortOrder": {
+        "label": "Order",
+        "placeholder": "0"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Enter ID…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      }
+    }
+  },
+  "searchPlaceholder": "Search policies…"
 }

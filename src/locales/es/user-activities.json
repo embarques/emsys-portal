@@ -21,5 +21,42 @@
     "loading": "Cargando actividades…",
     "noResults": "Aún no hay actividades de usuarios.",
     "noMatches": "Ninguna actividad coincide con la búsqueda."
+  },
+  "filters": {
+    "fields": {
+      "severity": {
+        "label": "Severidad"
+      },
+      "origin": {
+        "label": "Origen",
+        "placeholder": "p. ej. invoices, journals…"
+      },
+      "description": {
+        "label": "Descripción",
+        "placeholder": "Ingrese la descripción…"
+      },
+      "user": {
+        "name": {
+          "label": "Usuario",
+          "placeholder": "Ingrese el nombre del usuario…"
+        },
+        "id": {
+          "label": "ID de usuario",
+          "placeholder": "Ingrese el ID de usuario…"
+        }
+      },
+      "id": {
+        "label": "ID del registro",
+        "placeholder": "Ingrese el ID del registro…"
+      },
+      "timestamp": {
+        "label": "Fecha",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "timestampRange": {
+        "label": "Rango de fechas",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      }
+    }
   }
 }

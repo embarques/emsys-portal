@@ -8,8 +8,10 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { USER_ACTIVITY_API_TABLE_FIELDS } from "@/lib/user-activities/table-fields";
+import { USER_ACTIVITY_TABLE_FILTER_FIELDS } from "@/lib/user-activities/filter-fields";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -30,12 +32,22 @@ import {
 } from "@/lib/user-activities/types";
 import { useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+function localizeUserActivityFilterOption(
+  field: string,
+  option: { value: string; label: string },
+  t: (key: string) => string,
+) {
+  return field === "severity" ? { ...option, label: t(`userActivities.severity.${option.value}`) } : option;
+}
 
 export function UserActivitiesWorkspace() {
   const { t } = useTranslation();
@@ -50,8 +62,16 @@ export function UserActivitiesWorkspace() {
     setPage(1),
   );
   const [query, setQuery] = useState("");
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(
+    USER_ACTIVITY_TABLE_FILTER_FIELDS,
+    "userActivities.filters.fields",
+    localizeUserActivityFilterOption,
+  );
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
-  const hasActiveSearch = Boolean(query.trim());
+  const hasActiveSearch = Boolean(query.trim()) || activeFilterCount > 0;
   const isSearchPending = query.trim() !== debouncedQuery.trim();
 
   const listParams = useMemo(
@@ -60,9 +80,10 @@ export function UserActivitiesWorkspace() {
         page,
         limit: pageLimit,
         query: debouncedQuery,
+        rows: filterRows,
         sort,
       }),
-    [debouncedQuery, page, pageLimit, sort],
+    [debouncedQuery, filterRows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useUserActivities(listParams, {
@@ -208,7 +229,31 @@ export function UserActivitiesWorkspace() {
             <CardDescription>{t("userActivities.description")}</CardDescription>
           </div>
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            filterPanel={
+              <TableAdvancedFilterPanel
+                presetScope="user-activities"
+                open={filtersOpen}
+                rows={filterRows}
+                fields={filterFields}
+                resultSummary={listSummary}
+                onRowsChange={(rows) => {
+                  setFilterRows(rows);
+                  setPage(1);
+                }}
+                onClearAll={
+                  hasActiveSearch
+                    ? () => {
+                        setQuery("");
+                        setFilterRows([]);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              />
+            }
             columnLayout={columnLayout}
             searchSummary={searchSummary}
             search={
