@@ -67,11 +67,11 @@ export function BranchForm({
     setValue<keyof BranchFormValues>(key, value, { shouldDirty: true, shouldValidate: true });
   }
   function updateAddressField<K extends keyof BranchAddress>(key: K, value: BranchAddress[K]) {
-    updateField("address", { ...getValues("address"), [key]: value });
+    updateField("address", { ...getValues("address"), [key]: value, ...(["address1", "city", "state", "zipcode", "country"].includes(key) ? { location: null } : {}) });
   }
   function applyPlaceToAddress(place: ParsedPlaceAddress) {
     const address = getValues("address");
-    updateField("address", { ...address, address1: place.address1 || address.address1, city: place.city || address.city, state: place.state || address.state, zipcode: place.zipcode || address.zipcode, country: place.country || address.country });
+    updateField("address", { ...address, address1: place.address1 || address.address1, city: place.city || address.city, state: place.state || address.state, zipcode: place.zipcode || address.zipcode, country: place.country || address.country, location: place.location ?? null });
   }
   function updateSettingsField<K extends keyof BranchSettings>(key: K, value: BranchSettings[K]) {
     updateField("settings", { ...getValues("settings"), [key]: value });

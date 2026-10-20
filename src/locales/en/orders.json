@@ -364,7 +364,7 @@
       "routeRequired": "Assign the selected appointments to a route before optimizing.",
       "multipleRoutes": "The selected appointments belong to different routes. Select appointments from one route to optimize.",
       "multipleBranches": "The selected appointments belong to different branches. Select appointments from one branch to optimize.",
-      "branchAddressMissing": "The branch has no address to start and end the route. Add a branch address, then try again.",
+      "branchAddressMissing": "The branch needs an address with saved map coordinates. Select its address from Google suggestions, save, then optimize again. Users without branch edit access must ask an administrator to update it.",
       "emptyResult": "The route optimizer did not return a stop order for the selected appointments."
     }
   },
