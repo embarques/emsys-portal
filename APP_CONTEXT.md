@@ -195,6 +195,8 @@ A new daily route can start from a previous day’s configuration. Copying to an
 
 The same employee can be driver and appraiser, or driver, or appraiser, or helper.
 
+**Legacy routes** (`/legacy-routes`) are a reference catalog carried over from the legacy system: **ID**, **route name**, and **content** (a comma-separated list of the cities the route covers). They are not route crews or daily routes. Backend contract: `docs/legacy-routes-api-todo.md`.
+
 TODO (backend) — route modeling (portal now follows this; align API + legacy data):
 
 **Route crews** (`/v1/routes`): reusable people templates. Persist only **active**, **branch** (`id` + `code` + `name`), and **employees** (`id` + `name`). Do not persist date, vehicle, trip number, or driver/appraiser/helper roles on the crew. Strip those fields from existing crew records. Reject create/update when another crew in the same company already has the same **branch** and the same **employee id set** (order-independent; compare ids, not names).

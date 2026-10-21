@@ -17,6 +17,13 @@ test("manual number inserts an unnumbered stop and clamps past the end", () => {
   assert.deepEqual(assignManualStopNumber({}, "a", 0), { a: 1 });
 });
 
+test("a number at or past the last stop moves that stop last and shifts the rest up", () => {
+  const current = { a: 1, b: 2, c: 3, d: 4 };
+  assert.deepEqual(assignManualStopNumber(current, "b", 4), { a: 1, c: 2, d: 3, b: 4 });
+  assert.deepEqual(assignManualStopNumber(current, "a", 100), { b: 1, c: 2, d: 3, a: 4 });
+  assert.deepEqual(assignManualStopNumber(current, "d", 100), current);
+});
+
 test("clearing a manual number closes the gap", () => {
   assert.deepEqual(assignManualStopNumber({ a: 1, b: 2, c: 3 }, "b", null), { a: 1, c: 2 });
 });

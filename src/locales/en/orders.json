@@ -368,8 +368,9 @@
   },
   "optimize": {
     "endpoints": {
-      "title": "Enter route start and end",
-      "description": "The branch has no valid map coordinates. Enter the start and end coordinates for this optimization. These values will not change the branch address.",
+      "title": "Route start and end",
+      "description": "The branch has no valid map coordinates. Search and select the start and end addresses for this optimization. These values will not change the branch address.",
+      "branchDefaultDescription": "The route starts and ends at the branch address. Search and select a different address to change either one for this optimization. The branch address will not change.",
       "start": "Start",
       "end": "End",
       "longitude": "Longitude",

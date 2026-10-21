@@ -1,0 +1,50 @@
+{
+  "title": "Rutas heredadas",
+  "entity": "Ruta heredada",
+  "description": "Rutas traídas del sistema anterior, cada una con las ciudades y códigos postales que cubre.",
+  "add": "Agregar ruta heredada",
+  "edit": "Editar ruta heredada",
+  "editNamed": "Editar {{name}}",
+  "deleteNamed": "Eliminar {{name}}",
+  "empty": "Aún no hay rutas heredadas.",
+  "confirmDelete": "¿Eliminar la ruta heredada {{name}}?",
+  "retry": "Reintentar",
+  "searchPlaceholder": "Buscar por nombre de ruta, ciudad o código postal…",
+  "mockNotice": "Datos de ejemplo: la API de rutas heredadas aún no está disponible. Los cambios se guardan solo en esta sesión del navegador y se reinician al recargar la página.",
+  "fields": {
+    "name": "Nombre de la ruta",
+    "content": "Ciudades / códigos postales"
+  },
+  "form": {
+    "details": "01 · Datos de la ruta",
+    "hint": "Asigna un nombre a la ruta y agrega cada ciudad o código postal que cubre. El ID de la ruta se asigna automáticamente.",
+    "citiesHint": "Ingresa una ciudad o código postal por fila. Si escribes o pegas comas, el texto se divide en filas separadas.",
+    "cityPlaceholder": "Ciudad o código postal",
+    "cityAria": "Ciudad o código postal {{index}}",
+    "addCity": "Agregar ciudad o código postal",
+    "removeCity": "Quitar",
+    "removeCityAria": "Quitar ciudad o código postal {{index}}",
+    "cityCount": "Entradas: {{count}}",
+    "errors": {
+      "nameRequired": "Ingresa el nombre de la ruta.",
+      "citiesRequired": "Agrega al menos una ciudad o código postal.",
+      "cityComma": "Cada fila debe tener una sola ciudad o código postal, sin comas."
+    }
+  },
+  "filters": {
+    "fields": {
+      "name": {
+        "label": "Nombre de la ruta",
+        "placeholder": "Ingrese el nombre de la ruta…"
+      },
+      "content": {
+        "label": "Ciudades / códigos postales",
+        "placeholder": "Ingrese una ciudad o código postal…"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Ingrese el ID…"
+      }
+    }
+  }
+}

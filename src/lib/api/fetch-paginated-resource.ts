@@ -6,8 +6,12 @@ import {
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 
+export type PaginatedResourceClient = Pick<typeof apiClient, "get" | "post">;
+
 type FetchPaginatedResourceListOptions<T> = {
   endpoint: string;
+  /** Defaults to the central API client; only feature-local mocks override it. */
+  client?: PaginatedResourceClient;
   page?: number;
   limit?: number;
   offset?: number;
@@ -22,6 +26,7 @@ type FetchPaginatedResourceListOptions<T> = {
 
 export async function fetchPaginatedResourceList<T>({
   endpoint,
+  client = apiClient,
   page = 1,
   limit = 40,
   offset,
@@ -38,7 +43,7 @@ export async function fetchPaginatedResourceList<T>({
       offset: resolvedOffset,
     });
 
-    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+    const response = await client.post<PaginatedApiEnvelope<unknown[]>>(
       `${endpoint}/search?${paginationQuery}`,
       buildSearchBody(),
     );
@@ -46,7 +51,7 @@ export async function fetchPaginatedResourceList<T>({
     return normalize(response, { isFiltered: true });
   }
 
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
+  const response = await client.get<PaginatedApiEnvelope<unknown[]>>(
     `${endpoint}?${buildGetQuery()}`,
   );
 

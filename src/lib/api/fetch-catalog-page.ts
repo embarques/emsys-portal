@@ -1,4 +1,4 @@
-import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
+import { fetchPaginatedResourceList, type PaginatedResourceClient } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
   buildResourceSearchFilterGroups,
@@ -21,6 +21,7 @@ export type CatalogPageParams = {
 
 export type CatalogPageConfig<T> = {
   endpoint: string;
+  client?: PaginatedResourceClient;
   barOrSearchFields: readonly string[];
   filterFields: TableFilterFieldDefinition[];
   expandNode?: (node: ApiSearchFilterNode) => ApiSearchFilterNode | null;
@@ -33,6 +34,7 @@ export function fetchCatalogPage<T>(config: CatalogPageConfig<T>, params: Catalo
   const search = createListTextSearch(params.query ?? "");
   return fetchPaginatedResourceList({
     endpoint: config.endpoint,
+    client: config.client,
     page: params.page,
     limit: params.limit,
     isFiltered: hasResourceListFilters({

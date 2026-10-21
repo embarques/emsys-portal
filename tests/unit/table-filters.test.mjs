@@ -248,6 +248,7 @@ test("every new filter field has English and Spanish labels and placeholders", (
     invoicePolicies: load(`src/locales/${lang}/invoice-policies.json`),
     employeeTitles: load(`src/locales/${lang}/employee-titles.json`),
     employeeDepartments: load(`src/locales/${lang}/employee-departments.json`),
+    legacyRoutes: load(`src/locales/${lang}/legacy-routes.json`),
   });
   const read = (tree, key) => key.split(".").reduce((node, segment) => node?.[segment], tree);
   const specs = [
@@ -263,6 +264,7 @@ test("every new filter field has English and Spanish labels and placeholders", (
     ["src/lib/invoice-policies/filter-fields.ts", "INVOICE_POLICY_TABLE_FILTER_FIELDS", "invoicePolicies.filters.fields"],
     ["src/lib/table/named-catalog-filter-fields.ts", "NAMED_CATALOG_TABLE_FILTER_FIELDS", "employeeTitles.filters.fields"],
     ["src/lib/table/named-catalog-filter-fields.ts", "NAMED_CATALOG_TABLE_FILTER_FIELDS", "employeeDepartments.filters.fields"],
+    ["src/lib/legacy-routes/filter-fields.ts", "LEGACY_ROUTE_TABLE_FILTER_FIELDS", "legacyRoutes.filters.fields"],
   ];
   for (const lang of ["en", "es"]) {
     const tree = catalogs(lang);

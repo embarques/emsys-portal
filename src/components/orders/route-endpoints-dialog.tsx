@@ -16,7 +16,9 @@ import {
   type RouteEndpointLocations,
 } from "@/lib/orders/schemas/route-endpoints.schema";
 
-export function RouteEndpointsDialog({ onClose, onSubmit, isPending }: {
+export function RouteEndpointsDialog({ defaultValues, branchHasLocation, onClose, onSubmit, isPending }: {
+  defaultValues: RouteEndpointsFormValues;
+  branchHasLocation: boolean;
   onClose: () => void;
   onSubmit: (endpoints: RouteEndpointLocations) => Promise<void>;
   isPending: boolean;
@@ -26,7 +28,7 @@ export function RouteEndpointsDialog({ onClose, onSubmit, isPending }: {
   const googleMapsApiKey = useGoogleMapsApiKey();
   const form = useForm<RouteEndpointsFormValues>({
     resolver: zodResolver(routeEndpointsSchema),
-    defaultValues: { startAddress: "", endAddress: "", startLongitude: "", startLatitude: "", endLongitude: "", endLatitude: "" },
+    defaultValues,
   });
   const busy = isPending || form.formState.isSubmitting;
 
@@ -35,7 +37,9 @@ export function RouteEndpointsDialog({ onClose, onSubmit, isPending }: {
       <DialogContent onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>{t("orders.optimize.endpoints.title")}</DialogTitle>
-          <DialogDescription>{t("orders.optimize.endpoints.description")}</DialogDescription>
+          <DialogDescription>
+            {t(branchHasLocation ? "orders.optimize.endpoints.branchDefaultDescription" : "orders.optimize.endpoints.description")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit((values) => onSubmit(toRouteEndpointLocations(values)))} className="space-y-4" noValidate>
           {(["start", "end"] as const).map((endpoint) => (

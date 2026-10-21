@@ -1,0 +1,50 @@
+{
+  "title": "Legacy routes",
+  "entity": "Legacy route",
+  "description": "Routes carried over from the legacy system, each with the cities and ZIP codes it covers.",
+  "add": "Add legacy route",
+  "edit": "Edit legacy route",
+  "editNamed": "Edit {{name}}",
+  "deleteNamed": "Delete {{name}}",
+  "empty": "No legacy routes yet.",
+  "confirmDelete": "Delete legacy route {{name}}?",
+  "retry": "Retry",
+  "searchPlaceholder": "Search by route name, city, or ZIP…",
+  "mockNotice": "Sample data: the legacy routes API is not available yet. Changes are kept only in this browser session and reset when the page reloads.",
+  "fields": {
+    "name": "Route name",
+    "content": "Cities / ZIP codes"
+  },
+  "form": {
+    "details": "01 · Route details",
+    "hint": "Name the route, then add each city or ZIP code it covers. The route ID is assigned automatically.",
+    "citiesHint": "Enter one city or ZIP code per row. Typing or pasting commas splits the text into separate rows.",
+    "cityPlaceholder": "City or ZIP code",
+    "cityAria": "City or ZIP code {{index}}",
+    "addCity": "Add city or ZIP",
+    "removeCity": "Remove",
+    "removeCityAria": "Remove city or ZIP code {{index}}",
+    "cityCount": "Entries: {{count}}",
+    "errors": {
+      "nameRequired": "Enter a route name.",
+      "citiesRequired": "Add at least one city or ZIP code.",
+      "cityComma": "Each row must hold a single city or ZIP code, without commas."
+    }
+  },
+  "filters": {
+    "fields": {
+      "name": {
+        "label": "Route name",
+        "placeholder": "Enter route name…"
+      },
+      "content": {
+        "label": "Cities / ZIP codes",
+        "placeholder": "Enter a city or ZIP…"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Enter ID…"
+      }
+    }
+  }
+}

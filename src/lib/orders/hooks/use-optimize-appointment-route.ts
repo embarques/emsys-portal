@@ -22,6 +22,18 @@ export class BranchDepotRequiredError extends AppointmentRouteOptimizationError 
 
 const BRANCH_DEPOT_STALE_TIME_MS = 5 * 60_000;
 
+/** Load the route's branch so its address can prefill the optimization start and end. */
+export function useFetchRouteDepotBranch() {
+  const queryClient = useQueryClient();
+
+  return (branchId: number): Promise<Branch> =>
+    queryClient.fetchQuery({
+      queryKey: queryKeys.branches.detail(branchId),
+      queryFn: () => fetchBranchById(branchId),
+      staleTime: BRANCH_DEPOT_STALE_TIME_MS,
+    });
+}
+
 /**
  * Optimize stop order for appointments on one route, starting and ending at the
  * branch address. The result is not persisted — the API has no stop-order field.

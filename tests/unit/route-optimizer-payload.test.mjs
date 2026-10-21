@@ -86,6 +86,20 @@ test("endpoint form requires both coordinate pairs and preserves GeoJSON order",
   assert.equal(routeEndpointsSchema.safeParse({ ...values, endLatitude: "91" }).success, false);
 });
 
+test("endpoint form defaults both start and end to the branch address", () => {
+  const { branchRouteEndpointDefaults, routeEndpointsSchema } = loadFeature("src/lib/orders/schemas/route-endpoints.schema.ts", {});
+  const address = { address1: "1 Depot St", address2: "", apartment: "", city: "Newark", state: "NJ", zipcode: "07102", country: "",
+    location: { type: "Point", coordinates: [-74.17, 40.73] } };
+  const defaults = branchRouteEndpointDefaults(address);
+  assert.deepEqual(defaults, { startAddress: "1 Depot St, Newark, NJ, 07102", endAddress: "1 Depot St, Newark, NJ, 07102",
+    startLongitude: "-74.17", startLatitude: "40.73", endLongitude: "-74.17", endLatitude: "40.73" });
+  assert.equal(routeEndpointsSchema.safeParse(defaults).success, true);
+  const missing = branchRouteEndpointDefaults({ ...address, location: null });
+  assert.equal(missing.startAddress, "1 Depot St, Newark, NJ, 07102");
+  assert.equal(missing.startLongitude, "");
+  assert.equal(routeEndpointsSchema.safeParse(missing).success, false);
+});
+
 test("optimizer defaults to branch coordinates and accepts manual endpoints without a branch fetch", async () => {
   let branchReads = 0;
   let posts = [];

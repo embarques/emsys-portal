@@ -17,11 +17,6 @@ import {
   X,
 } from "lucide-react";
 
-import { BranchForm } from "@/components/branches/branch-form";
-import { useUpdateBranch } from "@/lib/branches/hooks/use-branches";
-import { branchToFormValues, areBranchFormValuesEquivalent, type Branch, type BranchFormValues } from "@/lib/branches/types";
-import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import {
@@ -38,7 +33,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RouteEndpointsDialog } from "@/components/orders/route-endpoints-dialog";
-import type { RouteEndpointLocations } from "@/lib/orders/schemas/route-endpoints.schema";
+import {
+  branchRouteEndpointDefaults,
+  type RouteEndpointLocations,
+  type RouteEndpointsFormValues,
+} from "@/lib/orders/schemas/route-endpoints.schema";
 import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
 import {
   getGoogleMapsCoreApi,
@@ -50,9 +49,8 @@ import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import type { PickupOrderNumberUpdate } from "@/lib/orders/api/orders-api";
 import { formatOrderRouteName } from "@/lib/orders/display";
 import { useFinalizePickupRouteOrder, useOrders } from "@/lib/orders/hooks/use-orders";
-import { BranchDepotRequiredError, useOptimizeAppointmentRoute } from "@/lib/orders/hooks/use-optimize-appointment-route";
+import { useFetchRouteDepotBranch, useOptimizeAppointmentRoute } from "@/lib/orders/hooks/use-optimize-appointment-route";
 import {
-  AppointmentRouteOptimizationError,
   type AppointmentRouteOptimizationPlan,
   formatRouteDistance,
   planAppointmentRouteOptimization,
@@ -213,24 +211,14 @@ export function OrdersMapView({
   const googleMapsApiKey = useGoogleMapsApiKey();
   const { notifyError, notifySuccess } = useFeedback();
   const optimizeRouteMutation = useOptimizeAppointmentRoute();
-  const { hasPermission } = useAuth();
-  const canUpdateBranch = hasPermission(PERMISSIONS.branchesUpdate.name, PERMISSIONS.branchesUpdate.resourceType);
-  const [depotBranch, setDepotBranch] = useState<Branch | null>(null);
-  const [depotError, setDepotError] = useState<string | null>(null);
-  const updateDepotBranch = useUpdateBranch();
-
-  async function saveDepotBranch(values: BranchFormValues) {
-    if (!depotBranch || updateDepotBranch.isPending) return;
-    if (!values.address.location) { setDepotError(t("orders.optimize.errors.branchAddressMissing")); return; }
-    if (areBranchFormValuesEquivalent(values, branchToFormValues(depotBranch))) { setDepotBranch(null); return; }
-    try {
-      await updateDepotBranch.mutateAsync({ branchId: depotBranch.id, values });
-      setDepotBranch(null);
-      setDepotError(null);
-    } catch (error) { setDepotError(normalizeApiError(error).message); }
-  }
+  const fetchRouteDepotBranch = useFetchRouteDepotBranch();
   const finalizeRouteOrderMutation = useFinalizePickupRouteOrder();
-  const [endpointPlan, setEndpointPlan] = useState<AppointmentRouteOptimizationPlan | null>(null);
+  const [endpointPlan, setEndpointPlan] = useState<{
+    plan: AppointmentRouteOptimizationPlan;
+    defaultValues: RouteEndpointsFormValues;
+    branchHasLocation: boolean;
+  } | null>(null);
+  const [isLoadingEndpoints, setIsLoadingEndpoints] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
   const mapsLibRef = useRef<GoogleMapsCore | null>(null);
@@ -543,26 +531,32 @@ export function OrdersMapView({
     onStopOrderChange?.(next);
   }
 
-  /** Manual entry: an empty value removes the stop's number; others shift to close gaps. */
-  function setManualStopNumber(stop: PickupMapStop, rawValue: string): boolean {
-    if (!dailyRouteId || stop.routeId?.trim() !== dailyRouteId) return false;
+  /**
+   * Manual entry inserts the stop at that position (past the end means last) and
+   * shifts the others; an empty value removes its number. Returns the stop's
+   * resulting number ("" when cleared), or null when the entry is rejected.
+   */
+  function setManualStopNumber(stop: PickupMapStop, rawValue: string): string | null {
+    if (!dailyRouteId || stop.routeId?.trim() !== dailyRouteId) return null;
 
     const trimmed = rawValue.trim();
     const position = trimmed === "" ? null : Number(trimmed);
-    if (position !== null && (!Number.isInteger(position) || position < 1)) return false;
-    if (position === (stopNumbers.get(stop.orderRecordId) ?? null)) return true;
+    if (position !== null && (!Number.isInteger(position) || position < 1)) return null;
 
-    const next = assignManualStopNumber(
-      Object.fromEntries(stopNumbers),
-      stop.orderRecordId,
-      position,
-    );
+    const current = Object.fromEntries(stopNumbers);
+    const next = assignManualStopNumber(current, stop.orderRecordId, position);
+    const resulting = next[stop.orderRecordId]?.toString() ?? "";
+    const unchanged =
+      Object.keys(next).length === stopNumbers.size &&
+      Object.entries(next).every(([key, value]) => current[key] === value);
+    if (unchanged) return resulting;
+
     updateStopOrder(
       Object.keys(next).length > 0
         ? { routeId: dailyRouteId, stopNumbers: next, totalDistanceMeters: null }
         : null,
     );
-    return true;
+    return resulting;
   }
 
   /** Runs after the list re-sorts and inputs remount, so "next" reflects the updated stop order. */
@@ -580,7 +574,7 @@ export function OrdersMapView({
   }
 
   async function optimizeSelectedRoute() {
-    if (!routeOrderingEnabled || optimizeRouteMutation.isPending) return;
+    if (!routeOrderingEnabled || optimizeRouteMutation.isPending || isLoadingEndpoints) return;
     const ordersToOptimize = selectedStops
       .map((stop) => orderByRecordId.get(stop.orderRecordId))
       .filter((order): order is Order => Boolean(order));
@@ -591,28 +585,22 @@ export function OrdersMapView({
       return;
     }
 
+    setIsLoadingEndpoints(true);
     try {
-      const result = await optimizeRouteMutation.mutateAsync(plan);
-      updateStopOrder(result);
-      notifyOptimizedRoute(result);
-    } catch (mutationError) {
-      if (mutationError instanceof BranchDepotRequiredError && canUpdateBranch) {
-        setDepotBranch(mutationError.branch);
-        setDepotError(null);
-        return;
-      }
-      if (mutationError instanceof AppointmentRouteOptimizationError && mutationError.code === "branchCoordinatesMissing") {
-        setEndpointPlan(plan);
-        return;
-      }
-      notifyError(resolveAppointmentRouteOptimizationErrorMessage(mutationError, t));
+      const branch = await fetchRouteDepotBranch(plan.branchId);
+      const defaultValues = branchRouteEndpointDefaults(branch.address);
+      setEndpointPlan({ plan, defaultValues, branchHasLocation: defaultValues.startLongitude !== "" });
+    } catch (fetchError) {
+      notifyError(normalizeApiError(fetchError).message);
+    } finally {
+      setIsLoadingEndpoints(false);
     }
   }
 
   async function optimizeWithEndpoints(endpoints: RouteEndpointLocations) {
-    if (!endpointPlan || endpointPlan.routeId !== dailyRouteId || optimizeRouteMutation.isPending) return;
+    if (!endpointPlan || endpointPlan.plan.routeId !== dailyRouteId || optimizeRouteMutation.isPending) return;
     try {
-      const result = await optimizeRouteMutation.mutateAsync({ ...endpointPlan, endpoints });
+      const result = await optimizeRouteMutation.mutateAsync({ ...endpointPlan.plan, endpoints });
       updateStopOrder(result);
       notifyOptimizedRoute(result);
       setEndpointPlan(null);
@@ -686,17 +674,8 @@ export function OrdersMapView({
               <MapPin className="h-3.5 w-3.5" />
               {t("orders.map.stopsShown", { count: mappedStops.length })}
             </span>
-            {mappedStops.length > 0 ? (
-              selectedStops.length > 0 ? (
-                <span className="font-medium text-primary">
-                  {t("common.table.selected", {
-                    count: selectedStops.length,
-                    total: mappedStops.length,
-                  })}
-                </span>
-              ) : (
-                <span>{t(routeOrderingEnabled ? "orders.map.dailyRouteSelectionHint" : "orders.map.clickToSelect")}</span>
-              )
+            {mappedStops.length > 0 && selectedStops.length === 0 ? (
+              <span>{t(routeOrderingEnabled ? "orders.map.dailyRouteSelectionHint" : "orders.map.clickToSelect")}</span>
             ) : null}
             {stopNumbers.size > 0 && stopOrder ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1 font-medium text-violet-700 dark:text-violet-300">
@@ -719,7 +698,7 @@ export function OrdersMapView({
 
           <div className="flex min-w-0 w-full flex-wrap items-center gap-2 lg:w-auto [&_button]:min-h-11 lg:[&_button]:min-h-8">
             <TableSelectionActionGroup
-              className="max-w-full flex-wrap [&>button]:min-w-0 [&>button]:flex-1 [&>button]:whitespace-normal [&>button]:px-2 [&>button]:text-xs sm:[&>button]:text-sm"
+              className="max-w-full flex-wrap [&>button]:flex-auto [&>button]:whitespace-nowrap [&>button]:px-2 [&>button]:text-xs sm:[&>button]:text-sm"
               aria-label={t("common.table.selectionActionsGroup")}
             >
               <Button
@@ -756,11 +735,11 @@ export function OrdersMapView({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={!selectionOnSingleRoute || isMutating}
+                  disabled={!selectionOnSingleRoute || isMutating || isLoadingEndpoints}
                   onClick={() => void optimizeSelectedRoute()}
                   className={tableSelectionActionStyles.optimize}
                 >
-                  {isOptimizing ? (
+                  {isOptimizing || isLoadingEndpoints ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Sparkles className="h-4 w-4" />
@@ -961,9 +940,8 @@ export function OrdersMapView({
                             aria-label={t("orders.optimize.stopNumberInput", { name: stop.senderName })}
                             className="h-11 w-full rounded-md lg:h-7 border border-input bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             onBlur={(event) => {
-                              if (!setManualStopNumber(stop, event.currentTarget.value)) {
-                                event.currentTarget.value = stopNumber?.toString() ?? "";
-                              }
+                              event.currentTarget.value =
+                                setManualStopNumber(stop, event.currentTarget.value) ?? stopNumber?.toString() ?? "";
                             }}
                             onKeyDown={(event) => {
                               if (event.key === "Enter") {
@@ -1001,8 +979,10 @@ export function OrdersMapView({
         </div>
       </div>
 
-      {endpointPlan && endpointPlan.routeId === dailyRouteId ? (
+      {endpointPlan && endpointPlan.plan.routeId === dailyRouteId ? (
         <RouteEndpointsDialog
+          defaultValues={endpointPlan.defaultValues}
+          branchHasLocation={endpointPlan.branchHasLocation}
           onClose={() => setEndpointPlan(null)}
           onSubmit={optimizeWithEndpoints}
           isPending={isOptimizing}
@@ -1014,18 +994,6 @@ export function OrdersMapView({
         onOpenChange={setAssignRouteOpen}
         appointments={selectedAssignRouteAppointments}
       />
-
-      <Dialog open={Boolean(depotBranch)} onOpenChange={(open) => { if (!open && !updateDepotBranch.isPending) setDepotBranch(null); }}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b px-6 py-4">
-            <DialogTitle>{t("branches.form.editTitle")}</DialogTitle>
-            <DialogDescription>{t("orders.optimize.errors.branchAddressMissing")}</DialogDescription>
-          </DialogHeader>
-          {depotBranch ? <BranchForm initialValues={branchToFormValues(depotBranch)} isEditing
-            submitLabel={t("common.actions.saveChanges")} isSubmitting={updateDepotBranch.isPending}
-            externalError={depotError} onSubmit={saveDepotBranch} onCancel={() => setDepotBranch(null)} /> : null}
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={unassignOpen}

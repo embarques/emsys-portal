@@ -13,6 +13,7 @@ import {
   CreditCard,
   FileChartColumn,
   HandCoins,
+  History,
   Home,
   IdCard,
   KeyRound,
@@ -197,6 +198,12 @@ const routesItem: NavigationItem = {
       icon: MapPinned,
       permission: PERMISSIONS.dispatchView,
     },
+    {
+      labelKey: "navigation.items.legacyRoutes",
+      href: "/legacy-routes",
+      icon: History,
+      permission: PERMISSIONS.dispatchView,
+    },
   ],
 };
 
@@ -281,21 +288,20 @@ export const navigationSections: NavigationSection[] = [
     groups: [
       ...[appointmentsItem, invoicesItem].map(navigationItemToGroup),
       accountingGroup,
-      ...[customersItem, reportsItem].map(navigationItemToGroup),
+      ...[routesItem, barcodesItem].map(navigationItemToGroup),
     ],
   },
   {
     id: "operations",
     groups: [
-      barcodesItem,
+      reportsItem,
       inventoryItem,
       containersItem,
-      routesItem,
     ].map(navigationItemToGroup),
   },
   {
     id: "reference",
-    groups: [itemsItem, vehiclesItem].map(navigationItemToGroup),
+    groups: [itemsItem, vehiclesItem, customersItem].map(navigationItemToGroup),
   },
   {
     id: "admin",

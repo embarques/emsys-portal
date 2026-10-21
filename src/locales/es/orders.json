@@ -368,8 +368,9 @@
   },
   "optimize": {
     "endpoints": {
-      "title": "Ingrese el inicio y fin de la ruta",
-      "description": "La sucursal no tiene coordenadas válidas. Ingrese las coordenadas de inicio y fin para esta optimización. Estos valores no cambiarán la dirección de la sucursal.",
+      "title": "Inicio y fin de la ruta",
+      "description": "La sucursal no tiene coordenadas válidas. Busque y seleccione las direcciones de inicio y fin para esta optimización. Estos valores no cambiarán la dirección de la sucursal.",
+      "branchDefaultDescription": "La ruta comienza y termina en la dirección de la sucursal. Busque y seleccione otra dirección para cambiar cualquiera de las dos en esta optimización. La dirección de la sucursal no cambiará.",
       "start": "Inicio",
       "end": "Fin",
       "longitude": "Longitud",

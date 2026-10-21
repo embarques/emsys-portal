@@ -21,6 +21,7 @@ export const PAGE_PERMISSIONS: Record<string, Permission> = {
   "/containers": PERMISSIONS.containersView,
   "/routes": PERMISSIONS.dispatchView,
   "/daily-routes": PERMISSIONS.dispatchView,
+  "/legacy-routes": PERMISSIONS.dispatchView,
   "/pickup-routes": PERMISSIONS.dispatchView,
   "/appointment-routes": PERMISSIONS.dispatchView,
   "/delivery-routes": PERMISSIONS.dispatchView,
