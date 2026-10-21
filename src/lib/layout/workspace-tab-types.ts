@@ -42,6 +42,11 @@ export type WorkspaceTabForm = {
   focusBarcodeId?: string;
   /** Bumped when re-opening an existing form tab so the wizard remounts at a new step. */
   formNonce?: number;
+  /**
+   * Opened from another form's "New" action: close after a successful add and
+   * hand the created id back (see `form-tab-return`).
+   */
+  closeOnSave?: boolean;
 };
 
 export type WorkspaceTab = {

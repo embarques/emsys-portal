@@ -22,13 +22,14 @@ import {
   areContainerFormValuesEquivalent,
 } from "@/lib/containers/types";
 import { useTranslation } from "@/lib/i18n";
+import { stashFormTabCreatedId } from "@/lib/layout/form-tab-return";
 import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
-export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+export function ContainerFormWorkspace({ tabId, mode, entityId, closeOnSave }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
@@ -78,6 +79,11 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
 
       const next = await createMutation.mutateAsync(values);
       notifyAdded(t("containers.entity"), next.name);
+      if (closeOnSave) {
+        stashFormTabCreatedId("containers", next.id);
+        closeFormTabAndReturn(tabId);
+        return;
+      }
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(toErrorMessage(mutationError));

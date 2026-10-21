@@ -128,6 +128,8 @@ export function useWorkspaceTabs() {
       initialWizardStep?: number;
       /** Focus the line item that owns this barcode id/number when editing an invoice. */
       focusBarcodeId?: string;
+      /** Close the add tab after saving and hand the created id back to the opener. */
+      closeOnSave?: boolean;
     }) => {
       if (!isDesktopTabs) {
         if (params.feature !== "customers") {
@@ -161,6 +163,7 @@ export function useWorkspaceTabs() {
         params.mode,
         params.entityId,
         params.customerType,
+        params.closeOnSave,
       );
       if (existing) {
         if (
@@ -220,6 +223,7 @@ export function useWorkspaceTabs() {
             ...(params.focusBarcodeId != null
               ? { focusBarcodeId: params.focusBarcodeId }
               : {}),
+            ...(params.closeOnSave ? { closeOnSave: true } : {}),
             formNonce: Date.now(),
           },
         }),

@@ -15,7 +15,6 @@ export type InvoiceWizardStepKind =
   | "lineItems"
   | "payment"
   | "documents"
-  | "policies"
   | "preview";
 
 export type InvoiceWizardLayoutStep = {
@@ -28,9 +27,7 @@ export type InvoiceWizardLayout = {
   previewStep: InvoiceWizardStep;
   paymentStep: InvoiceWizardStep | null;
   documentsStep: InvoiceWizardStep | null;
-  policiesStep: InvoiceWizardStep | null;
   includePaymentStep: boolean;
-  includePoliciesStep: boolean;
 };
 
 const STEP_LABEL_KEYS: Record<InvoiceWizardStepKind, string> = {
@@ -39,7 +36,6 @@ const STEP_LABEL_KEYS: Record<InvoiceWizardStepKind, string> = {
   lineItems: "invoices.wizard.steps.lineItems",
   payment: "invoices.wizard.steps.payment",
   documents: "invoices.documents.title",
-  policies: "invoices.wizard.steps.policies",
   preview: "invoices.wizard.steps.preview",
 };
 
@@ -49,13 +45,11 @@ const STEP_TITLE_KEYS: Record<InvoiceWizardStepKind, string> = {
   lineItems: "invoices.wizard.stepTitles.addLineItems",
   payment: "invoices.wizard.stepTitles.paymentInfo",
   documents: "invoices.documents.title",
-  policies: "invoices.wizard.stepTitles.reviewPolicies",
   preview: "invoices.wizard.stepTitles.reviewAndSave",
 };
 
 export function resolveInvoiceWizardLayout(options: {
   requireDailyIncomeRegistration: boolean;
-  requirePolicySignature: boolean;
   includeDocumentsStep?: boolean;
 }): InvoiceWizardLayout {
   const steps: InvoiceWizardLayoutStep[] = [
@@ -65,7 +59,6 @@ export function resolveInvoiceWizardLayout(options: {
   ];
 
   let paymentStep: InvoiceWizardStep | null = null;
-  let policiesStep: InvoiceWizardStep | null = null;
 
   if (options.requireDailyIncomeRegistration) {
     const id = (steps.length + 1) as InvoiceWizardStep;
@@ -80,12 +73,6 @@ export function resolveInvoiceWizardLayout(options: {
     steps.push({ id: documentsStep, kind: "documents" });
   }
 
-  if (options.requirePolicySignature) {
-    const id = (steps.length + 1) as InvoiceWizardStep;
-    policiesStep = id;
-    steps.push({ id, kind: "policies" });
-  }
-
   const previewStep = (steps.length + 1) as InvoiceWizardStep;
   steps.push({ id: previewStep, kind: "preview" });
 
@@ -94,9 +81,7 @@ export function resolveInvoiceWizardLayout(options: {
     previewStep,
     paymentStep,
     documentsStep,
-    policiesStep,
     includePaymentStep: paymentStep != null,
-    includePoliciesStep: policiesStep != null,
   };
 }
 
@@ -119,9 +104,11 @@ type Props = {
   step: InvoiceWizardStep;
   layout: InvoiceWizardLayout;
   onSelectStep?: (step: InvoiceWizardStep) => void;
+  /** When set, upcoming steps are clickable too (not only completed ones). */
+  canSelectStep?: (step: InvoiceWizardStep) => boolean;
 };
 
-export function InvoiceWizardStepper({ step, layout, onSelectStep }: Props) {
+export function InvoiceWizardStepper({ step, layout, onSelectStep, canSelectStep }: Props) {
   const { t } = useTranslation();
   return (
     <WorkflowStepper
@@ -130,6 +117,10 @@ export function InvoiceWizardStepper({ step, layout, onSelectStep }: Props) {
       onSelectStep={onSelectStep ? (id) => {
         const entry = layout.steps.find((item) => item.id === id);
         if (entry) onSelectStep(entry.id);
+      } : undefined}
+      canSelectStep={canSelectStep ? (id) => {
+        const entry = layout.steps.find((item) => item.id === id);
+        return entry ? canSelectStep(entry.id) : false;
       } : undefined}
       ariaLabel={t("invoices.wizard.navAriaLabel")}
       progressLabel={`Step ${layout.steps.findIndex((entry) => entry.id === step) + 1} of ${layout.steps.length}`}

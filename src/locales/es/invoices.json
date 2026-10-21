@@ -101,13 +101,10 @@
       "backToInvoices": "Volver a facturas",
       "createDescription": "Ingresa los datos del envío, confirma los clientes y la mercancía y revisa el pago y los totales antes de guardar.",
       "editDescription": "Actualiza los datos de la factura, los clientes y la mercancía y revisa los cambios antes de guardar.",
-      "detailsHint": "Confirma la fecha, el contenedor y quién recibió la mercancía según el registro del envío.",
       "partiesHint": "Busca clientes por nombre o teléfono. Confirma sus datos de contacto y la dirección de recogida o entrega.",
       "itemsHint": "Registra la mercancía, las cantidades y los precios. Las etiquetas identifican las piezas individuales que necesitan seguimiento.",
       "totals": "Totales",
-      "navigationHint": "Completa este paso y selecciona Siguiente. Puedes volver a los pasos completados para hacer cambios.",
       "paymentHint": "Revisa el cuadre y los datos del pago antes de continuar.",
-      "policiesHint": "Revisa las políticas de la empresa, confirma el acuerdo y captura la firma del cliente antes de continuar.",
       "reviewHint": "Verifica los clientes, la mercancía, las etiquetas y los totales antes de guardar."
     },
     "fields": {
@@ -121,6 +118,7 @@
       "sender": "Remitente",
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
+      "pickupReceiver": "Destinatario de esta recogida",
       "pickupSource": "Recibido en",
       "pickupSourceRoute": "Ruta",
       "pickupSourceWarehouse": "Almacén",
@@ -139,6 +137,8 @@
       "noReceiver": "Sin destinatario",
       "noPickupReference": "Sin referencia de recogida",
       "searchPickupReferences": "Buscar referencias de recogida…",
+      "selectPickupReceiver": "Elige para quién es esta factura",
+      "searchPickupReceivers": "Buscar destinatarios de la recogida…",
       "selectPickupRoute": "Seleccionar ruta de citas",
       "noPickupRoute": "Sin ruta de citas",
       "searchPickupRoutes": "Buscar rutas de citas…",
@@ -155,7 +155,8 @@
       "editReceiver": "Editar destinatario"
     },
     "validation": {
-      "senderRequired": "Seleccione un remitente."
+      "senderRequired": "Seleccione un remitente.",
+      "createdEmployeeLoadFailed": "El empleado se creó, pero no se pudo cargar. Selecciónelo de la lista."
     },
     "sections": {
       "invoiceDetails": "Detalles de la factura",
@@ -217,7 +218,6 @@
       "parties": "Partes",
       "lineItems": "Artículos",
       "payment": "Pago",
-      "policies": "Políticas",
       "preview": "Vista previa"
     },
     "stepTitles": {
@@ -225,12 +225,11 @@
       "selectParties": "Seleccionar remitente y destinatario",
       "addLineItems": "Agregar artículos",
       "paymentInfo": "Información de pago",
-      "reviewPolicies": "Revisar políticas y firmar",
       "reviewAndSave": "Revisar y guardar factura"
     },
     "policies": {
       "title": "Políticas de la empresa",
-      "description": "Lee cada política, confirma el acuerdo y firma antes de continuar.",
+      "description": "Lee cada política, confirma el acuerdo y firma antes de guardar.",
       "agreeLabel": "He leído y acepto las políticas listadas arriba.",
       "loadError": "No se pudieron cargar las políticas. Vuelve a intentar antes de guardar la factura.",
       "signatureLabel": "Firma del cliente",
@@ -254,12 +253,12 @@
       "unverifiedSenderAddress": "La dirección del remitente no está verificada. Puedes continuar y guardar la factura; recomendamos actualizar la dirección con una sugerencia de Google.",
       "lineItemRequired": "Agregue al menos un artículo.",
       "lineItemQuantityRequired": "Cada artículo necesita una cantidad mayor que 0.",
-      "dailyIncomeContinueRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de continuar.",
+      "dailyIncomeContinueRequired": "Abra un Cuadre y luego registre un pago u omita el pago antes de continuar.",
       "dailyIncomeSaveRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de guardar.",
       "negativeBalance": "El saldo no puede ser negativo. Reduzca el pago o el descuento para que no superen el total de la factura.",
       "registeredCostMismatch": "El total de artículos debe coincidir con el costo registrado en Ingresos diarios antes de guardar.",
-      "policiesAgreeRequired": "Confirma que aceptas las políticas de la factura antes de continuar.",
-      "policiesSignatureRequired": "Se requiere la firma del cliente antes de continuar."
+      "policiesAgreeRequired": "Confirma que aceptas las políticas de la factura antes de guardar.",
+      "policiesSignatureRequired": "Se requiere la firma del cliente antes de guardar."
     },
     "summary": {
       "title": "Resumen de factura",
@@ -363,11 +362,11 @@
       "createOrOpenCuadre": "Crear Cuadre",
       "reopenCuadre": "Reabrir Cuadre",
       "skipPayment": "Omitir pago",
-      "skipPaymentHint": "Déjelo marcado para que el backend registre esta factura en el Cuadre abierto con pago de $0. Desmárquelo para ingresar detalles de pago.",
-      "skipWithCuadreHint": "La factura se vinculará a Ingresos diarios #{{id}} y se registrará en el diario con pago de $0.",
+      "paymentChoiceHint": "Registre ahora un pago para esta factura, u omítalo y la factura se registrará en Ingresos diarios #{{id}} con un pago de $0.",
+      "postPayment": "Registrar pago",
+      "postPaymentDescription": "Registre el pago recibido para esta factura en Ingresos diarios #{{id}}.",
       "paymentSkipped": "Pago omitido — no hay Cuadre abierto para registrar. Cree un Cuadre para registrar el costo con pago de $0, o continúe sin vincular.",
       "unpaidContinueHint": "Ingrese un pago abajo, o continúe para registrar el costo y el saldo de la factura en Ingresos diarios #{{id}} con pago de $0.",
-      "recordBeforeContinueHint": "Presione Registrar pago para continuar. El monto puede ser $0.00 para una factura sin pagar.",
       "zeroPaymentDescription": "Registro inicial de factura (sin pagar)",
       "registeringZeroPayment": "Registrando factura sin pago en Ingresos diarios…",
       "dialog": {
@@ -704,7 +703,6 @@
     "noPreview": "Este formato no admite vista previa aquí. Descargue el archivo original para abrirlo.",
     "drop": "Arrastre archivos aquí o seleccione archivos",
     "draftHint": "Seleccione archivos ahora. Se subirán después de guardar la factura.",
-    "editHint": "Los cambios en documentos se guardan de inmediato, independientemente de los cambios en la factura.",
     "savedHint": "Guardando los documentos de la factura. El proceso finalizará automáticamente cuando se completen todas las cargas. Reintente las cargas fallidas abajo.",
     "finish": "Finalizar documentos",
     "invalidSize": "Los archivos no pueden estar vacíos ni superar los 25 MB.",

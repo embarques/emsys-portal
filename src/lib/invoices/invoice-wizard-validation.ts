@@ -152,18 +152,18 @@ export function findInvoiceWizardPaymentIssue(
 export function findInvoiceWizardPoliciesIssue(
   agreement: InvoicePoliciesAgreementInput,
   t: Translate,
-  policiesStep: InvoiceWizardStep,
+  reviewStep: InvoiceWizardStep,
 ): InvoiceWizardIssue | null {
   if (!agreement.agreed) {
     return {
-      step: policiesStep,
+      step: reviewStep,
       fieldId: INVOICE_WIZARD_FIELDS.policiesAgree,
       message: t("invoices.wizard.validation.policiesAgreeRequired"),
     };
   }
   if (!agreement.signatureDataUrl) {
     return {
-      step: policiesStep,
+      step: reviewStep,
       fieldId: INVOICE_WIZARD_FIELDS.policiesSignature,
       message: t("invoices.wizard.validation.policiesSignatureRequired"),
     };
@@ -178,7 +178,6 @@ export function findInvoiceWizardSaveIssue(options: {
   requirePolicySignature: boolean;
   policiesAgreement: InvoicePoliciesAgreementInput;
   paymentStep: InvoiceWizardStep | null;
-  policiesStep: InvoiceWizardStep | null;
   previewStep: InvoiceWizardStep;
   t: Translate;
 }): InvoiceWizardIssue | null {
@@ -189,7 +188,6 @@ export function findInvoiceWizardSaveIssue(options: {
     requirePolicySignature,
     policiesAgreement,
     paymentStep,
-    policiesStep,
     previewStep,
     t,
   } = options;
@@ -207,8 +205,8 @@ export function findInvoiceWizardSaveIssue(options: {
     (requireDailyIncome && paymentStep != null
       ? findInvoiceWizardPaymentIssue(dailyIncome, t, "save", values, paymentStep)
       : null) ??
-    (requirePolicySignature && policiesStep != null
-      ? findInvoiceWizardPoliciesIssue(policiesAgreement, t, policiesStep)
+    (requirePolicySignature
+      ? findInvoiceWizardPoliciesIssue(policiesAgreement, t, previewStep)
       : null) ??
     (registeredCostMismatch
       ? {

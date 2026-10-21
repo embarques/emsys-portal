@@ -24,9 +24,10 @@ import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,
 } from "@/lib/layout/hooks/use-workspace-tabs";
+import { stashFormTabCreatedId } from "@/lib/layout/form-tab-return";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
-export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+export function EmployeeFormWorkspace({ tabId, mode, entityId, closeOnSave }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
@@ -71,6 +72,11 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
       const next = await createMutation.mutateAsync(values);
       notifyAdded(t("employees.entity"), next.name);
+      if (closeOnSave) {
+        stashFormTabCreatedId("employees", next.id);
+        closeFormTabAndReturn(tabId);
+        return;
+      }
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);

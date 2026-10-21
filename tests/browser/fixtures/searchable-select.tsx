@@ -82,7 +82,7 @@ function WorkflowStepperFixture() {
       canSelectStep={traversable ? (id) => id <= 2 || prerequisitesValid : undefined}
       onSelectStep={setStep} ariaLabel="Appointment steps" progressLabel="Step 3 of 3" goToStepLabel={(label) => `Go to ${label}`} />
     {traversable ? <button type="button" onClick={() => setPrerequisitesValid((current) => !current)}>Toggle prerequisites</button> : null}
-    <InvoiceWizardStepper step={invoiceStep} layout={resolveInvoiceWizardLayout({ requireDailyIncomeRegistration: false, requirePolicySignature: false })}
+    <InvoiceWizardStepper step={invoiceStep} layout={resolveInvoiceWizardLayout({ requireDailyIncomeRegistration: false })}
       onSelectStep={setInvoiceStep} />
   </>;
 }

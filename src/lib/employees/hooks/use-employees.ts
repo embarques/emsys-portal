@@ -6,6 +6,7 @@ import {
   useQueries,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
@@ -124,6 +125,19 @@ export function useEmployee(employeeId: string | null, enabled = true) {
     queryFn: () => fetchEmployeeById(employeeId!),
     enabled: enabled && Boolean(employeeId),
   });
+}
+
+export function useEnsureEmployeeDetail() {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (employeeId: string) =>
+      queryClient.fetchQuery({
+        queryKey: queryKeys.employees.detail(employeeId),
+        queryFn: () => fetchEmployeeById(employeeId),
+      }),
+    [queryClient],
+  );
 }
 
 function invalidateEmployees(queryClient: ReturnType<typeof useQueryClient>) {

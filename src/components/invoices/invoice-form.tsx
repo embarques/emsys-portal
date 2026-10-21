@@ -63,7 +63,9 @@ import {
   useCreateEmployee,
   useEmployeeSearch,
   useEmployees,
+  useEnsureEmployeeDetail,
 } from "@/lib/employees/hooks/use-employees";
+import { useApplyCreatedOnTabReturn } from "@/lib/layout/hooks/use-apply-created-on-tab-return";
 import {
   createEmptyEmployeeForm,
   DEFAULT_EMPLOYEE_LIST_PARAMS,
@@ -88,7 +90,7 @@ import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/
 import { isDeliveryBranchCode } from "@/lib/pickup-delivery-routes/types";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
-import { DEFAULT_ORDER_LIST_PARAMS, type Order } from "@/lib/orders/types";
+import { DEFAULT_ORDER_LIST_PARAMS, getOrderReceivers, type Order } from "@/lib/orders/types";
 import { useOrder, useOrderSearch, useOrders } from "@/lib/orders/hooks/use-orders";
 import { cn } from "@/lib/utils";
 
@@ -156,6 +158,29 @@ function orderToPickupSelectOption(order: Order): SearchableSelectOption {
     label: senderName ? `#${order.id} ${senderName}` : `#${order.id}`,
     descriptionLines: buildPickupOptionDescriptionLines(order),
     keywords: buildPickupSearchKeywords(order),
+  };
+}
+
+function getPickupReceivers(order: Order | null | undefined): Customer[] {
+  if (!order) return [];
+  const seen = new Set<string>();
+  return getOrderReceivers(order).filter((receiver) => {
+    const id = receiver?.id?.trim();
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function receiverToPickupSelectOption(receiver: Customer): SearchableSelectOption {
+  const phone = getPrimaryPhoneDisplayNumber(receiver.phones);
+  const address = getCustomerPrimaryCoreAddress(receiver);
+  const location = [address.address1, address.city].map((part) => part.trim()).filter(Boolean).join(", ");
+  return {
+    value: receiver.id,
+    label: receiver.name,
+    descriptionLines: [phone, location].filter((line) => line.trim()),
+    keywords: [receiver.name, phone, address.address1, address.city].filter((value) => value.trim()),
   };
 }
 
@@ -227,8 +252,20 @@ export function InvoiceForm({
   const isWizard = appearance === "wizard" || isPhoneWizard;
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders(DEFAULT_ORDER_LIST_PARAMS);
-  const { openFormTab } = useWorkspaceTabs();
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const ensureCustomerDetail = useEnsureCustomerDetail();
+  const ensureEmployeeDetail = useEnsureEmployeeDetail();
+  const { markPendingAdd } = useApplyCreatedOnTabReturn((feature, id) => {
+    if (feature === "containers") {
+      updateField("containerId", id);
+      return;
+    }
+    if (feature === "employees") {
+      ensureEmployeeDetail(id)
+        .then(applyCreatedEmployee)
+        .catch(() => setFormError(t("invoices.form.validation.createdEmployeeLoadFailed")));
+    }
+  });
 
   const { data: itemsData } = useItemPicker();
   const containers = containersData?.items ?? [];
@@ -423,6 +460,23 @@ export function InvoiceForm({
     values.pickupId,
   ]);
 
+  function findPickupOrder(pickupId: string): Order | undefined {
+    if (!pickupId) return undefined;
+    return (
+      pickupSearchResults.find((order) => String(order.id) === pickupId) ??
+      defaultOrders.find((order) => String(order.id) === pickupId) ??
+      (selectedPickupQuery.data && String(selectedPickupQuery.data.id) === pickupId
+        ? selectedPickupQuery.data
+        : undefined)
+    );
+  }
+
+  const pickupReceivers = getPickupReceivers(findPickupOrder(values.pickupId));
+  const pickupReceiverOptions = pickupReceivers.map(receiverToPickupSelectOption);
+  const pickupReceiverValue = pickupReceivers.some((receiver) => receiver.id === values.receiverId)
+    ? values.receiverId
+    : "";
+
   function updateField<K extends keyof InvoiceFormValues>(key: K, value: InvoiceFormValues[K]) {
     commitValues((current) => ({ ...current, [key]: value }));
     setFormError(null);
@@ -479,13 +533,50 @@ export function InvoiceForm({
   }
 
   function openAddContainer() {
+    if (isDesktopTabs) {
+      markPendingAdd("containers");
+      openFormTab({
+        feature: "containers",
+        baseHref: "/containers",
+        mode: "add",
+        label: t("containers.actions.add"),
+        closeOnSave: true,
+      });
+      return;
+    }
     setEntityError(null);
     setEntityDialog("container");
   }
 
   function openAddEmployee() {
+    if (isDesktopTabs) {
+      markPendingAdd("employees");
+      openFormTab({
+        feature: "employees",
+        baseHref: "/employees",
+        mode: "add",
+        label: t("employees.actions.add"),
+        closeOnSave: true,
+      });
+      return;
+    }
     setEntityError(null);
     setEntityDialog("employee");
+  }
+
+  function applyCreatedEmployee(employee: Employee) {
+    commitValues((current) => ({
+      ...current,
+      pickupSource: current.pickupSource === "route" ? "office" : current.pickupSource,
+      pickupEmployeeId: String(employee.id),
+      pickupEmployeeName: employee.name,
+      officeBranchId: String(employee.branch.id),
+      officeBranchName: `${employee.branch.code} — ${employee.branch.name}`.trim(),
+      routeId: "",
+      routeCrewId: "",
+      routeCrewName: "",
+    }));
+    setFormError(null);
   }
 
   function openAddRoute() {
@@ -508,19 +599,8 @@ export function InvoiceForm({
     try {
       setEntityError(null);
       const saved = await createEmployeeMutation.mutateAsync(formValues);
-      commitValues((current) => ({
-        ...current,
-        pickupSource: current.pickupSource === "route" ? "office" : current.pickupSource,
-        pickupEmployeeId: String(saved.id),
-        pickupEmployeeName: saved.name,
-        officeBranchId: String(saved.branch.id),
-        officeBranchName: `${saved.branch.code} — ${saved.branch.name}`.trim(),
-        routeId: "",
-        routeCrewId: "",
-        routeCrewName: "",
-      }));
+      applyCreatedEmployee(saved);
       setEntityDialog(null);
-      setFormError(null);
     } catch (error) {
       setEntityError(normalizeApiError(error).message);
     }
@@ -550,29 +630,50 @@ export function InvoiceForm({
     setFormError(null);
   }
 
+  async function loadLiveReceiver(pickupId: string, receiverId: string) {
+    try {
+      const liveReceiver = await ensureCustomerDetail(receiverId, { staleTime: 0 });
+      commitValues((current) => {
+        if (current.pickupId !== pickupId || current.receiverId !== receiverId) return current;
+        return { ...current, receiverId: liveReceiver.id, receiver: liveReceiver };
+      });
+    } catch {
+      // Keep the pickup snapshot if the live customer cannot be loaded.
+    }
+  }
+
   async function updatePickupReference(next: string) {
-    const source = debouncedPickupQuery ? pickupSearchResults : defaultOrders;
-    const selectedOrder =
-      source.find((order) => String(order.id) === next) ??
-      (selectedPickupQuery.data && String(selectedPickupQuery.data.id) === next
-        ? selectedPickupQuery.data
-        : undefined);
+    const selectedOrder = findPickupOrder(next);
     const snapshotSender = selectedOrder?.sender ?? null;
     const senderId = snapshotSender?.id?.trim() ?? "";
+    const receivers = getPickupReceivers(selectedOrder);
+    const onlyReceiver = receivers.length === 1 ? receivers[0] : null;
 
-    commitValues((current) => ({
-      ...current,
-      pickupId: next,
-      ...(snapshotSender
-        ? { senderId: snapshotSender.id, sender: snapshotSender }
-        : {}),
-    }));
+    commitValues((current) => {
+      const keepsReceiver = receivers.some((receiver) => receiver.id === current.receiverId);
+      return {
+        ...current,
+        pickupId: next,
+        ...(snapshotSender
+          ? { senderId: snapshotSender.id, sender: snapshotSender }
+          : {}),
+        ...(onlyReceiver
+          ? { receiverId: onlyReceiver.id, receiver: onlyReceiver }
+          : receivers.length > 1 && !keepsReceiver
+            ? { receiverId: "", receiver: null }
+            : {}),
+      };
+    });
     setFormError(null);
 
-    // Pickup auto-fills sender — skip sender and open receiver for the next choice.
+    // Pickup auto-fills sender — skip sender and open the receiver choice next.
     window.setTimeout(() => {
-      focusInvoiceWizardField(senderId ? "receiverId" : "senderId");
+      focusInvoiceWizardField(
+        !senderId ? "senderId" : receivers.length > 1 ? "pickupReceiverId" : "receiverId",
+      );
     }, 0);
+
+    if (onlyReceiver) void loadLiveReceiver(next, onlyReceiver.id);
 
     if (!senderId) return;
 
@@ -587,6 +688,14 @@ export function InvoiceForm({
     } catch {
       // Keep the pickup snapshot if the live customer cannot be loaded.
     }
+  }
+
+  function updatePickupReceiver(receiverId: string) {
+    const receiver = pickupReceivers.find((entry) => entry.id === receiverId);
+    if (!receiver) return;
+    commitValues((current) => ({ ...current, receiverId: receiver.id, receiver }));
+    setFormError(null);
+    void loadLiveReceiver(values.pickupId, receiver.id);
   }
 
   function updateSender(_senderId: string, sender: Customer) {
@@ -1018,6 +1127,22 @@ export function InvoiceForm({
             onEdit={() => openEditCustomer("receiver")}
           />
         </div>
+        {pickupReceivers.length > 1 ? (
+          <div className="space-y-1">
+            <Label htmlFor="pickupReceiverId" className="text-xs font-medium text-muted-foreground">
+              {t("invoices.form.fields.pickupReceiver")}
+            </Label>
+            <SearchableSelect
+              id="pickupReceiverId"
+              value={pickupReceiverValue}
+              onValueChange={updatePickupReceiver}
+              placeholder={t("invoices.form.placeholders.selectPickupReceiver")}
+              searchPlaceholder={t("invoices.form.placeholders.searchPickupReceivers")}
+              {...(isWizard ? wizardSelectFieldProps(pickupReceiverValue) : {})}
+              options={pickupReceiverOptions}
+            />
+          </div>
+        ) : null}
         <CustomerPartySelect
           id="receiverId"
           partyType="receiver"
@@ -1067,7 +1192,7 @@ export function InvoiceForm({
                 {detailsFields}
               </section>
             ) : (
-              <FormSection variant="card" icon={Receipt} title={`01 · ${t("invoices.form.sections.invoiceDetails")}`} description={t("invoices.form.design.detailsHint")}>
+              <FormSection variant="card" icon={Receipt} title={`01 · ${t("invoices.form.sections.invoiceDetails")}`}>
                 {detailsFields}
               </FormSection>
             )

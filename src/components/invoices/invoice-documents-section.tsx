@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, LayoutGrid, List, Search, Upload } from "lucide-react";
+import { Camera, ChevronDown, LayoutGrid, List, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InvoiceDocumentList } from "@/components/invoices/invoice-document-list";
@@ -156,9 +156,9 @@ export function InvoiceDocumentsSection({
         )}
       >
         <div className="min-w-0 space-y-3">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-0 flex-1 basis-full sm:min-w-40 sm:basis-auto">
-              <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 aria-label={t("invoices.documents.search")}
                 placeholder={t("invoices.documents.search")}
@@ -167,15 +167,18 @@ export function InvoiceDocumentsSection({
                 className="min-h-11 pl-9"
               />
             </div>
-            <select
-              aria-label={t("invoices.documents.sort")}
-              value={sort}
-              onChange={(event) => setSort(event.target.value as typeof sort)}
-              className="min-h-11 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm sm:flex-none"
-            >
-              <option value="newest">{t("invoices.documents.newest")}</option>
-              <option value="name">{t("invoices.documents.name")}</option>
-            </select>
+            <div className="relative min-w-0 flex-1 sm:flex-none">
+              <select
+                aria-label={t("invoices.documents.sort")}
+                value={sort}
+                onChange={(event) => setSort(event.target.value as typeof sort)}
+                className="min-h-11 w-full appearance-none rounded-md border border-input bg-card py-2 pr-9 pl-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <option value="newest">{t("invoices.documents.newest")}</option>
+                <option value="name">{t("invoices.documents.name")}</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
             <Button
               size="icon"
               className="size-11"

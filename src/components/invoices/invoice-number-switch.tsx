@@ -46,29 +46,31 @@ export function InvoiceNumberModeFields({
 }: Props) {
   const { t } = useTranslation();
   const mode: Mode = autoGenerate ? "system" : "custom";
-  const modeLocked = disabled || !canUseManualNumber || Boolean(generatedInvoiceNumber);
+  // Locked modes stay focusable so Enter navigation still stops on this field.
+  const modeLocked = !canUseManualNumber || Boolean(generatedInvoiceNumber);
   const modeOptions = [
     {
       value: "system",
       label: t("invoices.form.autoNumber.modeSystem"),
+      disabled: modeLocked && mode !== "system",
     },
     {
       value: "custom",
       label: t("invoices.form.autoNumber.modeCustom"),
-      disabled: !canUseManualNumber,
+      disabled: !canUseManualNumber || (modeLocked && mode !== "custom"),
     },
   ];
 
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2", className)}>
+    <div className={cn("grid gap-4", mode === "custom" && "sm:grid-cols-2", className)}>
       <div className="space-y-2">
         <Label htmlFor={`${id}-mode`}>{t("invoices.form.fields.invoiceNumber")}</Label>
         <SearchableSelect
           id={`${id}-mode`}
           value={mode}
-          disabled={modeLocked}
+          disabled={disabled}
           onValueChange={(next) => {
-            if (!canUseManualNumber && next === "custom") return;
+            if (modeLocked) return;
             onModeChange(next !== "custom");
             if (next !== "custom") {
               onInvoiceNumberChange("");

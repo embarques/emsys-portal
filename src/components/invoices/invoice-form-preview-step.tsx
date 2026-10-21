@@ -58,6 +58,8 @@ type Props = {
   canApplyInvoiceDiscount?: boolean;
   onDiscountChange?: (discount: string) => void;
   errorMessage?: string | null;
+  /** Extra review sections rendered last, inside the same layout container. */
+  children?: React.ReactNode;
 };
 
 function usePreviewLabels(values: InvoiceFormValues) {
@@ -380,6 +382,7 @@ function InvoiceWizardCheckoutReview({
   canApplyInvoiceDiscount,
   onDiscountChange,
   errorMessage,
+  children,
 }: Required<Pick<Props, "values">> &
   Pick<
     Props,
@@ -390,6 +393,7 @@ function InvoiceWizardCheckoutReview({
     | "canApplyInvoiceDiscount"
     | "onDiscountChange"
     | "errorMessage"
+    | "children"
   > & { isPhoneWizard?: boolean }) {
   const { t } = useTranslation();
   const {
@@ -801,6 +805,7 @@ function InvoiceWizardCheckoutReview({
           </div>
         </div>
       </InvoiceWizardReviewSection>
+      {children}
     </div>
   );
 }
@@ -815,6 +820,7 @@ export function InvoiceFormPreviewStep({
   canApplyInvoiceDiscount = false,
   onDiscountChange,
   errorMessage = null,
+  children,
 }: Props) {
   const { t } = useTranslation();
   const isPhoneWizard = appearance === "phoneWizard";
@@ -834,7 +840,9 @@ export function InvoiceFormPreviewStep({
         canApplyInvoiceDiscount={canApplyInvoiceDiscount}
         onDiscountChange={onDiscountChange}
         errorMessage={errorMessage}
-      />
+      >
+        {children}
+      </InvoiceWizardCheckoutReview>
     );
   }
 
@@ -935,6 +943,7 @@ export function InvoiceFormPreviewStep({
           </div>
         </div>
       </FormSection>
+      {children}
     </FormBody>
   );
 }

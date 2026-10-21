@@ -277,8 +277,10 @@ export function InvoiceDailyIncomeDialog({
       setStatementError(null);
       setOpenStatements([]);
       const created = await createStatement.mutateAsync(values);
-      await onStatementCreated(created);
+      // Close before the parent passes the new statement back in, or the dialog
+      // briefly switches to its registration view while closing.
       onOpenChange(false);
+      await onStatementCreated(created);
     } catch (error) {
       const message = normalizeApiError(error).message;
       setStatementError(message);

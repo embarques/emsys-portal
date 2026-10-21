@@ -358,6 +358,7 @@ export function findFormTab(
   mode: WorkspaceTabForm["mode"],
   entityId?: string,
   customerType?: number,
+  closeOnSave?: boolean,
 ): WorkspaceTab | undefined {
   return tabs.find(
     (tab) =>
@@ -365,6 +366,8 @@ export function findFormTab(
       tab.form.mode === mode &&
       // A preset party type is a distinct add form (sender vs receiver vs plain).
       tab.form.customerType === customerType &&
+      // A directory add tab stays open for the next entry; keep it separate.
+      Boolean(tab.form.closeOnSave) === Boolean(closeOnSave) &&
       (mode === "add"
         ? !entityId || tab.form.entityId === entityId
         : tab.form.entityId === entityId),

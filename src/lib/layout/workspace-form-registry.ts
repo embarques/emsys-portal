@@ -36,6 +36,8 @@ export type WorkspaceFormHostProps = {
   focusBarcodeId?: string;
   /** Remount token when re-opening an existing form tab at a new step. */
   formNonce?: number;
+  /** Close after a successful add and hand the created id back to the opener. */
+  closeOnSave?: boolean;
 };
 
 /** Maps a feature key to the form host component rendered inside a form tab. */

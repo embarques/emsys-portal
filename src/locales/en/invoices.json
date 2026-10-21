@@ -101,13 +101,10 @@
       "backToInvoices": "Back to invoices",
       "createDescription": "Enter shipment details, confirm customers and merchandise, then review payment and totals before saving.",
       "editDescription": "Update the invoice details, customers, and merchandise, then review the changes before saving.",
-      "detailsHint": "Use the shipment record to confirm the date, container, and who received the merchandise.",
       "partiesHint": "Find customers by name or phone. Confirm their contact details and the pickup or delivery address.",
       "itemsHint": "Record the merchandise, quantities, and prices. Label counts identify the individual pieces that need tracking.",
       "totals": "Totals",
-      "navigationHint": "Complete this step, then choose Next. You can return to completed steps to make changes.",
       "paymentHint": "Review Daily Income and payment details before continuing.",
-      "policiesHint": "Review the company policies, confirm agreement, and capture the customer signature before continuing.",
       "reviewHint": "Check the customers, merchandise, labels, and totals before saving."
     },
     "fields": {
@@ -121,6 +118,7 @@
       "sender": "Sender",
       "receiver": "Receiver",
       "pickupReference": "Pickup Reference",
+      "pickupReceiver": "Receiver from this pickup",
       "pickupSource": "Received via",
       "pickupSourceRoute": "Route",
       "pickupSourceWarehouse": "Warehouse",
@@ -139,6 +137,8 @@
       "noReceiver": "No receiver",
       "noPickupReference": "No pickup reference",
       "searchPickupReferences": "Search pickup references…",
+      "selectPickupReceiver": "Choose who this invoice is for",
+      "searchPickupReceivers": "Search pickup receivers…",
       "selectPickupRoute": "Select appointment route",
       "noPickupRoute": "No appointment route",
       "searchPickupRoutes": "Search appointment routes…",
@@ -155,7 +155,8 @@
       "editReceiver": "Edit receiver"
     },
     "validation": {
-      "senderRequired": "Sender is required."
+      "senderRequired": "Sender is required.",
+      "createdEmployeeLoadFailed": "The employee was created, but could not be loaded. Select them from the list."
     },
     "sections": {
       "invoiceDetails": "Invoice details",
@@ -217,7 +218,6 @@
       "parties": "Parties",
       "lineItems": "Line items",
       "payment": "Payment",
-      "policies": "Policies",
       "preview": "Preview"
     },
     "stepTitles": {
@@ -225,12 +225,11 @@
       "selectParties": "Select sender & receiver",
       "addLineItems": "Add line items",
       "paymentInfo": "Payment information",
-      "reviewPolicies": "Review policies & sign",
       "reviewAndSave": "Review & save invoice"
     },
     "policies": {
       "title": "Company policies",
-      "description": "Read each policy, confirm agreement, and sign before continuing.",
+      "description": "Read each policy, confirm agreement, and sign before saving.",
       "agreeLabel": "I have read and agree to the policies listed above.",
       "loadError": "Unable to load invoice policies. Retry before saving the invoice.",
       "signatureLabel": "Customer signature",
@@ -254,12 +253,12 @@
       "unverifiedSenderAddress": "The sender's address is unverified. You can continue and save the invoice; we recommend updating it with a Google-suggested address.",
       "lineItemRequired": "Add at least one line item.",
       "lineItemQuantityRequired": "Each line item needs a quantity greater than 0.",
-      "dailyIncomeContinueRequired": "Open a Cuadre, then record a payment or check Skip payment before continuing.",
+      "dailyIncomeContinueRequired": "Open a Cuadre, then post a payment or skip payment before continuing.",
       "dailyIncomeSaveRequired": "Open a Cuadre, then record a payment or check Skip payment before saving.",
       "negativeBalance": "Balance cannot be negative. Reduce the payment or discount so it does not exceed the invoice total.",
       "registeredCostMismatch": "Line items total must match the registered Daily Income cost before saving.",
-      "policiesAgreeRequired": "Confirm that you agree to the invoice policies before continuing.",
-      "policiesSignatureRequired": "A customer signature is required before continuing."
+      "policiesAgreeRequired": "Confirm that you agree to the invoice policies before saving.",
+      "policiesSignatureRequired": "A customer signature is required before saving."
     },
     "summary": {
       "title": "Invoice summary",
@@ -363,11 +362,11 @@
       "createOrOpenCuadre": "Create Cuadre",
       "reopenCuadre": "Reopen Cuadre",
       "skipPayment": "Skip payment",
-      "skipPaymentHint": "Leave checked to let the backend register this invoice in the open Cuadre with $0 payment. Uncheck to enter payment details.",
-      "skipWithCuadreHint": "Invoice will be linked to Daily Income #{{id}} and registered in the journal with $0 payment.",
+      "paymentChoiceHint": "Post a payment for this invoice now, or skip it and the invoice will be registered in Daily Income #{{id}} with a $0 payment.",
+      "postPayment": "Post payment",
+      "postPaymentDescription": "Record the payment received for this invoice in Daily Income #{{id}}.",
       "paymentSkipped": "Payment skipped — no open Cuadre to register against. Create a Cuadre to record cost with $0 payment, or continue without linking.",
       "unpaidContinueHint": "Enter a payment below, or continue to register invoice cost and balance in Daily Income #{{id}} with $0 payment.",
-      "recordBeforeContinueHint": "Press Record payment to continue. Amount may be $0.00 for an unpaid invoice.",
       "zeroPaymentDescription": "Initial invoice registration (unpaid)",
       "registeringZeroPayment": "Registering unpaid invoice in Daily Income…",
       "dialog": {
@@ -704,7 +703,6 @@
     "noPreview": "This format cannot be previewed here. Download the original file to open it.",
     "drop": "Drop files here or browse",
     "draftHint": "Choose attachments now. They will upload after the invoice is saved.",
-    "editHint": "Document changes are saved immediately, independently of invoice changes.",
     "savedHint": "Saving invoice documents. This workflow will finish automatically when all uploads succeed. Retry any failed uploads below.",
     "finish": "Finish documents",
     "invalidSize": "Files must be non-empty and no larger than 25 MB.",
