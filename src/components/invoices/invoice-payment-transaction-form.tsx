@@ -7,6 +7,7 @@ import { useForm, type FieldErrors } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -391,11 +392,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           invoiceCostReadOnly
         />
 
-        {submitError ? (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {submitError}
-          </div>
-        ) : null}
+        {submitError ? <FormFooterNoticeMessage tone="error" message={submitError} /> : null}
 
         <div className="sticky bottom-0 z-10 flex justify-end border-t bg-background py-3">
           <Button

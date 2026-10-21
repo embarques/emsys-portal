@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
-import { MessageSquare, Pencil, Plus, Trash2 } from "lucide-react";
+import { Banknote, Check, ClipboardList, MessageSquare, PackageOpen, Pencil, Plus, Trash2, Truck, type LucideIcon } from "lucide-react";
 
+import { wizardInputFieldProps } from "@/components/invoices/invoice-wizard-styles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -18,6 +19,14 @@ import {
 } from "@/lib/orders/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+
+const purposeIcons: Record<string, LucideIcon> = {
+  PICKUP: PackageOpen,
+  TAKE: Truck,
+  PAYMENT: Banknote,
+  ESTIMATE: ClipboardList,
+  OTHER: MessageSquare,
+};
 
 /** Purposes that may only appear once per order. */
 const SINGLE_USE_PURPOSES = new Set<string>(["ESTIMATE", "PAYMENT", "OTHER"]);
@@ -40,29 +49,48 @@ function highlightQuantityField(event: FocusEvent<HTMLInputElement>) {
 }
 
 type OrderCommentsEditorProps = {
+  quickEntry?: boolean;
   comments: OrderCommentFormValues[];
   onChange: (comments: OrderCommentFormValues[]) => void;
+  /** Quick entry only: extra classes for the scrollable list of added comments. */
+  listClassName?: string;
 };
 
-export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorProps) {
+export function OrderCommentsEditor({ comments, onChange, quickEntry = false, listClassName }: OrderCommentsEditorProps) {
   const { t, locale } = useTranslation();
   const [editing, setEditing] = useState<EditingCell>(null);
   const [mobileEditingIndex, setMobileEditingIndex] = useState<number | null>(null);
+  // Quick entry: the comment shown in the editor card; null means the new draft.
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<OrderCommentFormValues | null>(() =>
-    comments.length === 0 ? { ...createEmptyOrderComment(), language: locale } : null,
+    comments.length === 0 || quickEntry ? { ...createEmptyOrderComment(), language: locale } : null,
   );
   const advancingRef = useRef(false);
   const draftRef = useRef<OrderCommentFormValues | null>(draft);
   const commentsRef = useRef(comments);
   commentsRef.current = comments;
 
+  const resolvedActiveIndex = activeIndex !== null && activeIndex < comments.length ? activeIndex : null;
+
   useEffect(() => {
-    if (comments.length === 0 && !draftRef.current) {
+    const needsDraft = comments.length === 0 || (quickEntry && resolvedActiveIndex === null);
+    if (needsDraft && !draftRef.current) {
       const next = { ...createEmptyOrderComment(), language: locale };
       draftRef.current = next;
       setDraft(next);
     }
-  }, [comments, draft, locale]);
+  }, [comments, draft, locale, quickEntry, resolvedActiveIndex]);
+
+  useEffect(() => {
+    if (!quickEntry || editing?.field !== "note") return;
+
+    const index = editing.index;
+    const timer = window.setTimeout(() => {
+      document.getElementById(`quick-comment-note-${index}`)?.focus();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [editing, quickEntry]);
 
   useEffect(() => {
     if (editing?.field !== "quantity") return;
@@ -70,6 +98,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
     const index = editing.index;
     const timer = window.setTimeout(() => {
       const input =
+        (document.getElementById(`quick-comment-quantity-${index}`) as HTMLInputElement | null) ??
         (document.getElementById(`comment-quantity-${index}`) as HTMLInputElement | null) ??
         (document.getElementById(`mobile-comment-quantity-${index}`) as HTMLInputElement | null);
       if (!input) return;
@@ -194,6 +223,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
         commentsRef.current = committed;
         setDraftState(null);
         onChange(committed);
+        setActiveIndex(committedIndex);
         if (editing?.index === index) {
           setEditing({ index: committedIndex, field: editing.field });
         }
@@ -218,6 +248,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
     commentsRef.current = committed;
     setDraftState(null);
     onChange(committed);
+    setActiveIndex(newIndex);
     if (isMobileViewportNow()) {
       setEditing(null);
       setMobileEditingIndex(nextField ? newIndex : null);
@@ -281,6 +312,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
       const committed = [...commentsRef.current, current];
       commentsRef.current = committed;
       onChange(committed);
+      setActiveIndex(null);
       const nextIndex = committed.length;
       if (isMobileViewportNow()) {
         setEditing(null);
@@ -353,6 +385,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
 
   function addComment() {
     advancingRef.current = false;
+    setActiveIndex(null);
     if (draft) {
       const field: CommentField = !draft.purpose
         ? "purpose"
@@ -391,6 +424,10 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
       return;
     }
     onChange(comments.filter((_, commentIndex) => commentIndex !== index));
+    setActiveIndex((current) => {
+      if (current === null || current === index) return null;
+      return current > index ? current - 1 : current;
+    });
     setEditing(null);
     setMobileEditingIndex((current) => {
       if (current === null) return null;
@@ -398,6 +435,139 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
       if (current > index) return current - 1;
       return current;
     });
+  }
+
+  if (quickEntry) {
+    const currentIndex = resolvedActiveIndex ?? draftIndex;
+    const current = rows[currentIndex] as OrderCommentFormValues | undefined;
+    const isCurrentDraft = isDraftIndex(currentIndex);
+    const requiresItem = current ? orderCommentPurposeRequiresItem(current.purpose) : false;
+    const noteField = requiresItem && current?.itemType === "other" ? "customItem" : "description";
+
+    function quickCommentSummary(comment: OrderCommentFormValues): string {
+      const parts: string[] = [];
+      if (orderCommentPurposeRequiresItem(comment.purpose)) {
+        if (comment.itemType === "other") parts.push(comment.customItem.trim());
+        else if (comment.itemType) parts.push(`${itemLabel(comment.itemType)} × ${comment.quantity || "1"}`);
+      }
+      if (comment.description.trim()) parts.push(comment.description.trim());
+      return parts.filter(Boolean).join(" · ");
+    }
+
+    return (
+      <section className="flex min-h-0 flex-1 flex-col gap-3" aria-label={t("orders.comments.title")} data-enter-navigation="ignore">
+        {current ? (
+          <div className="@container shrink-0 space-y-3 rounded-xl border border-primary/30 bg-primary/[0.03] p-3 @sm:p-4">
+            <div className="flex min-h-8 items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">
+                {isCurrentDraft
+                  ? t("orders.form.design.addPurpose")
+                  : t("orders.form.design.editPurpose", { index: currentIndex + 1 })}
+              </h3>
+              {!isCurrentDraft ? (
+                <div className="flex items-center gap-1">
+                  <Button type="button" variant="outline" size="sm" onClick={addComment}>
+                    <Plus className="size-4" />{t("orders.form.design.addAnotherPurpose")}
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => removeComment(currentIndex)}
+                    aria-label={t("orders.comments.removeAria", { index: currentIndex + 1 })}><Trash2 className="size-4" /></Button>
+                </div>
+              ) : null}
+            </div>
+            <div role="group" aria-label={t("orders.comments.columns.purpose")} className="grid grid-cols-3 gap-2 @md:grid-cols-5">
+              {purposeOptionsForRow(currentIndex).map((purpose) => {
+                const Icon = purposeIcons[purpose.value] ?? MessageSquare;
+                const selected = current.purpose === purpose.value;
+                return (
+                  <Button key={purpose.value} type="button" variant="outline"
+                    className={cn("relative h-auto min-h-16 flex-col gap-1.5 whitespace-normal rounded-lg px-2 py-2.5 text-center text-xs font-medium @sm:text-sm", selected && "border-primary bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary")}
+                    disabled={purpose.disabled} aria-pressed={selected}
+                    onClick={() => { if (!selected) changePurpose(currentIndex, purpose.value); }}>
+                    {selected ? <Check className="absolute right-1.5 top-1.5 size-3.5" aria-hidden /> : null}
+                    <Icon className="size-4" aria-hidden />
+                    {purpose.label}
+                  </Button>
+                );
+              })}
+            </div>
+            {requiresItem ? (
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">{t("orders.comments.columns.item")}</p>
+                <div role="group" aria-label={t("orders.comments.columns.item")} className="grid grid-cols-2 gap-2 @sm:grid-cols-4">
+                  {itemOptionsForRow(currentIndex).map((item) => (
+                    <Button key={item.value} type="button" variant={current.itemType === item.value ? "default" : "outline"}
+                      className="h-9 rounded-lg" disabled={item.disabled} aria-pressed={current.itemType === item.value}
+                      onClick={() => changeItem(currentIndex, item.value)}>{item.label}</Button>
+                  ))}
+                </div>
+              </div>
+        ) : null}
+          {requiresItem && current.itemType && current.itemType !== "other" ? (
+            <div className="min-w-0 space-y-1.5">
+              <label htmlFor={`quick-comment-quantity-${currentIndex}`} className="text-sm font-medium">{t("orders.comments.columns.quantity")}</label>
+              <Input {...wizardInputFieldProps(current.quantity)} id={`quick-comment-quantity-${currentIndex}`} type="number" min="1" value={current.quantity}
+                onFocus={highlightQuantityField}
+                onChange={(event) => updateComment(currentIndex, { quantity: event.target.value })}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
+                  }
+                }} />
+            </div>
+          ) : current.purpose && (!requiresItem || current.itemType === "other") ? (
+            <div className="min-w-0 space-y-1.5">
+              <label htmlFor={`quick-comment-note-${currentIndex}`} className="text-sm font-medium">{t("orders.comments.columns.comment")}</label>
+              <Input {...wizardInputFieldProps(current[noteField])} id={`quick-comment-note-${currentIndex}`} value={current[noteField]}
+                placeholder={t(noteField === "customItem" ? "orders.comments.placeholders.customItem" : "orders.comments.placeholders.note")}
+                onChange={(event) => updateComment(currentIndex, { [noteField]: event.target.value })}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
+                  }
+                }} />
+            </div>
+          ) : null}
+      </div>
+        ) : null}
+        <div className="flex shrink-0 items-center justify-between gap-2 pt-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("orders.form.design.addedPurposes", { count: comments.length })}
+          </p>
+        </div>
+        <div className={cn("-m-1 min-h-0 space-y-2 overflow-y-auto p-1", listClassName)}>
+          {comments.length === 0 ? (
+            <p className="rounded-lg border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
+              {t("orders.form.design.noPurposes")}
+            </p>
+          ) : null}
+          {comments.map((comment, index) => {
+            const Icon = purposeIcons[comment.purpose] ?? MessageSquare;
+            const isActive = resolvedActiveIndex === index;
+            const summary = quickCommentSummary(comment);
+            return (
+              <div key={`quick-comment-row-${index}`}
+                className={cn("flex items-center gap-1 rounded-lg border bg-card pr-1 shadow-xs", isActive && "border-primary bg-primary/5")}>
+                <button type="button" aria-current={isActive || undefined}
+                  aria-label={t("orders.form.design.editPurposeAria", { index: index + 1, purpose: purposeLabel(comment.purpose) })}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-muted/40"
+                  onClick={() => setActiveIndex(index)}>
+                  <Icon className="size-4 shrink-0 text-primary" aria-hidden />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">{purposeLabel(comment.purpose)}</span>
+                    {summary ? <span className="block truncate text-xs text-muted-foreground">{summary}</span> : null}
+                  </span>
+                </button>
+                <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeComment(index)}
+                  aria-label={t("orders.comments.removeAria", { index: index + 1 })}><Trash2 className="size-4" /></Button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
   }
 
   return (

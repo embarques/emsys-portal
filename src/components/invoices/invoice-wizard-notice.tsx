@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { AlertCircle, AlertTriangle } from "lucide-react";
 
+import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { cn } from "@/lib/utils";
 
 type InvoiceWizardNoticeProps = {
@@ -21,27 +22,20 @@ export function InvoiceWizardNotice({
   action,
   variant = "banner",
 }: InvoiceWizardNoticeProps) {
+  if (variant === "footer") {
+    return <FormFooterNoticeMessage tone={tone} message={message} action={action} className={className} />;
+  }
+
   const Icon = tone === "error" ? AlertCircle : AlertTriangle;
-  const isFooter = variant === "footer";
 
   return (
     <div
       role="alert"
       className={cn(
-        "flex items-start text-sm",
-        isFooter
-          ? cn(
-              "min-w-0 flex-1 gap-2 px-3 py-1.5",
-              tone === "error"
-                ? "rounded-md border border-destructive/30 bg-destructive/10 text-destructive"
-                : "rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-100",
-            )
-          : cn(
-              "gap-2.5 px-5 py-3 sm:px-8",
-              tone === "error"
-                ? "border-b border-destructive/25 bg-destructive/10 text-destructive"
-                : "border-b border-amber-500/25 bg-amber-500/10 text-amber-900 dark:text-amber-100",
-            ),
+        "flex items-start gap-2.5 px-5 py-3 text-sm sm:px-8",
+        tone === "error"
+          ? "border-b border-destructive/25 bg-destructive/10 text-destructive"
+          : "border-b border-amber-500/25 bg-amber-500/10 text-amber-900 dark:text-amber-100",
         className,
       )}
     >

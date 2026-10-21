@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, History, Loader2 } from "lucide-react";
 
-import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useSenderOrderHistory } from "@/lib/orders/hooks/use-orders";
@@ -12,8 +11,6 @@ import {
   formatOrderDate,
   formatUserSummary,
   getCustomerAddressLine,
-  getCustomerPhone,
-  getOrderCompletedLabel,
   getReceiverAddressLine,
   getReceiverSummary,
 } from "@/lib/orders/display";
@@ -24,7 +21,7 @@ import { useTranslation } from "@/lib/i18n";
 type SenderOrderHistorySectionProps = {
   sender: Pick<Customer, "id" | "name">;
   currentOrderId?: string;
-  variant?: "form" | "view";
+  variant?: "form" | "view" | "embedded";
 };
 
 export function SenderOrderHistorySection({
@@ -36,7 +33,7 @@ export function SenderOrderHistorySection({
   const [open, setOpen] = useState(false);
   const senderId = sender.id.trim();
   const { data, isLoading, isError, error } = useSenderOrderHistory(senderId, {
-    enabled: open,
+    enabled: open || variant === "embedded",
   });
 
   useEffect(() => {
@@ -82,7 +79,7 @@ export function SenderOrderHistorySection({
     <p className="text-sm text-muted-foreground">{t("orders.empty.noPickupHistory")}</p>
   ) : (
     <div className={cn("overflow-x-auto", !isView && "rounded-lg border")}>
-      <table className={cn("w-full text-left", isView ? "text-xs" : "min-w-[960px] text-sm")}>
+      <table className={cn("w-full text-left", isView ? "text-xs" : "min-w-[760px] text-sm")}>
           <thead>
             <tr
               className={cn(
@@ -90,18 +87,13 @@ export function SenderOrderHistorySection({
                 isView ? "bg-muted/40" : "bg-muted/50 text-xs",
               )}
             >
-              <th className={headerClassName}>{t("orders.columns.orderId")}</th>
               <th className={headerClassName}>{t("orders.columns.date")}</th>
-              <th className={headerClassName}>{t("orders.columns.completed")}</th>
-              <th className={headerClassName}>{t("orders.columns.sender")}</th>
               <th className={headerClassName}>{t("orders.columns.senderAddressLine")}</th>
-              <th className={headerClassName}>{t("orders.columns.phone1")}</th>
               <th className={headerClassName}>{t("orders.columns.comments")}</th>
               <th className={headerClassName}>{t("orders.columns.receiver")}</th>
               <th className={headerClassName}>{t("orders.columns.receiverAddress")}</th>
               <th className={headerClassName}>{t("orders.columns.createdAt")}</th>
               <th className={headerClassName}>{t("orders.columns.createdBy")}</th>
-              <th className={headerClassName}>{t("orders.columns.updatedAt")}</th>
             </tr>
           </thead>
           <tbody>
@@ -119,31 +111,17 @@ export function SenderOrderHistorySection({
                         : "bg-background",
                   )}
                 >
-                  <td className={cn(cellClassName, "whitespace-nowrap font-mono")}>
-                    {order.id}
+                  <td className={cn(cellClassName, "whitespace-nowrap")}>
+                    {formatOrderDate(order.date)}
                     {isCurrent ? (
-                      <span className="ml-2 font-sans text-[10px] text-primary">
+                      <span className="ml-2 text-[10px] text-primary">
                         {t("orders.history.current")}
                       </span>
                     ) : null}
                   </td>
-                  <td className={cn(cellClassName, "whitespace-nowrap")}>{formatOrderDate(order.date)}</td>
-                  <td className={cn(cellClassName, "whitespace-nowrap")}>
-                    <TableTagText
-                      className={
-                        order.completed
-                          ? "text-emerald-700 dark:text-emerald-300"
-                          : "text-amber-700 dark:text-amber-300"
-                      }
-                    >
-                      {getOrderCompletedLabel(order.completed, t)}
-                    </TableTagText>
-                  </td>
-                  <td className={cn(cellClassName, "whitespace-nowrap")}>{order.sender.name}</td>
                   <td className={cn(cellClassName, "min-w-[10rem] leading-snug [overflow-wrap:anywhere]")}>
                     {getCustomerAddressLine(order.sender)}
                   </td>
-                  <td className={cn(cellClassName, "whitespace-nowrap")}>{getCustomerPhone(order.sender)}</td>
                   <td className={cn(cellClassName, "min-w-[8rem] leading-snug [overflow-wrap:anywhere]")}>
                     {order.comments.length > 0 ? formatOrderCommentsSummary(order) : dash}
                   </td>
@@ -155,9 +133,6 @@ export function SenderOrderHistorySection({
                     {formatAuditDateTime(order.createdAt)}
                   </td>
                   <td className={cn(cellClassName, "whitespace-nowrap")}>{formatUserSummary(order.createdBy)}</td>
-                  <td className={cn(cellClassName, "whitespace-nowrap", !isView && "text-muted-foreground")}>
-                    {formatAuditDateTime(order.updatedAt)}
-                  </td>
                 </tr>
               );
             })}
@@ -165,6 +140,15 @@ export function SenderOrderHistorySection({
       </table>
     </div>
   );
+
+  if (variant === "embedded") {
+    return (
+      <div className="min-w-0 space-y-2.5">
+        <p className="text-sm text-muted-foreground">{sectionTitle}</p>
+        {content}
+      </div>
+    );
+  }
 
   return (
     <section

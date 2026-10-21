@@ -36,10 +36,10 @@ export function CustomerContactSummary({
   const phoneLine = phones
     .map((phone) => phone.displayNumber?.trim() || phone.number.trim())
     .filter(Boolean)
-    .join("  ·  ");
+    .join(" · ");
 
-  const addressLines = formatCoreAddressLines(address);
-  const hasAddress = addressLines.length > 0 && coreAddressRequiresVerification(address);
+  const addressLine = formatCoreAddressLines(address).join(", ");
+  const hasAddress = Boolean(addressLine) && coreAddressRequiresVerification(address);
   const warnMissing = Boolean(missingPhoneLabel || missingAddressLabel);
   const showMissingPhone = !phoneLine && warnMissing && Boolean(missingPhoneLabel);
   const showMissingAddress = !hasAddress && warnMissing && Boolean(missingAddressLabel);
@@ -57,17 +57,13 @@ export function CustomerContactSummary({
               <span className={optionalMissingClassName}>{missingPhoneLabel}</span>
             </p>
           ) : null}
-          {hasAddress
-            ? addressLines.map((line, index) => (
-                <p key={index} className="break-words">
-                  {line}
-                </p>
-              ))
-            : showMissingAddress ? (
-                <p>
-                  <span className={optionalMissingClassName}>{missingAddressLabel}</span>
-                </p>
-              ) : null}
+          {hasAddress ? (
+            <p className="break-words">{addressLine}</p>
+          ) : showMissingAddress ? (
+            <p>
+              <span className={optionalMissingClassName}>{missingAddressLabel}</span>
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

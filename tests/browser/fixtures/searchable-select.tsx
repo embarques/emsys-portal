@@ -1,3 +1,5 @@
+import { WorkflowStepper } from "@/components/forms/workflow-stepper";
+import { InvoiceWizardStepper, resolveInvoiceWizardLayout, type InvoiceWizardStep } from "@/components/invoices/invoice-wizard-stepper";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -40,7 +42,7 @@ function PickupCommentsFixture() {
   return (
     <form onKeyDown={navigate} onSubmit={(event) => event.preventDefault()}>
       <input id="before-comments" autoFocus />
-      <OrderCommentsEditor comments={comments} onChange={setComments} />
+      <OrderCommentsEditor quickEntry={document.documentElement.dataset.quickEntry === "true"} comments={comments} onChange={setComments} />
       <button type="submit" id="save">Save</button>
       <button type="button" id="new-record" onClick={() => setComments([])}>New</button>
       <output id="comments-value">{JSON.stringify(comments)}</output>
@@ -70,7 +72,23 @@ function Fixture() {
   );
 }
 
+function WorkflowStepperFixture() {
+  const traversable = document.documentElement.dataset.traverse === "true";
+  const [prerequisitesValid, setPrerequisitesValid] = useState(false);
+  const [step, setStep] = useState(traversable ? 1 : 3);
+  const [invoiceStep, setInvoiceStep] = useState<InvoiceWizardStep>(3);
+  return <>
+    <WorkflowStepper step={step} steps={[{ id: 1, label: "Sender" }, { id: 2, label: "Receivers" }, { id: 3, label: "Date and purpose" }]}
+      canSelectStep={traversable ? (id) => id <= 2 || prerequisitesValid : undefined}
+      onSelectStep={setStep} ariaLabel="Appointment steps" progressLabel="Step 3 of 3" goToStepLabel={(label) => `Go to ${label}`} />
+    {traversable ? <button type="button" onClick={() => setPrerequisitesValid((current) => !current)}>Toggle prerequisites</button> : null}
+    <InvoiceWizardStepper step={invoiceStep} layout={resolveInvoiceWizardLayout({ requireDailyIncomeRegistration: false, requirePolicySignature: false })}
+      onSelectStep={setInvoiceStep} />
+  </>;
+}
+
 createRoot(document.getElementById("root")!).render(
+  document.documentElement.dataset.fixture === "stepper" ? <WorkflowStepperFixture /> :
   document.documentElement.dataset.fixture === "wizard" ? <DailyIncomeWizardFixture /> :
   document.documentElement.dataset.fixture === "comments" ? <PickupCommentsFixture /> :
     document.documentElement.dataset.fixture === "address" ? <AddressFixture /> :

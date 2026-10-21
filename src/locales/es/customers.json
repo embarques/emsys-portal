@@ -115,18 +115,10 @@
     "noChanges": "No hay cambios de cliente para guardar.",
     "notFound": "No se encontró este cliente.",
     "workflow": {
-      "contactTitle": "Cliente y contacto",
-      "contactHint": "Confirma el nombre del cliente y su teléfono de contacto.",
-      "addressHint": "Agrega lugares de recogida o entrega y usa la estrella para elegir la dirección principal.",
-      "additionalTitle": "Detalles adicionales · Opcionales",
-      "optional": "Opcional",
-      "senderHint": "Remitente · Cliente que envía mercancía desde Estados Unidos.",
-      "receiverHint": "Destinatario · Cliente que recibe mercancía en República Dominicana.",
+      "contactTitle": "Información del cliente",
       "typeChangeHint": "Cambiar el tipo de cliente borra las direcciones ingresadas aquí.",
-      "phoneHint": "Ingresa al menos un número de 10 dígitos. Usa la estrella para elegir el teléfono principal.",
       "addressEmptyTitle": "Aún no hay direcciones",
-      "addressEmptyHint": "Puedes guardar este cliente sin dirección. Agrega una ahora si tienes los datos de recogida o entrega.",
-      "notesHint": "Incluye preferencias del cliente o instrucciones de contacto. Enter agrega una nueva línea."
+      "addressEmptyHint": "Puedes guardar este cliente sin dirección. Agrega una ahora si tienes los datos de recogida o entrega."
     },
     "sections": {
       "general": "General",

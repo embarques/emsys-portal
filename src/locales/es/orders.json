@@ -148,12 +148,23 @@
     "editTitle": "Editar cita",
     "addDescription": "Crear una nueva cita.",
     "notFound": "No se encontró esta cita.",
+    "design": {
+      "addPurpose": "Agregar un propósito",
+      "editPurpose": "Editar propósito {{index}}",
+      "addAnotherPurpose": "Agregar otro",
+      "addedPurposes": "Propósitos agregados ({{count}})",
+      "noPurposes": "Aún no hay propósitos agregados.",
+      "editPurposeAria": "Editar propósito {{index}}: {{purpose}}"
+    },
     "workflow": {
+      "scheduleStep": "Fecha de la cita",
+      "senderStep": "Seleccionar remitente",
+      "receiverStep": "Seleccionar destinatario(s)",
+      "purposeStep": "Propósito y comentarios",
+      "next": "Continuar",
+
       "scheduleTitle": "01 · Programa la visita",
-      "scheduleHint": "Confirma la fecha de la cita con el cliente.",
       "customersTitle": "02 · Confirma los datos del cliente",
-      "senderHint": "Busca por nombre o teléfono y confirma la dirección de la visita.",
-      "receiverHint": "Agrega un destinatario si la visita lo requiere.",
       "receiversScrollHint": "{{count}} destinatarios: desplázate hacia abajo para verlos todos.",
       "visitTitle": "03 · Detalles de la visita",
       "visitHint": "Registra el propósito de la visita.",
@@ -212,6 +223,7 @@
       "purpose": "Propósito",
       "item": "Artículo",
       "qty": "Cant.",
+      "quantity": "Cantidad",
       "comment": "Comentario"
     },
     "placeholders": {
@@ -252,6 +264,8 @@
     "idNumber": "Número de ID"
   },
   "history": {
+    "sectionTitle": "Historial de citas",
+    "backToDetails": "Volver a los datos del cliente",
     "title": "Historial de citas de {{name}} ({{count}})",
     "titleCollapsed": "Historial de citas de {{name}}",
     "pendingSavedSender": "El historial de citas aparece una vez que el remitente esté guardado.",

@@ -148,12 +148,23 @@
     "editTitle": "Edit appointment",
     "addDescription": "Create a new appointment.",
     "notFound": "This appointment could not be found.",
+    "design": {
+      "addPurpose": "Add a purpose",
+      "editPurpose": "Edit purpose {{index}}",
+      "addAnotherPurpose": "Add another",
+      "addedPurposes": "Added purposes ({{count}})",
+      "noPurposes": "No purposes added yet.",
+      "editPurposeAria": "Edit purpose {{index}}: {{purpose}}"
+    },
     "workflow": {
+      "scheduleStep": "Appointment date",
+      "senderStep": "Select sender",
+      "receiverStep": "Select receiver(s)",
+      "purposeStep": "Purpose and comments",
+      "next": "Continue",
+
       "scheduleTitle": "01 · Schedule the visit",
-      "scheduleHint": "Confirm the appointment date with the caller.",
       "customersTitle": "02 · Confirm customer details",
-      "senderHint": "Search by name or phone, then confirm the visit address.",
-      "receiverHint": "Add a receiver if this visit needs one.",
       "receiversScrollHint": "{{count}} receivers — scroll down to see them all.",
       "visitTitle": "03 · Visit details",
       "visitHint": "Record the purpose of the visit.",
@@ -212,6 +223,7 @@
       "purpose": "Purpose",
       "item": "Item",
       "qty": "Qty",
+      "quantity": "Quantity",
       "comment": "Comment"
     },
     "placeholders": {
@@ -252,6 +264,8 @@
     "idNumber": "ID number"
   },
   "history": {
+    "sectionTitle": "Appointment history",
+    "backToDetails": "Back to customer details",
     "title": "{{name}} appointment history ({{count}})",
     "titleCollapsed": "{{name}} appointment history",
     "pendingSavedSender": "Appointment history appears once the sender is saved.",

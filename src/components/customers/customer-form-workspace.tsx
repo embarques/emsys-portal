@@ -49,8 +49,6 @@ export function CustomerFormWorkspace({
   const customerQuery = useCustomer(isEditing ? (entityId ?? null) : null);
 
   const [formError, setFormError] = useState<string | null>(null);
-  // Bumping this remounts CustomerForm to reset fields after a successful add.
-  const [formInstance, setFormInstance] = useState(0);
 
   const editingCustomer = isEditing ? (customerQuery.data ?? null) : null;
   const isSaving = createCustomerMutation.isPending || updateCustomerMutation.isPending;
@@ -86,13 +84,11 @@ export function CustomerFormWorkspace({
       const nextCustomer = await createCustomerMutation.mutateAsync(values);
       notifyAdded(t("customers.entity"), nextCustomer.name);
       // Opened from appointment/invoice "New" party action: hand the customer
-      // back to the parent form and close. Directory adds stay open for batch entry.
+      // back to the parent form.
       if (hasPresetCustomerType) {
         stashPartyReturnCustomerId(nextCustomer.id);
-        closeFormTabAndReturn(tabId);
-        return;
       }
-      setFormInstance((value) => value + 1);
+      closeFormTabAndReturn(tabId);
     } catch (mutationError) {
       const { status, category } = formatError(mutationError);
       setFormError(
@@ -143,7 +139,7 @@ export function CustomerFormWorkspace({
       }
     >
       <CustomerForm
-        key={isEditing ? (editingCustomer?.id ?? "edit") : `new-${formInstance}`}
+        key={isEditing ? (editingCustomer?.id ?? "edit") : "new"}
         initialValues={
           isEditing && editingCustomer
             ? customerToFormValues(editingCustomer)

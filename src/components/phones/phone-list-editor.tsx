@@ -22,6 +22,8 @@ type PhoneListEditorProps = {
   required?: boolean;
   /** Dense single-row layout used inside compact forms. */
   compact?: boolean;
+  /** Extra classes for the compact phone rows wrapper (e.g. a scroll cap). */
+  listClassName?: string;
   onChange: (phones: RecordPhone[]) => void;
 };
 
@@ -30,6 +32,7 @@ export function PhoneListEditor({
   phones,
   required = false,
   compact = false,
+  listClassName,
   onChange,
 }: PhoneListEditorProps) {
   const { t } = useTranslation();
@@ -82,68 +85,70 @@ export function PhoneListEditor({
 
   if (compact) {
     return (
-      <div className="space-y-2">
-        {entries.map((phone, index) => {
-          const isOnly = entries.length <= 1;
+      <div className="flex flex-col gap-3">
+        <div className={cn("space-y-2.5", listClassName)}>
+          {entries.map((phone, index) => {
+            const isOnly = entries.length <= 1;
 
-          return (
-            <div key={`${idPrefix}-${index}`} className="flex items-center gap-2">
-              <div className="w-36 shrink-0 sm:w-40">
-                <SearchableSelect
-                  aria-label={t("phones.aria.type", { index: index + 1 })}
-                  value={phone.type}
-                  onValueChange={(next) => updatePhone(index, { type: next as RecordPhone["type"] })}
-                  searchPlaceholder={t("phones.searchTypes")}
-                  options={phoneTypeOptions}
-                />
+            return (
+              <div key={`${idPrefix}-${index}`} className="flex items-center gap-2.5">
+                <div className="w-36 shrink-0 sm:w-40">
+                  <SearchableSelect
+                    aria-label={t("phones.aria.type", { index: index + 1 })}
+                    value={phone.type}
+                    onValueChange={(next) => updatePhone(index, { type: next as RecordPhone["type"] })}
+                    searchPlaceholder={t("phones.searchTypes")}
+                    options={phoneTypeOptions}
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <PhoneInput
+                    id={`${idPrefix}-number-${index}`}
+                    aria-label={t("phones.aria.number", { index: index + 1 })}
+                    value={phone.number}
+                    onChange={(nextValue) => updatePhone(index, { number: nextValue })}
+                    required={required && index === 0}
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-pressed={phone.isPrimary}
+                  title={phone.isPrimary ? t("phones.primary") : t("phones.setPrimary")}
+                  className={cn(
+                    "shrink-0",
+                    phone.isPrimary
+                      ? "text-amber-500 hover:text-amber-500"
+                      : "text-muted-foreground",
+                  )}
+                  onClick={() => updatePhone(index, { isPrimary: true })}
+                >
+                  <Star className={cn("size-4", phone.isPrimary && "fill-current")} />
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  title={t("phones.remove")}
+                  disabled={isOnly}
+                  className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => removePhone(index)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
-
-              <div className="min-w-0 flex-1">
-                <PhoneInput
-                  id={`${idPrefix}-number-${index}`}
-                  aria-label={t("phones.aria.number", { index: index + 1 })}
-                  value={phone.number}
-                  onChange={(nextValue) => updatePhone(index, { number: nextValue })}
-                  required={required && index === 0}
-                />
-              </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-pressed={phone.isPrimary}
-                title={phone.isPrimary ? t("phones.primary") : t("phones.setPrimary")}
-                className={cn(
-                  "shrink-0",
-                  phone.isPrimary
-                    ? "text-amber-500 hover:text-amber-500"
-                    : "text-muted-foreground",
-                )}
-                onClick={() => updatePhone(index, { isPrimary: true })}
-              >
-                <Star className={cn("size-4", phone.isPrimary && "fill-current")} />
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                title={t("phones.remove")}
-                disabled={isOnly}
-                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => removePhone(index)}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
         <Button
           type="button"
           variant="outline"
-          className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
+          className="h-9 w-full shrink-0 justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
           onClick={addPhone}
         >
           <Plus className="size-4" />

@@ -52,10 +52,12 @@ async function fixture(width = 1280, kind = "select", settings = {}) {
   await page.evaluate((settings) => Object.assign(document.documentElement.dataset, settings), settings);
   await page.addStyleTag({ content: '.hidden {display:none} @media(min-width:768px) { .md\\:hidden {display:none} .md\\:block {display:block} }' });
   await page.addScriptTag({ content: script });
+  if (kind === "stepper") { await page.getByRole("navigation", { name: "Appointment steps" }).waitFor(); return page; }
   if (kind === "wizard") { await page.getByTestId("transaction-wizard").waitFor(); return page; }
   await page.locator("form").waitFor();
   const first = { comments: "#comment-purpose-0", statement: "#statement-branch", transaction: "#transaction", customer: "#sender", address: "#address" }[kind] ?? "#branch";
-  await page.locator(first).waitFor();
+  if (settings.quickEntry === "true") await page.getByRole("group", { name: "orders.comments.columns.purpose" }).first().waitFor();
+  else await page.locator(first).waitFor();
   return page;
 }
 
@@ -429,3 +431,67 @@ for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "EXPENSE", "SALES",
     });
   }
 }
+
+
+test("appointment quick comments use clicks, preserve notes, and prevent duplicate items on desktop and mobile", async () => {
+  for (const width of [1280, 390]) {
+    const page = await fixture(width, "comments", { quickEntry: "true" });
+    try {
+      await page.getByRole("button", { name: "orders.comments.purposes.PAYMENT", exact: true }).click();
+      await page.locator("#quick-comment-note-0").fill("Ring the bell");
+      await page.getByRole("button", { name: "orders.comments.purposes.PAYMENT", exact: true }).click();
+      assert.equal(await page.locator("#quick-comment-note-0").inputValue(), "Ring the bell");
+      await page.locator("#quick-comment-note-0").press("Enter");
+      await page.getByRole("button", { name: "orders.comments.purposes.PICKUP", exact: true }).click();
+      await page.getByRole("button", { name: "orders.comments.items.box", exact: true }).click();
+      assert.equal(await page.locator("#quick-comment-note-1").count(), 0);
+      await page.locator("#quick-comment-quantity-1").fill("3");
+      await page.locator("#quick-comment-quantity-1").press("Enter");
+      await page.getByRole("button", { name: "orders.comments.purposes.PICKUP", exact: true }).click();
+      assert.equal(await page.getByRole("button", { name: "orders.comments.items.box", exact: true }).isDisabled(), true);
+      await page.getByRole("button", { name: "orders.comments.items.barrel", exact: true }).click();
+      const comments = JSON.parse(await page.locator("#comments-value").textContent());
+      assert.equal(comments.length, 3);
+      assert.equal(comments[0].description, "Ring the bell");
+      assert.equal(comments[1].quantity, "3");
+      assert.equal(comments[2].itemType, "barrel");
+    } finally { await page.close(); }
+  }
+});
+
+
+test("shared workflow stepper shows three appointment steps and preserves invoice navigation", async () => {
+  const page = await fixture(1280, "stepper");
+  try {
+    const appointment = page.getByRole("navigation", { name: "Appointment steps" });
+    assert.equal(await appointment.locator("li").count(), 3);
+    assert.match(await appointment.locator('[aria-current="step"]').textContent(), /3Date and purpose/);
+    assert.equal(await appointment.locator("li svg").count(), 2);
+    await appointment.getByRole("button", { name: "Go to Receivers" }).click();
+    assert.match(await appointment.locator('[aria-current="step"]').textContent(), /2Receivers/);
+    assert.equal(await appointment.getByRole("button").count(), 1);
+    const invoice = page.getByRole("navigation", { name: "invoices.wizard.navAriaLabel" });
+    assert.equal(await invoice.locator("li").count(), 4);
+    assert.match(await invoice.locator('[aria-current="step"]').textContent(), /^3/);
+    await invoice.getByRole("button").first().click();
+    assert.match(await invoice.locator('[aria-current="step"]').textContent(), /^1/);
+  } finally { await page.close(); }
+});
+
+
+test("appointment step buttons allow valid forward jumps and disable invalid destinations", async () => {
+  const page = await fixture(1280, "stepper", { traverse: "true" });
+  try {
+    const nav = page.getByRole("navigation", { name: "Appointment steps" });
+    const purpose = nav.getByRole("button", { name: "Go to Date and purpose" });
+    assert.equal(await purpose.isDisabled(), true);
+    await nav.getByRole("button", { name: "Go to Receivers" }).click();
+    await page.getByRole("button", { name: "Toggle prerequisites" }).click();
+    await purpose.click();
+    assert.match(await nav.locator('[aria-current="step"]').textContent(), /3Date and purpose/);
+    await nav.getByRole("button", { name: "Go to Sender" }).click();
+    assert.equal(await purpose.isEnabled(), true);
+    await page.getByRole("button", { name: "Toggle prerequisites" }).click();
+    assert.equal(await purpose.isDisabled(), true);
+  } finally { await page.close(); }
+});

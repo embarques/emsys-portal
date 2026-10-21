@@ -126,3 +126,56 @@ test("customer tab return keeps the original receiver row identity during an asy
   assert.equal(returned.meta.contextKey, "row-a");
   assert.equal(returned.customer.id, "receiver-a");
 });
+
+test("appointment steps validate sender, then receivers, then date and purpose", () => {
+  const { values, types } = fixture();
+  const { getAppointmentStepError } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");
+  assert.equal(getAppointmentStepError(types.createEmptyOrderForm(), 1, false), "orders.form.validation.senderRequired");
+  assert.equal(getAppointmentStepError(values, 1, true), "orders.form.validation.unverifiedSenderAddress");
+  assert.equal(getAppointmentStepError(values, 1, false), null);
+  assert.equal(getAppointmentStepError(values, 2, false), null);
+  assert.equal(getAppointmentStepError(values, 3, false), "orders.form.validation.commentRequired");
+  assert.equal(getAppointmentStepError({ ...values, date: "" }, 1, false), null);
+  assert.equal(getAppointmentStepError({ ...values, date: "" }, 2, false), null);
+  assert.equal(getAppointmentStepError({ ...values, date: "" }, 3, false), "orders.form.validation.pickupDateRequired");
+});
+
+test("skipping receivers permits saving without them and leaves original selections intact", () => {
+  const { values, types } = fixture();
+  const { getAppointmentStepError, canSelectAppointmentStep } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");
+  const comments = [{ ...types.createEmptyOrderComment(), purpose: "PAYMENT" }];
+  const draft = { ...values, receivers: [{ key: "empty", customer: null, addressIndex: 0 }], comments };
+  assert.equal(getAppointmentStepError(draft, 1, false), null);
+  assert.equal(getAppointmentStepError(draft, 2, false), "orders.form.validation.receiverRequired");
+  assert.equal(canSelectAppointmentStep(draft, 3, false), false);
+  assert.equal(canSelectAppointmentStep({ ...draft, receivers: [] }, 3, false), true);
+  assert.equal(getAppointmentStepError({ ...draft, receivers: [] }, 3, false), null);
+  assert.equal(draft.receivers.length, 1);
+  assert.equal(canSelectAppointmentStep({ ...draft, sender: null, receivers: [] }, 3, false), false);
+});
+
+test("wizard preserves duplicate receiver and comment item validation", () => {
+  const { values, types } = fixture();
+  const { getAppointmentStepError } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");
+  assert.equal(getAppointmentStepError({ ...values, receivers: [values.receivers[0], values.receivers[0]] }, 2, false),
+    "orders.form.validation.duplicateReceiver");
+  const comment = { ...types.createEmptyOrderComment(), purpose: "PICKUP", itemType: "box", quantity: "1" };
+  assert.equal(getAppointmentStepError({ ...values, comments: [comment, comment] }, 3, false),
+    "orders.form.validation.duplicateCommentItem");
+});
+
+test("appointment navigation checks preceding steps without requiring a date or purpose before the final step", () => {
+  const { values, types } = fixture();
+  const { canSelectAppointmentStep } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");
+  const empty = types.createEmptyOrderForm();
+  assert.equal(canSelectAppointmentStep(empty, 1, false), true);
+  assert.equal(canSelectAppointmentStep(empty, 2, false), false);
+  assert.equal(canSelectAppointmentStep(empty, 3, false), false);
+  assert.equal(canSelectAppointmentStep(values, 3, false), true);
+  assert.equal(canSelectAppointmentStep({ ...values, date: "" }, 3, false), true);
+  assert.equal(canSelectAppointmentStep(values, 2, true), false);
+  const incompleteReceiver = { ...values, receivers: [{ key: "empty", customer: null, addressIndex: 0 }] };
+  assert.equal(canSelectAppointmentStep(incompleteReceiver, 2, false), true);
+  assert.equal(canSelectAppointmentStep(incompleteReceiver, 3, false), false);
+  assert.equal(canSelectAppointmentStep(values, 4, false), false);
+});

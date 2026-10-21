@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Info, Loader2 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n";
 
@@ -93,6 +93,40 @@ export type FormFooterNotice = {
   message: string;
 };
 
+type FormFooterNoticeMessageProps = FormFooterNotice & {
+  action?: React.ReactNode;
+  className?: string;
+};
+
+/**
+ * Footer notice shared by every add/edit form: errors render in a destructive
+ * box, warnings (invalid or missing required inputs) render as amber text with
+ * an info icon.
+ */
+export function FormFooterNoticeMessage({ tone, message, action, className }: FormFooterNoticeMessageProps) {
+  const isError = tone === "error";
+  const Icon = isError ? AlertCircle : Info;
+
+  return (
+    <div
+      role={isError ? "alert" : "status"}
+      className={cn(
+        "flex min-w-0 flex-1 items-start gap-2 text-sm",
+        isError
+          ? "rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-destructive"
+          : "text-amber-700 dark:text-amber-300",
+        className,
+      )}
+    >
+      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <div className={cn("min-w-0 flex-1", action ? "space-y-2.5" : null)}>
+        <p className="break-words">{message}</p>
+        {action ? <div className="print:hidden">{action}</div> : null}
+      </div>
+    </div>
+  );
+}
+
 type FormFooterProps = {
   /** Error message (takes priority over the warning). */
   error?: string | null;
@@ -129,21 +163,7 @@ export function FormFooter({
     <div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card px-5 py-3">
       <div className="flex items-center justify-between gap-3">
         {notice ? (
-          notice.tone === "error" ? (
-            <div
-              className={cn(
-                "flex min-w-0 flex-1 items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5",
-                "text-sm text-destructive",
-              )}
-            >
-              <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span className="min-w-0 break-words">{notice.message}</span>
-            </div>
-          ) : (
-            <p className="min-w-0 flex-1 break-words text-sm text-amber-700 dark:text-amber-300">
-              {notice.message}
-            </p>
-          )
+          <FormFooterNoticeMessage tone={notice.tone} message={notice.message} />
         ) : (
           <span className="flex-1" aria-hidden />
         )}
