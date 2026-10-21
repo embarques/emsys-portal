@@ -57,5 +57,12 @@
       "weakPassword": "Firebase rejected this password because it is too weak.",
       "generic": "Unable to change your password."
     }
+  },
+  "companyPolicy": {
+    "title": "Company policies",
+    "description": "Manage the public terms and policies URL printed on this company’s invoices.",
+    "label": "Policy URL",
+    "hint": "Use a public HTTPS page. Leave blank to clear the link. This setting applies to the selected company.",
+    "invalid": "Enter a valid HTTPS URL without a username or password (maximum 2,048 characters)."
   }
 }

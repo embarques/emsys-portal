@@ -1,5 +1,6 @@
 export const API_ENDPOINTS = {
   HEALTH: "/health",
+  CURRENT_COMPANY_POLICY: "/companies/current/policy",
   CURRENT_COMPANY: "/companies/current",
   AUTH_TOKEN: "/auth/token",
   USER_PERMISSIONS: "/users/permissions",
