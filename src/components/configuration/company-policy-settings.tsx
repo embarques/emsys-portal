@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useCurrentCompany, useUpdateCompanyPolicy } from "@/lib/company/hooks/use-current-company";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { createCompanyPolicySchema } from "@/lib/company/policy-schema";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -32,7 +33,7 @@ function CompanyPolicyForm() {
   useEffect(() => { if (company.data && !isDirty) reset({ policyUrl: company.data.policyUrl ?? "" }); }, [company.data, reset, isDirty]);
   const error = company.error ?? mutation.error;
   async function save(values: { policyUrl: string }) {
-    if (values.policyUrl === (company.data?.policyUrl ?? "").trim()) {
+    if (areFormValuesEquivalent(values, { policyUrl: (company.data?.policyUrl ?? "").trim() })) {
       notifySuccess(t("common.form.noChanges")); return;
     }
     try {
