@@ -1,5 +1,6 @@
 "use client";
 
+import { CompanyPolicySettings } from "./company-policy-settings";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo } from "react";
@@ -206,6 +207,7 @@ export function ConfigurationWorkspace() {
           </Button>
         </div>
         </form>
+        <CompanyPolicySettings />
       </div>
     </div>
   );

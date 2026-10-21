@@ -6,3 +6,8 @@ export async function fetchCurrentCompany(): Promise<Company> {
   const response = await apiClient.get<{ data: Company }>(API_ENDPOINTS.CURRENT_COMPANY);
   return response.data;
 }
+
+export async function updateCompanyPolicy(policyUrl: string): Promise<Company> {
+  const response = await apiClient.put<{ data: Company }>(API_ENDPOINTS.CURRENT_COMPANY_POLICY, { policyUrl });
+  return response.data;
+}
