@@ -86,7 +86,7 @@ export function OrdersMapWorkspace() {
   }
 
   return (
-    <div ref={viewportRef} className="flex h-[calc(100dvh-var(--form-viewport-inset,8rem))] min-h-0 flex-col overflow-hidden">
+    <div ref={viewportRef} className="flex h-[calc(100dvh-var(--form-viewport-inset,8rem))] min-h-0 flex-col overflow-y-auto overscroll-contain scroll-pb-24 lg:overflow-hidden">
       <div className="shrink-0">
         <PageHeader title={mapTitle} description={mapDescription} />
       </div>

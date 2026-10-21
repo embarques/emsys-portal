@@ -103,6 +103,8 @@ type GoogleMapInstance = {
   fitBounds: (bounds: LatLngBoundsLiteral, padding?: number) => void;
   setCenter: (center: LatLngLiteral) => void;
   setZoom: (zoom: number) => void;
+  getZoom: () => number | undefined;
+  addListener: (event: string, handler: () => void) => { remove: () => void };
 };
 
 type GoogleMarker = {
@@ -144,26 +146,27 @@ export type OrdersMapViewProps = {
 
 function buildMarkerIcon(
   maps: GoogleMapsCore,
-  options: { selected: boolean; color: string },
+  options: { selected: boolean; color: string; size?: number },
 ) {
-  const { selected, color } = options;
+  const { selected, color, size = 36 } = options;
+  const scale = size / 48;
 
   return {
     url: buildPickupTruckMarkerUrl(color, selected),
-    scaledSize: new maps.Size(48, 48),
-    anchor: new maps.Point(24, 24),
+    scaledSize: new maps.Size(size, size),
+    anchor: new maps.Point(size / 2, size / 2),
     // Keep stop numbers inside the cargo area, clear of the cab and wheels.
-    labelOrigin: new maps.Point(17, 22),
+    labelOrigin: new maps.Point(17 * scale, 22 * scale),
   };
 }
 
-function buildMarkerLabel(stopNumber: number | undefined) {
+function buildMarkerLabel(stopNumber: number | undefined, size = 36) {
   if (stopNumber === undefined) return null;
 
   return {
     text: String(stopNumber),
     color: "#111827",
-    fontSize: stopNumber >= 100 ? "9px" : "11px",
+    fontSize: `${(stopNumber >= 100 ? 9 : 11) * size / 48}px`,
     fontWeight: "700",
   };
 }
@@ -235,6 +238,7 @@ export function OrdersMapView({
   const initializedSelectionRef = useRef(false);
   const stopListRef = useRef<HTMLUListElement | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [markerSize, setMarkerSize] = useState(36);
   const [mapError, setMapError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [unassignOpen, setUnassignOpen] = useState(false);
@@ -398,7 +402,8 @@ export function OrdersMapView({
           streetViewControl: false,
           fullscreenControl: true,
           zoomControl: true,
-          gestureHandling: "greedy",
+          // Let one-finger swipes scroll the mobile workspace; two fingers pan the map.
+          gestureHandling: window.matchMedia("(max-width: 1023px)").matches ? "cooperative" : "greedy",
           clickableIcons: false,
           styles: PLAIN_MAP_STYLES,
         });
@@ -468,6 +473,19 @@ export function OrdersMapView({
     }
   }, [active, mapReady, mappedStops, routeColors]);
 
+  // Scale the existing truck artwork without rebuilding markers or refetching stops.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    const updateSize = () => {
+      const zoom = map.getZoom() ?? DEFAULT_MAP_ZOOM;
+      setMarkerSize(Math.max(18, Math.min(64, 36 * 2 ** ((zoom - DEFAULT_MAP_ZOOM) / 4))));
+    };
+    updateSize();
+    const listener = map.addListener("zoom_changed", updateSize);
+    return () => listener.remove();
+  }, [mapReady]);
+
   // Repaint marker styling when the map selection, plotted set, or stop order changes.
   useEffect(() => {
     const maps = mapsLibRef.current;
@@ -479,10 +497,11 @@ export function OrdersMapView({
       binding.marker.setIcon(
         buildMarkerIcon(maps, {
           selected,
+          size: markerSize,
           color: getPickupRouteColor(routeColors, binding.stop.routeId),
         }),
       );
-      binding.marker.setLabel(buildMarkerLabel(stopNumber));
+      binding.marker.setLabel(buildMarkerLabel(stopNumber, markerSize));
       binding.marker.setTitle(
         stopNumber !== undefined
           ? t("orders.optimize.stopTitle", { number: stopNumber, name: binding.stop.senderName })
@@ -490,7 +509,7 @@ export function OrdersMapView({
       );
       binding.marker.setZIndex(selected ? 2 : 1);
     }
-  }, [mapReady, mapSelectedIds, mappedStops, routeColors, stopNumbers, t]);
+  }, [mapReady, markerSize, mapSelectedIds, mappedStops, routeColors, stopNumbers, t]);
 
   function openAssignRouteDialog() {
     if (selectedStops.length === 0) return;
@@ -660,7 +679,7 @@ export function OrdersMapView({
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border shadow-md ring-1 ring-black/5 bg-card dark:ring-white/10">
+      <div className="flex min-h-0 shrink-0 flex-col overflow-visible rounded-xl lg:flex-1 lg:shrink lg:overflow-hidden border border-border shadow-md ring-1 ring-black/5 bg-card dark:ring-white/10">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 font-medium text-foreground shadow-sm">
@@ -698,8 +717,11 @@ export function OrdersMapView({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <TableSelectionActionGroup aria-label={t("common.table.selectionActionsGroup")}>
+          <div className="flex min-w-0 w-full flex-wrap items-center gap-2 lg:w-auto [&_button]:min-h-11 lg:[&_button]:min-h-8">
+            <TableSelectionActionGroup
+              className="max-w-full flex-wrap [&>button]:min-w-0 [&>button]:flex-1 [&>button]:whitespace-normal [&>button]:px-2 [&>button]:text-xs sm:[&>button]:text-sm"
+              aria-label={t("common.table.selectionActionsGroup")}
+            >
               <Button
                 variant="outline"
                 size="sm"
@@ -785,8 +807,8 @@ export function OrdersMapView({
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <div className="relative min-h-0 min-w-0 flex-1">
+        <div className="flex min-h-0 flex-col lg:flex-1 lg:flex-row">
+          <div className="relative h-[clamp(15rem,35dvh,22rem)] min-w-0 shrink-0 lg:h-auto lg:min-h-0 lg:flex-1">
             <div ref={mapContainerRef} className="absolute inset-0 bg-muted" aria-label={t("orders.map.title")} />
             <div className="pointer-events-none absolute inset-0 z-[5] rounded-sm shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]" />
 
@@ -850,17 +872,17 @@ export function OrdersMapView({
           </div>
 
           {mappedStops.length > 0 ? (
-            <aside className="flex min-h-0 w-full basis-2/5 flex-col overflow-hidden border-t border-border bg-muted/25 lg:w-80 lg:shrink-0 lg:basis-auto lg:border-l lg:border-t-0 lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.12)] dark:lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.45)]">
+            <aside className="flex min-h-0 w-full flex-col overflow-visible border-t border-border bg-muted/25 lg:w-80 lg:shrink-0 lg:overflow-hidden lg:border-l lg:border-t-0 lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.12)] dark:lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.45)]">
               <div className="shrink-0 border-b border-border bg-muted/50 px-4 py-3">
                 <h3 className="text-sm font-semibold text-foreground">{t("orders.map.mappedStopsTitle")}</h3>
-                <p className="text-xs text-foreground/70">
+                <p className="min-w-0 break-words text-xs text-foreground/70">
                   {t("common.table.selected", {
                     count: selectedStops.length,
                     total: mappedStops.length,
                   })}
                 </p>
               </div>
-              <ul ref={stopListRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3" tabIndex={0} aria-label={t("orders.map.mappedStopsTitle")}>
+              <ul ref={stopListRef} className="min-h-0 space-y-2 p-3 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain" tabIndex={0} aria-label={t("orders.map.mappedStopsTitle")}>
                 {listedStops.map((stop) => {
                   const selected = mapSelectedIds.includes(stop.orderRecordId);
                   const assigned = Boolean(stop.routeId?.trim());
@@ -887,13 +909,13 @@ export function OrdersMapView({
                           <Square className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                         )}
                         <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-semibold leading-snug text-foreground">
+                          <span className="block break-words text-sm font-semibold leading-snug text-foreground">
                             {stop.senderName}
                           </span>
-                          <span className="mt-0.5 block text-xs leading-relaxed text-foreground/75">
+                          <span className="mt-0.5 block break-words text-xs leading-relaxed text-foreground/75">
                             {stop.addressLine}
                           </span>
-                          <span className="mt-1 inline-flex items-center gap-1.5">
+                          <span className="mt-1 inline-flex max-w-full items-start gap-1.5">
                             {stopNumber !== undefined ? (
                               <span
                                 className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none text-white"
@@ -909,7 +931,7 @@ export function OrdersMapView({
                                 aria-hidden
                               />
                             )}
-                            <span className="text-xs text-foreground/70">
+                            <span className="min-w-0 break-words text-xs text-foreground/70">
                               {assigned
                                 ? formatOrderRouteName(
                                     { routeId: stop.routeId, routeName: stop.routeName },
@@ -937,7 +959,7 @@ export function OrdersMapView({
                             disabled={isMutating}
                             data-stop-number-input={stop.orderRecordId}
                             aria-label={t("orders.optimize.stopNumberInput", { name: stop.senderName })}
-                            className="h-7 w-full rounded-md border border-input bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            className="h-11 w-full rounded-md lg:h-7 border border-input bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             onBlur={(event) => {
                               if (!setManualStopNumber(stop, event.currentTarget.value)) {
                                 event.currentTarget.value = stopNumber?.toString() ?? "";
@@ -958,10 +980,10 @@ export function OrdersMapView({
                 })}
               </ul>
               {routeOrderingEnabled ? (
-                <div className="shrink-0 border-t border-border bg-muted/50 p-3">
+                <div className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:static lg:bg-muted/50 lg:pb-3">
                   <Button
                     size="sm"
-                    className="w-full"
+                    className="min-h-11 w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-70 lg:min-h-8"
                     disabled={!everyRouteStopNumbered || isMutating}
                     onClick={() => void finalizeRouteOrder()}
                   >
