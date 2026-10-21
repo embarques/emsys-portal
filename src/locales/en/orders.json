@@ -455,6 +455,11 @@
           "label": "Route"
         }
       },
+      "legacyRoute": {
+        "id": {
+          "label": "Legacy route"
+        }
+      },
       "branch": {
         "id": {
           "label": "Branch"

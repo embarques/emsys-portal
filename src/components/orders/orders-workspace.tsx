@@ -121,6 +121,8 @@ import {
 } from "@/lib/orders/types";
 import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
 import { buildPickupRouteFilterRows } from "@/lib/orders/pickup-route-filter";
+import { LEGACY_ROUTE_FILTER_FIELD } from "@/lib/orders/legacy-route-filter";
+import { useLegacyRouteFilterOptions } from "@/lib/legacy-routes/hooks/use-legacy-routes";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { useLegacyLastSynced } from "@/lib/legacy-sync/use-legacy-last-synced";
@@ -445,6 +447,9 @@ export function OrdersWorkspace() {
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
+  const legacyRouteFilter = useLegacyRouteFilterOptions(
+    filtersOpen || filters.rows.some((row) => row.field === LEGACY_ROUTE_FILTER_FIELD && row.value.trim()),
+  );
   const orderFilterFields = useOrderFilterFields();
   const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const legacyTimestamps = useMemo(
@@ -1239,6 +1244,7 @@ export function OrdersWorkspace() {
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
                     pickupRoutes: assignRoutesLoading ? [] : assignRouteOptions,
+                    legacyRoutes: legacyRouteFilter.isLoading ? [] : legacyRouteFilter.options,
                     branches: branchesLoading ? [] : branchFilterOptionsById,
                     branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
                   }}
@@ -1510,6 +1516,7 @@ export function OrdersWorkspace() {
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
                     pickupRoutes: assignRoutesLoading ? [] : assignRouteOptions,
+                    legacyRoutes: legacyRouteFilter.isLoading ? [] : legacyRouteFilter.options,
                     branches: branchesLoading ? [] : branchFilterOptionsById,
                     branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
                   }}

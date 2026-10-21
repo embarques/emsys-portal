@@ -47,6 +47,7 @@ export const queryKeys = {
   legacyRoutes: {
     all: ["legacy-routes"] as const,
     page: (params: CatalogPageParams) => ["legacy-routes", "page", params] as const,
+    options: () => ["legacy-routes", "options"] as const,
   },
   api: {
     health: () => ["api", "health"] as const,

@@ -94,6 +94,14 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     optionsSource: "pickupRoutes",
   },
   {
+    // Expanded by fetchOrders into the route's sender cities (case-insensitive) and ZIP codes.
+    field: "legacyRoute.id",
+    label: "Legacy route",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    optionsSource: "legacyRoutes",
+  },
+  {
     field: "branch.id",
     label: "Branch",
     operators: ["eq", "neq"],

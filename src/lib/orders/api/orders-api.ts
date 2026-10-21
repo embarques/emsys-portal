@@ -24,6 +24,8 @@ import {
 } from "@/lib/api/search-query";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { expandOrderFilterNode } from "@/lib/orders/order-filters";
+import { fetchLegacyRoute } from "@/lib/legacy-routes/api/legacy-routes-api";
+import { collectLegacyRouteFilterIds, type LegacyRouteFilterLookup } from "@/lib/orders/legacy-route-filter";
 import { parseLastSyncedAt } from "@/lib/legacy-sync/last-synced";
 import {
   createPickupBarSearchFilterGroup,
@@ -399,7 +401,10 @@ function normalizePaginatedOrders(payload: PaginatedApiEnvelope<unknown[] | unkn
   };
 }
 
-function buildOrderSearchFilterGroups(params: OrderListParams): ApiSearchFilterGroup[] {
+function buildOrderSearchFilterGroups(
+  params: OrderListParams,
+  legacyRoutes?: LegacyRouteFilterLookup,
+): ApiSearchFilterGroup[] {
   const groups: ApiSearchFilterGroup[] = [];
 
   if (params.search?.value.trim()) {
@@ -430,7 +435,7 @@ function buildOrderSearchFilterGroups(params: OrderListParams): ApiSearchFilterG
     params.filterRows ?? [],
     ORDER_TABLE_FILTER_FIELDS,
   );
-  const expandedRowFilter = rowFilterNode ? expandOrderFilterNode(rowFilterNode) : null;
+  const expandedRowFilter = rowFilterNode ? expandOrderFilterNode(rowFilterNode, { legacyRoutes }) : null;
 
   if (expandedRowFilter) {
     if (isApiSearchFilter(expandedRowFilter)) {
@@ -487,11 +492,19 @@ function buildOrdersQuery(params: OrderListParams): string {
   });
 }
 
-function buildPickupSearchBody(params: OrderListParams) {
+function buildPickupSearchBody(params: OrderListParams, legacyRoutes?: LegacyRouteFilterLookup) {
   return buildStripeStyleSearchBody({
     sort: aliasOrdersSort(params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort),
-    filterGroups: buildOrderSearchFilterGroups(params),
+    filterGroups: buildOrderSearchFilterGroups(params, legacyRoutes),
   });
+}
+
+/** Loads the current cities / ZIP codes of every legacy route referenced by the filter rows. */
+async function loadLegacyRouteFilterLookup(params: OrderListParams): Promise<LegacyRouteFilterLookup | undefined> {
+  const ids = collectLegacyRouteFilterIds(params.filterRows, ORDER_TABLE_FILTER_FIELDS);
+  if (!ids.length) return undefined;
+  const routes = await Promise.all(ids.map((id) => fetchLegacyRoute(id)));
+  return new Map(routes.map((route) => [String(route.id), route]));
 }
 
 /**
@@ -500,6 +513,7 @@ function buildPickupSearchBody(params: OrderListParams) {
  * - Search/filters: POST /pickups/search
  */
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
+  const legacyRoutes = await loadLegacyRouteFilterLookup(params);
   return fetchPaginatedResourceList({
     endpoint: API_ENDPOINTS.PICKUPS,
     page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
@@ -507,7 +521,7 @@ export async function fetchOrders(params: OrderListParams = {}): Promise<Paginat
     offset: params.offset,
     isFiltered: hasOrderListFilters(params),
     buildGetQuery: () => buildOrdersQuery(params),
-    buildSearchBody: () => buildPickupSearchBody(params),
+    buildSearchBody: () => buildPickupSearchBody(params, legacyRoutes),
     normalize: normalizePaginatedOrders,
   });
 }

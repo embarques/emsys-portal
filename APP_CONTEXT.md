@@ -195,7 +195,7 @@ A new daily route can start from a previous day’s configuration. Copying to an
 
 The same employee can be driver and appraiser, or driver, or appraiser, or helper.
 
-**Legacy routes** (`/legacy-routes`) are a reference catalog carried over from the legacy system: **ID**, **route name**, and **content** (a comma-separated list of the cities the route covers). They are not route crews or daily routes. Backend contract: `docs/legacy-routes-api-todo.md`.
+**Legacy routes** (`/legacy-routes`) are a reference catalog carried over from the legacy system: **ID**, **route name**, and **content** (a comma-separated list of the cities the route covers). They are not route crews or daily routes. Appointments can be filtered by a legacy route: the appointment's sender city (case-insensitive) or ZIP code must be on that route. Backend contract: `docs/legacy-routes-api-todo.md`.
 
 TODO (backend) — route modeling (portal now follows this; align API + legacy data):
 

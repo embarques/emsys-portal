@@ -60,6 +60,16 @@ export async function deleteLegacyRoute(id: number): Promise<void> {
   assertMutationSuccess(response, "Unable to delete legacy route.");
 }
 
+/** Every legacy route (all pages), for dropdowns such as the appointments filter. */
+export async function fetchAllLegacyRoutes(): Promise<LegacyRoute[]> {
+  const items: LegacyRoute[] = [];
+  for (let page = 1; ; page++) {
+    const result = await fetchLegacyRoutesPage({ page, limit: 200, sort: "name:asc" });
+    items.push(...result.items);
+    if (!result.items.length || items.length >= result.total) return items;
+  }
+}
+
 /** One server page for the directory table (search + filters applied by the API). */
 export function fetchLegacyRoutesPage(params: CatalogPageParams): Promise<PaginatedResult<LegacyRoute>> {
   return fetchCatalogPage(

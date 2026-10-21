@@ -219,6 +219,15 @@ test("city/ZIP parsing trims, collapses whitespace and removes case-insensitive 
   assert.equal(formatRouteCities(["Doral", " ", "02119", "doral"]), "Doral, 02119");
 });
 
+test("typing or pasting commas into a row splits it into separate city/ZIP rows", () => {
+  const { splitRouteCityInput } = createLoader()("src/lib/legacy-routes/utils/route-cities.ts");
+  assert.deepEqual(splitRouteCityInput("Miami,"), { current: "Miami", added: [""] }, "trailing comma opens a new row");
+  assert.deepEqual(splitRouteCityInput(" Miami , 33010,, Doral "), { current: "Miami", added: ["33010", "Doral"] });
+  assert.deepEqual(splitRouteCityInput("Miami, Doral,"), { current: "Miami", added: ["Doral", ""] });
+  assert.deepEqual(splitRouteCityInput(",Doral"), { current: "", added: ["Doral"] });
+  assert.deepEqual(splitRouteCityInput("Hialeah"), { current: "Hialeah", added: [] });
+});
+
 test("editing a route loads one form row per city/ZIP and new routes start with one empty row", () => {
   const types = createLoader()("src/lib/legacy-routes/types.ts");
   assert.deepEqual(types.legacyRouteToFormValues({ ...route, content: "Miami, 33010" }), form("North Dade", "Miami", "33010"));

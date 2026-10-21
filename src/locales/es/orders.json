@@ -455,6 +455,11 @@
           "label": "Ruta"
         }
       },
+      "legacyRoute": {
+        "id": {
+          "label": "Ruta heredada"
+        }
+      },
       "branch": {
         "id": {
           "label": "Sucursal"

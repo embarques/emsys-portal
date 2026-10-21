@@ -10,11 +10,11 @@ Suggested `legacy_route` (company-scoped):
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `id` | int | PK (keep legacy ids when importing) |
+| `id` | int | PK, **assigned by the API** on create (never sent by the portal; keep legacy ids when importing) |
 | `name` | string | Required, trimmed |
-| `content` | string | Required. Comma-separated city list, e.g. `"Miami, Hialeah, Doral"` |
+| `content` | string | Required. Comma-separated cities and/or ZIP codes, e.g. `"Miami, 33010, Hialeah"`. Keep ZIPs as strings (leading zeros, e.g. `02119`). |
 
-The portal normalizes `content` before create/update: cities are trimmed, inner whitespace is collapsed, empty entries and case-insensitive duplicates are removed, and the list is joined with `", "`. City order is preserved.
+The portal form edits one city or ZIP per row and builds `content` on create/update: entries are trimmed, inner whitespace is collapsed, blank rows and case-insensitive duplicates are dropped, and the list is joined with `", "`. Entry order is preserved, and entries never contain commas.
 
 `createdAt` / `updatedAt` are accepted on responses but not displayed.
 
@@ -40,6 +40,16 @@ Base path: `/v1/legacy-routes` (portal `API_ENDPOINTS.LEGACY_ROUTES`). Standard 
 | `id` | `eq`, `neq`, `gte`, `lte` | number |
 
 The toolbar search box sends an OR group of `name contains <q>` and `content contains <q>`. Text matching should be case-insensitive.
+
+## Appointments filter
+
+Appointments (`/appointments`) have a **Legacy route** advanced filter (`legacyRoute.id`, Equals / Not equals). Before searching, the portal loads the selected route (`GET /legacy-routes/:id`) and expands it on `POST /pickups/search`:
+
+- Entries matching `^\d{5}(-\d{4})?$` are ZIP codes → `sender.address.zipcode in [...]`.
+- Everything else is a city → `sender.address.city in [...]`, sending each city as entered, lower, UPPER and Title Case because pickup `eq`/`in` compare exactly.
+- Equals = city **or** ZIP on the route; Not equals = `notIn` on both, joined with AND.
+
+Backend follow-up (preferred): make `in`/`notIn` on `sender.address.city` case-insensitive (collation or a normalized field), or accept `legacyRoute.id` directly on `/pickups/search` and expand it server-side. Either removes the case-variant workaround and the extra route lookup.
 
 ## Permissions
 

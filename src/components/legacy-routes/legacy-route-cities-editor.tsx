@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
 import { createEmptyLegacyRouteCity, type LegacyRouteFormValues } from "@/lib/legacy-routes/types";
-import { normalizeRouteCities } from "@/lib/legacy-routes/utils/route-cities";
+import { normalizeRouteCities, splitRouteCityInput } from "@/lib/legacy-routes/utils/route-cities";
 
 type LegacyRouteCitiesEditorProps = {
   form: UseFormReturn<LegacyRouteFormValues>;
@@ -26,15 +26,13 @@ export function LegacyRouteCitiesEditor({ form, disabled, invalid, describedBy }
 
   /** Typing or pasting commas splits the text into separate rows so each entry stays a single city or ZIP. */
   function splitEntry(index: number, raw: string) {
-    const [first, ...rest] = raw.split(",").map((part) => part.trim());
-    const rows = rest.filter(Boolean);
-    if (rest.at(-1) === "") rows.push("");
-    form.setValue(`cities.${index}.value`, first, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
-    if (!rows.length) return;
+    const { current, added } = splitRouteCityInput(raw);
+    form.setValue(`cities.${index}.value`, current, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+    if (!added.length) return;
     insert(
       index + 1,
-      rows.map((value) => ({ value })),
-      { focusName: `cities.${index + rows.length}.value` },
+      added.map((value) => ({ value })),
+      { focusName: `cities.${index + added.length}.value` },
     );
   }
 
