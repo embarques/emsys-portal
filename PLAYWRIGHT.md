@@ -813,3 +813,32 @@ Do not commit:
 - `playwright-report/`
 - `test-results/`
 - `.next-playwright/`
+
+
+### External invoice report regression
+
+`tests/integration/invoices/invoice-print-external.spec.ts` is opt-in and requires
+an isolated local EMSYS API + Rust report service and an externally configured
+test company. It uses the existing Firebase-backed test session, selects one
+invoice through the directory, clicks Print, checks `engine: external`, and
+verifies the actual PDF delivered by the print popup. It does not modify company
+settings or financial records. Headless Chromium reports PDF downloads on the
+opener page; regular Chrome displays its PDF viewer.
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:18080/v1 \
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 \
+PLAYWRIGHT_TEST_COMPANY_ID=<isolated-test-company-id> \
+PLAYWRIGHT_EXTERNAL_REPORT_TEST=true \
+PLAYWRIGHT_EXTERNAL_INVOICE_NUMBER=EXT-1001 \
+PLAYWRIGHT_REUSE_SERVER=false \
+npx playwright test tests/integration/invoices/invoice-print-external.spec.ts --workers=1
+```
+
+Supply `PLAYWRIGHT_TEST_EMAIL` and `PLAYWRIGHT_TEST_PASSWORD` using the existing
+private test environment. The API must use an approved non-production database
+such as `emsys_codex_test`. The test rejects non-loopback API URLs. Localhost port
+3000 uses the API's existing allowed development origin without relaxing CORS.
+`PLAYWRIGHT_PORT`/`PLAYWRIGHT_HOST` are optional; other suites keep their existing
+127.0.0.1:3100 defaults. Stop test dev servers after validation; no authentication
+bypass or test credential belongs in a production deployment.

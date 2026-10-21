@@ -3,8 +3,8 @@ import { loadEnvConfig } from "@next/env";
 
 loadEnvConfig(process.cwd());
 
-const port = 3100;
-const baseURL = `http://127.0.0.1:${port}`;
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
+const baseURL = `http://${process.env.PLAYWRIGHT_HOST ?? "127.0.0.1"}:${port}`;
 
 /** UI mode reads trace/video attachments while tests run — disable heavy artifacts to avoid corrupt zip errors. */
 const isUiMode = process.argv.some((arg) => arg === "--ui" || arg.startsWith("--ui-port"));
