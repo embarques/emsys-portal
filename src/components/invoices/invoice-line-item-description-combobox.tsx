@@ -67,18 +67,25 @@ export function InvoiceLineItemDescriptionCombobox({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
+  const newestFirstCatalog = useMemo(
+    () => [...catalogItems].sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    [catalogItems],
+  );
+
   const suggestions = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     const matches = normalized
-      ? catalogItems.filter((item) => item.description.toLowerCase().includes(normalized))
-      : catalogItems;
+      ? newestFirstCatalog.filter((item) => item.description.toLowerCase().includes(normalized))
+      : newestFirstCatalog;
 
     return matches.slice(0, 40);
-  }, [catalogItems, query]);
+  }, [newestFirstCatalog, query]);
 
+  // Empty field: Enter picks the newest item. Typed text: Enter keeps the free-text description.
+  const isQueryEmpty = query.trim() === "";
   useEffect(() => {
-    setActiveIndex(-1);
-  }, [suggestions]);
+    setActiveIndex(isQueryEmpty && suggestions.length > 0 ? 0 : -1);
+  }, [isQueryEmpty, suggestions]);
 
   useEffect(() => {
     if (!autoFocus) return;

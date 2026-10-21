@@ -762,7 +762,7 @@
         "paymentMethod": "Payment method",
         "bankAccount": "Bank account",
         "checkNumber": "Check number",
-        "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",
+        "checkNumberHint": "Stays outstanding until the check is marked cleared.",
         "autoClear": "Auto-approve (mark as cleared)",
         "autoClearHint": "Skip the outstanding step: the payment is cleared and applied to the invoice balance as soon as it is saved.",
         "autoClearReviewValue": "Cleared and applied on save",
@@ -771,7 +771,7 @@
         "referenceNumberModeSystem": "System generated",
         "referenceNumberModeCustom": "Enter your own",
         "referenceNumberCustom": "Custom internal reference number",
-        "referenceNumberHint": "Reference used by EMSYS to identify this transaction internally.",
+        "referenceNumberHint": "EMSYS uses this to identify the transaction.",
         "referenceNumberSystemHint": "EMSYS will generate an internal reference number when you save.",
         "account": "Account",
         "sourceAccount": "Source account",
@@ -787,7 +787,7 @@
         "unitPrice": "Unit price",
         "total": "Total",
         "externalReferenceNumber": "Institution transaction reference",
-        "externalReferenceHint": "Optional transaction ID or reference issued by the bank, payment provider, or other institution processing this payment."
+        "externalReferenceHint": "Optional ID from the bank or payment provider."
       },
       "partyActions": {
         "new": "New",
@@ -834,9 +834,9 @@
         "externalReferenceNumber": "Enter the institution’s transaction reference"
       },
       "hints": {
-        "amountZeroAllowed": "Zero is allowed for unpaid initial registration.",
-        "paymentMethodOptionalZero": "Cash is recorded when amount is $0.00.",
-        "costFromLineItems": "Taken from the invoice line items total."
+        "amountZeroAllowed": "Use $0.00 if nothing was paid yet.",
+        "paymentMethodOptionalZero": "Recorded as Cash while the amount is $0.00.",
+        "costFromLineItems": "From the invoice line items."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -858,6 +858,7 @@
         "refNumberRequired": "Enter an internal reference number, or choose system generated.",
         "descriptionTooLong": "Description is too long.",
         "costPositive": "Cost must be greater than zero.",
+        "costFromLineItemsRequired": "Add priced line items to the invoice before posting a payment.",
         "discountNonNegative": "Discount cannot be negative.",
         "checkNumberRequired": "Check number is required.",
         "bankAccountRequired": "Select a bank account for this payment method.",

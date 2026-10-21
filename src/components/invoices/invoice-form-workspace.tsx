@@ -79,6 +79,8 @@ type InvoiceWizardShellProps = {
   onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
   isPrinting?: boolean;
+  /** Rendered inside an auto-height dialog: cap the height instead of filling the viewport. */
+  inDialog?: boolean;
 };
 
 function InvoiceWizardShell({
@@ -100,13 +102,21 @@ function InvoiceWizardShell({
   onSaved,
   onPrint,
   isPrinting = false,
+  inDialog = false,
 }: InvoiceWizardShellProps) {
   const { t } = useTranslation();
   const shellRef = useFormViewport();
   return (
-    <div ref={shellRef} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-x-hidden md:block", invoiceWizardTypographyRoot)}>
-      <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden md:block md:max-w-6xl">
-        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-card md:max-h-[calc(100dvh-var(--form-viewport-inset,8rem))] md:rounded-xl md:border md:border-border md:shadow-sm">
+    <div ref={shellRef} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-x-hidden", inDialog && "md:block", invoiceWizardTypographyRoot)}>
+      <div className={cn("mx-auto flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden md:max-w-6xl", inDialog && "md:block")}>
+        <div
+          className={cn(
+            "flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-card md:rounded-xl md:border md:border-border md:shadow-sm",
+            inDialog
+              ? "md:max-h-[calc(100dvh-var(--form-viewport-inset,8rem))]"
+              : "md:h-[calc(100dvh-var(--form-viewport-inset,8rem))] md:flex-none",
+          )}
+        >
           <div className="hidden shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-3 md:flex">
             <div className="min-w-0">
               <h1 className="text-base font-semibold leading-tight">{title}</h1>
@@ -237,11 +247,13 @@ async function buildInvoiceWriteContext(values: InvoiceFormValues): Promise<Invo
 type InvoiceCreateWizardProps = {
   onCancel: () => void;
   submitLabel?: string;
+  inDialog?: boolean;
 };
 
 export function InvoiceCreateWizard({
   onCancel,
   submitLabel = "Save invoice",
+  inDialog = false,
 }: InvoiceCreateWizardProps) {
   const { t } = useTranslation();
   const { notifyAdded } = useFeedback();
@@ -310,6 +322,7 @@ export function InvoiceCreateWizard({
       requirePolicySignature
       isSubmitting={createMutation.isPending}
       onSubmit={handleSubmit}
+      inDialog={inDialog}
     />
   );
 }
@@ -321,6 +334,7 @@ type InvoiceEditWizardProps = {
   initialWizardStep?: number;
   focusBarcodeId?: string;
   formNonce?: number;
+  inDialog?: boolean;
 };
 
 function findLineItemIdForBarcodeFocus(invoice: Invoice, focusBarcodeId: string): string | null {
@@ -345,6 +359,7 @@ export function InvoiceEditWizard({
   initialWizardStep,
   focusBarcodeId,
   formNonce,
+  inDialog = false,
 }: InvoiceEditWizardProps) {
   const { t } = useTranslation();
   const { notifyUpdated, notifySuccess, notifyError } = useFeedback();
@@ -512,6 +527,7 @@ export function InvoiceEditWizard({
         onSaved={onCancel}
         onPrint={handlePrint}
         isPrinting={isPrinting}
+        inDialog={inDialog}
       />
       <InvoiceBarcodeDecreaseDialog
         open={decreaseOpen}

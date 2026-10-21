@@ -47,12 +47,50 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+/**
+ * Publish the on-screen part of a tab's portal host as CSS variables so a dialog
+ * can center on the workspace body instead of the whole window.
+ */
+function useWorkspaceBodyViewport(container: HTMLElement | null, enabled: boolean) {
+  React.useLayoutEffect(() => {
+    if (!enabled || !container) return;
+
+    const update = () => {
+      const rect = container.getBoundingClientRect();
+      const left = Math.max(rect.left, 0);
+      const right = Math.min(rect.right, window.innerWidth);
+      const top = Math.max(rect.top, 0);
+      const bottom = Math.min(rect.bottom, window.innerHeight);
+      container.style.setProperty("--workspace-body-center-x", `${(left + right) / 2}px`);
+      container.style.setProperty("--workspace-body-center-y", `${(top + bottom) / 2}px`);
+      container.style.setProperty("--workspace-body-width", `${Math.max(right - left, 0)}px`);
+      container.style.setProperty("--workspace-body-height", `${Math.max(bottom - top, 0)}px`);
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [container, enabled]);
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    /** Center within the visible workspace tab body and size to content within it. */
+    centerInWorkspace?: boolean;
+  }
+>(({ className, children, onPointerDownOutside, onInteractOutside, centerInWorkspace = false, ...props }, ref) => {
   const portalContainer = useWorkspaceTabPortalContainer();
   const tabScoped = portalContainer != null;
+  const centeredInBody = centerInWorkspace && tabScoped;
+  useWorkspaceBodyViewport(portalContainer, centeredInBody);
 
   function isShellChromeInteraction(target: EventTarget | null) {
     if (!(target instanceof Element) || !portalContainer) return false;
@@ -95,6 +133,8 @@ const DialogContent = React.forwardRef<
           // absolute when tab-scoped so dimming remains inside the workspace tab.
           "fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-y-auto -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border bg-background p-6 shadow-xl outline-none",
           className,
+          centeredInBody &&
+            "left-[var(--workspace-body-center-x,50%)] top-[var(--workspace-body-center-y,50%)] max-h-[calc(var(--workspace-body-height,100dvh)-2rem)] max-w-[calc(var(--workspace-body-width,100vw)-2rem)]",
         )}
         onPointerDownOutside={handlePointerDownOutside}
         onInteractOutside={handleInteractOutside}

@@ -10,8 +10,8 @@ const employees = [
 ];
 
 const routes = [
-  { id: "route-1", name: "North route", date: "2026-10-21", route: { id: "r1", routeId: "R1", name: "North route" }, employees: [], branch: { code: "NY" } },
-  { id: "route-2", name: "South route", date: "2026-10-20", route: { id: "r2", routeId: "R2", name: "South route" }, employees: [], branch: { code: "NY" } },
+  { id: "route-1", name: "North route", date: "2026-10-21", createdAt: "2026-10-19T09:00:00Z", route: { id: "r1", routeId: "R1", name: "North route" }, employees: [], branch: { code: "NY" } },
+  { id: "route-2", name: "South route", date: "2026-10-20", createdAt: "2026-10-20T15:30:00Z", route: { id: "r2", routeId: "R2", name: "South route" }, employees: [], branch: { code: "NY" } },
 ];
 
 const branches = { items: [{ id: 1, code: "NY", name: "New York", type: "office", active: true }] };
@@ -26,11 +26,18 @@ export function useEnsureEmployeeDetail() {
 export const useUpdateEmployee = mutation;
 
 export function useActiveRoutePicker() { return { data: { items: routes }, isFetching: false }; }
+export function useEnsurePickupRouteDetail() {
+  return async (id: string) => routes.find((route) => route.id === id) ?? routes[0];
+}
 
 export function useContainerPicker() { return { data: { items: [{ id: 7, name: "CONT-7" }] }, isFetching: false }; }
 export const useCreateContainer = mutation;
 
-export function useItemPicker() { return { data: { items: [] }, isFetching: false }; }
+const catalogItems = [
+  { itemId: "item-old", description: "Small box", price: 25, createdAt: "2026-09-01T10:00:00Z" },
+  { itemId: "item-new", description: "Flat screen TV", price: 120, createdAt: "2026-10-20T10:00:00Z" },
+];
+export function useItemPicker() { return { data: { items: catalogItems }, isFetching: false }; }
 
 const orders = [
   { id: 101, sender, receivers: [pickupReceivers.maria] },

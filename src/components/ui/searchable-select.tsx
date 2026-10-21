@@ -72,6 +72,11 @@ type SearchableSelectProps = {
    * Set false when the parent handles post-select focus (e.g. skip an auto-filled field).
    */
   advanceFocusOnSelect?: boolean;
+  /**
+   * Open the list when Enter navigation moves focus here from a previous field
+   * (closed by default so selections settle without a second popup).
+   */
+  openOnNavigationFocus?: boolean;
   /** Opens options in a bottom sheet on phones. Desktop keeps the normal popover. */
   mobileSheet?: boolean;
   "aria-label"?: string;
@@ -276,6 +281,7 @@ export function SearchableSelect({
   onClose,
   selectAllOnFocus = false,
   advanceFocusOnSelect = true,
+  openOnNavigationFocus = false,
   mobileSheet = false,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
@@ -343,7 +349,14 @@ export function SearchableSelect({
     if (disabled || skipOpenOnFocusRef.current) return;
     // Deposit/Zelle mount a bank selector during selection. Focus it without
     // opening another Popper while the first popup and form are still settling.
-    if (isAutomaticSelectionFocus(inputRef.current ?? triggerRef.current)) return;
+    if (isAutomaticSelectionFocus(inputRef.current ?? triggerRef.current)) {
+      if (openOnNavigationFocus) {
+        window.requestAnimationFrame(() => {
+          if (document.activeElement === inputRef.current) openDropdown();
+        });
+      }
+      return;
+    }
     if (suppressNextFocusSearchRef.current) {
       suppressNextFocusSearchRef.current = false;
       return;

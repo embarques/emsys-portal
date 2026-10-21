@@ -762,7 +762,7 @@
         "paymentMethod": "Método de pago",
         "bankAccount": "Cuenta bancaria",
         "checkNumber": "Número de cheque",
-        "checkNumberHint": "Crea un cheque pendiente. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
+        "checkNumberHint": "Queda pendiente hasta que el cheque se marque como cobrado.",
         "autoClear": "Aprobar automáticamente (marcar como cobrado)",
         "autoClearHint": "Omite el paso de pendiente: el pago se marca como cobrado y se aplica al saldo de la factura al guardarlo.",
         "autoClearReviewValue": "Cobrado y aplicado al guardar",
@@ -771,7 +771,7 @@
         "referenceNumberModeSystem": "Generado por el sistema",
         "referenceNumberModeCustom": "Ingresar el propio",
         "referenceNumberCustom": "Número de referencia interna personalizado",
-        "referenceNumberHint": "Referencia que EMSYS utiliza para identificar esta transacción internamente.",
+        "referenceNumberHint": "EMSYS la usa para identificar la transacción.",
         "referenceNumberSystemHint": "EMSYS generará un número de referencia interna al guardar.",
         "account": "Cuenta",
         "sourceAccount": "Cuenta origen",
@@ -787,7 +787,7 @@
         "unitPrice": "Precio unitario",
         "total": "Total",
         "externalReferenceNumber": "Referencia de transacción de la institución",
-        "externalReferenceHint": "ID o referencia de transacción opcional emitido por el banco, proveedor de pagos u otra institución que procesa este pago."
+        "externalReferenceHint": "ID opcional del banco o proveedor de pagos."
       },
       "partyActions": {
         "new": "Nuevo",
@@ -834,9 +834,9 @@
         "externalReferenceNumber": "Ingresa la referencia de transacción de la institución"
       },
       "hints": {
-        "amountZeroAllowed": "Se permite cero para el registro inicial sin pago.",
-        "paymentMethodOptionalZero": "Se registra efectivo cuando el monto es $0.00.",
-        "costFromLineItems": "Tomado del total de los renglones de la factura."
+        "amountZeroAllowed": "Use $0.00 si aún no se ha pagado.",
+        "paymentMethodOptionalZero": "Se registra como efectivo mientras el monto sea $0.00.",
+        "costFromLineItems": "Tomado de los renglones de la factura."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -858,6 +858,7 @@
         "refNumberRequired": "Ingresa un número de referencia interna o elige la generación automática.",
         "descriptionTooLong": "La descripción es demasiado larga.",
         "costPositive": "El costo debe ser mayor que cero.",
+        "costFromLineItemsRequired": "Agregue renglones con precio a la factura antes de registrar un pago.",
         "discountNonNegative": "El descuento no puede ser negativo.",
         "checkNumberRequired": "El número de cheque es obligatorio.",
         "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",

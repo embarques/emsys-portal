@@ -14,15 +14,20 @@ import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,
 } from "@/lib/layout/hooks/use-workspace-tabs";
+import { stashFormTabCreatedId } from "@/lib/layout/form-tab-return";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
-import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
+import {
+  DAILY_ROUTES_DIRECTORY_VARIANT,
+  PICKUP_ROUTE_FORM_FEATURE,
+  PICKUP_ROUTES_DIRECTORY_VARIANT,
+} from "@/lib/pickup-delivery-routes/directory-variant";
 
 type ActiveRouteFormWorkspaceProps = WorkspaceFormHostProps & {
   variant: ActiveRoutesDirectoryVariant;
 };
 
-export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: ActiveRouteFormWorkspaceProps) {
+export function ActiveRouteFormWorkspace({ tabId, mode, entityId, closeOnSave, variant }: ActiveRouteFormWorkspaceProps) {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
@@ -80,7 +85,12 @@ export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: Act
         key={isEditing ? (editing?.id ?? "edit") : `new-${variant.id}`}
         initialRecord={isEditing ? editing : null}
         variant={variant}
-        onSaved={() => closeFormTabAndReturn(tabId)}
+        onSaved={(saved) => {
+          if (closeOnSave && !isEditing && saved?.id) {
+            stashFormTabCreatedId(variant.formFeature, saved.id);
+          }
+          closeFormTabAndReturn(tabId);
+        }}
         onCancel={() => closeFormTabAndReturn(tabId)}
       />
     </FormTabShell>
@@ -89,4 +99,14 @@ export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: Act
 
 export function DailyRouteFormWorkspace(props: WorkspaceFormHostProps) {
   return <ActiveRouteFormWorkspace {...props} variant={DAILY_ROUTES_DIRECTORY_VARIANT} />;
+}
+
+const PICKUP_ROUTE_FORM_VARIANT: ActiveRoutesDirectoryVariant = {
+  ...PICKUP_ROUTES_DIRECTORY_VARIANT,
+  formFeature: PICKUP_ROUTE_FORM_FEATURE,
+};
+
+/** Pickup-only schedule form (no route type or container), opened from invoice "New" route. */
+export function PickupRouteFormWorkspace(props: WorkspaceFormHostProps) {
+  return <ActiveRouteFormWorkspace {...props} variant={PICKUP_ROUTE_FORM_VARIANT} />;
 }

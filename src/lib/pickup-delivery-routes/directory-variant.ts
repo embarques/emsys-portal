@@ -18,6 +18,9 @@ export type ActiveRoutesDirectoryVariant = {
   fixedBranchCode?: string;
 };
 
+/** Form tab feature for the pickup-only schedule form (invoice "New" appointment route). */
+export const PICKUP_ROUTE_FORM_FEATURE = "pickup-routes";
+
 export const DAILY_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
   id: "daily",
   showRouteTypeField: false,

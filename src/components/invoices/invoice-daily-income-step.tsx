@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { PreviousOpenStatementsBanner } from "@/components/accounting/previous-open-statements-banner";
 import { InvoiceDailyIncomeDialog } from "@/components/invoices/invoice-daily-income-dialog";
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
+import { invoiceStepTitleClassName } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import {
@@ -529,10 +530,15 @@ export function InvoiceDailyIncomeStep({
 
   const paymentDialog = statement && statementOpen ? (
     <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader className="pr-8">
-          <DialogTitle>{t("invoices.wizard.dailyIncome.postPayment")}</DialogTitle>
-          <DialogDescription>
+      <DialogContent
+        centerInWorkspace
+        className="flex w-max max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0"
+      >
+        <DialogHeader className="shrink-0 space-y-1 border-b border-border bg-card px-5 py-3 pr-14 text-left">
+          <DialogTitle className={invoiceStepTitleClassName}>
+            {t("invoices.wizard.dailyIncome.postPayment")}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
             {t("invoices.wizard.dailyIncome.postPaymentDescription", { id: statement.id })}
           </DialogDescription>
         </DialogHeader>
@@ -540,6 +546,7 @@ export function InvoiceDailyIncomeStep({
           statement={statement}
           invoice={values}
           onRegistered={handlePaymentPosted}
+          onCancel={() => setPaymentDialogOpen(false)}
         />
       </DialogContent>
     </Dialog>

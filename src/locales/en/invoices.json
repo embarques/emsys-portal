@@ -156,7 +156,8 @@
     },
     "validation": {
       "senderRequired": "Sender is required.",
-      "createdEmployeeLoadFailed": "The employee was created, but could not be loaded. Select them from the list."
+      "createdEmployeeLoadFailed": "The employee was created, but could not be loaded. Select them from the list.",
+      "createdRouteLoadFailed": "The appointment route was created, but could not be loaded. Select it from the list."
     },
     "sections": {
       "invoiceDetails": "Invoice details",
@@ -354,7 +355,6 @@
       "openForInvoiceDateHint": "Opens in a new tab. Create or reopen the statement, then return here and save again.",
       "openAssociated": "Open Cuadre linked",
       "openAssociatedHint": "Today's Daily Income #{{id}} is open. This invoice will be associated with it automatically.",
-      "recordPaymentNow": "Record payment",
       "recordPaymentOptional": "Recording a payment is optional. You can continue without one.",
       "noOpenTitle": "No open Cuadre",
       "noStatementOptional": "No Daily Income exists for today and the current branch. Create one, then record a payment (amount may be $0).",

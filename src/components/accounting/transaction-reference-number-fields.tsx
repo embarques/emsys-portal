@@ -2,6 +2,7 @@
 
 import type { UseFormRegisterReturn } from "react-hook-form";
 
+import { FieldMessage } from "@/components/forms/field-message";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -11,6 +12,7 @@ import {
   type DailyIncomeRefNumberMode,
 } from "@/lib/accounting/daily-income/ref-number";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 type Props = {
   id?: string;
@@ -52,7 +54,7 @@ export function TransactionReferenceNumberFields({
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 sm:col-span-2">
+    <div className={cn("grid gap-4 sm:col-span-2", resolvedMode === "custom" && "sm:grid-cols-2")}>
       <div className="space-y-2">
         <Label htmlFor={`${id}-mode`}>{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
         <SearchableSelect
@@ -64,11 +66,9 @@ export function TransactionReferenceNumberFields({
           searchable={false}
           options={modeOptions}
         />
-        {resolvedMode === "system" ? (
-          <p className="text-xs text-muted-foreground">
-            {t("accounting.dailyIncome.form.fields.referenceNumberSystemHint")}
-          </p>
-        ) : null}
+        <FieldMessage
+          hint={resolvedMode === "system" ? t("accounting.dailyIncome.form.fields.referenceNumberSystemHint") : null}
+        />
       </div>
 
       {resolvedMode === "custom" ? (
@@ -83,11 +83,9 @@ export function TransactionReferenceNumberFields({
             placeholder={t("accounting.dailyIncome.form.placeholders.enterReferenceNumber")}
             {...refNumberRegister}
             onKeyDown={submitFormOnEnterKeyDown}
+            aria-invalid={Boolean(error)}
           />
-          <p className="text-xs text-muted-foreground">
-            {t("accounting.dailyIncome.form.fields.referenceNumberHint")}
-          </p>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <FieldMessage error={error} hint={t("accounting.dailyIncome.form.fields.referenceNumberHint")} />
         </div>
       ) : null}
     </div>

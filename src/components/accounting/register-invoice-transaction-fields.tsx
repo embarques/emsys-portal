@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 
+import { FieldMessage } from "@/components/forms/field-message";
 import { FormSection } from "@/components/forms/form-shell";
+import { cn } from "@/lib/utils";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
@@ -311,7 +313,7 @@ export function RegisterInvoiceTransactionFields({
 
   const methodFields = (
     <>
-      <div className="space-y-2 min-w-0">
+      <div className={cn("space-y-2 min-w-0", !isCheck && "sm:col-span-2")}>
         {paymentDetailsRequired ? (
           <RequiredLabel htmlFor="journal-payment">
             {t("accounting.dailyIncome.form.fields.paymentMethod")}
@@ -342,15 +344,16 @@ export function RegisterInvoiceTransactionFields({
           searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
           mobileSheet
           options={paymentMethodOptions}
+          aria-invalid={Boolean(errors.paymentMethodId)}
         />
-        {!paymentDetailsRequired ? (
-          <p className="text-xs text-muted-foreground">
-            {t("accounting.dailyIncome.form.hints.paymentMethodOptionalZero")}
-          </p>
-        ) : null}
-        {errors.paymentMethodId ? (
-          <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
-        ) : null}
+        <FieldMessage
+          error={errors.paymentMethodId?.message}
+          hint={
+            !paymentDetailsRequired && paymentMethodName?.trim() && !isCashPaymentMethod(paymentMethodName)
+              ? t("accounting.dailyIncome.form.hints.paymentMethodOptionalZero")
+              : null
+          }
+        />
       </div>
     </>
   );
@@ -385,8 +388,9 @@ export function RegisterInvoiceTransactionFields({
             searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
             mobileSheet
             options={bankAccountOptions}
+            aria-invalid={Boolean(errors.paymentAccountId)}
           />
-          {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
+          <FieldMessage error={errors.paymentAccountId?.message} />
         </div>
       ) : null}
     </>
@@ -407,15 +411,13 @@ export function RegisterInvoiceTransactionFields({
             id="journal-check-number"
             placeholder={t("accounting.dailyIncome.form.placeholders.enterCheckNumber")}
             autoComplete="off"
+            aria-invalid={Boolean(errors.checkNumber)}
             {...register("checkNumber")}
           />
-          {errors.checkNumber ? (
-            <p className="text-sm text-destructive">{errors.checkNumber.message}</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {t("accounting.dailyIncome.form.fields.checkNumberHint")}
-            </p>
-          )}
+          <FieldMessage
+            error={errors.checkNumber?.message}
+            hint={t("accounting.dailyIncome.form.fields.checkNumberHint")}
+          />
         </div>
       ) : null}
     </>
@@ -440,9 +442,7 @@ export function RegisterInvoiceTransactionFields({
               setValue("invoiceNumber", next, { shouldValidate: true, shouldDirty: true });
             }}
           />
-          {errors.invoiceNumber ? (
-            <p className="mt-2 text-sm text-destructive">{errors.invoiceNumber.message}</p>
-          ) : null}
+          <FieldMessage error={errors.invoiceNumber?.message} className="mt-2" />
         </div>
       ) : null}
     </>
@@ -458,7 +458,7 @@ export function RegisterInvoiceTransactionFields({
           placeholder={t("accounting.dailyIncome.form.placeholders.externalReferenceNumber")}
           {...register("externalReferenceNumber")}
         />
-        <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
+        <FieldMessage hint={t("accounting.dailyIncome.form.fields.externalReferenceHint")} />
       </div>
     </>
   );
@@ -500,6 +500,7 @@ export function RegisterInvoiceTransactionFields({
             tabIndex={-1}
             value={formatMoneyFormDisplayValue(invoiceCost)}
             className="bg-muted/40 tabular-nums"
+            aria-invalid={Boolean(errors.invoiceCost)}
           />
         ) : (
           <Input
@@ -523,12 +524,16 @@ export function RegisterInvoiceTransactionFields({
             aria-invalid={Boolean(errors.invoiceCost)}
           />
         )}
-        {invoiceCostReadOnly ? (
-          <p className="text-xs text-muted-foreground">
-            {t("accounting.dailyIncome.form.hints.costFromLineItems")}
-          </p>
-        ) : null}
-        {errors.invoiceCost ? <p className="text-sm text-destructive">{errors.invoiceCost.message}</p> : null}
+        <FieldMessage
+          error={
+            errors.invoiceCost
+              ? invoiceCostReadOnly
+                ? t("accounting.dailyIncome.form.validation.costFromLineItemsRequired")
+                : errors.invoiceCost.message
+              : null
+          }
+          hint={invoiceCostReadOnly ? t("accounting.dailyIncome.form.hints.costFromLineItems") : null}
+        />
       </div>
     </>
   );
@@ -563,10 +568,10 @@ export function RegisterInvoiceTransactionFields({
             } : grouped ? undefined : submitFormOnEnterKeyDown}
           aria-invalid={Boolean(errors.amount)}
         />
-        <p className="text-xs text-muted-foreground">
-          {t("accounting.dailyIncome.form.hints.amountZeroAllowed")}
-        </p>
-        {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+        <FieldMessage
+          error={errors.amount?.message}
+          hint={t("accounting.dailyIncome.form.hints.amountZeroAllowed")}
+        />
       </div>
     </>
   );
@@ -583,9 +588,9 @@ export function RegisterInvoiceTransactionFields({
           className="bg-muted/40 tabular-nums"
           aria-invalid={balance != null && balance < 0}
         />
-        {balance != null && balance < 0 ? (
-          <p className="text-sm text-destructive">{t("accounting.dailyIncome.form.validation.balanceNegative")}</p>
-        ) : null}
+        <FieldMessage
+          error={balance != null && balance < 0 ? t("accounting.dailyIncome.form.validation.balanceNegative") : null}
+        />
       </div>
     </>
   );
@@ -628,7 +633,7 @@ export function RegisterInvoiceTransactionFields({
                   onSearchChange={setSenderQuery}
                   options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
                 />
-                {errors.senderId ? <p className="text-sm text-destructive">{errors.senderId.message}</p> : null}
+                <FieldMessage error={errors.senderId?.message} />
               </div>
             ) : null}
           </div>
@@ -667,7 +672,7 @@ export function RegisterInvoiceTransactionFields({
                   onSearchChange={setReceiverQuery}
                   options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
                 />
-                {errors.receiverId ? <p className="text-sm text-destructive">{errors.receiverId.message}</p> : null}
+                <FieldMessage error={errors.receiverId?.message} />
               </div>
             ) : null}
           </div>

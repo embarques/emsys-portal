@@ -12,6 +12,7 @@ import { RegisterInvoiceTransactionFields } from "@/components/accounting/regist
 import { RegisterInventoryChangeFields } from "@/components/accounting/register-inventory-change-fields";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
+import { FieldMessage } from "@/components/forms/field-message";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -525,9 +526,7 @@ export function DailyIncomeTransactionForm({
                       mobileSheet
                       options={invoiceOptions}
                     />
-                    {errors.invoiceId ? (
-                      <p className="text-sm text-destructive">{errors.invoiceId.message}</p>
-                    ) : null}
+                    <FieldMessage error={errors.invoiceId?.message} />
                     {selectedInvoice ? (
                       <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-border bg-card px-3 py-2 text-sm sm:grid-cols-4">
                         <div>
@@ -579,9 +578,7 @@ export function DailyIncomeTransactionForm({
                         mobileSheet
                         options={accountOptions}
                       />
-                      {errors.accountId ? (
-                        <p className="text-sm text-destructive">{errors.accountId.message}</p>
-                      ) : null}
+                      <FieldMessage error={errors.accountId?.message} />
                     </div>
                   ) : null}
 
@@ -604,9 +601,7 @@ export function DailyIncomeTransactionForm({
                         mobileSheet
                         options={sourceAccountOptions}
                       />
-                      {errors.sourceAccountId ? (
-                        <p className="text-sm text-destructive">{errors.sourceAccountId.message}</p>
-                      ) : null}
+                      <FieldMessage error={errors.sourceAccountId?.message} />
                     </div>
                   ) : null}
 
@@ -620,7 +615,7 @@ export function DailyIncomeTransactionForm({
                       placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
                       {...register("amount", { setValueAs: moneyFormSetValueAs })}
                     />
-                    {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+                    <FieldMessage error={errors.amount?.message} />
                   </div>
                 </div>
 
@@ -658,9 +653,7 @@ export function DailyIncomeTransactionForm({
                     mobileSheet
                     options={paymentMethodOptions}
                   />
-                  {errors.paymentMethodId ? (
-                    <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
-                  ) : null}
+                  <FieldMessage error={errors.paymentMethodId?.message} />
                 </div>
 
                 {isCheck ? (
@@ -674,13 +667,7 @@ export function DailyIncomeTransactionForm({
                       autoComplete="off"
                       {...register("checkNumber")}
                     />
-                    {errors.checkNumber ? (
-                      <p className="text-sm text-destructive">{errors.checkNumber.message}</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {t("accounting.dailyIncome.form.fields.checkNumberHint")}
-                      </p>
-                    )}
+                    <FieldMessage error={errors.checkNumber?.message} hint={t("accounting.dailyIncome.form.fields.checkNumberHint")} />
                   </div>
                 ) : null}
 
@@ -707,7 +694,7 @@ export function DailyIncomeTransactionForm({
                       mobileSheet
                       options={bankAccountOptions}
                     />
-                    {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
+                    <FieldMessage error={errors.paymentAccountId?.message} />
                   </div>
                 ) : null}
 
@@ -719,7 +706,7 @@ export function DailyIncomeTransactionForm({
                     placeholder={t("accounting.dailyIncome.form.placeholders.externalReferenceNumber")}
                     {...register("externalReferenceNumber")}
                   />
-                  <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
+                  <FieldMessage hint={t("accounting.dailyIncome.form.fields.externalReferenceHint")} />
                 </div> : null}
 
                 {allowAutoClear ? (

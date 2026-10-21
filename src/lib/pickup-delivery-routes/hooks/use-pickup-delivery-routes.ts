@@ -1,7 +1,7 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
@@ -114,6 +114,19 @@ export function useActiveRoutes(
     placeholderData: keepPreviousData,
     staleTime: isFiltered ? 0 : 60_000,
   });
+}
+
+export function useEnsurePickupRouteDetail() {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (recordId: string) =>
+      queryClient.fetchQuery({
+        queryKey: queryKeys.pickupRouteSchedules.byId(recordId),
+        queryFn: () => fetchActiveRouteById(recordId, "pickup"),
+      }),
+    [queryClient],
+  );
 }
 
 export function useActiveRouteById(recordId: string | null, routeType?: RouteType) {

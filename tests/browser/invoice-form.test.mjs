@@ -31,6 +31,7 @@ before(async () => {
       "@/lib/auth/hooks/use-auth$": path.resolve("tests/browser/fixtures/documents-auth.ts"),
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/i18n.ts"),
       "@/lib/branches/hooks/use-branches$": hooks,
+      "@/components/app-shell/feedback-provider$": path.resolve("tests/browser/fixtures/feedback.tsx"),
       "@/lib/customers/hooks/use-customers$": path.resolve("tests/browser/fixtures/invoice-form-customers.ts"),
       "@/hooks/use-address-autocomplete$": path.resolve("tests/browser/fixtures/address-autocomplete.ts"),
       "@": path.resolve("src"),
@@ -61,7 +62,7 @@ async function fixture({ manualNumber = true, step = 1 } = {}) {
   if (!manualNumber) await page.evaluate(() => { window.readOnly = true; });
   await page.addStyleTag({ content: ".hidden {display:none}" });
   await page.addScriptTag({ content: script });
-  await page.locator(step === 2 ? "#pickupId" : "#pickupSource").waitFor();
+  await page.locator(step === 3 ? '[id$="-description"]' : step === 2 ? "#pickupId" : "#pickupSource").first().waitFor();
   return page;
 }
 
@@ -138,6 +139,50 @@ test("without manual number permission the locked invoice number dropdown still 
     await page.locator("#invoiceNumber-mode").focus();
     await page.keyboard.press("Enter");
     await focusedId(page, "wizard-next");
+  } finally { await page.close(); }
+});
+
+test("appointment routes open newest-created first and Enter picks the first route", async () => {
+  const page = await fixture();
+  try {
+    await page.locator("#pickupSource").focus();
+    await page.keyboard.press("Enter");
+    await focusedId(page, "routeId");
+    await page.getByRole("option").first().waitFor();
+    const labels = await page.getByRole("option").allTextContents();
+    assert.match(labels[0], /South route/);
+    assert.match(labels[1], /North route/);
+
+    await page.keyboard.press("Enter");
+    await focusedId(page, "invoiceNumber-mode");
+    assert.match(await page.locator("#routeId").inputValue(), /South route/);
+  } finally { await page.close(); }
+});
+
+test("line item suggestions open newest-created first and Enter picks the first item", async () => {
+  const page = await fixture({ step: 3 });
+  try {
+    const description = page.locator('[id$="-description"]').first();
+    await description.focus();
+    await page.getByRole("option").first().waitFor();
+    const labels = await page.getByRole("option").allTextContents();
+    assert.match(labels[0], /Flat screen TV/);
+    assert.match(labels[1], /Small box/);
+
+    await page.keyboard.press("Enter");
+    assert.equal(await description.inputValue(), "Flat screen TV");
+    await page.waitForFunction(() => document.activeElement?.id.endsWith("-quantity"));
+  } finally { await page.close(); }
+});
+
+test("typed line item text is kept on Enter instead of picking a suggestion", async () => {
+  const page = await fixture({ step: 3 });
+  try {
+    const description = page.locator('[id$="-description"]').first();
+    await description.focus();
+    await page.keyboard.type("Box");
+    await page.keyboard.press("Enter");
+    assert.equal(await description.inputValue(), "Box");
   } finally { await page.close(); }
 });
 

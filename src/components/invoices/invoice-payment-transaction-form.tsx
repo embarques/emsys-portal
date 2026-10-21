@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 
@@ -45,6 +45,7 @@ type Props = {
   statement: DailyIncomeStatement;
   invoice: InvoiceFormValues;
   onRegistered: (journal: DailyIncomeJournal) => void | Promise<void>;
+  onCancel?: () => void;
 };
 
 function buildInitialValues(
@@ -102,7 +103,7 @@ function hasJournalAssignee(values: Pick<DailyIncomeJournalValues, "employeeId" 
   return Boolean(values.employeeId) || Boolean(values.routeId?.trim());
 }
 
-export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered }: Props) {
+export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered, onCancel }: Props) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const isMobileLayout = useIsMobileViewport();
@@ -372,9 +373,15 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   }
 
   return (
-    <div className="space-y-4">
-      <form id={formId} className="space-y-4" onKeyDown={navigateOnEnter} onSubmit={handleSubmit(submit, handleInvalid)}>
+    <form
+      id={formId}
+      className="flex min-h-0 flex-1 flex-col"
+      onKeyDown={navigateOnEnter}
+      onSubmit={handleSubmit(submit, handleInvalid)}
+    >
+      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 p-4 sm:p-6">
         <RegisterInvoiceTransactionFields
+          grouped
           employees={employees}
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}
@@ -391,22 +398,34 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           showParties={false}
           invoiceCostReadOnly
         />
+      </div>
 
-        {submitError ? <FormFooterNoticeMessage tone="error" message={submitError} /> : null}
-
-        <div className="sticky bottom-0 z-10 flex justify-end border-t bg-background py-3">
-          <Button
-            type="submit"
-            className="max-md:w-full"
-            disabled={createJournal.isPending || statement.status !== "OPEN"}
-          >
-            {createJournal.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            {createJournal.isPending
-              ? t("invoices.wizard.dailyIncome.dialog.registering")
-              : t("invoices.wizard.dailyIncome.recordPaymentNow")}
-          </Button>
+      <div className="shrink-0 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 sm:pb-3">
+        <div className="flex items-center justify-between gap-3">
+          {submitError ? (
+            <FormFooterNoticeMessage tone="error" message={submitError} />
+          ) : (
+            <span className="flex-1" aria-hidden />
+          )}
+          <div className="flex shrink-0 items-center gap-2">
+            {onCancel ? (
+              <Button type="button" variant="outline" onClick={onCancel} disabled={createJournal.isPending}>
+                {t("common.actions.cancel")}
+              </Button>
+            ) : null}
+            <Button
+              type="submit"
+              data-wizard-primary
+              disabled={createJournal.isPending || statement.status !== "OPEN"}
+            >
+              {createJournal.isPending ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
+              {createJournal.isPending
+                ? t("invoices.wizard.dailyIncome.dialog.registering")
+                : t("invoices.wizard.dailyIncome.postPayment")}
+            </Button>
+          </div>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

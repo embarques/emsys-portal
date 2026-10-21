@@ -156,7 +156,8 @@
     },
     "validation": {
       "senderRequired": "Seleccione un remitente.",
-      "createdEmployeeLoadFailed": "El empleado se creó, pero no se pudo cargar. Selecciónelo de la lista."
+      "createdEmployeeLoadFailed": "El empleado se creó, pero no se pudo cargar. Selecciónelo de la lista.",
+      "createdRouteLoadFailed": "La ruta de citas se creó, pero no se pudo cargar. Selecciónela de la lista."
     },
     "sections": {
       "invoiceDetails": "Detalles de la factura",
@@ -354,7 +355,6 @@
       "openForInvoiceDateHint": "Se abre en una pestaña nueva. Crea o reabre el cierre, luego vuelve aquí y guarda de nuevo.",
       "openAssociated": "Cuadre abierto vinculado",
       "openAssociatedHint": "Los Ingresos diarios #{{id}} de hoy están abiertos. Esta factura se asociará automáticamente.",
-      "recordPaymentNow": "Registrar pago",
       "recordPaymentOptional": "Registrar un pago es opcional. Puede continuar sin uno.",
       "noOpenTitle": "No hay Cuadre abierto",
       "noStatementOptional": "No existe Ingresos diarios para hoy y la sucursal actual. Cree uno y luego registre un pago (el monto puede ser $0).",

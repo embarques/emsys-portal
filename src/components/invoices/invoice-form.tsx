@@ -85,10 +85,16 @@ import {
   type InvoicePickupSource,
 } from "@/lib/invoices/types";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
-import { PICKUP_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
+import {
+  PICKUP_ROUTE_FORM_FEATURE,
+  PICKUP_ROUTES_DIRECTORY_VARIANT,
+} from "@/lib/pickup-delivery-routes/directory-variant";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { isDeliveryBranchCode } from "@/lib/pickup-delivery-routes/types";
-import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import {
+  useActiveRoutePicker,
+  useEnsurePickupRouteDetail,
+} from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { DEFAULT_ORDER_LIST_PARAMS, getOrderReceivers, type Order } from "@/lib/orders/types";
 import { useOrder, useOrderSearch, useOrders } from "@/lib/orders/hooks/use-orders";
@@ -255,6 +261,7 @@ export function InvoiceForm({
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const ensureCustomerDetail = useEnsureCustomerDetail();
   const ensureEmployeeDetail = useEnsureEmployeeDetail();
+  const ensurePickupRouteDetail = useEnsurePickupRouteDetail();
   const { markPendingAdd } = useApplyCreatedOnTabReturn((feature, id) => {
     if (feature === "containers") {
       updateField("containerId", id);
@@ -264,6 +271,12 @@ export function InvoiceForm({
       ensureEmployeeDetail(id)
         .then(applyCreatedEmployee)
         .catch(() => setFormError(t("invoices.form.validation.createdEmployeeLoadFailed")));
+      return;
+    }
+    if (feature === PICKUP_ROUTE_FORM_FEATURE) {
+      ensurePickupRouteDetail(id)
+        .then(selectCreatedRoute)
+        .catch(() => setFormError(t("invoices.form.validation.createdRouteLoadFailed")));
     }
   });
 
@@ -320,7 +333,7 @@ export function InvoiceForm({
     { enabled: isEmployeePickupSource },
   );
   const pickupRouteOptions = useMemo(
-    () => buildActiveRouteAssignmentOptions(pickupRoutes, t),
+    () => buildActiveRouteAssignmentOptions(pickupRoutes, t, { order: "created" }),
     [pickupRoutes, t],
   );
   const pickupSourceEmployees = useMemo(() => {
@@ -580,6 +593,17 @@ export function InvoiceForm({
   }
 
   function openAddRoute() {
+    if (isDesktopTabs) {
+      markPendingAdd(PICKUP_ROUTE_FORM_FEATURE);
+      openFormTab({
+        feature: PICKUP_ROUTE_FORM_FEATURE,
+        baseHref: PICKUP_ROUTES_DIRECTORY_VARIANT.baseHref,
+        mode: "add",
+        label: t("routes.pickupRoutes.addTabLabel"),
+        closeOnSave: true,
+      });
+      return;
+    }
     setEntityError(null);
     setEntityDialog("route");
   }
@@ -948,6 +972,7 @@ export function InvoiceForm({
               required
               autoFocus={openPickupAssignment}
               defaultOpen={openPickupAssignment}
+              openOnNavigationFocus
               {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
               options={[
                 { value: "", label: t("invoices.form.placeholders.selectPickupRoute") },

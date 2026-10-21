@@ -7,7 +7,7 @@ import { createEmptyInvoiceForm, type InvoiceFormValues } from "@/lib/invoices/t
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 function InvoiceWizardStepFixture() {
-  const step = Number(document.documentElement.dataset.step ?? 1) as 1 | 2;
+  const step = Number(document.documentElement.dataset.step ?? 1) as 1 | 2 | 3;
   const [receiverId, setReceiverId] = useState("");
   return <QueryClientProvider client={queryClient}>
     <div data-testid="invoice-form-wizard" className="flex h-screen min-h-0 flex-col">

@@ -1596,7 +1596,7 @@ export function InvoicesWorkspace() {
             <DialogTitle>{t("invoices.workspace.addInvoice")}</DialogTitle>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <InvoiceCreateWizard onCancel={() => setAddFormOpen(false)} />
+            <InvoiceCreateWizard inDialog onCancel={() => setAddFormOpen(false)} />
           </div>
         </DialogContent>
       </Dialog>
@@ -1623,6 +1623,7 @@ export function InvoicesWorkspace() {
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {editInvoiceId ? (
               <InvoiceEditWizard
+                inDialog
                 invoiceId={editInvoiceId}
                 onCancel={() => setEditInvoiceId(null)}
               />
