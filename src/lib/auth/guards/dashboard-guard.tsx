@@ -3,6 +3,8 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { ApplicationLoader } from "@/components/app-shell/application-loader";
+
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { permissionForPath } from "@/lib/auth/page-permissions";
 import { Button } from "@/components/ui/button";
@@ -25,11 +27,7 @@ export function DashboardGuard({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, loading, router]);
 
   if (loading || permissionsLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background text-foreground">
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
+    return <ApplicationLoader stage={loading ? "session" : "access"} />;
   }
 
   if (!isAuthenticated) {

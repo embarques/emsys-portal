@@ -1,4 +1,11 @@
 {
+  "startup": {
+    "title": "Abriendo tu espacio de trabajo",
+    "session": "Estableciendo tu sesión segura",
+    "access": "Cargando el acceso a tu espacio de trabajo",
+    "slow": "Está tardando más de lo esperado. Revisa tu conexión o inténtalo de nuevo.",
+    "reload": "Recargar portal"
+  },
   "loading": "Cargando...",
   "actions": {
     "add": "Agregar",

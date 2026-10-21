@@ -82,8 +82,10 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 async function resolveFirebaseUserProfile(user: User): Promise<FirebaseUserDocument> {
   try {
-    const tokenResult = await user.getIdTokenResult();
-    const document = await readFirebaseUserDocument(user.uid);
+    const [tokenResult, document] = await Promise.all([
+      user.getIdTokenResult(),
+      readFirebaseUserDocument(user.uid),
+    ]);
 
     return mergeFirebaseUserProfile(user, document, {
       claimCompanyId: tokenResult.claims.companyId,

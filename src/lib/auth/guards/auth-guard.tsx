@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { ApplicationLoader } from "@/components/app-shell/application-loader";
+
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -16,11 +18,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, loading, router]);
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background text-foreground">
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
+    return <ApplicationLoader stage="session" />;
   }
 
   if (!isAuthenticated) {

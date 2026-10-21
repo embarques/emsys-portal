@@ -1,4 +1,11 @@
 {
+  "startup": {
+    "title": "Opening your workspace",
+    "session": "Establishing your secure session",
+    "access": "Loading your workspace access",
+    "slow": "This is taking longer than expected. Check your connection or try again.",
+    "reload": "Reload portal"
+  },
   "loading": "Loading...",
   "actions": {
     "add": "Add",
