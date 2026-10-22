@@ -1,3 +1,4 @@
+import { sumInvoiceItemQuantities } from "@/lib/invoices/item-count";
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
@@ -170,6 +171,8 @@ export type Invoice = ApiTableRecord & {
   paidRegion?: string;
   paidStatus?: string;
   cost?: number;
+  /** Read-only quantity total returned by the API. */
+  itemCount?: number;
   branch?: InvoiceBranch;
   sender: OrderParty;
   receiver: OrderParty | null;
@@ -582,6 +585,11 @@ export function resolveLineTotal(values: InvoiceLineItemFormValues): number {
 /** Whether a line item row has enough data to count toward invoice validation. */
 export function hasInvoiceLineItemContent(values: InvoiceLineItemFormValues): boolean {
   return Boolean(values.itemName.trim() || values.itemId || resolveLineTotal(values) > 0);
+}
+
+/** Count only populated draft rows; a new empty row is not merchandise yet. */
+export function getInvoiceFormItemCount(values: Pick<InvoiceFormValues, "lineItems">): number {
+  return sumInvoiceItemQuantities(values.lineItems.filter(hasInvoiceLineItemContent));
 }
 
 /** Quantity must be greater than 0. Labels may be 0. */

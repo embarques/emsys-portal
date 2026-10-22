@@ -37,6 +37,7 @@
     "title": "Select invoice items for processing"
   },
   "columns": {
+    "itemCount": "Items",
     "invoiceNumber": "Invoice",
     "date": "Date",
     "container": "Container",
@@ -262,6 +263,7 @@
       "policiesSignatureRequired": "A customer signature is required before saving."
     },
     "summary": {
+      "itemCount": "Item count",
       "title": "Invoice summary",
       "newInvoice": "New invoice",
       "senderNotSelected": "Sender not selected",

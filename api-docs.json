@@ -2313,6 +2313,11 @@
         "isVoid": {
           "type": "boolean"
         },
+        "itemCount": {
+          "description": "ItemCount is the sum of positive finite line-item quantities; response-only.",
+          "type": "number",
+          "readOnly": true
+        },
         "legacySyncedAt": {
           "description": "Temporary legacy API bridge; remove after legacy invoice sync is retired.",
           "type": "string"

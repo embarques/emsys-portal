@@ -1,3 +1,4 @@
+import { resolveInvoiceItemCount } from "@/lib/invoices/item-count";
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -190,6 +191,7 @@ type ApiInvoiceDetail = {
 };
 
 type ApiInvoice = {
+  itemCount?: number;
   id?: string;
   oldID?: number;
   number?: string;
@@ -632,6 +634,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     sender: normalizeApiInvoiceParty(item.sender),
     receiver: normalizeApiInvoiceReceiver(item),
     lineItems,
+    itemCount: resolveInvoiceItemCount(item.itemCount, lineItems),
     comments: normalizeInvoiceComments(item.comments ?? item.pickup?.comments),
     activity: [],
     payments: [],

@@ -31,8 +31,13 @@ export function buildDefaultWidths(columns: ColumnVisibilityDefinition[]): Recor
 export function normalizeColumnOrder(order: string[], columns: ColumnVisibilityDefinition[]): string[] {
   const ids = new Set(columns.map((column) => column.id));
   const normalized = order.filter((id) => ids.has(id));
-  const missing = columns.filter((column) => !normalized.includes(column.id)).map((column) => column.id);
-  return [...normalized, ...missing];
+  for (const column of columns) {
+    if (normalized.includes(column.id)) continue;
+    const anchor = column.defaultBefore ? normalized.indexOf(column.defaultBefore) : -1;
+    if (anchor >= 0) normalized.splice(anchor, 0, column.id);
+    else normalized.push(column.id);
+  }
+  return normalized;
 }
 
 export function reorderColumnIds(order: string[], sourceId: string, targetId: string): string[] {

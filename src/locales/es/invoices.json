@@ -37,6 +37,7 @@
     "title": "Seleccionar artículos de factura para procesamiento"
   },
   "columns": {
+    "itemCount": "Artículos",
     "invoiceNumber": "Factura",
     "date": "Fecha",
     "container": "Furgon",
@@ -262,6 +263,7 @@
       "policiesSignatureRequired": "Se requiere la firma del cliente antes de guardar."
     },
     "summary": {
+      "itemCount": "Cantidad de artículos",
       "title": "Resumen de factura",
       "newInvoice": "Nueva factura",
       "senderNotSelected": "Remitente no seleccionado",
