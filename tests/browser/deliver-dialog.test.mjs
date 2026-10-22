@@ -100,8 +100,8 @@ test("delivery signs once and sets the chosen status on the invoice/route group 
     assert.equal(reads, 2);
     assert.equal(writes.length, 1);
     assert.equal(writes[0].invoiceId, "invoice-1");
-    assert.equal(writes[0].dailyRouteId, "route-1");
-    assert.equal("deliveryId" in writes[0], false);
+    assert.equal(writes[0].deliveryId, "5");
+    assert.equal("dailyRouteId" in writes[0], false);
     assert.deepEqual(Object.keys(writes[0].receiverSignature).sort(), ["contentType", "data", "idNumber", "signerName"]);
     assert.equal(writes[0].receiverSignature.signerName, "Pedro Ramirez");
     assert.equal(writes[0].receiverSignature.idNumber, "001-1234567-8");

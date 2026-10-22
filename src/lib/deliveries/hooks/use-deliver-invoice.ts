@@ -27,7 +27,7 @@ import { queryKeys } from "@/lib/query/query-keys";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
 
-export type DeliverTarget = Pick<Barcode, "invoiceId" | "barcodeId" | "number" | "route">;
+export type DeliverTarget = Pick<Barcode, "invoiceId" | "barcodeId" | "number" | "route" | "delivery">;
 
 export function useDeliveryAccess() {
   const { hasPermission, isAuthenticated, user, email } = useAuth();
@@ -37,6 +37,7 @@ export function useDeliveryAccess() {
   return {
     companyId,
     actorId: user?.uid || email || "",
+    canPrint: session && has(PERMISSIONS.invoicesPrint),
     canList: session && has(PERMISSIONS.deliveriesView),
     // Status changes and delivery documents are written on the invoice.
     canDeliver: session
@@ -69,7 +70,7 @@ export function useDeliverInvoice(target: DeliverTarget, onDelivered: () => void
   });
   const invoiceId = target.invoiceId ?? "";
   const routeId = target.route?.id ?? "";
-  const key = queryKeys.deliveries.group(access.companyId, access.actorId, invoiceId, routeId);
+  const key = queryKeys.deliveries.group(access.companyId, access.actorId, invoiceId, `${routeId}:${target.delivery?.id ?? ""}`);
   const query = useWorkspaceQuery({
     queryKey: key,
     queryFn: async ({ signal }) => resolveDeliveryGroup(target, await fetchInvoiceById(invoiceId, signal)),
@@ -109,11 +110,11 @@ export function useDeliverInvoice(target: DeliverTarget, onDelivered: () => void
       if (access.companyId !== store.getState().auth.companyId || sessionToken !== store.getState().auth.idToken) {
         throw new Error(t("deliveries.deliver.unavailable"));
       }
-      // A status failure must not resend the signature: the API would store it again as a document.
+      // Keep retries on the recorded receipt; the API also deduplicates identical trip submissions.
       if (!signatureSavedRef.current) {
         await saveInvoiceReceiverSignature({
           invoiceId: reviewed.invoiceId,
-          dailyRouteId: reviewed.routeId,
+          deliveryId: reviewed.deliveryId,
           receiverSignature: { ...buildCustomerSignature(values.signerName, values.signatureDataUrl), idNumber: values.idNumber },
         });
         signatureSavedRef.current = true;
@@ -124,6 +125,7 @@ export function useDeliverInvoice(target: DeliverTarget, onDelivered: () => void
     onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: queryKeys.invoices.detail(invoiceId) }),
+        client.invalidateQueries({ queryKey: queryKeys.invoices.signatureOptionsPrefix(access.companyId) }),
         client.invalidateQueries({ queryKey: queryKeys.deliveries.assigned() }),
         client.invalidateQueries({ queryKey: queryKeys.barcodes.all }),
       ]);

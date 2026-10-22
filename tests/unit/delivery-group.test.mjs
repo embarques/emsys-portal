@@ -36,8 +36,8 @@ function loadFeature(relative, apiClient) {
 
 
 const { resolveDeliveryGroup, buildDeliveryStatusPatches } = loadFeature("src/lib/deliveries/utils/delivery-group.ts", {});
-const selected = { invoiceId: "invoice-1", barcodeId: "barcode-a", number: "A", route: { id: "route-1", name: "Daily route" } };
-const barcode = (id, number, routeId = "route-1") => ({ id: "1", barcodeId: id, number, routeId });
+const selected = { invoiceId: "invoice-1", barcodeId: "barcode-a", number: "A", delivery: { id: 5, name: "Delivery 5" }, route: { id: "route-1", name: "Daily route" } };
+const barcode = (id, number, routeId = "route-1") => ({ id: "1", barcodeId: id, number, routeId, deliveryId: "5" });
 const invoice = { invoiceId: "invoice-1", invoiceNumber: "INV-1", lineItems: [
   { id: "item-a", itemName: "Box", barcodes: [barcode("barcode-a", "A"), barcode("barcode-b", "B")] },
   { id: "item-b", itemName: "Chair", barcodes: [barcode("barcode-c", "C"), barcode("barcode-d", "D", "route-2")] },
@@ -71,14 +71,14 @@ test("legacy barcode numbers can resolve a group without a document ID", () => {
   assert.equal(resolveDeliveryGroup({ ...selected, barcodeId: undefined }, invoice).barcodeCount, 3);
 });
 
-test("legacy barcode delivery IDs do not affect the daily-route delivery group", () => {
-  const changed = structuredClone(invoice);
-  changed.lineItems[0].barcodes[0].deliveryId = "6";
-  changed.lineItems[0].barcodes[1].deliveryId = undefined;
-  const group = resolveDeliveryGroup(selected, changed);
-  assert.equal(group.routeId, "route-1");
-  assert.equal(group.barcodeCount, 3);
-  assert.equal("deliveryId" in group, false);
+test("barcode delivery identity separates items on the same daily route", () => {
+ const changed = structuredClone(invoice);
+ changed.lineItems[0].barcodes[1].deliveryId="6";
+ changed.lineItems[1].barcodes[0].deliveryId="6";
+ const group=resolveDeliveryGroup(selected,changed);
+ assert.equal(group.deliveryId,"5"); assert.equal(group.barcodeCount,1);
+ assert.equal(resolveDeliveryGroup({...selected,delivery:null},changed),null);
+ assert.equal(resolveDeliveryGroup({...selected,delivery:{id:6}},changed),null);
 });
 
 test("the invoice receiver is offered as a shortcut without affecting the review fingerprint", () => {

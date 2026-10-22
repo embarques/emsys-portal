@@ -11,10 +11,12 @@ import { getBarcodeStatusLabel } from "@/lib/labels/display";
 type DeliveryMobileRowProps = {
   row: AssignedDeliveryBarcode;
   canDeliver: boolean;
+  canPrint?: boolean;
+  onPrint?: (row: AssignedDeliveryBarcode) => void;
   onDeliver: (row: AssignedDeliveryBarcode) => void;
 };
 
-export function DeliveryMobileRow({ row, canDeliver, onDeliver }: DeliveryMobileRowProps) {
+export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrint }: DeliveryMobileRowProps) {
   const { t } = useTranslation();
   const address = formatDeliveryAddress(row.receiver);
   const city = row.receiver?.city;
@@ -59,10 +61,11 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver }: DeliveryMobile
         </dl>
       ) : null}
       {canDeliver ? (
-        <Button type="button" className="mt-3 h-11 w-full" disabled={!row.invoiceId || !row.route?.id} onClick={() => onDeliver(row)}>
+        <Button type="button" className="mt-3 h-11 w-full" disabled={!row.invoiceId || !row.route?.id || !row.delivery?.id} onClick={() => onDeliver(row)}>
           <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
         </Button>
       ) : null}
+      {canPrint && onPrint ? <Button type="button" variant="outline" className="mt-2 h-11 w-full" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => onPrint(row)}>{t("invoices.printSignatures.action")}</Button> : null}
     </article>
   );
 }

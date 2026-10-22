@@ -29,7 +29,7 @@ export function useAuth() {
 export async function fetchInvoiceById(): Promise<Invoice> {
   window.deliverReads = (window.deliverReads ?? 0) + 1;
   const barcode = (id: string, routeId = "route-1", statusId = 4, statusName = "ALM-RD") => ({
-    id, barcodeId: id, number: id, routeId, statusId, statusName,
+    id, barcodeId: id, number: id, routeId, deliveryId: routeId === "route-1" ? "5" : "6", statusId, statusName,
   });
   return {
     invoiceId: "invoice-1", invoiceNumber: "INV-1", containerId: "container-1",

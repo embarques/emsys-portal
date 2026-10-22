@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
   ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",
   REPORTS: "/reports",
   REPORTS_INCOME: "/reports/income",
+  INVOICE_SIGNATURE_OPTIONS: "/reports/invoices/signature-options",
   REPORTS_INVOICES: "/reports/invoices",
   REPORTS_INVOICE_DETAILS: "/reports/invoice-details",
   REPORTS_TRANSACTIONS: "/reports/transactions",

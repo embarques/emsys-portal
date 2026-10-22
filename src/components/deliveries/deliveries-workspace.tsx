@@ -5,6 +5,7 @@ import { PackageCheck } from "lucide-react";
 
 import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
 import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ function rowKey(row: AssignedDeliveryBarcode) {
 export function DeliveriesWorkspace() {
   const { t } = useTranslation();
   const access = useDeliveryAccess();
+  const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
   const table = useCatalogTable({
     fields: ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS,
@@ -95,7 +97,7 @@ export function DeliveriesWorkspace() {
                   {province !== previous ? (
                     <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{province}</h3>
                   ) : null}
-                  <DeliveryMobileRow row={row} canDeliver={access.canDeliver} onDeliver={setDeliverRow} />
+                  <DeliveryMobileRow row={row} canDeliver={access.canDeliver} onDeliver={setDeliverRow} canPrint={access.canPrint} onPrint={setPrintRow} />
                 </li>
               );
             })}
@@ -105,7 +107,7 @@ export function DeliveriesWorkspace() {
               <thead className="border-b bg-muted/40 text-left">
                 <tr>
                   {headers.map((header) => <th key={header} className="whitespace-nowrap px-4 py-3 font-medium">{header}</th>)}
-                  {access.canDeliver && <th className="px-4 py-3 text-right font-medium">{t("common.actions.actions")}</th>}
+                  {(access.canDeliver || access.canPrint) && <th className="px-4 py-3 text-right font-medium">{t("common.actions.actions")}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -126,12 +128,13 @@ export function DeliveriesWorkspace() {
                       <td className="whitespace-nowrap px-4 py-3">
                         {phones.map((phone) => <a key={phone.dial} href={`tel:${phone.dial}`} className="block hover:underline">{phone.label}</a>)}
                       </td>
-                      {access.canDeliver && <td className="px-4 py-3 text-right">
-                        <Button type="button" size="sm" variant="outline"
-                          disabled={!row.invoiceId || !row.route?.id}
+                      {(access.canDeliver || access.canPrint) && <td className="px-4 py-3 text-right">
+                        {access.canDeliver && <Button type="button" size="sm" variant="outline"
+                          disabled={!row.invoiceId || !row.route?.id || !row.delivery?.id}
                           onClick={() => setDeliverRow(row)}>
                           <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
-                        </Button>
+                        </Button>}
+                        {access.canPrint && <Button type="button" size="sm" variant="outline" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => setPrintRow(row)}>{t("invoices.printSignatures.action")}</Button>}
                       </td>}
                     </tr>
                   );
@@ -143,8 +146,9 @@ export function DeliveriesWorkspace() {
         {access.canList && !table.isLoading && !table.isError ? <CatalogTablePagination state={table} /> : null}
       </Card>
 
+      {printRow?.invoiceId && printRow.delivery?.id && access.canPrint && <InvoicePrintSignaturesDialog key={`${access.companyId}:${printRow.invoiceId}:${printRow.delivery.id}`} invoiceIds={[printRow.invoiceId]} trip={{ deliveryId: String(printRow.delivery.id) }} onClose={() => setPrintRow(null)} />}
       {deliverRow && access.canDeliver && <DeliverDialog
-        key={`${access.companyId}:${access.actorId}:${deliverRow.invoiceId}:${deliverRow.route?.id}`}
+        key={`${access.companyId}:${access.actorId}:${deliverRow.invoiceId}:${deliverRow.route?.id}:${deliverRow.delivery?.id}`}
         target={deliverRow}
         onClose={() => setDeliverRow(null)}
         onDelivered={() => setDeliverRow(null)}

@@ -208,6 +208,8 @@ export const queryKeys = {
     detail: (containerId: number) => [...queryKeys.containers.all, "detail", containerId] as const,
   },
   invoices: {
+    signatureOptionsPrefix: (companyId: string | null) => ["invoices", "signature-options", companyId] as const,
+    signatureOptions: (companyId: string | null, actorId: string, invoiceIds: string[]) => ["invoices", "signature-options", companyId, actorId, invoiceIds] as const,
     all: ["invoices"] as const,
     lists: () => [...queryKeys.invoices.all, "list"] as const,
     list: (params: InvoiceListParams) => [...queryKeys.invoices.lists(), params] as const,

@@ -76,17 +76,17 @@ test("skip signature allows unsigned creation without skipping policy agreement"
   assert.match(findInvoiceWizardPoliciesIssue({ agreed: true, skipSignature: false, signatureDataUrl: null }, t, 5).message, /policiesSignatureRequired/);
 });
 
-test("receiver signature addresses the delivery by daily route and sends only submitted fields", async () => {
+test("receiver signature addresses the delivery by barcode delivery ID and sends only submitted fields", async () => {
   let captured;
   const api = loadFeature("src/lib/invoices/api/invoice-signatures-api.ts", {
     put: async (url, body) => { captured = { url, body }; },
   });
-  await api.saveInvoiceReceiverSignature({ dailyRouteId: "6aa44f19b2ff4651db4a3dee", invoiceId: "invoice-1", receiverSignature: { ...signature, idNumber: "001-1234567-8", signedAt: "client-time" } });
-  assert.deepEqual(captured, { url: "/deliveries/6aa44f19b2ff4651db4a3dee/invoices/invoice-1/receiver/signature", body: { receiverSignature: { ...signature, idNumber: "001-1234567-8" } } });
-  await assert.rejects(api.saveInvoiceReceiverSignature({ dailyRouteId: "", invoiceId: "invoice-1", receiverSignature: signature }));
+  await api.saveInvoiceReceiverSignature({ deliveryId: "5", invoiceId: "invoice-1", receiverSignature: { ...signature, idNumber: "001-1234567-8", signedAt: "client-time" } });
+  assert.deepEqual(captured, { url: "/deliveries/5/invoices/invoice-1/receiver/signature", body: { deliveryId: 5, receiverSignature: { ...signature, idNumber: "001-1234567-8" } } });
+  await assert.rejects(api.saveInvoiceReceiverSignature({ deliveryId: "", invoiceId: "invoice-1", receiverSignature: signature }));
 });
 
 test("receiver signature propagates API failure", async () => {
   const api = loadFeature("src/lib/invoices/api/invoice-signatures-api.ts", { put: async () => ({ success: false, message: "Delivery mismatch" }) });
-  await assert.rejects(api.saveInvoiceReceiverSignature({ dailyRouteId: "route-1", invoiceId: "invoice-1", receiverSignature: { ...signature, idNumber: "123" } }), /Delivery mismatch/);
+  await assert.rejects(api.saveInvoiceReceiverSignature({ deliveryId: "5", invoiceId: "invoice-1", receiverSignature: { ...signature, idNumber: "123" } }), /Delivery mismatch/);
 });

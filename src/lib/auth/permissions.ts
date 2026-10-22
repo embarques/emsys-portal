@@ -19,6 +19,7 @@ export const PERMISSIONS = {
   routesView: { name: "canViewPickup", resourceType: "pickup" },
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },
   dispatchView: { name: "canViewPickup", resourceType: "pickup" },
+  invoicesPrint: { name: "canPrintInvoice", resourceType: "invoice" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
   invoicesUpdate: { name: "canUpdateInvoice", resourceType: "invoice" },
   invoicesSyncLegacy: { name: "canSyncLegacyInvoices", resourceType: "invoice" },
