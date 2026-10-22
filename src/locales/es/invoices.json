@@ -231,10 +231,11 @@
     },
     "policies": {
       "title": "Políticas de la empresa",
-      "description": "Lee cada política, confirma el acuerdo y firma antes de guardar.",
+      "description": "Lee cada política y confirma el acuerdo antes de guardar.",
       "agreeLabel": "He leído y acepto las políticas listadas arriba.",
       "loadError": "No se pudieron cargar las políticas. Vuelve a intentar antes de guardar la factura.",
-      "signatureLabel": "Firma del cliente",
+      "skipSignature": "Omitir firma",
+      "signatureLabel": "Autorizado por / Firma del remitente",
       "signatureHint": "Firma con el mouse o el dedo. Borra y vuelve a intentar si es necesario.",
       "clearSignature": "Borrar firma"
     },
@@ -675,6 +676,8 @@
     "title": "Documentos",
     "overview": "Resumen",
     "upload": "Subir documentos",
+    "capturePhoto": "Tomar foto",
+    "takeVideo": "Grabar video",
     "takePhoto": "Tomar foto o video",
     "preview": "Vista previa",
     "closePreview": "Cerrar vista previa",

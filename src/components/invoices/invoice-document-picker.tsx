@@ -1,13 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, Upload, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DOCUMENT_ACCEPT, formatDocumentSize } from "@/lib/invoices/documents";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  description?: string;
+  allowVideoCapture?: boolean;
   files: File[];
   invalid: boolean;
   disabled?: boolean;
@@ -16,6 +18,8 @@ type Props = {
 };
 
 export function InvoiceDocumentPicker({
+  description,
+  allowVideoCapture = false,
   files,
   invalid,
   disabled,
@@ -25,6 +29,7 @@ export function InvoiceDocumentPicker({
   const { t } = useTranslation();
   const fileInput = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
+  const videoInput = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
   function handleFiles(list: FileList | File[] | null) {
@@ -37,7 +42,7 @@ export function InvoiceDocumentPicker({
       <div>
         <h2 className="font-semibold">{t("invoices.documents.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t("invoices.documents.draftHint")}
+          {description ?? t("invoices.documents.draftHint")}
         </p>
       </div>
 
@@ -78,8 +83,18 @@ export function InvoiceDocumentPicker({
             className="min-h-11 w-full sm:w-auto"
           >
             <Camera className="size-4" />
-            {t("invoices.documents.takePhoto")}
+            {t(allowVideoCapture ? "invoices.documents.capturePhoto" : "invoices.documents.takePhoto")}
           </Button>
+          {allowVideoCapture && <Button
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            onClick={() => videoInput.current?.click()}
+            className="min-h-11 w-full sm:w-auto"
+          >
+            <Video className="size-4" />
+            {t("invoices.documents.takeVideo")}
+          </Button>}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
           {t("invoices.documents.formats")}
@@ -102,16 +117,30 @@ export function InvoiceDocumentPicker({
       <input
         ref={cameraInput}
         type="file"
-        accept="image/*,video/*"
+        accept={allowVideoCapture ? "image/*" : "image/*,video/*"}
         capture="environment"
         disabled={disabled}
         className="sr-only"
-        aria-label={t("invoices.documents.takePhoto")}
+        aria-label={t(allowVideoCapture ? "invoices.documents.capturePhoto" : "invoices.documents.takePhoto")}
         onChange={(event) => {
           handleFiles(event.target.files);
           event.target.value = "";
         }}
       />
+
+      {allowVideoCapture && <input
+        ref={videoInput}
+        type="file"
+        accept="video/*"
+        capture="environment"
+        disabled={disabled}
+        className="sr-only"
+        aria-label={t("invoices.documents.takeVideo")}
+        onChange={(event) => {
+          handleFiles(event.target.files);
+          event.target.value = "";
+        }}
+      />}
 
       {invalid ? (
         <p role="alert" className="text-sm text-destructive">

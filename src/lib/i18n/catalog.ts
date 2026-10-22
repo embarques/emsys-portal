@@ -6,6 +6,8 @@ import enInvoicePolicies from "@/locales/en/invoice-policies.json";
 import esInvoicePolicies from "@/locales/es/invoice-policies.json";
 import enPredefinedRoutes from "@/locales/en/predefined-routes.json";
 import esPredefinedRoutes from "@/locales/es/predefined-routes.json";
+import enDeliveries from "@/locales/en/deliveries.json";
+import esDeliveries from "@/locales/es/deliveries.json";
 import type { LanguagePreference } from "@/lib/configuration/types";
 
 import enCommon from "@/locales/en/common.json";
@@ -89,6 +91,7 @@ const catalogs: Record<Locale, MessageTree> = {
     employeeDepartments: enEmployeeDepartments,
     invoicePolicies: enInvoicePolicies,
     predefinedRoutes: enPredefinedRoutes,
+    deliveries: enDeliveries,
     branches: enBranches,
     vehicles: enVehicles,
     roles: enRoles,
@@ -120,6 +123,7 @@ const catalogs: Record<Locale, MessageTree> = {
     employeeDepartments: esEmployeeDepartments,
     invoicePolicies: esInvoicePolicies,
     predefinedRoutes: esPredefinedRoutes,
+    deliveries: esDeliveries,
     branches: esBranches,
     vehicles: esVehicles,
     roles: esRoles,

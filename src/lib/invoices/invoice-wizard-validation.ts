@@ -33,6 +33,7 @@ export type InvoiceWizardIssue = {
 type Translate = (key: string) => string;
 
 export type InvoicePoliciesAgreementInput = {
+  skipSignature?: boolean;
   agreed: boolean;
   signatureDataUrl: string | null;
 };
@@ -161,7 +162,7 @@ export function findInvoiceWizardPoliciesIssue(
       message: t("invoices.wizard.validation.policiesAgreeRequired"),
     };
   }
-  if (!agreement.signatureDataUrl) {
+  if (!agreement.skipSignature && !agreement.signatureDataUrl) {
     return {
       step: reviewStep,
       fieldId: INVOICE_WIZARD_FIELDS.policiesSignature,

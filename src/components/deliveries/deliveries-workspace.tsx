@@ -1,0 +1,154 @@
+"use client";
+
+import { useState } from "react";
+import { PackageCheck } from "lucide-react";
+
+import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
+import { PageHeader } from "@/components/app-shell/page-header";
+import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
+import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader } from "@/components/ui/card";
+import { normalizeApiError } from "@/lib/api/axios";
+import { fetchAssignedDeliveryBarcodesPage } from "@/lib/deliveries/api/assigned-deliveries-api";
+import { ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS } from "@/lib/deliveries/filter-fields";
+import { useDeliveryAccess } from "@/lib/deliveries/hooks/use-deliver-invoice";
+import {
+  DEFAULT_ASSIGNED_DELIVERY_SORT,
+  formatDeliveryAddress,
+  formatDeliveryPhones,
+  type AssignedDeliveryBarcode,
+} from "@/lib/deliveries/types";
+import { useTranslation } from "@/lib/i18n";
+import { getBarcodeStatusLabel } from "@/lib/labels/display";
+import { queryKeys } from "@/lib/query/query-keys";
+import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
+
+function rowKey(row: AssignedDeliveryBarcode) {
+  return row.barcodeId || (row.id > 0 ? String(row.id) : `${row.invoiceId}:${row.number}`);
+}
+
+export function DeliveriesWorkspace() {
+  const { t } = useTranslation();
+  const access = useDeliveryAccess();
+  const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
+  const table = useCatalogTable({
+    fields: ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS,
+    keepPrevious: false,
+    enabled: access.canList,
+    keyPrefix: "deliveries.filters.fields",
+    sort: DEFAULT_ASSIGNED_DELIVERY_SORT,
+    queryKey: (params) => queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params),
+    fetchPage: fetchAssignedDeliveryBarcodesPage,
+  });
+
+  const headers = [
+    t("deliveries.columns.barcode"),
+    t("deliveries.columns.invoice"),
+    t("deliveries.columns.name"),
+    t("deliveries.columns.container"),
+    t("deliveries.columns.status"),
+    t("deliveries.columns.receiverName"),
+    t("deliveries.columns.address"),
+    t("deliveries.columns.province"),
+    t("deliveries.columns.phones"),
+  ];
+
+  return (
+    <div className="max-w-full overflow-x-hidden">
+      <PageHeader title={t("deliveries.title")} description={t("deliveries.description")} />
+
+      <Card className="mt-6 gap-0">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
+          <CatalogTableToolbar
+            state={table}
+            presetScope="deliveries"
+            searchPlaceholder={t("deliveries.searchPlaceholder")}
+          />
+        </CardHeader>
+
+        {!access.canList ? (
+          <p role="alert" className="px-6 py-6 text-sm text-muted-foreground">{t("deliveries.noAccess")}</p>
+        ) : table.isLoading ? (
+          <p className="px-6 py-6 text-sm text-muted-foreground">{t("common.loading")}</p>
+        ) : table.isError ? (
+          <div className="space-y-3 border-b px-6 py-3">
+            <p role="alert" className="text-sm text-destructive">
+              {normalizeApiError(table.error).message}
+            </p>
+            <Button variant="outline" onClick={() => void table.refetch()}>
+              {t("deliveries.retry")}
+            </Button>
+          </div>
+        ) : !table.items.length ? (
+          <p className="px-6 py-6 text-sm text-muted-foreground">
+            {table.hasActiveFilters ? t("common.table.noMatches") : t("deliveries.empty")}
+          </p>
+        ) : (<>
+          <ul className="md:hidden" aria-label={t("deliveries.title")}>
+            {table.items.map((row, index) => {
+              const province = row.receiver?.province || t("deliveries.noProvince");
+              const previous = index > 0 ? table.items[index - 1]!.receiver?.province || t("deliveries.noProvince") : null;
+              return (
+                <li key={rowKey(row)}>
+                  {province !== previous ? (
+                    <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{province}</h3>
+                  ) : null}
+                  <DeliveryMobileRow row={row} canDeliver={access.canDeliver} onDeliver={setDeliverRow} />
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
+              <thead className="border-b bg-muted/40 text-left">
+                <tr>
+                  {headers.map((header) => <th key={header} className="whitespace-nowrap px-4 py-3 font-medium">{header}</th>)}
+                  {access.canDeliver && <th className="px-4 py-3 text-right font-medium">{t("common.actions.actions")}</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {table.items.map((row) => {
+                  const phones = formatDeliveryPhones(row.receiver);
+                  return (
+                    <tr key={rowKey(row)} className="border-b align-top last:border-0">
+                      <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums">{row.number}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{row.invoiceNumber}</td>
+                      <td className="px-4 py-3">{row.description}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{row.container?.name}</td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        {row.status?.name ? <Badge variant="outline">{getBarcodeStatusLabel(row.status.name, t)}</Badge> : null}
+                      </td>
+                      <td className="px-4 py-3">{row.receiver?.name}</td>
+                      <td className="px-4 py-3">{formatDeliveryAddress(row.receiver)}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{row.receiver?.province}</td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        {phones.map((phone) => <a key={phone.dial} href={`tel:${phone.dial}`} className="block hover:underline">{phone.label}</a>)}
+                      </td>
+                      {access.canDeliver && <td className="px-4 py-3 text-right">
+                        <Button type="button" size="sm" variant="outline"
+                          disabled={!row.invoiceId || !row.route?.id}
+                          onClick={() => setDeliverRow(row)}>
+                          <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
+                        </Button>
+                      </td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>)}
+        {access.canList && !table.isLoading && !table.isError ? <CatalogTablePagination state={table} /> : null}
+      </Card>
+
+      {deliverRow && access.canDeliver && <DeliverDialog
+        key={`${access.companyId}:${access.actorId}:${deliverRow.invoiceId}:${deliverRow.route?.id}`}
+        target={deliverRow}
+        onClose={() => setDeliverRow(null)}
+        onDelivered={() => setDeliverRow(null)}
+      />}
+    </div>
+  );
+}

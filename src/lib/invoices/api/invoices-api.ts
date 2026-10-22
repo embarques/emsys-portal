@@ -1,3 +1,4 @@
+import { customerSignatureSchema, type CustomerSignature } from "@/lib/invoices/schemas/customer-signature.schema";
 import { resolveInvoiceItemCount } from "@/lib/invoices/item-count";
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
@@ -885,7 +886,7 @@ function unwrapInvoiceApiRecord(response: unknown): ApiInvoice {
   return raw as ApiInvoice;
 }
 
-export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
+export async function fetchInvoiceById(invoiceId: string, signal?: AbortSignal): Promise<Invoice> {
   const id = parseInvoicePathId(invoiceId);
   if (process.env.NODE_ENV === "development") {
     console.info("[invoice:get] request", {
@@ -896,6 +897,7 @@ export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
 
   const response = await apiClient.get<ApiInvoice | PaginatedApiEnvelope<ApiInvoice>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
+    { signal },
   );
 
   const apiRecord = unwrapInvoiceApiRecord(response);
@@ -1244,6 +1246,7 @@ export type InvoiceWriteRouteRef = {
 };
 
 export type InvoiceWriteContext = {
+  customerSignature?: CustomerSignature;
   employee?: InvoiceWriteEmployeeRef;
   branch: InvoiceBranch;
   container: {
@@ -1645,7 +1648,10 @@ export async function createInvoice(
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.INVOICES,
     // Income statement (Cuadre) is optional: skip when none is open, or link an open one.
-    buildInvoiceWritePayload(values, context, { requireIncomeStatement: false }),
+    {
+      ...buildInvoiceWritePayload(values, context, { requireIncomeStatement: false }),
+      ...(context.customerSignature ? { customerSignature: customerSignatureSchema.parse(context.customerSignature) } : {}),
+    },
   );
 
   assertMutationSuccess(response, "Unable to create invoice.");

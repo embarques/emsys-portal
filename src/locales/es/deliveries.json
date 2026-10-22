@@ -1,0 +1,104 @@
+{
+  "title": "Entregas",
+  "description": "Códigos de barras de tus rutas diarias pendientes de entrega, ordenados por provincia.",
+  "searchPlaceholder": "Buscar código, factura, artículo, destinatario, provincia o contenedor…",
+  "empty": "No tienes entregas pendientes.",
+  "noAccess": "No tienes acceso para ver las entregas.",
+  "retry": "Reintentar",
+  "noProvince": "Sin provincia",
+  "columns": {
+    "barcode": "Código de barras",
+    "invoice": "Factura",
+    "name": "Nombre",
+    "container": "Contenedor",
+    "status": "Estado",
+    "receiverName": "Nombre del destinatario",
+    "address": "Dirección",
+    "province": "Provincia",
+    "phones": "Teléfonos del destinatario"
+  },
+  "filters": {
+    "fields": {
+      "number": {
+        "label": "Código de barras",
+        "placeholder": "Ingresa el código…"
+      },
+      "invoice": {
+        "number": {
+          "label": "Factura",
+          "placeholder": "Ingresa la factura…"
+        }
+      },
+      "receiver": {
+        "name": {
+          "label": "Nombre del destinatario",
+          "placeholder": "Ingresa el destinatario…"
+        },
+        "address": {
+          "state": {
+            "label": "Provincia",
+            "placeholder": "Ingresa la provincia…"
+          },
+          "city": {
+            "label": "Ciudad",
+            "placeholder": "Ingresa la ciudad…"
+          }
+        }
+      },
+      "container": {
+        "name": {
+          "label": "Contenedor",
+          "placeholder": "Ingresa el contenedor…"
+        }
+      },
+      "status": {
+        "name": {
+          "label": "Estado",
+          "placeholder": "Ingresa el estado…"
+        }
+      }
+    }
+  },
+  "deliver": {
+    "action": "Entregar",
+    "title": "Entregar artículos de la factura",
+    "description": "Completa la entrega una sola vez para todos los artículos de esta factura asignados a esta ruta diaria.",
+    "unavailable": "No tienes acceso para completar esta entrega.",
+    "loadError": "No se pudieron cargar los artículos de esta entrega.",
+    "retry": "Reintentar",
+    "changed": "La asignación del código de barras cambió. Cierra y vuelve a abrir la entrega para revisar los artículos actuales.",
+    "count": "{{items}} artículos · {{barcodes}} códigos de barras",
+    "items": "Artículos incluidos en esta entrega",
+    "status": "Nuevo estado",
+    "statusPlaceholder": "Selecciona un estado",
+    "statusSearch": "Buscar estados…",
+    "statusEmpty": "No se encontraron estados.",
+    "statusHint": "Se aplica a todos los códigos de barras listados arriba.",
+    "statusRequired": "Selecciona el nuevo estado para estos códigos de barras.",
+    "documents": "Documentos de entrega",
+    "documentsHint": "Agrega documentos, fotos o videos de la entrega. Se guardan en esta factura como delivery_1, delivery_2, etc., conservando sus extensiones. Los archivos cargados permanecen guardados aunque cierres sin entregar.",
+    "uploading": "Cargando…",
+    "uploadDocuments": "Cargar documentos",
+    "pendingDocuments": "Carga o elimina los archivos pendientes antes de entregar.",
+    "terms": "Términos y condiciones",
+    "termsLoadError": "No se pudieron cargar los términos y condiciones. Vuelve a intentar antes de entregar.",
+    "noTerms": "No hay términos y condiciones activos.",
+    "agree": "Quien recibe la entrega ha leído y acepta los términos y condiciones listados arriba.",
+    "agreementRequired": "Quien recibe la entrega debe aceptar los términos y condiciones.",
+    "receiver": "Quien recibe la entrega",
+    "receiverHint": "Ingresa la persona que recibe la entrega. Puede ser distinta del destinatario de la factura. Su firma se guarda en los documentos de la factura.",
+    "invoiceReceiver": "Destinatario de la factura: {{name}}",
+    "sameAsInvoiceReceiver": "Igual que el destinatario de la factura",
+    "signerName": "Nombre de quien recibe",
+    "idNumber": "Número de identificación de quien recibe",
+    "signature": "Firma de quien recibe",
+    "signatureCoversTerms": "Una sola firma confirma ambas cosas: esta persona recibió los artículos listados arriba y acepta los términos y condiciones.",
+    "signatureCoversDelivery": "La firma confirma que esta persona recibió los artículos listados arriba.",
+    "signatureSaved": "La firma de quien recibe está guardada. Vuelve a intentar para terminar de actualizar el estado de los códigos de barras.",
+    "required": "Este campo es obligatorio.",
+    "signatureRequired": "Dibuja la firma de quien recibe antes de entregar.",
+    "submit": "Completar entrega",
+    "retryStatus": "Reintentar actualización de estado",
+    "saving": "Guardando…"
+  }
+}

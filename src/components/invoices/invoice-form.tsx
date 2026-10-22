@@ -1,7 +1,7 @@
 "use client";
 
 import { ClipboardList, Container as ContainerIcon, Receipt, Route, UserPlus, Users, Wallet } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFormEnterNavigation, selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
@@ -124,6 +124,8 @@ type InvoiceFormProps = {
   focusFieldKey?: number;
   /** Open this line item in edit mode when the line-items step mounts. */
   requestEditLineItemId?: string | null;
+  /** Preselect the newest container when the form opens without one (new invoices only). */
+  defaultToLatestContainer?: boolean;
 };
 
 type PartySide = "sender" | "receiver";
@@ -249,6 +251,7 @@ export function InvoiceForm({
   focusFieldId = null,
   focusFieldKey = 0,
   requestEditLineItemId = null,
+  defaultToLatestContainer = false,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
@@ -430,6 +433,17 @@ export function InvoiceForm({
     setValues(!isEditing && !canUseManualNumber ? { ...initial, autoGenerateNumber: true } : initial);
     setFormError(null);
   }, [initialValues, isWizard, isEditing, canUseManualNumber]);
+
+  // Containers come sorted newest-first (id:desc); apply once so a user-cleared field stays cleared.
+  const latestContainerId = containers[0] ? String(containers[0].id) : "";
+  const appliedLatestContainerRef = useRef(false);
+  useEffect(() => {
+    if (!defaultToLatestContainer || appliedLatestContainerRef.current || !latestContainerId) return;
+    appliedLatestContainerRef.current = true;
+    commitValues((current) =>
+      current.containerId ? current : { ...current, containerId: latestContainerId },
+    );
+  }, [commitValues, defaultToLatestContainer, latestContainerId]);
 
   useEffect(() => {
     onValuesChange?.(values);

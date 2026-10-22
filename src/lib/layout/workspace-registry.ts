@@ -34,6 +34,7 @@ import { OrdersMapWorkspace } from "@/components/orders/orders-map-workspace";
 import { RolesWorkspace } from "@/components/roles/roles-workspace";
 import { RouteManagerWorkspace } from "@/components/route-manager/route-manager-workspace";
 import { DailyRoutesWorkspace } from "@/components/pickup-delivery-routes/daily-routes-workspace";
+import { DeliveriesWorkspace } from "@/components/deliveries/deliveries-workspace";
 import { UserActivitiesWorkspace } from "@/components/user-activities/user-activities-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
@@ -62,6 +63,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/containers": ContainersWorkspace,
   "/routes": RouteManagerWorkspace,
   "/daily-routes": DailyRoutesWorkspace,
+  "/deliveries": DeliveriesWorkspace,
   "/predefined-routes": PredefinedRoutesWorkspace,
   "/pickup-routes": DailyRoutesWorkspace,
   "/appointment-routes": DailyRoutesWorkspace,

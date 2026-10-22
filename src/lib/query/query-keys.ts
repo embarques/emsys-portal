@@ -44,6 +44,14 @@ export const queryKeys = {
     detail: (id: number) => ["invoice-policies", "detail", id] as const,
     page: (params: CatalogPageParams) => ["invoice-policies", "page", params] as const,
   },
+  deliveries: {
+    all: ["deliveries"] as const,
+    assigned: () => ["deliveries", "assigned"] as const,
+    assignedPage: (companyId: string | null, actorId: string, params: CatalogPageParams) =>
+      ["deliveries", "assigned", companyId, actorId, params] as const,
+    group: (companyId: string | null, actorId: string, invoiceId: string, routeId: string) =>
+      ["deliveries", "group", companyId, actorId, invoiceId, routeId] as const,
+  },
   predefinedRoutes: {
     all: ["predefined-routes"] as const,
     page: (params: CatalogPageParams) => ["predefined-routes", "page", params] as const,

@@ -216,6 +216,25 @@ The system allows us to:
 
 This section helps coordinate the day-to-day movement of employees and merchandise.
 
+#### Deliveries
+
+Portal route: `/deliveries` (Routes sidebar, `canViewDelivery`). The driver's work list: barcodes on DR daily routes whose crew includes the signed-in user's employee (`employee.user.id`), excluding barcodes already delivered. Columns: barcode, invoice, name (merchandise), container, status, receiver name, address + apartment, province (receiver address `state`), receiver phones, and **Deliver**. Sort is fixed to province (headers do not re-sort). The status is always chosen by the driver; there is no preselected default. On phones the table becomes cards grouped under province headings, with tap-to-call phone buttons and a full-width Deliver button. This keeps Barcodes strictly for barcode management — Barcodes has no Deliver or signing actions.
+
+The list comes from `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`; the API owns the "assigned to me" and "pending" scoping and joins the invoice receiver. The portal never resolves the current employee or filters assignment client-side. Contract: `docs/delivery-completion-api-contract.md`.
+
+**Deliver** covers every barcode on the clicked invoice assigned to the clicked daily route, across all line items and including rows outside the current page (resolved from the invoice detail; never by line item, package sequence, visible selection, or invoice alone).
+
+**The DR daily route is the delivery.** Its `/vehicle-routes` id both selects the group and addresses the delivery endpoint. The legacy `/deliveries` records (numeric id, `trip-container` name, own employee list) are not linked to daily routes, and new barcode route assignments leave `barcode.delivery` empty, so the portal does not use `delivery.id`. The form contains, in order:
+
+1. **New status** — picked from the tenant barcode status catalog and applied to the group's barcodes that are not already at that status, via the invoice-embedded barcode update.
+2. **Delivery documents** — invoice-document uploads (with separate mobile photo and video capture) named `delivery_N` with their original extension, one invoice-wide sequence across file types. Each batch reads all document metadata pages (including original names retained after a rename) and starts above the highest number. Writes are sequential; failed and unattempted files stay queued, completed files are not resent, and completion waits for queued files to be uploaded or removed. Same-origin tabs are serialized with Web Locks. Uploads persist independently of completion.
+3. **Terms and conditions** — the active invoice policies with one agreement checkbox; when any exist the receiver must tick it. Completion is blocked while they load or if they fail to load. The agreement itself is not saved separately.
+4. **Delivery receiver signature** — the **delivery receiver** (whoever physically receives the merchandise) can differ from the **invoice receiver**. The driver enters the delivery receiver's name, ID number (cédula), and signature; all three are required and start empty. When the invoice receiver is on file, a "Same as invoice receiver" shortcut fills name and ID (still editable). One signature covers both the delivery and the terms agreement. The portal sends it to the invoice receiver-signature endpoint: `PUT /v1/deliveries/{dailyRouteId}/invoices/{invoiceId}/receiver/signature` with `{ receiverSignature: { signerName, idNumber, contentType: "image/png", data } }` (raw base64). In that one request the API **always** saves a `delivery_signature` invoice document (signature PNG plus delivery receiver name, ID, signing time, collecting user, daily route), and **also** stores it as the invoice receiver signature when that field is empty (the first one is never overwritten). The invoice receiver party (`receiver.name` / `IDNumber`) is never changed by a delivery. The portal cannot see signatures on invoice responses and does not make these decisions.
+
+On submit the portal reloads the invoice and rejects a changed group, saves the signature, then writes the status. If the status write fails, Retry skips the already-saved signature. Deliver requires `canUpdateDelivery` (`delivery`), `canViewInvoice`, and `canUpdateInvoice` (`invoice`); the API remains authoritative for driver/route authorization.
+
+**API follow-ups:** the assigned-barcodes endpoint; accept the daily route id (24-character ObjectID) in the receiver-signature path instead of the numeric delivery id; atomic per-invoice `delivery_N` sequence allocation with a durable high-water mark; publishing the receiver-signature endpoint in Swagger.
+
 ### Customers
 
 Customers manages our clients and their information.
@@ -385,7 +404,9 @@ This includes:
 
 Portal route: `/invoice-policies` (Admin sidebar). Tenant catalog of policy titles and body text with sort order and active flag.
 
-Active invoice policies are shown during **invoice creation** (after payment / Cuadre, before preview). The customer must agree and sign (mouse or touch). The portal builds a signed agreement document (policies list + signature PNG) and uploads it as an invoice document after save. Edit invoice flows skip the policies step.
+Active invoice policies are shown during **invoice creation** in the review step. The customer must agree to active policies. “Skip signature” is checked by default; unchecking it requires a signature (mouse or touch), including when there are no active policies. Creation sends `customerSignature: { signerName, data, contentType }` using the sender name, raw base64 PNG data, and `image/png`. The API supplies `signedAt` and `collectedBy`. Edit payloads omit signatures so the API preserves them; invoice JSON responses exclude both signatures. The signature is stored on the invoice instead of uploaded as a policy agreement document.
+
+Report mapping: sender signature → Autorizado por; receiver signature, API signing date, and submitted ID → Recibido por / Fecha / ID. Receiver signatures are collected from the **Deliveries** workspace (see Routes → Deliveries), not from Barcodes.
 
 Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
 

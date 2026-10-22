@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Printer, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceDocumentPicker } from "@/components/invoices/invoice-document-picker";
@@ -41,7 +42,7 @@ import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/wor
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useActiveInvoicePolicies } from "@/lib/invoice-policies/hooks/use-invoice-policies";
-import { buildPolicyAgreementDocument } from "@/lib/invoice-policies/utils/build-policy-agreement-document";
+import { buildCustomerSignature } from "@/lib/invoices/schemas/customer-signature.schema";
 import { isMissingOpenIncomeStatementError } from "@/lib/invoices/missing-open-income-statement";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -74,6 +75,7 @@ import {
 
 const EMPTY_POLICIES_AGREEMENT: InvoicePoliciesAgreementState = {
   agreed: false,
+  skipSignature: true,
   signatureDataUrl: null,
 };
 
@@ -97,7 +99,7 @@ type Props = {
    */
   requireDailyIncomeRegistration?: boolean;
   /**
-   * Include the policies + signature step on create when active policies exist.
+   * Include signature capture on create and agreement when active policies exist.
    * Edit flows leave this false.
    */
   requirePolicySignature?: boolean;
@@ -153,7 +155,7 @@ export function InvoiceFormWizard({
   const activePoliciesQuery = useActiveInvoicePolicies(requirePolicySignature);
   const activePolicies = activePoliciesQuery.data ?? [];
   const policiesUnavailable = requirePolicySignature && !activePoliciesQuery.isSuccess;
-  const includePolicies = requirePolicySignature && (policiesUnavailable || activePolicies.length > 0);
+  const includePolicies = requirePolicySignature && !isEditing;
   const canUploadDocuments = hasPermission("canUpdateInvoice", "invoice");
   const includeDocumentsStep = Boolean(isEditing && initialValues?.invoiceId) || canUploadDocuments;
   const layout = useMemo(
@@ -190,8 +192,14 @@ export function InvoiceFormWizard({
   const [dailyIncomeContext, setDailyIncomeContext] = useState<InvoiceDailyIncomeContext>(
     emptyInvoiceDailyIncomeContext(),
   );
-  const [policiesAgreement, setPoliciesAgreement] =
-    useState<InvoicePoliciesAgreementState>(EMPTY_POLICIES_AGREEMENT);
+  const agreementForm = useForm<InvoicePoliciesAgreementState>({ defaultValues: EMPTY_POLICIES_AGREEMENT });
+  const agreementValues = useWatch({ control: agreementForm.control });
+  const policiesAgreement = useMemo<InvoicePoliciesAgreementState>(() => ({
+    agreed: agreementValues.agreed ?? false,
+    skipSignature: agreementValues.skipSignature ?? true,
+    signatureDataUrl: agreementValues.signatureDataUrl ?? null,
+  }), [agreementValues.agreed, agreementValues.skipSignature, agreementValues.signatureDataUrl]);
+  const setPoliciesAgreement = agreementForm.reset;
   const wizardRef = useRef<HTMLDivElement>(null);
   const isTabActive = useWorkspaceTabQueriesEnabled();
   const stepKind = getInvoiceWizardStepKind(layout, step);
@@ -259,13 +267,14 @@ export function InvoiceFormWizard({
         dailyIncome: dailyIncomeContext,
         requireDailyIncome: requireDailyIncomeRegistration,
         requirePolicySignature: includePolicies,
-        policiesAgreement,
+        policiesAgreement: { ...policiesAgreement, agreed: activePolicies.length === 0 || policiesAgreement.agreed },
         paymentStep: paymentStepId,
         previewStep,
         t,
       }),
     [
       dailyIncomeContext,
+      activePolicies.length,
       includePolicies,
       paymentStepId,
       policiesAgreement,
@@ -465,29 +474,13 @@ export function InvoiceFormWizard({
         amountPaid: String(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0),
       };
       const draftFiles = [...documentDraft.files];
-      if (
-        !isEditing &&
-        includePolicies &&
-        policiesAgreement.signatureDataUrl
-      ) {
-        try {
-          const agreementFile = await buildPolicyAgreementDocument({
-            policies: activePolicies,
-            signatureDataUrl: policiesAgreement.signatureDataUrl,
-            invoice: submittedValues,
-          });
-          draftFiles.push(agreementFile);
-        } catch (cause) {
-          setSubmitError(
-            cause instanceof Error ? cause.message : t("invoices.wizard.validation.policiesSignatureRequired"),
-          );
-          return;
-        }
-      }
+      const customerSignature = !isEditing && includePolicies && !policiesAgreement.skipSignature && policiesAgreement.signatureDataUrl
+        ? buildCustomerSignature(submittedValues.sender?.name ?? "", policiesAgreement.signatureDataUrl)
+        : undefined;
 
       const result = await onSubmit(
         submittedValues,
-        toInvoiceFormSubmitContext(dailyIncomeContext),
+        { ...toInvoiceFormSubmitContext(dailyIncomeContext), customerSignature },
       );
       if (result.error) {
         if (isMissingOpenIncomeStatementError(result.error) && paymentStepId != null) {
@@ -521,6 +514,8 @@ export function InvoiceFormWizard({
         return;
       }
       finishSave();
+    } catch (cause) {
+      setSubmitError(cause instanceof Error ? cause.message : t("invoices.wizard.validation.policiesSignatureRequired"));
     } finally {
       savingRef.current = false;
       setPreparingSave(false);
@@ -560,7 +555,7 @@ export function InvoiceFormWizard({
     : null;
   const policiesIssue =
     includePolicies && !policiesUnavailable
-      ? findInvoiceWizardPoliciesIssue(policiesAgreement, t, previewStep)
+      ? findInvoiceWizardPoliciesIssue({ ...policiesAgreement, agreed: activePolicies.length === 0 || policiesAgreement.agreed }, t, previewStep)
       : null;
   const saveDisabled = preparingSave || isSubmitting || documentsBusy || documentStage || policiesUnavailable || Boolean(policiesIssue) || hasNegativeBalance || hasRegisteredCostMismatch;
   const bannerError =
@@ -660,6 +655,7 @@ export function InvoiceFormWizard({
       focusFieldId={focusFieldId}
       focusFieldKey={focusFieldKey}
       requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
+      defaultToLatestContainer={!isEditing}
     />
   );
 

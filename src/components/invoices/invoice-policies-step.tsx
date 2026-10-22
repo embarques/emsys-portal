@@ -8,6 +8,7 @@ import { useTranslation } from "@/lib/i18n";
 
 export type InvoicePoliciesAgreementState = {
   agreed: boolean;
+  skipSignature: boolean;
   signatureDataUrl: string | null;
 };
 
@@ -36,50 +37,64 @@ export function InvoicePoliciesStep({
   return (
     <InvoiceWizardReviewSection
       number={number}
-      title={t("invoices.wizard.policies.title")}
+      title={t(policies.length ? "invoices.wizard.policies.title" : "invoices.wizard.policies.signatureLabel")}
       variant={variant}
       className={className}
     >
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          {t("invoices.wizard.policies.description")}
-        </p>
+        {policies.length > 0 && <>
+          <p className="text-sm text-muted-foreground">
+            {t("invoices.wizard.policies.description")}
+          </p>
 
-        <div
-          role="region"
-          aria-label={t("invoices.wizard.policies.title")}
-          tabIndex={0}
-          className="max-h-[min(40dvh,24rem)] overflow-y-auto overscroll-contain rounded-lg border border-border p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
-        >
-          <ol className="space-y-4">
-            {policies.map((policy, index) => (
-              <li key={policy.id} className="rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
-                <p className="text-sm font-semibold text-foreground">
-                  {index + 1}. {policy.title}
-                </p>
-                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
-                  {policy.body}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </div>
+          <div
+            role="region"
+            aria-label={t("invoices.wizard.policies.title")}
+            tabIndex={0}
+            className="max-h-[min(40dvh,24rem)] overflow-y-auto overscroll-contain rounded-lg border border-border p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+          >
+            <ol className="space-y-4">
+              {policies.map((policy, index) => (
+                <li key={policy.id} className="rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
+                  <p className="text-sm font-semibold text-foreground">
+                    {index + 1}. {policy.title}
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
+                    {policy.body}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-        <Label className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
+          <Label className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
+            <input
+              id="invoice-policies-agree"
+              type="checkbox"
+              className="mt-1 size-4"
+              checked={value.agreed}
+              disabled={disabled}
+              onChange={(event) => onChange({ ...value, agreed: event.target.checked })}
+            />
+            <span className="text-sm leading-snug text-foreground">
+              {t("invoices.wizard.policies.agreeLabel")}
+            </span>
+          </Label>
+        </>}
+
+        <Label className="flex items-center gap-3">
           <input
-            id="invoice-policies-agree"
+            id="invoice-skip-signature"
             type="checkbox"
-            className="mt-1 size-4"
-            checked={value.agreed}
+            className="size-4"
+            checked={value.skipSignature}
             disabled={disabled}
-            onChange={(event) => onChange({ ...value, agreed: event.target.checked })}
+            onChange={(event) => onChange({ ...value, skipSignature: event.target.checked })}
           />
-          <span className="text-sm leading-snug text-foreground">
-            {t("invoices.wizard.policies.agreeLabel")}
-          </span>
+          {t("invoices.wizard.policies.skipSignature")}
         </Label>
 
-        <div>
+        {!value.skipSignature && <div>
           <Label htmlFor="invoice-signature-pad" className="text-sm font-medium">
             {t("invoices.wizard.policies.signatureLabel")}{" "}
             <span className="text-destructive">*</span>
@@ -94,7 +109,7 @@ export function InvoicePoliciesStep({
               onChange={(signatureDataUrl) => onChange({ ...value, signatureDataUrl })}
             />
           </div>
-        </div>
+        </div>}
       </div>
     </InvoiceWizardReviewSection>
   );

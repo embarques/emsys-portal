@@ -1,3 +1,4 @@
+import type { CustomerSignature } from "@/lib/invoices/schemas/customer-signature.schema";
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 
 /** Payment / Cuadre outcome from the invoice create wizard payment step. */
@@ -14,6 +15,7 @@ export type InvoiceDailyIncomeContext = {
 };
 
 export type InvoiceFormSubmitContext = {
+  customerSignature?: CustomerSignature;
   dailyIncomeRegistration: DailyIncomeJournal | null;
   incomeStatementId: number | null;
   paymentSkipped: boolean;

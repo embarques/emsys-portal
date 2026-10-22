@@ -21,6 +21,7 @@ import {
   Layers,
   MapPinned,
   PackageMinus,
+  PackageCheck,
   PackageOpen,
   PackagePlus,
   Route,
@@ -197,6 +198,12 @@ const routesItem: NavigationItem = {
       href: "/daily-routes",
       icon: MapPinned,
       permission: PERMISSIONS.dispatchView,
+    },
+    {
+      labelKey: "navigation.items.deliveries",
+      href: "/deliveries",
+      icon: PackageCheck,
+      permission: PERMISSIONS.deliveriesView,
     },
     {
       labelKey: "navigation.items.predefinedRoutes",

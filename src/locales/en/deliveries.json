@@ -1,0 +1,104 @@
+{
+  "title": "Deliveries",
+  "description": "Barcodes on your daily routes that are waiting for delivery, ordered by province.",
+  "searchPlaceholder": "Search barcode, invoice, item, receiver, province, or container…",
+  "empty": "You have no pending deliveries.",
+  "noAccess": "You do not have access to view deliveries.",
+  "retry": "Retry",
+  "noProvince": "No province",
+  "columns": {
+    "barcode": "Barcode",
+    "invoice": "Invoice",
+    "name": "Name",
+    "container": "Container",
+    "status": "Status",
+    "receiverName": "Receiver name",
+    "address": "Address",
+    "province": "Province",
+    "phones": "Receiver phones"
+  },
+  "filters": {
+    "fields": {
+      "number": {
+        "label": "Barcode",
+        "placeholder": "Enter barcode…"
+      },
+      "invoice": {
+        "number": {
+          "label": "Invoice",
+          "placeholder": "Enter invoice…"
+        }
+      },
+      "receiver": {
+        "name": {
+          "label": "Receiver name",
+          "placeholder": "Enter receiver…"
+        },
+        "address": {
+          "state": {
+            "label": "Province",
+            "placeholder": "Enter province…"
+          },
+          "city": {
+            "label": "City",
+            "placeholder": "Enter city…"
+          }
+        }
+      },
+      "container": {
+        "name": {
+          "label": "Container",
+          "placeholder": "Enter container…"
+        }
+      },
+      "status": {
+        "name": {
+          "label": "Status",
+          "placeholder": "Enter status…"
+        }
+      }
+    }
+  },
+  "deliver": {
+    "action": "Deliver",
+    "title": "Deliver invoice items",
+    "description": "Complete the delivery once for all items on this invoice assigned to this daily route.",
+    "unavailable": "You do not have access to complete this delivery.",
+    "loadError": "Unable to load the items for this delivery.",
+    "retry": "Retry",
+    "changed": "The barcode assignment changed. Close and reopen the delivery to review the current items.",
+    "count": "{{items}} line items · {{barcodes}} barcodes",
+    "items": "Items covered by this delivery",
+    "status": "New status",
+    "statusPlaceholder": "Select a status",
+    "statusSearch": "Search statuses…",
+    "statusEmpty": "No statuses found.",
+    "statusHint": "Applied to every barcode listed above.",
+    "statusRequired": "Select the new status for these barcodes.",
+    "documents": "Delivery documents",
+    "documentsHint": "Add delivery documents, photos, or videos. Files are saved to this invoice as delivery_1, delivery_2, and so on, keeping their extensions. Uploaded files remain saved even if you close without delivering.",
+    "uploading": "Uploading…",
+    "uploadDocuments": "Upload documents",
+    "pendingDocuments": "Upload or remove the queued files before delivering.",
+    "terms": "Terms and conditions",
+    "termsLoadError": "Unable to load the terms and conditions. Retry before delivering.",
+    "noTerms": "There are no active terms and conditions.",
+    "agree": "The delivery receiver has read and agrees to the terms and conditions listed above.",
+    "agreementRequired": "The delivery receiver must agree to the terms and conditions.",
+    "receiver": "Delivery receiver",
+    "receiverHint": "Enter the person receiving the delivery. They can be different from the invoice receiver. Their signature is saved to the invoice documents.",
+    "invoiceReceiver": "Invoice receiver: {{name}}",
+    "sameAsInvoiceReceiver": "Same as invoice receiver",
+    "signerName": "Delivery receiver name",
+    "idNumber": "Delivery receiver ID number",
+    "signature": "Delivery receiver signature",
+    "signatureCoversTerms": "One signature confirms both: this person received the items listed above and agrees to the terms and conditions.",
+    "signatureCoversDelivery": "The signature confirms this person received the items listed above.",
+    "signatureSaved": "The delivery receiver signature is saved. Retry to finish updating the barcode status.",
+    "required": "This field is required.",
+    "signatureRequired": "Draw the delivery receiver’s signature before delivering.",
+    "submit": "Complete delivery",
+    "retryStatus": "Retry status update",
+    "saving": "Saving…"
+  }
+}

@@ -297,6 +297,7 @@ export function InvoiceCreateWizard({
         values,
         context: {
           ...context,
+          customerSignature: submitContext?.customerSignature,
           incomeStatement: incomeStatementId > 0 ? { id: incomeStatementId } : undefined,
           registeredInvoiceTotals,
         },

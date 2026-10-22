@@ -231,10 +231,11 @@
     },
     "policies": {
       "title": "Company policies",
-      "description": "Read each policy, confirm agreement, and sign before saving.",
+      "description": "Read each policy and confirm agreement before saving.",
       "agreeLabel": "I have read and agree to the policies listed above.",
       "loadError": "Unable to load invoice policies. Retry before saving the invoice.",
-      "signatureLabel": "Customer signature",
+      "skipSignature": "Skip signature",
+      "signatureLabel": "Authorized by / Sender signature",
       "signatureHint": "Sign with a mouse or finger. Clear and retry if needed.",
       "clearSignature": "Clear signature"
     },
@@ -675,6 +676,8 @@
     "title": "Documents",
     "overview": "Overview",
     "upload": "Upload documents",
+    "capturePhoto": "Take photo",
+    "takeVideo": "Record video",
     "takePhoto": "Take photo or video",
     "preview": "Preview",
     "closePreview": "Close preview",
