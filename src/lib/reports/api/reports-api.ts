@@ -119,6 +119,7 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
     expiresInHours: request.expiresInHours ?? 24,
     language: request.language,
     rate: request.rate,
+    signatureSelections: request.signatureSelections,
   };
 
   if (process.env.NODE_ENV !== "production") {

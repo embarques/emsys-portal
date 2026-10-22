@@ -85,7 +85,7 @@ import {
   usePreviewLegacyInvoiceSync,
   useSyncLegacyInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
-import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
+import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { useInvoiceFilterFields } from "@/lib/invoices/hooks/use-invoice-filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
@@ -585,7 +585,9 @@ export function InvoicesWorkspace() {
   const deleteInvoicesMutation = useDeleteInvoices();
   const previewLegacyInvoiceSyncMutation = usePreviewLegacyInvoiceSync();
   const syncLegacyInvoicesMutation = useSyncLegacyInvoices();
-  const { printInvoiceIds, isPrinting } = usePrintInvoices();
+  const [printInvoiceIds, setPrintInvoiceIds] = useState<string[]>([]);
+  const isPrinting = printInvoiceIds.length > 0;
+  const canPrintInvoices = hasPermission(PERMISSIONS.invoicesPrint.name, PERMISSIONS.invoicesPrint.resourceType);
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
   const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const viewedInvoiceNumber =
@@ -743,7 +745,7 @@ export function InvoicesWorkspace() {
 
   async function printSelectedInvoices() {
     const invoiceIds = selectedInvoices.map((invoice) => invoice.invoiceId).filter(Boolean);
-    await printInvoiceIds(invoiceIds);
+    if (canPrintInvoices && invoiceIds.length) setPrintInvoiceIds(invoiceIds);
   }
 
   async function confirmDelete() {
@@ -1330,7 +1332,7 @@ export function InvoicesWorkspace() {
             actions={
               <>
                 {documentsButton}
-                <Button variant="outline" size="sm" className={tableSelectionActionStyles.print} onClick={printSelectedInvoices} disabled={isPrinting}>
+                <Button variant="outline" size="sm" className={tableSelectionActionStyles.print} onClick={printSelectedInvoices} disabled={isPrinting || !canPrintInvoices}>
                   <Printer className="h-4 w-4" />
                   {isPrinting ? "Preparing…" : "Print"}
                 </Button>
@@ -1502,7 +1504,7 @@ export function InvoicesWorkspace() {
                 variant="outline"
                 size="sm"
                 onClick={printSelectedInvoices}
-                disabled={isPrinting}
+                disabled={isPrinting || !canPrintInvoices}
                 className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
               >
                 <Printer className="h-4 w-4" />
@@ -1575,6 +1577,7 @@ export function InvoicesWorkspace() {
       </Card>
       </div>
 
+      {printInvoiceIds.length > 0 && <InvoicePrintSignaturesDialog invoiceIds={printInvoiceIds} onClose={() => setPrintInvoiceIds([])} />}
       <InvoiceStagingDialog
         open={stagingOpen}
         onOpenChange={setStagingOpen}

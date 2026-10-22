@@ -36,6 +36,7 @@ Register these before `GET /v1/deliveries/{id}`; today `GET /v1/deliveries/assig
   "container": { "id": 3, "name": "C-3" },
   "status": { "id": 4, "name": "ALM-RD" },
   "route": { "id": "<daily route id>", "name": "1-64-26" },
+  "delivery": { "id": 5, "name": "Delivery 5" },
   "receiver": {
     "name": "Maria Perez",
     "address": { "address1": "Calle 1 #5", "apartment": "2B", "city": "Santiago", "state": "Santiago", "zipcode": "51000" },
@@ -46,40 +47,29 @@ Register these before `GET /v1/deliveries/{id}`; today `GET /v1/deliveries/assig
 
 Envelope: the standard paginated `{ success, data, total, page, resultsPerPage }`.
 
-## 2. Receiver signature — route exists; must accept the daily route id
+## 2. Receiver signature — barcode delivery ID
 
-**The DR daily route is the delivery.** Verified on live data (daily route `6aa44f19b2ff4651db4a3dee`, `1-64-26`, Sep 11 2026): the daily route has no delivery link, no `/deliveries` record exists for container `64-26`, and none of the container's 518 invoice barcodes has `delivery` set. Legacy `/deliveries` records (numeric id, same `trip-container` name, own employee list) are not created or linked by daily routes or barcode route assignment.
+`PUT /v1/deliveries/{deliveryId}/invoices/{invoiceId}/receiver/signature`
 
-```txt
-PUT /v1/deliveries/{dailyRouteId}/invoices/{invoiceId}/receiver/signature
-```
-
-- [ ] Accept the daily route id (24-character `/vehicle-routes` ObjectID) as the path's first id. The portal now sends the barcode `route.id`, not `delivery.id`.
-- [ ] Validate that the invoice has barcodes assigned to that daily route, and that the caller's employee is in that daily route's `employees`.
-- [ ] Optional: keep accepting a numeric legacy delivery id for older data, but don't require `barcode.delivery`.
+`deliveryId` is the numeric `delivery.id` on the selected barcode, not its DR `route.id`. An invoice can have items assigned to different deliveries. Review and status changes are scoped to both the selected daily route and selected delivery. Missing delivery assignment blocks collection.
 
 ```json
 {
+  "deliveryId": 5,
   "receiverSignature": {
     "signerName": "Pedro Ramirez",
     "idNumber": "001-1234567-8",
     "contentType": "image/png",
-    "data": "<complete base64 signature image, no data: prefix>"
+    "data": "<complete raw base64 PNG>"
   }
 }
 ```
 
-(`/receiver-signature` with a hyphen does not exist.)
+The API validates invoice membership in that barcode delivery and appends a private receipt with a generated signature ID, delivery ID/name, server signing date and collecting user. Identical retries for that delivery preserve the original receipt. Another delivery has its own receipt; recipients can differ from the invoice customer. No image is returned to the portal or stored as an extra public invoice document.
 
-**`signerName` / `idNumber` are the delivery receiver** — whoever physically received the merchandise. They can differ from the invoice receiver party; do not validate them against `invoice.receiver` and never write them into `invoice.receiver`.
+See the API's `docs/contracts/delivery-receiver-signature.md` and `invoice-print-signatures.md`. Existing delivery update permission applies. The response contains only invoiceId/deliveryId. Maximum 100 receipts and 8 MiB encoded receipt data per invoice; excess returns 422.
 
-**Required behavior (atomic, one request, server-side):**
-
-- **Always** save a `delivery_signature` invoice document for every delivery signature: the signature PNG, plus delivery receiver name, ID number, signing time, collecting user, and daily route id as document metadata.
-- **Also** store it as the invoice receiver signature when that field is empty. Never overwrite an existing invoice receiver signature.
-- The portal cannot see signatures on invoice responses and never makes either decision. Do not rely on a frontend existence check; concurrent drivers would race.
-- Document the response: the created document id, and whether the invoice receiver signature was set by this request.
-- The printed report ("Recibido por / Fecha / ID") reads the invoice receiver signature (the first delivery). Decide whether later deliveries should appear on it.
+Invoice batch printing opens one Choose signatures dialog (five rows per page). Sender-only is the initial batch default; applying latest receiver to all is explicit. Printing from a delivery defaults to the latest receipt matching barcode delivery.id. Users can choose a different saved receipt or none. The picker fetches only metadata in one batch request; print requests send signature IDs. Signature images and the actual signer's ID are loaded server-side only during PDF generation. No preview.
 
 ## 3. Status change — EXISTING invoice update
 

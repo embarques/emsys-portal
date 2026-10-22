@@ -56,6 +56,7 @@ export type ReportOutputFormat = "pdf" | "excel";
  *   `{ type: "loan", collection: "loans", filters: [{ field: "employee.id", operator: "eq", value: 12 }, { field: "transactionDate", operator: "gte", value: "2026-06-01" }, { field: "transactionDate", operator: "lte", value: "2026-09-15" }] }`
  */
 export type ReportRequest = {
+  signatureSelections?: import("@/lib/invoices/schemas/invoice-print.schema").InvoiceSignatureSelection[];
   /** Document type to render. */
   type: ReportType;
   /** Collection the `values` identifiers belong to. */
