@@ -67,7 +67,11 @@ import {
 import { buildPickupMapStops, type PickupMapStop } from "@/lib/orders/utils/pickup-map";
 import { assignManualStopNumber } from "@/lib/route-optimizer/stop-numbers";
 import { buildPickupRouteColors, getPickupRouteColor } from "@/lib/orders/utils/pickup-map-colors";
-import { buildPickupTruckMarkerUrl } from "@/lib/orders/utils/pickup-map-marker";
+import {
+  PICKUP_MARKER_BASE_SIZE,
+  buildPickupTruckMarkerUrl,
+  pickupMarkerSizeForZoom,
+} from "@/lib/orders/utils/pickup-map-marker";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
@@ -145,28 +149,14 @@ export type OrdersMapViewProps = {
 
 function buildMarkerIcon(
   maps: GoogleMapsCore,
-  options: { selected: boolean; color: string; size?: number },
+  options: { selected: boolean; color: string; size?: number; stopNumber?: number },
 ) {
-  const { selected, color, size = 36 } = options;
-  const scale = size / 48;
+  const { selected, color, size = PICKUP_MARKER_BASE_SIZE, stopNumber } = options;
 
   return {
-    url: buildPickupTruckMarkerUrl(color, selected),
+    url: buildPickupTruckMarkerUrl(color, selected, stopNumber),
     scaledSize: new maps.Size(size, size),
     anchor: new maps.Point(size / 2, size / 2),
-    // Keep stop numbers inside the cargo area, clear of the cab and wheels.
-    labelOrigin: new maps.Point(17 * scale, 22 * scale),
-  };
-}
-
-function buildMarkerLabel(stopNumber: number | undefined, size = 36) {
-  if (stopNumber === undefined) return null;
-
-  return {
-    text: String(stopNumber),
-    color: "#111827",
-    fontSize: `${(stopNumber >= 100 ? 9 : 11) * size / 48}px`,
-    fontWeight: "700",
   };
 }
 
@@ -227,7 +217,7 @@ export function OrdersMapView({
   const initializedSelectionRef = useRef(false);
   const stopListRef = useRef<HTMLUListElement | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [markerSize, setMarkerSize] = useState(36);
+  const [markerSize, setMarkerSize] = useState(PICKUP_MARKER_BASE_SIZE);
   const [mapError, setMapError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [unassignOpen, setUnassignOpen] = useState(false);
@@ -476,8 +466,7 @@ export function OrdersMapView({
     const map = mapRef.current;
     if (!mapReady || !map) return;
     const updateSize = () => {
-      const zoom = map.getZoom() ?? DEFAULT_MAP_ZOOM;
-      setMarkerSize(Math.max(18, Math.min(64, 36 * 2 ** ((zoom - DEFAULT_MAP_ZOOM) / 4))));
+      setMarkerSize(pickupMarkerSizeForZoom(map.getZoom() ?? DEFAULT_MAP_ZOOM, DEFAULT_MAP_ZOOM));
     };
     updateSize();
     const listener = map.addListener("zoom_changed", updateSize);
@@ -497,9 +486,10 @@ export function OrdersMapView({
           selected,
           size: markerSize,
           color: getPickupRouteColor(routeColors, binding.stop.routeId),
+          stopNumber,
         }),
       );
-      binding.marker.setLabel(buildMarkerLabel(stopNumber, markerSize));
+      binding.marker.setLabel(null);
       binding.marker.setTitle(
         stopNumber !== undefined
           ? t("orders.optimize.stopTitle", { number: stopNumber, name: binding.stop.senderName })
