@@ -54,10 +54,11 @@ function useOrdersQueryEnabled() {
 }
 
 export function useOrders(params: OrderListParams) {
+  const { companyId } = useAuth();
   const queryEnabled = useOrdersQueryEnabled();
 
   return useWorkspaceQuery({
-    queryKey: queryKeys.orders.list(params),
+    queryKey: [...queryKeys.orders.list(params), companyId],
     queryFn: () => fetchOrders(params),
     enabled: queryEnabled,
   });

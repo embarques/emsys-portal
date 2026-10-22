@@ -1,19 +1,20 @@
 {
-  "title": "Rutas heredadas",
-  "entity": "Ruta heredada",
-  "description": "Rutas traídas del sistema anterior, cada una con las ciudades y códigos postales que cubre.",
-  "add": "Agregar ruta heredada",
-  "edit": "Editar ruta heredada",
+  "title": "Rutas predefinidas",
+  "entity": "Ruta predefinida",
+  "description": "Grupos de ciudades y códigos postales para filtrar citas.",
+  "add": "Agregar ruta predefinida",
+  "edit": "Editar ruta predefinida",
   "editNamed": "Editar {{name}}",
   "deleteNamed": "Eliminar {{name}}",
-  "empty": "Aún no hay rutas heredadas.",
-  "confirmDelete": "¿Eliminar la ruta heredada {{name}}?",
+  "empty": "Aún no hay rutas predefinidas.",
+  "confirmDelete": "¿Eliminar la ruta predefinida {{name}}?",
   "retry": "Reintentar",
   "searchPlaceholder": "Buscar por nombre de ruta, ciudad o código postal…",
-  "mockNotice": "Datos de ejemplo: la API de rutas heredadas aún no está disponible. Los cambios se guardan solo en esta sesión del navegador y se reinician al recargar la página.",
   "fields": {
     "name": "Nombre de la ruta",
-    "content": "Ciudades / códigos postales"
+    "content": "Ciudades / códigos postales",
+    "cities": "Ciudades",
+    "zipcodes": "Códigos postales"
   },
   "form": {
     "details": "01 · Datos de la ruta",
@@ -46,5 +47,9 @@
         "placeholder": "Ingrese el ID…"
       }
     }
-  }
+  },
+  "all": "Todas las rutas",
+  "routeLabel": "RUTA",
+  "showMore": "+{{count}} más",
+  "showLess": "Mostrar menos"
 }

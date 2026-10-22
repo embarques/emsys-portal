@@ -121,8 +121,11 @@ import {
 } from "@/lib/orders/types";
 import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
 import { buildPickupRouteFilterRows } from "@/lib/orders/pickup-route-filter";
-import { LEGACY_ROUTE_FILTER_FIELD } from "@/lib/orders/legacy-route-filter";
-import { useLegacyRouteFilterOptions } from "@/lib/legacy-routes/hooks/use-legacy-routes";
+import { PREDEFINED_ROUTE_FILTER_FIELD } from "@/lib/orders/predefined-route-filter";
+import { PredefinedRouteFilterRow } from "@/components/orders/predefined-route-filter-row";
+import { PredefinedRouteDialog } from "@/components/predefined-routes/predefined-route-dialog";
+import { usePredefinedRouteWorkspace } from "@/lib/predefined-routes/hooks/use-predefined-route-workspace";
+import { usePredefinedRouteFilterOptions } from "@/lib/predefined-routes/hooks/use-predefined-routes";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { useLegacyLastSynced } from "@/lib/legacy-sync/use-legacy-last-synced";
@@ -447,10 +450,38 @@ export function OrdersWorkspace() {
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
-  const legacyRouteFilter = useLegacyRouteFilterOptions(
-    filtersOpen || filters.rows.some((row) => row.field === LEGACY_ROUTE_FILTER_FIELD && row.value.trim()),
+  const predefinedRouteFilter = usePredefinedRouteFilterOptions(
+    filtersOpen || filters.rows.some((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD && row.value.trim()),
   );
   const orderFilterFields = useOrderFilterFields();
+  const advancedFilterFields = orderFilterFields.filter((field) => field.field !== PREDEFINED_ROUTE_FILTER_FIELD);
+  const advancedRows = filters.rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD);
+  const selectedPredefinedRoute = filters.rows.find((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD)?.value ?? "";
+  const canCreatePredefinedRoute = hasPermission(PERMISSIONS.predefinedRoutesCreate.name, PERMISSIONS.predefinedRoutesCreate.resourceType);
+  function selectPredefinedRoute(value: string) {
+    setFilters((current) => ({ ...current, rows: [
+      ...current.rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD),
+      ...(value ? [{ id: "predefined-route", join: "and" as const, field: PREDEFINED_ROUTE_FILTER_FIELD, operator: "eq", value }] : []),
+    ] }));
+    setPage(1);
+  }
+  function changeAdvancedRows(rows: typeof filters.rows) {
+    setFilters((current) => ({ ...current, rows: [...rows, ...current.rows.filter((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD)] }));
+    setPage(1);
+  }
+  const predefinedRouteCreate = usePredefinedRouteWorkspace((route) => selectPredefinedRoute(String(route.id)));
+  const predefinedRouteRow = predefinedRouteFilter.canView ? (
+    <PredefinedRouteFilterRow
+      value={selectedPredefinedRoute}
+      options={predefinedRouteFilter.options}
+      loading={predefinedRouteFilter.isLoading}
+      error={predefinedRouteFilter.isError ? normalizeApiError(predefinedRouteFilter.error).message : undefined}
+      canCreate={canCreatePredefinedRoute}
+      onChange={selectPredefinedRoute}
+      onAdd={() => { setFiltersOpen(false); predefinedRouteCreate.edit(null); }}
+      onRetry={() => void predefinedRouteFilter.refetch()}
+    />
+  ) : null;
   const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const legacyTimestamps = useMemo(
     () => orders.map((order) => order.legacySyncedAt),
@@ -1149,6 +1180,8 @@ export function OrdersWorkspace() {
   );
 
   return (
+    <>
+    <PredefinedRouteDialog state={predefinedRouteCreate} />
     <div className="overflow-x-hidden">
       <section className="max-w-full space-y-5 overflow-x-hidden md:hidden">
         <div>
@@ -1239,20 +1272,18 @@ export function OrdersWorkspace() {
               >
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
-                  rows={filters.rows}
-                  fields={orderFilterFields}
+                  rows={advancedRows}
+                  fields={advancedFilterFields}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
                     pickupRoutes: assignRoutesLoading ? [] : assignRouteOptions,
-                    legacyRoutes: legacyRouteFilter.isLoading ? [] : legacyRouteFilter.options,
+                    predefinedRoutes: predefinedRouteFilter.isLoading ? [] : predefinedRouteFilter.options,
                     branches: branchesLoading ? [] : branchFilterOptionsById,
                     branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
                   }}
-                  onChange={(rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  }}
+                  onChange={changeAdvancedRows}
                 />
+                {predefinedRouteRow}
               </TableFilterPanel>
             </div>
           ) : null}
@@ -1511,20 +1542,18 @@ export function OrdersWorkspace() {
               >
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
-                  rows={filters.rows}
-                  fields={orderFilterFields}
+                  rows={advancedRows}
+                  fields={advancedFilterFields}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
                     pickupRoutes: assignRoutesLoading ? [] : assignRouteOptions,
-                    legacyRoutes: legacyRouteFilter.isLoading ? [] : legacyRouteFilter.options,
+                    predefinedRoutes: predefinedRouteFilter.isLoading ? [] : predefinedRouteFilter.options,
                     branches: branchesLoading ? [] : branchFilterOptionsById,
                     branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
                   }}
-                  onChange={(rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  }}
+                  onChange={changeAdvancedRows}
                 />
+                {predefinedRouteRow}
               </TableFilterPanel>
             }
           />
@@ -1942,5 +1971,6 @@ export function OrdersWorkspace() {
       </Dialog>
 
     </div>
+    </>
   );
 }

@@ -3,7 +3,7 @@
 import { MapPinned } from "lucide-react";
 
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
-import { LegacyRouteCitiesEditor } from "@/components/legacy-routes/legacy-route-cities-editor";
+import { PredefinedRouteCitiesEditor } from "@/components/predefined-routes/predefined-route-cities-editor";
 import {
   Dialog,
   DialogContent,
@@ -14,13 +14,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import type { useLegacyRouteWorkspace } from "@/lib/legacy-routes/hooks/use-legacy-route-workspace";
+import type { usePredefinedRouteWorkspace } from "@/lib/predefined-routes/hooks/use-predefined-route-workspace";
 import { useTranslation } from "@/lib/i18n";
 
-export function LegacyRouteDialog({
+export function PredefinedRouteDialog({
   state,
 }: {
-  state: ReturnType<typeof useLegacyRouteWorkspace>;
+  state: ReturnType<typeof usePredefinedRouteWorkspace>;
 }) {
   const { t } = useTranslation();
   const handleEnterNavigation = useFormEnterNavigation();
@@ -32,8 +32,8 @@ export function LegacyRouteDialog({
     <Dialog open={state.open} onOpenChange={state.setOpen}>
       <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
-          <DialogTitle>{t(state.editing ? "legacyRoutes.edit" : "legacyRoutes.add")}</DialogTitle>
-          <DialogDescription>{t("legacyRoutes.description")}</DialogDescription>
+          <DialogTitle>{t(state.editing ? "predefinedRoutes.edit" : "predefinedRoutes.add")}</DialogTitle>
+          <DialogDescription>{t("predefinedRoutes.description")}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={state.save}
@@ -44,15 +44,15 @@ export function LegacyRouteDialog({
             <FormSection
               variant="card"
               icon={MapPinned}
-              title={t("legacyRoutes.form.details")}
-              description={t("legacyRoutes.form.hint")}
+              title={t("predefinedRoutes.form.details")}
+              description={t("predefinedRoutes.form.hint")}
             >
               <div className="space-y-1">
-                <Label htmlFor="legacy-route-name">
-                  {t("legacyRoutes.fields.name")} <span className="text-destructive">*</span>
+                <Label htmlFor="predefined-route-name">
+                  {t("predefinedRoutes.fields.name")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="legacy-route-name"
+                  id="predefined-route-name"
                   autoFocus
                   required
                   disabled={state.busy}
@@ -61,7 +61,7 @@ export function LegacyRouteDialog({
                 />
                 {errors.name ? (
                   <p role="alert" className="text-sm text-destructive">
-                    {t("legacyRoutes.form.errors.nameRequired")}
+                    {t("predefinedRoutes.form.errors.nameRequired")}
                   </p>
                 ) : null}
               </div>
@@ -69,25 +69,25 @@ export function LegacyRouteDialog({
               <div className="space-y-2">
                 <div>
                   <p className="text-sm font-medium">
-                    {t("legacyRoutes.fields.content")} <span className="text-destructive">*</span>
+                    {t("predefinedRoutes.fields.content")} <span className="text-destructive">*</span>
                   </p>
-                  <p id="legacy-route-cities-hint" className="text-xs text-muted-foreground">
-                    {t("legacyRoutes.form.citiesHint")}
+                  <p id="predefined-route-cities-hint" className="text-xs text-muted-foreground">
+                    {t("predefinedRoutes.form.citiesHint")}
                   </p>
                 </div>
-                <LegacyRouteCitiesEditor
+                <PredefinedRouteCitiesEditor
                   form={state.form}
                   disabled={state.busy}
                   invalid={Boolean(citiesError)}
-                  describedBy="legacy-route-cities-hint"
+                  describedBy="predefined-route-cities-hint"
                 />
                 {citiesError ? (
                   <p role="alert" className="text-sm text-destructive">
-                    {t("legacyRoutes.form.errors.citiesRequired")}
+                    {t("predefinedRoutes.form.errors.citiesRequired")}
                   </p>
                 ) : hasRowErrors ? (
                   <p role="alert" className="text-sm text-destructive">
-                    {t("legacyRoutes.form.errors.cityComma")}
+                    {t("predefinedRoutes.form.errors.cityComma")}
                   </p>
                 ) : null}
               </div>

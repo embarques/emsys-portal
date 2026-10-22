@@ -455,9 +455,9 @@
           "label": "Ruta"
         }
       },
-      "legacyRoute": {
+      "predefinedRoute": {
         "id": {
-          "label": "Ruta heredada"
+          "label": "Ruta predefinida"
         }
       },
       "branch": {

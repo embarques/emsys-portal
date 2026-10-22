@@ -5,10 +5,8 @@ import {
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
 import {
-  LEGACY_ROUTE_FILTER_FIELD,
-  buildLegacyRouteAddressFilter,
-  type LegacyRouteFilterLookup,
-} from "@/lib/orders/legacy-route-filter";
+  PREDEFINED_ROUTE_FILTER_FIELD,
+} from "@/lib/orders/predefined-route-filter";
 import { resolvePickupSearchField } from "@/lib/orders/pickup-search";
 
 const NUMERIC_FILTER_FIELDS: ReadonlySet<string> = new Set([
@@ -92,21 +90,10 @@ function expandCompletedFilter(filter: ApiSearchFilter): ApiSearchFilter {
     : { field: "completed", operator: "eq", value: false };
 }
 
-type OrderFilterContext = {
-  /** Legacy routes referenced by `legacyRoute.id` rows, loaded before the search is built. */
-  legacyRoutes?: LegacyRouteFilterLookup;
-};
-
-function expandLegacyRouteFilter(filter: ApiSearchFilter, context: OrderFilterContext): ApiSearchFilterNode {
-  const route = context.legacyRoutes?.get(String(filter.value).trim());
-  if (!route) throw new Error("Legacy route not found.");
-  return buildLegacyRouteAddressFilter(route, filter.operator);
-}
-
-function expandOrderLeafFilter(filter: ApiSearchFilter, context: OrderFilterContext): ApiSearchFilterNode | null {
+function expandOrderLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {
   switch (filter.field) {
-    case LEGACY_ROUTE_FILTER_FIELD:
-      return expandLegacyRouteFilter(filter, context);
+    case PREDEFINED_ROUTE_FILTER_FIELD:
+      return { ...filter, value: Number(filter.value) };
     case "sender.zipRange":
       return expandZipRangeFilter(filter.value);
     case "dateRange":
@@ -125,14 +112,13 @@ function expandOrderLeafFilter(filter: ApiSearchFilter, context: OrderFilterCont
 
 export function expandOrderFilterNode(
   node: ApiSearchFilterNode,
-  context: OrderFilterContext = {},
 ): ApiSearchFilterNode | null {
   if (isApiSearchFilter(node)) {
-    return expandOrderLeafFilter(node, context);
+    return expandOrderLeafFilter(node);
   }
 
   const filters = node.filters
-    .map((entry) => expandOrderFilterNode(entry, context))
+    .map((entry) => expandOrderFilterNode(entry))
     .filter((entry): entry is ApiSearchFilterNode => entry != null);
 
   if (filters.length === 0) return null;

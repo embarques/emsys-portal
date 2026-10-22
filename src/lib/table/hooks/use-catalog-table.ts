@@ -18,11 +18,13 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 type UseCatalogTableOptions<T> = {
   fields: readonly TableFilterFieldDefinition[];
+  enabled?: boolean;
+  keepPrevious?: boolean;
   /** Locale prefix for field labels, e.g. `employeeTitles.filters.fields`. */
   keyPrefix: string;
   sort: string;
   queryKey: (params: CatalogPageParams) => QueryKey;
-  fetchPage: (params: CatalogPageParams) => Promise<PaginatedResult<T>>;
+  fetchPage: (params: CatalogPageParams, signal?: AbortSignal) => Promise<PaginatedResult<T>>;
   localizeOption?: (
     field: string,
     option: TableFilterFieldOption,
@@ -31,7 +33,7 @@ type UseCatalogTableOptions<T> = {
 };
 
 /** Search box, advanced filters and pagination for a small catalog, all applied by the API. */
-export function useCatalogTable<T>({ fields, keyPrefix, sort, queryKey, fetchPage, localizeOption }: UseCatalogTableOptions<T>) {
+export function useCatalogTable<T>({ fields, keyPrefix, sort, queryKey, fetchPage, localizeOption, enabled = true, keepPrevious = true }: UseCatalogTableOptions<T>) {
   const [query, setQueryState] = useState("");
   const [rows, setRowsState] = useState<TableFilterRowState[]>([]);
   const [open, setOpen] = useState(false);
@@ -54,8 +56,9 @@ export function useCatalogTable<T>({ fields, keyPrefix, sort, queryKey, fetchPag
 
   const pageQuery = useWorkspaceQuery({
     queryKey: queryKey(params),
-    queryFn: () => fetchPage(params),
-    placeholderData: keepPreviousData,
+    enabled,
+    queryFn: ({ signal }) => fetchPage(params, signal),
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
 
   const total = pageQuery.data?.total ?? 0;

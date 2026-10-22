@@ -4599,6 +4599,40 @@
           "$ref": "#/definitions/route.VehicleRef"
         }
       }
+    },
+    "predefinedroute.PredefinedRoute": {
+      "type": "object",
+      "properties": {
+        "cities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true
+        },
+        "content": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "zipcodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true
+        }
+      }
     }
   },
   "host": "api.embarqueros.com",
@@ -17967,6 +18001,446 @@
             "description": "OK",
             "schema": {
               "$ref": "#/definitions/responses.Success"
+            }
+          }
+        }
+      }
+    },
+    "/predefined-routes": {
+      "get": {
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Returns predefined route options for the current company tenant. For nested AND/OR filters, use Search (`POST /predefined-routes/search`).",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "predefined_route"
+        ],
+        "summary": "List predefined routes",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Filter: field name on the resource",
+            "name": "field",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Filter operator: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte",
+            "name": "operator",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Filter value",
+            "name": "value",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 1,
+            "description": "1-based page number",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 0,
+            "description": "Offset (MongoDB skip)",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 40,
+            "description": "Page size (MongoDB limit)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Sort fields as comma-separated field:direction pairs (example: name:asc)",
+            "name": "sort",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/predefinedroute.PredefinedRoute"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Requires predefined_route create permission. Send name and comma-separated content; the API preserves mixed entry order and derives read-only cities and zipcodes arrays.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "predefined_route"
+        ],
+        "summary": "Create an predefined route",
+        "parameters": [
+          {
+            "description": "Predefined route payload",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/predefinedroute.PredefinedRoute"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/predefinedroute.PredefinedRoute"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          }
+        }
+      }
+    },
+    "/predefined-routes/search": {
+      "post": {
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Accepted filter fields: content, createdAt, id, name, updatedAt.\nAdvanced search for predefined routes with nested AND/OR filter groups.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "predefined_route"
+        ],
+        "summary": "Search predefined routes",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "description": "1-based page number",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 0,
+            "description": "Offset (MongoDB skip)",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 40,
+            "description": "Page size (MongoDB limit)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "description": "Optional filter query (field, operator, filters, pagination, sort)",
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/query.Request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/predefinedroute.PredefinedRoute"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          }
+        }
+      }
+    },
+    "/predefined-routes/{id}": {
+      "get": {
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Requires predefined_route view permission.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "predefined_route"
+        ],
+        "summary": "Retrieve an predefined route",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "Predefined route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/predefinedroute.PredefinedRoute"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Requires predefined_route update permission. Send name and mixed city/ZIP content; cities and zipcodes are derived by the API.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "predefined_route"
+        ],
+        "summary": "Update an predefined route",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "Predefined route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Predefined route payload",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/predefinedroute.PredefinedRoute"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/predefinedroute.PredefinedRoute"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Requires predefined_route delete permission.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "predefined_route"
+        ],
+        "summary": "Delete an predefined route",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "Predefined route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/responses.Success"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
             }
           }
         }

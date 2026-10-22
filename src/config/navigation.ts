@@ -199,10 +199,10 @@ const routesItem: NavigationItem = {
       permission: PERMISSIONS.dispatchView,
     },
     {
-      labelKey: "navigation.items.legacyRoutes",
-      href: "/legacy-routes",
+      labelKey: "navigation.items.predefinedRoutes",
+      href: "/predefined-routes",
       icon: History,
-      permission: PERMISSIONS.dispatchView,
+      permission: PERMISSIONS.predefinedRoutesView,
     },
   ],
 };

@@ -25,7 +25,7 @@ import { InventorySuppliersWorkspace } from "@/components/inventory/inventory-su
 import { InvoicesWorkspace } from "@/components/invoices/invoices-workspace";
 import { InvoicePoliciesWorkspace } from "@/components/invoice-policies/invoice-policies-workspace";
 import { ItemsWorkspace } from "@/components/items/items-workspace";
-import { LegacyRoutesWorkspace } from "@/components/legacy-routes/legacy-routes-workspace";
+import { PredefinedRoutesWorkspace } from "@/components/predefined-routes/predefined-routes-workspace";
 import { BarcodesWorkspace } from "@/components/barcodes/barcodes-workspace";
 import { BarcodeStatusesWorkspace } from "@/components/barcodes/barcode-statuses-workspace";
 import { LabelUpdaterWorkspace } from "@/components/label-updater/label-updater-workspace";
@@ -62,7 +62,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/containers": ContainersWorkspace,
   "/routes": RouteManagerWorkspace,
   "/daily-routes": DailyRoutesWorkspace,
-  "/legacy-routes": LegacyRoutesWorkspace,
+  "/predefined-routes": PredefinedRoutesWorkspace,
   "/pickup-routes": DailyRoutesWorkspace,
   "/appointment-routes": DailyRoutesWorkspace,
   "/delivery-routes": DailyRoutesWorkspace,

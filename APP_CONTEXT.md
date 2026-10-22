@@ -195,7 +195,7 @@ A new daily route can start from a previous day’s configuration. Copying to an
 
 The same employee can be driver and appraiser, or driver, or appraiser, or helper.
 
-**Legacy routes** (`/legacy-routes`) are a reference catalog carried over from the legacy system: **ID**, **route name**, and **content** (a comma-separated list of the cities the route covers). They are not route crews or daily routes. Appointments can be filtered by a legacy route: the appointment's sender city (case-insensitive) or ZIP code must be on that route. Backend contract: `docs/legacy-routes-api-todo.md`.
+**Predefined routes** (`/predefined-routes`) are reusable named coverage filters, separate from route crews and daily routes. The list shows ID, name, Cities, and ZIP codes. The form retains one ordered mixed city/ZIP textbox list. Data is persisted through `/v1/predefined-routes` in the tenant `predefined_routes` collection. The appointment Route selector (below advanced filters) sends `predefinedRoute.id`; the API matches the customer sender address city OR ZIP and combines this restriction with existing filters using AND before counting/pagination. Add is available beside the selector; Edit/Delete are only in the catalog. Contract: `docs/predefined-routes.md`.
 
 TODO (backend) — route modeling (portal now follows this; align API + legacy data):
 

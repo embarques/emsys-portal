@@ -6,18 +6,18 @@ import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
-import { createEmptyLegacyRouteCity, type LegacyRouteFormValues } from "@/lib/legacy-routes/types";
-import { normalizeRouteCities, splitRouteCityInput } from "@/lib/legacy-routes/utils/route-cities";
+import { createEmptyPredefinedRouteCity, type PredefinedRouteFormValues } from "@/lib/predefined-routes/types";
+import { normalizeRouteCities, splitRouteCityInput } from "@/lib/predefined-routes/utils/route-cities";
 
-type LegacyRouteCitiesEditorProps = {
-  form: UseFormReturn<LegacyRouteFormValues>;
+type PredefinedRouteCitiesEditorProps = {
+  form: UseFormReturn<PredefinedRouteFormValues>;
   disabled?: boolean;
   invalid?: boolean;
   describedBy?: string;
 };
 
-/** Add, edit and remove the cities / ZIP codes a legacy route covers, one row each. */
-export function LegacyRouteCitiesEditor({ form, disabled, invalid, describedBy }: LegacyRouteCitiesEditorProps) {
+/** Add, edit and remove the cities / ZIP codes a predefined route covers, one row each. */
+export function PredefinedRouteCitiesEditor({ form, disabled, invalid, describedBy }: PredefinedRouteCitiesEditorProps) {
   const { t } = useTranslation();
   const { fields, append, insert, remove } = useFieldArray({ control: form.control, name: "cities" });
   const entries = useWatch({ control: form.control, name: "cities" }) ?? [];
@@ -56,11 +56,11 @@ export function LegacyRouteCitiesEditor({ form, disabled, invalid, describedBy }
               <span className="w-6 shrink-0 text-right text-xs tabular-nums text-muted-foreground">{index + 1}</span>
               <Input
                 {...registration}
-                id={`legacy-route-city-${index}`}
+                id={`predefined-route-city-${index}`}
                 disabled={disabled}
                 autoComplete="off"
-                placeholder={t("legacyRoutes.form.cityPlaceholder")}
-                aria-label={t("legacyRoutes.form.cityAria", { index: index + 1 })}
+                placeholder={t("predefinedRoutes.form.cityPlaceholder")}
+                aria-label={t("predefinedRoutes.form.cityAria", { index: index + 1 })}
                 aria-invalid={invalid || rowInvalid}
                 className="min-w-0 flex-1"
                 onChange={(event) => {
@@ -76,8 +76,8 @@ export function LegacyRouteCitiesEditor({ form, disabled, invalid, describedBy }
                 variant="ghost"
                 size="icon"
                 disabled={disabled || (fields.length <= 1 && !entries[0]?.value)}
-                title={t("legacyRoutes.form.removeCity")}
-                aria-label={t("legacyRoutes.form.removeCityAria", { index: index + 1 })}
+                title={t("predefinedRoutes.form.removeCity")}
+                aria-label={t("predefinedRoutes.form.removeCityAria", { index: index + 1 })}
                 className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => removeEntry(index)}
               >
@@ -94,13 +94,13 @@ export function LegacyRouteCitiesEditor({ form, disabled, invalid, describedBy }
           variant="outline"
           disabled={disabled}
           className="h-9 border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
-          onClick={() => append(createEmptyLegacyRouteCity())}
+          onClick={() => append(createEmptyPredefinedRouteCity())}
         >
           <Plus className="size-4" />
-          {t("legacyRoutes.form.addCity")}
+          {t("predefinedRoutes.form.addCity")}
         </Button>
         <p className="text-xs text-muted-foreground" aria-live="polite">
-          {t("legacyRoutes.form.cityCount", { count: filledCount })}
+          {t("predefinedRoutes.form.cityCount", { count: filledCount })}
         </p>
       </div>
     </div>

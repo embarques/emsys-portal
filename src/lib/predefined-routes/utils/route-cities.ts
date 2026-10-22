@@ -12,7 +12,7 @@ export function normalizeRouteCities(entries: readonly string[]): string[] {
   return cities;
 }
 
-/** Splits a legacy route `content` string into its city / ZIP entries. */
+/** Splits a predefined route `content` string into its city / ZIP entries. */
 export function parseRouteCities(content: string): string[] {
   return normalizeRouteCities(content.split(","));
 }

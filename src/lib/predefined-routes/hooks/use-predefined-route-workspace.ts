@@ -7,34 +7,34 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
-import { useLegacyRouteMutations } from "@/lib/legacy-routes/hooks/use-legacy-routes";
-import { legacyRouteFormSchema } from "@/lib/legacy-routes/schemas/legacy-route.schema";
+import { usePredefinedRouteMutations } from "@/lib/predefined-routes/hooks/use-predefined-routes";
+import { predefinedRouteFormSchema } from "@/lib/predefined-routes/schemas/predefined-route.schema";
 import {
-  areLegacyRouteFormValuesEquivalent,
-  createEmptyLegacyRouteForm,
-  legacyRouteToFormValues,
-  type LegacyRoute,
-  type LegacyRouteFormValues,
-} from "@/lib/legacy-routes/types";
+  arePredefinedRouteFormValuesEquivalent,
+  createEmptyPredefinedRouteForm,
+  predefinedRouteToFormValues,
+  type PredefinedRoute,
+  type PredefinedRouteFormValues,
+} from "@/lib/predefined-routes/types";
 
-export function useLegacyRouteWorkspace() {
+export function usePredefinedRouteWorkspace(onCreated?: (route: PredefinedRoute) => void) {
   const { t } = useTranslation();
   const feedback = useFeedback();
-  const mutations = useLegacyRouteMutations();
+  const mutations = usePredefinedRouteMutations();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<LegacyRoute | null>(null);
+  const [editing, setEditing] = useState<PredefinedRoute | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const form = useForm<LegacyRouteFormValues>({
-    resolver: zodResolver(legacyRouteFormSchema),
-    defaultValues: createEmptyLegacyRouteForm(),
+  const form = useForm<PredefinedRouteFormValues>({
+    resolver: zodResolver(predefinedRouteFormSchema),
+    defaultValues: createEmptyPredefinedRouteForm(),
   });
   const busy =
     mutations.create.isPending || mutations.update.isPending || mutations.remove.isPending;
 
-  function edit(item: LegacyRoute | null) {
+  function edit(item: PredefinedRoute | null) {
     setEditing(item);
     setError(null);
-    form.reset(item ? legacyRouteToFormValues(item) : createEmptyLegacyRouteForm());
+    form.reset(item ? predefinedRouteToFormValues(item) : createEmptyPredefinedRouteForm());
     setOpen(true);
   }
 
@@ -43,16 +43,17 @@ export function useLegacyRouteWorkspace() {
     setError(null);
     try {
       if (editing) {
-        if (areLegacyRouteFormValuesEquivalent(values, legacyRouteToFormValues(editing))) {
+        if (arePredefinedRouteFormValuesEquivalent(values, predefinedRouteToFormValues(editing))) {
           feedback.notifySuccess(t("common.form.noChanges"));
           setOpen(false);
           return;
         }
         const next = await mutations.update.mutateAsync({ id: editing.id, values });
-        feedback.notifyUpdated(t("legacyRoutes.entity"), next.name);
+        feedback.notifyUpdated(t("predefinedRoutes.entity"), next.name);
       } else {
         const next = await mutations.create.mutateAsync(values);
-        feedback.notifyAdded(t("legacyRoutes.entity"), next.name);
+        feedback.notifyAdded(t("predefinedRoutes.entity"), next.name);
+        onCreated?.(next);
       }
       setOpen(false);
     } catch (cause) {
@@ -60,12 +61,12 @@ export function useLegacyRouteWorkspace() {
     }
   });
 
-  async function remove(item: LegacyRoute) {
+  async function remove(item: PredefinedRoute) {
     if (busy) return;
-    if (!window.confirm(t("legacyRoutes.confirmDelete", { name: item.name }))) return;
+    if (!window.confirm(t("predefinedRoutes.confirmDelete", { name: item.name }))) return;
     try {
       await mutations.remove.mutateAsync(item.id);
-      feedback.notifyDeleted(t("legacyRoutes.entity"), 1);
+      feedback.notifyDeleted(t("predefinedRoutes.entity"), 1);
     } catch (cause) {
       feedback.notifyError(normalizeApiError(cause).message);
     }
