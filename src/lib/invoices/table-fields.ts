@@ -6,6 +6,7 @@ export const INVOICE_API_TABLE_FIELDS = [
   { field: "branch", defaultVisible: false },
   { field: "container" },
   { field: "cost", columnId: "total" },
+  { field: "itemCount" },
   { field: "createdAt", format: "date", defaultVisible: false },
   { field: "createdBy", defaultVisible: false },
   { field: "date", format: "date" },

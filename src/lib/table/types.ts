@@ -6,6 +6,8 @@ export type ColumnVisibilityDefinition = {
   defaultVisible?: boolean;
   /** Preferred width (px) when no saved column width exists. Defaults to 160. */
   defaultWidth?: number;
+  /** Insert a newly introduced column before this saved column, without moving existing choices. */
+  defaultBefore?: string;
 };
 
 export type DataTableColumn<T> = ColumnVisibilityDefinition & {

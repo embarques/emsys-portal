@@ -57,6 +57,7 @@ import {
   formatInvoiceCount,
   formatInvoiceDate,
   formatInvoiceMoney,
+  formatInvoiceItemCount,
   formatInvoicePartyAddressLine,
   formatInvoicePartyAddressLines,
   formatInvoiceTabLabel,
@@ -1051,6 +1052,14 @@ export function InvoicesWorkspace() {
       renderCell: (invoice) => (
         <InvoicePartyAddressCell party={getInvoicePrimaryReceiver(invoice)} />
       ),
+    },
+    {
+      id: "itemCount",
+      defaultBefore: "total",
+      label: t("invoices.columns.itemCount"),
+      sortable: false,
+      defaultWidth: 110,
+      renderCell: (invoice) => formatInvoiceItemCount(invoice.itemCount ?? 0),
     },
     {
       id: "total",

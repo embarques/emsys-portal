@@ -5,10 +5,11 @@ import { ChevronDown, ChevronUp, Minus, Pencil, Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
-import { formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
+import { formatInvoiceItemCount, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import { useTranslation } from "@/lib/i18n";
 import {
   computeInvoiceBalance,
+  getInvoiceFormItemCount,
   resolveLineTotal,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
@@ -38,7 +39,7 @@ function useInvoiceTotals(values: InvoiceFormValues) {
     const amountPaid = Number(values.amountPaid) || 0;
     const balance = computeInvoiceBalance(subtotal, discount, amountPaid);
 
-    return { lineRows, subtotal, discount, amountPaid, balance };
+    return { lineRows, itemCount: getInvoiceFormItemCount(values), subtotal, discount, amountPaid, balance };
   }, [values]);
 }
 
@@ -105,13 +106,13 @@ function SummaryDiscountControl({
   const isApplied = discountAmount > 0;
 
   if (!onDiscountChange) {
-    return isApplied ? (
+    return (
       <SummaryLineRow
         label={t("invoices.wizard.summary.discount")}
-        value={`−${formatInvoiceMoney(discountAmount)}`}
+        value={`${discountAmount > 0 ? "−" : ""}${formatInvoiceMoney(discountAmount)}`}
         muted
       />
-    ) : null;
+    );
   }
 
   function commitDiscount(raw: string) {
@@ -222,9 +223,8 @@ function InvoiceSummaryCard({
   const [summaryOpen, setSummaryOpen] = useState(defaultExpanded);
   const [detailsOpen, setDetailsOpen] = useState(true);
 
-  const { lineRows, subtotal, discount, amountPaid, balance } = useInvoiceTotals(values);
+  const { lineRows, itemCount, subtotal, discount, amountPaid, balance } = useInvoiceTotals(values);
   const invoiceLabel = values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber.trim() || t("invoices.wizard.summary.newInvoice");
-  const showPaidAdjustment = amountPaid > 0;
   const hasRegisteredCost = registeredCost != null && Number.isFinite(registeredCost);
   const registeredCostMismatch =
     hasRegisteredCost && Math.round(Math.abs(subtotal - (registeredCost as number)) * 100) / 100 >= 0.01;
@@ -290,17 +290,8 @@ function InvoiceSummaryCard({
               ) : null}
             </div>
 
-            {showPaidAdjustment && !showPayment ? (
-              <div className={cn("pt-1", summaryDividerClassName)}>
-                <SummaryLineRow
-                  label={t("invoices.wizard.summary.paid")}
-                  value={`−${formatInvoiceMoney(amountPaid)}`}
-                  muted
-                />
-              </div>
-            ) : null}
-
             <div className={cn("space-y-3 pt-1", summaryDividerClassName)}>
+              <SummaryLineRow label={t("invoices.wizard.summary.itemCount")} value={formatInvoiceItemCount(itemCount)} />
               <SummaryLineRow label={t("invoices.wizard.summary.subtotal")} value={formatInvoiceMoney(subtotal)} />
               {hasRegisteredCost ? (
                 <div className="space-y-1">
@@ -326,14 +317,12 @@ function InvoiceSummaryCard({
                 discountAmount={discount}
                 onDiscountChange={onDiscountChange}
               />
-              {showPayment ? (
-                <div className="text-emerald-700 dark:text-emerald-400">
-                  <SummaryLineRow
-                    label={t("invoices.wizard.summary.payment")}
-                    value={formatInvoiceMoney(amountPaid)}
-                  />
-                </div>
-              ) : null}
+              <div className="text-emerald-700 dark:text-emerald-400">
+                <SummaryLineRow
+                  label={showPayment ? t("invoices.wizard.summary.payment") : t("invoices.wizard.summary.paid")}
+                  value={formatInvoiceMoney(amountPaid)}
+                />
+              </div>
             </div>
 
             <div className={cn("flex items-end justify-between gap-3 pt-1", summaryDividerClassName)}>

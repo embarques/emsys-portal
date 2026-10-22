@@ -108,6 +108,14 @@ const invoiceCountFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+const invoiceItemCountFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 6,
+});
+
+export function formatInvoiceItemCount(count: number): string {
+  return invoiceItemCountFormatter.format(count);
+}
+
 export function formatInvoiceCount(count: number): string {
   return invoiceCountFormatter.format(count);
 }
