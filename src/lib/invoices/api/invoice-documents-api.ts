@@ -32,9 +32,11 @@ export async function uploadInvoiceDocument(
   invoiceId: string,
   file: File,
   progress: (percent: number) => void,
+  uploadId?: string,
 ): Promise<InvoiceDocument> {
   const form = new FormData();
   form.append("file", file);
+  if (uploadId) form.append("uploadId", uploadId);
   const response = await axiosInstance.post<Envelope<InvoiceDocument>>(
     path(invoiceId),
     form,

@@ -130,7 +130,7 @@ export function DeliveriesWorkspace() {
                       </td>
                       {(access.canDeliver || access.canPrint) && <td className="px-4 py-3 text-right">
                         {access.canDeliver && <Button type="button" size="sm" variant="outline"
-                          disabled={!row.invoiceId || !row.route?.id || !row.delivery?.id}
+                          disabled={!row.invoiceId || !row.delivery?.id}
                           onClick={() => setDeliverRow(row)}>
                           <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
                         </Button>}

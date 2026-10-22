@@ -1,6 +1,6 @@
 {
   "title": "Entregas",
-  "description": "Códigos de barras de tus rutas diarias pendientes de entrega, ordenados por provincia.",
+  "description": "Sus códigos de entrega pendientes asignados, ordenados por provincia.",
   "searchPlaceholder": "Buscar código, factura, artículo, destinatario, provincia o contenedor…",
   "empty": "No tienes entregas pendientes.",
   "noAccess": "No tienes acceso para ver las entregas.",
@@ -62,7 +62,7 @@
   "deliver": {
     "action": "Entregar",
     "title": "Entregar artículos de la factura",
-    "description": "Completa la entrega una sola vez para todos los artículos de esta factura asignados a esta ruta diaria.",
+    "description": "Complete los artículos seleccionados de esta factura y entrega.",
     "unavailable": "No tienes acceso para completar esta entrega.",
     "loadError": "No se pudieron cargar los artículos de esta entrega.",
     "retry": "Reintentar",
@@ -86,7 +86,7 @@
     "agree": "Quien recibe la entrega ha leído y acepta los términos y condiciones listados arriba.",
     "agreementRequired": "Quien recibe la entrega debe aceptar los términos y condiciones.",
     "receiver": "Quien recibe la entrega",
-    "receiverHint": "Ingresa la persona que recibe la entrega. Puede ser distinta del destinatario de la factura. Su firma se guarda en los documentos de la factura.",
+    "receiverHint": "Ingrese la persona que recibe la mercancía. Su firma queda privada en esta factura.",
     "invoiceReceiver": "Destinatario de la factura: {{name}}",
     "sameAsInvoiceReceiver": "Igual que el destinatario de la factura",
     "signerName": "Nombre de quien recibe",
@@ -100,5 +100,59 @@
     "submit": "Completar entrega",
     "retryStatus": "Reintentar actualización de estado",
     "saving": "Guardando…"
+  },
+  "wizard": {
+    "title": "Completar entrega",
+    "progress": "Progreso de la entrega",
+    "steps": {
+      "review": "Revisar",
+      "photos": "Fotos",
+      "signature": "Firma",
+      "finish": "Finalizar"
+    },
+    "headings": {
+      "review": "Revisar artículos",
+      "photos": "Fotos de la entrega",
+      "signature": "Firma de quien recibe",
+      "finish": "Revisar y completar"
+    },
+    "hints": {
+      "review": "Seleccione solo las piezas que el cliente recibe en esta entrega.",
+      "photos": "Fotografíe la mercancía entregada.",
+      "signature": "Quien recibe puede ser una persona diferente al cliente de la factura.",
+      "finish": "Verifique los artículos seleccionados, las fotos y la persona que recibe."
+    },
+    "summary": "Resumen de la entrega",
+    "invoice": "Factura",
+    "delivery": "Entrega",
+    "deliveryNumber": "Entrega #{{id}}",
+    "selectedCount": "{{count}} de {{total}} artículos seleccionados",
+    "remainingConduce": "Los artículos no seleccionados permanecen en {{pendingStatus}} para el próximo viaje.",
+    "selectItems": "Seleccione al menos un artículo para entregar.",
+    "back": "Atrás",
+    "continue": "Continuar",
+    "saving": "Guardando…",
+    "photoHint": "Tome fotos o arrastre archivos de imagen aquí.",
+    "takePhoto": "Tomar foto",
+    "gallery": "Elegir de la galería",
+    "photos": "Fotos de la entrega",
+    "photoLimits": "1–12 fotos · Hasta 25 MB cada una · Solo imágenes",
+    "photoRequired": "Agregue al menos una foto de la mercancía para continuar.",
+    "photoFailed": "Error al subir — reintente para continuar.",
+    "removePhoto": "Quitar {{name}}",
+    "readyToUpload": "Lista para subir",
+    "uploaded": "Subida",
+    "savedWithInvoice": "Las fotos se suben al continuar y se guardan con esta factura.",
+    "photoCount": "{{count}} fotos subidas",
+    "receiverId": "ID: {{id}}",
+    "validReceiverId": "Ingrese el ID de quien recibe (hasta 64 caracteres, sin saltos de línea).",
+    "automaticMetadata": "La fecha de firma y el empleado que recoge la firma se registran automáticamente.",
+    "signatureCaptured": "Firma capturada",
+    "newStatus": "Los artículos seleccionados cambiarán a",
+    "confirmReceived": "Complete solo cuando el cliente haya recibido la mercancía seleccionada.",
+    "retrySameReceipt": "El reintento envía el mismo recibo de forma segura. Si cambiaron los artículos o términos, vuelva a abrir el asistente para revisarlos.",
+    "successTitle": "Entrega completada",
+    "successHint": "{{count}} artículos están en {{deliveredStatus}}. El recibo y las fotos quedan vinculados a esta factura y entrega. Los demás permanecen en {{pendingStatus}}.",
+    "done": "Volver a entregas"
   }
 }

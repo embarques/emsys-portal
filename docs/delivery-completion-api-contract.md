@@ -1,89 +1,54 @@
-# Deliveries workspace: API contract
+# Delivery completion wizard
 
-Portal route `/deliveries` (Routes sidebar). Barcodes stays barcode management only; delivery happens here.
+The Deliver button in Routes → Deliveries opens four steps: items, photos, actual receiver/signature, confirmation. The layout adapts to phone, tablet and desktop. Existing signature capture and invoice signature printing are reused; no PDF preview is requested.
 
-## 1. Assigned barcodes list — NEW (not yet on the API)
+## Assignment and status identity
 
-```txt
-GET  /v1/deliveries/assigned-barcodes?page=&limit=&sort=
-POST /v1/deliveries/assigned-barcodes/search?page=&limit=&offset=   (Stripe-style query.Request body)
-```
+Assignment is numeric `barcode.delivery.id`, not the DR daily route ID. The authenticated user must resolve to an active employee in that delivery's `employees`. Tenant context and endpoint permissions remain required.
 
-Register these before `GET /v1/deliveries/{id}`; today `GET /v1/deliveries/assigned-barcodes` is captured by the `{id}` route (401 without a token), and `/search` returns 404.
+Status IDs are authoritative: pending **6** (currently CONDUCE), delivered **7** (currently ENTREGADO). Names and `prevStatus` text are never used to decide eligibility or transitions. Review returns the current catalog labels. Selected pieces become ID 7; unselected pieces stay ID 6 for the next trip. Invoice financial totals and the overall delivery status are unchanged.
 
-**Permission:** `canViewDelivery` (`delivery`).
+## Endpoints
 
-**Scoping (server-side, required):**
+- `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`: delivery view permission; active employee scope enforced in MongoDB, only pending pieces. Page limit 100. Default province/invoice/barcode order. Filtering, sorting, pagination and counts run in the database. Receiver list metadata excludes personal ID and signature images.
+- `GET /v1/deliveries/{deliveryId}/invoices/{invoiceId}/items`: delivery update + invoice view. Returns invoice/delivery identity, receiver, container, pending pieces and `pendingStatus`/`deliveredStatus`. Maximum 200 pending pieces per invoice/delivery; larger assignments must be split before collecting a receipt.
+- `POST /v1/deliveries/{deliveryId}/invoices/{invoiceId}/complete`: delivery update + invoice update. Atomic completion described below.
+- Existing `PUT /v1/deliveries/{deliveryId}/invoices/{invoiceId}/receiver/signature` remains available for standalone signature capture. The wizard uses the atomic completion endpoint, not a sequence of independent signature/status updates.
 
-- Resolve the authenticated user → employee via `employee.user.id`. No employee → empty list (not an error).
-- Include barcodes whose `route.id` is a DR daily route (`/vehicle-routes`) whose `employees` contains that employee.
-- Exclude delivered barcodes. The API owns the definition of "delivered" for the tenant (the portal does not hardcode a status name).
-- Read invoice-embedded barcodes (the source of truth), not only the `/barcodes` catalog.
-
-**Default sort:** `receiver.address.state:asc`, ties broken by `invoice.number`, then `number`, so one invoice's pieces stay together.
-
-**Searchable / filterable fields:** `number`, `name`, `invoice.number`, `receiver.name`, `receiver.address.state`, `receiver.address.city`, `container.name`, `status.name`.
-
-**Row shape** (barcode fields as in `barcode.Barcode`, plus the invoice receiver):
+Completion body (replace all sample IDs and image data):
 
 ```json
 {
-  "id": 12,
-  "barcodeId": "65f000000000000000000001",
-  "number": "000123",
-  "name": "Large box",
-  "invoice": { "id": "68f800000000000000000001", "number": "INV-77" },
-  "container": { "id": 3, "name": "C-3" },
-  "status": { "id": 4, "name": "ALM-RD" },
-  "route": { "id": "<daily route id>", "name": "1-64-26" },
-  "delivery": { "id": 5, "name": "Delivery 5" },
-  "receiver": {
-    "name": "Maria Perez",
-    "address": { "address1": "Calle 1 #5", "apartment": "2B", "city": "Santiago", "state": "Santiago", "zipcode": "51000" },
-    "phones": [{ "number": "8095550101", "displayNumber": "(809) 555-0101", "type": "mobile", "isPrimary": true }]
-  }
-}
-```
-
-Envelope: the standard paginated `{ success, data, total, page, resultsPerPage }`.
-
-## 2. Receiver signature — barcode delivery ID
-
-`PUT /v1/deliveries/{deliveryId}/invoices/{invoiceId}/receiver/signature`
-
-`deliveryId` is the numeric `delivery.id` on the selected barcode, not its DR `route.id`. An invoice can have items assigned to different deliveries. Review and status changes are scoped to both the selected daily route and selected delivery. Missing delivery assignment blocks collection.
-
-```json
-{
-  "deliveryId": 5,
+  "requestId": "1331d28d-846d-42f4-8c99-a828d8f482ae",
+  "barcodeIds": ["68f800000000000000000011"],
+  "documentIds": ["68f800000000000000000021"],
+  "policyIds": [1],
+  "agreed": true,
   "receiverSignature": {
     "signerName": "Pedro Ramirez",
     "idNumber": "001-1234567-8",
     "contentType": "image/png",
-    "data": "<complete raw base64 PNG>"
+    "data": "<complete raw base64 image>"
   }
 }
 ```
 
-The API validates invoice membership in that barcode delivery and appends a private receipt with a generated signature ID, delivery ID/name, server signing date and collecting user. Identical retries for that delivery preserve the original receipt. Another delivery has its own receipt; recipients can differ from the invoice customer. No image is returned to the portal or stored as an extra public invoice document.
+The receiver ID belongs to the actual signer, independently of the invoice customer. The API supplies signing time, collector and receipt ID. Active policy IDs must match current policy records; agreement is required when policies exist. Send 1–200 unique barcode ObjectIDs and 1–12 unique uploaded image document IDs. All must belong to this invoice/delivery; images must have been uploaded by the collecting user. Completion updates embedded pieces and barcode catalog, associates photos, saves the private receipt and writes activity in one transaction. Missing/stale source or catalog records fail closed with 409; nothing partially commits.
 
-See the API's `docs/contracts/delivery-receiver-signature.md` and `invoice-print-signatures.md`. Existing delivery update permission applies. The response contains only invoiceId/deliveryId. Maximum 100 receipts and 8 MiB encoded receipt data per invoice; excess returns 422.
+Use the same UUID and exact payload after an uncertain response. Identical retries return the original receipt; a changed payload under that UUID returns 409. The portal retains uploaded photos, reloads pending items and requires a fresh signature after a definitive conflict.
 
-Invoice batch printing opens one Choose signatures dialog (five rows per page). Sender-only is the initial batch default; applying latest receiver to all is explicit. Printing from a delivery defaults to the latest receipt matching barcode delivery.id. Users can choose a different saved receipt or none. The picker fetches only metadata in one batch request; print requests send signature IDs. Signature images and the actual signer's ID are loaded server-side only during PDF generation. No preview.
+Response data contains only `invoiceId`, numeric `deliveryId`, `signatureId`, and `deliveredCount`. Signature image bytes are never included in read or completion responses. Existing receipt limits (100 receipts / 8 MiB encoded receipt data per invoice) still apply.
 
-## 3. Status change — EXISTING invoice update
+## Photos and printing
 
-The portal applies the driver-selected status (from `GET /v1/barcodes/status-options`) to the group's barcodes through `PUT /v1/invoices/{id}` with patched `invoiceDetails[].barcodes[].status`, the same invoice-embedded path used elsewhere. Only barcodes not already at that status are sent; nothing is sent when all match. This requires `canUpdateInvoice`. The API should keep the `/barcodes` catalog in sync and drop delivered rows from the assigned list.
+Upload through `POST /v1/invoices/{invoiceId}/documents` multipart `file`, with optional stable UUID `uploadId` per photo. Existing clients may omit it. Identical upload retries return the existing document; conflicting reuse returns 409. Upload identity/hash remain private. Original image bytes are preserved and the existing 25 MiB per-file limit applies. The wizard uses a unique filename and upload UUID, avoiding attachment-directory scans and sequence allocation.
 
-Order: signature first, then status. If the status write fails, the portal retries only the status; it does not resend the signature.
+Successful uploads are retained when a later upload or completion fails. Cancelling or removing a photo from the wizard does not delete an already uploaded invoice attachment. Completion links only selected uploaded photos. Camera/gallery controls accept images, with local thumbnail previews. Uploads are sequential and bounded to 12.
 
-## 4. Delivery documents — EXISTING
+After success, Print uses the existing metadata-only signature picker, initially choosing the latest receipt for this numeric delivery. Users may select another receipt or sender-only. Signature images and actual signer ID are loaded only server-side for PDF generation.
 
-`POST /v1/invoices/{id}/documents`, named `delivery_N` with the original extension. **Follow-up:** atomic per-invoice sequence allocation with a durable high-water mark after deletions.
+## Rollout and validation
 
-## Portal permissions
+Deploy the API before the Portal. Existing tenant startup calls `EnsureIndexes`; restart successfully to install the numeric status/delivery source index and partial unique `(invoiceId, uploadId)` attachment index. No new permission names or production data migration is required. Both status catalog records 6 and 7 must exist. No production data was modified during implementation.
 
-| Action | Grants |
-| --- | --- |
-| See Deliveries | `canViewDelivery` |
-| Deliver (group review, documents, signature, status) | `canUpdateDelivery`, `canViewInvoice`, `canUpdateInvoice` |
+Isolated local MongoDB regression fixtures cover partial completion, replay/concurrency, rollback, foreign photos/deliveries, employee/tenant scope and renamed status labels. A representative fixture with 2,003 detail rows produced a 25-row / 14,210-byte page using four database commands and the numeric status/delivery index (about 7.5 ms on the local test machine). This is a local observation, not a production latency guarantee or a before/after speed claim.

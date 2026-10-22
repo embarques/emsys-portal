@@ -61,7 +61,7 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrin
         </dl>
       ) : null}
       {canDeliver ? (
-        <Button type="button" className="mt-3 h-11 w-full" disabled={!row.invoiceId || !row.route?.id || !row.delivery?.id} onClick={() => onDeliver(row)}>
+        <Button type="button" className="mt-3 h-11 w-full" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => onDeliver(row)}>
           <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
         </Button>
       ) : null}
