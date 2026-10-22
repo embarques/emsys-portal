@@ -97,12 +97,24 @@ export function formatActiveRouteRouteName(
   return routeId || embeddedName || linked.id || emptyValue;
 }
 
+/** A conduce is a delivery daily route (`routeType === "delivery"`). */
+function isConduceDailyRoute(record: ActiveRoute): boolean {
+  return record.routeType === "delivery";
+}
+
+function formatConduceRecordName(record: ActiveRoute): string {
+  return String(record.name ?? "").trim();
+}
+
 export function formatActiveRouteRowLabel(
   record: ActiveRoute | null | undefined,
   emptyValue = "—",
   t?: (key: string) => string,
 ): string {
   if (!record) return emptyValue;
+  if (isConduceDailyRoute(record)) {
+    return formatConduceRecordName(record) || emptyValue;
+  }
   return formatActiveRouteReferenceLabel(record, t, emptyValue);
 }
 
@@ -140,6 +152,7 @@ export function formatActiveRouteScheduleLabel(
 
 /**
  * Human-readable pickup/delivery route reference: schedule · route manager name · container.
+ * Delivery conduces use the stored `{trip}-{container}` name instead.
  * Used in assignment pickers, order route columns, and feedback toasts.
  */
 export function formatActiveRouteReferenceLabel(
@@ -147,6 +160,10 @@ export function formatActiveRouteReferenceLabel(
   t?: (key: string) => string,
   emptyValue = "—",
 ): string {
+  if (isConduceDailyRoute(record)) {
+    return formatConduceRecordName(record) || emptyValue;
+  }
+
   const schedule = formatActiveRouteScheduleLabel(record, t, "");
   const routeName = record.route?.name?.trim();
   const container = record.container?.name?.trim();

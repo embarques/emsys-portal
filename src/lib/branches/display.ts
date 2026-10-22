@@ -55,11 +55,22 @@ export function getBranchCodeBadgeClass(code: string, branches: BranchRefWithTyp
   return "border-border bg-muted text-muted-foreground";
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** True when the branch name already ends with `(CODE)`, so we should not append it again. */
+function nameIncludesBranchCode(name: string, code: string): boolean {
+  return new RegExp(`\\(\\s*${escapeRegExp(code)}\\s*\\)$`, "i").test(name);
+}
+
 export function formatBranchFilterLabel(branch: Pick<Branch, "id" | "name" | "code">): string {
   const name = branch.name.trim();
   const code = branch.code.trim();
 
-  if (name && code) return `${name} (${code})`;
+  if (name && code) {
+    return nameIncludesBranchCode(name, code) ? name : `${name} (${code})`;
+  }
   return name || code || `Branch ${branch.id}`;
 }
 
