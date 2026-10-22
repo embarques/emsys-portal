@@ -9,7 +9,7 @@ import {
 import { parseAssignedDeliveryBarcodes } from "@/lib/deliveries/schemas/assigned-delivery-barcode.schema";
 import type { AssignedDeliveryBarcode } from "@/lib/deliveries/types";
 
-/** The API scopes rows to the authenticated user's assigned numeric deliveries and includes only CONDUCE barcodes. */
+/** The API returns all tenant CONDUCE barcodes with delivery-view permission; no employee link is required. */
 export function fetchAssignedDeliveryBarcodesPage(
   params: CatalogPageParams,
   signal?: AbortSignal,

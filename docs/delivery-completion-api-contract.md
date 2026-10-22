@@ -4,13 +4,13 @@ The Deliver button in Routes → Deliveries opens four steps: items, photos, act
 
 ## Assignment and status identity
 
-Assignment is numeric `barcode.delivery.id`, not the DR daily route ID. The authenticated user must resolve to an active employee in that delivery's `employees`. Tenant context and endpoint permissions remain required.
+Assignment is numeric `barcode.delivery.id`, not the DR daily route ID. The list is visible to every authenticated user with delivery-view permission in the tenant; it does not require an employee link or crew membership. Route-only assignments are included even without numeric `delivery.id`. Tenant isolation and endpoint permissions remain required. Numeric-delivery review/completion retain their existing assignment validation; listing a route-only barcode does not invent a numeric delivery ID.
 
 Status IDs are authoritative: pending **6** (currently CONDUCE), delivered **7** (currently ENTREGADO). Names and `prevStatus` text are never used to decide eligibility or transitions. Review returns the current catalog labels. Selected pieces become ID 7; unselected pieces stay ID 6 for the next trip. Invoice financial totals and the overall delivery status are unchanged.
 
 ## Endpoints
 
-- `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`: delivery view permission; active employee scope enforced in MongoDB, only pending pieces. Page limit 100. Default province/invoice/barcode order. Filtering, sorting, pagination and counts run in the database. Receiver list metadata excludes personal ID and signature images.
+- `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`: delivery view permission; all tenant pending pieces, without employee/crew filtering. Page limit 100. Default province/invoice/barcode order. Filtering, sorting, pagination and counts run in the database. Receiver list metadata excludes personal ID and signature images.
 - `GET /v1/deliveries/{deliveryId}/invoices/{invoiceId}/items`: delivery update + invoice view. Returns invoice/delivery identity, receiver, container, pending pieces and `pendingStatus`/`deliveredStatus`. Maximum 200 pending pieces per invoice/delivery; larger assignments must be split before collecting a receipt.
 - `POST /v1/deliveries/{deliveryId}/invoices/{invoiceId}/complete`: delivery update + invoice update. Atomic completion described below.
 - Existing `PUT /v1/deliveries/{deliveryId}/invoices/{invoiceId}/receiver/signature` remains available for standalone signature capture. The wizard uses the atomic completion endpoint, not a sequence of independent signature/status updates.
@@ -51,4 +51,4 @@ After success, Print uses the existing metadata-only signature picker, initially
 
 Deploy the API before the Portal. Existing tenant startup calls `EnsureIndexes`; restart successfully to install the numeric status/delivery source index and partial unique `(invoiceId, uploadId)` attachment index. No new permission names or production data migration is required. Both status catalog records 6 and 7 must exist. No production data was modified during implementation.
 
-Isolated local MongoDB regression fixtures cover partial completion, replay/concurrency, rollback, foreign photos/deliveries, employee/tenant scope and renamed status labels. A representative fixture with 2,003 detail rows produced a 25-row / 14,210-byte page using four database commands and the numeric status/delivery index (about 7.5 ms on the local test machine). This is a local observation, not a production latency guarantee or a before/after speed claim.
+Isolated local MongoDB regression fixtures cover partial completion, replay/concurrency, rollback, foreign photos/deliveries, employee/tenant scope and renamed status labels. A representative fixture with 2,003 detail rows verifies a bounded 25-row page, two database commands and use of the numeric status/delivery index. See the PR validation for the measured local result; this is not a production latency guarantee.

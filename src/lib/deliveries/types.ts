@@ -17,7 +17,7 @@ export type DeliveryReceiver = {
   phones: DeliveryReceiverPhone[];
 };
 
-/** A pending barcode on one of the signed-in user's daily routes, with its invoice receiver. */
+/** A tenant pending barcode with its invoice receiver; crew membership does not limit visibility. */
 export type AssignedDeliveryBarcode = Barcode & {
   receiver: DeliveryReceiver | null;
 };

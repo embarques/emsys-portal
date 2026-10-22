@@ -1,6 +1,6 @@
 {
   "title": "Deliveries",
-  "description": "Your assigned pending delivery barcodes, ordered by province.",
+  "description": "All pending delivery barcodes, ordered by province.",
   "searchPlaceholder": "Search barcode, invoice, item, receiver, province, or container…",
   "empty": "You have no pending deliveries.",
   "noAccess": "You do not have access to view deliveries.",
