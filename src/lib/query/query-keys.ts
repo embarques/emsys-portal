@@ -44,10 +44,10 @@ export const queryKeys = {
     detail: (id: number) => ["invoice-policies", "detail", id] as const,
     page: (params: CatalogPageParams) => ["invoice-policies", "page", params] as const,
   },
-  legacyRoutes: {
-    all: ["legacy-routes"] as const,
-    page: (params: CatalogPageParams) => ["legacy-routes", "page", params] as const,
-    options: () => ["legacy-routes", "options"] as const,
+  predefinedRoutes: {
+    all: ["predefined-routes"] as const,
+    page: (params: CatalogPageParams) => ["predefined-routes", "page", params] as const,
+    options: () => ["predefined-routes", "options"] as const,
   },
   api: {
     health: () => ["api", "health"] as const,

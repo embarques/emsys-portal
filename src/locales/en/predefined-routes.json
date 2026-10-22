@@ -1,19 +1,20 @@
 {
-  "title": "Legacy routes",
-  "entity": "Legacy route",
-  "description": "Routes carried over from the legacy system, each with the cities and ZIP codes it covers.",
-  "add": "Add legacy route",
-  "edit": "Edit legacy route",
+  "title": "Predefined routes",
+  "entity": "Predefined route",
+  "description": "Named groups of cities and ZIP codes used to filter appointments.",
+  "add": "Add predefined route",
+  "edit": "Edit predefined route",
   "editNamed": "Edit {{name}}",
   "deleteNamed": "Delete {{name}}",
-  "empty": "No legacy routes yet.",
-  "confirmDelete": "Delete legacy route {{name}}?",
+  "empty": "No predefined routes yet.",
+  "confirmDelete": "Delete predefined route {{name}}?",
   "retry": "Retry",
   "searchPlaceholder": "Search by route name, city, or ZIP…",
-  "mockNotice": "Sample data: the legacy routes API is not available yet. Changes are kept only in this browser session and reset when the page reloads.",
   "fields": {
     "name": "Route name",
-    "content": "Cities / ZIP codes"
+    "content": "Cities / ZIP codes",
+    "cities": "Cities",
+    "zipcodes": "ZIP codes"
   },
   "form": {
     "details": "01 · Route details",
@@ -46,5 +47,9 @@
         "placeholder": "Enter ID…"
       }
     }
-  }
+  },
+  "all": "All routes",
+  "routeLabel": "ROUTE",
+  "showMore": "+{{count}} more",
+  "showLess": "Show less"
 }

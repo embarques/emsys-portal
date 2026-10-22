@@ -4,8 +4,8 @@ import enEmployeeDepartments from "@/locales/en/employee-departments.json";
 import esEmployeeDepartments from "@/locales/es/employee-departments.json";
 import enInvoicePolicies from "@/locales/en/invoice-policies.json";
 import esInvoicePolicies from "@/locales/es/invoice-policies.json";
-import enLegacyRoutes from "@/locales/en/legacy-routes.json";
-import esLegacyRoutes from "@/locales/es/legacy-routes.json";
+import enPredefinedRoutes from "@/locales/en/predefined-routes.json";
+import esPredefinedRoutes from "@/locales/es/predefined-routes.json";
 import type { LanguagePreference } from "@/lib/configuration/types";
 
 import enCommon from "@/locales/en/common.json";
@@ -88,7 +88,7 @@ const catalogs: Record<Locale, MessageTree> = {
     employeeTitles: enEmployeeTitles,
     employeeDepartments: enEmployeeDepartments,
     invoicePolicies: enInvoicePolicies,
-    legacyRoutes: enLegacyRoutes,
+    predefinedRoutes: enPredefinedRoutes,
     branches: enBranches,
     vehicles: enVehicles,
     roles: enRoles,
@@ -119,7 +119,7 @@ const catalogs: Record<Locale, MessageTree> = {
     employeeTitles: esEmployeeTitles,
     employeeDepartments: esEmployeeDepartments,
     invoicePolicies: esInvoicePolicies,
-    legacyRoutes: esLegacyRoutes,
+    predefinedRoutes: esPredefinedRoutes,
     branches: esBranches,
     vehicles: esVehicles,
     roles: esRoles,

@@ -2,6 +2,10 @@ import type { Permission } from "@/lib/auth/types/permission";
 
 /** Portal page gates — aligned with emsys-api permission seed where applicable. */
 export const PERMISSIONS = {
+  predefinedRoutesView: { name: "canViewPredefinedRoute", resourceType: "predefined_route" },
+  predefinedRoutesCreate: { name: "canCreatePredefinedRoute", resourceType: "predefined_route" },
+  predefinedRoutesUpdate: { name: "canUpdatePredefinedRoute", resourceType: "predefined_route" },
+  predefinedRoutesDelete: { name: "canDeletePredefinedRoute", resourceType: "predefined_route" },
   inventoryWorkflowRead: { name: "inventory.read", resourceType: "inventory" },
   dashboardView: { name: "canViewDashboard", resourceType: "dashboard" },
   clientsView: { name: "canViewCustomer", resourceType: "customer" },

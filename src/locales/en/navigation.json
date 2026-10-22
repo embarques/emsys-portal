@@ -36,7 +36,7 @@
     "routeGroups": "Route crews",
     "routeCrews": "Route crews",
     "dailyRoutes": "Daily routes",
-    "legacyRoutes": "Legacy routes",
+    "predefinedRoutes": "Predefined routes",
     "pickupRoutes": "Routes",
     "orderRoutes": "Appointment routes",
     "deliveryRoutes": "Delivery routes",
