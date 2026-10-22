@@ -99,6 +99,7 @@ type LatLngBoundsLiteral = {
 
 type GoogleMapInstance = {
   fitBounds: (bounds: LatLngBoundsLiteral, padding?: number) => void;
+  panTo: (center: LatLngLiteral) => void;
   setCenter: (center: LatLngLiteral) => void;
   setZoom: (zoom: number) => void;
   getZoom: () => number | undefined;
@@ -340,6 +341,15 @@ export function OrdersMapView({
         ? current.filter((id) => id !== orderRecordId)
         : [...current, orderRecordId],
     );
+  }
+
+  function focusStopOnMap(stop: PickupMapStop) {
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo({ lat: stop.lat, lng: stop.lng });
+    if ((map.getZoom() ?? DEFAULT_MAP_ZOOM) < 14) {
+      map.setZoom(14);
+    }
   }
 
   // Default every mapped stop to selected on first load, then keep selection pruned to the plotted set.
@@ -873,7 +883,10 @@ export function OrdersMapView({
                     <li key={stop.orderRecordId} className="flex items-stretch gap-2">
                       <button
                         type="button"
-                        onClick={() => toggleMapSelection(stop.orderRecordId)}
+                        onClick={() => {
+                          toggleMapSelection(stop.orderRecordId);
+                          focusStopOnMap(stop);
+                        }}
                         aria-pressed={selected}
                         className={cn(
                           "flex min-w-0 flex-1 items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left shadow-sm ring-1 transition",
