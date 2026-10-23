@@ -8,8 +8,8 @@ import {
   CheckCircle2,
   PackageCheck,
   Printer,
-  User,
 } from "lucide-react";
+import { DeliveryBalanceStep } from "@/components/deliveries/delivery-balance-step";
 import { DeliveryReviewStep } from "@/components/deliveries/delivery-review-step";
 import { DeliverySignatureStep } from "@/components/deliveries/delivery-signature-step";
 import { DeliveryFinishStep } from "@/components/deliveries/delivery-finish-step";
@@ -47,7 +47,7 @@ export function DeliveryWizard({
   useEffect(() => {
     heading.current?.focus();
   }, [state.step]);
-  const steps = ["review", "photos", "signature", "finish"] as const;
+  const steps = ["balance", "review", "photos", "signature", "finish"] as const;
   const close = () => {
     if (!state.busy) {
       if (state.finished) onDelivered();
@@ -62,13 +62,14 @@ export function DeliveryWizard({
   ]
     .filter(Boolean)
     .join(", ");
+  const WorkflowContainer = state.step === 0 ? "div" : "form";
   const locked = state.busy || state.locked;
 
   function progress(vertical = false) {
     return (
       <ol
         aria-label={t("deliveries.wizard.progress")}
-        className={vertical ? "space-y-6" : "grid grid-cols-4 gap-2"}
+        className={vertical ? "space-y-6" : "grid grid-cols-5 gap-2"}
       >
         {steps.map((step, index) => (
           <li
@@ -76,10 +77,10 @@ export function DeliveryWizard({
             aria-current={index === state.step ? "step" : undefined}
             className={cn(
               vertical
-                ? "flex items-center gap-3"
-                : "flex flex-col items-center gap-2",
+                ? "flex items-center gap-3 rounded-lg px-3 py-2"
+                : "flex flex-col items-center gap-2 rounded-lg px-1 py-2",
               index === state.step
-                ? "font-semibold text-primary"
+                ? "bg-accent font-semibold text-accent-foreground"
                 : "text-muted-foreground",
             )}
           >
@@ -88,7 +89,7 @@ export function DeliveryWizard({
                 "flex size-8 shrink-0 items-center justify-center rounded-full border text-sm",
                 index <= state.step
                   ? "border-primary bg-primary text-primary-foreground"
-                  : "bg-muted/30",
+                  : "border-input bg-card text-foreground",
               )}
             >
               {index < state.step ? <Check className="size-4" /> : index + 1}
@@ -102,7 +103,7 @@ export function DeliveryWizard({
     );
   }
   const summary = (
-    <aside className="hidden self-start rounded-xl border bg-muted/20 p-4 md:block">
+    <aside className="hidden self-start rounded-xl border border-input bg-muted p-4 md:block">
       <h3 className="mb-4 text-sm font-semibold">
         {t("deliveries.wizard.summary")}
       </h3>
@@ -122,7 +123,9 @@ export function DeliveryWizard({
           </p>
         </div>
         <div>
-          <User className="mb-1 size-4 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground">
+            {t("deliveries.wizard.receiver")}
+          </p>
           <p className="break-words font-medium">
             {review?.receiver?.name || "—"}
           </p>
@@ -155,10 +158,11 @@ export function DeliveryWizard({
         }}
       >
         <DialogContent
-          className="h-[100dvh] max-h-[100dvh] max-w-none gap-0 overflow-hidden rounded-none p-0 sm:h-[min(90dvh,900px)] sm:max-h-[90dvh] sm:w-[calc(100%-2rem)] sm:max-w-6xl sm:rounded-xl"
+          centerInWorkspace
+          className="h-[100dvh] max-h-[100dvh] max-w-6xl gap-0 overflow-hidden rounded-none border-input bg-card p-0 sm:h-[min(85dvh,780px)] sm:w-[min(1152px,calc(100%-2rem))] sm:rounded-xl"
           aria-busy={state.busy}
         >
-          <DialogHeader className="border-b px-5 py-5 pr-14 sm:px-6">
+          <DialogHeader className="border-b border-input bg-card px-5 py-5 pr-14 sm:px-6">
             <DialogTitle>
               {state.finished
                 ? t("deliveries.wizard.successTitle")
@@ -228,23 +232,20 @@ export function DeliveryWizard({
               </div>
             </div>
           ) : (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (state.step === 3) void state.submit(event);
-                else void state.next();
-              }}
-              className="flex min-h-0 flex-1"
-            >
-              <nav className="hidden w-44 shrink-0 border-r bg-muted/15 p-5 lg:block">
+            <WorkflowContainer className="flex min-h-0 flex-1" onSubmit={state.step === 0 ? undefined : (event) => {
+              event.preventDefault();
+              if (state.step === 4) void state.submit(event);
+              else void state.next();
+            }}>
+              <nav className="hidden w-44 shrink-0 border-r border-input bg-muted p-3 lg:block">
                 {progress(true)}
               </nav>
               <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <nav className="shrink-0 border-b px-5 py-4 lg:hidden">
+                <nav className="shrink-0 border-b border-input bg-muted px-5 py-3 lg:hidden">
                   {progress()}
                 </nav>
-                <div className="grid min-h-0 flex-1 items-start gap-6 overflow-y-auto p-5 sm:p-6 md:grid-cols-[minmax(0,1fr)_200px] xl:grid-cols-[minmax(0,1fr)_230px]">
-                  <section className="min-w-0 space-y-5">
+                <div className="grid min-h-0 flex-1 items-start gap-6 bg-background overflow-y-auto p-5 sm:p-6 md:grid-cols-[minmax(0,1fr)_200px] xl:grid-cols-[minmax(0,1fr)_230px]">
+                  <section className="min-w-0 space-y-5 rounded-xl border border-input bg-card p-4 sm:p-5">
                     <div>
                       <h2
                         ref={heading}
@@ -257,10 +258,11 @@ export function DeliveryWizard({
                         {t(`deliveries.wizard.hints.${steps[state.step]}`)}
                       </p>
                     </div>
-                    {state.step === 0 ? (
+                    {state.step === 0 ? <DeliveryBalanceStep state={state.balance} /> : null}
+                    {state.step === 1 ? (
                       <DeliveryReviewStep state={state} />
                     ) : null}
-                    {state.step === 1 ? (
+                    {state.step === 2 ? (
                       <>
                         <DeliveryPhotoPicker
                           photos={state.photos.photos}
@@ -275,16 +277,16 @@ export function DeliveryWizard({
                         ) : null}
                       </>
                     ) : null}
-                    {state.step === 2 ? (
+                    {state.step === 3 ? (
                       <DeliverySignatureStep state={state} />
                     ) : null}
-                    {state.step === 3 ? (
+                    {state.step === 4 ? (
                       <DeliveryFinishStep state={state} />
                     ) : null}
                   </section>
                   {summary}
                 </div>
-                <footer className="shrink-0 space-y-3 border-t bg-background px-5 py-4 sm:px-6">
+                <footer className="shrink-0 space-y-3 border-t border-input bg-card px-5 py-4 sm:px-6">
                   {errors.root?.message ? (
                     <p role="alert" className="text-sm text-destructive">
                       {errors.root.message}
@@ -306,15 +308,17 @@ export function DeliveryWizard({
                       )}
                     </Button>
                     <Button
-                      type="submit"
+                      type={state.step === 0 ? "button" : "submit"}
+                      onClick={state.step === 0 ? () => void state.next() : undefined}
                       className="min-h-12 flex-1 sm:ml-auto sm:min-w-44 sm:flex-none"
                       disabled={
                         state.busy ||
-                        (state.step === 2 &&
+                        (state.step === 0 && (state.balance.invoice.isFetching || state.balance.invoice.isError || !state.balance.ready)) ||
+                        (state.step === 3 &&
                           (state.policies.isPending || state.policies.isError))
                       }
                     >
-                      {state.step === 3 ? (
+                      {state.step === 4 ? (
                         <PackageCheck className="size-4" />
                       ) : (
                         <ArrowRight className="size-4" />
@@ -322,7 +326,7 @@ export function DeliveryWizard({
                       {t(
                         state.busy
                           ? "deliveries.wizard.saving"
-                          : state.step === 3
+                          : state.step === 4
                             ? "deliveries.deliver.submit"
                             : "deliveries.wizard.continue",
                       )}
@@ -330,7 +334,7 @@ export function DeliveryWizard({
                   </div>
                 </footer>
               </div>
-            </form>
+            </WorkflowContainer>
           )}
         </DialogContent>
       </Dialog>

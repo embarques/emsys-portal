@@ -15,7 +15,7 @@ export function DeliveryFinishStep({ state }: { state: WizardState }) {
   return (
     <>
       <div className="space-y-3">
-        <div className="flex items-center gap-3 rounded-xl border p-4">
+        <div className="flex items-center gap-3 rounded-xl border border-input bg-muted p-4">
           <Box className="size-7 text-primary" />
           <div>
             <p className="font-medium">
@@ -29,7 +29,7 @@ export function DeliveryFinishStep({ state }: { state: WizardState }) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border p-4">
+        <div className="flex items-center gap-3 rounded-xl border border-input bg-muted p-4">
           <ClipboardCheck className="size-7 text-primary" />
           <p className="text-sm font-medium">
             {t("deliveries.wizard.photoCount", {
@@ -37,7 +37,7 @@ export function DeliveryFinishStep({ state }: { state: WizardState }) {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border p-4">
+        <div className="flex items-center gap-3 rounded-xl border border-input bg-muted p-4">
           <User className="size-7 text-primary" />
           <div className="min-w-0">
             <p className="break-words font-medium">{values.signerName}</p>
@@ -53,7 +53,7 @@ export function DeliveryFinishStep({ state }: { state: WizardState }) {
           </span>
         </div>
       </div>
-      <div className="rounded-xl border p-4">
+      <div className="rounded-xl border border-input bg-muted p-4">
         <p className="mb-2 text-sm font-medium">
           {t("deliveries.wizard.newStatus")}
         </p>
