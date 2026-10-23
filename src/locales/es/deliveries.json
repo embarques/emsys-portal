@@ -5,6 +5,8 @@
   "empty": "No tienes entregas pendientes.",
   "noAccess": "No tienes acceso para ver las entregas.",
   "retry": "Reintentar",
+  "missingConduce": "El artículo de factura no tiene un Conduce asignado.",
+  "missingInvoice": "El artículo no tiene una factura vinculada.",
   "noProvince": "Sin provincia",
   "columns": {
     "barcode": "Código de barras",

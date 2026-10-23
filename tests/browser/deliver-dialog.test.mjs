@@ -480,3 +480,22 @@ test("a definitive conflict reloads items and requires a fresh receipt without r
   assert.equal(result.uploads,1);assert.equal(result.reads,2);
  } finally { await page.close(); }
 });
+
+
+test("disabled delivery actions show the missing assignment reason without hover", async () => {
+ for (const [state,reason] of [["missing-conduce","The invoice item has no Conduce assigned."],["missing-invoice","The item has no linked invoice."]]) {
+  const page=await fixture({deliveryNotice:state,wizardVisual:true});
+  try {
+   await page.setViewportSize({width:390,height:844});
+   await page.getByText(reason,{exact:true}).waitFor();
+   assert.equal(await page.getByRole("button",{name:"Deliver",exact:true}).isDisabled(),true);
+   assert.equal(await page.getByRole("button",{name:/^(Print invoice|invoices\.printSignatures\.action)$/,exact:true}).isDisabled(),true);
+  } finally { await page.close(); }
+ }
+ const page=await fixture({deliveryNotice:"valid",wizardVisual:true});
+ try {
+  await page.getByRole("button",{name:"Deliver",exact:true}).waitFor();
+  assert.equal(await page.getByRole("button",{name:"Deliver",exact:true}).isEnabled(),true);
+  assert.equal(await page.getByText("The invoice item has no Conduce assigned.",{exact:true}).count(),0);
+ } finally {await page.close();}
+});

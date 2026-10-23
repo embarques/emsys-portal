@@ -5,6 +5,8 @@
   "empty": "You have no pending deliveries.",
   "noAccess": "You do not have access to view deliveries.",
   "retry": "Retry",
+  "missingConduce": "The invoice item has no Conduce assigned.",
+  "missingInvoice": "The item has no linked invoice.",
   "noProvince": "No province",
   "columns": {
     "barcode": "Barcode",

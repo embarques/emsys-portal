@@ -1,5 +1,7 @@
 "use client";
 
+import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-notice";
+
 import { useState } from "react";
 import { PackageCheck } from "lucide-react";
 
@@ -135,6 +137,7 @@ export function DeliveriesWorkspace() {
                           <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
                         </Button>}
                         {access.canPrint && <Button type="button" size="sm" variant="outline" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => setPrintRow(row)}>{t("invoices.printSignatures.action")}</Button>}
+                        <DeliveryActionNotice row={row} />
                       </td>}
                     </tr>
                   );
