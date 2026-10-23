@@ -118,7 +118,7 @@
     },
     "hints": {
       "review": "Seleccione solo las piezas que el cliente recibe en esta entrega.",
-      "photos": "Fotografíe la mercancía entregada.",
+      "photos": "Opcionalmente, fotografíe la mercancía entregada.",
       "signature": "Quien recibe puede ser una persona diferente al cliente de la factura.",
       "finish": "Verifique los artículos seleccionados, las fotos y la persona que recibe."
     },
@@ -136,8 +136,7 @@
     "takePhoto": "Tomar foto",
     "gallery": "Elegir de la galería",
     "photos": "Fotos de la entrega",
-    "photoLimits": "1–12 fotos · Hasta 25 MB cada una · Solo imágenes",
-    "photoRequired": "Agregue al menos una foto de la mercancía para continuar.",
+    "photoLimits": "Opcional · Hasta 12 fotos · Hasta 25 MB cada una · Solo imágenes",
     "photoFailed": "Error al subir — reintente para continuar.",
     "removePhoto": "Quitar {{name}}",
     "readyToUpload": "Lista para subir",

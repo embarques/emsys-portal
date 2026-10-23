@@ -213,19 +213,23 @@ test("selecting no items blocks the wizard", async () => {
     await page.close();
   }
 });
-test("at least one merchandise photo is required", async () => {
+test("delivery can be completed without merchandise photos", async () => {
   const page = await fixture();
   try {
     await review(page);
     await next(page);
     await next(page);
     await page
-      .getByText("deliveries.wizard.photoRequired", { exact: true })
+      .getByLabel("deliveries.deliver.signerName", { exact: true })
       .waitFor();
-    assert.equal(
-      await page.evaluate(() => window.wizardRequests?.length ?? 0),
-      0,
-    );
+    await sign(page);
+    await finish(page);
+    const result = await page.evaluate(() => ({
+      uploads: window.wizardUploadCalls ?? 0,
+      requests: window.wizardRequests,
+    }));
+    assert.equal(result.uploads, 0);
+    assert.deepEqual(result.requests[0].documentIds, []);
   } finally {
     await page.close();
   }
@@ -459,7 +463,6 @@ test("mobile, iPad and desktop follow the same wizard layout", async () => {
     }
   }
 });
-
 
 test("a definitive conflict reloads items and requires a fresh receipt without reuploading photos", async () => {
  const page = await fixture({ wizardConflict: true });

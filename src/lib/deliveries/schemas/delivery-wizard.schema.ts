@@ -61,7 +61,7 @@ export type DeliveryWizardValues = z.infer<typeof deliveryWizardSchema>;
 export const completeDeliverySchema = z.object({
   requestId: z.string().uuid(),
   barcodeIds: z.array(barcodeObjectId).min(1).max(200),
-  documentIds: z.array(barcodeObjectId).min(1).max(12),
+  documentIds: z.array(barcodeObjectId).max(12),
   policyIds: z.array(z.number().int().positive()).max(100),
   agreed: z.boolean(),
   receiverSignature: receiverSignatureSchema,

@@ -91,7 +91,6 @@ export function useDeliveryWizard(target: DeliverTarget) {
         !query.data ||
         auth.companyId !== access.companyId ||
         photos.hasPending ||
-        !photos.documentIds.length ||
         policies.isPending ||
         policies.isError
       )
@@ -142,7 +141,7 @@ export function useDeliveryWizard(target: DeliverTarget) {
     }
     if (step === 1) {
       const ids = await photos.upload();
-      if (ids?.length) setStep(2);
+      if (ids !== null) setStep(2);
       return;
     }
     if (step === 2) {

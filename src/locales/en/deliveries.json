@@ -118,7 +118,7 @@
     },
     "hints": {
       "review": "Select only the pieces the customer is receiving on this delivery.",
-      "photos": "Photograph the delivered merchandise.",
+      "photos": "Optionally photograph the delivered merchandise.",
       "signature": "The person receiving may be different from the invoice customer.",
       "finish": "Check the selected items, uploaded photos and receiver before completing."
     },
@@ -136,8 +136,7 @@
     "takePhoto": "Take photo",
     "gallery": "Choose from gallery",
     "photos": "Delivery photos",
-    "photoLimits": "1–12 photos · Up to 25 MB each · Images only",
-    "photoRequired": "Add at least one merchandise photo before continuing.",
+    "photoLimits": "Optional · Up to 12 photos · Up to 25 MB each · Images only",
     "photoFailed": "Upload failed — retry to continue.",
     "removePhoto": "Remove {{name}}",
     "readyToUpload": "Ready to upload",

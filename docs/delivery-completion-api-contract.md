@@ -33,7 +33,7 @@ Completion body (replace all sample IDs and image data):
 }
 ```
 
-The receiver ID belongs to the actual signer, independently of the invoice customer. The API supplies signing time, collector and receipt ID. Active policy IDs must match current policy records; agreement is required when policies exist. Send 1–200 unique barcode ObjectIDs and 1–12 unique uploaded image document IDs. All must belong to this invoice/delivery; images must have been uploaded by the collecting user. Completion updates embedded pieces and barcode catalog, associates photos, saves the private receipt and writes activity in one transaction. Missing/stale source or catalog records fail closed with 409; nothing partially commits.
+The receiver ID belongs to the actual signer, independently of the invoice customer. The API supplies signing time, collector and receipt ID. Active policy IDs must match current policy records; agreement is required when policies exist. Send 1–200 unique barcode ObjectIDs and optionally up to 12 unique uploaded image document IDs (omit documentIds or send an empty array when there are no photos). All must belong to this invoice/delivery; images must have been uploaded by the collecting user. Completion updates embedded pieces and barcode catalog, associates photos, saves the private receipt and writes activity in one transaction. Missing/stale source or catalog records fail closed with 409; nothing partially commits.
 
 Use the same UUID and exact payload after an uncertain response. Identical retries return the original receipt; a changed payload under that UUID returns 409. The portal retains uploaded photos, reloads pending items and requires a fresh signature after a definitive conflict.
 
@@ -41,7 +41,7 @@ Response data contains only `invoiceId`, numeric `deliveryId`, `signatureId`, an
 
 ## Photos and printing
 
-Upload through `POST /v1/invoices/{invoiceId}/documents` multipart `file`, with optional stable UUID `uploadId` per photo. Existing clients may omit it. Identical upload retries return the existing document; conflicting reuse returns 409. Upload identity/hash remain private. Original image bytes are preserved and the existing 25 MiB per-file limit applies. The wizard uses a unique filename and upload UUID, avoiding attachment-directory scans and sequence allocation.
+Upload through `POST /v1/invoices/{invoiceId}/documents` multipart `file`, with optional stable UUID `uploadId` per photo. Existing clients may omit it. Identical upload retries return the existing document; conflicting reuse returns 409. Upload identity/hash remain private. Original image bytes are preserved and the existing 25 MiB per-file limit applies. Photos are optional; Continue proceeds directly to signature when none are selected. The wizard uses a unique filename and upload UUID, avoiding attachment-directory scans and sequence allocation.
 
 Successful uploads are retained when a later upload or completion fails. Cancelling or removing a photo from the wizard does not delete an already uploaded invoice attachment. Completion links only selected uploaded photos. Camera/gallery controls accept images, with local thumbnail previews. Uploads are sequential and bounded to 12.
 

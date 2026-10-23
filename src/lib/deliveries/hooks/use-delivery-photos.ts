@@ -127,8 +127,8 @@ export function useDeliveryPhotos(
   async function upload() {
     if (running.current) return null;
     if (!form.getValues("photos").length) {
-      form.setError("root", { message: t("deliveries.wizard.photoRequired") });
-      return null;
+      form.clearErrors("root");
+      return [];
     }
     running.current = true;
     form.clearErrors("root");
