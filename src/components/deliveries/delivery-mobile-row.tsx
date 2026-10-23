@@ -1,5 +1,7 @@
 "use client";
 
+import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-notice";
+
 import { PackageCheck, Phone } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -61,11 +63,12 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrin
         </dl>
       ) : null}
       {canDeliver ? (
-        <Button type="button" className="mt-3 h-11 w-full" disabled={!row.invoiceId || !row.route?.id || !row.delivery?.id} onClick={() => onDeliver(row)}>
+        <Button type="button" className="mt-3 h-11 w-full" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => onDeliver(row)}>
           <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
         </Button>
       ) : null}
       {canPrint && onPrint ? <Button type="button" variant="outline" className="mt-2 h-11 w-full" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => onPrint(row)}>{t("invoices.printSignatures.action")}</Button> : null}
+      {(canDeliver || (canPrint && onPrint)) ? <DeliveryActionNotice row={row} /> : null}
     </article>
   );
 }

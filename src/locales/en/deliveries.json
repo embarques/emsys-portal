@@ -1,10 +1,12 @@
 {
   "title": "Deliveries",
-  "description": "Barcodes on your daily routes that are waiting for delivery, ordered by province.",
+  "description": "All pending delivery barcodes, ordered by province.",
   "searchPlaceholder": "Search barcode, invoice, item, receiver, province, or container…",
   "empty": "You have no pending deliveries.",
   "noAccess": "You do not have access to view deliveries.",
   "retry": "Retry",
+  "missingConduce": "The invoice item has no Conduce assigned.",
+  "missingInvoice": "The item has no linked invoice.",
   "noProvince": "No province",
   "columns": {
     "barcode": "Barcode",
@@ -62,7 +64,7 @@
   "deliver": {
     "action": "Deliver",
     "title": "Deliver invoice items",
-    "description": "Complete the delivery once for all items on this invoice assigned to this daily route.",
+    "description": "Complete the selected items for this invoice and delivery.",
     "unavailable": "You do not have access to complete this delivery.",
     "loadError": "Unable to load the items for this delivery.",
     "retry": "Retry",
@@ -86,7 +88,7 @@
     "agree": "The delivery receiver has read and agrees to the terms and conditions listed above.",
     "agreementRequired": "The delivery receiver must agree to the terms and conditions.",
     "receiver": "Delivery receiver",
-    "receiverHint": "Enter the person receiving the delivery. They can be different from the invoice receiver. Their signature is saved to the invoice documents.",
+    "receiverHint": "Enter the actual person receiving the merchandise. Their signature stays private on this invoice.",
     "invoiceReceiver": "Invoice receiver: {{name}}",
     "sameAsInvoiceReceiver": "Same as invoice receiver",
     "signerName": "Delivery receiver name",
@@ -100,5 +102,58 @@
     "submit": "Complete delivery",
     "retryStatus": "Retry status update",
     "saving": "Saving…"
+  },
+  "wizard": {
+    "title": "Complete delivery",
+    "progress": "Delivery progress",
+    "steps": {
+      "review": "Review",
+      "photos": "Photos",
+      "signature": "Signature",
+      "finish": "Finish"
+    },
+    "headings": {
+      "review": "Review items",
+      "photos": "Delivery photos",
+      "signature": "Receiver signature",
+      "finish": "Review & complete"
+    },
+    "hints": {
+      "review": "Select only the pieces the customer is receiving on this delivery.",
+      "photos": "Optionally photograph the delivered merchandise.",
+      "signature": "The person receiving may be different from the invoice customer.",
+      "finish": "Check the selected items, uploaded photos and receiver before completing."
+    },
+    "summary": "Delivery summary",
+    "invoice": "Invoice",
+    "delivery": "Delivery",
+    "deliveryNumber": "Delivery #{{id}}",
+    "selectedCount": "{{count}} of {{total}} items selected",
+    "remainingConduce": "Items you do not select remain {{pendingStatus}} for the next trip.",
+    "selectItems": "Select at least one item to deliver.",
+    "back": "Back",
+    "continue": "Continue",
+    "saving": "Saving…",
+    "photoHint": "Take photos or drop image files here.",
+    "takePhoto": "Take photo",
+    "gallery": "Choose from gallery",
+    "photos": "Delivery photos",
+    "photoLimits": "Optional · Up to 12 photos · Up to 25 MB each · Images only",
+    "photoFailed": "Upload failed — retry to continue.",
+    "removePhoto": "Remove {{name}}",
+    "readyToUpload": "Ready to upload",
+    "uploaded": "Uploaded",
+    "savedWithInvoice": "Photos upload when you continue and remain stored with this invoice.",
+    "photoCount": "{{count}} photos uploaded",
+    "receiverId": "ID: {{id}}",
+    "validReceiverId": "Enter the actual receiver ID (up to 64 characters, no line breaks).",
+    "automaticMetadata": "The signing date and collecting employee are recorded automatically.",
+    "signatureCaptured": "Signature captured",
+    "newStatus": "Selected items will change to",
+    "confirmReceived": "Complete only after the customer has received the selected merchandise.",
+    "retrySameReceipt": "Retry sends the same receipt safely. If items or terms changed, reopen the wizard to review them.",
+    "successTitle": "Delivery completed",
+    "successHint": "{{count}} items are now {{deliveredStatus}}. The receipt and photos are linked to this invoice and delivery. Unselected items remain {{pendingStatus}}.",
+    "done": "Back to deliveries"
   }
 }

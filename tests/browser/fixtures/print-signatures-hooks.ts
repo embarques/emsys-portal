@@ -1,7 +1,9 @@
+import { reserveInvoiceReportWindow as reserveWindow, openInvoiceReportUrl as navigateWindow } from "../../../src/lib/invoices/print-invoice-report";
 import { useMutation } from "@tanstack/react-query";
 import type { ReportRequest } from "@/lib/reports/types";
 declare global {
  interface Window {
+  blockPopup?:boolean; reservedBeforeRequest?:boolean; switchPrintInvoice?: (id:string)=>void; metadataDelay?:number; wrongInvoice?:boolean; noSignatures?:boolean;
   visual?: boolean; readOnly?: boolean; failPrint?: boolean; failMetadata?: boolean; trip?: boolean;
   printRequests?: ReportRequest[]; metadataRequests?: number; opened?: string; printClosed?: boolean;
  }
@@ -18,11 +20,20 @@ export function useGenerateInvoiceReport() { return useMutation({ mutationFn: as
  if (w.failPrint) throw new Error("Print failed");
  return { url: "/fixture.pdf" };
 } }); }
-export function openInvoiceReportUrl(url: string) { window.opened = url; }
+export function reserveInvoiceReportWindow(title: string, message: string) {
+ window.reservedBeforeRequest=!(window.printRequests?.length);
+ return window.blockPopup ? null : reserveWindow(title,message);
+}
+export function openInvoiceReportUrl(url: string,target?:Window|null) {
+ const opened=navigateWindow(url,target);
+ if(opened) window.opened=url;
+ return opened;
+}
 export const apiClient = { post: async (_path: string, body: {invoiceIds: string[]}) => {
  const w = window; w.metadataRequests = (w.metadataRequests ?? 0) + 1;
  if (w.failMetadata) throw new Error("Metadata failed");
- return { success: true, data: body.invoiceIds.map((id, i) => ({ invoiceId:id, invoiceNumber:`INV-${i + 1}`, senderSignature: {signerName:"Sender"}, receiverSignatures: [
+ if(w.metadataDelay) await new Promise(resolve=>setTimeout(resolve,w.metadataDelay));
+ return { success: true, data: body.invoiceIds.map((id) => ({ invoiceId:w.wrongInvoice ? "ffffffffffffffffffffffff" : id, invoiceNumber:`INV-${parseInt(id,16)}`, senderSignature: w.noSignatures ? null : {signerName:"Sender"}, receiverSignatures: w.noSignatures ? [] : [
  {id:"68f800000000000000000005", deliveryId:5, signerName:"Delivery five", signedAt:"2026-10-21T10:00:00Z"},
  {id:"68f800000000000000000006", deliveryId:6, signerName:"Delivery six", signedAt:"2026-10-22T10:00:00Z"}
  ] })) };

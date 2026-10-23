@@ -22,6 +22,8 @@ export const API_ENDPOINTS = {
   CONTAINERS: "/containers",
   CONTAINERS_AVERAGE_VALUE: "/containers/stats/average-value",
   DELIVERIES: "/deliveries",
+  DELIVERY_REVIEW: (deliveryId: string, invoiceId: string) => `/deliveries/${encodeURIComponent(deliveryId)}/invoices/${encodeURIComponent(invoiceId)}/items`,
+  DELIVERY_COMPLETE: (deliveryId: string, invoiceId: string) => `/deliveries/${encodeURIComponent(deliveryId)}/invoices/${encodeURIComponent(invoiceId)}/complete`,
   /** Pending barcodes on daily routes whose crew includes the signed-in user's employee. */
   DELIVERIES_ASSIGNED_BARCODES: "/deliveries/assigned-barcodes",
   INVOICE_RECEIVER_SIGNATURE: (dailyRouteId: string, invoiceId: string) =>

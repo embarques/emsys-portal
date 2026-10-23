@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Printer } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInvoicePrintSignatures } from "@/lib/invoices/hooks/use-invoice-print-signatures";
@@ -32,10 +32,13 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
   }
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !state.busy) onClose(); }}>
-      <DialogContent className="max-h-[90dvh] overflow-hidden sm:max-w-3xl" aria-busy={state.busy}>
+      <DialogContent className="inset-0 h-[100dvh] max-h-[100dvh] max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] [&>button]:hidden sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90dvh] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6 sm:[&>button]:inline-flex" aria-busy={state.busy}>
         <DialogHeader>
+          <Button type="button" variant="ghost" disabled={state.busy} onClick={onClose} className="mb-2 min-h-11 self-start px-0 sm:hidden"><ArrowLeft className="size-4" />{t(trip ? "invoices.printSignatures.backToDeliveries" : "invoices.printSignatures.backToInvoices")}</Button>
           <DialogTitle>{t("invoices.printSignatures.title")}</DialogTitle>
-          <DialogDescription>{t("invoices.printSignatures.description", { count: state.invoiceCount })}</DialogDescription>
+          <DialogDescription>{ready && rows.length === 1
+            ? t("invoices.printSignatures.descriptionSingle", { number: rows[0].invoiceNumber })
+            : t("invoices.printSignatures.description", { count: state.invoiceCount })}</DialogDescription>
         </DialogHeader>
         {!state.canPrint ? <p role="alert">{t("invoices.printSignatures.noAccess")}</p>
           : !state.withinLimit ? <p role="alert">{t("invoices.printSignatures.limit")}</p>
@@ -43,7 +46,7 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
           : !ready ? <p role="status">{t("invoices.printSignatures.loading")}</p>
           : <form onSubmit={(event) => void state.submit(event)} className="flex min-h-0 flex-1 flex-col gap-4">
             <div className="min-h-0 flex-1 overflow-y-auto"><fieldset disabled={state.busy} className="min-w-0 space-y-5">
-              <div className="space-y-2">
+              {rows.length > 1 ? <div className="space-y-2">
                 <label htmlFor="print-signature-default" className="text-sm font-medium">{t("invoices.printSignatures.applyLabel", { count: rows.length })}</label>
                 <div className="flex flex-wrap gap-2">
                   <select id="print-signature-default" value={mode} onChange={(event) => setMode(event.target.value === "latest" ? "latest" : "sender")} className="min-h-11 min-w-0 flex-1 rounded-md border bg-background px-3 text-base sm:text-sm">
@@ -52,7 +55,8 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
                   </select>
                   <Button type="button" variant="outline" onClick={() => state.applyDefault(mode)}>{t("invoices.printSignatures.applyAll")}</Button>
                 </div>
-              </div>
+              </div> : null}
+              {rows.length === 1 && !rows[0].senderSignature && rows[0].receiverSignatures.length === 0 ? <p role="status" className="text-sm text-muted-foreground">{t("invoices.printSignatures.noSignatures")}</p> : null}
               <div>
                 <h3 className="mb-2 text-sm font-medium">{t("invoices.printSignatures.review")}</h3>
                 <div className="hidden grid-cols-[minmax(0,1fr)_72px_minmax(0,2fr)] gap-3 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground sm:grid" aria-hidden>
@@ -79,7 +83,8 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
             </fieldset></div>
             <p className="text-xs text-muted-foreground" aria-live="polite">{t("invoices.printSignatures.selected", { count: selections.filter((selection) => selection.receiverSignatureId).length, total: rows.length })}</p>
             {state.form.formState.errors.root?.message ? <p role="alert" className="text-sm text-destructive">{state.form.formState.errors.root.message}</p> : null}
-            <DialogFooter className="static"><Button type="button" variant="outline" disabled={state.busy} onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button><Button type="submit" disabled={state.busy || !ready}><Printer className="size-4" />{state.busy ? t("invoices.printSignatures.printing") : t("invoices.printSignatures.print", { count: rows.length })}</Button></DialogFooter>
+            {state.reportUrl ? <a href={state.reportUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-md border px-4 text-sm font-medium">{t("invoices.printSignatures.openPdf")}</a> : null}
+            <DialogFooter className="static"><Button type="button" variant="outline" disabled={state.busy} onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button><Button type="submit" disabled={state.busy || !ready}><Printer className="size-4" />{state.busy ? t("invoices.printSignatures.printing") : rows.length === 1 ? t("invoices.printSignatures.printSingle") : t("invoices.printSignatures.print", { count: rows.length })}</Button></DialogFooter>
           </form>}
         {!ready ? <DialogFooter className="static"><Button type="button" variant="outline" onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button></DialogFooter> : null}
       </DialogContent>
