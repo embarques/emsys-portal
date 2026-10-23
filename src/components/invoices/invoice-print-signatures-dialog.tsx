@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Printer } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInvoicePrintSignatures } from "@/lib/invoices/hooks/use-invoice-print-signatures";
@@ -32,8 +32,9 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
   }
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !state.busy) onClose(); }}>
-      <DialogContent className="max-h-[90dvh] overflow-hidden sm:max-w-3xl" aria-busy={state.busy}>
+      <DialogContent className="inset-0 h-[100dvh] max-h-[100dvh] max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] [&>button]:hidden sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90dvh] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6 sm:[&>button]:inline-flex" aria-busy={state.busy}>
         <DialogHeader>
+          <Button type="button" variant="ghost" disabled={state.busy} onClick={onClose} className="mb-2 min-h-11 self-start px-0 sm:hidden"><ArrowLeft className="size-4" />{t(trip ? "invoices.printSignatures.backToDeliveries" : "invoices.printSignatures.backToInvoices")}</Button>
           <DialogTitle>{t("invoices.printSignatures.title")}</DialogTitle>
           <DialogDescription>{ready && rows.length === 1
             ? t("invoices.printSignatures.descriptionSingle", { number: rows[0].invoiceNumber })
@@ -82,6 +83,7 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
             </fieldset></div>
             <p className="text-xs text-muted-foreground" aria-live="polite">{t("invoices.printSignatures.selected", { count: selections.filter((selection) => selection.receiverSignatureId).length, total: rows.length })}</p>
             {state.form.formState.errors.root?.message ? <p role="alert" className="text-sm text-destructive">{state.form.formState.errors.root.message}</p> : null}
+            {state.reportUrl ? <a href={state.reportUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-md border px-4 text-sm font-medium">{t("invoices.printSignatures.openPdf")}</a> : null}
             <DialogFooter className="static"><Button type="button" variant="outline" disabled={state.busy} onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button><Button type="submit" disabled={state.busy || !ready}><Printer className="size-4" />{state.busy ? t("invoices.printSignatures.printing") : rows.length === 1 ? t("invoices.printSignatures.printSingle") : t("invoices.printSignatures.print", { count: rows.length })}</Button></DialogFooter>
           </form>}
         {!ready ? <DialogFooter className="static"><Button type="button" variant="outline" onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button></DialogFooter> : null}

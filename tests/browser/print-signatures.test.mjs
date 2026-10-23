@@ -54,7 +54,8 @@ after(async () => {
 async function fixture(flags = {}) {
   const page = await browser.newPage();
   page.setDefaultTimeout(5000);
-  await page.setContent('<div id="root"></div>');
+  await page.context().route("http://localhost/**",route=>route.fulfill({contentType:"text/html",body:route.request().url().endsWith("fixture.pdf") ? "PDF document" : '<div id="root"></div>'}));
+  await page.goto("http://localhost/fixture");
   await page.evaluate(flags => Object.assign(window, flags), flags);
   await page.addStyleTag({ content: css });
   await page.addScriptTag({ content: script });
@@ -102,6 +103,9 @@ test("signature picker fits desktop and mobile without a preview",async()=>{
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
    assert.equal(await page.locator("canvas,img,iframe").count(),0);
    await page.screenshot({path:`/tmp/emsys-print-signatures-${width}.png`});
+   await page.getByText("INV-5",{exact:true}).scrollIntoViewIfNeeded();
+   await page.getByRole("button",{name:"Next",exact:true}).click();
+   await page.getByText("INV-6",{exact:true}).waitFor();
   }finally{await page.close();}
  }
 });
@@ -145,5 +149,51 @@ test("mismatched invoice metadata blocks printing with an explanation",async()=>
   assert.equal(await page.locator("form").count(),0);
   assert.ok((await page.getByRole("alert").innerText()).includes("do not match"));
   assert.equal(await page.evaluate(()=>window.printRequests?.length??0),0);
+ }finally{await page.close();}
+});
+
+
+test("mobile picker is a full-screen panel with a back action",async()=>{
+ const page=await fixture({visual:true,trip:true});try {
+  await page.setViewportSize({width:390,height:844});await ready(page);
+  const bounds=await page.getByRole("dialog").boundingBox();
+  assert.equal(Math.round(bounds.x),0);assert.equal(Math.round(bounds.y),0);
+  assert.equal(Math.round(bounds.width),390);assert.equal(Math.round(bounds.height),844);
+  await page.getByRole("button",{name:"Back to deliveries",exact:true}).click();
+  assert.equal(await page.evaluate(()=>window.printClosed),true);
+ }finally{await page.close();}
+});
+test("PDF tab is reserved on tap before generation and receives the report",async()=>{
+ const page=await fixture({trip:true});try {
+  await ready(page);const popupPromise=page.waitForEvent("popup");
+  await page.locator("form").evaluate(form=>form.requestSubmit());
+  const popup=await popupPromise;await popup.waitForURL("http://localhost/fixture.pdf");
+  assert.equal(await page.evaluate(()=>window.reservedBeforeRequest),true);
+  assert.equal(await popup.evaluate(()=>window.opener===null),true);
+  await page.waitForFunction(()=>window.printClosed);
+ }finally{await page.close();}
+});
+test("blocked PDF opening keeps panel open with a direct link",async()=>{
+ const page=await fixture({trip:true,visual:true,blockPopup:true});try{
+  await ready(page);await page.getByRole("button",{name:"Print invoice",exact:true}).click();
+  await page.getByRole("link",{name:"Open PDF",exact:true}).waitFor();
+  assert.equal(await page.evaluate(()=>window.printClosed??false),false);
+  assert.equal(await page.getByRole("link",{name:"Open PDF",exact:true}).getAttribute("href"),"/fixture.pdf");
+  assert.ok((await page.getByRole("alert").innerText()).includes("browser blocked"));
+  const popupPromise=page.waitForEvent("popup");await page.getByRole("link",{name:"Open PDF",exact:true}).click();
+  const popup=await popupPromise;await popup.waitForURL("http://localhost/fixture.pdf");
+  assert.equal(await page.evaluate(()=>window.printRequests.length),1);
+ }finally{await page.close();}
+});
+
+
+test("generation failure closes the reserved blank tab and keeps the panel",async()=>{
+ const page=await fixture({trip:true,failPrint:true});try{
+  await ready(page);const popupPromise=page.waitForEvent("popup");
+  await page.getByRole("button",{name:"invoices.printSignatures.printSingle",exact:true}).click();
+  const popup=await popupPromise;await page.getByRole("alert").waitFor();
+  assert.equal(popup.isClosed(),true);
+  assert.equal(await page.evaluate(()=>window.printClosed??false),false);
+  assert.ok((await page.getByRole("alert").innerText()).includes("Print failed"));
  }finally{await page.close();}
 });

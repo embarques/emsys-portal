@@ -45,6 +45,23 @@ export async function printInvoiceReport(input: {
   });
 }
 
-export function openInvoiceReportUrl(url: string) {
+/** Called synchronously from the user's print action, before any await. */
+export function reserveInvoiceReportWindow(title: string, message: string): Window | null {
+  const target = window.open("", "_blank");
+  if (target) {
+    target.opener = null;
+    target.document.title = title;
+    target.document.body.textContent = message;
+  }
+  return target;
+}
+
+export function openInvoiceReportUrl(url: string, target?: Window | null): boolean {
+  if (target !== undefined) {
+    if (!target || target.closed) return false;
+    target.location.replace(url);
+    return true;
+  }
   window.open(url, "_blank", "noopener,noreferrer");
+  return true;
 }

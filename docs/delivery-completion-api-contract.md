@@ -45,6 +45,8 @@ Upload through `POST /v1/invoices/{invoiceId}/documents` multipart `file`, with 
 
 Successful uploads are retained when a later upload or completion fails. Cancelling or removing a photo from the wizard does not delete an already uploaded invoice attachment. Completion links only selected uploaded photos. Camera/gallery controls accept images, with local thumbnail previews. Uploads are sequential and bounded to 12.
 
+On mobile, the signature picker fills the screen and offers a Back to deliveries button. The completed wizard yields to the picker; cancelling or completing printing returns to Deliveries. Print reserves its PDF tab synchronously from the user action, before requesting the report. A blocked/closed tab leaves the panel open with an explicit Open PDF link; generation failures keep the selection and close the empty tab.
+
 After success, Print uses the existing metadata-only signature picker, initially choosing the latest receipt for this numeric delivery. Users may select another receipt or sender-only. Signature images and actual signer ID are loaded only server-side for PDF generation.
 
 ## Rollout and validation

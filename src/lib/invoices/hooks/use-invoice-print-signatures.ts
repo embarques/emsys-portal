@@ -15,7 +15,8 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { fetchInvoiceSignatureOptions } from "@/lib/invoices/api/invoice-print-options-api";
 import { invoicePrintFormSchema, MAX_SIGNATURE_PRINT_INVOICES, type InvoicePrintForm, type InvoicePrintDelivery } from "@/lib/invoices/schemas/invoice-print.schema";
 import { buildInvoiceSignatureSelections, validateInvoiceSignatureSelections } from "@/lib/invoices/utils/print-signatures";
-import { openInvoiceReportUrl } from "@/lib/invoices/print-invoice-report";
+import type { BaseSyntheticEvent } from "react";
+import { reserveInvoiceReportWindow, openInvoiceReportUrl } from "@/lib/invoices/print-invoice-report";
 import { useGenerateInvoiceReport } from "@/lib/reports/hooks/use-reports";
 
 export function useInvoicePrintSignatures(invoiceIds: string[], onPrinted: () => void, trip?: InvoicePrintDelivery) {
@@ -44,28 +45,45 @@ export function useInvoicePrintSignatures(invoiceIds: string[], onPrinted: () =>
   const generation = useGenerateInvoiceReport();
   const { notifySuccess } = useFeedback();
   const submitting = useRef(false);
-  const submit = form.handleSubmit(async (values) => {
+  const [generatedReport, setGeneratedReport] = useState<{ scope: string; url: string } | null>(null);
+  const reportUrl = generatedReport?.scope === scope ? generatedReport.url : null;
+  function submit(event?: BaseSyntheticEvent) {
+    event?.preventDefault();
     if (submitting.current) return;
     const current = store.getState().auth;
-    if (!canPrint || !withinLimit || !query.data || initializedScope !== scope || companyId !== current.companyId || !validateInvoiceSignatureSelections(query.data, values.selections)) {
+    if (!canPrint || !withinLimit || !query.data || initializedScope !== scope || companyId !== current.companyId) {
       form.setError("root", { message: t("invoices.printSignatures.unavailable") }); return;
     }
+    // Reserve the tab before RHF's async validation and report generation lose
+    // the browser's user activation (especially on mobile Safari).
     submitting.current = true;
+    let target: Window | null = null;
+    try { target = reserveInvoiceReportWindow(t("invoices.printSignatures.title"), t("invoices.printSignatures.printing")); } catch { /* Show a direct PDF link if a browser blocks the tab. */ }
     const token = current.idToken;
     form.clearErrors("root");
-    try {
-      const report = await generation.mutateAsync({ type: "invoice", collection: "invoices", values: ids, lookupField: "id", signatureSelections: values.selections });
-      const session = store.getState().auth;
-      if (companyId !== session.companyId || token !== session.idToken) throw new Error(t("invoices.printSignatures.unavailable"));
-      openInvoiceReportUrl(report.url);
-      notifySuccess(t("invoices.printSignatures.ready"));
-      onPrinted();
-    } catch (error) { form.setError("root", { message: normalizeApiError(error).message }); }
-    finally { submitting.current = false; generation.reset(); }
-  });
+    setGeneratedReport(null);
+    return form.handleSubmit(async (values) => {
+      try {
+        if (!validateInvoiceSignatureSelections(query.data!, values.selections)) throw new Error(t("invoices.printSignatures.unavailable"));
+        const report = await generation.mutateAsync({ type: "invoice", collection: "invoices", values: ids, lookupField: "id", signatureSelections: values.selections });
+        const session = store.getState().auth;
+        if (companyId !== session.companyId || token !== session.idToken) throw new Error(t("invoices.printSignatures.unavailable"));
+        if (!openInvoiceReportUrl(report.url, target)) {
+          setGeneratedReport({ scope, url: report.url });
+          form.setError("root", { message: t("invoices.printSignatures.popupBlocked") });
+          return;
+        }
+        notifySuccess(t("invoices.printSignatures.ready"));
+        onPrinted();
+      } catch (error) {
+        target?.close();
+        form.setError("root", { message: normalizeApiError(error).message });
+      } finally { submitting.current = false; generation.reset(); }
+    }, () => { target?.close(); submitting.current = false; })(event);
+  }
   function applyDefault(mode: "sender" | "latest") {
     if (!query.data || submitting.current) return;
     form.setValue("selections", buildInvoiceSignatureSelections(query.data, mode), { shouldDirty: true, shouldValidate: true });
   }
-  return { query, form, submit, applyDefault, canPrint, withinLimit, initialized: initializedScope === scope, busy: form.formState.isSubmitting, invoiceCount: ids.length, companyId };
+  return { query, form, submit, reportUrl, applyDefault, canPrint, withinLimit, initialized: initializedScope === scope, busy: form.formState.isSubmitting, invoiceCount: ids.length, companyId };
 }

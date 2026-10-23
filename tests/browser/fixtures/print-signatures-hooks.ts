@@ -1,8 +1,9 @@
+import { reserveInvoiceReportWindow as reserveWindow, openInvoiceReportUrl as navigateWindow } from "../../../src/lib/invoices/print-invoice-report";
 import { useMutation } from "@tanstack/react-query";
 import type { ReportRequest } from "@/lib/reports/types";
 declare global {
  interface Window {
-  switchPrintInvoice?: (id:string)=>void; metadataDelay?:number; wrongInvoice?:boolean; noSignatures?:boolean;
+  blockPopup?:boolean; reservedBeforeRequest?:boolean; switchPrintInvoice?: (id:string)=>void; metadataDelay?:number; wrongInvoice?:boolean; noSignatures?:boolean;
   visual?: boolean; readOnly?: boolean; failPrint?: boolean; failMetadata?: boolean; trip?: boolean;
   printRequests?: ReportRequest[]; metadataRequests?: number; opened?: string; printClosed?: boolean;
  }
@@ -19,7 +20,15 @@ export function useGenerateInvoiceReport() { return useMutation({ mutationFn: as
  if (w.failPrint) throw new Error("Print failed");
  return { url: "/fixture.pdf" };
 } }); }
-export function openInvoiceReportUrl(url: string) { window.opened = url; }
+export function reserveInvoiceReportWindow(title: string, message: string) {
+ window.reservedBeforeRequest=!(window.printRequests?.length);
+ return window.blockPopup ? null : reserveWindow(title,message);
+}
+export function openInvoiceReportUrl(url: string,target?:Window|null) {
+ const opened=navigateWindow(url,target);
+ if(opened) window.opened=url;
+ return opened;
+}
 export const apiClient = { post: async (_path: string, body: {invoiceIds: string[]}) => {
  const w = window; w.metadataRequests = (w.metadataRequests ?? 0) + 1;
  if (w.failMetadata) throw new Error("Metadata failed");

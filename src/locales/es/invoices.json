@@ -736,6 +736,10 @@
   "printSignatures": {
     "action": "Imprimir factura",
     "title": "Elegir firmas",
+    "backToDeliveries": "Volver a entregas",
+    "backToInvoices": "Volver a facturas",
+    "popupBlocked": "Su PDF está listo, pero el navegador bloqueó la nueva pestaña. Pulse Abrir PDF para verlo o imprimirlo.",
+    "openPdf": "Abrir PDF",
     "descriptionSingle": "Factura {{number}} · Elija las firmas para este PDF",
     "printSingle": "Imprimir factura",
     "noSignatures": "Esta factura no tiene firmas guardadas. Puede imprimirla sin firmas.",

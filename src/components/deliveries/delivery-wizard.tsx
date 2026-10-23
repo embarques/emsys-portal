@@ -149,9 +149,9 @@ export function DeliveryWizard({
   return (
     <>
       <Dialog
-        open
+        open={!print}
         onOpenChange={(open) => {
-          if (!open) close();
+          if (!open && !print) close();
         }}
       >
         <DialogContent
@@ -338,7 +338,7 @@ export function DeliveryWizard({
         <InvoicePrintSignaturesDialog
           invoiceIds={[review.invoiceId]}
           trip={{ deliveryId: String(review.deliveryId) }}
-          onClose={() => setPrint(false)}
+          onClose={() => { setPrint(false); close(); }}
         />
       ) : null}
     </>

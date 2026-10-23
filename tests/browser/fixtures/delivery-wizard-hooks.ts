@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CompleteDeliveryInput } from "@/lib/deliveries/schemas/delivery-wizard.schema";
 import type { InvoiceDocument } from "@/lib/invoices/documents";
 
@@ -114,6 +114,7 @@ export const apiClient = {
     };
   },
   post: async (url: string, input: CompleteDeliveryInput) => {
+    if (url.endsWith("/signature-options")) return { success:true, data:[{invoiceId,invoiceNumber:"INV-26-001434",senderSignature:null,receiverSignatures:[{id:"68f800000000000000000099",deliveryId:5,signerName:"Pedro Ramirez",signedAt:"2026-10-23T00:00:00Z"}]}] };
     if (!url.endsWith("/complete"))
       throw new Error("Unexpected mutation: " + url);
     window.wizardRequests = [
@@ -162,4 +163,12 @@ export async function uploadInvoiceDocument(
     version: 1,
     deleting: false,
   };
+}
+
+export function useFeedback() { return { notifySuccess: () => {} }; }
+export function useGenerateInvoiceReport() {
+ return useMutation({ mutationFn: async () => {
+  await new Promise(resolve=>setTimeout(resolve,100));
+  return {url:"http://localhost/fixture.pdf"};
+ } });
 }

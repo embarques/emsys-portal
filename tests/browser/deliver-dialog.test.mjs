@@ -33,6 +33,8 @@ before(async () => {
         "@/lib/store/store$": hooks,
         "@/lib/api/client$": hooks,
         "@/lib/api/axios$": hooks,
+        "@/lib/reports/hooks/use-reports$": hooks,
+        "@/components/app-shell/feedback-provider$": hooks,
         "@/lib/invoices/api/invoice-documents-api$": hooks,
         "@/lib/invoice-policies/hooks/use-invoice-policies$": hooks,
 
@@ -84,6 +86,7 @@ async function fixture(flags = {}) {
   await page.route("http://localhost/wizard", (route) =>
     route.fulfill({ contentType: "text/html", body: '<div id="root"></div>' }),
   );
+  await page.context().route("http://localhost/fixture.pdf",route=>route.fulfill({contentType:"text/html",body:"PDF document"}));
   await page.goto("http://localhost/wizard");
   await page.evaluate((flags) => Object.assign(window, flags), flags);
   await page.addStyleTag({ content: css });
@@ -510,5 +513,20 @@ test("legacy invoice items submit their numeric IDs and no zero ObjectIDs",async
   assert.deepEqual(request.barcodeIds,[]);
   assert.deepEqual(request.legacyBarcodeIds,[765464,765465,765466]);
   assert.equal(JSON.stringify(request).includes("000000000000000000000000"),false);
+ }finally{await page.close();}
+});
+
+
+test("printing after completion opens the PDF before closing the delivery panel",async()=>{
+ const page=await fixture();try{
+  await toSignature(page);await sign(page);await finish(page);
+  await page.getByRole("button",{name:"invoices.printSignatures.action",exact:true}).click();
+  await page.getByRole("heading",{name:"invoices.printSignatures.title",exact:true}).waitFor();
+  assert.equal(await page.getByText("Closed",{exact:true}).count(),0);
+  assert.equal(await page.getByRole("dialog").count(),1);
+  const popupPromise=page.waitForEvent("popup");
+  await page.getByRole("button",{name:"invoices.printSignatures.printSingle",exact:true}).click();
+  const popup=await popupPromise;await popup.waitForURL("http://localhost/fixture.pdf");
+  await page.getByText("Closed",{exact:true}).waitFor();
  }finally{await page.close();}
 });

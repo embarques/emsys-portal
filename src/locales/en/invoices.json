@@ -736,6 +736,10 @@
   "printSignatures": {
     "action": "Print invoice",
     "title": "Choose signatures",
+    "backToDeliveries": "Back to deliveries",
+    "backToInvoices": "Back to invoices",
+    "popupBlocked": "Your PDF is ready, but the browser blocked the new tab. Tap Open PDF to view or print it.",
+    "openPdf": "Open PDF",
     "descriptionSingle": "Invoice {{number}} · Choose signatures for this PDF",
     "printSingle": "Print invoice",
     "noSignatures": "This invoice has no saved signatures. You can print it without signatures.",
