@@ -101,7 +101,14 @@ export function useDeliveryWizard(target: DeliverTarget) {
       // makes retrying safe, including when the first completion actually committed.
       const payload = submitted.current ?? {
         requestId,
-        barcodeIds: values.barcodeIds,
+        barcodeIds: values.barcodeIds.filter((id) => !id.startsWith("legacy:")),
+        ...(values.barcodeIds.some((id) => id.startsWith("legacy:"))
+          ? {
+              legacyBarcodeIds: values.barcodeIds
+                .filter((id) => id.startsWith("legacy:"))
+                .map((id) => Number(id.slice(7))),
+            }
+          : {}),
         documentIds: photos.documentIds,
         policyIds: (policies.data ?? []).map((policy) => policy.id),
         agreed: values.agreed,

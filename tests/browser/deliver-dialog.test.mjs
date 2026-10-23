@@ -499,3 +499,16 @@ test("disabled delivery actions show the missing assignment reason without hover
   assert.equal(await page.getByText("The invoice item has no Conduce assigned.",{exact:true}).count(),0);
  } finally {await page.close();}
 });
+
+
+test("legacy invoice items submit their numeric IDs and no zero ObjectIDs",async()=>{
+ const page=await fixture({wizardLegacy:true});try{
+  await review(page);await next(page);await next(page);
+  await page.getByLabel("deliveries.deliver.signerName",{exact:true}).waitFor();
+  await sign(page);await finish(page);
+  const request=await page.evaluate(()=>window.wizardRequests[0]);
+  assert.deepEqual(request.barcodeIds,[]);
+  assert.deepEqual(request.legacyBarcodeIds,[765464,765465,765466]);
+  assert.equal(JSON.stringify(request).includes("000000000000000000000000"),false);
+ }finally{await page.close();}
+});

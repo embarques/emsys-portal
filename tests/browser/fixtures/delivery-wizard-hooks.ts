@@ -48,7 +48,10 @@ export function useAuth() {
   };
 }
 export function normalizeApiError(error: unknown) {
-  return { message: error instanceof Error ? error.message : "Error", status: (error as { status?: number })?.status };
+  return {
+    message: error instanceof Error ? error.message : "Error",
+    status: (error as { status?: number })?.status,
+  };
 }
 export function useActiveInvoicePolicies(enabled: boolean) {
   return useQuery({
@@ -97,7 +100,13 @@ export const apiClient = {
               },
             },
         barcodes: barcodeIds.map((barcodeId, index) => ({
-          barcodeId,
+          barcodeId: (window as unknown as { wizardLegacy?: boolean })
+            .wizardLegacy
+            ? "000000000000000000000000"
+            : barcodeId,
+          ...((window as unknown as { wizardLegacy?: boolean }).wizardLegacy
+            ? { legacyId: 765464 + index }
+            : {}),
           number: `00012${index + 3}`,
           description: index === 2 ? "Wooden chair" : "Large box",
         })),
@@ -112,7 +121,8 @@ export const apiClient = {
       JSON.parse(JSON.stringify(input)),
     ];
     await new Promise((resolve) => setTimeout(resolve, 100));
-    if ((window as unknown as { wizardConflict?: boolean }).wizardConflict) throw Object.assign(new Error("Delivery changed"), { status: 409 });
+    if ((window as unknown as { wizardConflict?: boolean }).wizardConflict)
+      throw Object.assign(new Error("Delivery changed"), { status: 409 });
     if (window.wizardFailComplete) throw new Error("Completion failed");
     window.wizardCompleted = true;
     return {
@@ -121,7 +131,8 @@ export const apiClient = {
         invoiceId,
         deliveryId: 5,
         signatureId: "68f800000000000000000099",
-        deliveredCount: input.barcodeIds.length,
+        deliveredCount:
+          input.barcodeIds.length + (input.legacyBarcodeIds?.length ?? 0),
       },
     };
   },
