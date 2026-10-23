@@ -4,11 +4,9 @@ import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-no
 
 import { PackageCheck, Phone } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDeliveryAddress, formatDeliveryPhones, type AssignedDeliveryBarcode } from "@/lib/deliveries/types";
 import { useTranslation } from "@/lib/i18n";
-import { getBarcodeStatusLabel } from "@/lib/labels/display";
 
 type DeliveryMobileRowProps = {
   row: AssignedDeliveryBarcode;
@@ -36,7 +34,6 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrin
         <p className="min-w-0 break-words text-base font-semibold leading-6 text-foreground [overflow-wrap:anywhere]">
           {row.receiver?.name || "—"}
         </p>
-        {row.status?.name ? <Badge variant="outline" className="shrink-0">{getBarcodeStatusLabel(row.status.name, t)}</Badge> : null}
       </div>
       {address || city ? (
         <p className="mt-1 text-sm text-muted-foreground [overflow-wrap:anywhere]">

@@ -14,10 +14,9 @@ export const ASSIGNED_DELIVERY_BAR_OR_SEARCH_FIELDS = [
 
 export const ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   { field: "number", label: "Barcode", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter barcode…" },
-  { field: "invoice.number", label: "Invoice", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter invoice…" },
+  { field: "invoice.number", label: "Invoice number", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter invoice…" },
   { field: "receiver.name", label: "Receiver name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter receiver…" },
   { field: "receiver.address.state", label: "Province", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter province…" },
   { field: "receiver.address.city", label: "City", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter city…" },
   { field: "container.name", label: "Container", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter container…" },
-  { field: "status.name", label: "Status", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter status…" },
 ];

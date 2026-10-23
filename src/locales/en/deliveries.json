@@ -10,7 +10,7 @@
   "noProvince": "No province",
   "columns": {
     "barcode": "Barcode",
-    "invoice": "Invoice",
+    "invoice": "Invoice #",
     "name": "Name",
     "container": "Container",
     "status": "Status",
@@ -27,7 +27,7 @@
       },
       "invoice": {
         "number": {
-          "label": "Invoice",
+          "label": "Invoice number",
           "placeholder": "Enter invoice…"
         }
       },

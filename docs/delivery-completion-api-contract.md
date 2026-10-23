@@ -54,3 +54,16 @@ After success, Print uses the existing metadata-only signature picker, initially
 Deploy the API before the Portal. Existing tenant startup calls `EnsureIndexes`; restart successfully to install the numeric status/delivery source index and partial unique `(invoiceId, uploadId)` attachment index. No new permission names or production data migration is required. Both status catalog records 6 and 7 must exist. No production data was modified during implementation.
 
 Isolated local MongoDB regression fixtures cover partial completion, replay/concurrency, rollback, foreign photos/deliveries, permission/tenant scope and completion without employee links or crew membership and renamed status labels. A representative fixture with 2,003 detail rows verifies a bounded 25-row page, two database commands and use of the numeric status/delivery index. Legacy/mixed identifier completion, retry, foreign-delivery and stale-mirror rollback are covered by isolated tests. See the PR validation for the measured local result; this is not a production latency guarantee.
+
+## Invoice identity and fixed list status
+
+Delivery rows display and search by `invoice.number` (the customer-facing invoice
+number, preserving leading zeros). `invoice.id` is the MongoDB ObjectID used for
+review/completion, document upload, signature selection and printing API calls.
+Do not substitute the business number into those routes or expose the ObjectID
+as a fallback display label. A missing business number remains blank.
+
+The assigned barcode list is already scoped by the API to status ID 6 (CONDUCE),
+so desktop/mobile rows and filter controls omit Status. The API status payload
+and completion lifecycle checks remain available for compatibility. The receipt
+footer's submitted `idNumber` identifies the signer; it is not an invoice ID.

@@ -10,7 +10,7 @@
   "noProvince": "Sin provincia",
   "columns": {
     "barcode": "Código de barras",
-    "invoice": "Factura",
+    "invoice": "Factura n.º",
     "name": "Nombre",
     "container": "Contenedor",
     "status": "Estado",
@@ -27,7 +27,7 @@
       },
       "invoice": {
         "number": {
-          "label": "Factura",
+          "label": "Número de factura",
           "placeholder": "Ingresa la factura…"
         }
       },

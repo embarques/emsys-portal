@@ -10,7 +10,6 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
 import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -24,7 +23,6 @@ import {
   type AssignedDeliveryBarcode,
 } from "@/lib/deliveries/types";
 import { useTranslation } from "@/lib/i18n";
-import { getBarcodeStatusLabel } from "@/lib/labels/display";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
 
@@ -52,7 +50,6 @@ export function DeliveriesWorkspace() {
     t("deliveries.columns.invoice"),
     t("deliveries.columns.name"),
     t("deliveries.columns.container"),
-    t("deliveries.columns.status"),
     t("deliveries.columns.receiverName"),
     t("deliveries.columns.address"),
     t("deliveries.columns.province"),
@@ -121,9 +118,6 @@ export function DeliveriesWorkspace() {
                       <td className="whitespace-nowrap px-4 py-3">{row.invoiceNumber}</td>
                       <td className="px-4 py-3">{row.description}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.container?.name}</td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        {row.status?.name ? <Badge variant="outline">{getBarcodeStatusLabel(row.status.name, t)}</Badge> : null}
-                      </td>
                       <td className="px-4 py-3">{row.receiver?.name}</td>
                       <td className="px-4 py-3">{formatDeliveryAddress(row.receiver)}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.receiver?.province}</td>
