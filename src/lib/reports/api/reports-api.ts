@@ -1,5 +1,7 @@
 import { isAxiosError } from "axios";
 
+import { getConfigurationSnapshot } from "@/lib/configuration/store";
+
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { getConfiguredApiBaseUrl } from "@/lib/api/base-url";
@@ -185,7 +187,7 @@ export function generateIncomeReport(request: ReportRequest): Promise<ReportResu
 
 /** Generate an invoice report (`POST /reports/invoices`). */
 export function generateInvoiceReport(request: ReportRequest): Promise<ReportResult> {
-  return postReport(API_ENDPOINTS.REPORTS_INVOICES, request);
+  return postReport(API_ENDPOINTS.REPORTS_INVOICES, { ...request, language: request.language ?? getConfigurationSnapshot().language });
 }
 
 /** Generate an invoice details report (`POST /reports/invoice-details`). */
