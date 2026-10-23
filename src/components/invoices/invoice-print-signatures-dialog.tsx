@@ -35,7 +35,9 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
       <DialogContent className="max-h-[90dvh] overflow-hidden sm:max-w-3xl" aria-busy={state.busy}>
         <DialogHeader>
           <DialogTitle>{t("invoices.printSignatures.title")}</DialogTitle>
-          <DialogDescription>{t("invoices.printSignatures.description", { count: state.invoiceCount })}</DialogDescription>
+          <DialogDescription>{ready && rows.length === 1
+            ? t("invoices.printSignatures.descriptionSingle", { number: rows[0].invoiceNumber })
+            : t("invoices.printSignatures.description", { count: state.invoiceCount })}</DialogDescription>
         </DialogHeader>
         {!state.canPrint ? <p role="alert">{t("invoices.printSignatures.noAccess")}</p>
           : !state.withinLimit ? <p role="alert">{t("invoices.printSignatures.limit")}</p>
@@ -43,7 +45,7 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
           : !ready ? <p role="status">{t("invoices.printSignatures.loading")}</p>
           : <form onSubmit={(event) => void state.submit(event)} className="flex min-h-0 flex-1 flex-col gap-4">
             <div className="min-h-0 flex-1 overflow-y-auto"><fieldset disabled={state.busy} className="min-w-0 space-y-5">
-              <div className="space-y-2">
+              {rows.length > 1 ? <div className="space-y-2">
                 <label htmlFor="print-signature-default" className="text-sm font-medium">{t("invoices.printSignatures.applyLabel", { count: rows.length })}</label>
                 <div className="flex flex-wrap gap-2">
                   <select id="print-signature-default" value={mode} onChange={(event) => setMode(event.target.value === "latest" ? "latest" : "sender")} className="min-h-11 min-w-0 flex-1 rounded-md border bg-background px-3 text-base sm:text-sm">
@@ -52,7 +54,8 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
                   </select>
                   <Button type="button" variant="outline" onClick={() => state.applyDefault(mode)}>{t("invoices.printSignatures.applyAll")}</Button>
                 </div>
-              </div>
+              </div> : null}
+              {rows.length === 1 && !rows[0].senderSignature && rows[0].receiverSignatures.length === 0 ? <p role="status" className="text-sm text-muted-foreground">{t("invoices.printSignatures.noSignatures")}</p> : null}
               <div>
                 <h3 className="mb-2 text-sm font-medium">{t("invoices.printSignatures.review")}</h3>
                 <div className="hidden grid-cols-[minmax(0,1fr)_72px_minmax(0,2fr)] gap-3 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground sm:grid" aria-hidden>
@@ -79,7 +82,7 @@ export function InvoicePrintSignaturesDialog({ invoiceIds, onClose, trip }: {
             </fieldset></div>
             <p className="text-xs text-muted-foreground" aria-live="polite">{t("invoices.printSignatures.selected", { count: selections.filter((selection) => selection.receiverSignatureId).length, total: rows.length })}</p>
             {state.form.formState.errors.root?.message ? <p role="alert" className="text-sm text-destructive">{state.form.formState.errors.root.message}</p> : null}
-            <DialogFooter className="static"><Button type="button" variant="outline" disabled={state.busy} onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button><Button type="submit" disabled={state.busy || !ready}><Printer className="size-4" />{state.busy ? t("invoices.printSignatures.printing") : t("invoices.printSignatures.print", { count: rows.length })}</Button></DialogFooter>
+            <DialogFooter className="static"><Button type="button" variant="outline" disabled={state.busy} onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button><Button type="submit" disabled={state.busy || !ready}><Printer className="size-4" />{state.busy ? t("invoices.printSignatures.printing") : rows.length === 1 ? t("invoices.printSignatures.printSingle") : t("invoices.printSignatures.print", { count: rows.length })}</Button></DialogFooter>
           </form>}
         {!ready ? <DialogFooter className="static"><Button type="button" variant="outline" onClick={onClose}>{t("invoices.printSignatures.cancel")}</Button></DialogFooter> : null}
       </DialogContent>

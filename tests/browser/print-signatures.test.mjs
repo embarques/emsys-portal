@@ -105,3 +105,45 @@ test("signature picker fits desktop and mobile without a preview",async()=>{
   }finally{await page.close();}
  }
 });
+
+
+test("English and Spanish counts render without raw placeholders",async()=>{
+ for(const spanish of [false,true]) {
+  const page=await fixture({visual:true,spanish});try{
+   await ready(page);
+   const text=await page.locator('[role="dialog"]').innerText();
+   assert.equal(/\{(?:count|total|first|last|number)\}/.test(text),false);
+   assert.ok(text.includes(spanish ? "20 facturas seleccionadas" : "20 selected invoices"));
+   assert.ok(text.includes(spanish ? "Facturas 1–5 de 20" : "Invoices 1–5 of 20"));
+  }finally{await page.close();}
+ }
+});
+test("single invoice identifies its number and explains absent signatures",async()=>{
+ const page=await fixture({visual:true,trip:true,noSignatures:true});try{
+  await ready(page);
+  await page.getByText("Invoice INV-1 · Choose signatures for this PDF",{exact:true}).waitFor();
+  await page.getByText("This invoice has no saved signatures. You can print it without signatures.",{exact:true}).waitFor();
+  assert.equal(await page.locator("#print-signature-default").count(),0);
+  assert.equal(await page.getByRole("button",{name:"Print invoice",exact:true}).isEnabled(),true);
+ }finally{await page.close();}
+});
+test("switching invoices during metadata loading prints only the new selection",async()=>{
+ const page=await fixture({trip:true,metadataDelay:150});try{
+  await page.waitForFunction(()=>window.metadataRequests===1 && window.switchPrintInvoice);
+  await page.evaluate(()=>window.switchPrintInvoice("000000000000000000000002"));
+  await ready(page);await page.getByText("INV-2",{exact:true}).waitFor();
+  assert.equal(await page.getByText("INV-1",{exact:true}).count(),0);
+  await page.locator("form").evaluate(form=>form.requestSubmit());await page.waitForFunction(()=>window.printClosed);
+  const request=await page.evaluate(()=>window.printRequests[0]);
+  assert.deepEqual(request.values,["000000000000000000000002"]);
+  assert.equal(request.signatureSelections[0].invoiceId,"000000000000000000000002");
+ }finally{await page.close();}
+});
+test("mismatched invoice metadata blocks printing with an explanation",async()=>{
+ const page=await fixture({trip:true,wrongInvoice:true});try{
+  await page.getByRole("alert").waitFor();
+  assert.equal(await page.locator("form").count(),0);
+  assert.ok((await page.getByRole("alert").innerText()).includes("do not match"));
+  assert.equal(await page.evaluate(()=>window.printRequests?.length??0),0);
+ }finally{await page.close();}
+});
