@@ -1,7 +1,9 @@
 "use client";
 
 import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-notice";
+import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
 
+import type { ReactNode } from "react";
 import { PackageCheck, Phone } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,12 +25,18 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrin
   const address = formatDeliveryAddress(row.receiver);
   const city = row.receiver?.city;
   const phones = formatDeliveryPhones(row.receiver);
-  const fields = [
+  const senderPhones = formatDeliveryPhones(row.sender);
+  const fields = ([
     [t("deliveries.columns.barcode"), row.number],
     [t("deliveries.columns.invoice"), row.invoiceNumber],
+    [t("deliveries.columns.invoiceBalance"), row.invoiceBalance != null ? <DeliveryRowBalance row={row} /> : undefined],
     [t("deliveries.columns.name"), row.description],
     [t("deliveries.columns.container"), row.container?.name],
-  ].filter(([, value]) => value);
+    [t("deliveries.columns.senderName"), row.sender?.name],
+    [t("deliveries.columns.senderPhones"), senderPhones.length
+      ? senderPhones.map((phone) => <a key={phone.dial} href={`tel:${phone.dial}`} className="block underline-offset-2 hover:underline">{phone.label}</a>)
+      : undefined],
+  ] as [string, ReactNode][]).filter(([, value]) => value);
 
   return (
     <article className="min-w-0 border-b border-border px-4 py-4 last:border-b-0">

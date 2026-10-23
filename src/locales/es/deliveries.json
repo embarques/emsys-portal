@@ -11,9 +11,12 @@
   "columns": {
     "barcode": "Código de barras",
     "invoice": "Factura",
+    "invoiceBalance": "Balance de factura",
     "name": "Nombre",
     "container": "Contenedor",
     "status": "Estado",
+    "senderName": "Nombre del remitente",
+    "senderPhones": "Teléfonos del remitente",
     "receiverName": "Nombre del destinatario",
     "address": "Dirección",
     "province": "Provincia",
@@ -110,23 +113,27 @@
       "review": "Revisar",
       "photos": "Fotos",
       "signature": "Firma",
-      "finish": "Finalizar"
+      "finish": "Finalizar",
+      "balance": "Saldo"
     },
     "headings": {
       "review": "Revisar artículos",
       "photos": "Fotos de la entrega",
       "signature": "Firma de quien recibe",
-      "finish": "Revisar y completar"
+      "finish": "Revisar y completar",
+      "balance": "Revisar saldo"
     },
     "hints": {
       "review": "Seleccione solo las piezas que el cliente recibe en esta entrega.",
       "photos": "Opcionalmente, fotografíe la mercancía entregada.",
       "signature": "Quien recibe puede ser una persona diferente al cliente de la factura.",
-      "finish": "Verifique los artículos seleccionados, las fotos y la persona que recibe."
+      "finish": "Verifique los artículos seleccionados, las fotos y la persona que recibe.",
+      "balance": "El saldo de la factura debe ser cero antes de completar esta entrega, salvo que acepte la responsabilidad por pagos pendientes de cobro."
     },
     "summary": "Resumen de la entrega",
     "invoice": "Factura",
     "delivery": "Entrega",
+    "receiver": "Destinatario",
     "deliveryNumber": "Entrega #{{id}}",
     "selectedCount": "{{count}} de {{total}} artículos seleccionados",
     "remainingConduce": "Los artículos no seleccionados permanecen en {{pendingStatus}} para el próximo viaje.",
@@ -154,6 +161,38 @@
     "retrySameReceipt": "El reintento envía el mismo recibo de forma segura. Si cambiaron los artículos o términos, vuelva a abrir el asistente para revisarlos.",
     "successTitle": "Entrega completada",
     "successHint": "{{count}} artículos están en {{deliveredStatus}}. El recibo y las fotos quedan vinculados a esta factura y entrega. Los demás permanecen en {{pendingStatus}}.",
-    "done": "Volver a entregas"
+    "done": "Volver a entregas",
+    "balance": {
+      "outstanding": "Saldo de la factura",
+      "refresh": "Actualizar saldo",
+      "paid": "El saldo es cero. Continúe para revisar los artículos.",
+      "required": "El saldo de la factura debe ser cero para continuar. Los pagos en efectivo se aplican de inmediato; los pagos con cheque, Zelle, depósito o tarjeta cuentan solo cuando estén cobrados en el sistema. Si otra persona cobra, actualice el saldo.",
+      "recorded": "Pago registrado. Actualice para consultar el saldo.",
+      "recordedPending": "Pago registrado pero no cobrado. Los pagos que no son en efectivo no reducen el saldo hasta que se marquen como cobrados en el sistema.",
+      "credit": "Esta factura tiene saldo a favor. Contabilidad debe resolverlo antes de la entrega.",
+      "paymentUnavailable": "Para registrar pagos se requiere acceso a ver entregas, crear Cuadre y registrar pagos (crear transacciones). Solicite a un usuario autorizado saldar la factura y actualice el saldo.",
+      "paymentLoadError": "No se pudieron cargar los datos de pago. Reintente o solicite el cobro a un usuario autorizado.",
+      "loadError": "No se pudo verificar el saldo. Reintente antes de continuar.",
+      "noStatementCreate": "No hay un Cuadre de hoy para su sucursal. Abra uno para registrar el pago.",
+      "noStatementNoRate": "No hay un Cuadre de hoy para su sucursal y esta ruta no tiene tasa de cambio para abrirlo. Ábralo en Ingresos diarios y actualice este paso.",
+      "statementClosed": "El Cuadre de hoy para su sucursal está cerrado. Reábralo en Ingresos diarios y actualice este paso.",
+      "createStatement": "Abrir Cuadre de hoy",
+      "creatingStatement": "Abriendo Cuadre…",
+      "recordPayment": "Registrar pago",
+      "dopAtRate": "{{amount}} a la tasa de la ruta {{rate}}",
+      "rateUnavailable": "Monto en DOP no disponible: la ruta no tiene tasa de cambio.",
+      "pendingTitle": "Pagos pendientes de cobro",
+      "pendingTotal": "Total pendiente",
+      "pendingLoadError": "No se pudieron verificar los pagos pendientes de cobro. Reintente para ver si cubren el saldo.",
+      "pendingShort": "Los pagos pendientes ({{pending}}) no cubren el saldo de {{balance}}. Cobre el monto restante para continuar.",
+      "overrideWarning": "Estos pagos no están cobrados en el sistema. Si entrega ahora, usted es responsable del saldo de {{amount}} si un pago no se cobra.",
+      "overrideAccept": "Entregar antes de que el pago se cobre. Acepto la responsabilidad por este pago.",
+      "methods": {
+        "check": "Cheque",
+        "zelle": "Zelle",
+        "deposit": "Depósito",
+        "creditCard": "Tarjeta de crédito"
+      }
+    }
   }
 }

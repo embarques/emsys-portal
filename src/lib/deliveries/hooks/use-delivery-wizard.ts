@@ -23,6 +23,7 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { queryKeys } from "@/lib/query/query-keys";
 import { normalizeApiError } from "@/lib/api/axios";
 import { store } from "@/lib/store/store";
+import { useDeliveryBalance } from "./use-delivery-balance";
 import { useTranslation } from "@/lib/i18n";
 
 export function useDeliveryWizard(target: DeliverTarget) {
@@ -33,6 +34,7 @@ export function useDeliveryWizard(target: DeliverTarget) {
   const deliveryId = target.delivery?.id ? String(target.delivery.id) : "";
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [step, setStep] = useState(0);
+  const balance = useDeliveryBalance(target, access, step === 0);
   const [finished, setFinished] = useState(false);
   const [locked, setLocked] = useState(false);
   const saving = useRef(false);
@@ -99,7 +101,8 @@ export function useDeliveryWizard(target: DeliverTarget) {
         throw new Error(t("deliveries.deliver.agreementRequired"));
       // Retain the exact submitted payload after an uncertain response; the API UUID
       // makes retrying safe, including when the first completion actually committed.
-      const payload = submitted.current ?? {
+      const replay = submitted.current;
+      const payload = replay ?? {
         requestId,
         barcodeIds: values.barcodeIds.filter((id) => !id.startsWith("legacy:")),
         ...(values.barcodeIds.some((id) => id.startsWith("legacy:"))
@@ -117,8 +120,19 @@ export function useDeliveryWizard(target: DeliverTarget) {
           idNumber: values.idNumber,
         },
       };
+      // An uncertain request must replay the identical receipt; it may already
+      // have committed. Only a new completion performs this preflight.
+      if (!replay) {
+        if (!(await balance.verify())) {
+          setStep(0);
+          throw new Error(t("deliveries.wizard.balance.required"));
+        }
+      }
       submitted.current = payload;
       setLocked(true);
+      const beforeCompletion = store.getState().auth;
+      if (beforeCompletion.companyId !== access.companyId || beforeCompletion.idToken !== token)
+        throw new Error(t("deliveries.deliver.unavailable"));
       const result = await completeDelivery(deliveryId, invoiceId, payload);
       const current = store.getState().auth;
       if (current.companyId !== access.companyId || current.idToken !== token)
@@ -142,16 +156,24 @@ export function useDeliveryWizard(target: DeliverTarget) {
   async function next() {
     form.clearErrors("root");
     if (step === 0) {
-      if (!(await form.trigger("barcodeIds"))) return;
+      if (!(await balance.verify())) {
+        form.setError("root", { message: t("deliveries.wizard.balance.required") });
+        return;
+      }
       setStep(1);
       return;
     }
     if (step === 1) {
-      const ids = await photos.upload();
-      if (ids !== null) setStep(2);
+      if (!(await form.trigger("barcodeIds"))) return;
+      setStep(2);
       return;
     }
     if (step === 2) {
+      const ids = await photos.upload();
+      if (ids !== null) setStep(3);
+      return;
+    }
+    if (step === 3) {
       if (policies.isPending || policies.isError) return;
       if ((policies.data?.length ?? 0) > 0 && !form.getValues("agreed")) {
         form.setError("agreed", {
@@ -160,7 +182,7 @@ export function useDeliveryWizard(target: DeliverTarget) {
         return;
       }
       if (await form.trigger(["signerName", "idNumber", "signatureDataUrl"]))
-        setStep(3);
+        setStep(4);
     }
   }
   async function save(values: DeliveryWizardValues) {
@@ -218,6 +240,7 @@ export function useDeliveryWizard(target: DeliverTarget) {
   }
   return {
     access,
+    balance,
     form,
     query,
     policies,
@@ -229,7 +252,7 @@ export function useDeliveryWizard(target: DeliverTarget) {
     finished,
     locked,
     toggleBarcode,
-    busy: photos.busy || form.formState.isSubmitting || mutation.isPending,
+    busy: balance.busy || photos.busy || form.formState.isSubmitting || mutation.isPending,
     fillFromInvoiceReceiver,
   };
 }

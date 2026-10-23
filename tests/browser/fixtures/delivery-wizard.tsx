@@ -1,5 +1,6 @@
 import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
 import type { AssignedDeliveryBarcode } from "@/lib/deliveries/types";
+import { WorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,7 +21,8 @@ function Harness() {
         invoiceId: "68f800000000000000000001",
         number: "000123",
         barcodeId: "68f800000000000000000010",
-        route: null,
+        route: { id: "route-1", name: "1-64-26" },
+        routeRate: (window as unknown as { wizardRowRate?: number }).wizardRowRate,
         delivery: { id: 5, name: "Delivery 5" },
       }}
       onClose={() => setOpen(false)}
@@ -33,6 +35,8 @@ function Harness() {
 window.wizardMounted = true;
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={client}>
-    <Harness />
+    <WorkspaceTabScope tabId="delivery-test" isActive portalContainer={document.getElementById("workspace-body")} >
+      <Harness />
+    </WorkspaceTabScope>
   </QueryClientProvider>,
 );

@@ -17,10 +17,26 @@ export type DeliveryReceiver = {
   phones: DeliveryReceiverPhone[];
 };
 
+export type DeliverySender = {
+  name: string;
+  phones: DeliveryReceiverPhone[];
+};
+
 /** A tenant pending barcode with its invoice receiver; crew membership does not limit visibility. */
 export type AssignedDeliveryBarcode = Barcode & {
   receiver: DeliveryReceiver | null;
+  sender: DeliverySender | null;
+  /** Open balance of the owning invoice (`invoice.balance`); absent when the API omits it. */
+  invoiceBalance?: number;
+  /** DOP per USD from the row's daily route (`route.rate`); absent when the API omits it. */
+  routeRate?: number;
 };
+
+/** USD amount converted with a route exchange rate; undefined without a usable rate. */
+export function toDopAmount(usd: number, rate: number | undefined): number | undefined {
+  if (rate == null || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(usd)) return undefined;
+  return Math.round(usd * rate * 100) / 100;
+}
 
 /** Province is the receiver address `state`; the API orders ties by invoice, then barcode. */
 export const DEFAULT_ASSIGNED_DELIVERY_SORT = "receiver.address.state:asc";
@@ -30,8 +46,8 @@ export function formatDeliveryAddress(receiver: DeliveryReceiver | null): string
   return [receiver.address1, receiver.apartment].map((part) => part.trim()).filter(Boolean).join(", ");
 }
 
-export function formatDeliveryPhones(receiver: DeliveryReceiver | null): { label: string; dial: string }[] {
-  return (receiver?.phones ?? [])
+export function formatDeliveryPhones(party: { phones: DeliveryReceiverPhone[] } | null): { label: string; dial: string }[] {
+  return (party?.phones ?? [])
     .map((phone) => {
       const label = (phone.displayNumber || phone.number).trim();
       return { label, dial: (phone.number || label).replace(/[^\d+]/g, "") };

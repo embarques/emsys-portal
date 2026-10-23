@@ -72,7 +72,7 @@ export function DeliveryPhotoPicker({
   return (
     <div className="space-y-5">
       <div
-        className="rounded-xl border-2 border-dashed bg-primary/[0.025] px-4 py-7 text-center"
+        className="rounded-xl border-2 border-dashed border-primary/60 bg-accent px-4 py-7 text-center"
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
@@ -141,7 +141,7 @@ export function DeliveryPhotoPicker({
         {photos.map((photo) => (
           <li
             key={photo.id}
-            className="relative min-w-0 overflow-hidden rounded-xl border"
+            className="relative min-w-0 overflow-hidden rounded-xl border border-input bg-card"
           >
             <PhotoPreview photo={photo} />
             <Button

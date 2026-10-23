@@ -11,9 +11,12 @@
   "columns": {
     "barcode": "Barcode",
     "invoice": "Invoice",
+    "invoiceBalance": "Invoice balance",
     "name": "Name",
     "container": "Container",
     "status": "Status",
+    "senderName": "Sender name",
+    "senderPhones": "Sender phones",
     "receiverName": "Receiver name",
     "address": "Address",
     "province": "Province",
@@ -110,23 +113,27 @@
       "review": "Review",
       "photos": "Photos",
       "signature": "Signature",
-      "finish": "Finish"
+      "finish": "Finish",
+      "balance": "Balance"
     },
     "headings": {
       "review": "Review items",
       "photos": "Delivery photos",
       "signature": "Receiver signature",
-      "finish": "Review & complete"
+      "finish": "Review & complete",
+      "balance": "Review balance"
     },
     "hints": {
       "review": "Select only the pieces the customer is receiving on this delivery.",
       "photos": "Optionally photograph the delivered merchandise.",
       "signature": "The person receiving may be different from the invoice customer.",
-      "finish": "Check the selected items, uploaded photos and receiver before completing."
+      "finish": "Check the selected items, uploaded photos and receiver before completing.",
+      "balance": "The invoice balance must be zero before completing this delivery, unless you accept liability for payments still pending clearance."
     },
     "summary": "Delivery summary",
     "invoice": "Invoice",
     "delivery": "Delivery",
+    "receiver": "Receiver",
     "deliveryNumber": "Delivery #{{id}}",
     "selectedCount": "{{count}} of {{total}} items selected",
     "remainingConduce": "Items you do not select remain {{pendingStatus}} for the next trip.",
@@ -154,6 +161,38 @@
     "retrySameReceipt": "Retry sends the same receipt safely. If items or terms changed, reopen the wizard to review them.",
     "successTitle": "Delivery completed",
     "successHint": "{{count}} items are now {{deliveredStatus}}. The receipt and photos are linked to this invoice and delivery. Unselected items remain {{pendingStatus}}.",
-    "done": "Back to deliveries"
+    "done": "Back to deliveries",
+    "balance": {
+      "outstanding": "Invoice balance",
+      "refresh": "Refresh balance",
+      "paid": "Balance is zero. Continue to review the items.",
+      "required": "The invoice balance must be zero to continue. Cash payments apply immediately; check, Zelle, deposit and card payments count only after they are cleared in the system. If someone else collects payment, refresh the balance.",
+      "recorded": "Payment recorded. Refresh to check the latest balance.",
+      "recordedPending": "Payment recorded but not cleared. Non-cash payments do not reduce the balance until they are cleared in the system.",
+      "credit": "This invoice has a credit balance. Accounting must resolve it before delivery.",
+      "paymentUnavailable": "Recording payment requires delivery view, Cuadre create and payment (journal create) access. Ask an authorized user to settle the invoice, then refresh the balance.",
+      "paymentLoadError": "Payment details could not be loaded. Retry or have an authorized user collect payment.",
+      "loadError": "The invoice balance could not be verified. Retry before continuing.",
+      "noStatementCreate": "There is no Cuadre for your branch today. Open one to record payment.",
+      "noStatementNoRate": "There is no Cuadre for your branch today, and this route has no exchange rate to open one. Open it in Daily Income, then refresh this step.",
+      "statementClosed": "Today's Cuadre for your branch is closed. Reopen it in Daily Income, then refresh this step.",
+      "createStatement": "Open today's Cuadre",
+      "creatingStatement": "Opening Cuadre…",
+      "recordPayment": "Record payment",
+      "dopAtRate": "{{amount}} at route rate {{rate}}",
+      "rateUnavailable": "DOP amount unavailable: the route has no exchange rate.",
+      "pendingTitle": "Payments pending clearance",
+      "pendingTotal": "Total pending",
+      "pendingLoadError": "Payments pending clearance could not be checked. Retry to see whether they cover the balance.",
+      "pendingShort": "Pending payments ({{pending}}) do not cover the {{balance}} balance. Collect the remaining amount to continue.",
+      "overrideWarning": "These payments are not cleared in the system. If you deliver now, you are liable for the {{amount}} balance if a payment does not clear.",
+      "overrideAccept": "Deliver before the payment clears. I accept liability for this payment.",
+      "methods": {
+        "check": "Check",
+        "zelle": "Zelle",
+        "deposit": "Deposit",
+        "creditCard": "Credit card"
+      }
+    }
   }
 }

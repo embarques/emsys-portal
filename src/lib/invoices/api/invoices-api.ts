@@ -886,7 +886,7 @@ function unwrapInvoiceApiRecord(response: unknown): ApiInvoice {
   return raw as ApiInvoice;
 }
 
-export async function fetchInvoiceById(invoiceId: string, signal?: AbortSignal): Promise<Invoice> {
+export async function fetchInvoiceById(invoiceId: string, signal?: AbortSignal, requireBalance = false): Promise<Invoice> {
   const id = parseInvoicePathId(invoiceId);
   if (process.env.NODE_ENV === "development") {
     console.info("[invoice:get] request", {
@@ -901,7 +901,15 @@ export async function fetchInvoiceById(invoiceId: string, signal?: AbortSignal):
   );
 
   const apiRecord = unwrapInvoiceApiRecord(response);
+  if (requireBalance && ((typeof apiRecord.balance !== "number" && typeof apiRecord.balance !== "string") || apiRecord.balance == null || String(apiRecord.balance).trim() === "" || !Number.isFinite(Number(apiRecord.balance)))) {
+    throw new Error("Invoice balance is unavailable. Refresh before completing delivery.");
+  }
   const invoice = normalizeInvoice(apiRecord);
+  // Delivery requires the authoritative balance, including any credit balance.
+  if (invoice && requireBalance) {
+    if (invoice.invoiceId !== id) throw new Error("Invoice does not match the selected delivery.");
+    invoice.balance = Number(apiRecord.balance);
+  }
   if (!invoice) {
     throw new Error("Invoice not found.");
   }

@@ -3,13 +3,15 @@
 import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-notice";
 
 import { useState } from "react";
-import { PackageCheck } from "lucide-react";
+import { PackageCheck, Printer } from "lucide-react";
 
 import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
+import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
 import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
+import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -20,7 +22,6 @@ import { useDeliveryAccess } from "@/lib/deliveries/hooks/use-deliver-invoice";
 import {
   DEFAULT_ASSIGNED_DELIVERY_SORT,
   formatDeliveryAddress,
-  formatDeliveryPhones,
   type AssignedDeliveryBarcode,
 } from "@/lib/deliveries/types";
 import { useTranslation } from "@/lib/i18n";
@@ -50,9 +51,12 @@ export function DeliveriesWorkspace() {
   const headers = [
     t("deliveries.columns.barcode"),
     t("deliveries.columns.invoice"),
+    t("deliveries.columns.invoiceBalance"),
     t("deliveries.columns.name"),
     t("deliveries.columns.container"),
     t("deliveries.columns.status"),
+    t("deliveries.columns.senderName"),
+    t("deliveries.columns.senderPhones"),
     t("deliveries.columns.receiverName"),
     t("deliveries.columns.address"),
     t("deliveries.columns.province"),
@@ -114,29 +118,43 @@ export function DeliveriesWorkspace() {
               </thead>
               <tbody>
                 {table.items.map((row) => {
-                  const phones = formatDeliveryPhones(row.receiver);
                   return (
                     <tr key={rowKey(row)} className="border-b align-top last:border-0">
                       <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums">{row.number}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.invoiceNumber}</td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <DeliveryRowBalance row={row} />
+                      </td>
                       <td className="px-4 py-3">{row.description}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.container?.name}</td>
                       <td className="whitespace-nowrap px-4 py-3">
                         {row.status?.name ? <Badge variant="outline">{getBarcodeStatusLabel(row.status.name, t)}</Badge> : null}
                       </td>
+                      <td className="px-4 py-3">{row.sender?.name}</td>
+                      <td className="min-w-[260px] px-4 py-3">
+                        <TablePhoneCell phones={row.sender?.phones ?? []} callable />
+                      </td>
                       <td className="px-4 py-3">{row.receiver?.name}</td>
                       <td className="px-4 py-3">{formatDeliveryAddress(row.receiver)}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.receiver?.province}</td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        {phones.map((phone) => <a key={phone.dial} href={`tel:${phone.dial}`} className="block hover:underline">{phone.label}</a>)}
+                      <td className="min-w-[260px] px-4 py-3">
+                        <TablePhoneCell phones={row.receiver?.phones ?? []} callable />
                       </td>
                       {(access.canDeliver || access.canPrint) && <td className="px-4 py-3 text-right">
-                        {access.canDeliver && <Button type="button" size="sm" variant="outline"
-                          disabled={!row.invoiceId || !row.delivery?.id}
-                          onClick={() => setDeliverRow(row)}>
-                          <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
-                        </Button>}
-                        {access.canPrint && <Button type="button" size="sm" variant="outline" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => setPrintRow(row)}>{t("invoices.printSignatures.action")}</Button>}
+                        <div className="ml-auto flex w-max flex-col items-stretch gap-2">
+                          {access.canDeliver && <Button type="button" size="sm" variant="outline"
+                            className="justify-start"
+                            disabled={!row.invoiceId || !row.delivery?.id}
+                            onClick={() => setDeliverRow(row)}>
+                            <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
+                          </Button>}
+                          {access.canPrint && <Button type="button" size="sm" variant="outline"
+                            className="justify-start"
+                            disabled={!row.invoiceId || !row.delivery?.id}
+                            onClick={() => setPrintRow(row)}>
+                            <Printer className="size-4" />{t("invoices.printSignatures.action")}
+                          </Button>}
+                        </div>
                         <DeliveryActionNotice row={row} />
                       </td>}
                     </tr>
