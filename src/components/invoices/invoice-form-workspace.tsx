@@ -26,7 +26,7 @@ import {
   useUpdateInvoice,
 } from "@/lib/invoices/hooks/use-invoices";
 import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
-import type { InvoiceWriteContext, InvoiceWriteEmployeeRef } from "@/lib/invoices/api/invoices-api";
+import type { InvoiceWriteContext } from "@/lib/invoices/api/invoices-api";
 import { resolveInvoiceRemoveBarcodeIds } from "@/lib/invoices/api/invoice-barcode-sync-api";
 import {
   invoiceBarcodeSyncNeedsUserInput,
@@ -53,6 +53,17 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useEnsureCustomerDetail } from "@/lib/customers/hooks/use-customers";
+import { buildInvoiceFormFromAppointment } from "@/lib/invoices/appointment-invoice";
+import type { InvoiceAppointmentPrefill } from "@/lib/invoices/appointment-invoice-prefill";
+import {
+  applyAssignedInvoiceContext,
+  AssignedInvoiceContextError,
+  buildAssignedInvoiceWriteContext,
+  employeeToInvoiceWriteRef,
+} from "@/lib/invoices/assigned-invoice";
+import { useAssignedInvoiceContext } from "@/lib/invoices/hooks/use-assigned-invoice-context";
+import { useInvoiceCreateAccess } from "@/lib/invoices/hooks/use-invoice-create-access";
+import { useOrder } from "@/lib/orders/hooks/use-orders";
 import { fetchCurrentUser } from "@/lib/users/api/users-api";
 
 
@@ -81,6 +92,8 @@ type InvoiceWizardShellProps = {
   isPrinting?: boolean;
   /** Rendered inside an auto-height dialog: cap the height instead of filling the viewport. */
   inDialog?: boolean;
+  /** `canCreateAssignedInvoice` flow: details read-only, appointment parties only. */
+  assignedMode?: boolean;
 };
 
 function InvoiceWizardShell({
@@ -103,6 +116,7 @@ function InvoiceWizardShell({
   onPrint,
   isPrinting = false,
   inDialog = false,
+  assignedMode = false,
 }: InvoiceWizardShellProps) {
   const { t } = useTranslation();
   const shellRef = useFormViewport();
@@ -144,6 +158,7 @@ function InvoiceWizardShell({
             onPrint={onPrint}
             isPrinting={isPrinting}
             onCancel={onCancel}
+            assignedMode={assignedMode}
           />
         </div>
       </div>
@@ -151,25 +166,7 @@ function InvoiceWizardShell({
   );
 }
 
-function employeeToWriteRef(
-  employee: {
-    id: number;
-    name: string;
-    email?: string;
-    user?: { email?: string } | null;
-  },
-  fallbackName = "",
-): InvoiceWriteEmployeeRef {
-  const userName = employee.user?.email?.trim() || employee.email?.trim() || undefined;
-  const fullName = employee.name.trim();
-
-  return {
-    id: employee.id,
-    name: fullName || fallbackName,
-    ...(userName ? { userName } : {}),
-    ...(fullName ? { fullName } : {}),
-  };
-}
+const employeeToWriteRef = employeeToInvoiceWriteRef;
 
 async function resolveInvoicePickupAssignment(
   values: InvoiceFormValues,
@@ -248,24 +245,75 @@ type InvoiceCreateWizardProps = {
   onCancel: () => void;
   submitLabel?: string;
   inDialog?: boolean;
+  /** Start from an appointment: sender and receiver come from it. */
+  appointmentPrefill?: InvoiceAppointmentPrefill;
 };
 
 export function InvoiceCreateWizard({
   onCancel,
   submitLabel = "Save invoice",
   inDialog = false,
+  appointmentPrefill,
 }: InvoiceCreateWizardProps) {
   const { t } = useTranslation();
   const { notifyAdded } = useFeedback();
   const createMutation = useCreateInvoice();
-  const initialValues = useMemo(() => createEmptyInvoiceForm(), []);
+  const ensureCustomerDetail = useEnsureCustomerDetail();
+  const createAccess = useInvoiceCreateAccess();
+  const isAssignedOnly = createAccess.isAssignedOnly;
+  const emptyValues = useMemo(() => createEmptyInvoiceForm(), []);
+  const appointmentId = appointmentPrefill?.pickupId.trim() || null;
+  const appointmentReceiverId = appointmentPrefill?.receiverId;
+  const appointmentQuery = useOrder(appointmentId, Boolean(appointmentId));
+  const assignedContextQuery = useAssignedInvoiceContext(
+    emptyValues.date,
+    createAccess.ready && isAssignedOnly && Boolean(appointmentId),
+  );
+  const assignedContext = assignedContextQuery.data ?? null;
+  const [appointmentValues, setAppointmentValues] = useState<InvoiceFormValues | null>(null);
+
+  useEffect(() => {
+    // Build once; a background refetch must not replace what the user is editing.
+    if (!appointmentQuery.data || appointmentValues) return;
+
+    let cancelled = false;
+    const base = buildInvoiceFormFromAppointment(
+      appointmentQuery.data,
+      appointmentReceiverId,
+      emptyValues,
+    );
+
+    void hydrateInvoiceEditPartyCustomers(base, (customerId) =>
+      ensureCustomerDetail(customerId, { staleTime: 0 }),
+    )
+      .then((hydrated) => {
+        if (!cancelled) setAppointmentValues(hydrated);
+      })
+      .catch(() => {
+        if (!cancelled) setAppointmentValues(base);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [appointmentQuery.data, appointmentReceiverId, appointmentValues, emptyValues, ensureCustomerDetail]);
+
+  const initialValues = useMemo(() => {
+    if (!appointmentId) return emptyValues;
+    if (!appointmentValues) return null;
+    if (!isAssignedOnly) return appointmentValues;
+    return assignedContext ? applyAssignedInvoiceContext(appointmentValues, assignedContext) : null;
+  }, [appointmentId, appointmentValues, assignedContext, emptyValues, isAssignedOnly]);
 
   async function handleSubmit(
     values: InvoiceFormValues,
     submitContext?: InvoiceFormSubmitContext,
   ): Promise<InvoiceFormSubmitResult> {
     try {
-      const context = await buildInvoiceWriteContext(values);
+      const context =
+        isAssignedOnly && assignedContext
+          ? buildAssignedInvoiceWriteContext(assignedContext)
+          : await buildInvoiceWriteContext(values);
       const registration = submitContext?.dailyIncomeRegistration ?? null;
       const fallbackIncomeStatementId =
         submitContext?.incomeStatementId ??
@@ -312,6 +360,46 @@ export function InvoiceCreateWizard({
     }
   }
 
+  const blockedMessage =
+    appointmentId && appointmentQuery.isError
+      ? t("invoices.workspace.appointmentLoadError")
+      : createAccess.ready && isAssignedOnly && !appointmentId
+        ? t("invoices.assigned.errors.appointmentRequired")
+        : isAssignedOnly && assignedContextQuery.isError
+          ? assignedContextQuery.error instanceof AssignedInvoiceContextError
+            ? t(`invoices.assigned.errors.${assignedContextQuery.error.code}`)
+            : normalizeApiError(assignedContextQuery.error).message
+          : null;
+
+  if (blockedMessage) {
+    return (
+      <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="max-w-md text-sm text-destructive">{blockedMessage}</p>
+        <Button variant="outline" onClick={onCancel}>
+          {t("invoices.form.design.backToInvoices")}
+        </Button>
+      </div>
+    );
+  }
+
+  if (appointmentId && !createAccess.ready) {
+    return (
+      <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
+        <Loader2 className="mr-2 size-4 animate-spin" />
+        {t("invoices.workspace.loadingAppointment")}
+      </div>
+    );
+  }
+
+  if (!initialValues) {
+    return (
+      <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
+        <Loader2 className="mr-2 size-4 animate-spin" />
+        {isAssignedOnly ? t("invoices.assigned.loading") : t("invoices.workspace.loadingAppointment")}
+      </div>
+    );
+  }
+
   return (
     <InvoiceWizardShell
       title={t("invoices.workspace.addInvoice")}
@@ -324,6 +412,8 @@ export function InvoiceCreateWizard({
       isSubmitting={createMutation.isPending}
       onSubmit={handleSubmit}
       inDialog={inDialog}
+      {...(appointmentId ? { resetAfterSave: false, onSaved: onCancel } : {})}
+      {...(isAssignedOnly ? { assignedMode: true, initialWizardStep: 2 } : {})}
     />
   );
 }
@@ -561,6 +651,7 @@ export function InvoiceFormWorkspace({
   entityId,
   initialWizardStep,
   focusBarcodeId,
+  invoicePrefill,
   formNonce,
 }: WorkspaceFormHostProps) {
   const isEditing = mode === "edit";
@@ -602,5 +693,5 @@ export function InvoiceFormWorkspace({
     );
   }
 
-  return <InvoiceCreateWizard onCancel={returnToInvoices} />;
+  return <InvoiceCreateWizard onCancel={returnToInvoices} appointmentPrefill={invoicePrefill} />;
 }

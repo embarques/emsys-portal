@@ -1,10 +1,11 @@
 "use client";
 
-import { Info, MapPin, Phone as PhoneIcon } from "lucide-react";
+import { Info, MapPin, Phone as PhoneIcon, Receipt } from "lucide-react";
 
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
 import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -37,6 +38,8 @@ type OrderViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
+  /** Omit to hide Create invoice (e.g. no invoice access). */
+  onCreateInvoice?: (order: Order) => void;
 };
 
 function SenderViewSections({ customer }: { customer: Customer }) {
@@ -94,7 +97,14 @@ function SenderViewSections({ customer }: { customer: Customer }) {
   );
 }
 
-export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: OrderViewSheetProps) {
+export function OrderViewSheet({
+  order,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+  onCreateInvoice,
+}: OrderViewSheetProps) {
   const { t, locale } = useTranslation();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
 
@@ -123,6 +133,14 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
                 {getOrderCompletedLabel(order.completed, t)}
               </Badge>
             </div>
+          }
+          actions={
+            onCreateInvoice ? (
+              <Button type="button" size="sm" variant="outline" onClick={() => onCreateInvoice(order)}>
+                <Receipt className="size-4" />
+                {t("orders.actions.createInvoice")}
+              </Button>
+            ) : null
           }
         />
 

@@ -15,6 +15,7 @@ import {
   PackageOpen,
   Plus,
   Printer,
+  Receipt,
   RefreshCw,
   Route as RouteIcon,
   RouteOff,
@@ -25,6 +26,8 @@ import {
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
+import { AppointmentInvoiceDialogs } from "@/components/orders/appointment-invoice-dialogs";
+import { useCreateAppointmentInvoice } from "@/lib/orders/hooks/use-create-appointment-invoice";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -449,6 +452,7 @@ export function OrdersWorkspace() {
   const retryLegacySyncMutation = useRetryOrderLegacySync();
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
+  const appointmentInvoice = useCreateAppointmentInvoice();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
   const predefinedRouteFilter = usePredefinedRouteFilterOptions(
     filtersOpen || filters.rows.some((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD && row.value.trim()),
@@ -647,6 +651,11 @@ export function OrdersWorkspace() {
 
   function openViewOrder(order: Order) {
     setViewOrder(order);
+  }
+
+  function createInvoiceFromOrder(order: Order) {
+    setViewOrder(null);
+    appointmentInvoice.startInvoice(order);
   }
 
   async function saveOrder(values: OrderFormValues) {
@@ -1313,6 +1322,18 @@ export function OrdersWorkspace() {
             onDelete={() => setDeleteTarget(selectedOrders)}
             deleteDisabled={isSaving}
             actions={<>
+              {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap"
+                  onClick={() => createInvoiceFromOrder(selectedOrders[0])}
+                >
+                  <Receipt className="size-4" />
+                  {t("orders.actions.createInvoice")}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -1588,6 +1609,17 @@ export function OrdersWorkspace() {
             <>
               {!completionExpanded && !routesExpanded ? (
                 <>
+                  {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="whitespace-nowrap"
+                      onClick={() => createInvoiceFromOrder(selectedOrders[0])}
+                    >
+                      <Receipt className="h-4 w-4" />
+                      {t("orders.actions.createInvoice")}
+                    </Button>
+                  ) : null}
                   <Button variant="outline" size="sm" onClick={openMapView}>
                     <MapIcon className="h-4 w-4" />
                     {t("orders.actions.map")}
@@ -1774,7 +1806,10 @@ export function OrdersWorkspace() {
           setViewOrder(null);
           setDeleteTarget(order);
         }}
+        onCreateInvoice={appointmentInvoice.canCreateInvoice ? createInvoiceFromOrder : undefined}
       />
+
+      <AppointmentInvoiceDialogs state={appointmentInvoice} />
 
       <Dialog
         open={formMode !== null}

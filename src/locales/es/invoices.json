@@ -95,7 +95,19 @@
     "editInvoiceNamed": "Editar factura {{number}}",
     "addInvoice": "Agregar factura",
     "untitledTab": "Factura",
-    "invoiceNotFound": "Factura no encontrada."
+    "invoiceNotFound": "Factura no encontrada.",
+    "loadingAppointment": "Cargando cita…",
+    "appointmentLoadError": "No se pudo cargar esta cita."
+  },
+  "assigned": {
+    "loading": "Preparando su factura…",
+    "detailsHint": "Se completa automáticamente con la fecha de hoy, el contenedor más reciente y su ruta u oficina asignada.",
+    "errors": {
+      "appointmentRequired": "Las facturas solo se pueden crear desde una cita.",
+      "employeeNotLinked": "Su usuario no está vinculado a un empleado. Pida a un administrador que vincule su registro de empleado antes de crear facturas.",
+      "noAssignment": "No está en la ruta de recogida de hoy y no es empleado de oficina ni de almacén. Pida a un administrador que lo asigne antes de crear facturas.",
+      "noContainer": "Todavía no hay un contenedor disponible. Pida a un administrador que cree uno antes de crear facturas."
+    }
   },
   "form": {
     "design": {

@@ -53,7 +53,8 @@ import {
 } from "@/lib/containers/types";
 import { useEnsureCustomerDetail } from "@/lib/customers/hooks/use-customers";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, coreAddressHasContent, customerHasUnverifiedPrimaryAddress, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
-import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { formatContainerIdLabel, formatContainerLabel } from "@/lib/containers/display";
+import { formatInvoiceDate, formatInvoiceMoney } from "@/lib/invoices/display";
 import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
@@ -89,14 +90,17 @@ import {
   PICKUP_ROUTE_FORM_FEATURE,
   PICKUP_ROUTES_DIRECTORY_VARIANT,
 } from "@/lib/pickup-delivery-routes/directory-variant";
-import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import {
+  buildActiveRouteAssignmentOptions,
+  formatActiveRouteAssignmentLabel,
+} from "@/lib/pickup-delivery-routes/display";
 import { isDeliveryBranchCode } from "@/lib/pickup-delivery-routes/types";
 import {
   useActiveRoutePicker,
   useEnsurePickupRouteDetail,
 } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
-import { DEFAULT_ORDER_LIST_PARAMS, getOrderReceivers, type Order } from "@/lib/orders/types";
+import { DEFAULT_ORDER_LIST_PARAMS, getUniqueOrderReceivers, type Order } from "@/lib/orders/types";
 import { useOrder, useOrderSearch, useOrders } from "@/lib/orders/hooks/use-orders";
 import { cn } from "@/lib/utils";
 
@@ -126,7 +130,21 @@ type InvoiceFormProps = {
   requestEditLineItemId?: string | null;
   /** Preselect the newest container when the form opens without one (new invoices only). */
   defaultToLatestContainer?: boolean;
+  /**
+   * `canCreateAssignedInvoice` flow: details are read-only and parties come only
+   * from the appointment (choose among its receivers; no customer add/edit).
+   */
+  assignedMode?: boolean;
 };
+
+function ReadOnlyField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-border bg-muted/20 px-3 py-2">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <div className="mt-0.5 text-sm font-medium text-foreground [overflow-wrap:anywhere]">{children}</div>
+    </div>
+  );
+}
 
 type PartySide = "sender" | "receiver";
 
@@ -169,16 +187,7 @@ function orderToPickupSelectOption(order: Order): SearchableSelectOption {
   };
 }
 
-function getPickupReceivers(order: Order | null | undefined): Customer[] {
-  if (!order) return [];
-  const seen = new Set<string>();
-  return getOrderReceivers(order).filter((receiver) => {
-    const id = receiver?.id?.trim();
-    if (!id || seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
-}
+const getPickupReceivers = getUniqueOrderReceivers;
 
 function receiverToPickupSelectOption(receiver: Customer): SearchableSelectOption {
   const phone = getPrimaryPhoneDisplayNumber(receiver.phones);
@@ -252,6 +261,7 @@ export function InvoiceForm({
   focusFieldKey = 0,
   requestEditLineItemId = null,
   defaultToLatestContainer = false,
+  assignedMode = false,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
@@ -1091,7 +1101,98 @@ export function InvoiceForm({
     </div>
   );
 
-  const partiesFields = (
+  const dash = t("common.empty.dash");
+  const assignedContainer = containers.find((container) => String(container.id) === values.containerId);
+  const assignedRoute = pickupRoutes.find((route) => route.id === values.routeId);
+  const assignedSourceOption = INVOICE_PICKUP_SOURCES.find((option) => option.value === values.pickupSource);
+  const assignedPickupOrder = findPickupOrder(values.pickupId);
+
+  const assignedDetailsFields = (
+    <div className="min-w-0 space-y-3">
+      <p className="text-sm text-muted-foreground">{t("invoices.assigned.detailsHint")}</p>
+      <div className={cn("grid min-w-0 gap-3", !isPhoneWizard && "@2xl:grid-cols-2")}>
+        <ReadOnlyField label={t("invoices.form.fields.date")}>
+          {values.date ? formatInvoiceDate(values.date) : dash}
+        </ReadOnlyField>
+        <ReadOnlyField label={t("invoices.form.fields.container")}>
+          {assignedContainer
+            ? formatContainerLabel(assignedContainer)
+            : values.containerId
+              ? formatContainerIdLabel(values.containerId)
+              : dash}
+        </ReadOnlyField>
+        <ReadOnlyField label={t("invoices.form.fields.pickupSource")}>
+          {assignedSourceOption ? t(assignedSourceOption.labelKey) : dash}
+        </ReadOnlyField>
+        {values.pickupSource === "route" ? (
+          <ReadOnlyField label={t("invoices.form.fields.pickupRoute")}>
+            {assignedRoute
+              ? formatActiveRouteAssignmentLabel(assignedRoute, t)
+              : values.routeCrewName.trim() || dash}
+          </ReadOnlyField>
+        ) : (
+          <ReadOnlyField label={pickupEmployeeFieldLabel}>
+            {[values.pickupEmployeeName.trim(), values.officeBranchName.trim()].filter(Boolean).join(" · ") ||
+              dash}
+          </ReadOnlyField>
+        )}
+        <ReadOnlyField label={t("invoices.form.fields.invoiceNumber")}>
+          {values.autoGenerateNumber
+            ? t("invoices.form.autoNumber.assignedOnSave")
+            : values.invoiceNumber.trim() || dash}
+        </ReadOnlyField>
+      </div>
+    </div>
+  );
+
+  const partyBoxClassName = cn(
+    "space-y-2",
+    isPhoneWizard ? "border-b border-border/70 px-1 pb-4" : "min-w-0 rounded-lg border border-border bg-muted/20 p-4",
+  );
+
+  const assignedPartiesFields = (
+    <div className={cn("grid min-w-0", isPhoneWizard ? "gap-4" : "gap-4 @2xl:grid-cols-2")}>
+      <div className={isPhoneWizard ? undefined : "@2xl:col-span-2"}>
+        <ReadOnlyField label={t("invoices.form.fields.pickupReference")}>
+          {assignedPickupOrder
+            ? orderToPickupSelectOption(assignedPickupOrder).label
+            : values.pickupId
+              ? `#${values.pickupId}`
+              : dash}
+        </ReadOnlyField>
+      </div>
+      <div className={partyBoxClassName}>
+        <p className="text-sm font-medium">{t("invoices.form.fields.sender")}</p>
+        {values.sender ? <CustomerContactSummary customer={values.sender} /> : <p className="text-sm text-muted-foreground">{dash}</p>}
+      </div>
+      <div className={partyBoxClassName}>
+        <p className="text-sm font-medium">{t("invoices.form.fields.receiver")}</p>
+        {pickupReceivers.length > 1 ? (
+          <div className="space-y-1">
+            <Label htmlFor="pickupReceiverId" className="text-xs font-medium text-muted-foreground">
+              {t("invoices.form.fields.pickupReceiver")}
+            </Label>
+            <SearchableSelect
+              id="pickupReceiverId"
+              value={pickupReceiverValue}
+              onValueChange={updatePickupReceiver}
+              placeholder={t("invoices.form.placeholders.selectPickupReceiver")}
+              searchPlaceholder={t("invoices.form.placeholders.searchPickupReceivers")}
+              {...(isWizard ? wizardSelectFieldProps(pickupReceiverValue) : {})}
+              options={pickupReceiverOptions}
+            />
+          </div>
+        ) : null}
+        {values.receiver ? (
+          <CustomerContactSummary customer={values.receiver} />
+        ) : pickupReceivers.length <= 1 ? (
+          <p className="text-sm text-muted-foreground">{t("invoices.form.placeholders.noReceiver")}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const partiesFields = assignedMode ? assignedPartiesFields : (
     <div
       className={cn(
         "grid min-w-0",
@@ -1228,11 +1329,11 @@ export function InvoiceForm({
           {showDetailsSection ? (
             isPhoneWizard ? (
               <section className="min-w-0 space-y-5">
-                {detailsFields}
+                {assignedMode ? assignedDetailsFields : detailsFields}
               </section>
             ) : (
               <FormSection variant="card" icon={Receipt} title={`01 · ${t("invoices.form.sections.invoiceDetails")}`}>
-                {detailsFields}
+                {assignedMode ? assignedDetailsFields : detailsFields}
               </FormSection>
             )
           ) : null}

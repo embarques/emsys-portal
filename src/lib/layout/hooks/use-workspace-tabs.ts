@@ -130,6 +130,8 @@ export function useWorkspaceTabs() {
       focusBarcodeId?: string;
       /** Close the add tab after saving and hand the created id back to the opener. */
       closeOnSave?: boolean;
+      /** Start a new invoice from an appointment's sender/receiver. */
+      invoicePrefill?: WorkspaceTabForm["invoicePrefill"];
     }) => {
       if (!isDesktopTabs) {
         if (params.feature !== "customers") {
@@ -164,6 +166,7 @@ export function useWorkspaceTabs() {
         params.entityId,
         params.customerType,
         params.closeOnSave,
+        params.invoicePrefill,
       );
       if (existing) {
         if (
@@ -224,6 +227,7 @@ export function useWorkspaceTabs() {
               ? { focusBarcodeId: params.focusBarcodeId }
               : {}),
             ...(params.closeOnSave ? { closeOnSave: true } : {}),
+            ...(params.invoicePrefill ? { invoicePrefill: params.invoicePrefill } : {}),
             formNonce: Date.now(),
           },
         }),

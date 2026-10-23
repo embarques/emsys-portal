@@ -180,6 +180,20 @@ export function getOrderReceivers(order: Pick<Order, "receiver" | "receivers">):
   return order.receivers ?? (order.receiver ? [order.receiver] : []);
 }
 
+/** Saved receivers with an id, first occurrence only — the invoice receiver choices. */
+export function getUniqueOrderReceivers(
+  order: Pick<Order, "receiver" | "receivers"> | null | undefined,
+): Customer[] {
+  if (!order) return [];
+  const seen = new Set<string>();
+  return getOrderReceivers(order).filter((receiver) => {
+    const id = receiver?.id?.trim();
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 export type OrderFormValues = {
   id: number;
   date: string;

@@ -115,6 +115,8 @@ type Props = {
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
   isPrinting?: boolean;
   onCancel: () => void;
+  /** `canCreateAssignedInvoice` flow: details read-only, appointment parties only. */
+  assignedMode?: boolean;
 };
 
 function resolveInitialWizardStep(
@@ -143,6 +145,7 @@ export function InvoiceFormWizard({
   onPrint,
   isPrinting = false,
   onCancel,
+  assignedMode = false,
 }: Props) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
@@ -656,6 +659,7 @@ export function InvoiceFormWizard({
       focusFieldKey={focusFieldKey}
       requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
       defaultToLatestContainer={!isEditing}
+      assignedMode={assignedMode}
     />
   );
 

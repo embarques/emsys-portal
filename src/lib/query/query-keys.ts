@@ -227,6 +227,8 @@ export const queryKeys = {
     detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
     journals: (invoiceId: string, invoiceNumber?: string) =>
       [...queryKeys.invoices.all, "journals", invoiceId, invoiceNumber ?? ""] as const,
+    assignedContext: (companyId: string | null, actorId: string, date: string) =>
+      [...queryKeys.invoices.all, "assigned-context", companyId, actorId, date] as const,
   },
   accounting: {
     all: ["accounting"] as const,

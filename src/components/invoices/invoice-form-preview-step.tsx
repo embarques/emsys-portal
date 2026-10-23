@@ -102,10 +102,11 @@ function usePreviewLabels(values: InvoiceFormValues) {
 
     if (!values.routeId) return t("invoices.form.placeholders.noPickupRoute");
     const route = pickupRoutes.find((entry) => entry.id === values.routeId);
-    return route ? formatActiveRouteAssignmentLabel(route, t) : values.routeId;
+    return route ? formatActiveRouteAssignmentLabel(route, t) : values.routeCrewName.trim() || values.routeId;
   }, [
     pickupRoutes,
     t,
+    values.routeCrewName,
     values.officeBranchName,
     values.pickupEmployeeId,
     values.pickupEmployeeName,

@@ -24,6 +24,8 @@ export const PERMISSIONS = {
   invoicesPrint: { name: "canPrintInvoice", resourceType: "invoice" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
   invoicesUpdate: { name: "canUpdateInvoice", resourceType: "invoice" },
+  /** Create an invoice from an appointment with date, container and received-by auto-filled. */
+  invoicesCreateAssigned: { name: "canCreateAssignedInvoice", resourceType: "invoice" },
   invoicesSyncLegacy: { name: "canSyncLegacyInvoices", resourceType: "invoice" },
   invoicesManualNumber: { name: "canDisableAutomaticInvoiceNumber", resourceType: "invoice_manual_number" },
   invoicesApplyDiscount: { name: "canApplyInvoiceDiscount", resourceType: "invoice_discount" },
