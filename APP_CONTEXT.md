@@ -519,3 +519,12 @@ Examples include:
 - Other key performance indicators
 
 The goal is to turn the operational and financial data collected throughout the system into useful information for decision-making.
+
+### Daily-route supervisor terminology
+
+The crew role previously displayed as Appraiser/Tasador is now Supervisor in
+English and Spanish throughout daily-route forms, tables, details, filters and
+crew-role controls. The existing `appraiser` API value, fields and localization
+keys remain compatibility identifiers. Do not change saved crew roles, singleton
+lead-role behavior or combined driver/supervisor assignments as part of the
+terminology change.
