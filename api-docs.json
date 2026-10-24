@@ -4031,7 +4031,7 @@
           "type": "string"
         },
         "role": {
-          "enum": ["driver", "appraiser", "helper"],
+          "enum": ["driver", "supervisor", "helper"],
           "allOf": [
             {
               "$ref": "#/definitions/route.EmployeeRole"
@@ -4041,7 +4041,7 @@
         "roles": {
           "type": "array",
           "items": {
-            "enum": ["driver", "appraiser", "helper"],
+            "enum": ["driver", "supervisor", "helper"],
             "$ref": "#/definitions/route.EmployeeRole"
           }
         }
@@ -4049,10 +4049,10 @@
     },
     "route.EmployeeRole": {
       "type": "string",
-      "enum": ["driver", "appraiser", "helper"],
+      "enum": ["driver", "supervisor", "helper"],
       "x-enum-varnames": [
         "EmployeeRoleDriver",
-        "EmployeeRoleAppraiser",
+        "EmployeeRoleSupervisor",
         "EmployeeRoleHelper"
       ]
     },
@@ -4458,7 +4458,7 @@
         "active": {
           "type": "boolean"
         },
-        "appraiser": {
+        "supervisor": {
           "$ref": "#/definitions/route.EmployeeRef"
         },
         "branch": {
@@ -4537,7 +4537,7 @@
         "active": {
           "type": "boolean"
         },
-        "appraiser": {
+        "supervisor": {
           "$ref": "#/definitions/route.EmployeeRef"
         },
         "branch": {

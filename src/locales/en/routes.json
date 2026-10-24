@@ -194,7 +194,7 @@
     "container": "Container",
     "route": "Route crew",
     "driver": "Driver",
-    "appraiser": "Supervisor",
+    "supervisor": "Supervisor",
     "helper": "Helper",
     "recordId": "Record ID",
     "rate": "Exchange rate"
@@ -311,7 +311,7 @@
     "enums": {
       "crewRole": {
         "driver": "Driver",
-        "appraiser": "Supervisor",
+        "supervisor": "Supervisor",
         "helper": "Helper"
       },
       "status": {
@@ -407,12 +407,12 @@
     "routeSearch": "Search route crews…",
     "routeEmpty": "No route crews for this branch.",
     "driver": "Driver",
-    "appraiser": "Supervisor",
+    "supervisor": "Supervisor",
     "helper": "Helper",
     "crewRoles": "Assign roles",
     "crewRolesEmpty": "This route crew has no crew members.",
     "driverFor": "Driver — {{name}}",
-    "appraiserFor": "Supervisor — {{name}}",
+    "supervisorFor": "Supervisor — {{name}}",
     "helperFor": "Helper — {{name}}",
     "createVehicle": "New vehicle",
     "createRoute": "New route crew",

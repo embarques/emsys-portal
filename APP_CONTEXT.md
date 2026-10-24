@@ -187,21 +187,21 @@ Daily Income **Register inventory change** still posts a journal with `transacti
 
 Routes organize day-to-day appointment stops and delivery stops.
 
-**Route crews** are reusable people templates: **status**, **branch**, and **crew members**. They have no date, vehicle, or driver/appraiser/helper roles.
+**Route crews** are reusable people templates: **status**, **branch**, and **crew members**. They have no date, vehicle, or driver/supervisor/helper roles.
 
-**Daily routes** are the dated working route for a visit or delivery day: **branch**, **date**, **vehicle**, **route crew**, and **crew roles** for each employee on that crew (driver, appraiser, helper(s)). If the branch is RD, the form also includes **container** and **exchange rate**. They have no status/active flag. Daily-route employees come from the selected route crew; roles are assigned on the daily route, not on the crew template.
+**Daily routes** are the dated working route for a visit or delivery day: **branch**, **date**, **vehicle**, **route crew**, and **crew roles** for each employee on that crew (driver, supervisor, helper(s)). If the branch is RD, the form also includes **container** and **exchange rate**. They have no status/active flag. Daily-route employees come from the selected route crew; roles are assigned on the daily route, not on the crew template.
 
 A new daily route can start from a previous day’s configuration. Copying to another date is allowed; the same route crew cannot be used twice on the same date at the same branch.
 
-The same employee can be driver and appraiser, or driver, or appraiser, or helper.
+The same employee can be driver and supervisor, or driver, or supervisor, or helper.
 
 **Predefined routes** (`/predefined-routes`) are reusable named coverage filters, separate from route crews and daily routes. The list shows ID, name, Cities, and ZIP codes. The form retains one ordered mixed city/ZIP textbox list. Data is persisted through `/v1/predefined-routes` in the tenant `predefined_routes` collection. The appointment Route selector (below advanced filters) sends `predefinedRoute.id`; the API matches the customer sender address city OR ZIP and combines this restriction with existing filters using AND before counting/pagination. Add is available beside the selector; Edit/Delete are only in the catalog. Contract: `docs/predefined-routes.md`.
 
 TODO (backend) — route modeling (portal now follows this; align API + legacy data):
 
-**Route crews** (`/v1/routes`): reusable people templates. Persist only **active**, **branch** (`id` + `code` + `name`), and **employees** (`id` + `name`). Do not persist date, vehicle, trip number, or driver/appraiser/helper roles on the crew. Strip those fields from existing crew records. Reject create/update when another crew in the same company already has the same **branch** and the same **employee id set** (order-independent; compare ids, not names).
+**Route crews** (`/v1/routes`): reusable people templates. Persist only **active**, **branch** (`id` + `code` + `name`), and **employees** (`id` + `name`). Do not persist date, vehicle, trip number, or driver/supervisor/helper roles on the crew. Strip those fields from existing crew records. Reject create/update when another crew in the same company already has the same **branch** and the same **employee id set** (order-independent; compare ids, not names).
 
-**Daily routes** (`/v1/vehicle-routes`): dated working route. Persist **branch**, **date**, **vehicle** (`id` + `name`, optional `branch`), **route** (crew ref `id` + `name`), and **employees with roles** (`driver` | `appraiser` | `helper`; one person may be both driver and appraiser). RD/DR/DO branches also require **container** and may include **rate**. Daily-route `employees` must be the selected crew’s members (no extras). `vehicle` is required. Do not use `active` as a user-facing status. Reject a second daily route for the same **date + branch + route crew**. Multiple daily routes on the same date and branch are allowed when the route crews differ. Copying a previous day’s configuration onto a new date is allowed. Backfill legacy daily routes that stored vehicle only on the crew, or that have extra/missing employees vs the linked crew.
+**Daily routes** (`/v1/vehicle-routes`): dated working route. Persist **branch**, **date**, **vehicle** (`id` + `name`, optional `branch`), **route** (crew ref `id` + `name`), and **employees with roles** (`driver` | `supervisor` | `helper`; one person may be both driver and supervisor). RD/DR/DO branches also require **container** and may include **rate**. Daily-route `employees` must be the selected crew’s members (no extras). `vehicle` is required. Do not use `active` as a user-facing status. Reject a second daily route for the same **date + branch + route crew**. Multiple daily routes on the same date and branch are allowed when the route crews differ. Copying a previous day’s configuration onto a new date is allowed. Backfill legacy daily routes that stored vehicle only on the crew, or that have extra/missing employees vs the linked crew.
 
 Daily routes can be created from the Daily routes workspace, or when assigning appointments or invoice barcodes (choose an existing daily route, or open the add daily route form).
 
@@ -522,9 +522,8 @@ The goal is to turn the operational and financial data collected throughout the 
 
 ### Daily-route supervisor terminology
 
-The crew role previously displayed as Appraiser/Tasador is now Supervisor in
-English and Spanish throughout daily-route forms, tables, details, filters and
-crew-role controls. The existing `appraiser` API value, fields and localization
-keys remain compatibility identifiers. Do not change saved crew roles, singleton
-lead-role behavior or combined driver/supervisor assignments as part of the
-terminology change.
+Supervisor is the canonical crew role (`supervisor`) in API payloads, filters,
+forms, tables and details. Daily routes expose `supervisor` alongside `driver`.
+Driver/supervisor combined assignments and singleton lead-role behavior remain
+supported. Deploy with the API supervisor contract change; legacy role data must
+be migrated before switching clients.

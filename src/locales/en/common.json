@@ -188,7 +188,7 @@
     "activityId": "Activity ID",
     "address": "Address",
     "addresses": "Addresses",
-    "appraiser": "Supervisor",
+    "supervisor": "Supervisor",
     "arrivalDate": "Arrival Date",
     "averageCost": "Average Cost",
     "balance": "Balance",

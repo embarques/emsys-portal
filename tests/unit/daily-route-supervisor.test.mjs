@@ -35,16 +35,16 @@ function loadPicker(language){
 function inputs(node,result=[]){if(!node||typeof node!=="object")return result;if(node.type==="input")result.push(node);React.Children.forEach(node.props?.children,child=>inputs(child,result));return result;}
 
 for(const language of ["en","es"]){
- test(`${language}: daily-route Supervisor retains existing appraiser assignment semantics`,()=>{
+ test(`${language}: daily-route Supervisor uses the canonical supervisor role for combined assignments`,()=>{
   const{CrewRolePicker,messages}=loadPicker(language);const changes=[];
-  const tree=CrewRolePicker({employees:[{id:7,name:"Crew member",role:"driver",roles:["driver","appraiser"]}],toggleLeadRoles:true,onRoleChange:(...args)=>changes.push(args)});
+  const tree=CrewRolePicker({employees:[{id:7,name:"Crew member",role:"driver",roles:["driver","supervisor"]}],toggleLeadRoles:true,onRoleChange:(...args)=>changes.push(args)});
   const html=renderToStaticMarkup(tree);
   assert.match(html,/Supervisor/);assert.doesNotMatch(html,/Appraiser|Tasador/);
-  const supervisor=inputs(tree).find(input=>input.props.id==="crew-role-7-appraiser");
+  const supervisor=inputs(tree).find(input=>input.props.id==="crew-role-7-supervisor");
   assert.equal(supervisor.props.checked,true);
-  supervisor.props.onChange();assert.deepEqual(changes,[[7,"appraiser"]]);
-  assert.equal(messages.columns.appraiser,"Supervisor");
-  assert.equal(messages.filters.enums.crewRole.appraiser,"Supervisor");
-  assert.equal(messages.activeRoute.appraiser,"Supervisor");
+  supervisor.props.onChange();assert.deepEqual(changes,[[7,"supervisor"]]);
+  assert.equal(messages.columns.supervisor,"Supervisor");
+  assert.equal(messages.filters.enums.crewRole.supervisor,"Supervisor");
+  assert.equal(messages.activeRoute.supervisor,"Supervisor");
  });
 }

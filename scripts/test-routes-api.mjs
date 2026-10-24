@@ -309,7 +309,7 @@ if (!opts.skipCrud) {
         const crew = seedCrews[index - 1];
         const crewEmployees = (crew.employees ?? []).map(employeeRef);
         const driver = crewEmployees[0];
-        const appraiser = crewEmployees[1] ?? driver;
+        const supervisor = crewEmployees[1] ?? driver;
         return {
           routeType: "pickup",
           active: true,
@@ -321,10 +321,10 @@ if (!opts.skipCrud) {
           employees: crewEmployees.map((emp, position) => ({
             id: emp.id,
             name: emp.name,
-            role: position === 0 ? "driver" : position === 1 ? "appraiser" : "helper",
+            role: position === 0 ? "driver" : position === 1 ? "supervisor" : "helper",
           })),
           driver: { id: driver.id, name: driver.name },
-          appraiser: { id: appraiser.id, name: appraiser.name },
+          supervisor: { id: supervisor.id, name: supervisor.name },
         };
       },
       lookup: (body) => [{ field: "name", operator: "eq", value: body.name }],
@@ -644,7 +644,7 @@ if (!opts.skipCrud && !opts.skipDaily) {
       ),
     };
     const driver = crewEmployees[0];
-    const appraiser = crewEmployees[1] ?? crewEmployees[0];
+    const supervisor = crewEmployees[1] ?? crewEmployees[0];
 
     const createBody = {
       routeType: "pickup",
@@ -664,10 +664,10 @@ if (!opts.skipCrud && !opts.skipDaily) {
       employees: crewEmployees.map((emp, index) => ({
         id: emp.id,
         name: emp.name,
-        role: index === 0 ? "driver" : index === 1 ? "appraiser" : "helper",
+        role: index === 0 ? "driver" : index === 1 ? "supervisor" : "helper",
       })),
       driver: { id: driver.id, name: driver.name },
-      appraiser: { id: appraiser.id, name: appraiser.name },
+      supervisor: { id: supervisor.id, name: supervisor.name },
     };
 
     const create = await request("POST", "/vehicle-routes", createBody);

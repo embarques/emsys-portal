@@ -194,7 +194,7 @@
     "container": "Contenedor",
     "route": "Cuadrilla de ruta",
     "driver": "Conductor",
-    "appraiser": "Supervisor",
+    "supervisor": "Supervisor",
     "helper": "Ayudante",
     "recordId": "ID de registro",
     "rate": "Tasa de cambio"
@@ -311,7 +311,7 @@
     "enums": {
       "crewRole": {
         "driver": "Conductor",
-        "appraiser": "Supervisor",
+        "supervisor": "Supervisor",
         "helper": "Ayudante"
       },
       "status": {
@@ -407,12 +407,12 @@
     "routeSearch": "Buscar cuadrillas de ruta…",
     "routeEmpty": "No hay cuadrillas de ruta para esta sucursal.",
     "driver": "Conductor",
-    "appraiser": "Supervisor",
+    "supervisor": "Supervisor",
     "helper": "Ayudante",
     "crewRoles": "Asignar roles",
     "crewRolesEmpty": "Esta cuadrilla de ruta no tiene miembros de la cuadrilla.",
     "driverFor": "Conductor — {{name}}",
-    "appraiserFor": "Supervisor — {{name}}",
+    "supervisorFor": "Supervisor — {{name}}",
     "helperFor": "Ayudante — {{name}}",
     "createVehicle": "Nuevo vehículo",
     "createRoute": "Nuevo cuadrilla de ruta",

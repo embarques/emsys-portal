@@ -33,7 +33,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useUserError } from "@/lib/errors/use-user-error";
 import {
-  formatActiveRouteAppraiserName,
+  formatActiveRouteSupervisorName,
   formatActiveRouteContainerLabel,
   formatActiveRouteDriverNames,
   formatActiveRouteHelperNames,
@@ -325,9 +325,9 @@ export function ActiveRoutesDirectoryWorkspace({
         renderCell: (record) => formatActiveRouteDriverNames(record) || dash,
       },
       {
-        id: "appraiser.name",
-        label: t("routes.columns.appraiser"),
-        renderCell: (record) => formatActiveRouteAppraiserName(record) || dash,
+        id: "supervisor.name",
+        label: t("routes.columns.supervisor"),
+        renderCell: (record) => formatActiveRouteSupervisorName(record) || dash,
       },
       {
         id: "helper.name",
@@ -347,7 +347,7 @@ export function ActiveRoutesDirectoryWorkspace({
       if (column.id === "routeType" && !variant.showRouteTypeField) return false;
       if (column.id === "container.name" && !variant.showContainerField) return false;
       if (column.id === "id" && !showRecordIdColumn) return false;
-      if (showRecordIdColumn && (column.id === "route.name" || column.id === "driver.name" || column.id === "appraiser.name" || column.id === "helper.name")) {
+      if (showRecordIdColumn && (column.id === "route.name" || column.id === "driver.name" || column.id === "supervisor.name" || column.id === "helper.name")) {
         return false;
       }
       return true;

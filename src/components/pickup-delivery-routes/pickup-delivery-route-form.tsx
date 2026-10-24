@@ -110,7 +110,7 @@ export function ActiveRouteForm({
   const { t } = useTranslation();
   const handleEnterNavigation = useFormEnterNavigation();
   const hasBranch = Boolean(branchCode.trim());
-  const crewRoles: RouteCrewRole[] = ["driver", "appraiser", "helper"];
+  const crewRoles: RouteCrewRole[] = ["driver", "supervisor", "helper"];
   const resetFieldsButton = onResetFields ? (
     <Button
       type="button"

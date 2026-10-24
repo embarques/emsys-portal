@@ -126,7 +126,7 @@ function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
 
 function normalizeCrewRole(raw: unknown): RouteCrewRole {
   const value = String(raw ?? "").trim().toLowerCase();
-  if (value === "driver" || value === "appraiser" || value === "helper") return value;
+  if (value === "driver" || value === "supervisor" || value === "helper") return value;
   return "helper";
 }
 

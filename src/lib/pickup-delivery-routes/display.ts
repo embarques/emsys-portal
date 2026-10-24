@@ -1,7 +1,7 @@
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { DAYS_OF_WEEK } from "@/lib/pickup-delivery-routes/types";
 import {
-  getActiveRouteAppraisers,
+  getActiveRouteSupervisors,
   getActiveRouteEmployeesByRole,
   getActiveRouteHelpers,
 } from "@/lib/pickup-delivery-routes/types";
@@ -18,9 +18,9 @@ function formatEmployeeNames(employees: { name: string }[]): string {
   return employees.map((employee) => employee.name).join(", ");
 }
 
-/** Names of every crew member acting as appraiser. */
-export function formatActiveRouteAppraiserName(record: ActiveRoute): string {
-  return formatEmployeeNames(getActiveRouteAppraisers(record));
+/** Names of every crew member acting as supervisor. */
+export function formatActiveRouteSupervisorName(record: ActiveRoute): string {
+  return formatEmployeeNames(getActiveRouteSupervisors(record));
 }
 
 /** Names of every crew member acting as helper. */
@@ -268,8 +268,8 @@ export function activeRouteMatchesSearch(
       case "driver.name":
       case "drivers.name":
         return formatActiveRouteDriverNames(record);
-      case "appraiser.name":
-        return formatActiveRouteAppraiserName(record);
+      case "supervisor.name":
+        return formatActiveRouteSupervisorName(record);
       case "helper.name":
       case "helpers.name":
         return formatActiveRouteHelperNames(record);

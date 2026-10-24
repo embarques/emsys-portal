@@ -32,7 +32,7 @@ export const DAMAGE_RESOLUTIONS = ['QUARANTINE', 'WRITE_OFF'] as const;
 export const PRICING_MODES = ['TOTAL_PER_ITEM', 'PRICE_GROUPS'] as const;
 export const ALLOCATION_TARGETS = ['SALES_REPORT', 'COLLECTION_OBLIGATION'] as const;
 /** Swagger types crew roles as free strings; these are the roles defined in inventory.md. */
-export const CREW_ROLES = ['driver', 'appraiser', 'helper'] as const;
+export const CREW_ROLES = ['driver', 'supervisor', 'helper'] as const;
 
 const item = ref('itemId', 'items');
 const holder = ref('holderId', 'holders');

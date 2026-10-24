@@ -42,7 +42,7 @@ inventory reports, `/route-crews`, `/daily-routes`, `/audit-events` and
   `payments.verify`, `payments.manage`, `collections.manage`, `collections.settle`,
   `closeout.record`, `closeout.finalize`, `inventory.holder.manage`,
   `inventory.reassign` and `routes.manage` come from `inventory.md`.
-- Crew `role` is a free string; the portal offers `driver`, `appraiser`, `helper`.
+- Crew `role` is a free string; the portal offers `driver`, `supervisor`, `helper`.
 - Holder `entityId` for vehicles uses the vehicle record `id`.
 
 Decided in `docs/INVENTORY_FEATURE_BACKEND.md` (target contract): versions start

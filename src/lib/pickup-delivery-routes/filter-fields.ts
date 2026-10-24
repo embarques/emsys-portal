@@ -17,7 +17,7 @@ export const ACTIVE_ROUTE_BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active
 
 const CREW_ROLE_OPTIONS = [
   { value: "driver", label: "Driver" },
-  { value: "appraiser", label: "Supervisor" },
+  { value: "supervisor", label: "Supervisor" },
   { value: "helper", label: "Helper" },
 ] as const;
 
