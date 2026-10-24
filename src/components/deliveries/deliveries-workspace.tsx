@@ -12,7 +12,6 @@ import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
 import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
 import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -25,7 +24,6 @@ import {
   type AssignedDeliveryBarcode,
 } from "@/lib/deliveries/types";
 import { useTranslation } from "@/lib/i18n";
-import { getBarcodeStatusLabel } from "@/lib/labels/display";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
 
@@ -54,7 +52,6 @@ export function DeliveriesWorkspace() {
     t("deliveries.columns.invoiceBalance"),
     t("deliveries.columns.name"),
     t("deliveries.columns.container"),
-    t("deliveries.columns.status"),
     t("deliveries.columns.senderName"),
     t("deliveries.columns.senderPhones"),
     t("deliveries.columns.receiverName"),
@@ -127,9 +124,6 @@ export function DeliveriesWorkspace() {
                       </td>
                       <td className="px-4 py-3">{row.description}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.container?.name}</td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        {row.status?.name ? <Badge variant="outline">{getBarcodeStatusLabel(row.status.name, t)}</Badge> : null}
-                      </td>
                       <td className="px-4 py-3">{row.sender?.name}</td>
                       <td className="min-w-[260px] px-4 py-3">
                         <TablePhoneCell phones={row.sender?.phones ?? []} callable />

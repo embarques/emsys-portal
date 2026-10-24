@@ -10,7 +10,7 @@
   "noProvince": "Sin provincia",
   "columns": {
     "barcode": "Código de barras",
-    "invoice": "Factura",
+    "invoice": "Factura n.º",
     "invoiceBalance": "Balance de factura",
     "name": "Nombre",
     "container": "Contenedor",
@@ -30,7 +30,7 @@
       },
       "invoice": {
         "number": {
-          "label": "Factura",
+          "label": "Número de factura",
           "placeholder": "Ingresa la factura…"
         }
       },
@@ -131,7 +131,7 @@
       "balance": "El saldo de la factura debe ser cero antes de completar esta entrega, salvo que acepte la responsabilidad por pagos pendientes de cobro."
     },
     "summary": "Resumen de la entrega",
-    "invoice": "Factura",
+    "invoice": "Factura n.º",
     "delivery": "Entrega",
     "receiver": "Destinatario",
     "deliveryNumber": "Entrega #{{id}}",

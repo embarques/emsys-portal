@@ -10,7 +10,7 @@
   "noProvince": "No province",
   "columns": {
     "barcode": "Barcode",
-    "invoice": "Invoice",
+    "invoice": "Invoice #",
     "invoiceBalance": "Invoice balance",
     "name": "Name",
     "container": "Container",
@@ -30,7 +30,7 @@
       },
       "invoice": {
         "number": {
-          "label": "Invoice",
+          "label": "Invoice number",
           "placeholder": "Enter invoice…"
         }
       },
@@ -131,7 +131,7 @@
       "balance": "The invoice balance must be zero before completing this delivery, unless you accept liability for payments still pending clearance."
     },
     "summary": "Delivery summary",
-    "invoice": "Invoice",
+    "invoice": "Invoice #",
     "delivery": "Delivery",
     "receiver": "Receiver",
     "deliveryNumber": "Delivery #{{id}}",
