@@ -10,7 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 const require=createRequire(import.meta.url);
 const root=path.resolve(import.meta.dirname,"../..");
 const invoiceId="68f800000000000000000001";
-const row={id:1,barcodeId:"65f000000000000000000001",number:"BARCODE-1",invoiceId,invoiceNumber:"000123",description:"Box",status:{id:6,name:"CONDUCE"},container:{name:"Container"},receiver:{name:"Receiver",province:"Santiago",address1:"Calle 1",apartment:"",city:"Santiago",zipcode:"",phones:[]}};
+const row={id:1,barcodeId:"65f000000000000000000001",number:"BARCODE-1",invoiceId,invoiceNumber:"000123",description:"Box",routeRate:61.25,status:{id:6,name:"CONDUCE"},container:{name:"Container"},receiver:{name:"Receiver",province:"Santiago",address1:"Calle 1",apartment:"",city:"Santiago",zipcode:"",phones:[]}};
 function loadComponent(relative){
  const cache=new Map();
  const block=({children})=>React.createElement("div",null,children);
@@ -46,6 +46,8 @@ test("desktop and mobile delivery rows show the business invoice number and omit
  const html=renderToStaticMarkup(React.createElement(DeliveriesWorkspace));
  assert.match(html,/Invoice #/);
  assert.match(html,/>000123</);
+ assert.match(html,/<td[^>]*>61[.,]25<\/td>/);
+ assert.match(html,/<dd[^>]*>61[.,]25<\/dd>/);
  assert.doesNotMatch(html,/CONDUCE|>Status</);
  assert.doesNotMatch(html,new RegExp(invoiceId));
 });
@@ -61,4 +63,10 @@ test("delivery filters use the invoice number and do not offer the fixed status"
  const {ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS}=loadComponent("src/lib/deliveries/filter-fields.ts");
  assert.ok(ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS.some(({field})=>field==="invoice.number"));
  assert.ok(!ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS.some(({field})=>field==="status.name"||field==="invoice.id"));
+});
+
+test("an unavailable route rate displays a dash rather than zero",()=>{
+ const {formatDeliveryRate}=loadComponent("src/lib/deliveries/types.ts");
+ for(const value of [undefined,NaN,Infinity,0,-1])assert.equal(formatDeliveryRate(value),"—");
+ assert.match(formatDeliveryRate(61.25),/^61[.,]25$/);
 });

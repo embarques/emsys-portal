@@ -21,6 +21,7 @@ import { useDeliveryAccess } from "@/lib/deliveries/hooks/use-deliver-invoice";
 import {
   DEFAULT_ASSIGNED_DELIVERY_SORT,
   formatDeliveryAddress,
+  formatDeliveryRate,
   type AssignedDeliveryBarcode,
 } from "@/lib/deliveries/types";
 import { useTranslation } from "@/lib/i18n";
@@ -50,6 +51,7 @@ export function DeliveriesWorkspace() {
     t("deliveries.columns.barcode"),
     t("deliveries.columns.invoice"),
     t("deliveries.columns.invoiceBalance"),
+    t("deliveries.columns.rate"),
     t("deliveries.columns.name"),
     t("deliveries.columns.container"),
     t("deliveries.columns.senderName"),
@@ -122,6 +124,7 @@ export function DeliveriesWorkspace() {
                       <td className="whitespace-nowrap px-4 py-3">
                         <DeliveryRowBalance row={row} />
                       </td>
+                      <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDeliveryRate(row.routeRate)}</td>
                       <td className="px-4 py-3">{row.description}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.container?.name}</td>
                       <td className="px-4 py-3">{row.sender?.name}</td>

@@ -78,3 +78,11 @@ Payment posting uses the existing `/journals` contract, explicit duplicate-payme
 **Uncleared-payment override:** for an outstanding balance, the portal lists OUTSTANDING records for the invoice from `POST /v1/checks/search`, `/zelle-payments/search`, `/deposits/search` and `/credit-card-payments/search` (`status eq OUTSTANDING` and `invoice.number eq …`, one request per directory the user may list). When their total covers the balance, users with the payment permissions above may tick an acknowledgment that they are liable for the payment if it does not clear, then continue. Immediately before completion the portal rereads the balance and the outstanding records; if they no longer cover the balance it returns to the balance step without calling completion. Without list access to a directory, its payments are not counted.
 
 **Backend work still required:** enforce the zero-balance invariant in the same transaction as delivery completion, with the invoice financial version participating in the write/conflict check. Return a conflict without changing barcodes or saving a new signature when the balance is nonzero or unavailable. To support the override server-side, accept an explicit acknowledgment on completion (e.g. `unclearedPaymentOverride: true`) that is valid only when outstanding clearing records for the invoice cover the balance, and record the acknowledging user/time in the receipt and activity log. The portal does not send this field yet, so the acknowledgment is not persisted. Preserve idempotent replay of an already committed receipt. The frontend preflight alone cannot prevent a concurrent balance change or direct API calls. No server-side enforcement was changed here.
+
+## Delivery row exchange rate
+
+Desktop and mobile deliveries show the linked daily route's `route.rate` as DOP
+per USD. This is the same row rate used for DOP balance calculations. Missing or
+invalid rates display a dash, never a fabricated zero. The API resolves the rate
+from the assigned daily delivery route; no additional fetch is added for the
+rate field. Deploy the API route-rate enrichment before expecting this field.
