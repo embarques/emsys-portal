@@ -10,7 +10,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import {
+  getNavigableFormFields,
+  selectFormFieldText,
+  useFormEnterNavigation,
+} from "@/hooks/use-form-enter-navigation";
 import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-company";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
@@ -44,6 +48,7 @@ import {
   createEmptyCustomerForm,
   findDuplicateCustomerAddressIndex,
   findDuplicateCustomerPhoneIndex,
+  getCustomerAddressDuplicateKey,
   getDefaultCountryForPortalBranch,
   getPortalBranchForCustomerType,
   isAddressVerified,
@@ -647,6 +652,78 @@ export function CustomerForm({
   const addressMode: "sender" | "receiver" = isSender ? "sender" : "receiver";
   const googleEnabled = useIsGoogleMapsConfigured();
 
+  const savedAddressKeys =
+    isEditing && initialValues
+      ? new Set(initialValues.addresses.map(getCustomerAddressDuplicateKey).filter(Boolean))
+      : null;
+
+  function isAddressEntryComplete(address: CustomerCoreAddress): boolean {
+    if (!isSender) return Boolean(address.city.trim());
+    return googleEnabled ? isAddressVerified(address) : coreAddressRequiresVerification(address);
+  }
+
+  /**
+   * Enter inside the phone or address sections moves to the next entry, or adds
+   * one once the current entry is complete. It never submits; Save is manual.
+   */
+  function handleListEntryEnter(event: React.KeyboardEvent<HTMLFormElement>): boolean {
+    if (event.key !== "Enter" || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return false;
+    if (event.defaultPrevented || event.nativeEvent.isComposing) return false;
+
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || target.tagName === "BUTTON") return false;
+    if (target.getAttribute("aria-expanded") === "true") return false;
+    if (target.closest('[data-enter-navigation="ignore"]')) return false;
+
+    const phoneMatch = /^customer-phone-number-(\d+)$/.exec(target.id);
+    if (phoneMatch) {
+      event.preventDefault();
+      const index = Number(phoneMatch[1]);
+      if (!isCompletePhoneNumber(values.phones[index]?.number ?? "")) return true;
+      if (index + 1 < values.phones.length) {
+        focusFormField(`customer-phone-number-${index + 1}`);
+      } else {
+        updateField("phones", [...values.phones, createEmptyRecordPhone(false)]);
+        setPendingPhoneFocusIndex(values.phones.length);
+      }
+      return true;
+    }
+
+    const card = target.closest<HTMLElement>("[data-customer-address-index]");
+    if (!card) return false;
+
+    const fields = getNavigableFormFields(event.currentTarget);
+    const position = fields.indexOf(target);
+    if (position === -1) return false;
+    event.preventDefault();
+
+    const nextField = fields[position + 1];
+    if (nextField && card.contains(nextField)) {
+      nextField.focus();
+      selectFormFieldText(nextField);
+      return true;
+    }
+
+    const index = Number(card.dataset.customerAddressIndex);
+    const address = values.addresses[index];
+    if (!address) return true;
+    if (!isAddressEntryComplete(address)) {
+      focusFormField(isSender ? `address-${index}-address1` : `address-${index}-city`);
+      return true;
+    }
+    if (index + 1 < values.addresses.length) {
+      setPendingAddressFocusIndex(index + 1);
+    } else {
+      addAddress();
+    }
+    return true;
+  }
+
+  function handleFormKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
+    if (handleListEntryEnter(event)) return;
+    handleEnterNavigation(event);
+  }
+
   // The single reason the customer can't be saved yet, evaluated in priority
   // order: name → first phone → any other started phone → any open address.
   // Senders need a verified address; receivers need a city selected.
@@ -792,7 +869,7 @@ export function CustomerForm({
   const selectedType = normalizeCustomerType(values.customerType);
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+    <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <div className="grid items-start gap-5 @3xl:h-full @3xl:grid-cols-2 @3xl:grid-rows-[minmax(0,1fr)]">
           <FormSection variant="card" icon={User} title={`01 · ${t("customers.form.workflow.contactTitle")}`}>
@@ -888,6 +965,7 @@ export function CustomerForm({
                 required
                 compact
                 listClassName="-m-1 max-h-56 overflow-y-auto p-1"
+                savedPhones={isEditing ? initialValues?.phones : undefined}
                 onChange={(phones) => updateField("phones", phones)}
               />
             </FormSection>
@@ -912,11 +990,18 @@ export function CustomerForm({
                   <div className="-m-1 max-h-[32rem] min-h-0 space-y-3 overflow-y-auto p-1 @3xl:max-h-none @3xl:min-h-48 @3xl:flex-1">
                     {values.addresses.map((address, index) => {
                       const isPrimary = address.isPrimary;
+                      const isUnsaved =
+                        savedAddressKeys !== null &&
+                        !savedAddressKeys.has(getCustomerAddressDuplicateKey(address));
 
                       return (
                         <div
                           key={index}
-                          className="rounded-lg border border-border/60 bg-muted/20 p-3"
+                          data-customer-address-index={index}
+                          className={cn(
+                            "rounded-lg border border-border/60 bg-muted/20 p-3",
+                            isUnsaved && "border-dashed border-primary/50 bg-primary/[0.03]",
+                          )}
                         >
                           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
@@ -929,6 +1014,11 @@ export function CustomerForm({
                                 </span>
                               ) : null}
                               {isSender ? <AddressVerificationBadge address={address} /> : null}
+                              {isUnsaved ? (
+                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                  {t("customers.form.address.unsavedBadge")}
+                                </span>
+                              ) : null}
                             </div>
                             <div className="flex items-center gap-1">
                               <Button

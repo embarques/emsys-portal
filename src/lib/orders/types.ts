@@ -66,10 +66,10 @@ export type Order = ApiTableRecord & {
 };
 
 export const ORDER_COMMENT_PURPOSES = [
+  { value: "PICKUP", label: "Pickup" },
+  { value: "TAKE", label: "Take" },
   { value: "PAYMENT", label: "Payment" },
   { value: "ESTIMATE", label: "Estimate" },
-  { value: "TAKE", label: "Take" },
-  { value: "PICKUP", label: "Pickup" },
   { value: "OTHER", label: "Other" },
 ] as const;
 

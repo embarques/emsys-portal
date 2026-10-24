@@ -15,6 +15,12 @@ import {
   ensureSinglePrimaryPhone,
 } from "@/lib/phones/phones";
 import { RECORD_PHONE_TYPE_OPTIONS, type RecordPhone } from "@/lib/phones/types";
+import { getPhoneDialDigits } from "@/lib/utils/phone";
+
+function savedPhoneKey(phone: Pick<RecordPhone, "type" | "number">): string {
+  const digits = getPhoneDialDigits(phone.number);
+  return digits ? `${phone.type}:${digits}` : "";
+}
 
 type PhoneListEditorProps = {
   idPrefix?: string;
@@ -24,6 +30,8 @@ type PhoneListEditorProps = {
   compact?: boolean;
   /** Extra classes for the compact phone rows wrapper (e.g. a scroll cap). */
   listClassName?: string;
+  /** Phones already persisted on the record; other rows are marked as not saved. */
+  savedPhones?: RecordPhone[];
   onChange: (phones: RecordPhone[]) => void;
 };
 
@@ -33,11 +41,19 @@ export function PhoneListEditor({
   required = false,
   compact = false,
   listClassName,
+  savedPhones,
   onChange,
 }: PhoneListEditorProps) {
   const { t } = useTranslation();
   const entries = phones.length > 0 ? phones : createDefaultRecordPhones();
   const [pendingFocusIndex, setPendingFocusIndex] = useState<number | null>(null);
+
+  const savedPhoneKeys = useMemo(
+    () => (savedPhones ? new Set(savedPhones.map(savedPhoneKey).filter(Boolean)) : null),
+    [savedPhones],
+  );
+  const isUnsavedPhone = (phone: RecordPhone) =>
+    savedPhoneKeys !== null && !savedPhoneKeys.has(savedPhoneKey(phone));
 
   const phoneTypeOptions = useMemo(
     () =>
@@ -89,6 +105,7 @@ export function PhoneListEditor({
         <div className={cn("space-y-2.5", listClassName)}>
           {entries.map((phone, index) => {
             const isOnly = entries.length <= 1;
+            const isUnsaved = isUnsavedPhone(phone);
 
             return (
               <div key={`${idPrefix}-${index}`} className="flex items-center gap-2.5">
@@ -102,14 +119,24 @@ export function PhoneListEditor({
                   />
                 </div>
 
-                <div className="min-w-0 flex-1">
+                <div className="relative min-w-0 flex-1">
                   <PhoneInput
                     id={`${idPrefix}-number-${index}`}
                     aria-label={t("phones.aria.number", { index: index + 1 })}
+                    aria-describedby={isUnsaved ? `${idPrefix}-unsaved-${index}` : undefined}
                     value={phone.number}
                     onChange={(nextValue) => updatePhone(index, { number: nextValue })}
                     required={required && index === 0}
+                    className={cn(isUnsaved && "border-dashed border-primary/50 bg-primary/[0.03] pr-24")}
                   />
+                  {isUnsaved ? (
+                    <span
+                      id={`${idPrefix}-unsaved-${index}`}
+                      className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                    >
+                      {t("phones.unsaved")}
+                    </span>
+                  ) : null}
                 </div>
 
                 <Button
@@ -163,7 +190,14 @@ export function PhoneListEditor({
       {entries.map((phone, index) => (
         <div key={`${idPrefix}-${index}`} className="rounded-lg border border-border/70 p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">{t("phones.label", { index: index + 1 })}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">{t("phones.label", { index: index + 1 })}</p>
+              {isUnsavedPhone(phone) ? (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {t("phones.unsaved")}
+                </span>
+              ) : null}
+            </div>
             {entries.length > 1 ? (
               <Button
                 type="button"

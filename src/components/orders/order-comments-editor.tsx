@@ -173,17 +173,29 @@ export function OrderCommentsEditor({ comments, onChange, quickEntry = false, li
   }
 
   // ESTIMATE and PAYMENT are limited to one per order; disable them on other rows once used.
+  // TAKE and PICKUP are disabled once every item type is already used for them on other rows.
   function purposeOptionsForRow(index: number) {
+    const otherRows = rows.filter((_, commentIndex) => commentIndex !== index);
     const takenSingleUse = new Set(
-      rows
-        .filter((comment, commentIndex) => commentIndex !== index && SINGLE_USE_PURPOSES.has(comment.purpose))
+      otherRows
+        .filter((comment) => SINGLE_USE_PURPOSES.has(comment.purpose))
         .map((comment) => comment.purpose),
     );
+
+    const isItemPurposeExhausted = (purpose: string) => {
+      if (!orderCommentPurposeRequiresItem(purpose)) return false;
+      const usedItems = new Set(
+        otherRows
+          .filter((comment) => comment.purpose === purpose && comment.itemType)
+          .map((comment) => comment.itemType),
+      );
+      return ORDER_COMMENT_ITEM_TYPES.every((item) => usedItems.has(item.value));
+    };
 
     return localizedPurposes.map((purpose) => ({
       value: purpose.value,
       label: purpose.label,
-      disabled: takenSingleUse.has(purpose.value),
+      disabled: takenSingleUse.has(purpose.value) || isItemPurposeExhausted(purpose.value),
     }));
   }
 
@@ -448,7 +460,7 @@ export function OrderCommentsEditor({ comments, onChange, quickEntry = false, li
       const parts: string[] = [];
       if (orderCommentPurposeRequiresItem(comment.purpose)) {
         if (comment.itemType === "other") parts.push(comment.customItem.trim());
-        else if (comment.itemType) parts.push(`${itemLabel(comment.itemType)} × ${comment.quantity || "1"}`);
+        else if (comment.itemType) parts.push(`${comment.quantity || "1"} × ${itemLabel(comment.itemType)}`);
       }
       if (comment.description.trim()) parts.push(comment.description.trim());
       return parts.filter(Boolean).join(" · ");

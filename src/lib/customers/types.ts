@@ -229,7 +229,7 @@ function normalizeDuplicateAddressPart(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function getCustomerAddressDuplicateKey(address: CustomerCoreAddress): string {
+export function getCustomerAddressDuplicateKey(address: CustomerCoreAddress): string {
   if (!coreAddressHasContent(address)) return "";
 
   return [
