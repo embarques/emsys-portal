@@ -51,6 +51,33 @@ for (const [name, itemCount, expected] of [["API value", 9, 9], ["API zero", 0, 
  });
 }
 
+test("a catalog item saves its text as the detail description the API copies onto barcodes", async () => {
+ let posted;
+ const api = loadFeature("src/lib/invoices/api/invoices-api.ts", {post: async (_url, body) => {
+  posted = body;
+  return {data: {id: invoiceId, invoiceDetails: body.invoiceDetails}};
+ }});
+ const types = loadFeature("src/lib/invoices/types.ts");
+ const values = {
+  ...types.createEmptyInvoiceForm(),
+  invoiceNumber: "INV-1",
+  date: "2026-10-24",
+  sender: {id: "", name: "Sender", phones: [], addresses: [], email: "", IDNumber: ""},
+  lineItems: [{...types.createEmptyInvoiceLineItem(), itemId: "76", itemName: "5/6 CON MONA COMIDA Y ROPA U/S", quantity: "1", unitPrice: "0", labelCount: "1"}],
+ };
+ const invoice = await api.createInvoice(values, {branch: {id: 1}, container: {id: 67, name: "67-26"}});
+ assert.equal(posted.invoiceDetails[0].name, "5/6 CON MONA COMIDA Y ROPA U/S");
+ assert.equal(posted.invoiceDetails[0].description, "5/6 CON MONA COMIDA Y ROPA U/S");
+ assert.equal(invoice.lineItems[0].itemName, "5/6 CON MONA COMIDA Y ROPA U/S");
+});
+
+test("a barcode saved with a numeric catalog id as description shows the line name", () => {
+ const {normalizeBarcode} = loadFeature("src/lib/labels/api/barcodes-api.ts");
+ assert.equal(normalizeBarcode({id: 176, number: "ET067260002", description: "76", name: "5/6 CON MONA COMIDA Y ROPA U/S"}).description, "5/6 CON MONA COMIDA Y ROPA U/S");
+ assert.equal(normalizeBarcode({id: 177, number: "ET067260003", description: "Box"}).description, "Box");
+ assert.equal(normalizeBarcode({id: 178, number: "ET067260004", name: "Barrel"}).description, "Barrel");
+});
+
 test("draft item count follows quantities and excludes untouched blank rows", () => {
  const types = loadFeature("src/lib/invoices/types.ts");
  const values = types.createEmptyInvoiceForm();

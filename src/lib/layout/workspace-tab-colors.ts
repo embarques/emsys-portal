@@ -87,7 +87,6 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   // Route templates are opened from the Routes → Daily routes create flow.
   routes: "pickups",
   invoices: "invoices",
-  "invoice-item-staging": "invoices",
   "invoice-documents": "invoices",
   items: "invoices",
   containers: "invoices",

@@ -106,24 +106,22 @@ Barcodes identify and track **individual pieces of merchandise on an invoice**.
 ```txt
 Invoice (line items + labels count)
   → Barcodes created on the invoice
-    → Label manager: status, container, print, route
     → Barcode Scanner: scan number → update status / container / route
-    → Barcodes table: browse / filter / bulk status·container·route
+    → Barcodes table: browse / filter / print / bulk status·container·route
 ```
 
 **Surfaces (same labels, different jobs):**
 
 | Surface | Role |
 | --- | --- |
-| **Label manager** | Invoice-scoped: retrieve / manage labels for selected invoice line items |
 | **Barcode Scanner** | Operations: find a label by printed number and update location fields |
-| **Barcodes table** | Browse / filter / bulk status·container·route (no standalone create/delete) |
+| **Barcodes table** | Browse / filter / print / bulk status·container·route (no standalone create/delete) |
 
 Lookups and updates should prefer **invoice-embedded** barcodes when the number lives on an invoice. The `/barcodes` catalog may mirror or denormalize the same labels for directory search and reports; keep both stores in sync when the portal updates status, container, or route.
 
 Barcode **route** is the **DR branch daily vehicle-route**, separate from invoice `receivedBy`. The barcode Route filter uses only **Equals** against `route.id`, with a dropdown of DR daily routes.
 
-Barcode **status** is a manual location flag in the logistics process (where the piece is now), not an automatic workflow stage. Workers assign it via the scanner, label staging, or barcode forms. Status options come from the tenant `barcode_statuses` collection via `GET /v1/barcodes/status-options` (labels:view). Typical values include `ALM-NY`, `DEV-NY`, `EN TRANSITO`, `ALM-RD`, `DEV-RD`, `CONDUCE`, `ENTREGADO`, `SUBASTADO`.
+Barcode **status** is a manual location flag in the logistics process (where the piece is now), not an automatic workflow stage. Workers assign it via the scanner or Barcodes table. Status options come from the tenant `barcode_statuses` collection via `GET /v1/barcodes/status-options` (labels:view). Typical values include `ALM-NY`, `DEV-NY`, `EN TRANSITO`, `ALM-RD`, `DEV-RD`, `CONDUCE`, `ENTREGADO`, `SUBASTADO`.
 
 **Default on create:** every newly created barcode / invoice line-item label should start as **`ALM-NY`**. The API should set this when status is omitted (including barcodes created with the invoice). The portal also sends `ALM-NY` when it must gap-fill a missing label so creates are never empty. Later location changes stay manual.
 
@@ -133,7 +131,9 @@ Barcode **status** is a manual location flag in the logistics process (where the
 
 - View: barcode, invoice, description, container, status, route (when assigned)
 - Search / filter: invoice, description, container, status, route
-- Multi-select bulk: change status, transfer container, assign route
+- Multi-select bulk: print selected labels, change status, transfer container, assign route
+- “Manage invoice items” on selected invoices opens the Barcodes table filtered to those invoices. The separate Label manager workflow is retired.
+- Printing uses the existing labels report with selected barcode IDs; selection is scoped to the current page and resets when paging or filtering.
 - No direct create / edit / delete — those belong on the invoice
 
 **When editing an invoice (line items + labels):**
@@ -148,7 +148,7 @@ Barcode **status** is a manual location flag in the logistics process (where the
 
 On invoice-embedded barcodes, **`barcodeId`** is the unique ObjectID used for print selection and matching. Numeric **`id`** is the package sequence only (not unique across invoices). Selected-label printing uses `POST /reports/labels` with `collection=barcodes` and `lookup_field=id`.
 
-TODO (backend): return `invoice` / `description` on `/barcodes` list+search, and allow filtering by `invoice.number`, `description`, `container.name`, `status.name`, and `route.name`. When creating barcodes with the invoice, upsert the same records into the `/barcodes` catalog (or expose a barcode→invoice lookup) so Label manager, Barcode Manager, and the scanner stay aligned.
+TODO (backend): return `invoice` / `description` on `/barcodes` list+search, and allow filtering by `invoice.number`, `description`, `container.name`, `status.name`, and `route.name`. When creating barcodes with the invoice, upsert the same records into the `/barcodes` catalog (or expose a barcode→invoice lookup) so invoices, Barcode Manager, and the scanner stay aligned.
 
 Barcodes can be used to:
 

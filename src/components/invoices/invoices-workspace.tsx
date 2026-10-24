@@ -14,7 +14,6 @@ import {
   Tags,
 } from "lucide-react";
 
-import { InvoiceStagingDialog } from "@/components/invoices/invoice-staging-dialog";
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
 import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
@@ -97,7 +96,7 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
-import { encodeStagingInvoiceIds } from "@/lib/invoices/staging";
+import { buildInvoiceBarcodesHref } from "@/lib/barcodes/invoice-search";
 import { mapInvoiceJournalsToPayments } from "@/lib/invoices/invoice-journals";
 import {
   buildInvoiceListParams,
@@ -505,14 +504,17 @@ export function InvoicesWorkspace() {
   const [viewDocuments, setViewDocuments] = useState(false);
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
-  const [stagingOpen, setStagingOpen] = useState(false);
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
   const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
   const legacySyncResetTimerRef = useRef<number | null>(null);
 
-  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+  const { openTab, openFormTab, isDesktopTabs } = useWorkspaceTabs();
+  const canViewBarcodes = hasPermission(
+    PERMISSIONS.packagesView.name,
+    PERMISSIONS.packagesView.resourceType,
+  );
 
   function openManageInvoiceItems() {
     if (selectedInvoices.length === 0) {
@@ -520,18 +522,12 @@ export function InvoicesWorkspace() {
       return;
     }
 
-    if (isDesktopTabs) {
-      openFormTab({
-        feature: "invoice-item-staging",
-        baseHref: "/invoices",
-        mode: "stage",
-        entityId: encodeStagingInvoiceIds(selectedInvoices.map((invoice) => invoice.invoiceId)),
-        label: t("invoices.staging.tableAction"),
-      });
-      return;
-    }
-
-    setStagingOpen(true);
+    if (!canViewBarcodes) return;
+    openTab(
+      buildInvoiceBarcodesHref(selectedInvoices.map((invoice) => invoice.invoiceNumber)),
+      undefined,
+      { forceNew: true },
+    );
   }
 
   function openAddForm() {
@@ -1496,7 +1492,7 @@ export function InvoicesWorkspace() {
           deleteDisabled={isDeleting}
           actions={
             <>
-              <Button size="sm" onClick={openManageInvoiceItems}>
+              <Button size="sm" onClick={openManageInvoiceItems} disabled={!canViewBarcodes}>
                 <Tags className="h-4 w-4" />
                 {t("invoices.staging.tableAction")}
               </Button>
@@ -1578,11 +1574,6 @@ export function InvoicesWorkspace() {
       </div>
 
       {printInvoiceIds.length > 0 && <InvoicePrintSignaturesDialog invoiceIds={printInvoiceIds} onClose={() => setPrintInvoiceIds([])} />}
-      <InvoiceStagingDialog
-        open={stagingOpen}
-        onOpenChange={setStagingOpen}
-        invoices={selectedInvoices}
-      />
 
       <InvoiceViewSheet
         key={`${viewInvoiceId}-${viewDocuments}`}

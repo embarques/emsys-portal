@@ -1,4 +1,10 @@
 {
+  "print": {
+    "action": "Imprimir",
+    "preparing": "Preparando…",
+    "ready": "PDF listo para {{count}} etiquetas.",
+    "missingIdentity": "Algunos códigos seleccionados no tienen un ID para imprimir. Actualiza la tabla e inténtalo de nuevo."
+  },
   "entity": "Código de barras",
   "entityPlural": "códigos de barras",
   "title": "Códigos de barras",

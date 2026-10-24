@@ -47,6 +47,8 @@ function dedupeTabs(tabs: WorkspaceTab[]): WorkspaceTab[] {
   const unique: WorkspaceTab[] = [];
 
   for (const tab of tabs) {
+    // Retired label-manager tabs cannot be restored after moving operations to Barcodes.
+    if (tab.form?.feature === "invoice-item-staging") continue;
     if (seen.has(tab.id)) continue;
     seen.add(tab.id);
     unique.push(tab);

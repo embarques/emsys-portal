@@ -94,7 +94,7 @@ export function useWorkspaceTabs() {
       dispatch(
         openWorkspaceTab({
           id: tabId,
-          href: pathnameOnly,
+          href: options.forceNew ? href : pathnameOnly,
           label: label ?? resolveWorkspaceLabel(pathnameOnly, language),
         }),
       );

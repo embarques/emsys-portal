@@ -428,7 +428,7 @@ function normalizeInvoiceLineItems(raw: unknown): InvoiceLineItem[] {
           ? Math.round((lineTotal / quantity) * 100) / 100
           : 0;
     const apiId = readStringId(detail.id);
-    // Write path stores catalog FK in `description` and human text in `name`.
+    // Older invoices stored the numeric items-catalog id in `description`.
     // Never treat a numeric catalog id as display copy.
     const rawDescription = String(detail.description ?? "").trim();
     const catalogItemId = /^\d+$/.test(rawDescription) ? rawDescription : undefined;
@@ -1421,18 +1421,16 @@ function buildInvoiceDetailWriteRef(
     throw new Error(`Line item ${index + 1}: unit price must be 0 or greater.`);
   }
 
+  // The API copies `description` onto every barcode minted for this line, so it
+  // must carry the merchandise text — never the catalog item id.
   const detail: ApiInvoiceDetailWriteRef = {
     name,
+    description: name,
     quantity,
     labels,
     price: Math.round(price * 100) / 100,
     total: Math.round(total * 100) / 100,
   };
-
-  const description = lineItem.itemId.trim();
-  if (description) {
-    detail.description = description;
-  }
 
   const persistedId = lineItem.id.trim();
   if (/^[a-f\d]{24}$/i.test(persistedId)) {

@@ -1,4 +1,10 @@
 {
+  "print": {
+    "action": "Print",
+    "preparing": "Preparing…",
+    "ready": "PDF ready for {{count}} labels.",
+    "missingIdentity": "Some selected barcodes have no printable ID. Refresh the table and try again."
+  },
   "entity": "Barcode",
   "entityPlural": "barcodes",
   "title": "Barcodes",

@@ -20,6 +20,8 @@ type TableFilterSelectProps = {
   placeholder?: string;
   className?: string;
   mutedWhenEmpty?: boolean;
+  fitToOptions?: boolean;
+  searchable?: boolean;
 };
 
 export function tableFilterSelectClassName(className?: string) {
@@ -35,6 +37,8 @@ export function TableFilterSelect({
   placeholder,
   className,
   mutedWhenEmpty = false,
+  fitToOptions = false,
+  searchable = true,
 }: TableFilterSelectProps) {
   return (
     <SearchableSelect
@@ -46,6 +50,9 @@ export function TableFilterSelect({
       placeholder={placeholder}
       className={cn(baseClassName, mutedWhenEmpty && !value && "text-muted-foreground", className)}
       contentClassName="z-[110]"
+      fitToOptions={fitToOptions}
+      truncateSelection={!fitToOptions}
+      searchable={searchable}
     />
   );
 }

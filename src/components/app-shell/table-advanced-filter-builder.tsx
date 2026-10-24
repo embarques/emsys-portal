@@ -79,15 +79,16 @@ export function TableAdvancedFilterBuilder({
         const canPickValue = Boolean(definition && (usesRange || row.operator));
 
         return (
-          <div key={row.id} className="flex min-w-0 items-center gap-2">
+          <div key={row.id} className="flex min-w-0 flex-wrap items-center gap-2">
             {index === 0 ? (
-              <span className="w-14 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("common.table.where")}
               </span>
             ) : (
               <TableFilterSelect
                 aria-label={`Filter join ${index + 1}`}
-                className="w-[4.75rem] shrink-0 flex-none px-2 text-xs font-semibold uppercase tracking-wide"
+                className="w-24 shrink-0 flex-none text-xs font-semibold uppercase tracking-wide"
+                searchable={false}
                 value={row.join}
                 options={filterJoinOptions}
                 onChange={(value) =>
@@ -98,7 +99,8 @@ export function TableAdvancedFilterBuilder({
 
             <TableFilterSelect
               aria-label={`Filter field ${index + 1}`}
-              className="w-[7rem] shrink-0 flex-none"
+              className="w-full shrink-0 flex-none"
+              fitToOptions
               value={row.field}
               placeholder={t("common.table.field")}
               mutedWhenEmpty
@@ -113,7 +115,8 @@ export function TableAdvancedFilterBuilder({
             ) : (
               <TableFilterSelect
                 aria-label={`Filter condition ${index + 1}`}
-                className="w-[7.25rem] shrink-0 flex-none"
+                className="w-full shrink-0 flex-none"
+                fitToOptions
                 value={row.operator}
                 placeholder={t("common.table.condition")}
                 mutedWhenEmpty
@@ -140,7 +143,7 @@ export function TableAdvancedFilterBuilder({
             ) : (
               <Input
                 aria-label={`Filter value ${index + 1}`}
-                className="h-9 min-w-0 flex-1 shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-9 min-w-[12rem] flex-1 shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
                 value={row.value}
                 disabled={!canPickValue}
                 placeholder={canPickValue ? (definition?.placeholder ?? t("common.table.enterValue")) : t("common.table.value")}

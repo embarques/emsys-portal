@@ -1,16 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePrintBarcodes } from "@/lib/barcodes/hooks/use-print-barcodes";
+import { barcodeSelectionKey } from "@/lib/barcodes/print-barcodes";
+import { useInitialBarcodeFilters } from "@/lib/barcodes/hooks/use-initial-barcode-filters";
 import {
   Container as ContainerIcon,
   FileText,
   PackageCheck,
-  Pencil,
   Printer,
   Route as RouteIcon,
   ScanBarcode,
   Tag,
-  Trash2,
   Truck,
 } from "lucide-react";
 
@@ -109,12 +110,14 @@ export function BarcodesWorkspace() {
   const { data: containersData } = useContainerPicker(200);
   const containers = containersData?.items ?? [];
   const updateBarcodesMutation = useUpdateBarcodes();
+  const { canPrint, isPrinting, printBarcodes } = usePrintBarcodes();
 
-  const [filters, setFilters] = useState<BarcodeFilterState>(defaultFilters);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const initialFilters = useInitialBarcodeFilters();
+  const [filters, setFilters] = useState<BarcodeFilterState>(initialFilters);
+  const [filtersOpen, setFiltersOpen] = useState(initialFilters.rows.length > 0);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_BARCODE_LIST_PARAMS.sort, () => setPage(1));
   const [viewBarcode, setViewBarcode] = useState<Barcode | null>(null);
@@ -156,12 +159,12 @@ export function BarcodesWorkspace() {
   const totalPages = Math.max(1, Math.ceil(totalBarcodes / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
-    barcodes.length > 0 && barcodes.every((barcode) => selectedIds.includes(barcode.id));
-  const selectedBarcodes = barcodes.filter((barcode) => selectedIds.includes(barcode.id));
+    barcodes.length > 0 && barcodes.every((barcode) => selectedIds.includes(barcodeSelectionKey(barcode)));
+  const selectedBarcodes = barcodes.filter((barcode) => selectedIds.includes(barcodeSelectionKey(barcode)));
   const isUpdating = updateBarcodesMutation.isPending;
 
-  useTableSelectionReset<number>(
-    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+  useTableSelectionReset<string>(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows, page, pageLimit),
     setSelectedIds,
   );
 
@@ -263,16 +266,16 @@ export function BarcodesWorkspace() {
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...barcodes.map((barcode) => barcode.id)])),
+        Array.from(new Set([...current, ...barcodes.map(barcodeSelectionKey)])),
       );
       return;
     }
     setSelectedIds((current) =>
-      current.filter((id) => !barcodes.some((barcode) => barcode.id === id)),
+      current.filter((id) => !barcodes.some((barcode) => barcodeSelectionKey(barcode) === id)),
     );
   }
 
-  function toggleSelect(barcodeId: number, checked: boolean) {
+  function toggleSelect(barcodeId: string, checked: boolean) {
     setSelectedIds((current) =>
       checked ? [...current, barcodeId] : current.filter((entry) => entry !== barcodeId),
     );
@@ -594,14 +597,28 @@ export function BarcodesWorkspace() {
         </CardHeader>
 
         <TableSelectionToolbar
-          selectedIds={selectedIds.map(String)}
-          pageRowIds={barcodes.map((barcode) => String(barcode.id))}
+          selectedIds={selectedIds}
+          pageRowIds={barcodes.map(barcodeSelectionKey)}
           totalCount={totalBarcodes}
-          onSelectedIdsChange={(ids) => setSelectedIds(ids.map(Number))}
-          canEdit={false}
-          canDelete={false}
+          onSelectedIdsChange={setSelectedIds}
+          onView={() => setViewBarcode(selectedBarcodes[0] ?? null)}
+          onEdit={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
+          onDelete={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
+          editDisabled={!selectedInvoiceTarget || isUpdating}
+          deleteDisabled={!selectedInvoiceTarget || isUpdating}
           actions={
             <>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                disabled={!canPrint || isPrinting || isUpdating || isFetching || selectedBarcodes.length !== selectedIds.length}
+                onClick={() => void printBarcodes(selectedBarcodes)}
+              >
+                <Printer className="h-4 w-4" />
+                {t(isPrinting ? "barcodes.print.preparing" : "barcodes.print.action")}
+              </Button>
               <Button
                 type="button"
                 size="sm"
@@ -617,33 +634,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-                disabled={!selectedInvoiceTarget || isUpdating}
-                onClick={() =>
-                  openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })
-                }
-              >
-                <Pencil className="h-4 w-4" />
-                {t("common.actions.edit")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-                disabled={!selectedInvoiceTarget || isUpdating}
-                onClick={() =>
-                  openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("common.actions.delete")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+                className="whitespace-nowrap"
                 disabled={selectedIds.length === 0 || isUpdating}
                 onClick={() => {
                   setBulkError(null);
@@ -662,7 +653,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+                className="whitespace-nowrap"
                 disabled={selectedIds.length === 0 || isUpdating}
                 onClick={() => {
                   setBulkError(null);
@@ -677,7 +668,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+                className="whitespace-nowrap"
                 disabled={assignRouteBarcodes.length === 0 || isUpdating}
                 onClick={() => setRouteDialogOpen(true)}
               >
@@ -710,19 +701,19 @@ export function BarcodesWorkspace() {
             rows={barcodes}
             page={currentPage}
             isPageDataPending={isFetching}
-            rowKey={(barcode) => String(barcode.id)}
+            rowKey={barcodeSelectionKey}
             rowLabel={(barcode) => barcode.number}
             columnLayout={columnVisibility}
             minWidth={960}
             sort={sort}
             onSortChange={onSortChange}
             selectable
-            selectedIds={selectedIds.map(String)}
+            selectedIds={selectedIds}
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
-            onToggleSelect={(id, checked) => toggleSelect(Number(id), checked)}
+            onToggleSelect={toggleSelect}
             onRowClick={setViewBarcode}
-            activeRowId={viewBarcode ? String(viewBarcode.id) : undefined}
+            activeRowId={viewBarcode ? barcodeSelectionKey(viewBarcode) : undefined}
             emptyState={
               <p className="text-muted-foreground">
                 {hasActiveFilters ? t("barcodes.empty.noMatch") : t("barcodes.empty.none")}

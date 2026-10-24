@@ -218,8 +218,11 @@ export function normalizeBarcode(raw: unknown): Barcode | null {
     String(item.invoice?.id ?? item.invoiceId ?? "").trim() || undefined;
   const invoiceNumber =
     String(item.invoice?.number ?? item.invoiceNumber ?? "").trim() || undefined;
+  // Older invoices stored the numeric items-catalog id in `description`; show the line name instead.
+  const rawDescription = String(item.description ?? "").trim();
+  const name = String(item.name ?? "").trim();
   const description =
-    String(item.description ?? item.name ?? "").trim() || undefined;
+    (/^\d+$/.test(rawDescription) && name ? name : rawDescription || name) || undefined;
 
   return {
     ...captureApiTableFields(raw, BARCODE_API_TABLE_FIELDS),
