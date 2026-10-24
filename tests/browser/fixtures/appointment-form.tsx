@@ -4,6 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { OrderForm } from "@/components/orders/order-form";
 import { createEmptyOrderForm, type OrderFormValues } from "@/lib/orders/types";
 import { customer as appointmentSender } from "./customers";
+if (document.documentElement.dataset.multipleAddresses === "true") {
+  appointmentSender.addresses.push({
+    ...appointmentSender.addresses[0], id: "a2", address1: "456 Broadway", isPrimary: false,
+  });
+}
 const customerQueryClient = new QueryClient();
 
 function AppointmentFixture() {

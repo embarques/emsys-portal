@@ -18,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import {
   InvoiceWizardReviewOptionalMissing,
   InvoiceWizardReviewSection,
-  InvoiceWizardReviewTextBlock,
 } from "@/components/invoices/invoice-wizard-review-section";
 import { InvoiceWizardNotice } from "@/components/invoices/invoice-wizard-notice";
 import { formatContainerLabel } from "@/lib/containers/display";
@@ -153,6 +152,19 @@ function usePreviewLabels(values: InvoiceFormValues) {
   };
 }
 
+function ReviewDetail({ label, children, className = "" }: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`min-w-0 space-y-1 ${className}`}>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="break-words text-sm font-medium leading-relaxed text-foreground">{children}</dd>
+    </div>
+  );
+}
+
 function PreviewField({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
@@ -212,6 +224,7 @@ function ReviewPriceTotals({
   showPayment,
   canApplyInvoiceDiscount = false,
   onDiscountChange,
+  className = "",
 }: {
   subtotal: number;
   discount: number;
@@ -220,6 +233,7 @@ function ReviewPriceTotals({
   showPayment: boolean;
   canApplyInvoiceDiscount?: boolean;
   onDiscountChange?: (discount: string) => void;
+  className?: string;
 }) {
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -262,7 +276,7 @@ function ReviewPriceTotals({
   }
 
   return (
-    <div className="mt-1 space-y-3 border-t border-border pt-4 text-sm">
+    <div className={`mt-1 space-y-3 border-t border-border pt-4 text-sm ${className}`}>
       <div className="flex items-center justify-between gap-4">
         <span className="text-muted-foreground">{t("invoices.wizard.summary.subtotal")}</span>
         <span className="inline-flex min-w-[5.5rem] justify-end">
@@ -286,6 +300,7 @@ function ReviewPriceTotals({
             onClick={discount > 0 ? removeDiscount : openDiscountDialog}
             disabled={!canEditDiscount}
           >
+            <span className="min-w-0">{t("invoices.wizard.summary.discount")}</span>
             <span
               className={
                 discount > 0
@@ -296,7 +311,6 @@ function ReviewPriceTotals({
             >
               {discount > 0 ? <Minus className="size-3" /> : <Plus className="size-3" />}
             </span>
-            <span className="min-w-0">{t("invoices.wizard.summary.discount")}</span>
           </button>
           <span className="inline-flex min-w-[5.5rem] justify-end tabular-nums">
             {discount > 0 ? `−${formatInvoiceMoney(discount)}` : formatInvoiceMoney(0)}
@@ -432,7 +446,7 @@ function InvoiceWizardCheckoutReview({
   return (
     <div
       id="invoice-wizard-print-area"
-      className={isPhoneWizard ? "space-y-4 pb-2" : "@container space-y-5 p-4 sm:p-6"}
+      className={isPhoneWizard ? "@container space-y-4 pb-2" : "@container space-y-5 p-4 sm:p-6"}
     >
       {errorMessage ? (
         <div className="py-3 print:hidden">
@@ -445,43 +459,36 @@ function InvoiceWizardCheckoutReview({
         onEdit={onEditStep ? () => onEditStep(1) : undefined}
         variant={isPhoneWizard ? "phonePanel" : "default"}
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <InvoiceWizardReviewTextBlock
-            label={t("invoices.wizard.review.invoice")}
-            value={
-              <>
-                <p>{values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber || t("common.empty.dash")}</p>
-                <p>{formatInvoiceDate(values.date) || values.date || t("common.empty.dash")}</p>
-              </>
-            }
-          />
-          <InvoiceWizardReviewTextBlock
-            label={t("invoices.wizard.review.shipment")}
-            value={
-              <>
-                <p>
-                  {t("invoices.wizard.review.container")}: {containerLabel}
-                </p>
-                <p>
-                  {pickupFieldLabel}:{" "}
-                  {values.pickupId ? (
-                    pickupLabel
-                  ) : (
-                    <InvoiceWizardReviewOptionalMissing>{pickupLabel}</InvoiceWizardReviewOptionalMissing>
-                  )}
-                </p>
-                <p>
-                  {t("invoices.form.fields.pickupSource")}: {pickupSourceLabel}
-                </p>
-                <p>
-                  {pickupAssignmentFieldLabel}: {pickupAssignmentLabel}
-                </p>
-                <p>
-                  {t("invoices.form.fields.paymentLocation")}: {getPaymentLocationLabel(values.paymentLocation)}
-                </p>
-              </>
-            }
-          />
+        <div className="grid gap-5 @xl:grid-cols-2">
+          <div className="min-w-0 space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+            <h4 className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.invoice")}</h4>
+            <dl className="space-y-4">
+              <ReviewDetail label={t("invoices.form.fields.invoiceNumber")}>
+                {values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber || t("common.empty.dash")}
+              </ReviewDetail>
+              <ReviewDetail label={t("invoices.form.fields.date")}>
+                {formatInvoiceDate(values.date) || values.date || t("common.empty.dash")}
+              </ReviewDetail>
+              <ReviewDetail label={t("invoices.form.fields.paymentLocation")}>
+                {getPaymentLocationLabel(values.paymentLocation)}
+              </ReviewDetail>
+            </dl>
+          </div>
+          <div className="min-w-0 space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+            <h4 className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.shipment")}</h4>
+            <dl className="grid gap-4 @2xl:grid-cols-2">
+              <ReviewDetail label={t("invoices.wizard.review.container")}>{containerLabel}</ReviewDetail>
+              <ReviewDetail label={t("invoices.form.fields.pickupSource")}>{pickupSourceLabel}</ReviewDetail>
+              <ReviewDetail label={pickupFieldLabel} className="@2xl:col-span-2">
+                {values.pickupId ? pickupLabel : (
+                  <InvoiceWizardReviewOptionalMissing>{pickupLabel}</InvoiceWizardReviewOptionalMissing>
+                )}
+              </ReviewDetail>
+              <ReviewDetail label={pickupAssignmentFieldLabel} className="@2xl:col-span-2">
+                {pickupAssignmentLabel}
+              </ReviewDetail>
+            </dl>
+          </div>
         </div>
       </InvoiceWizardReviewSection>
 
@@ -491,25 +498,25 @@ function InvoiceWizardCheckoutReview({
         onEdit={onEditStep ? () => onEditStep(2) : undefined}
         variant={isPhoneWizard ? "phonePanel" : "default"}
       >
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="space-y-2">
+        <div className="grid gap-5 @xl:grid-cols-2">
+          <div className="min-w-0 space-y-2">
             <p className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.sender")}</p>
             {values.sender ? (
               <CustomerContactSummary customer={values.sender} {...missingContactLabels} />
             ) : (
-              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.notSelected")}</p>
+              <div className="min-h-24 rounded-lg border border-dashed border-border bg-muted/20 p-3 text-sm text-muted-foreground">{t("invoices.wizard.review.notSelected")}</div>
             )}
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <p className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.receiver")}</p>
             {values.receiver ? (
               <CustomerContactSummary customer={values.receiver} {...missingContactLabels} />
             ) : (
-              <p className="text-sm">
+              <div className="min-h-24 rounded-lg border border-dashed border-border bg-muted/20 p-3 text-sm">
                 <InvoiceWizardReviewOptionalMissing>
                   {t("invoices.wizard.review.noReceiver")}
                 </InvoiceWizardReviewOptionalMissing>
-              </p>
+              </div>
             )}
           </div>
         </div>
@@ -521,81 +528,132 @@ function InvoiceWizardCheckoutReview({
         onEdit={onEditStep ? () => onEditStep(3) : undefined}
         variant={isPhoneWizard ? "phonePanel" : "default"}
       >
-        {lineItemRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
-        ) : (
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              {t(lineItemRows.length === 1 ? "invoices.wizard.review.itemsSummary" : "invoices.wizard.review.itemsSummary_plural", {
-                count: lineItemRows.length,
-                subtotal: formatInvoiceMoney(subtotal),
+        <div className="space-y-4">
+          {zeroLabelsWarning ? (
+            <InvoiceWizardNotice
+              tone="warning"
+              variant="footer"
+              message={zeroLabelsWarning}
+              className="rounded-lg border print:hidden"
+            />
+          ) : null}
+          {lineItemRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
+          ) : isPhoneWizard ? (
+            <div className="divide-y divide-border">
+              {lineItemRows.map((item) => {
+                const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                const label =
+                  item.itemName.trim() ||
+                  catalogItem?.description ||
+                  t("invoices.wizard.summary.lineItem");
+                const unitPrice = Number(item.unitPrice) || 0;
+                const quantity = Number(item.quantity) || 0;
+                const lineTotal = resolveLineTotal(item);
+
+                return (
+                  <article key={item.id} className="py-5 first:pt-1 last:pb-1">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                      <div className="min-w-0 space-y-2">
+                        <p className="whitespace-normal break-words text-lg font-semibold leading-snug text-foreground">
+                          {label}
+                        </p>
+                        <p className="text-base tabular-nums text-muted-foreground">
+                          <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} /> x{" "}
+                          {quantity || t("common.empty.dash")}
+                        </p>
+                        <ReviewLineItemLabels count={resolveLineLabelCount(item)} />
+                      </div>
+                      <p className="shrink-0 self-center text-lg font-semibold tabular-nums text-foreground">
+                        <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
+                      </p>
+                    </div>
+                  </article>
+                );
               })}
-              {discount > 0
-                ? t("invoices.wizard.review.discountSuffix", { discount: formatInvoiceMoney(discount) })
-                : ""}
-            </p>
-            {isPhoneWizard ? (
-              <div className="divide-y divide-border">
-                {lineItemRows.map((item) => {
-                  const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                  const label =
-                    item.itemName.trim() ||
-                    catalogItem?.description ||
-                    t("invoices.wizard.summary.lineItem");
-                  const unitPrice = Number(item.unitPrice) || 0;
-                  const quantity = Number(item.quantity) || 0;
-                  const lineTotal = resolveLineTotal(item);
-                  return (
-                    <article key={item.id} className="py-4 first:pt-2 last:pb-0">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-                        <div className="min-w-0">
-                          <p className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-[36rem] text-sm">
+                <colgroup>
+                  <col className="w-auto" />
+                  <col className="w-[4.5rem]" />
+                  <col className="w-[5.5rem]" />
+                  <col className="w-[7.5rem]" />
+                  <col className="w-[7.5rem]" />
+                </colgroup>
+                <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">
+                      {t("invoices.wizard.review.table.item")}
+                    </th>
+                    <th className="px-3 py-3 text-right font-medium">
+                      {t("invoices.wizard.review.table.qty")}
+                    </th>
+                    <th className="px-3 py-3 text-right font-medium">
+                      {t("invoices.wizard.review.table.labels")}
+                    </th>
+                    <th className="px-3 py-3 text-right font-medium">
+                      {t("invoices.wizard.review.table.unitPrice")}
+                    </th>
+                    <th className="px-4 py-3 text-right font-medium">
+                      {t("invoices.wizard.review.table.subtotal")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItemRows.map((item) => {
+                    const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                    const label =
+                      item.itemName.trim() ||
+                      catalogItem?.description ||
+                      t("invoices.wizard.summary.lineItem");
+                    const labelCount = resolveLineLabelCount(item);
+                    const unitPrice = Number(item.unitPrice) || 0;
+                    const lineTotal = resolveLineTotal(item);
+                    return (
+                      <tr key={item.id} className="border-b last:border-b-0">
+                        <td className="px-4 py-4 align-middle">
+                          <p className="whitespace-normal break-words font-medium leading-snug text-foreground">
                             {label}
                           </p>
-                          <p className="mt-2 text-sm tabular-nums text-muted-foreground">
-                            <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} /> x{" "}
-                            {quantity || t("common.empty.dash")}
-                          </p>
-                          <div className="mt-1">
-                            <ReviewLineItemLabels count={resolveLineLabelCount(item)} />
-                          </div>
-                        </div>
-                        <p className="shrink-0 text-base font-semibold tabular-nums text-foreground">
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
+                          {item.quantity || t("common.empty.dash")}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-muted-foreground">
+                          {labelCount > 0 ? (
+                            <span className="tabular-nums">{labelCount}</span>
+                          ) : (
+                            <InvoiceWizardReviewOptionalMissing>
+                              {t("invoices.wizard.review.noLabels")}
+                            </InvoiceWizardReviewOptionalMissing>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
+                          <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 align-middle text-right font-medium tabular-nums">
                           <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
-                        </p>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            ) : (
-              <ul className="list-inside list-disc space-y-1">
-                {lineItemRows.map((item) => {
-                  const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                  const label =
-                    item.itemName.trim() ||
-                    catalogItem?.description ||
-                    t("invoices.wizard.summary.lineItem");
-                  const lineTotal = resolveLineTotal(item);
-                  return (
-                    <li key={item.id}>
-                      {label} · {t("invoices.wizard.review.qty")} {item.quantity || "1"} ·{" "}
-                      <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
-                      {resolveLineLabelCount(item) > 0 ? null : (
-                        <>
-                          {" · "}
-                          <InvoiceWizardReviewOptionalMissing>
-                            {t("invoices.wizard.review.noLabels")}
-                          </InvoiceWizardReviewOptionalMissing>
-                        </>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <ReviewPriceTotals
+            subtotal={subtotal}
+            discount={discount}
+            amountPaid={recordedPaymentAmount}
+            balance={computeInvoiceBalance(subtotal, discount, recordedPaymentAmount)}
+            showPayment={Boolean(showPaymentSection)}
+            canApplyInvoiceDiscount={canApplyInvoiceDiscount}
+            onDiscountChange={onDiscountChange}
+            className={isPhoneWizard ? "" : "pr-[calc(1rem+1px)]"}
+          />
+        </div>
       </InvoiceWizardReviewSection>
 
       {showPaymentSection ? (
@@ -665,147 +723,6 @@ function InvoiceWizardCheckoutReview({
           </div>
         </InvoiceWizardReviewSection>
       ) : null}
-
-      <InvoiceWizardReviewSection
-        number={showPaymentSection ? 5 : 4}
-        title={t("invoices.wizard.stepTitles.reviewAndSave")}
-        variant={isPhoneWizard ? "phonePanel" : "default"}
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.reviewIntro")}</p>
-          {zeroLabelsWarning ? (
-            <InvoiceWizardNotice
-              tone="warning"
-              variant="footer"
-              message={zeroLabelsWarning}
-              className="rounded-lg border print:hidden"
-            />
-          ) : null}
-
-          <div>
-            <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-foreground">
-              {t("invoices.wizard.review.yourItems")}
-            </h4>
-            {lineItemRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
-            ) : (
-              isPhoneWizard ? (
-                <div className="divide-y divide-border">
-                  {lineItemRows.map((item) => {
-                    const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                    const label =
-                      item.itemName.trim() ||
-                      catalogItem?.description ||
-                      t("invoices.wizard.summary.lineItem");
-                    const unitPrice = Number(item.unitPrice) || 0;
-                    const quantity = Number(item.quantity) || 0;
-                    const lineTotal = resolveLineTotal(item);
-
-                    return (
-                      <article key={item.id} className="py-5 first:pt-1 last:pb-1">
-                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-                          <div className="min-w-0 space-y-2">
-                            <p className="whitespace-normal break-words text-lg font-semibold leading-snug text-foreground">
-                              {label}
-                            </p>
-                            <p className="text-base tabular-nums text-muted-foreground">
-                              <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} /> x{" "}
-                              {quantity || t("common.empty.dash")}
-                            </p>
-                            <ReviewLineItemLabels count={resolveLineLabelCount(item)} />
-                          </div>
-                          <p className="shrink-0 self-center text-lg font-semibold tabular-nums text-foreground">
-                            <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
-                          </p>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="overflow-x-auto rounded-lg border">
-                  <table className="w-full min-w-[36rem] text-sm">
-                    <colgroup>
-                      <col className="w-auto" />
-                      <col className="w-[4.5rem]" />
-                      <col className="w-[5.5rem]" />
-                      <col className="w-[7.5rem]" />
-                      <col className="w-[7.5rem]" />
-                    </colgroup>
-                    <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-medium">
-                          {t("invoices.wizard.review.table.item")}
-                        </th>
-                        <th className="px-3 py-3 text-right font-medium">
-                          {t("invoices.wizard.review.table.qty")}
-                        </th>
-                        <th className="px-3 py-3 text-right font-medium">
-                          {t("invoices.wizard.review.table.labels")}
-                        </th>
-                        <th className="px-3 py-3 text-right font-medium">
-                          {t("invoices.wizard.review.table.unitPrice")}
-                        </th>
-                        <th className="px-4 py-3 text-right font-medium">
-                          {t("invoices.wizard.review.table.subtotal")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lineItemRows.map((item) => {
-                        const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                        const label =
-                          item.itemName.trim() ||
-                          catalogItem?.description ||
-                          t("invoices.wizard.summary.lineItem");
-                        const labelCount = resolveLineLabelCount(item);
-                        const unitPrice = Number(item.unitPrice) || 0;
-                        const lineTotal = resolveLineTotal(item);
-                        return (
-                          <tr key={item.id} className="border-b last:border-b-0">
-                            <td className="px-4 py-4 align-middle">
-                              <p className="whitespace-normal break-words font-medium leading-snug text-foreground">
-                                {label}
-                              </p>
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
-                              {item.quantity || t("common.empty.dash")}
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-muted-foreground">
-                              {labelCount > 0 ? (
-                                <span className="tabular-nums">{labelCount}</span>
-                              ) : (
-                                <InvoiceWizardReviewOptionalMissing>
-                                  {t("invoices.wizard.review.noLabels")}
-                                </InvoiceWizardReviewOptionalMissing>
-                              )}
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
-                              <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} />
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-4 align-middle text-right font-medium tabular-nums">
-                              <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            )}
-            <ReviewPriceTotals
-              subtotal={subtotal}
-              discount={discount}
-              amountPaid={recordedPaymentAmount}
-              balance={computeInvoiceBalance(subtotal, discount, recordedPaymentAmount)}
-              showPayment={Boolean(showPaymentSection)}
-              canApplyInvoiceDiscount={canApplyInvoiceDiscount}
-              onDiscountChange={onDiscountChange}
-            />
-          </div>
-        </div>
-      </InvoiceWizardReviewSection>
       {children}
     </div>
   );

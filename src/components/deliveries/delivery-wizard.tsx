@@ -41,6 +41,7 @@ export function DeliveryWizard({
   const state = useDeliveryWizard(target);
   const [print, setPrint] = useState(false);
   const review = state.query.data;
+  const invoiceNumber = review?.invoiceNumber || target.invoiceNumber || "";
   const values = state.form.watch();
   const errors = state.form.formState.errors;
   const heading = useRef<HTMLHeadingElement>(null);
@@ -170,8 +171,14 @@ export function DeliveryWizard({
             </DialogTitle>
             <DialogDescription>
               <span className="font-medium text-foreground">
-                {review?.invoiceNumber || target.number}
+                {target.number}
               </span>
+              {invoiceNumber ? (
+                <>
+                  {" · "}
+                  {t("deliveries.wizard.invoiceNumber", { number: invoiceNumber })}
+                </>
+              ) : null}
               {" · "}
               {t("deliveries.wizard.deliveryNumber", {
                 id: target.delivery?.id ?? "",

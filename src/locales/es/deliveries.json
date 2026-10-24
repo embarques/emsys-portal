@@ -15,13 +15,23 @@
     "invoiceBalance": "Balance de factura",
     "name": "Nombre",
     "container": "Contenedor",
-    "status": "Estado",
     "senderName": "Nombre del remitente",
     "senderPhones": "Teléfonos del remitente",
     "receiverName": "Nombre del destinatario",
     "address": "Dirección",
     "province": "Provincia",
     "phones": "Teléfonos del destinatario"
+  },
+  "view": {
+    "title": "Ver entrega",
+    "description": "Código {{barcode}} · Factura {{invoice}}",
+    "route": "Ruta",
+    "city": "Ciudad",
+    "sections": {
+      "merchandise": "Mercancía",
+      "receiver": "Destinatario",
+      "sender": "Remitente"
+    }
   },
   "filters": {
     "fields": {
@@ -55,12 +65,6 @@
         "name": {
           "label": "Contenedor",
           "placeholder": "Ingresa el contenedor…"
-        }
-      },
-      "status": {
-        "name": {
-          "label": "Estado",
-          "placeholder": "Ingresa el estado…"
         }
       }
     }
@@ -136,6 +140,7 @@
     "delivery": "Entrega",
     "receiver": "Destinatario",
     "deliveryNumber": "Entrega #{{id}}",
+    "invoiceNumber": "Factura {{number}}",
     "selectedCount": "{{count}} de {{total}} artículos seleccionados",
     "remainingConduce": "Los artículos no seleccionados permanecen en {{pendingStatus}} para el próximo viaje.",
     "selectItems": "Seleccione al menos un artículo para entregar.",
@@ -155,7 +160,6 @@
     "photoCount": "{{count}} fotos subidas",
     "receiverId": "ID: {{id}}",
     "validReceiverId": "Ingrese el ID de quien recibe (hasta 64 caracteres, sin saltos de línea).",
-    "automaticMetadata": "La fecha de firma y el empleado que recoge la firma se registran automáticamente.",
     "signatureCaptured": "Firma capturada",
     "newStatus": "Los artículos seleccionados cambiarán a",
     "confirmReceived": "Complete solo cuando el cliente haya recibido la mercancía seleccionada.",

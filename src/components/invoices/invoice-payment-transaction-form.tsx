@@ -1,14 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Wallet } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
-import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
@@ -45,7 +44,10 @@ type Props = {
   statement: DailyIncomeStatement;
   invoice: InvoiceFormValues;
   onRegistered: (journal: DailyIncomeJournal) => void | Promise<void>;
-  onCancel?: () => void;
+  /** Amount is $0: continue without posting a Daily Income payment. */
+  onSkip: () => void;
+  /** Lets the wizard Next button post the payment (or skip it when the amount is $0). */
+  submitRef: MutableRefObject<(() => Promise<void>) | null>;
 };
 
 function buildInitialValues(
@@ -103,11 +105,10 @@ function hasJournalAssignee(values: Pick<DailyIncomeJournalValues, "employeeId" 
   return Boolean(values.employeeId) || Boolean(values.routeId?.trim());
 }
 
-export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered, onCancel }: Props) {
+export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered, onSkip, submitRef }: Props) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const isMobileLayout = useIsMobileViewport();
-  const formId = useId();
   const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const currentUserQuery = useCurrentUser();
@@ -372,60 +373,69 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     notifyError(message);
   }
 
+  const submittingRef = useRef(false);
+
+  async function postPaymentOrSkip() {
+    if (submittingRef.current || statement.status !== "OPEN") return;
+    const amount = Number(getValues("amount"));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setSubmitError(null);
+      onSkip();
+      return;
+    }
+    submittingRef.current = true;
+    try {
+      await handleSubmit(submit, handleInvalid)();
+    } finally {
+      submittingRef.current = false;
+    }
+  }
+
+  useEffect(() => {
+    submitRef.current = postPaymentOrSkip;
+  });
+
+  useEffect(() => () => {
+    submitRef.current = null;
+  }, [submitRef]);
+
   return (
     <form
-      id={formId}
-      className="flex min-h-0 flex-1 flex-col"
+      className="space-y-3"
       onKeyDown={navigateOnEnter}
-      onSubmit={handleSubmit(submit, handleInvalid)}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void postPaymentOrSkip();
+      }}
     >
-      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/35 p-4 sm:p-6">
-        <RegisterInvoiceTransactionFields
-          grouped
-          employees={employees}
-          dailyRoutes={dailyRoutes}
-          statementDate={statement.date}
-          statementBranchId={statement.branch?.id}
-          bankAccounts={bankAccounts}
-          paymentMethods={paymentMethods}
-          errors={errors}
-          register={register}
-          setValue={setValue}
-          watch={watch}
-          showEmployee={showAssignee}
-          allowDailyRoute={showAssignee}
-          showInvoiceNumber={false}
-          showParties={false}
-          invoiceCostReadOnly
-        />
-      </div>
+      <RegisterInvoiceTransactionFields
+        grouped
+        employees={employees}
+        dailyRoutes={dailyRoutes}
+        statementDate={statement.date}
+        statementBranchId={statement.branch?.id}
+        bankAccounts={bankAccounts}
+        paymentMethods={paymentMethods}
+        errors={errors}
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        showEmployee={showAssignee}
+        allowDailyRoute={showAssignee}
+        showInvoiceNumber={false}
+        showParties={false}
+        invoiceCostReadOnly
+        paymentSectionFirst
+      />
 
-      <div className="shrink-0 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 sm:pb-3">
-        <div className="flex items-center justify-between gap-3">
-          {submitError ? (
-            <FormFooterNoticeMessage tone="error" message={submitError} />
-          ) : (
-            <span className="flex-1" aria-hidden />
-          )}
-          <div className="flex shrink-0 items-center gap-2">
-            {onCancel ? (
-              <Button type="button" variant="outline" onClick={onCancel} disabled={createJournal.isPending}>
-                {t("common.actions.cancel")}
-              </Button>
-            ) : null}
-            <Button
-              type="submit"
-              data-wizard-primary
-              disabled={createJournal.isPending || statement.status !== "OPEN"}
-            >
-              {createJournal.isPending ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
-              {createJournal.isPending
-                ? t("invoices.wizard.dailyIncome.dialog.registering")
-                : t("invoices.wizard.dailyIncome.postPayment")}
-            </Button>
-          </div>
-        </div>
-      </div>
+      {createJournal.isPending ? (
+        <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          {t("invoices.wizard.dailyIncome.dialog.registering")}
+        </p>
+      ) : submitError ? (
+        <FormFooterNoticeMessage tone="error" message={submitError} />
+      ) : null}
     </form>
   );
 }

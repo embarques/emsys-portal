@@ -15,13 +15,23 @@
     "invoiceBalance": "Invoice balance",
     "name": "Name",
     "container": "Container",
-    "status": "Status",
     "senderName": "Sender name",
     "senderPhones": "Sender phones",
     "receiverName": "Receiver name",
     "address": "Address",
     "province": "Province",
     "phones": "Receiver phones"
+  },
+  "view": {
+    "title": "View delivery",
+    "description": "Barcode {{barcode}} · Invoice {{invoice}}",
+    "route": "Route",
+    "city": "City",
+    "sections": {
+      "merchandise": "Merchandise",
+      "receiver": "Receiver",
+      "sender": "Sender"
+    }
   },
   "filters": {
     "fields": {
@@ -55,12 +65,6 @@
         "name": {
           "label": "Container",
           "placeholder": "Enter container…"
-        }
-      },
-      "status": {
-        "name": {
-          "label": "Status",
-          "placeholder": "Enter status…"
         }
       }
     }
@@ -136,6 +140,7 @@
     "delivery": "Delivery",
     "receiver": "Receiver",
     "deliveryNumber": "Delivery #{{id}}",
+    "invoiceNumber": "Invoice {{number}}",
     "selectedCount": "{{count}} of {{total}} items selected",
     "remainingConduce": "Items you do not select remain {{pendingStatus}} for the next trip.",
     "selectItems": "Select at least one item to deliver.",
@@ -155,7 +160,6 @@
     "photoCount": "{{count}} photos uploaded",
     "receiverId": "ID: {{id}}",
     "validReceiverId": "Enter the actual receiver ID (up to 64 characters, no line breaks).",
-    "automaticMetadata": "The signing date and collecting employee are recorded automatically.",
     "signatureCaptured": "Signature captured",
     "newStatus": "Selected items will change to",
     "confirmReceived": "Complete only after the customer has received the selected merchandise.",

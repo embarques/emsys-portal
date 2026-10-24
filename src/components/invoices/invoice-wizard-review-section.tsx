@@ -2,7 +2,6 @@
 
 import { Pencil } from "lucide-react";
 
-import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -29,43 +28,31 @@ export function InvoiceWizardReviewSection({
   const { t } = useTranslation();
   const resolvedEditLabel = editLabel ?? t("invoices.wizard.review.editStep");
 
-  if (variant === "phonePanel") {
-    return (
-      <section className={cn("rounded-xl bg-muted/45 p-4", className)}>
-        <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
-          <h3 className="min-w-0 text-xl font-bold leading-tight text-foreground">{title}</h3>
-          {onEdit ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-9 shrink-0 text-primary"
-              onClick={onEdit}
-              aria-label={resolvedEditLabel}
-            >
-              <Pencil className="size-5" />
-            </Button>
-          ) : null}
-        </div>
-        <div>{children}</div>
-      </section>
-    );
-  }
-
   return (
-    <FormSection
-      variant="card"
-      title={`${String(number).padStart(2, "0")} · ${title}`}
-      className={className}
-      action={onEdit ? (
-        <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
-          <Pencil className="size-4" />
-          {resolvedEditLabel}
-        </Button>
-      ) : undefined}
-    >
-      {children}
-    </FormSection>
+    <section className={cn("min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm print:break-inside-avoid print:shadow-none", className)}>
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/20 px-4 py-3 sm:px-5">
+        <h3 className="flex min-w-0 items-center gap-3 text-sm font-semibold text-foreground">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs tabular-nums text-primary">
+            {String(number).padStart(2, "0")}
+          </span>
+          {title}
+        </h3>
+        {onEdit ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size={variant === "phonePanel" ? "icon" : "sm"}
+            className="shrink-0 text-muted-foreground hover:text-foreground print:hidden"
+            onClick={onEdit}
+            aria-label={`${resolvedEditLabel}: ${title}`}
+          >
+            <Pencil className="size-4" aria-hidden="true" />
+            {variant === "phonePanel" ? null : resolvedEditLabel}
+          </Button>
+        ) : null}
+      </div>
+      <div className="p-4 sm:p-5">{children}</div>
+    </section>
   );
 }
 

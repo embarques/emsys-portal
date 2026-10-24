@@ -147,6 +147,14 @@ function focusFieldById(fieldId: string) {
   });
 }
 
+/** Row clicks open the editor, except when the click lands on a row action button. */
+function editOnRowClick(onEdit: () => void) {
+  return (event: React.MouseEvent<HTMLElement>) => {
+    if ((event.target as HTMLElement).closest("button")) return;
+    onEdit();
+  };
+}
+
 /** Blank unit price is 0 so a free line can be committed without typing a price. */
 function resolveUnitPriceInput(unitPrice: string): string {
   return unitPrice.trim() === "" ? "0" : unitPrice;
@@ -413,7 +421,11 @@ function WizardLineItemsMobileCards({
         const labels = resolveLineLabelCount(item);
 
         return (
-          <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
+          <article
+            key={item.id}
+            className="cursor-pointer border-b px-4 py-4 transition-colors last:border-b-0 hover:bg-muted/40"
+            onClick={editOnRowClick(() => onEdit(item.id))}
+          >
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
               <div className="min-w-0">
                 <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
@@ -529,7 +541,11 @@ function WizardLineItemsTable({
               </tr>
             ) : (
               visibleItems.map((item, index) => (
-                <tr key={item.id} className="border-b last:border-b-0">
+                <tr
+                  key={item.id}
+                  className="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/40"
+                  onClick={editOnRowClick(() => onEdit(item.id))}
+                >
                   <td className="px-3 py-2.5 font-medium">{item.itemName.trim() || "—"}</td>
                   <td className="px-3 py-2.5 tabular-nums">{item.quantity}</td>
                   <td className="px-3 py-2.5 tabular-nums">{resolveLineLabelCount(item)}</td>
@@ -980,7 +996,7 @@ function InvoiceLineItemsWizardEditor({
     setFocusDescription(false);
   }
 
-  function commitDraft() {
+  function commitDraft({ continueAdding = false }: { continueAdding?: boolean } = {}) {
     if (!draft) return;
     if (!isDraftReadyToCommit(draft)) {
       const field = !draft.itemName.trim()
@@ -1003,6 +1019,10 @@ function InvoiceLineItemsWizardEditor({
     emitCommittedItems(items);
     if (mergedIntoId) {
       notifySuccess(t("invoices.form.lineItems.duplicateMerged"));
+    }
+    if (continueAdding) {
+      openDraftForAdd();
+      return;
     }
     resetDraft();
     window.requestAnimationFrame(() => {
@@ -1073,21 +1093,16 @@ function InvoiceLineItemsWizardEditor({
       ) : null}
       {isDraftOpen ? (
         <section
+          data-editing={editingId ? "true" : undefined}
           className={cn(
             "space-y-4 rounded-xl border bg-muted/20 p-4",
             isPhoneWizard && "mx-1 border-border/80 bg-background p-3",
+            editingId && "border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10",
           )}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">
-                {editingId ? labels.editingTitle : labels.addTitle}
-              </h3>
-            </div>
-            <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
-              {editingId ? labels.cancelEdit : t("common.actions.cancel")}
-            </Button>
-          </div>
+          <h3 className="text-sm font-semibold text-foreground">
+            {editingId ? labels.editingTitle : labels.addTitle}
+          </h3>
 
           <LineItemEntryFields
             item={activeDraft}
@@ -1104,27 +1119,40 @@ function InvoiceLineItemsWizardEditor({
             totalLabel={labels.totalLabel}
             autoFocusDescription={focusDescription}
             onDescriptionFocused={clearFocusDescription}
-            onCommitFromTotal={commitDraft}
+            onCommitFromTotal={() => commitDraft({ continueAdding: true })}
             {...draftHandlers}
           />
           {duplicateCommittedItem ? (
             <p className="text-sm text-muted-foreground">{labels.duplicateHint}</p>
           ) : null}
           {isPhoneWizard ? (
-            <Button
-              type="button"
-              className="h-12 w-full rounded-xl text-base font-semibold"
-              onClick={commitDraft}
-              disabled={!isDraftReadyToCommit(activeDraft)}
-            >
-              {editingId ? <Save className="size-5" /> : <Plus className="size-5" />}
-              {editingId ? labels.saveChanges : labels.addItem}
-            </Button>
-          ) : (
-            <div className="flex justify-end">
+            <div className="flex gap-2">
               <Button
                 type="button"
-                onClick={commitDraft}
+                variant="outline"
+                className="h-12 rounded-xl px-4 text-base"
+                onClick={cancelEdit}
+              >
+                {editingId ? labels.cancelEdit : t("common.actions.cancel")}
+              </Button>
+              <Button
+                type="button"
+                className="h-12 flex-1 rounded-xl text-base font-semibold"
+                onClick={() => commitDraft()}
+                disabled={!isDraftReadyToCommit(activeDraft)}
+              >
+                {editingId ? <Save className="size-5" /> : <Plus className="size-5" />}
+                {editingId ? labels.saveChanges : labels.addItem}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="outline" onClick={cancelEdit}>
+                {editingId ? labels.cancelEdit : t("common.actions.cancel")}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => commitDraft()}
                 disabled={!isDraftReadyToCommit(activeDraft)}
               >
                 {editingId ? <Save className="size-4" /> : <Plus className="size-4" />}

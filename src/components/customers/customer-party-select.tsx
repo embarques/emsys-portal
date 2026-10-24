@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, ChevronUp, Loader2, LoaderCircle, Plus, Search, UsersRound } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Loader2, LoaderCircle, Plus, Search, UserPlus, UsersRound } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
@@ -56,6 +56,14 @@ export type CustomerPartySelectProps = {
   triggerClassName?: string;
   /** Show the Primary/Other label badge next to each expanded address. */
   showAddressLabels?: boolean;
+  /** Customers hidden from results because they are already chosen elsewhere in the form. */
+  excludedCustomerIds?: readonly string[];
+  /** Customers listed before a search is typed (e.g. the receivers of a linked pickup). */
+  suggestedCustomers?: readonly Customer[];
+  suggestionsLabel?: string;
+  /** Adds an action at the end of the results that opens the new-customer form. */
+  onAddCustomer?: () => void;
+  addCustomerLabel?: string;
 };
 
 type CollapsedAddressPreview = {
@@ -181,6 +189,11 @@ export function CustomerPartySelect({
   className,
   triggerClassName,
   showAddressLabels = true,
+  excludedCustomerIds,
+  suggestedCustomers,
+  suggestionsLabel,
+  onAddCustomer,
+  addCustomerLabel,
 }: CustomerPartySelectProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -212,9 +225,14 @@ export function CustomerPartySelect({
     open && Boolean(detailCustomerId && expandedIds.has(detailCustomerId)),
   );
 
+  const showingSuggestions = !hasMinimumQuery && Boolean(suggestedCustomers?.length);
   const results = useMemo(() => {
-    return isSearching ? autocompleteQuery.data ?? [] : [];
-  }, [autocompleteQuery.data, isSearching]);
+    const found: CustomerSearchResult[] = showingSuggestions
+      ? (suggestedCustomers ?? []).map((customer) => ({ customer }))
+      : isSearching ? autocompleteQuery.data ?? [] : [];
+    if (!excludedCustomerIds?.length) return found;
+    return found.filter((result) => !excludedCustomerIds.includes(result.customer.id));
+  }, [autocompleteQuery.data, isSearching, excludedCustomerIds, showingSuggestions, suggestedCustomers]);
 
   const visibleCustomerIds = useMemo(
     () => results.slice(0, 20).map((result) => result.customer.id),
@@ -298,10 +316,10 @@ export function CustomerPartySelect({
   /**
    * A customer with more than one address must be confirmed by pressing a specific
    * address, so activating the row only expands it. Single-address customers select
-   * immediately.
+   * immediately, as do suggestions, which already identify the intended customer.
    */
   function activateCustomerRow(customer: Customer, addressCount: number) {
-    if (addressCount > 1) {
+    if (addressCount > 1 && !showingSuggestions) {
       expandCustomer(customer.id);
       return;
     }
@@ -371,7 +389,7 @@ export function CustomerPartySelect({
       event.stopPropagation();
       const displayCustomer = resolveDisplayCustomer(results[highlightedIndex]!.customer);
       keyboardSelectionRef.current = isDesktopFormNavigation();
-      if (keyboardSelectionRef.current && resolveCustomerAddressCount(displayCustomer) > 1) {
+      if (keyboardSelectionRef.current && !showingSuggestions && resolveCustomerAddressCount(displayCustomer) > 1) {
         pendingAddressFocusRef.current = displayCustomer.id;
       }
       activateCustomerRow(displayCustomer, resolveCustomerAddressCount(displayCustomer));
@@ -391,6 +409,13 @@ export function CustomerPartySelect({
     setDetailCustomerId(null);
   }
 
+  function handleAddCustomer() {
+    if (!onAddCustomer) return;
+    setOpen(false);
+    resetPickerState();
+    onAddCustomer();
+  }
+
   function handleOpenChange(next: boolean) {
     if (disabled) return;
     setOpen(next);
@@ -402,6 +427,12 @@ export function CustomerPartySelect({
       <>
         {loading ? (
           <CustomerPickerLoader compact={isMobileSheet} title={t("customers.addresses.loading")} />
+        ) : null}
+
+        {showingSuggestions && suggestionsLabel && results.length > 0 ? (
+          <p className="border-b border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground">
+            {suggestionsLabel}
+          </p>
         ) : null}
 
         {!loading && results.length === 0 ? (
@@ -532,7 +563,21 @@ export function CustomerPartySelect({
                             key={address.id ?? `${displayCustomer.id}-${addressIndex}`}
                             type="button"
                             data-customer-address={displayCustomer.id}
-                            className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-muted/70"
+                            className="flex w-full cursor-pointer items-start gap-2 rounded-md px-2 py-2 text-left text-xs outline-none hover:bg-primary/10 focus:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
+                            onMouseMove={(event) => {
+                              keyboardSelectionRef.current = false;
+                              if (document.activeElement !== event.currentTarget) {
+                                event.currentTarget.focus({ preventScroll: true });
+                              }
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+                              event.preventDefault();
+                              event.stopPropagation();
+                              const addresses = Array.from(event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("[data-customer-address]") ?? []);
+                              const nextIndex = Math.max(0, Math.min(addresses.length - 1, addressIndex + (event.key === "ArrowDown" ? 1 : -1)));
+                              addresses[nextIndex]?.focus();
+                            }}
                             onClick={() => void selectCustomer(displayCustomer, address.id)}
                           >
                             {showAddressLabels ? (
@@ -574,6 +619,27 @@ export function CustomerPartySelect({
             </div>
           );
         }) : null}
+
+        {showingSuggestions && results.length > 0 ? (
+          <p className="px-3 py-2 text-xs text-muted-foreground">
+            {t("customers.addresses.searchAllHint")}
+          </p>
+        ) : null}
+
+        {onAddCustomer && addCustomerLabel && !loading ? (
+          <button
+            type="button"
+            className={cn(
+              "flex w-full items-center gap-2 border-t border-border/60 px-3 py-2.5 text-left text-sm font-medium text-primary hover:bg-muted/60",
+              isMobileSheet && "px-4 py-4",
+            )}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={handleAddCustomer}
+          >
+            <UserPlus className="size-4 shrink-0" />
+            <span>{addCustomerLabel}</span>
+          </button>
+        ) : null}
       </>
     );
   }

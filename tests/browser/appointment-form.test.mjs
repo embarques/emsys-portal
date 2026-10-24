@@ -140,3 +140,28 @@ test("empty receivers show only the add action and an empty draft row blocks sav
     assert.equal(await save.isDisabled(), false);
   } finally { await page.close(); }
 });
+
+
+test("appointment address options follow the mouse and arrow keys before selecting the address", async () => {
+  const page = await fixture(1280, "appointment", { multipleAddresses: "true" });
+  try {
+    await page.locator("#senderId").fill("Test");
+    const customer = page.getByRole("option").filter({ hasText: "Test sender" });
+    await customer.click();
+    const addresses = page.locator('[data-customer-address="sender"]');
+    await addresses.nth(1).waitFor();
+    await addresses.nth(0).hover();
+    assert.equal(await addresses.nth(0).evaluate((element) => element === document.activeElement), true);
+    await addresses.nth(1).hover();
+    assert.equal(await addresses.nth(1).evaluate((element) => element === document.activeElement), true);
+    await page.keyboard.press("ArrowUp");
+    assert.equal(await addresses.nth(0).evaluate((element) => element === document.activeElement), true);
+    await page.keyboard.press("ArrowDown");
+    assert.equal(await addresses.nth(1).evaluate((element) => element === document.activeElement), true);
+    await addresses.nth(1).click();
+    await page.getByRole("option").waitFor({ state: "hidden" });
+    await page.getByText("456 Broadway, New York, NY 10001, US", { exact: true }).waitFor();
+  } finally {
+    await page.close();
+  }
+});

@@ -40,7 +40,7 @@ import {
   type OrderFormSubmitResult,
   type OrderFormValues,
 } from "@/lib/orders/types";
-import { getAppointmentStepError } from "@/lib/orders/utils/appointment-form-steps";
+import { getAppointmentStepError, getOtherReceiverCustomerIds } from "@/lib/orders/utils/appointment-form-steps";
 import { useTranslation } from "@/lib/i18n";
 
 type OrderFormProps = {
@@ -468,7 +468,7 @@ export function OrderForm({
                 variant="card"
                 icon={Users}
                 title={`03 · ${t("orders.form.workflow.receiverStep")}`}
-                className={values.receivers.length > 0 ? "flex flex-col @3xl:min-h-0 @3xl:flex-1" : "shrink-0"}
+                className={values.receivers.length > 0 ? "flex flex-col @3xl:flex-1" : "shrink-0"}
                 action={(
                   <Button ref={addReceiverButtonRef} type="button" variant="outline" size="sm" onClick={addReceiver}>
                     <UserPlus className="size-4" />{t("orders.form.partyActions.addReceiver")}
@@ -478,7 +478,7 @@ export function OrderForm({
                 {values.receivers.length > 0 ? (
                   <div
                     ref={receiverPanelRef}
-                    className="-m-1 max-h-[28rem] min-h-0 space-y-3 overflow-y-auto p-1 @3xl:max-h-none @3xl:min-h-48 @3xl:flex-1"
+                    className="-m-1 max-h-[28rem] min-h-0 space-y-3 overflow-y-auto p-1 @3xl:max-h-none @3xl:min-h-48 @3xl:grow @3xl:basis-48"
                   >
                     {values.receivers.map((row, index) => (
                       <div key={row.key} className="min-w-0 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
@@ -510,6 +510,7 @@ export function OrderForm({
                           pickerTitle={t("orders.form.placeholders.selectReceiver")}
                           searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
                           showAddressLabels={false}
+                          excludedCustomerIds={getOtherReceiverCustomerIds(values.receivers, row.key)}
                         />
                         {row.customer && isOrderPartyAddressChosen(row.customer, row.addressIndex) ? (
                           <CustomerContactSummary customer={row.customer} addressIndex={row.addressIndex} />

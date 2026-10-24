@@ -195,6 +195,8 @@ export function InvoiceFormWizard({
   const [dailyIncomeContext, setDailyIncomeContext] = useState<InvoiceDailyIncomeContext>(
     emptyInvoiceDailyIncomeContext(),
   );
+  const paymentSubmitRef = useRef<(() => Promise<void>) | null>(null);
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const agreementForm = useForm<InvoicePoliciesAgreementState>({ defaultValues: EMPTY_POLICIES_AGREEMENT });
   const agreementValues = useWatch({ control: agreementForm.control });
   const policiesAgreement = useMemo<InvoicePoliciesAgreementState>(() => ({
@@ -381,12 +383,23 @@ export function InvoiceFormWizard({
     return findStepIssue(step, currentValues, dailyIncome);
   }
 
-  function handleNext() {
-    advanceStep(dailyIncomeContext);
+  async function handleNext() {
+    const submitPayment = paymentStepId != null && step === paymentStepId ? paymentSubmitRef.current : null;
+    if (!submitPayment) {
+      advanceStep(dailyIncomeContext);
+      return;
+    }
+    if (paymentSubmitting) return;
+    setPaymentSubmitting(true);
+    try {
+      await submitPayment();
+    } finally {
+      setPaymentSubmitting(false);
+    }
   }
 
-  /** Skip payment hands over its context before the wizard state has re-rendered. */
-  function handleSkipDailyIncomePayment(context: InvoiceDailyIncomeContext) {
+  /** The payment step hands over its context before the wizard state has re-rendered. */
+  function handleDailyIncomePaymentContinue(context: InvoiceDailyIncomeContext) {
     setDailyIncomeContext(context);
     advanceStep(context);
   }
@@ -426,6 +439,10 @@ export function InvoiceFormWizard({
       return;
     }
     if (savingRef.current || documentsBusy || isSubmitting || documentStage) return;
+    if (step === paymentStepId && paymentSubmitRef.current) {
+      void handleNext();
+      return;
+    }
 
     const currentValues = valuesRef.current;
     for (const entry of layout.steps) {
@@ -667,7 +684,8 @@ export function InvoiceFormWizard({
     <InvoiceDailyIncomeStep
       values={values}
       onContextChange={handleDailyIncomeContextChange}
-      onSkipPayment={handleSkipDailyIncomePayment}
+      onContinue={handleDailyIncomePaymentContinue}
+      paymentSubmitRef={paymentSubmitRef}
       onPaymentLocationChange={(paymentLocation) => {
         setValues((current) => {
           const next = { ...current, paymentLocation };
@@ -680,7 +698,7 @@ export function InvoiceFormWizard({
     />
   );
 
-  const policiesSectionNumber = requireDailyIncomeRegistration ? 6 : 5;
+  const policiesSectionNumber = requireDailyIncomeRegistration ? 5 : 4;
   const policiesReviewSection = !includePolicies ? null : policiesUnavailable ? (
     <div className="min-w-0 space-y-3 rounded-xl border border-border bg-card p-5 shadow-sm">
       {activePoliciesQuery.isError ? (
@@ -782,9 +800,9 @@ export function InvoiceFormWizard({
 
   const nextOrSaveButton =
     step < previewStep ? (
-      <Button data-wizard-primary type="button" className="max-sm:px-3" onClick={handleNext}>
+      <Button data-wizard-primary type="button" className="max-sm:px-3" onClick={handleNext} disabled={paymentSubmitting}>
         {t("common.actions.next")}
-        <ArrowRight className="size-4" />
+        {paymentSubmitting ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
       </Button>
     ) : (
       <>
@@ -822,9 +840,9 @@ export function InvoiceFormWizard({
       step > 1 ? t("invoices.wizard.actions.back") : t("common.actions.cancel");
     const phonePrimary =
       step < previewStep ? (
-        <Button data-wizard-primary type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleNext}>
+        <Button data-wizard-primary type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleNext} disabled={paymentSubmitting}>
           {t("common.actions.next")}
-          <ArrowRight className="size-4" />
+          {paymentSubmitting ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
         </Button>
       ) : showPrint ? (
         <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">

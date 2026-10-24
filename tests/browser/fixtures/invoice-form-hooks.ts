@@ -30,7 +30,7 @@ export function useEnsurePickupRouteDetail() {
   return async (id: string) => routes.find((route) => route.id === id) ?? routes[0];
 }
 
-export function useContainerPicker() { return { data: { items: [{ id: 7, name: "CONT-7" }] }, isFetching: false }; }
+export function useContainerPicker() { return { data: { items: [{ id: 7, name: "CONT-7", containerNumber: "" }] }, isFetching: false }; }
 export const useCreateContainer = mutation;
 
 const catalogItems = [

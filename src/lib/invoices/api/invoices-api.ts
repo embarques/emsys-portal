@@ -886,6 +886,22 @@ function unwrapInvoiceApiRecord(response: unknown): ApiInvoice {
   return raw as ApiInvoice;
 }
 
+/**
+ * Authoritative balance for delivery, or null when it cannot be trusted.
+ * The API omits a zero `balance`; an absent balance counts as zero only when the
+ * invoice's own cost, discount and payment also net to zero.
+ */
+function readRequiredInvoiceBalance(record: ApiInvoice): number | null {
+  const raw: unknown = record.balance;
+  if (raw === undefined) {
+    if (record.cost == null) return null;
+    const net = computeInvoiceBalance(Number(record.cost), Number(record.discount ?? 0), Number(record.payment ?? 0));
+    return net === 0 ? 0 : null;
+  }
+  if ((typeof raw !== "number" && typeof raw !== "string") || String(raw).trim() === "" || !Number.isFinite(Number(raw))) return null;
+  return Number(raw);
+}
+
 export async function fetchInvoiceById(invoiceId: string, signal?: AbortSignal, requireBalance = false): Promise<Invoice> {
   const id = parseInvoicePathId(invoiceId);
   if (process.env.NODE_ENV === "development") {
@@ -901,14 +917,15 @@ export async function fetchInvoiceById(invoiceId: string, signal?: AbortSignal, 
   );
 
   const apiRecord = unwrapInvoiceApiRecord(response);
-  if (requireBalance && ((typeof apiRecord.balance !== "number" && typeof apiRecord.balance !== "string") || apiRecord.balance == null || String(apiRecord.balance).trim() === "" || !Number.isFinite(Number(apiRecord.balance)))) {
+  const requiredBalance = requireBalance ? readRequiredInvoiceBalance(apiRecord) : null;
+  if (requireBalance && requiredBalance == null) {
     throw new Error("Invoice balance is unavailable. Refresh before completing delivery.");
   }
   const invoice = normalizeInvoice(apiRecord);
   // Delivery requires the authoritative balance, including any credit balance.
-  if (invoice && requireBalance) {
+  if (invoice && requiredBalance != null) {
     if (invoice.invoiceId !== id) throw new Error("Invoice does not match the selected delivery.");
-    invoice.balance = Number(apiRecord.balance);
+    invoice.balance = requiredBalance;
   }
   if (!invoice) {
     throw new Error("Invoice not found.");

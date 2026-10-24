@@ -574,6 +574,8 @@ test("nonzero balance blocks delivery until an external payment is refreshed", a
     assert.equal(await page.locator("#journal-amount").count(), 0);
     await page.evaluate(() => { window.wizardBalance = 0; });
     await page.getByRole("button", { name: "deliveries.wizard.balance.refresh" }).click();
+    await page.getByText("deliveries.wizard.balance.paid", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "deliveries.wizard.balance.refresh" }).count(), 0);
     await review(page);
     assert.equal(await page.evaluate(() => window.wizardRequests?.length ?? 0), 0);
   } finally { await page.close(); }

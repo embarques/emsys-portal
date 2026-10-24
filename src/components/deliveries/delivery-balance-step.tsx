@@ -99,11 +99,11 @@ export function DeliveryBalanceStep({ state }: { state: BalanceState }) {
             : t("deliveries.wizard.balance.rateUnavailable")}
         </p>
       </div>
-      <Button type="button" variant="outline" disabled={state.invoice.isFetching || state.busy} onClick={() => {
+      {balance !== 0 ? <Button type="button" variant="outline" disabled={state.invoice.isFetching || state.busy} onClick={() => {
         void state.invoice.refetch();
         if (state.canPay && state.profile.data?.branch.id) void state.statement.refetch();
         if (state.pending.isFetched) void state.pending.refetch();
-      }}>{t("deliveries.wizard.balance.refresh")}</Button>
+      }}>{t("deliveries.wizard.balance.refresh")}</Button> : null}
     </div>
     {balance === 0 ? <p role="status" className="font-medium text-emerald-700 dark:text-emerald-400">{t("deliveries.wizard.balance.paid")}</p> : <>
       <p className="text-sm">{t("deliveries.wizard.balance.required")}</p>

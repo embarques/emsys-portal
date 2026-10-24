@@ -6,7 +6,7 @@ import type { Permission } from "@/lib/auth/types/permission";
 import { useAppSelector } from "@/lib/store/hooks";
 import type { Barcode } from "@/lib/barcodes/types";
 
-export type DeliverTarget = Pick<Barcode, "invoiceId" | "barcodeId" | "number" | "route" | "delivery"> & {
+export type DeliverTarget = Pick<Barcode, "invoiceId" | "invoiceNumber" | "barcodeId" | "number" | "route" | "delivery"> & {
   /** Daily route exchange rate when the list row already carries it. */
   routeRate?: number;
 };

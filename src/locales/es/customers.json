@@ -27,6 +27,7 @@
     "moreMany": "+{{count}} direcciones más",
     "searchPlaceholder": "Buscar clientes",
     "minimumSearch": "Busca por nombre o teléfono (mínimo 3 caracteres).",
+    "searchAllHint": "O escribe un nombre o teléfono (mínimo 3 caracteres) para buscar entre todos los clientes.",
     "emptyResults": "No se encontraron clientes.",
     "loading": "Buscando clientes…",
     "viewAll": "Ver direcciones",

@@ -77,21 +77,46 @@ test("a pickup with one receiver fills that receiver without asking", async () =
     await choosePickup(page, "#101");
     await page.waitForFunction(() => document.getElementById("selected-receiver")?.textContent === "receiver-maria");
     assert.equal(await page.locator("#pickupReceiverId").count(), 0);
+    assert.equal(await page.locator('[role="combobox"][id="receiverId"]').count(), 1);
   } finally { await page.close(); }
 });
 
-test("a pickup with several receivers asks which receiver the invoice is for", async () => {
+test("a pickup with several receivers suggests them in the single receiver picker", async () => {
   const page = await fixture({ step: 2 });
   try {
     await choosePickup(page, "#102");
-    await focusedId(page, "pickupReceiverId");
+    await focusedId(page, "receiverId");
     assert.equal(await page.locator("#selected-receiver").textContent(), "");
-    await page.getByRole("option", { name: /Jose Receiver/ }).click();
+    assert.equal(await page.locator("#pickupReceiverId").count(), 0);
+    await page.getByText("invoices.form.placeholders.pickupReceiverSuggestions").waitFor();
+    const suggestions = await page.getByRole("option").allTextContents();
+    assert.equal(suggestions.length, 2);
+    assert.match(suggestions[0], /Maria Receiver/);
+    assert.match(suggestions[1], /Jose Receiver/);
+    await page.getByRole("option", { name: /Jose Receiver/ }).getByText("Jose Receiver", { exact: true }).click();
     await page.waitForFunction(() => document.getElementById("selected-receiver")?.textContent === "receiver-jose");
+    assert.equal(await page.locator("#receiverId").inputValue(), "Jose Receiver");
 
     await choosePickup(page, "#101");
     await page.waitForFunction(() => document.getElementById("selected-receiver")?.textContent === "receiver-maria");
-    await page.locator("#pickupReceiverId").waitFor({ state: "detached" });
+  } finally { await page.close(); }
+});
+
+test("the receiver picker offers pickup receivers, a search of all receivers and adding a new one", async () => {
+  const page = await fixture({ step: 2 });
+  try {
+    await choosePickup(page, "#102");
+    await focusedId(page, "receiverId");
+    await page.getByText("customers.addresses.searchAllHint").waitFor();
+
+    await page.keyboard.type("Rec");
+    await page.getByText("invoices.form.placeholders.pickupReceiverSuggestions").waitFor({ state: "detached" });
+
+    await page.getByRole("button", { name: "invoices.form.partyActions.addReceiver" }).last().click();
+    const opened = await page.evaluate(() => window.openedFormTabs ?? []);
+    assert.equal(opened.length, 1);
+    assert.equal(opened[0].mode, "add");
+    assert.equal(opened[0].feature, "customers");
   } finally { await page.close(); }
 });
 
@@ -183,6 +208,42 @@ test("typed line item text is kept on Enter instead of picking a suggestion", as
     await page.keyboard.type("Box");
     await page.keyboard.press("Enter");
     assert.equal(await description.inputValue(), "Box");
+  } finally { await page.close(); }
+});
+
+test("Enter on a line item total adds the item and starts a new line instead of moving to Next", async () => {
+  const page = await fixture({ step: 3 });
+  try {
+    const firstDescription = page.locator('[id$="-description"]').first();
+    const firstId = (await firstDescription.getAttribute("id")).replace(/-description$/, "");
+    await firstDescription.fill("Box");
+    await page.locator(`[id="${firstId}-quantity"]`).fill("2");
+    await page.locator(`[id="${firstId}-unitPrice"]`).fill("5");
+    await page.locator(`[id="${firstId}-total"]`).press("Enter");
+
+    await page.locator("table tbody tr", { hasText: "Box" }).waitFor({ state: "attached" });
+    await page.waitForFunction((firstId) => {
+      const id = document.activeElement?.id ?? "";
+      return id.endsWith("-description") && id !== `${firstId}-description`;
+    }, firstId);
+    assert.equal(await page.locator('[id$="-description"]').first().inputValue(), "");
+  } finally { await page.close(); }
+});
+
+test("clicking an added line item opens it for editing in a highlighted panel", async () => {
+  const page = await fixture({ step: 3 });
+  try {
+    const firstDescription = page.locator('[id$="-description"]').first();
+    const firstId = (await firstDescription.getAttribute("id")).replace(/-description$/, "");
+    await firstDescription.fill("Box");
+    await page.locator(`[id="${firstId}-quantity"]`).fill("2");
+    await page.locator(`[id="${firstId}-total"]`).press("Enter");
+    assert.equal(await page.locator("section[data-editing]").count(), 0);
+
+    await page.locator("article", { hasText: "Box" }).click();
+    await page.locator("section[data-editing]").waitFor();
+    assert.equal(await page.locator(`[id="${firstId}-description"]`).inputValue(), "Box");
+    assert.equal(await page.locator(`[id="${firstId}-quantity"]`).inputValue(), "2");
   } finally { await page.close(); }
 });
 

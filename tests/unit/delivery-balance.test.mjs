@@ -50,6 +50,22 @@ for (const [label, balance, expected] of [
     assert.deepEqual(calls, [`/invoices/${invoiceId}`]);
   });
 }
+for (const [label, money, expected] of [
+  ["paid in full", { cost: 100, payment: 100 }, 0],
+  ["paid after discount", { cost: 100, discount: 20, payment: 80 }, 0],
+  ["fully discounted", { cost: 50, discount: 50 }, 0],
+  ["still owed", { cost: 100, payment: 40 }, null],
+  ["unpaid", { cost: 100 }, null],
+  ["invalid money", { cost: "bad", payment: 0 }, null],
+]) {
+  test(`delivery balance omitted by the API: ${label}`, async () => {
+    const api = loadFeature("src/lib/invoices/api/invoices-api.ts", {
+      get: async () => ({ data: { id: invoiceId, number: "INV-1", ...money } }),
+    });
+    if (expected == null) await assert.rejects(() => api.fetchInvoiceById(invoiceId, undefined, true), /balance is unavailable/);
+    else assert.equal((await api.fetchInvoiceById(invoiceId, undefined, true)).balance, expected);
+  });
+}
 test("balance review rejects a foreign invoice response", async () => {
   const api = loadFeature("src/lib/invoices/api/invoices-api.ts", { get: async () => ({ data: { id: "68f800000000000000000002", balance: 0 } }) });
   await assert.rejects(() => api.fetchInvoiceById(invoiceId, undefined, true), /does not match/);

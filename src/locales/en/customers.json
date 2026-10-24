@@ -27,6 +27,7 @@
     "moreMany": "+{{count}} more addresses",
     "searchPlaceholder": "Search customers",
     "minimumSearch": "Search by name or phone (at least 3 characters).",
+    "searchAllHint": "Or type a name or phone (at least 3 characters) to search all customers.",
     "emptyResults": "No customers found.",
     "loading": "Searching customers…",
     "viewAll": "View addresses",

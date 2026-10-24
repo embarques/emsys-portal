@@ -1,23 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, ArrowRight, CheckCircle2, Loader2, RefreshCw, Wallet } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, CheckCircle2, Info, Loader2, Plus, RefreshCw, Wallet } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from "react";
 import { useForm } from "react-hook-form";
 
 import { PreviousOpenStatementsBanner } from "@/components/accounting/previous-open-statements-banner";
 import { InvoiceDailyIncomeDialog } from "@/components/invoices/invoice-daily-income-dialog";
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
-import { invoiceStepTitleClassName } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -55,8 +47,10 @@ import { cn } from "@/lib/utils";
 type Props = {
   values: InvoiceFormValues;
   onContextChange: (context: InvoiceDailyIncomeContext) => void;
-  /** Skip payment: continue to the next wizard step with this context. */
-  onSkipPayment?: (context: InvoiceDailyIncomeContext) => void;
+  /** Payment posted or skipped ($0): continue to the next wizard step with this context. */
+  onContinue?: (context: InvoiceDailyIncomeContext) => void;
+  /** Set while the inline payment form is shown; the wizard Next button calls it. */
+  paymentSubmitRef: MutableRefObject<(() => Promise<void>) | null>;
   onPaymentLocationChange?: (paymentLocation: InvoicePaymentLocation) => void;
 };
 
@@ -367,13 +361,13 @@ function MobileCreateDailyIncomePage({
 export function InvoiceDailyIncomeStep({
   values,
   onContextChange,
-  onSkipPayment,
+  onContinue,
+  paymentSubmitRef,
   onPaymentLocationChange,
 }: Props) {
   const { t } = useTranslation();
   const isMobileLayout = useIsMobileViewport();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const paymentLocationField = (
     <PendingPaymentBranchField
       value={values.paymentLocation}
@@ -486,8 +480,12 @@ export function InvoiceDailyIncomeStep({
   }
 
   async function handlePaymentPosted(journal: DailyIncomeJournal) {
-    setPaymentDialogOpen(false);
     await applyRegistration(journal);
+    onContinue?.({
+      registration: journal,
+      incomeStatementId: journal.incomeStatementId || associatedStatementId,
+      paymentSkipped: journal.amount === 0,
+    });
   }
 
   function skipPaymentAndContinue() {
@@ -497,59 +495,22 @@ export function InvoiceDailyIncomeStep({
       paymentSkipped: true,
     };
     onContextChange(context);
-    onSkipPayment?.(context);
+    onContinue?.(context);
   }
 
-  const paymentChoice = statement ? (
-    <div className="space-y-3">
+  const paymentForm = statement && statementOpen ? (
+    <div className="space-y-3" data-invoice-wizard-focus="daily-income">
       <p className={cn("leading-relaxed text-muted-foreground", isMobileLayout ? "text-base" : "text-sm")}>
-        {t("invoices.wizard.dailyIncome.paymentChoiceHint", { id: statement.id })}
+        {t("invoices.wizard.dailyIncome.unpaidContinueHint", { id: statement.id })}
       </p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Button
-          type="button"
-          className="h-11 rounded-xl md:h-10 md:rounded-md"
-          onClick={() => setPaymentDialogOpen(true)}
-          data-invoice-wizard-focus="daily-income"
-        >
-          <Wallet className="size-4" />
-          {t("invoices.wizard.dailyIncome.postPayment")}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 rounded-xl md:h-10 md:rounded-md"
-          onClick={skipPaymentAndContinue}
-        >
-          {t("invoices.wizard.dailyIncome.skipPayment")}
-          <ArrowRight className="size-4" />
-        </Button>
-      </div>
+      <InvoicePaymentTransactionForm
+        statement={statement}
+        invoice={values}
+        onRegistered={handlePaymentPosted}
+        onSkip={skipPaymentAndContinue}
+        submitRef={paymentSubmitRef}
+      />
     </div>
-  ) : null;
-
-  const paymentDialog = statement && statementOpen ? (
-    <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-      <DialogContent
-        centerInWorkspace
-        className="flex w-max max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0"
-      >
-        <DialogHeader className="shrink-0 space-y-1 border-b border-border bg-card px-5 py-3 pr-14 text-left">
-          <DialogTitle className={invoiceStepTitleClassName}>
-            {t("invoices.wizard.dailyIncome.postPayment")}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
-            {t("invoices.wizard.dailyIncome.postPaymentDescription", { id: statement.id })}
-          </DialogDescription>
-        </DialogHeader>
-        <InvoicePaymentTransactionForm
-          statement={statement}
-          invoice={values}
-          onRegistered={handlePaymentPosted}
-          onCancel={() => setPaymentDialogOpen(false)}
-        />
-      </DialogContent>
-    </Dialog>
   ) : null;
 
   async function handleStatementCreated(created?: DailyIncomeStatement) {
@@ -721,8 +682,7 @@ export function InvoiceDailyIncomeStep({
           </div>
         </div>
 
-        {paymentChoice}
-        {paymentDialog}
+        {paymentForm}
       </div>
     );
   }
@@ -854,58 +814,64 @@ export function InvoiceDailyIncomeStep({
                 </div>
               </div>
 
-              {paymentChoice}
-              {paymentDialog}
+              {paymentForm}
             </>
           ) : (
-            <div className="rounded-lg border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="min-w-0 text-sm font-semibold text-amber-950 dark:text-amber-100">
-                    {t("invoices.wizard.dailyIncome.noOpenTitle")}
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <div className="flex items-start gap-4 p-5 sm:p-6">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Wallet className="size-5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-semibold tracking-tight text-foreground">
+                    {t(statement?.status === "CLOSED"
+                      ? "invoices.wizard.dailyIncome.closedTitle"
+                      : "invoices.wizard.dailyIncome.setupTitle")}
+                  </h3>
+                  <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                    {t(statement?.status === "CLOSED"
+                      ? "invoices.wizard.dailyIncome.closedSetupHint"
+                      : "invoices.wizard.dailyIncome.setupHint")}
                   </p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 shrink-0"
-                    onClick={refreshStatus}
-                  >
-                    <RefreshCw className="size-4" />
-                    {t("invoices.wizard.dailyIncome.refresh")}
-                  </Button>
+                  {statusError ? <p role="alert" className="mt-3 text-sm text-destructive">{statusError}</p> : null}
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    {statement?.status === "CLOSED" ? (
+                      <Button
+                        type="button"
+                        onClick={reopenDailyIncome}
+                        disabled={reopenMutation.isPending}
+                        data-invoice-wizard-focus="daily-income"
+                      >
+                        {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+                        {t("invoices.wizard.dailyIncome.reopenDailyIncome")}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={() => setDialogOpen(true)}
+                        data-invoice-wizard-focus="daily-income"
+                      >
+                        <Plus className="size-4" aria-hidden="true" />
+                        {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={refreshStatus}
+                      disabled={statementQuery.isFetching || registrationQuery.isFetching || reopenMutation.isPending}
+                    >
+                      <RefreshCw className={cn("size-4", (statementQuery.isFetching || registrationQuery.isFetching) && "animate-spin")} aria-hidden="true" />
+                      {t("invoices.wizard.dailyIncome.refresh")}
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {statement?.status === "CLOSED"
-                    ? t("invoices.wizard.dailyIncome.closedStatementOptional")
-                    : t("invoices.wizard.dailyIncome.noStatementOptional")}
+              </div>
+              <div className="flex items-start gap-2 border-t border-border bg-muted/30 px-5 py-3 sm:px-6">
+                <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("invoices.wizard.dailyIncome.zeroPaymentHint")}
                 </p>
-                {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
-                <div className="flex flex-wrap items-center gap-2">
-                  {statement?.status === "CLOSED" ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-8"
-                      onClick={reopenDailyIncome}
-                      disabled={reopenMutation.isPending}
-                      data-invoice-wizard-focus="daily-income"
-                    >
-                      {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                      {t("invoices.wizard.dailyIncome.reopenCuadre")}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-8"
-                      onClick={() => setDialogOpen(true)}
-                      data-invoice-wizard-focus="daily-income"
-                    >
-                      {t("invoices.wizard.dailyIncome.createOrOpenCuadre")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </div>
           )}

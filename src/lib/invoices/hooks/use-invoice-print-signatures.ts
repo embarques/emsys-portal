@@ -38,7 +38,7 @@ export function useInvoicePrintSignatures(invoiceIds: string[], onPrinted: () =>
   const [initializedScope, setInitializedScope] = useState("");
   useEffect(() => {
     if (query.data && initializedScope !== scope) {
-      form.reset({ selections: buildInvoiceSignatureSelections(query.data, "sender", trip) });
+      form.reset({ selections: buildInvoiceSignatureSelections(query.data, "first", trip) });
       setInitializedScope(scope);
     }
   }, [form, initializedScope, query.data, scope, trip]);

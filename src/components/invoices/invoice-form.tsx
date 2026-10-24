@@ -717,7 +717,7 @@ export function InvoiceForm({
     // Pickup auto-fills sender — skip sender and open the receiver choice next.
     window.setTimeout(() => {
       focusInvoiceWizardField(
-        !senderId ? "senderId" : receivers.length > 1 ? "pickupReceiverId" : "receiverId",
+        !senderId ? "senderId" : "receiverId",
       );
     }, 0);
 
@@ -1267,22 +1267,6 @@ export function InvoiceForm({
             onEdit={() => openEditCustomer("receiver")}
           />
         </div>
-        {pickupReceivers.length > 1 ? (
-          <div className="space-y-1">
-            <Label htmlFor="pickupReceiverId" className="text-xs font-medium text-muted-foreground">
-              {t("invoices.form.fields.pickupReceiver")}
-            </Label>
-            <SearchableSelect
-              id="pickupReceiverId"
-              value={pickupReceiverValue}
-              onValueChange={updatePickupReceiver}
-              placeholder={t("invoices.form.placeholders.selectPickupReceiver")}
-              searchPlaceholder={t("invoices.form.placeholders.searchPickupReceivers")}
-              {...(isWizard ? wizardSelectFieldProps(pickupReceiverValue) : {})}
-              options={pickupReceiverOptions}
-            />
-          </div>
-        ) : null}
         <CustomerPartySelect
           id="receiverId"
           partyType="receiver"
@@ -1290,7 +1274,15 @@ export function InvoiceForm({
           selectedCustomer={values.receiver}
           onValueChange={updateReceiver}
           onAddAddress={(customer) => void openAddAddress("receiver", customer)}
-          placeholder={t("invoices.form.placeholders.noReceiver")}
+          suggestedCustomers={pickupReceivers}
+          suggestionsLabel={t("invoices.form.placeholders.pickupReceiverSuggestions")}
+          onAddCustomer={() => openAddCustomer("receiver")}
+          addCustomerLabel={t("invoices.form.partyActions.addReceiver")}
+          placeholder={t(
+            pickupReceivers.length > 1
+              ? "invoices.form.placeholders.selectPickupReceiver"
+              : "invoices.form.placeholders.noReceiver",
+          )}
           pickerTitle={t("invoices.form.placeholders.selectReceiver")}
           searchPlaceholder={t("invoices.form.placeholders.selectReceiver")}
           showAddressLabels={false}

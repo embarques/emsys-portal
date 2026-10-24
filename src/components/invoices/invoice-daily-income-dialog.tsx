@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Plus, Wallet } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -394,131 +394,148 @@ export function InvoiceDailyIncomeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader className="pr-8">
-          <DialogTitle>
-            {isCreating
-              ? t("invoices.wizard.dailyIncome.dialog.createDailyIncomeTitle")
-              : t("invoices.wizard.dailyIncome.dialog.title")}
-          </DialogTitle>
-          <DialogDescription>
-            {isCreating
-              ? t("invoices.wizard.dailyIncome.dialog.createDailyIncomeHint")
-              : t("invoices.wizard.dailyIncome.dialog.description")}
-          </DialogDescription>
+      <DialogContent className={cn(
+        "max-h-[90vh] overflow-y-auto",
+        isCreating ? "gap-0 bg-card p-0 sm:max-w-lg" : "sm:max-w-2xl",
+      )}>
+        <DialogHeader className={cn(
+          "text-left",
+          isCreating ? "border-b border-border px-6 py-5 pr-12" : "pr-8",
+        )}>
+          <div className="flex items-start gap-3">
+            {isCreating ? (
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Wallet className="size-5" aria-hidden="true" />
+              </div>
+            ) : null}
+            <div className="min-w-0 space-y-1">
+              <DialogTitle className={isCreating ? "text-lg font-semibold tracking-tight" : undefined}>
+                {isCreating
+                  ? t("invoices.wizard.dailyIncome.dialog.createDailyIncomeTitle")
+                  : t("invoices.wizard.dailyIncome.dialog.title")}
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed">
+                {isCreating
+                  ? t("invoices.wizard.dailyIncome.dialog.createDailyIncomeHint")
+                  : t("invoices.wizard.dailyIncome.dialog.description")}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {isCreating ? (
-          <form className="space-y-4" onSubmit={statementForm.handleSubmit(createDailyIncome)}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="invoice-statement-date">{t("invoices.form.fields.date")}</Label>
-                <DateInput
-                  id="invoice-statement-date"
-                  className="h-10"
-                  {...statementForm.register("date")}
-                />
-                {statementErrors.date ? (
-                  <p className="text-sm text-destructive">{statementErrors.date.message}</p>
-                ) : null}
-              </div>
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="invoice-statement-currency">{t("invoices.wizard.dailyIncome.dialog.currency")}</Label>
-                <SearchableSelect
-                  id="invoice-statement-currency"
-                  value={statementCurrency}
-                  onValueChange={(next) => statementForm.setValue("currency", next, { shouldValidate: true })}
-                  options={[
-                    { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
-                    { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
-                  ]}
-                  placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
-                  truncateSelection={false}
-                />
-              </div>
-              <div className="min-w-0 space-y-2 sm:col-span-2">
-                <Label htmlFor="invoice-statement-branch">{t("invoices.wizard.dailyIncome.dialog.branch")}</Label>
-                <SearchableSelect
-                  id="invoice-statement-branch"
-                  value={statementBranchId ? String(statementBranchId) : ""}
-                  onValueChange={(next) => {
-                    const branch = branches.find((item) => item.id === Number(next));
-                    statementForm.setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
-                    statementForm.setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
-                    statementForm.setValue("branchName", branch?.name ?? "", { shouldValidate: true });
-                  }}
-                  options={branchOptions}
-                  loading={branchesQuery.isLoading}
-                  placeholder={t("invoices.wizard.dailyIncome.dialog.selectBranch")}
-                  searchPlaceholder={t("invoices.wizard.dailyIncome.dialog.searchBranches")}
-                  truncateSelection={false}
-                />
-                {statementErrors.branchId ? (
-                  <p className="text-sm text-destructive">{statementErrors.branchId.message}</p>
-                ) : null}
-              </div>
-              {showExchangeRate ? (
-                <div className="min-w-0 space-y-2 sm:col-span-2">
-                  <Label htmlFor="invoice-statement-rate">{t("invoices.wizard.dailyIncome.dialog.exchangeRate")}</Label>
-                  <Input
-                    id="invoice-statement-rate"
-                    type="number"
-                    min={0}
-                    step="0.01"
+          <form onSubmit={statementForm.handleSubmit(createDailyIncome)}>
+            <div className="space-y-5 px-6 py-5">
+              <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+                <div className="min-w-0 space-y-2">
+                  <Label htmlFor="invoice-statement-date">{t("invoices.form.fields.date")}</Label>
+                  <DateInput
+                    id="invoice-statement-date"
                     className="h-10"
-                    {...statementForm.register("rate", { valueAsNumber: true })}
+                    {...statementForm.register("date")}
                   />
-                  {statementErrors.rate ? (
-                    <p className="text-sm text-destructive">{statementErrors.rate.message}</p>
+                  {statementErrors.date ? (
+                    <p className="text-sm text-destructive">{statementErrors.date.message}</p>
                   ) : null}
                 </div>
+                <div className="min-w-0 space-y-2">
+                  <Label htmlFor="invoice-statement-currency">{t("invoices.wizard.dailyIncome.dialog.currency")}</Label>
+                  <SearchableSelect
+                    id="invoice-statement-currency"
+                    value={statementCurrency}
+                    onValueChange={(next) => statementForm.setValue("currency", next, { shouldValidate: true })}
+                    options={[
+                      { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
+                      { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
+                    ]}
+                    placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
+                    truncateSelection={false}
+                  />
+                </div>
+                <div className="min-w-0 space-y-2 sm:col-span-2">
+                  <Label htmlFor="invoice-statement-branch">{t("invoices.wizard.dailyIncome.dialog.branch")}</Label>
+                  <SearchableSelect
+                    id="invoice-statement-branch"
+                    value={statementBranchId ? String(statementBranchId) : ""}
+                    onValueChange={(next) => {
+                      const branch = branches.find((item) => item.id === Number(next));
+                      statementForm.setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
+                      statementForm.setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
+                      statementForm.setValue("branchName", branch?.name ?? "", { shouldValidate: true });
+                    }}
+                    options={branchOptions}
+                    loading={branchesQuery.isLoading}
+                    placeholder={t("invoices.wizard.dailyIncome.dialog.selectBranch")}
+                    searchPlaceholder={t("invoices.wizard.dailyIncome.dialog.searchBranches")}
+                    truncateSelection={false}
+                  />
+                  {statementErrors.branchId ? (
+                    <p className="text-sm text-destructive">{statementErrors.branchId.message}</p>
+                  ) : null}
+                </div>
+                {showExchangeRate ? (
+                  <div className="min-w-0 space-y-2 sm:col-span-2">
+                    <Label htmlFor="invoice-statement-rate">{t("invoices.wizard.dailyIncome.dialog.exchangeRate")}</Label>
+                    <Input
+                      id="invoice-statement-rate"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      className="h-10"
+                      {...statementForm.register("rate", { valueAsNumber: true })}
+                    />
+                    {statementErrors.rate ? (
+                      <p className="text-sm text-destructive">{statementErrors.rate.message}</p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+
+              {statementError && openStatements.length > 0 ? (
+                <PreviousOpenStatementsBanner
+                  title={
+                    openStatements.length === 1
+                      ? t("invoices.wizard.dailyIncome.dialog.previousOpenTitle")
+                      : t("invoices.wizard.dailyIncome.dialog.previousOpenTitles")
+                  }
+                  description={
+                    openStatements.length === 1 ? (
+                      t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
+                        id: openStatements[0].id,
+                        date: openStatements[0].date,
+                      })
+                    ) : (
+                      <div className="space-y-1.5">
+                        <p>{t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}</p>
+                        <ul className="list-disc space-y-0.5 pl-5">
+                          {openStatements.map((item) => (
+                            <li key={item.id}>
+                              {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
+                                id: item.id,
+                                date: item.date,
+                              })}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  }
+                  closeLabel={
+                    openStatements.length > 1
+                      ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
+                      : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")
+                  }
+                  closingLabel={t("invoices.wizard.dailyIncome.dialog.closing")}
+                  isClosing={closeStatement.isPending}
+                  onClose={closeOpenStatements}
+                  closeButtonTestId="invoice-daily-income-close-previous"
+                />
+              ) : statementError ? (
+                <p className="break-words text-sm text-destructive">{statementError}</p>
               ) : null}
+
             </div>
-
-            {statementError && openStatements.length > 0 ? (
-              <PreviousOpenStatementsBanner
-                title={
-                  openStatements.length === 1
-                    ? t("invoices.wizard.dailyIncome.dialog.previousOpenTitle")
-                    : t("invoices.wizard.dailyIncome.dialog.previousOpenTitles")
-                }
-                description={
-                  openStatements.length === 1 ? (
-                    t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
-                      id: openStatements[0].id,
-                      date: openStatements[0].date,
-                    })
-                  ) : (
-                    <div className="space-y-1.5">
-                      <p>{t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}</p>
-                      <ul className="list-disc space-y-0.5 pl-5">
-                        {openStatements.map((item) => (
-                          <li key={item.id}>
-                            {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
-                              id: item.id,
-                              date: item.date,
-                            })}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )
-                }
-                closeLabel={
-                  openStatements.length > 1
-                    ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
-                    : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")
-                }
-                closingLabel={t("invoices.wizard.dailyIncome.dialog.closing")}
-                isClosing={closeStatement.isPending}
-                onClose={closeOpenStatements}
-                closeButtonTestId="invoice-daily-income-close-previous"
-              />
-            ) : statementError ? (
-              <p className="break-words text-sm text-destructive">{statementError}</p>
-            ) : null}
-
-            <DialogFooter className="gap-2 border-t pt-4 sm:justify-end">
+            <DialogFooter className="gap-2 border-t border-border bg-muted/30 px-6 py-4 sm:justify-end">
               <Button type="button" variant="outline" className="h-9" onClick={() => onOpenChange(false)}>
                 {t("common.actions.cancel")}
               </Button>
@@ -535,7 +552,7 @@ export function InvoiceDailyIncomeDialog({
                   !statementBranchId
                 }
               >
-                {createStatement.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {createStatement.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
                 {createStatement.isPending
                   ? t("invoices.wizard.dailyIncome.dialog.creating")
                   : t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}

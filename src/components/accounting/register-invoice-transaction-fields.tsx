@@ -93,6 +93,8 @@ type Props = {
   invoiceCostReadOnly?: boolean;
   /** Offer the auto-clear switch (Daily Income create only). */
   allowAutoClear?: boolean;
+  /** Grouped layout: show Payment & references before Invoice details. */
+  paymentSectionFirst?: boolean;
 };
 
 export function RegisterInvoiceTransactionFields({
@@ -115,6 +117,7 @@ export function RegisterInvoiceTransactionFields({
   showParties = true,
   invoiceCostReadOnly = false,
   allowAutoClear = false,
+  paymentSectionFirst = false,
 }: Props) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
@@ -682,6 +685,17 @@ export function RegisterInvoiceTransactionFields({
   );
 
   if (grouped) {
+    const invoiceDetailsSection = (
+      <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
+        {showInvoiceNumber ? <div className="mb-4">{invoiceFields}</div> : null}
+        <div className="grid min-w-0 gap-4 sm:grid-cols-3">
+          {costFields}
+          {amountFields}
+          {balanceFields}
+        </div>
+      </FormSection>
+    );
+
     return (
       <div className="space-y-5">
         {showEmployee ? (
@@ -691,14 +705,7 @@ export function RegisterInvoiceTransactionFields({
             </div>
           </FormSection>
         ) : null}
-        <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
-          {showInvoiceNumber ? <div className="mb-4">{invoiceFields}</div> : null}
-          <div className="grid min-w-0 gap-4 sm:grid-cols-3">
-            {costFields}
-            {amountFields}
-            {balanceFields}
-          </div>
-        </FormSection>
+        {paymentSectionFirst ? null : invoiceDetailsSection}
         <FormSection className={!quickEntry && activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">
@@ -713,6 +720,7 @@ export function RegisterInvoiceTransactionFields({
             {!quickEntry && referenceFields}
           </div>
         </FormSection>
+        {paymentSectionFirst ? invoiceDetailsSection : null}
         {showParties && !quickEntry ? (
           <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.customers")}>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">

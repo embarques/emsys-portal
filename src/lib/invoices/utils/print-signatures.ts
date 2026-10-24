@@ -9,13 +9,14 @@ function newest(signatures: ReceiverSignatureOption[]): ReceiverSignatureOption 
   }, undefined);
 }
 
-export function buildInvoiceSignatureSelections(rows: InvoiceSignatureOptions[], mode: "sender" | "latest" = "sender", trip?: InvoicePrintDelivery): InvoiceSignatureSelection[] {
+export function buildInvoiceSignatureSelections(rows: InvoiceSignatureOptions[], mode: "first" | "sender" | "latest" = "first", trip?: InvoicePrintDelivery): InvoiceSignatureSelection[] {
   return rows.map((row) => ({
     invoiceId: row.invoiceId,
     includeSender: row.senderSignature !== null,
     receiverSignatureId: trip
       ? newest(row.receiverSignatures.filter((signature) => signature.deliveryId === trip.deliveryId))?.id ?? ""
-      : mode === "latest" ? newest(row.receiverSignatures)?.id ?? "" : "",
+      : mode === "first" ? row.receiverSignatures[0]?.id ?? ""
+        : mode === "latest" ? newest(row.receiverSignatures)?.id ?? "" : "",
   }));
 }
 

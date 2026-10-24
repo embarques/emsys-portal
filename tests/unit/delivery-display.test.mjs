@@ -29,6 +29,7 @@ function loadComponent(relative){
   "@/lib/query/query-keys":{queryKeys:{deliveries:{assignedPage:()=>[]}}},
   "@/components/deliveries/delivery-action-notice":{DeliveryActionNotice:()=>null},
   "@/components/deliveries/deliver-dialog":{DeliverDialog:()=>null},
+  "@/components/deliveries/delivery-view-sheet":{DeliveryViewSheet:()=>null},
   "@/components/invoices/invoice-print-signatures-dialog":{InvoicePrintSignaturesDialog:()=>null},
  };
  function load(filename){

@@ -135,9 +135,6 @@ export function DeliverySignatureStep({ state }: { state: WizardState }) {
             {t("deliveries.deliver.signatureRequired")}
           </p>
         ) : null}
-        <p className="text-xs text-muted-foreground">
-          {t("deliveries.wizard.automaticMetadata")}
-        </p>
       </div>
     </fieldset>
   );

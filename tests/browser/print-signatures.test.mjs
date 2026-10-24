@@ -76,14 +76,29 @@ test("20 invoices load in one metadata request and submit reference-only choices
  const result=await page.evaluate(() => ({calls:window.metadataRequests,requests:window.printRequests,opened:window.opened}));
  assert.equal(result.calls,1); assert.equal(result.requests.length,1); assert.equal(result.requests[0].signatureSelections.length,20);
  assert.equal(result.requests[0].signatureSelections[0].receiverSignatureId,"68f800000000000000000005");
- assert.equal(result.requests[0].signatureSelections[1].receiverSignatureId,"");
+ assert.equal(result.requests[0].signatureSelections[1].receiverSignatureId,"68f800000000000000000005");
+ assert.equal(result.requests[0].signatureSelections[1].includeSender,true);
  assert.equal(JSON.stringify(result.requests).includes("base64"),false); assert.equal(result.opened,"/fixture.pdf");
  } finally {await page.close();}
+});
+test("first sender and receiver are selected by default and can be omitted",async()=>{
+ const page=await fixture();try{
+  await ready(page);
+  assert.equal(await page.locator('input[type="checkbox"]').first().isChecked(),true);
+  assert.equal(await page.locator('select[id^="print-receiver-"]').first().inputValue(),"68f800000000000000000005");
+  await page.locator('input[type="checkbox"]').first().uncheck();
+  await page.locator('select[id^="print-receiver-"]').first().selectOption("");
+  await page.locator("form").evaluate(form=>form.requestSubmit());
+  await page.waitForFunction(()=>window.printClosed);
+  const choice=await page.evaluate(()=>window.printRequests[0].signatureSelections[0]);
+  assert.equal(choice.includeSender,false);
+  assert.equal(choice.receiverSignatureId,"");
+ }finally{await page.close();}
 });
 test("delivery printing selects that barcode delivery, not the globally latest receipt",async()=>{
  const page=await fixture({trip:true}); try {await ready(page); assert.equal(await page.locator('select[id^="print-receiver-"]').inputValue(),"68f800000000000000000005");} finally {await page.close();}
 });
-test("latest receipt is used only after explicitly applying it to all",async()=>{
+test("latest receipt can replace the first receipt by applying it to all",async()=>{
  const page=await fixture(); try {await ready(page); await page.locator("#print-signature-default").selectOption("latest"); await page.getByRole("button",{name:"invoices.printSignatures.applyAll",exact:true}).click(); assert.equal(await page.locator('select[id^="print-receiver-"]').first().inputValue(),"68f800000000000000000006");}finally{await page.close();}
 });
 test("missing print permission performs no metadata request",async()=>{

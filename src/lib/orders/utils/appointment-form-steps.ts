@@ -29,6 +29,11 @@ export function getAppointmentStepError(values: OrderFormValues, step: number, u
   return null;
 }
 
+/** Customers already chosen on other receiver rows, so a row's picker cannot select them again. */
+export function getOtherReceiverCustomerIds(receivers: OrderFormValues["receivers"], rowKey: string): string[] {
+  return receivers.flatMap((row) => (row.key !== rowKey && row.customer?.id ? [row.customer.id] : []));
+}
+
 /** A destination needs only its preceding steps to be valid, not its own fields. */
 export function canSelectAppointmentStep(values: OrderFormValues, target: number, unverifiedSender: boolean) {
   if (!Number.isInteger(target) || target < 1 || target > 3) return false;

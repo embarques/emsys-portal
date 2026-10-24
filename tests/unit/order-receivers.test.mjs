@@ -164,6 +164,16 @@ test("wizard preserves duplicate receiver and comment item validation", () => {
     "orders.form.validation.duplicateCommentItem");
 });
 
+test("each receiver picker excludes customers already chosen on other rows but keeps its own", () => {
+  const { values } = fixture();
+  const { getOtherReceiverCustomerIds } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");
+  const receivers = [...values.receivers, { key: "row-blank", customer: null, addressIndex: 0 }];
+  assert.deepEqual(getOtherReceiverCustomerIds(receivers, "row-a"), ["receiver-b"]);
+  assert.deepEqual(getOtherReceiverCustomerIds(receivers, "row-b"), ["receiver-a"]);
+  assert.deepEqual(getOtherReceiverCustomerIds(receivers, "row-blank"), ["receiver-a", "receiver-b"]);
+  assert.deepEqual(getOtherReceiverCustomerIds([], "row-a"), []);
+});
+
 test("appointment navigation checks preceding steps without requiring a date or purpose before the final step", () => {
   const { values, types } = fixture();
   const { canSelectAppointmentStep } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");

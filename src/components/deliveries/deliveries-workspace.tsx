@@ -1,16 +1,17 @@
 "use client";
 
-import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-notice";
-
 import { useState } from "react";
 import { PackageCheck, Printer } from "lucide-react";
 
 import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
+import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
 import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
 import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
+import { DeliveryViewSheet } from "@/components/deliveries/delivery-view-sheet";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -27,6 +28,8 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 function rowKey(row: AssignedDeliveryBarcode) {
   return row.barcodeId || (row.id > 0 ? String(row.id) : `${row.invoiceId}:${row.number}`);
@@ -37,6 +40,8 @@ export function DeliveriesWorkspace() {
   const access = useDeliveryAccess();
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
   const table = useCatalogTable({
     fields: ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS,
     keepPrevious: false,
@@ -61,6 +66,19 @@ export function DeliveriesWorkspace() {
     t("deliveries.columns.province"),
     t("deliveries.columns.phones"),
   ];
+
+  const selectedRow = selectedKey ? table.items.find((row) => rowKey(row) === selectedKey) ?? null : null;
+  const selectedActionDisabled = !selectedRow?.invoiceId || !selectedRow.delivery?.id;
+
+  function openRow(row: AssignedDeliveryBarcode) {
+    setSelectedKey(rowKey(row));
+    setViewOpen(true);
+  }
+
+  function openFromView(open: (row: AssignedDeliveryBarcode) => void, row: AssignedDeliveryBarcode) {
+    setViewOpen(false);
+    open(row);
+  }
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -107,18 +125,66 @@ export function DeliveriesWorkspace() {
               );
             })}
           </ul>
+          {selectedRow && (access.canDeliver || access.canPrint) ? (
+            <TableSelectionBar
+              className="hidden md:flex"
+              selectedCount={1}
+              totalCount={table.items.length}
+              onClear={() => setSelectedKey(null)}
+              actions={<>
+                {access.canDeliver ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+                    disabled={selectedActionDisabled}
+                    onClick={() => setDeliverRow(selectedRow)}
+                  >
+                    <PackageCheck className="h-4 w-4" />
+                    {t("deliveries.deliver.action")}
+                  </Button>
+                ) : null}
+                {access.canPrint ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={selectedActionDisabled}
+                    onClick={() => setPrintRow(selectedRow)}
+                  >
+                    <Printer className="h-4 w-4" />
+                    {t("invoices.printSignatures.action")}
+                  </Button>
+                ) : null}
+              </>}
+            />
+          ) : null}
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left">
                 <tr>
                   {headers.map((header) => <th key={header} className="whitespace-nowrap px-4 py-3 font-medium">{header}</th>)}
-                  {(access.canDeliver || access.canPrint) && <th className="px-4 py-3 text-right font-medium">{t("common.actions.actions")}</th>}
                 </tr>
               </thead>
               <tbody>
                 {table.items.map((row) => {
+                  const key = rowKey(row);
                   return (
-                    <tr key={rowKey(row)} className="border-b align-top last:border-0">
+                    <InteractiveTableRow
+                      key={key}
+                      className="align-top"
+                      active={key === selectedKey}
+                      aria-selected={key === selectedKey}
+                      tabIndex={0}
+                      onRowClick={() => openRow(row)}
+                      onKeyDown={(event) => {
+                        if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
+                        event.preventDefault();
+                        openRow(row);
+                      }}
+                    >
                       <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums">{row.number}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.invoiceNumber}</td>
                       <td className="whitespace-nowrap px-4 py-3">
@@ -137,24 +203,7 @@ export function DeliveriesWorkspace() {
                       <td className="min-w-[260px] px-4 py-3">
                         <TablePhoneCell phones={row.receiver?.phones ?? []} callable />
                       </td>
-                      {(access.canDeliver || access.canPrint) && <td className="px-4 py-3 text-right">
-                        <div className="ml-auto flex w-max flex-col items-stretch gap-2">
-                          {access.canDeliver && <Button type="button" size="sm" variant="outline"
-                            className="justify-start"
-                            disabled={!row.invoiceId || !row.delivery?.id}
-                            onClick={() => setDeliverRow(row)}>
-                            <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
-                          </Button>}
-                          {access.canPrint && <Button type="button" size="sm" variant="outline"
-                            className="justify-start"
-                            disabled={!row.invoiceId || !row.delivery?.id}
-                            onClick={() => setPrintRow(row)}>
-                            <Printer className="size-4" />{t("invoices.printSignatures.action")}
-                          </Button>}
-                        </div>
-                        <DeliveryActionNotice row={row} />
-                      </td>}
-                    </tr>
+                    </InteractiveTableRow>
                   );
                 })}
               </tbody>
@@ -164,12 +213,24 @@ export function DeliveriesWorkspace() {
         {access.canList && !table.isLoading && !table.isError ? <CatalogTablePagination state={table} /> : null}
       </Card>
 
+      <DeliveryViewSheet
+        row={selectedRow}
+        open={viewOpen && Boolean(selectedRow)}
+        onOpenChange={setViewOpen}
+        canDeliver={access.canDeliver}
+        canPrint={access.canPrint}
+        onDeliver={(row) => openFromView(setDeliverRow, row)}
+        onPrint={(row) => openFromView(setPrintRow, row)}
+      />
       {printRow?.invoiceId && printRow.delivery?.id && access.canPrint && <InvoicePrintSignaturesDialog key={`${access.companyId}:${printRow.invoiceId}:${printRow.delivery.id}`} invoiceIds={[printRow.invoiceId]} trip={{ deliveryId: String(printRow.delivery.id) }} onClose={() => setPrintRow(null)} />}
       {deliverRow && access.canDeliver && <DeliverDialog
         key={`${access.companyId}:${access.actorId}:${deliverRow.invoiceId}:${deliverRow.route?.id}:${deliverRow.delivery?.id}`}
         target={deliverRow}
         onClose={() => setDeliverRow(null)}
-        onDelivered={() => setDeliverRow(null)}
+        onDelivered={() => {
+          setDeliverRow(null);
+          setSelectedKey(null);
+        }}
       />}
     </div>
   );
