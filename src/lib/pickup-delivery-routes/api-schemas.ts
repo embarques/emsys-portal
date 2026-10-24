@@ -43,7 +43,7 @@ export type VehicleRouteWritePayload = {
   route: { id: string; name: string };
   employees: VehicleRouteEmployeeWriteRef[];
   driver?: VehicleRouteEmployeeRef;
-  appraiser?: VehicleRouteEmployeeRef;
+  supervisor?: VehicleRouteEmployeeRef;
   date?: string;
   dayOfWeek?: string[];
   container?: VehicleRouteContainerWriteRef;
@@ -90,10 +90,10 @@ export const DELIVERY_VEHICLE_ROUTE_WRITE_EXAMPLE = {
   date: "2026-06-10T00:00:00Z",
   route: { id: "674a1b2c3d4e5f6789012348", name: "Route 1" },
   driver: { id: 8, name: "Driver A" },
-  appraiser: { id: 9, name: "Helper B" },
+  supervisor: { id: 9, name: "Helper B" },
   employees: [
     { id: 8, name: "Driver A", role: "driver" },
-    { id: 9, name: "Helper B", role: "appraiser" },
+    { id: 9, name: "Helper B", role: "supervisor" },
   ],
   container: { id: 674, number: "95-25" },
 } as const satisfies VehicleRouteWritePayload;

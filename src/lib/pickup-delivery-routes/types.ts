@@ -80,7 +80,7 @@ export type ActiveRoute = ApiTableRecord & {
   vehicle: RouteVehicleRef;
   active: boolean;
   route: ActiveRouteRouteRef;
-  /** Crew members with their role (driver/appraiser/helper). */
+  /** Crew members with their role (driver/supervisor/helper). */
   employees: RouteEmployeeRef[];
   createdAt: string;
   createdBy: string;
@@ -144,7 +144,7 @@ export const DEFAULT_ACTIVE_ROUTE_LIST_PARAMS = {
 
 /**
  * Fields the bar search fans out across with an OR group (`POST /vehicle-routes/search`).
- * Must match the API search allowlist — crew names use `employees.name` (not driver/appraiser/
+ * Must match the API search allowlist — crew names use `employees.name` (not driver/supervisor/
  * helper), and container uses `container.number` (not `container.name`).
  */
 export const ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS = [
@@ -198,18 +198,18 @@ export function deriveRouteType(container: ActiveRouteContainerRef | null): Rout
   return container && container.id > 0 ? "delivery" : "pickup";
 }
 
-/** Crew members acting as appraiser. */
-export function getActiveRouteAppraisers(
+/** Crew members acting as supervisor. */
+export function getActiveRouteSupervisors(
   record: Pick<ActiveRoute, "employees">,
 ): RouteEmployeeRef[] {
-  return getActiveRouteEmployeesByRole(record, "appraiser");
+  return getActiveRouteEmployeesByRole(record, "supervisor");
 }
 
-/** First appraiser on the route, if any (legacy API denormalization). */
-export function getActiveRouteAppraiser(
+/** First supervisor on the route, if any (legacy API denormalization). */
+export function getActiveRouteSupervisor(
   record: Pick<ActiveRoute, "employees">,
 ): RouteEmployeeRef | null {
-  return getActiveRouteAppraisers(record)[0] ?? null;
+  return getActiveRouteSupervisors(record)[0] ?? null;
 }
 
 /** Crew members acting as helper. */

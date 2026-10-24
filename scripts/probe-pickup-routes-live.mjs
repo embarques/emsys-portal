@@ -63,7 +63,7 @@ const ALLOWED_FILTER_FIELDS = [
   { field: "routeType", ops: ["eq", "neq"], valueType: "text" },
 ];
 
-const REJECTED_FIELDS = ["driver.name", "appraiser.name", "helper.name", "container.name"];
+const REJECTED_FIELDS = ["driver.name", "supervisor.name", "helper.name", "container.name"];
 const INCLUDE_OPS = new Set(["eq", "contains", "startsWith", "gte", "lte", "in"]);
 
 async function req(method, path, body) {

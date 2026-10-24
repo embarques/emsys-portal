@@ -16,9 +16,9 @@ type CrewRolePickerProps = {
   employees: RouteEmployeeRef[];
   onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
   onRemove?: (employeeId: number) => void;
-  /** Roles to offer, in order. Defaults to driver/appraiser/helper. */
+  /** Roles to offer, in order. Defaults to driver/supervisor/helper. */
   roles?: RouteCrewRole[];
-  /** When true, driver and appraiser can both be active on the same employee. */
+  /** When true, driver and supervisor can both be active on the same employee. */
   toggleLeadRoles?: boolean;
   loading?: boolean;
   emptyMessage?: string;
@@ -34,10 +34,10 @@ const ROLE_META: Record<
     forKey: "routes.activeRoute.driverFor",
     accentClass: "border-emerald-600/40 bg-emerald-600/10 text-emerald-800 dark:text-emerald-300",
   },
-  appraiser: {
+  supervisor: {
     icon: ClipboardList,
-    labelKey: "routes.activeRoute.appraiser",
-    forKey: "routes.activeRoute.appraiserFor",
+    labelKey: "routes.activeRoute.supervisor",
+    forKey: "routes.activeRoute.supervisorFor",
     accentClass: "border-blue-600/40 bg-blue-600/10 text-blue-800 dark:text-blue-300",
   },
   helper: {
@@ -48,7 +48,7 @@ const ROLE_META: Record<
   },
 };
 
-const ROLE_ORDER: RouteCrewRole[] = ["driver", "appraiser", "helper"];
+const ROLE_ORDER: RouteCrewRole[] = ["driver", "supervisor", "helper"];
 
 export function CrewRolePicker({
   employees,
@@ -79,13 +79,13 @@ export function CrewRolePicker({
       <ul className="divide-y divide-border">
         {employees.map((employee) => {
           const isDriver = employeeHasRole(employee, "driver");
-          const isAppraiser = employeeHasRole(employee, "appraiser");
+          const isSupervisor = employeeHasRole(employee, "supervisor");
           const isHelper = toggleLeadRoles
-            ? !isDriver && !isAppraiser
-            : employeeHasRole(employee, "helper") && !isDriver && !isAppraiser;
+            ? !isDriver && !isSupervisor
+            : employeeHasRole(employee, "helper") && !isDriver && !isSupervisor;
           const selectedByRole: Record<RouteCrewRole, boolean> = {
             driver: isDriver,
-            appraiser: isAppraiser,
+            supervisor: isSupervisor,
             helper: isHelper,
           };
 

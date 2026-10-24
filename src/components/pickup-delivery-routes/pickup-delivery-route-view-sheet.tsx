@@ -13,7 +13,7 @@ import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pi
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import {
-  formatActiveRouteAppraiserName,
+  formatActiveRouteSupervisorName,
   formatActiveRouteContainerLabel,
   formatActiveRouteDriverNames,
   formatActiveRouteHelperNames,
@@ -137,8 +137,8 @@ export function ActiveRouteViewSheet({
               value={formatActiveRouteDriverNames(record) || dash}
             />
             <RecordViewSheetDetailRow
-              label={t("routes.columns.appraiser")}
-              value={formatActiveRouteAppraiserName(record) || dash}
+              label={t("routes.columns.supervisor")}
+              value={formatActiveRouteSupervisorName(record) || dash}
             />
             <RecordViewSheetDetailRow
               label={t("routes.columns.helper")}

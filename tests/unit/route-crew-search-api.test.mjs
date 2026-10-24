@@ -95,3 +95,32 @@ test("route crew advanced filter rows are sent with API-typed values", async () 
   assert.equal(active?.value, false);
   assert.equal(employee?.value, 42);
 });
+
+test("daily-route API reads and writes canonical supervisor combined with driver", async () => {
+  const raw = {
+    id: "daily-route", routeType: "pickup", date: "2026-10-23",
+    route: { id: "crew", name: "Crew" },
+    driver: { id: 7, name: "Lead" }, supervisor: { id: 7, name: "Lead" },
+  };
+  const calls = [];
+  const api = loadFeature("src/lib/pickup-delivery-routes/api/pickup-delivery-routes-api.ts", {
+    post: async (url, body) => {
+      calls.push([url, body]);
+      return { success: true, data: raw };
+    },
+  });
+  const normalized = api.normalizeApiVehicleRoute(raw);
+  assert.equal(normalized.employees.length, 1);
+  assert.deepEqual(normalized.employees[0].roles, ["driver", "supervisor"]);
+  const types = loadFeature("src/lib/pickup-delivery-routes/types.ts", {});
+  await api.createActiveRoute({
+    ...types.createEmptyActiveRouteForm("pickup"),
+    date: "2026-10-23", branch: { id: 1, code: "US", name: "Origin" },
+    routeRecordId: "crew", routeAssignmentName: "Crew",
+    employees: normalized.employees,
+  });
+  assert.deepEqual(calls[0][1].supervisor, { id: 7, name: "Lead" });
+  assert.deepEqual(calls[0][1].driver, { id: 7, name: "Lead" });
+  assert.equal(calls[0][1].employees[0].role, "driver");
+  assert.equal("appraiser" in calls[0][1], false);
+});

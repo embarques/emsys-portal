@@ -310,7 +310,7 @@
     "noRouteGroupsFound": "No se encontraron cuadrillas de ruta.",
     "assignmentDate": "Fecha de asignación",
     "selectCrewRoles": "Asignar roles de cuadrilla",
-    "selectRouteGroupFirst": "Seleccione una cuadrilla de ruta para asignar conductor, tasador y ayudantes.",
+    "selectRouteGroupFirst": "Seleccione una cuadrilla de ruta para asignar conductor, supervisor y ayudantes.",
     "branchRequired": "Esta cuadrilla de ruta necesita una sucursal antes de poder asignarse.",
     "crewRequired": "Esta cuadrilla de ruta no tiene miembros de cuadrilla.",
     "deleteTitle": "¿Eliminar cita?",

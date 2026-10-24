@@ -812,7 +812,7 @@
       "ADJUSTMENT": "Adjustment",
       "REVERSAL": "Reversal",
       "driver": "Driver",
-      "appraiser": "Appraiser",
+      "supervisor": "Supervisor",
       "helper": "Helper"
     },
     "resources": {

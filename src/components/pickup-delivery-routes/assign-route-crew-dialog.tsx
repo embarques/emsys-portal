@@ -436,7 +436,7 @@ export function AssignRouteCrewDialog({
               <CrewRolePicker
                 employees={employees}
                 onRoleChange={handleRoleChange}
-                roles={["driver", "appraiser", "helper"]}
+                roles={["driver", "supervisor", "helper"]}
                 toggleLeadRoles
                 loading={crewLoading}
               />

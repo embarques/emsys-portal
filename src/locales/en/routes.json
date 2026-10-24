@@ -41,7 +41,7 @@
         "date": "Choose the day this vehicle and crew will operate.",
         "branch": "Choose the branch first to see the available vehicles and crews.",
         "previous": "Start with an existing daily route, then confirm the date and assignments.",
-        "roles": "Assign driver, appraiser, and helper roles to the selected crew members."
+        "roles": "Assign driver, supervisor, and helper roles to the selected crew members."
       }
     },
     "view": {
@@ -194,7 +194,7 @@
     "container": "Container",
     "route": "Route crew",
     "driver": "Driver",
-    "appraiser": "Appraiser",
+    "supervisor": "Supervisor",
     "helper": "Helper",
     "recordId": "Record ID",
     "rate": "Exchange rate"
@@ -311,7 +311,7 @@
     "enums": {
       "crewRole": {
         "driver": "Driver",
-        "appraiser": "Appraiser",
+        "supervisor": "Supervisor",
         "helper": "Helper"
       },
       "status": {
@@ -407,12 +407,12 @@
     "routeSearch": "Search route crews…",
     "routeEmpty": "No route crews for this branch.",
     "driver": "Driver",
-    "appraiser": "Appraiser",
+    "supervisor": "Supervisor",
     "helper": "Helper",
     "crewRoles": "Assign roles",
     "crewRolesEmpty": "This route crew has no crew members.",
     "driverFor": "Driver — {{name}}",
-    "appraiserFor": "Appraiser — {{name}}",
+    "supervisorFor": "Supervisor — {{name}}",
     "helperFor": "Helper — {{name}}",
     "createVehicle": "New vehicle",
     "createRoute": "New route crew",

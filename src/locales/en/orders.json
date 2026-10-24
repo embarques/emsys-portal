@@ -310,7 +310,7 @@
     "noRouteGroupsFound": "No route crews found.",
     "assignmentDate": "Assignment date",
     "selectCrewRoles": "Assign crew roles",
-    "selectRouteGroupFirst": "Select a route crew to assign driver, appraiser, and helper roles.",
+    "selectRouteGroupFirst": "Select a route crew to assign driver, supervisor, and helper roles.",
     "branchRequired": "This route crew needs a branch before it can be assigned.",
     "crewRequired": "This route crew has no crew members.",
     "deleteTitle": "Delete appointment?",

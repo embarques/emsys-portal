@@ -1037,10 +1037,10 @@ There are **no** separate `/pickup-routes` or `/delivery-routes` endpoints.
   "date": "2026-06-10T00:00:00Z",
   "route": { "id": "674a1b2c3d4e5f6789012346", "name": "Jane Driver-Vehicle 1" },
   "driver": { "id": 5, "name": "Jane Driver" },
-  "appraiser": { "id": 6, "name": "Helper One" },
+  "supervisor": { "id": 6, "name": "Helper One" },
   "employees": [
     { "id": 5, "name": "Jane Driver", "role": "driver" },
-    { "id": 6, "name": "Helper One", "role": "appraiser" }
+    { "id": 6, "name": "Helper One", "role": "supervisor" }
   ]
 }
 ```
@@ -1056,10 +1056,10 @@ There are **no** separate `/pickup-routes` or `/delivery-routes` endpoints.
   "date": "2026-06-10T00:00:00Z",
   "route": { "id": "674a1b2c3d4e5f6789012348", "name": "Driver A-Truck 2" },
   "driver": { "id": 8, "name": "Driver A" },
-  "appraiser": { "id": 9, "name": "Helper B" },
+  "supervisor": { "id": 9, "name": "Helper B" },
   "employees": [
     { "id": 8, "name": "Driver A", "role": "driver" },
-    { "id": 9, "name": "Helper B", "role": "appraiser" }
+    { "id": 9, "name": "Helper B", "role": "supervisor" }
   ]
 }
 ```
@@ -1082,10 +1082,10 @@ There are **no** separate `/pickup-routes` or `/delivery-routes` endpoints.
     "routeId": "R-1042"
   },
   "driver": { "id": 5, "name": "Jane Driver" },
-  "appraiser": { "id": 6, "name": "Helper One" },
+  "supervisor": { "id": 6, "name": "Helper One" },
   "employees": [
     { "id": 5, "name": "Jane Driver", "role": "driver" },
-    { "id": 6, "name": "Helper One", "role": "appraiser" }
+    { "id": 6, "name": "Helper One", "role": "supervisor" }
   ],
   "createdAt": "2026-06-10T14:22:00Z",
   "createdBy": "Admin User",

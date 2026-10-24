@@ -19,9 +19,9 @@ export type RouteBranchRef = {
 };
 
 /** Crew member role on a route. Defaults to `driver` when unset. */
-export type RouteCrewRole = "driver" | "appraiser" | "helper";
+export type RouteCrewRole = "driver" | "supervisor" | "helper";
 
-export const ROUTE_CREW_ROLES: RouteCrewRole[] = ["driver", "appraiser", "helper"];
+export const ROUTE_CREW_ROLES: RouteCrewRole[] = ["driver", "supervisor", "helper"];
 
 export const DEFAULT_ROUTE_CREW_ROLE: RouteCrewRole = "helper";
 
@@ -29,7 +29,7 @@ export type RouteEmployeeRef = {
   id: number;
   name: string;
   role?: RouteCrewRole;
-  /** When set, the employee holds multiple lead roles (e.g. driver + appraiser). */
+  /** When set, the employee holds multiple lead roles (e.g. driver + supervisor). */
   roles?: RouteCrewRole[];
 };
 
@@ -53,7 +53,7 @@ export function employeeHasRole(
 
 function primaryEmployeeRole(roles: RouteCrewRole[]): RouteCrewRole {
   if (roles.includes("driver")) return "driver";
-  if (roles.includes("appraiser")) return "appraiser";
+  if (roles.includes("supervisor")) return "supervisor";
   return "helper";
 }
 
@@ -70,7 +70,7 @@ function toEmployeeWithRoles(employee: RouteEmployeeRef, roles: RouteCrewRole[])
 }
 
 /** Roles that only one crew member can hold at a time. */
-export const SINGLETON_CREW_ROLES: RouteCrewRole[] = ["driver", "appraiser"];
+export const SINGLETON_CREW_ROLES: RouteCrewRole[] = ["driver", "supervisor"];
 
 type SetCrewMemberRoleOptions = {
   /** When set, only these roles demote other members holding the same role. */
@@ -79,7 +79,7 @@ type SetCrewMemberRoleOptions = {
 
 /**
  * Assign `role` to the crew member with `employeeId`. By default driver and
- * appraiser are singleton roles (only one each), so promoting a member to one
+ * supervisor are singleton roles (only one each), so promoting a member to one
  * of them demotes any other member currently holding that role back to helper.
  * Helper is unlimited.
  */
@@ -103,7 +103,7 @@ export function setCrewMemberRole(
 }
 
 /**
- * Toggle driver/appraiser on pickup and delivery routes. Each lead role has at
+ * Toggle driver/supervisor on pickup and delivery routes. Each lead role has at
  * most one holder, but the same employee may hold both. Helper clears lead roles.
  */
 export function setVehicleRouteCrewRole(
@@ -122,7 +122,7 @@ export function setVehicleRouteCrewRole(
   return employees.map((employee) => {
     if (employee.id === employeeId) {
       const leadRoles = getEmployeeRoles(employee).filter(
-        (entry) => entry === "driver" || entry === "appraiser",
+        (entry) => entry === "driver" || entry === "supervisor",
       );
       const hasRole = leadRoles.includes(role);
       const nextLeadRoles = hasRole

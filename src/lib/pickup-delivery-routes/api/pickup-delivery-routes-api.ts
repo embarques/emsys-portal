@@ -32,7 +32,7 @@ import {
   DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
   ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS,
   deriveRouteType,
-  getActiveRouteAppraiser,
+  getActiveRouteSupervisor,
   getActiveRouteEmployeesByRole,
   type ActiveRoute,
   type ActiveRouteFormValues,
@@ -94,7 +94,7 @@ type ApiVehicleRoute = {
   container?: ApiContainerRef | null;
   route?: ApiRef | null;
   driver?: ApiEmployeeRef | null;
-  appraiser?: ApiEmployeeRef | null;
+  supervisor?: ApiEmployeeRef | null;
   employees?: ApiEmployeeRef[] | null;
   rate?: number | string | null;
   createdAt?: string;
@@ -130,7 +130,7 @@ function readUserName(user: unknown): string {
 
 function normalizeCrewRole(raw: unknown): RouteCrewRole {
   const value = String(raw ?? "").trim().toLowerCase();
-  if (value === "driver" || value === "appraiser" || value === "helper") return value;
+  if (value === "driver" || value === "supervisor" || value === "helper") return value;
   return DEFAULT_ROUTE_CREW_ROLE;
 }
 
@@ -161,13 +161,13 @@ function normalizeEmployees(raw?: ApiEmployeeRef[] | null): ActiveRoute["employe
 
 function normalizeVehicleRouteCrew(item: ApiVehicleRoute): ActiveRoute["employees"] {
   const driver = normalizeEmployeeRef(item.driver, "driver");
-  const appraiser = normalizeEmployeeRef(item.appraiser, "appraiser");
+  const supervisor = normalizeEmployeeRef(item.supervisor, "supervisor");
   const fromEmployees = normalizeEmployees(item.employees);
 
-  if (driver && appraiser && driver.id === appraiser.id) {
+  if (driver && supervisor && driver.id === supervisor.id) {
     const dualRoleEmployee = toEmployeeWithRoles(
       { id: driver.id, name: driver.name },
-      ["driver", "appraiser"],
+      ["driver", "supervisor"],
     );
     const others = fromEmployees.filter((employee) => employee.id !== driver.id);
     if (fromEmployees.length > 0) {
@@ -180,7 +180,7 @@ function normalizeVehicleRouteCrew(item: ApiVehicleRoute): ActiveRoute["employee
 
   const crew: ActiveRoute["employees"] = [];
   if (driver) crew.push(driver);
-  if (appraiser) crew.push(appraiser);
+  if (supervisor) crew.push(supervisor);
   return crew;
 }
 
@@ -192,7 +192,7 @@ function toEmployeeWithRoles(
   if (unique.length === 1) {
     return { id: employee.id, name: employee.name, role: unique[0] };
   }
-  const primary = unique.includes("driver") ? "driver" : unique.includes("appraiser") ? "appraiser" : "helper";
+  const primary = unique.includes("driver") ? "driver" : unique.includes("supervisor") ? "supervisor" : "helper";
   return { id: employee.id, name: employee.name, role: primary, roles: unique };
 }
 
@@ -306,8 +306,8 @@ function buildEmployeeWriteRefs(values: ActiveRouteFormValues) {
     const roles = getEmployeeRoles(employee);
     const role = roles.includes("driver")
       ? "driver"
-      : roles.includes("appraiser")
-        ? "appraiser"
+      : roles.includes("supervisor")
+        ? "supervisor"
         : resolveCrewRole(employee.role);
     return {
       id: employee.id,
@@ -322,7 +322,7 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
 
   const employees = buildEmployeeWriteRefs(values);
   const driver = getActiveRouteEmployeesByRole(values, "driver")[0];
-  const appraiser = getActiveRouteAppraiser(values);
+  const supervisor = getActiveRouteSupervisor(values);
 
   const payload: VehicleRouteWritePayload = {
     routeType: values.routeType,
@@ -338,7 +338,7 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
     },
     employees,
     ...(driver ? { driver: { id: driver.id, name: driver.name.trim() } } : {}),
-    ...(appraiser ? { appraiser: { id: appraiser.id, name: appraiser.name.trim() } } : {}),
+    ...(supervisor ? { supervisor: { id: supervisor.id, name: supervisor.name.trim() } } : {}),
   };
 
   if (values.scheduleType === "dayOfWeek") {
