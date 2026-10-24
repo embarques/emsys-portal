@@ -54,3 +54,9 @@ export function formatDeliveryPhones(party: { phones: DeliveryReceiverPhone[] } 
     })
     .filter((phone) => phone.label && phone.dial);
 }
+
+/** Daily-route DOP per USD. Unknown or invalid rates never become a fabricated zero. */
+export function formatDeliveryRate(rate: number | undefined): string {
+ if (rate == null || !Number.isFinite(rate) || rate <= 0) return "—";
+ return new Intl.NumberFormat(undefined,{minimumFractionDigits:0,maximumFractionDigits:4}).format(rate);
+}

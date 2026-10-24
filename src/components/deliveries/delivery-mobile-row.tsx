@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import { PackageCheck, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { formatDeliveryAddress, formatDeliveryPhones, type AssignedDeliveryBarcode } from "@/lib/deliveries/types";
+import { formatDeliveryAddress, formatDeliveryPhones, formatDeliveryRate, type AssignedDeliveryBarcode } from "@/lib/deliveries/types";
 import { useTranslation } from "@/lib/i18n";
 
 type DeliveryMobileRowProps = {
@@ -28,6 +28,7 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrin
     [t("deliveries.columns.barcode"), row.number],
     [t("deliveries.columns.invoice"), row.invoiceNumber],
     [t("deliveries.columns.invoiceBalance"), row.invoiceBalance != null ? <DeliveryRowBalance row={row} /> : undefined],
+    [t("deliveries.columns.rate"), formatDeliveryRate(row.routeRate)],
     [t("deliveries.columns.name"), row.description],
     [t("deliveries.columns.container"), row.container?.name],
     [t("deliveries.columns.senderName"), row.sender?.name],

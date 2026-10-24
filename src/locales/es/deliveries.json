@@ -11,6 +11,7 @@
   "columns": {
     "barcode": "Código de barras",
     "invoice": "Factura n.º",
+    "rate": "Tasa de cambio (DOP/USD)",
     "invoiceBalance": "Balance de factura",
     "name": "Nombre",
     "container": "Contenedor",

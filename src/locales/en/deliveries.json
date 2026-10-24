@@ -11,6 +11,7 @@
   "columns": {
     "barcode": "Barcode",
     "invoice": "Invoice #",
+    "rate": "Exchange rate (DOP/USD)",
     "invoiceBalance": "Invoice balance",
     "name": "Name",
     "container": "Container",
