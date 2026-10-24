@@ -37,6 +37,8 @@ export type WorkspaceFormHostProps = {
   initialWizardStep?: number;
   /** Prefer focusing the line item that owns this barcode id/number. */
   focusBarcodeId?: string;
+  /** New invoice started from an appointment. */
+  invoicePrefill?: WorkspaceTabForm["invoicePrefill"];
   /** Remount token when re-opening an existing form tab at a new step. */
   formNonce?: number;
   /** Close after a successful add and hand the created id back to the opener. */

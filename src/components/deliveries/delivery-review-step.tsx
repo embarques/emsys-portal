@@ -23,7 +23,7 @@ export function DeliveryReviewStep({ state }: { state: WizardState }) {
     .join(", ");
   return (
     <>
-      <div className="space-y-2 rounded-xl border bg-muted/15 p-4">
+      <div className="space-y-2 rounded-xl border border-input bg-muted p-4 md:hidden">
         <p className="flex items-center gap-2 font-medium">
           <User className="size-4" />
           {review.receiver?.name || "—"}
@@ -44,7 +44,7 @@ export function DeliveryReviewStep({ state }: { state: WizardState }) {
         {review.barcodes.map((barcode) => (
           <label
             key={barcode.barcodeId}
-            className="flex min-h-20 cursor-pointer items-center gap-3 rounded-xl border p-4"
+            className="flex min-h-20 cursor-pointer items-center gap-3 rounded-xl border border-input bg-card p-4 transition-colors has-[:checked]:border-primary has-[:checked]:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2"
           >
             <input
               type="checkbox"
@@ -62,7 +62,7 @@ export function DeliveryReviewStep({ state }: { state: WizardState }) {
                 {barcode.number}
               </span>
             </span>
-            <Badge variant="outline">{review.pendingStatus.name}</Badge>
+            <Badge variant="outline" className="border-input bg-card">{review.pendingStatus.name}</Badge>
           </label>
         ))}
       </fieldset>

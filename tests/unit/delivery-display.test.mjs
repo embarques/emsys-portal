@@ -15,6 +15,8 @@ function loadComponent(relative){
  const cache=new Map();
  const block=({children})=>React.createElement("div",null,children);
  const stubs={
+  "@/components/deliveries/delivery-balance-amount":{DeliveryRowBalance:()=>null},
+  "@/components/phones/table-phone-cell":{TablePhoneCell:()=>null},
   "@/lib/i18n":{useTranslation:()=>({t:(key)=>({"deliveries.columns.invoice":"Invoice #","deliveries.columns.status":"Status"}[key]??key)})},
   "@/lib/deliveries/hooks/use-deliver-invoice":{useDeliveryAccess:()=>({canList:true,canDeliver:false,canPrint:false,companyId:"company",actorId:"actor"})},
   "@/lib/table/hooks/use-catalog-table":{useCatalogTable:()=>({items:[row],isLoading:false,isError:false,hasActiveFilters:false})},

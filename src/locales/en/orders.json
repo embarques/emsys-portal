@@ -40,7 +40,9 @@
     "manageCompletion": "Manage completion",
     "manageRoutes": "Manage routes",
     "completionGroup": "Completion status",
-    "routeGroup": "Route assignment"
+    "routeGroup": "Route assignment",
+    "createInvoice": "Create invoice",
+    "createInvoiceTab": "Invoice for #{{id}}"
   },
   "stats": {
     "pendingOrders": {
@@ -275,6 +277,8 @@
     "defaultSenderName": "Sender"
   },
   "dialogs": {
+    "chooseInvoiceReceiverTitle": "Choose receiver",
+    "chooseInvoiceReceiverDescription": "This appointment has {{count}} receivers. Choose the receiver for this invoice.",
     "assignRouteTitle": "Assign route",
     "assignRouteDescription": "Choose a daily route for {{count}} selected appointment, or create a new daily route.",
     "assignRouteDescription_plural": "Choose a daily route for {{count}} selected appointments, or create a new daily route.",

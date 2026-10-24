@@ -20,7 +20,6 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 
 import { useCustomer } from "@/lib/customers/hooks/use-customers";
 import type { Customer } from "@/lib/customers/types";
-import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -28,9 +27,8 @@ import {
   getRecordPhoneDisplayNumber,
 } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
-import { cn } from "@/lib/utils";
+import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 
-const MAX_VISIBLE_PHONES = 2;
 const PHONE_COUNT_LINK_MIN = 3;
 
 type CustomerTablePhoneCellProps = {
@@ -161,41 +159,15 @@ export function CustomerTablePhoneCell({ customer, className }: CustomerTablePho
     return <span>{t("common.empty.dash")}</span>;
   }
 
-  const visiblePhones = phones.slice(0, MAX_VISIBLE_PHONES);
   const showCountLink = phones.length >= PHONE_COUNT_LINK_MIN;
-  const phoneCountLabel = t("phones.countBadge", { count: phones.length });
-
-  function openSheet(event: React.MouseEvent) {
-    event.stopPropagation();
-    setSheetOpen(true);
-  }
 
   return (
     <>
-      <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME, className)}>
-        <div className={cn("flex w-full flex-col gap-0.5", ADDRESS_TEXT_WRAP_CLASSNAME)}>
-          {visiblePhones.map(({ phone, display }, index) => (
-            <span key={`${phone.number}-${index}`} className="flex flex-wrap items-center gap-2 leading-snug">
-              <span className="whitespace-nowrap tabular-nums">{display}</span>
-              {phone.isPrimary ? (
-                <Badge variant="outline" className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
-                  {t("phones.primaryBadge")}
-                </Badge>
-              ) : null}
-            </span>
-          ))}
-        </div>
-        {showCountLink ? (
-          <button
-            type="button"
-            data-stop-row-click
-            className="mt-0.5 text-left text-xs font-medium text-primary hover:underline"
-            onClick={openSheet}
-          >
-            {phoneCountLabel}
-          </button>
-        ) : null}
-      </div>
+      <TablePhoneCell
+        phones={phones.map(({ phone }) => phone)}
+        className={className}
+        onShowAll={() => setSheetOpen(true)}
+      />
 
       {showCountLink ? (
         <CustomerPhonesSheet customer={customer} open={sheetOpen} onOpenChange={setSheetOpen} />

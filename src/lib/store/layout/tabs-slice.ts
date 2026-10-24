@@ -8,6 +8,7 @@ import {
   type WorkspaceTabsState,
 } from "@/lib/layout/workspace-tab-types";
 import { getMaxWorkspaceTabs } from "@/lib/layout/workspace-tab-limits";
+import { isSameInvoiceAppointmentPrefill } from "@/lib/invoices/appointment-invoice-prefill";
 import {
   normalizeWorkspaceTabColor,
   resetWorkspaceSectionColor,
@@ -359,6 +360,7 @@ export function findFormTab(
   entityId?: string,
   customerType?: number,
   closeOnSave?: boolean,
+  invoicePrefill?: WorkspaceTabForm["invoicePrefill"],
 ): WorkspaceTab | undefined {
   return tabs.find(
     (tab) =>
@@ -368,6 +370,8 @@ export function findFormTab(
       tab.form.customerType === customerType &&
       // A directory add tab stays open for the next entry; keep it separate.
       Boolean(tab.form.closeOnSave) === Boolean(closeOnSave) &&
+      // Each appointment + receiver gets its own invoice add form.
+      isSameInvoiceAppointmentPrefill(tab.form.invoicePrefill, invoicePrefill) &&
       (mode === "add"
         ? !entityId || tab.form.entityId === entityId
         : tab.form.entityId === entityId),

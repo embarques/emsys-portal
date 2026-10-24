@@ -11,6 +11,7 @@ import {
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
+  buildApiSearchPaginationQuery,
   buildResourceSearchFilterGroups,
   buildStripeStyleSearchBody,
   hasResourceListFilters,
@@ -408,6 +409,26 @@ export async function fetchEmployees(
     buildSearchBody: () => buildEmployeeSearchBody(params),
     normalize: normalizePaginatedEmployees,
   });
+}
+
+/** Employee linked to a tenant user (`employee.user.id`); the link is re-checked client-side. */
+export async function fetchEmployeeByUserId(userId: number): Promise<Employee | null> {
+  if (!Number.isInteger(userId) || userId <= 0) return null;
+
+  const searchBody = buildStripeStyleSearchBody({
+    sort: DEFAULT_EMPLOYEE_LIST_PARAMS.sort,
+    filterGroups: [{ operator: "and", filters: [{ field: "user.id", operator: "eq", value: userId }] }],
+  });
+  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 5, offset: 0 });
+  const payload = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.EMPLOYEES}/search?${paginationQuery}`,
+    searchBody,
+  );
+
+  const linked = normalizePaginatedEmployees(payload).items.filter(
+    (employee) => employee.user?.id === userId,
+  );
+  return linked.find((employee) => employee.active) ?? linked[0] ?? null;
 }
 
 export async function fetchEmployeeById(employeeId: string): Promise<Employee> {

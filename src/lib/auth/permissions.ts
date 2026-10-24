@@ -17,11 +17,15 @@ export const PERMISSIONS = {
   pickupsSyncLegacy: { name: "canSyncLegacyPickups", resourceType: "pickup" },
   /** Pickups submenu — API has no route/vehicle/dispatch seed; gate with pickup view. */
   routesView: { name: "canViewPickup", resourceType: "pickup" },
+  /** `GET /vehicle-routes/{id}` — daily route detail (e.g. delivery exchange rate). */
+  vehicleRoutesView: { name: "canViewVehicleRoute", resourceType: "vehicle_route" },
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },
   dispatchView: { name: "canViewPickup", resourceType: "pickup" },
   invoicesPrint: { name: "canPrintInvoice", resourceType: "invoice" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
   invoicesUpdate: { name: "canUpdateInvoice", resourceType: "invoice" },
+  /** Create an invoice from an appointment with date, container and received-by auto-filled. */
+  invoicesCreateAssigned: { name: "canCreateAssignedInvoice", resourceType: "invoice" },
   invoicesSyncLegacy: { name: "canSyncLegacyInvoices", resourceType: "invoice" },
   invoicesManualNumber: { name: "canDisableAutomaticInvoiceNumber", resourceType: "invoice_manual_number" },
   invoicesApplyDiscount: { name: "canApplyInvoiceDiscount", resourceType: "invoice_discount" },
@@ -63,7 +67,10 @@ export const PERMISSIONS = {
   inventorySuppliersDelete: { name: "canDeleteInventorySupplier", resourceType: "inventory_supplier" },
   /** Parent inventory route — list stock until a dedicated inventory permission exists. */
   inventoryView: { name: "canListInventoryStock", resourceType: "inventory_stock" },
+  journalsCreate: { name: "canCreateJournal", resourceType: "journal" },
   incomeView: { name: "canViewIncomeStatement", resourceType: "income_statement" },
+  /** Open a Cuadre (daily income statement). */
+  incomeStatementsCreate: { name: "canCreateIncomeStatement", resourceType: "income_statement" },
   /**
    * Checks — dedicated CRUD + list. Roles seeded before canListCheck still list
    * via canViewCheck; income view still aliases older grants.

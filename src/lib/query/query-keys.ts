@@ -51,6 +51,8 @@ export const queryKeys = {
       ["deliveries", "assigned", companyId, actorId, params] as const,
     group: (companyId: string | null, actorId: string, invoiceId: string, routeId: string) =>
       ["deliveries", "group", companyId, actorId, invoiceId, routeId] as const,
+    routeRate: (companyId: string | null, routeId: string) =>
+      ["deliveries", "route-rate", companyId, routeId] as const,
   },
   predefinedRoutes: {
     all: ["predefined-routes"] as const,
@@ -225,6 +227,8 @@ export const queryKeys = {
     detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
     journals: (invoiceId: string, invoiceNumber?: string) =>
       [...queryKeys.invoices.all, "journals", invoiceId, invoiceNumber ?? ""] as const,
+    assignedContext: (companyId: string | null, actorId: string, date: string) =>
+      [...queryKeys.invoices.all, "assigned-context", companyId, actorId, date] as const,
   },
   accounting: {
     all: ["accounting"] as const,

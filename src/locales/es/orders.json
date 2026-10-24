@@ -40,7 +40,9 @@
     "manageCompletion": "Gestionar completado",
     "manageRoutes": "Gestionar rutas",
     "completionGroup": "Estado de completado",
-    "routeGroup": "Asignación de ruta"
+    "routeGroup": "Asignación de ruta",
+    "createInvoice": "Crear factura",
+    "createInvoiceTab": "Factura de #{{id}}"
   },
   "stats": {
     "pendingOrders": {
@@ -275,6 +277,8 @@
     "defaultSenderName": "Remitente"
   },
   "dialogs": {
+    "chooseInvoiceReceiverTitle": "Elegir destinatario",
+    "chooseInvoiceReceiverDescription": "Esta cita tiene {{count}} destinatarios. Elija el destinatario de esta factura.",
     "assignRouteTitle": "Asignar ruta",
     "assignRouteDescription": "Elija una ruta diaria para {{count}} cita seleccionada, o cree una nueva ruta diaria.",
     "assignRouteDescription_plural": "Elija una ruta diaria para {{count}} citas seleccionadas, o cree una nueva ruta diaria.",

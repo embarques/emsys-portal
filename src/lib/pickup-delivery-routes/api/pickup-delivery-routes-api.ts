@@ -523,6 +523,41 @@ async function searchActiveRouteByLookup(
   return null;
 }
 
+/** Pickup daily routes dated `date` whose crew includes `employeeId`. */
+export async function fetchPickupDailyRoutesForEmployee(
+  employeeId: number,
+  date: string,
+): Promise<ActiveRoute[]> {
+  const isoDate = date.trim().slice(0, 10);
+  if (!isoDate || !Number.isInteger(employeeId) || employeeId <= 0) return [];
+
+  const searchBody = buildStripeStyleSearchBody({
+    sort: { field: "date", direction: "desc" },
+    filterGroups: [
+      {
+        operator: "and",
+        filters: [
+          ...buildDayRangeFilters(isoDate),
+          { field: "routeType", operator: "eq", value: "pickup" },
+        ],
+      },
+    ],
+  });
+  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 100, offset: 0 });
+  const payload = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.VEHICLE_ROUTES}/search?${paginationQuery}`,
+    searchBody,
+  );
+
+  const items = Array.isArray(payload.data) ? payload.data : [];
+  return items
+    .map((row) => normalizeApiVehicleRoute(row))
+    .filter(
+      (record): record is ActiveRoute =>
+        record != null && record.employees.some((member) => member.id === employeeId),
+    );
+}
+
 export async function fetchVehicleRouteByCrewAndDate(input: {
   routeRecordId: string;
   date: string;

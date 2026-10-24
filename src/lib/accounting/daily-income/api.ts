@@ -478,6 +478,11 @@ export async function fetchIncomeStatement(branchId: number, date: string) {
     // Fall through to POST /search.
   }
 
+  return searchIncomeStatementForDate(branchId, isoDate);
+}
+
+/** Fetch only the requested branch/date; used by the delivery payment step. */
+export async function searchIncomeStatementForDate(branchId: number, isoDate: string) {
   const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 1, offset: 0 });
   const payload = await apiClient.post<ApiEnvelope>(
     `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/search?${paginationQuery}`,
@@ -494,7 +499,10 @@ export async function fetchIncomeStatement(branchId: number, date: string) {
       ],
     }),
   );
-  return normalizeIncomeStatement(unwrapArray(payload)[0]);
+  const statement = normalizeIncomeStatement(unwrapArray(payload)[0]);
+  return statement?.branch?.id === branchId && statement.date.slice(0, 10) === isoDate
+    ? statement
+    : null;
 }
 
 /** Prefer an OPEN closeout for this branch/date; otherwise keep `fallbackId`. */
@@ -518,7 +526,11 @@ export async function resolveOpenIncomeStatementId(
 function incomeStatementPayload(values: DailyIncomeStatementValues) {
   return {
     date: `${values.date}T00:00:00Z`,
-    branch: { id: values.branchId, code: values.branchCode, name: values.branchName },
+    branch: {
+      id: values.branchId,
+      ...(values.branchCode.trim() ? { code: values.branchCode } : {}),
+      name: values.branchName,
+    },
     currency: values.currency,
     rate: values.rate,
   };

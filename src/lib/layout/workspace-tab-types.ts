@@ -1,3 +1,4 @@
+import type { InvoiceAppointmentPrefill } from "@/lib/invoices/appointment-invoice-prefill";
 import type { WorkspaceTabSection } from "@/lib/layout/workspace-tab-colors";
 
 export type { WorkspaceTabSection };
@@ -40,6 +41,8 @@ export type WorkspaceTabForm = {
    * Prefer focusing / editing the line item that owns this barcode id or number.
    */
   focusBarcodeId?: string;
+  /** New invoice started from an appointment (sender/receiver come from it). */
+  invoicePrefill?: InvoiceAppointmentPrefill;
   /** Bumped when re-opening an existing form tab so the wizard remounts at a new step. */
   formNonce?: number;
   /**

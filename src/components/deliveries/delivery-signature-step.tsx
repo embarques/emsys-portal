@@ -24,6 +24,7 @@ export function DeliverySignatureStep({ state }: { state: WizardState }) {
         </Label>
         <Input
           id="delivery-receiver-name"
+          className="bg-background"
           autoComplete="name"
           {...state.form.register("signerName")}
           aria-invalid={Boolean(errors.signerName)}
@@ -40,6 +41,7 @@ export function DeliverySignatureStep({ state }: { state: WizardState }) {
         </Label>
         <Input
           id="delivery-receiver-id"
+          className="bg-background"
           {...state.form.register("idNumber")}
           aria-invalid={Boolean(errors.idNumber)}
         />
@@ -81,7 +83,7 @@ export function DeliverySignatureStep({ state }: { state: WizardState }) {
               role="region"
               aria-label={t("deliveries.deliver.terms")}
               tabIndex={0}
-              className="max-h-40 space-y-3 overflow-y-auto rounded-xl border p-3"
+              className="max-h-40 space-y-3 overflow-y-auto rounded-xl border border-input bg-muted p-3"
             >
               {policyList.map((policy) => (
                 <div key={policy.id}>

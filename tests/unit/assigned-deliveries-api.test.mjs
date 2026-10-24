@@ -107,6 +107,48 @@ test("address and phone helpers format the receiver columns", () => {
   assert.equal(formatDeliveryAddress(null), "");
 });
 
+test("invoice balance is read from the row invoice and omitted when absent", () => {
+  const { parseAssignedDeliveryBarcodes } = loadFeature("src/lib/deliveries/schemas/assigned-delivery-barcode.schema.ts", {});
+  const parse = (invoice) => parseAssignedDeliveryBarcodes([{ ...row, invoice }])[0];
+  assert.equal(parse({ ...row.invoice, balance: 125.456 }).invoiceBalance, 125.46);
+  assert.equal(parse({ ...row.invoice, balance: "40.5" }).invoiceBalance, 40.5);
+  assert.equal(parse({ ...row.invoice, balance: 0 }).invoiceBalance, 0);
+  assert.equal(parse({ ...row.invoice, balance: -3 }).invoiceBalance, 0);
+  assert.equal("invoiceBalance" in parse(row.invoice), false);
+  assert.equal("invoiceBalance" in parse({ ...row.invoice, balance: null }), false);
+  assert.equal("invoiceBalance" in parse({ ...row.invoice, balance: "n/a" }), false);
+});
+
+test("route exchange rate is read from the row route and omitted when unusable", () => {
+  const { parseAssignedDeliveryBarcodes } = loadFeature("src/lib/deliveries/schemas/assigned-delivery-barcode.schema.ts", {});
+  const parse = (route) => parseAssignedDeliveryBarcodes([{ ...row, route }])[0];
+  assert.equal(parse({ ...row.route, rate: 59.25 }).routeRate, 59.25);
+  assert.equal(parse({ ...row.route, rate: "60" }).routeRate, 60);
+  assert.equal("routeRate" in parse(row.route), false);
+  assert.equal("routeRate" in parse({ ...row.route, rate: 0 }), false);
+  assert.equal("routeRate" in parse({ ...row.route, rate: "n/a" }), false);
+  assert.equal("routeRate" in parse(null), false);
+});
+
+test("DOP amounts use the route rate and are omitted without a usable rate", () => {
+  const { toDopAmount } = loadFeature("src/lib/deliveries/types.ts", {});
+  assert.equal(toDopAmount(50, 59.25), 2962.5);
+  assert.equal(toDopAmount(10.01, 58.333), 583.91);
+  assert.equal(toDopAmount(50, undefined), undefined);
+  assert.equal(toDopAmount(50, 0), undefined);
+});
+
+test("sender name and phones are read from the row and null when absent", () => {
+  const { parseAssignedDeliveryBarcodes } = loadFeature("src/lib/deliveries/schemas/assigned-delivery-barcode.schema.ts", {});
+  const sender = { name: " Juan Gomez ", address: { address1: "1 Main St" }, phones: [{ number: "7185550100", displayNumber: "(718) 555-0100" }, { number: "" }] };
+  assert.deepEqual(parseAssignedDeliveryBarcodes([{ ...row, sender }])[0].sender, {
+    name: "Juan Gomez",
+    phones: [{ number: "7185550100", displayNumber: "(718) 555-0100" }],
+  });
+  assert.equal(parseAssignedDeliveryBarcodes([row])[0].sender, null);
+  assert.equal(parseAssignedDeliveryBarcodes([{ ...row, sender: null }])[0].sender, null);
+});
+
 test("rows that are not barcodes are rejected", () => {
   const { parseAssignedDeliveryBarcodes } = loadFeature("src/lib/deliveries/schemas/assigned-delivery-barcode.schema.ts", {});
   assert.throws(() => parseAssignedDeliveryBarcodes([{}]));

@@ -28,6 +28,8 @@ type RecordViewSheetHeaderProps = {
   title: React.ReactNode;
   description?: React.ReactNode;
   meta?: React.ReactNode;
+  /** Record-level shortcuts shown under the title/meta (e.g. Create invoice). */
+  actions?: React.ReactNode;
 };
 
 type RecordViewSheetBodyProps = {
@@ -107,7 +109,7 @@ export function RecordViewSheetContent({ children, className }: RecordViewSheetC
   );
 }
 
-export function RecordViewSheetHeader({ title, description, meta, compact = false }: RecordViewSheetHeaderProps) {
+export function RecordViewSheetHeader({ title, description, meta, actions, compact = false }: RecordViewSheetHeaderProps) {
   return (
     <div className={cn("shrink-0 border-b border-border bg-card", compact ? "px-5 py-3" : "px-6 pb-4 pt-6")}>
       <SheetHeader className={cn("pr-10 text-left", compact ? "space-y-1.5" : "space-y-2.5")}>
@@ -118,6 +120,7 @@ export function RecordViewSheetHeader({ title, description, meta, compact = fals
           </SheetDescription>
         ) : null}
         {meta ? <div className="flex flex-wrap items-center gap-2 pt-1">{meta}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-2 pt-1">{actions}</div> : null}
       </SheetHeader>
     </div>
   );

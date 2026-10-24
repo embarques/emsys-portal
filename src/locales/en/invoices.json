@@ -95,7 +95,19 @@
     "editInvoiceNamed": "Edit invoice {{number}}",
     "addInvoice": "Add invoice",
     "untitledTab": "Invoice",
-    "invoiceNotFound": "Invoice not found."
+    "invoiceNotFound": "Invoice not found.",
+    "loadingAppointment": "Loading appointment…",
+    "appointmentLoadError": "Unable to load this appointment."
+  },
+  "assigned": {
+    "loading": "Preparing your invoice…",
+    "detailsHint": "Filled in automatically from today's date, the latest container, and your route or office assignment.",
+    "errors": {
+      "appointmentRequired": "Invoices can only be created from an appointment.",
+      "employeeNotLinked": "Your user is not linked to an employee. Ask an administrator to link your employee record before creating invoices.",
+      "noAssignment": "You are not on today's pickup route and are not an office or warehouse employee. Ask an administrator to assign you before creating invoices.",
+      "noContainer": "No container is available yet. Ask an administrator to create one before creating invoices."
+    }
   },
   "form": {
     "design": {
