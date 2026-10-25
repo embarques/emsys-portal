@@ -1,0 +1,12 @@
+import React from "react";
+import {createRoot} from "react-dom/client";
+import {Provider} from "react-redux";
+import {QueryClient,QueryClientProvider} from "@tanstack/react-query";
+import {store} from "@/lib/store/store";
+import {setAuthTransport} from "@/lib/store/auth/auth-slice";
+import {FeedbackProvider} from "@/components/app-shell/feedback-provider";
+import {TooltipProvider} from "@/components/ui/tooltip";
+import {InvoicesWorkspace} from "@/components/invoices/invoices-workspace";
+store.dispatch(setAuthTransport({idToken:"fixture-token",companyId:"fixture-company"}));
+const client=new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false}}});
+createRoot(document.getElementById("root")!).render(<Provider store={store}><QueryClientProvider client={client}><TooltipProvider><FeedbackProvider><main className="p-4"><InvoicesWorkspace /></main></FeedbackProvider></TooltipProvider></QueryClientProvider></Provider>);

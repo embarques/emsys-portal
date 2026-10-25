@@ -7,7 +7,7 @@ export const MOBILE_INVOICE_BATCH_SIZE = 50;
 export function mobileInvoiceParams(params: InvoiceListParams, view: MobileInvoiceView): InvoiceListParams {
   const filters: TableFilterRowState[] = [...(params.filterRows ?? [])];
   if (view !== "all") {
-    filters.push({ id: "mobile-invoice-view", join: "and", field: view === "incomplete" ? "registration" : "balance", operator: view === "due" ? "gt" : "eq", value: view === "incomplete" ? "PENDING" : "0" });
+    filters.push({ id: "mobile-invoice-view", join: "and", field: view === "incomplete" ? "registration" : view === "paid" ? "paidStatus" : "balance", operator: view === "due" ? "gt" : "eq", value: view === "incomplete" ? "PENDING" : view === "paid" ? "CLOSED" : "0" });
   }
   return { ...params, page: 1, offset: undefined, limit: MOBILE_INVOICE_BATCH_SIZE, sort: "date:desc,id:desc", filterRows: filters };
 }

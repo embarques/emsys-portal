@@ -12,7 +12,7 @@ function load(file, dependencies={}) {
 const model=load("src/lib/invoices/mobile-list.ts");
 test("mobile filters use server-side financial and registration fields with stable ordering",()=>{
  const base={page:9,offset:400,limit:200,filterRows:[{id:"branch",field:"branch.id",operator:"eq",value:"3",join:"and"}]};
- for(const view of ["all","due","paid","incomplete"]){const params=model.mobileInvoiceParams(base,view);assert.equal(params.page,1);assert.equal(params.offset,undefined);assert.equal(params.limit,50);assert.equal(params.sort,"date:desc,id:desc");assert.equal(params.filterRows[0].field,"branch.id");if(view!=="all") assert.equal(params.filterRows.at(-1).field,view==="incomplete"?"registration":"balance");}
+ for(const view of ["all","due","paid","incomplete"]){const params=model.mobileInvoiceParams(base,view);assert.equal(params.page,1);assert.equal(params.offset,undefined);assert.equal(params.limit,50);assert.equal(params.sort,"date:desc,id:desc");assert.equal(params.filterRows[0].field,"branch.id");if(view!=="all") assert.equal(params.filterRows.at(-1).field,view==="incomplete"?"registration":view==="paid"?"paidStatus":"balance");}
  assert.equal(model.mobileInvoiceParams(base,"incomplete").filterRows.at(-1).value,"PENDING");
  assert.equal(base.filterRows.length,1);
 });
@@ -24,16 +24,19 @@ test("continuous pagination stops at the total or empty pages and deduplicates w
  assert.deepEqual(model.uniqueMobileInvoices([{items:[a,b]},{items:[b,c]}]),[a,b,c]);
 });
 test("mobile query scopes cached pages to tenant and actor, gates access, and forwards cancellation",async()=>{
- let captured;let auth={companyId:"tenares",user:{uid:"elk"},loading:false,roleLoading:false,hasPermission:()=>true};const calls=[];
+ let captured;let transport={idToken:"fixture-token",companyId:"tenares"};let auth={companyId:"tenares",user:{uid:"elk"},loading:false,roleLoading:false,hasPermission:()=>true};const calls=[];
  const hook=load("src/lib/invoices/hooks/use-mobile-invoices.ts",{
   "@tanstack/react-query":{useInfiniteQuery:options=>{captured=options;return options;}},
   "@/lib/layout/workspace-tab-scope":{useWorkspaceTabQueriesEnabled:()=>true},
   "@/lib/auth/hooks/use-auth":{useAuth:()=>auth},
+  "@/lib/store/hooks":{useAppSelector:selector=>selector({auth:transport})},
   "@/lib/invoices/api/invoices-api":{fetchInvoices:async(...args)=>{calls.push(args);return {items:[],total:0};}},
   "@/lib/invoices/mobile-list":model,
  });
  hook.useMobileInvoices({limit:50},true);const first=captured.queryKey;assert.equal(captured.enabled,true);
  const controller=new AbortController();await captured.queryFn({pageParam:2,signal:controller.signal});assert.equal(calls[0][0].page,2);assert.equal(calls[0][1],controller.signal);
  auth={...auth,companyId:"other"};hook.useMobileInvoices({limit:50},true);assert.notDeepEqual(captured.queryKey,first);
+ assert.equal(captured.enabled,false);
+ transport={idToken:"fixture-token",companyId:"other"};hook.useMobileInvoices({},true);assert.equal(captured.enabled,true);
  auth={...auth,hasPermission:()=>false};hook.useMobileInvoices({},true);assert.equal(captured.enabled,false);
 });
