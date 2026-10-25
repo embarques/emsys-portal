@@ -1,4 +1,5 @@
 export const API_ENDPOINTS = {
+ FINANCIAL_ACTIVITY: "/financial-activity",
   HEALTH: "/health",
   CURRENT_COMPANY_POLICY: "/companies/current/policy",
   CURRENT_COMPANY: "/companies/current",

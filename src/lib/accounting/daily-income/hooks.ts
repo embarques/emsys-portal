@@ -14,7 +14,7 @@ import {
   fetchDailyIncomeJournal,
   fetchDailyIncomeJournals,
   fetchDailyIncomeInvoiceRegistration,
-  fetchIncomeStatement,
+  fetchIncomeStatement,fetchCurrentIncomeStatement,
   fetchOpenIncomeStatements,
   fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
@@ -33,7 +33,7 @@ import { queryKeys } from "@/lib/query/query-keys";
 import { useAppSelector } from "@/lib/store/hooks";
 
 /** EMSYS API returns 403 when Authorization or x-company-id are not ready yet. */
-function useAccountingQueryEnabled(extraEnabled = true) {
+export function useAccountingQueryEnabled(extraEnabled = true) {
   const { loading, companyId, roleLoading } = useAuth();
   const { idToken, companyId: transportCompanyId } = useAppSelector((state) => state.auth);
 
@@ -59,6 +59,7 @@ export function useIncomeStatement(branchId: number, date: string) {
 
   return useWorkspaceQuery({
     queryKey: queryKeys.accounting.incomeStatement(String(branchId), date),
+    refetchInterval: 30000,
     queryFn: () => fetchIncomeStatement(branchId, date),
     enabled: queryEnabled,
   });
@@ -214,3 +215,5 @@ export function useSessionDailyIncomeTransactions(statementId: number, sessionId
     },
   }).filter((entry) => companyId && user?.uid && entry.journal && entry.statementId === statementId).sort((a, b) => b.savedAt - a.savedAt);
 }
+
+export function useCurrentIncomeStatement(branchId:number){const {companyId}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0);return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:()=>fetchCurrentIncomeStatement(branchId),enabled,refetchInterval:30000});}

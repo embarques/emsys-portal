@@ -136,8 +136,9 @@ function normalizeIncomeStatement(value: unknown): DailyIncomeStatement | null {
   const status = stringValue(raw.status).toUpperCase();
   return {
     id,
-    date: stringValue(raw.date).slice(0, 10),
-    status: status === "CLOSED" || status === "CLOSE" ? "CLOSED" : "OPEN",
+    date: stringValue(raw.businessDate || raw.date).slice(0, 10),
+ automated:raw.automated===true, periodStart:stringValue(raw.periodStart),periodEnd:stringValue(raw.periodEnd),businessDate:stringValue(raw.businessDate),timezone:stringValue(raw.timezone),
+    status: status === "INACTIVE" || status === "CLOSED" || status === "CLOSE" ? "CLOSED" : "OPEN",
     branch: normalizeLookup(raw.branch),
     currency: stringValue(raw.currency) || "USD",
     rate: numberValue(raw.rate),
@@ -439,7 +440,7 @@ export async function fetchOpenIncomeStatements(branchId: number, page: number) 
       sort: { field: "date", direction: "asc" },
       filterGroups: [{ operator: "and", filters: [
         { field: "branch.id", operator: "eq", value: branchId },
-        { field: "status", operator: "eq", value: "OPEN" },
+        { field: "status", operator: "in", value: ["open","OPEN","active"] },
       ] }],
     }),
   );
@@ -451,34 +452,9 @@ export async function fetchOpenIncomeStatements(branchId: number, page: number) 
   };
 }
 
-export async function fetchIncomeStatement(branchId: number, date: string) {
-  if (!branchId || !date) return null;
-  const isoDate = date.slice(0, 10);
-
-  try {
-    const listQuery = buildApiListQuery({
-      page: 1,
-      limit: 500,
-      sort: { field: "date", direction: "desc" },
-    });
-    const listPayload = await apiClient.get<ApiEnvelope>(
-      `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}?${listQuery}`,
-    );
-    for (const row of unwrapArray(listPayload)) {
-      const statement = normalizeIncomeStatement(row);
-      if (
-        statement &&
-        statement.date.slice(0, 10) === isoDate &&
-        statement.branch?.id === branchId
-      ) {
-        return statement;
-      }
-    }
-  } catch {
-    // Fall through to POST /search.
-  }
-
-  return searchIncomeStatementForDate(branchId, isoDate);
+export async function fetchIncomeStatement(branchId:number,date:string){
+ if(!branchId||!date)return null;
+ return searchIncomeStatementForDate(branchId,date.slice(0,10));
 }
 
 /** Fetch only the requested branch/date; used by the delivery payment step. */
@@ -493,7 +469,7 @@ export async function searchIncomeStatementForDate(branchId: number, isoDate: st
           operator: "and",
           filters: [
             { field: "branch.id", operator: "eq", value: branchId },
-            { field: "date", operator: "eq", value: isoDate },
+            {operator:"or",filters:[{field:"businessDate",operator:"eq",value:isoDate},{operator:"and",filters:[{field:"automated",operator:"neq",value:true},{field:"date",operator:"eq",value:isoDate}]}]},
           ],
         },
       ],
@@ -506,22 +482,10 @@ export async function searchIncomeStatementForDate(branchId: number, isoDate: st
 }
 
 /** Prefer an OPEN closeout for this branch/date; otherwise keep `fallbackId`. */
-export async function resolveOpenIncomeStatementId(
-  branchId: number,
-  date: string,
-  fallbackId = 0,
-): Promise<number> {
-  try {
-    const statement = await fetchIncomeStatement(branchId, date);
-    if (statement?.status === "OPEN" && statement.id > 0) {
-      return statement.id;
-    }
-  } catch {
-    // Keep the previously linked statement when lookup fails.
-  }
-
-  return fallbackId > 0 ? fallbackId : 0;
+export async function resolveOpenIncomeStatementId(branchId:number):Promise<number>{
+ const statement=await fetchCurrentIncomeStatement(branchId);return statement?.status==="OPEN"?statement.id:0;
 }
+export async function fetchCurrentIncomeStatement(branchId:number){if(!branchId)return null;const payload=await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/current?branchId=${branchId}`);return normalizeIncomeStatement(unwrap(payload));}
 
 function incomeStatementPayload(values: DailyIncomeStatementValues) {
   return {
@@ -756,9 +720,8 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   const refNumber = resolveJournalRefNumberForWrite(values);
 
   return {
-    incomeStatementId: statement.id,
-    incomeStatement: { id: statement.id },
-    date: statement.date,
+    // The server selects today's closeout; the viewed historical date is never posted.
+    ...(statement.branch?.id ? { branch:{id:statement.branch.id} } : {}),
     transactionType: values.transactionType,
     amount,
     ...(refNumber ? { refNumber } : {}),

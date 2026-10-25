@@ -1541,10 +1541,7 @@ function buildInvoiceWritePayload(
     throw new Error("Sender is required.");
   }
 
-  const incomeStatementId = context.incomeStatement?.id ?? 0;
-  if (options.requireIncomeStatement && (!Number.isInteger(incomeStatementId) || incomeStatementId <= 0)) {
-    throw new Error("A Daily Income statement is required.");
-  }
+  // Ordinary writes leave accounting-period assignment to the server.
 
   const lineItems = values.lineItems.filter(
     (item) => item.itemName.trim() || item.itemId || resolveLineTotal(item) > 0,
@@ -1584,6 +1581,8 @@ function buildInvoiceWritePayload(
   if (!Number.isFinite(payment) || payment < 0) {
     throw new Error("Amount paid must be 0 or greater.");
   }
+ if(!options.isUpdate&&!registered&&payment>0){throw new Error("Record the payment in Daily Income before completing this invoice.");}
+
 
   const balance = computeInvoiceBalance(cost, discount, payment);
   if (balance < 0) {
@@ -1618,9 +1617,6 @@ function buildInvoiceWritePayload(
 
   applyInvoicePickupAssignment(payload, context.pickupAssignment, Boolean(options.isUpdate));
 
-  if (incomeStatementId > 0) {
-    payload.incomeStatement = { id: incomeStatementId };
-  }
 
   if (values.receiver) {
     payload.receiver = buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER);
