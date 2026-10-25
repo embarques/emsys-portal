@@ -231,6 +231,9 @@ export const queryKeys = {
       [...queryKeys.invoices.all, "assigned-context", companyId, actorId, date] as const,
   },
   accounting: {
+ financialActivity:(company:string,filters:unknown,page:number)=>["accounting","financial-activity",company,filters,page] as const,
+ financialHistory:(company:string,id:string)=>["accounting","financial-history",company,id] as const,
+ closeoutAutomation:(company:string)=>["accounting","closeout-automation",company] as const,
     all: ["accounting"] as const,
     incomeStatement: (branchCode: string, date: string) =>
       [...queryKeys.accounting.all, "income-statement", branchCode, date] as const,

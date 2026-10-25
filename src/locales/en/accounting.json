@@ -556,8 +556,8 @@
       "noCloseout": "No closeout for this date"
     },
     "status": {
-      "open": "OPEN",
-      "closed": "CLOSED",
+      "open": "Active",
+      "closed": "Inactive",
       "badge": "{{status}} · #{{id}}"
     },
     "summary": {
@@ -943,5 +943,61 @@
       "singleOpenBlocking": "Another open closeout (#{{id}} on {{date}}) is blocking create. Close it first, then try again.",
       "closeOther": "Close other open closeout"
     }
+  },
+  "financialActivity": {
+    "title": "Pending Financial Activity",
+    "description": "Outstanding collections, cash custody and payment clearing across all dates.",
+    "employee": "Employee",
+    "branch": "Branch",
+    "from": "Transaction date from",
+    "through": "Transaction date through",
+    "minimum": "Minimum outstanding amount",
+    "age": "Minimum age (days)",
+    "method": "Payment method",
+    "all": "All methods",
+    "reset": "Reset filters",
+    "date": "Transaction date",
+    "amount": "Amount",
+    "outstanding": "Outstanding",
+    "actions": "Actions",
+    "activity": "Activity and reconciliation",
+    "empty": "No unresolved activity matches these filters.",
+    "loading": "Loading activity…",
+    "previous": "Previous",
+    "next": "Next",
+    "clearingHelp": "Clear payments using their existing payment directories:",
+    "checks": "Checks",
+    "deposits": "Deposits",
+    "cards": "Credit cards",
+    "historyHelp": "Collection and clearing events preserve the original transaction and closeout.",
+    "automation": "Automatic end-of-day closing",
+    "automationHelp": "Close the previous day and open the new day at midnight in the configured timezone. An administrator must install the server schedule before enabling this feature.",
+    "enabled": "Enable automatic daily closeouts",
+    "timezone": "Timezone",
+    "currency": "Currency",
+    "rate": "Exchange rate",
+    "save": "Save",
+    "saved": "Settings saved",
+    "action": "Action",
+    "fromEmployee": "Responsible employee handing over cash",
+    "toEmployee": "Employee receiving cash",
+    "handover": "Pending cash handover",
+    "choose": "Choose a handover",
+    "reference": "Reference or correction reason",
+    "events": {
+      "RECORDED": "Recorded",
+      "COLLECTED": "Collected",
+      "HANDED_OVER": "Cash handed over",
+      "VERIFIED": "Received and verified",
+      "CLEARED": "Cleared",
+      "REJECTED": "Handover rejected",
+      "REVERSED": "Reversing adjustment"
+    },
+    "branchOverrides": "Branch timezone and currency overrides",
+    "companyDefaults": "Use company defaults",
+    "unknownCurrency": "Unspecified",
+    "noCurrentCloseout": "No current daily closeout is available. Review Daily Income or scheduled closing status.",
+    "occurrenceDate": "Actual transaction date",
+    "refresh": "Refresh"
   }
 }

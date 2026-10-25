@@ -8,6 +8,7 @@
   },
   "loading": "Cargando...",
   "actions": {
+    "retry": "Reintentar",
     "add": "Agregar",
     "edit": "Editar",
     "view": "Ver",

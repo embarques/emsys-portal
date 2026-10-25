@@ -812,7 +812,11 @@ function parseInvoicePathId(invoiceId: string): string {
   return id;
 }
 
-export async function fetchInvoices(params: InvoiceListParams = {}): Promise<PaginatedResult<Invoice>> {
+export async function fetchInvoices(
+  params: InvoiceListParams = {},
+  signal?: AbortSignal,
+): Promise<PaginatedResult<Invoice>> {
+  const requestConfig = { signal, timeout: 60_000 };
   if (shouldUseInvoiceSearch(params)) {
     const page = params.page ?? DEFAULT_INVOICE_LIST_PARAMS.page;
     const limit = params.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit;
@@ -822,6 +826,7 @@ export async function fetchInvoices(params: InvoiceListParams = {}): Promise<Pag
     const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
       `${API_ENDPOINTS.INVOICES}/search?${paginationQuery}`,
       buildInvoiceSearchBody(params),
+      requestConfig,
     );
 
     return normalizePaginatedInvoices(response);
@@ -830,6 +835,7 @@ export async function fetchInvoices(params: InvoiceListParams = {}): Promise<Pag
   const query = buildInvoicesQuery(params);
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.INVOICES}?${query}`,
+    requestConfig,
   );
 
   return normalizePaginatedInvoices(response);
@@ -1541,10 +1547,7 @@ function buildInvoiceWritePayload(
     throw new Error("Sender is required.");
   }
 
-  const incomeStatementId = context.incomeStatement?.id ?? 0;
-  if (options.requireIncomeStatement && (!Number.isInteger(incomeStatementId) || incomeStatementId <= 0)) {
-    throw new Error("A Daily Income statement is required.");
-  }
+  // Ordinary writes leave accounting-period assignment to the server.
 
   const lineItems = values.lineItems.filter(
     (item) => item.itemName.trim() || item.itemId || resolveLineTotal(item) > 0,
@@ -1584,6 +1587,8 @@ function buildInvoiceWritePayload(
   if (!Number.isFinite(payment) || payment < 0) {
     throw new Error("Amount paid must be 0 or greater.");
   }
+ if(!options.isUpdate&&!registered&&payment>0){throw new Error("Record the payment in Daily Income before completing this invoice.");}
+
 
   const balance = computeInvoiceBalance(cost, discount, payment);
   if (balance < 0) {
@@ -1618,9 +1623,6 @@ function buildInvoiceWritePayload(
 
   applyInvoicePickupAssignment(payload, context.pickupAssignment, Boolean(options.isUpdate));
 
-  if (incomeStatementId > 0) {
-    payload.incomeStatement = { id: incomeStatementId };
-  }
 
   if (values.receiver) {
     payload.receiver = buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER);
