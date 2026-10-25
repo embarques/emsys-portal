@@ -61,6 +61,7 @@
     "settings": "Settings",
     "employeeDepartments": "Employee departments",
     "employeeTitles": "Employee titles",
-    "invoicePolicies": "Invoice policies"
+    "invoicePolicies": "Invoice policies",
+    "pendingFinancialActivity": "Pending Financial Activity"
   }
 }

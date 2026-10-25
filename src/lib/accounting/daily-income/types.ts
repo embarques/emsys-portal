@@ -21,6 +21,7 @@ export type DailyIncomePartyRef = {
 export type IncomeStatementStatus = "OPEN" | "CLOSED";
 
 export type DailyIncomeStatement = {
+ automated?:boolean; periodStart?:string; periodEnd?:string; businessDate?:string; timezone?:string;
   id: number;
   date: string;
   status: IncomeStatementStatus;

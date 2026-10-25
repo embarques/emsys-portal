@@ -527,3 +527,11 @@ forms, tables and details. Daily routes expose `supervisor` alongside `driver`.
 Driver/supervisor combined assignments and singleton lead-role behavior remain
 supported. Deploy with the API supervisor contract change; legacy role data must
 be migrated before switching clients.
+
+### Automatic daily closeouts and pending financial activity
+
+Daily closeout scheduling lives in the API CLI (`daily-income end-of-day`) and cron. Each tenant can opt in through the financial activity workspace; settings include company defaults and API-supported branch overrides for timezone, currency and rate. Scheduling infrastructure must be installed before activation.
+
+New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Posted transactions cannot be edited/deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
+
+Pending Financial Activity lists unresolved amounts across all dates with server-side filters and pagination. Collection, employee cash handover, receiving-employee verification, expenses and payment clearing remain separate from daily accounting totals. Method-specific clearing directories retain their update permissions. Financial activity has dedicated view/update permissions; generic reversals additionally require journal-create permission. Reconciliation events preserve the original period and invoice payments are applied/reversed transactionally.

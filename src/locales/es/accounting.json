@@ -556,8 +556,8 @@
       "noCloseout": "Sin cierre para esta fecha"
     },
     "status": {
-      "open": "ABIERTO",
-      "closed": "CERRADO",
+      "open": "Activo",
+      "closed": "Inactivo",
       "badge": "{{status}} · #{{id}}"
     },
     "summary": {
@@ -943,5 +943,61 @@
       "singleOpenBlocking": "Otro cuadre abierto (#{{id}} el {{date}}) impide crear uno nuevo. Ciérrelo primero e intente de nuevo.",
       "closeOther": "Cerrar el otro cuadre abierto"
     }
+  },
+  "financialActivity": {
+    "title": "Actividad financiera pendiente",
+    "description": "Cobros, custodia de efectivo y pagos pendientes de todas las fechas.",
+    "employee": "Empleado",
+    "branch": "Sucursal",
+    "from": "Fecha de transacción desde",
+    "through": "Fecha de transacción hasta",
+    "minimum": "Monto pendiente mínimo",
+    "age": "Antigüedad mínima (días)",
+    "method": "Método de pago",
+    "all": "Todos los métodos",
+    "reset": "Restablecer filtros",
+    "date": "Fecha de transacción",
+    "amount": "Monto",
+    "outstanding": "Pendiente",
+    "actions": "Acciones",
+    "activity": "Actividad y conciliación",
+    "empty": "No hay actividad pendiente para estos filtros.",
+    "loading": "Cargando actividad…",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "clearingHelp": "Confirme los pagos en sus directorios:",
+    "checks": "Cheques",
+    "deposits": "Depósitos",
+    "cards": "Tarjetas de crédito",
+    "historyHelp": "Los eventos de cobro y confirmación conservan la transacción y su cuadre original.",
+    "automation": "Cierre automático de fin de día",
+    "automationHelp": "Cierra el día anterior y abre el nuevo a medianoche en la zona horaria configurada. Un administrador debe instalar la programación del servidor antes de activar esta función.",
+    "enabled": "Activar los cuadres diarios automáticos",
+    "timezone": "Zona horaria",
+    "currency": "Moneda",
+    "rate": "Tasa de cambio",
+    "save": "Guardar",
+    "saved": "Configuración guardada",
+    "action": "Acción",
+    "fromEmployee": "Empleado responsable que entrega el efectivo",
+    "toEmployee": "Empleado que recibe el efectivo",
+    "handover": "Entrega de efectivo pendiente",
+    "choose": "Seleccione una entrega",
+    "reference": "Referencia o motivo de corrección",
+    "events": {
+      "RECORDED": "Registrado",
+      "COLLECTED": "Cobrado",
+      "HANDED_OVER": "Efectivo entregado",
+      "VERIFIED": "Recibido y verificado",
+      "CLEARED": "Confirmado",
+      "REJECTED": "Entrega rechazada",
+      "REVERSED": "Asiento de reversión"
+    },
+    "branchOverrides": "Zona horaria y moneda por sucursal",
+    "companyDefaults": "Usar valores de la empresa",
+    "unknownCurrency": "Sin especificar",
+    "noCurrentCloseout": "No hay un cuadre diario actual disponible. Revise el ingreso diario o el cierre programado.",
+    "occurrenceDate": "Fecha real de la transacción",
+    "refresh": "Actualizar"
   }
 }

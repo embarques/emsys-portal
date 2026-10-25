@@ -61,6 +61,7 @@
     "settings": "Configuración",
     "employeeDepartments": "Departamentos de empleados",
     "employeeTitles": "Cargos de empleados",
-    "invoicePolicies": "Políticas de factura"
+    "invoicePolicies": "Políticas de factura",
+    "pendingFinancialActivity": "Actividad financiera pendiente"
   }
 }

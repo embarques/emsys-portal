@@ -12,7 +12,6 @@ import {
 import { useFormViewport } from "@/hooks/use-form-viewport";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
-import { resolveOpenIncomeStatementId } from "@/lib/accounting/daily-income/api";
 import type { InvoiceFormSubmitContext } from "@/lib/invoices/invoice-daily-income-context";
 import { fetchBranches } from "@/lib/branches/api/branches-api";
 import { resolveUserBranchRef } from "@/lib/branches/user-branch";
@@ -315,15 +314,7 @@ export function InvoiceCreateWizard({
           ? buildAssignedInvoiceWriteContext(assignedContext)
           : await buildInvoiceWriteContext(values);
       const registration = submitContext?.dailyIncomeRegistration ?? null;
-      const fallbackIncomeStatementId =
-        submitContext?.incomeStatementId ??
-        registration?.incomeStatementId ??
-        0;
-      const incomeStatementId = await resolveOpenIncomeStatementId(
-        context.branch.id,
-        values.date,
-        fallbackIncomeStatementId,
-      );
+      const incomeStatementId = submitContext?.incomeStatementId ?? registration?.incomeStatementId ?? 0;
       const registeredInvoiceTotals =
         registration?.invoice && Number.isFinite(registration.invoice.cost)
           ? {
