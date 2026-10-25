@@ -6,6 +6,7 @@ const NUMERIC_OPERATORS = ["eq", "neq", "gte", "lte", "gt", "lt"] as const;
 const PHONE_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 
 export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
+  { field: "registration", label: "Registration", operators: ["eq", "neq"], valueType: "select", options: [{ value: "PENDING", label: "Incomplete" }, { value: "COMPLETED", label: "Complete" }] },
   {
     field: "number",
     label: "Invoice number",

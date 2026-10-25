@@ -2,13 +2,13 @@
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check,
   CircleAlert,
+  Ellipsis,
   FileText,
-  Filter,
   Plus,
   Printer,
   Receipt,
+  SlidersHorizontal,
   RefreshCw,
   Search,
   Tags,
@@ -39,6 +39,7 @@ import {
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -52,12 +53,9 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
-  computeInvoiceKpis,
   formatInvoiceCount,
-  formatInvoiceDate,
   formatInvoiceMoney,
   formatInvoiceItemCount,
-  formatInvoicePartyAddressLine,
   formatInvoicePartyAddressLines,
   formatInvoiceTabLabel,
   getContainerLabelForInvoice,
@@ -66,8 +64,6 @@ import {
   getInvoiceDiscountMoneyClass,
   getInvoicePaidMoneyClass,
   getInvoicePaidStatusBadgeClass,
-  getInvoicePaidStatusLabel,
-  getInvoicePartyDisplayPhone,
   getInvoiceSubtotal,
   getInvoiceTotalMoneyClass,
   getPaymentLocationLabel,
@@ -123,6 +119,11 @@ import type { OrderParty } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { useTranslation } from "@/lib/i18n";
+
+import { MobileInvoiceRow } from "@/components/invoices/mobile-invoice-row";
+import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { useMobileInvoices } from "@/lib/invoices/hooks/use-mobile-invoices";
+import { mobileInvoiceParams, uniqueMobileInvoices, type MobileInvoiceView } from "@/lib/invoices/mobile-list";
 
 const LEGACY_SYNC_PERMISSION_ERROR_NAMES = ["canSyncLegacyInvoices"] as const;
 const LEGACY_SYNC_FALLBACK_TOTAL = 1;
@@ -276,33 +277,6 @@ function formatInvoiceTableDate(date: string): string {
     .replaceAll("/", "-");
 }
 
-function getInvoiceMobileInitials(invoice: Invoice): string {
-  const name =
-    invoice.sender?.name?.trim() ||
-    getInvoicePrimaryReceiver(invoice)?.name?.trim() ||
-    invoice.invoiceNumber;
-  const parts = name.split(/\s+/).filter(Boolean);
-  const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
-  return initials || "IN";
-}
-
-function getInvoiceMobilePartyName(invoice: Invoice, emptyLabel: string): string {
-  return invoice.sender?.name?.trim() || getInvoicePrimaryReceiver(invoice)?.name?.trim() || emptyLabel;
-}
-
-function getInvoiceMobilePhone(invoice: Invoice, emptyLabel: string): string {
-  const senderPhone = getInvoicePartyDisplayPhone(invoice.sender);
-  if (senderPhone !== "—") return senderPhone;
-
-  const phone = invoice.sender.phones.find((entry) => entry.number?.trim());
-  return phone?.number?.trim() || emptyLabel;
-}
-
-function getInvoiceMobileAddress(invoice: Invoice, emptyLabel: string): string {
-  const addressLine = formatInvoicePartyAddressLine(invoice.sender);
-  return addressLine === "—" ? emptyLabel : addressLine;
-}
-
 function formatInvoiceMonth(date: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -313,21 +287,7 @@ function formatInvoiceMonth(date: string): string {
 function groupInvoicesByMonth(invoices: Invoice[]): Array<{ month: string; invoices: Invoice[] }> {
   const groups: Array<{ month: string; invoices: Invoice[] }> = [];
   const groupIndexByMonth = new Map<string, number>();
-  const sortedInvoices = [...invoices].sort((left, right) => {
-    const leftTime = new Date(`${left.date}T12:00:00`).getTime();
-    const rightTime = new Date(`${right.date}T12:00:00`).getTime();
-
-    if (rightTime !== leftTime) {
-      return rightTime - leftTime;
-    }
-
-    return right.invoiceNumber.localeCompare(left.invoiceNumber, undefined, {
-      numeric: true,
-      sensitivity: "base",
-    });
-  });
-
-  for (const invoice of sortedInvoices) {
+  for (const invoice of invoices) {
     const month = formatInvoiceMonth(invoice.date);
     const existingIndex = groupIndexByMonth.get(month);
 
@@ -343,140 +303,6 @@ function groupInvoicesByMonth(invoices: Invoice[]): Array<{ month: string; invoi
   return groups;
 }
 
-function getInvoiceMobileAvatarClass(invoice: Invoice): string {
-  const avatarClasses = [
-    "bg-blue-500 text-white",
-    "bg-fuchsia-500 text-white",
-    "bg-violet-500 text-white",
-    "bg-cyan-600 text-white",
-    "bg-emerald-600 text-white",
-  ];
-  const seed = Array.from(invoice.invoiceId || invoice.invoiceNumber).reduce(
-    (total, character) => total + character.charCodeAt(0),
-    0,
-  );
-
-  return avatarClasses[seed % avatarClasses.length] ?? avatarClasses[0];
-}
-
-function MobileInvoiceRow({
-  invoice,
-  onOpen,
-  selected,
-  selectionMode,
-  onToggleSelected,
-}: {
-  invoice: Invoice;
-  onOpen: (invoice: Invoice) => void;
-  selected: boolean;
-  selectionMode: boolean;
-  onToggleSelected: (invoiceId: string, checked: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  const status = resolveInvoicePaidStatus(invoice);
-  const balance = getInvoiceBalance(invoice);
-  const emptyLabel = t("common.empty.dash");
-  const isClosed = status === "closed";
-  const invoiceId = invoice.invoiceId;
-
-  return (
-    <div
-      className={cn(
-        "grid w-full items-start gap-3 border-b border-border/70 px-1 py-4 text-left transition-colors active:bg-muted/50 last:border-b-0",
-        "grid-cols-[2.25rem_3.75rem_minmax(0,1fr)_auto]",
-        selected && "bg-primary/5",
-      )}
-    >
-      <button
-        type="button"
-        className={cn(
-          "mt-1 flex size-7 items-center justify-center rounded-full border text-primary",
-          selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
-        )}
-        onClick={() => onToggleSelected(invoiceId, !selected)}
-        aria-label={selected ? "Deselect invoice" : "Select invoice"}
-      >
-        {selected ? <Check className="size-4" /> : null}
-      </button>
-      <button
-        type="button"
-        className={cn(
-          "text-left",
-          "flex size-12 items-center justify-center rounded-full text-sm font-semibold shadow-xs",
-          getInvoiceMobileAvatarClass(invoice),
-        )}
-        onClick={() => {
-          if (selectionMode) {
-            onToggleSelected(invoiceId, !selected);
-            return;
-          }
-          onOpen(invoice);
-        }}
-      >
-        {getInvoiceMobileInitials(invoice)}
-      </button>
-      <button
-        type="button"
-        className="min-w-0 text-left"
-        onClick={() => {
-          if (selectionMode) {
-            onToggleSelected(invoiceId, !selected);
-            return;
-          }
-          onOpen(invoice);
-        }}
-      >
-        <span className={cn(
-          "block truncate text-lg font-bold leading-tight",
-          hasPendingRegistration(invoice) ? "text-red-600 dark:text-red-400" : "text-foreground",
-        )}>
-          {hasPendingRegistration(invoice) ? "*" : ""}
-          {invoice.invoiceNumber || emptyLabel}
-        </span>
-        <span className="mt-1 block truncate text-base font-medium uppercase leading-tight text-foreground/80">
-          {getInvoiceMobilePartyName(invoice, emptyLabel)}
-        </span>
-        <span className="mt-1 block truncate text-sm text-muted-foreground">
-          {formatInvoiceDate(invoice.date)}
-        </span>
-        <span className="mt-1 block truncate text-sm text-muted-foreground">
-          {getInvoiceMobilePhone(invoice, emptyLabel)}
-        </span>
-        <span className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground">
-          {getInvoiceMobileAddress(invoice, emptyLabel)}
-        </span>
-      </button>
-      <button
-        type="button"
-        className="flex flex-col items-end gap-2 pt-1 text-right"
-        onClick={() => {
-          if (selectionMode) {
-            onToggleSelected(invoiceId, !selected);
-            return;
-          }
-          onOpen(invoice);
-        }}
-      >
-        <span
-          className={cn(
-            "text-lg font-bold leading-none",
-            isClosed ? "text-emerald-600" : "text-rose-600",
-          )}
-        >
-          {formatInvoiceMoney(balance)}
-        </span>
-        <span
-          className={cn(
-            "text-sm font-semibold",
-            isClosed ? "text-emerald-600" : "text-rose-600",
-          )}
-        >
-          {getInvoicePaidStatusLabel(status)}
-        </span>
-      </button>
-    </div>
-  );
-}
 
 const defaultFilters: InvoiceFilterState = {
   query: "",
@@ -488,7 +314,7 @@ export function InvoicesWorkspace() {
   const { t } = useTranslation();
   const invoiceFilterFields = useInvoiceFilterFields();
   const { notifyAdded, notifyDeleted, notifyError, notifySuccess } = useFeedback();
-  const { hasPermission } = useAuth();
+  const { hasPermission, companyId } = useAuth();
   const canSyncLegacyInvoices = hasPermission(
     PERMISSIONS.invoicesSyncLegacy.name,
     PERMISSIONS.invoicesSyncLegacy.resourceType,
@@ -496,6 +322,10 @@ export function InvoicesWorkspace() {
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const isMobileViewport = useIsMobileViewport();
+  const [mobileView, setMobileView] = useState<MobileInvoiceView>("all");
+  const [mobileSelectMode, setMobileSelectMode] = useState(false);
+  const continuationRef = useRef<HTMLDivElement>(null);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
@@ -571,7 +401,22 @@ export function InvoicesWorkspace() {
     [deferredQuery, filters.paymentLocation, filters.rows, page, pageLimit, sort],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useInvoices(listParams);
+  const desktopQuery = useInvoices(listParams, { enabled: !isMobileViewport });
+  const mobileParams = useMemo(() => mobileInvoiceParams(listParams, mobileView), [listParams, mobileView]);
+  const mobileQuery = useMobileInvoices(mobileParams, isMobileViewport);
+  const mobileItems = useMemo(() => uniqueMobileInvoices(mobileQuery.data?.pages ?? []), [mobileQuery.data]);
+  const { isLoading, isError, error, isFetching } = isMobileViewport ? mobileQuery : desktopQuery;
+  const data = isMobileViewport ? { items: mobileItems, total: mobileQuery.data?.pages[0]?.total ?? 0 } : desktopQuery.data;
+  const { hasNextPage, isFetching: mobileFetching, isFetchNextPageError, fetchNextPage } = mobileQuery;
+  useEffect(() => {
+    const target = continuationRef.current;
+    if (!isMobileViewport || !target || !hasNextPage || mobileFetching || isFetchNextPageError) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) void fetchNextPage({ cancelRefetch: false });
+    }, { rootMargin: "180px" });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [isMobileViewport, hasNextPage, mobileFetching, isFetchNextPageError, fetchNextPage]);
   const invoiceStats = useInvoiceStats();
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
@@ -616,7 +461,7 @@ export function InvoicesWorkspace() {
   const isSaving = isDeleting || isPrinting || isLegacySyncing;
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(deferredQuery, filters.rows, filters.paymentLocation),
+    buildTableSelectionResetKey(deferredQuery, filters.rows, filters.paymentLocation, mobileView, companyId),
     setSelectedIds,
   );
 
@@ -667,7 +512,6 @@ export function InvoicesWorkspace() {
     "Invoices",
   );
 
-  const kpis = useMemo(() => computeInvoiceKpis(invoices), [invoices]);
 
   const selectedInvoices = useMemo(
     () => invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)),
@@ -1185,7 +1029,7 @@ export function InvoicesWorkspace() {
 
   return (
     <div>
-      <div className="[&>div>div>p]:max-md:hidden">
+      <div className="[&>div>div>p]:max-md:hidden [&>div]:max-md:flex-row [&>div]:max-md:items-center [&>div]:max-md:justify-between">
         <PageHeader
           title={t("invoices.title")}
           description={t("invoices.pages.description")}
@@ -1195,6 +1039,7 @@ export function InvoicesWorkspace() {
                 <Button
                   type="button"
                   variant="outline"
+                  className="hidden md:inline-flex"
                   onClick={handleSyncLegacyInvoices}
                   disabled={isSaving}
                 >
@@ -1206,9 +1051,10 @@ export function InvoicesWorkspace() {
                     : t("invoices.actions.syncLegacy")}
                 </Button>
               ) : null}
-              <Button onClick={openAddForm} disabled={isSaving}>
+              {canSyncLegacyInvoices ? <div className="md:hidden"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="size-11" aria-label={t("invoices.mobile.more")}><Ellipsis className="size-5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem disabled={isSaving} onSelect={() => void handleSyncLegacyInvoices()}><RefreshCw className="mr-2 size-4" />{t("invoices.actions.syncLegacy")}</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div> : null}
+              <Button onClick={openAddForm} disabled={isSaving} aria-label={t("invoices.workspace.addInvoice")} className="max-md:size-11 max-md:rounded-full max-md:p-0">
                 <Plus className="h-4 w-4" />
-                {t("invoices.workspace.addInvoice")}
+                <span className="hidden md:inline">{t("invoices.workspace.addInvoice")}</span>
               </Button>
             </div>
           }
@@ -1226,7 +1072,7 @@ export function InvoicesWorkspace() {
                 setPage(1);
               }}
               className="h-12 w-full rounded-xl border border-border/70 bg-card pl-12 pr-4 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-              placeholder={t("invoices.search.placeholder")}
+              placeholder={t("invoices.mobile.search")}
               aria-label="Search invoice"
             />
           </div>
@@ -1241,22 +1087,9 @@ export function InvoicesWorkspace() {
             onClick={() => setMobileFiltersOpen((open) => !open)}
             aria-label="Filter invoices"
           >
-            <Filter className="size-5" />
+            <SlidersHorizontal className="size-5" />
           </Button>
-          {canSyncLegacyInvoices ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-12 shrink-0 rounded-xl border-primary/30 text-primary shadow-xs"
-              onClick={handleSyncLegacyInvoices}
-              disabled={isSaving}
-              aria-label={t("invoices.actions.syncLegacy")}
-              title={t("invoices.actions.syncLegacy")}
-            >
-              <RefreshCw className={cn("size-5", isLegacySyncing && "animate-spin")} />
-            </Button>
-          ) : null}
+
         </div>
 
         {mobileFiltersOpen ? (
@@ -1296,24 +1129,14 @@ export function InvoicesWorkspace() {
           </TableFilterPanel>
         ) : null}
 
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-primary/15 bg-primary/10 px-4 py-4 text-primary shadow-xs">
-          <span className="text-base font-semibold">Outstanding receivables</span>
-          <span className="shrink-0 text-xl font-bold">
-            {isLoading ? "…" : formatInvoiceMoney(kpis.outstanding)}
-          </span>
+        <div className="flex items-center justify-between gap-3 rounded-[18px] bg-primary/10 px-4 py-[17px]">
+          <div><p className="text-[13px] font-medium">{t("invoices.mobile.outstanding")}</p><p className="mt-1 text-[11px] text-muted-foreground">{t("invoices.mobile.acrossAll")}</p></div>
+          <div className="shrink-0 text-right"><strong className="text-2xl font-semibold tracking-tight tabular-nums">{invoiceStats.isBalanceLoading ? "…" : invoiceStats.isError ? "—" : formatInvoiceMoney(invoiceStats.outstandingBalance)}</strong><span className="mt-0.5 block text-[10px] tracking-widest text-muted-foreground">USD</span></div>
         </div>
-
-        {!isLoading && !isError ? (
-          <TablePaginationControls
-            layout="mobile"
-            page={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={changePageSize}
-            disabled={isLoading}
-          />
-        ) : null}
+        <div className="flex rounded-xl border border-border/70 bg-card p-1" aria-label={t("invoices.mobile.views")}>
+          {(["all", "due", "paid", "incomplete"] as const).map(view => <button type="button" key={view} aria-pressed={mobileView === view} className={cn("min-h-11 flex-1 rounded-lg px-1 text-[11px]", mobileView === view ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground")} onClick={() => { setMobileView(view); setSelectedIds([]); }}>{t(`invoices.mobile.${view}`)}</button>)}
+        </div>
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground"><span>{t("invoices.mobile.count", { count: totalInvoices })}</span><button type="button" className="min-h-10 px-2 text-primary" onClick={() => { setMobileSelectMode(value => !value); setSelectedIds([]); }}>{t(mobileSelectMode ? "invoices.mobile.done" : "invoices.mobile.select")}</button></div>
 
         {!isLoading && !isError && invoices.length > 0 && selectedCount > 0 ? (
           <TableSelectionToolbar
@@ -1338,9 +1161,10 @@ export function InvoicesWorkspace() {
         ) : null}
 
         <div className="rounded-xl bg-background">
-          {isError ? (
+          {isError && invoices.length === 0 ? (
             <div className="px-4 py-8 text-sm text-destructive">
-              {normalizeApiError(error).message}
+              <p role="alert">{normalizeApiError(error).message}</p>
+              <Button variant="ghost" onClick={() => void mobileQuery.refetch()}>{t("invoices.mobile.retry")}</Button>
             </div>
           ) : isLegacySyncing ? (
             legacySyncLoader
@@ -1368,29 +1192,30 @@ export function InvoicesWorkspace() {
               No invoices match your search or filters.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {mobileInvoiceGroups.map((group, groupIndex) => (
                 <section
                   key={group.month}
                   aria-label={group.month}
-                  className="border-b border-border pb-2 last:border-b-0 last:pb-0"
+                  className="space-y-2"
                 >
                   <h2
                     className={cn(
-                      "px-1 pb-1 text-lg font-semibold text-muted-foreground",
+                      "px-1 pb-1 text-xs font-semibold text-foreground",
                       groupIndex === 0 ? "pt-0" : "pt-4",
                     )}
                   >
                     {group.month}
                   </h2>
-                  <div>
+                  <div className="overflow-hidden rounded-[18px] border border-border/70">
                     {group.invoices.map((invoice) => (
                       <MobileInvoiceRow
                         key={invoice.invoiceId}
                         invoice={invoice}
                         onOpen={openView}
+                        onPrint={canPrintInvoices ? invoice => setPrintInvoiceIds([invoice.invoiceId]) : undefined}
                         selected={selectedIds.includes(invoice.invoiceId)}
-                        selectionMode={selectedCount > 0}
+                        selectionMode={mobileSelectMode || selectedCount > 0}
                         onToggleSelected={toggleSelect}
                       />
                     ))}
@@ -1399,6 +1224,9 @@ export function InvoicesWorkspace() {
               ))}
             </div>
           )}
+        </div>
+        <div ref={continuationRef} className="flex min-h-16 flex-col items-center justify-center gap-2 text-xs text-muted-foreground" aria-live="polite">
+          {mobileQuery.isFetchingNextPage ? <><RefreshCw className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />{t("invoices.mobile.loadingOlder")}</> : mobileQuery.isFetchNextPageError ? <><p role="alert">{normalizeApiError(mobileQuery.error).message}</p><Button variant="ghost" onClick={() => void mobileQuery.fetchNextPage()}>{t("invoices.mobile.retry")}</Button></> : mobileQuery.hasNextPage ? <Button variant="ghost" className="text-primary" onClick={() => void mobileQuery.fetchNextPage({ cancelRefetch: false })}>{t("invoices.mobile.older")}</Button> : !isLoading && !isError && invoices.length > 0 ? <span>{t("invoices.mobile.end")}</span> : null}
         </div>
         {canSyncLegacyInvoices ? (
           <div className="px-1">

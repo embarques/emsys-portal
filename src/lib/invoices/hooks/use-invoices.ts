@@ -95,7 +95,7 @@ export function useInvoiceSearch(
 export function useInvoices(params: InvoiceListParams, options: { enabled?: boolean } = {}) {
   return useWorkspaceQuery({
     queryKey: queryKeys.invoices.list(params),
-    queryFn: () => fetchInvoices(params),
+    queryFn: ({ signal }) => fetchInvoices(params, signal),
     enabled: options.enabled ?? true,
   });
 }
