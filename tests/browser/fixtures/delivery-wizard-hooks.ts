@@ -30,6 +30,7 @@ declare global {
     wizardCompanyChanged?: boolean;
     wizardVisual?: boolean;
     wizardNoItems?: boolean;
+    wizardItemsApiError?: string;
     wizardMounted?: boolean;
   }
 }
@@ -91,6 +92,8 @@ export const apiClient = {
     if (!url.endsWith("/items")) throw new Error("Unexpected read: " + url);
     window.wizardReads = (window.wizardReads ?? 0) + 1;
     if (window.wizardNoItems) throw new Error("No pending items");
+    if (window.wizardItemsApiError)
+      throw Object.assign(new Error(window.wizardItemsApiError), { status: 400 });
     return {
       success: true,
       data: {
