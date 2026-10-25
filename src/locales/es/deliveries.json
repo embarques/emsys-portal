@@ -75,6 +75,7 @@
     "description": "Complete los artículos seleccionados de esta factura y entrega.",
     "unavailable": "No tienes acceso para completar esta entrega.",
     "loadError": "No se pudieron cargar los artículos de esta entrega.",
+    "loadErrorReason": "Motivo: {{reason}}",
     "retry": "Reintentar",
     "changed": "La asignación del código de barras cambió. Cierra y vuelve a abrir la entrega para revisar los artículos actuales.",
     "count": "{{items}} artículos · {{barcodes}} códigos de barras",
