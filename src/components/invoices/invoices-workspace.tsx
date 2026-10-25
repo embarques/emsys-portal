@@ -571,7 +571,7 @@ export function InvoicesWorkspace() {
     [deferredQuery, filters.paymentLocation, filters.rows, page, pageLimit, sort],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useInvoices(listParams);
+  const { data, isLoading, isError, error, isFetching, refetch } = useInvoices(listParams);
   const invoiceStats = useInvoiceStats();
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
@@ -1512,8 +1512,12 @@ export function InvoicesWorkspace() {
         />
 
         {isError ? (
-          <div className="px-6 py-8 text-sm text-destructive">
-            {normalizeApiError(error).message}
+          <div role="alert" className="space-y-3 px-6 py-8 text-sm text-destructive">
+            <p>{normalizeApiError(error).message}</p>
+            <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+              <RefreshCw className="h-4 w-4" />
+              {t("common.actions.retry")}
+            </Button>
           </div>
         ) : isLegacySyncing ? (
           legacySyncLoader

@@ -6,6 +6,7 @@ import type { ComponentType } from "react";
 import { AnalyticsWorkspace } from "@/components/insights/insights-workspaces";
 import { ReportsWorkspace } from "@/components/reports/reports-workspace";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
+import { FinancialActivityWorkspace } from "@/components/accounting/financial-activity-workspace";
 import { DailyIncomeWorkspace } from "@/components/accounting/daily-income-workspace";
 import { ChartOfAccountsWorkspace } from "@/components/accounting/chart-of-accounts-workspace";
 import { ChecksWorkspace } from "@/components/accounting/checks-workspace";
@@ -69,6 +70,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/appointment-routes": DailyRoutesWorkspace,
   "/delivery-routes": DailyRoutesWorkspace,
   "/vehicles": VehiclesWorkspace,
+  "/accounting/pending-financial-activity": FinancialActivityWorkspace,
   "/accounting/daily-income": DailyIncomeWorkspace,
   "/accounting/loans": LoansWorkspace,
   "/accounting/checks": ChecksWorkspace,

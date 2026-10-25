@@ -812,7 +812,11 @@ function parseInvoicePathId(invoiceId: string): string {
   return id;
 }
 
-export async function fetchInvoices(params: InvoiceListParams = {}): Promise<PaginatedResult<Invoice>> {
+export async function fetchInvoices(
+  params: InvoiceListParams = {},
+  signal?: AbortSignal,
+): Promise<PaginatedResult<Invoice>> {
+  const requestConfig = { signal, timeout: 60_000 };
   if (shouldUseInvoiceSearch(params)) {
     const page = params.page ?? DEFAULT_INVOICE_LIST_PARAMS.page;
     const limit = params.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit;
@@ -822,6 +826,7 @@ export async function fetchInvoices(params: InvoiceListParams = {}): Promise<Pag
     const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
       `${API_ENDPOINTS.INVOICES}/search?${paginationQuery}`,
       buildInvoiceSearchBody(params),
+      requestConfig,
     );
 
     return normalizePaginatedInvoices(response);
@@ -830,6 +835,7 @@ export async function fetchInvoices(params: InvoiceListParams = {}): Promise<Pag
   const query = buildInvoicesQuery(params);
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.INVOICES}?${query}`,
+    requestConfig,
   );
 
   return normalizePaginatedInvoices(response);

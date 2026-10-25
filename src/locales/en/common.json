@@ -8,6 +8,7 @@
   },
   "loading": "Loading...",
   "actions": {
+    "retry": "Retry",
     "add": "Add",
     "edit": "Edit",
     "view": "View",

@@ -55,3 +55,32 @@ test("central clearing retains method-specific endpoint and immutable status dir
  assert.deepEqual(calls,[["/checks/payment",{status:"CLEARED"}]]);
  assert.equal(api.clearingAction({paymentId:"payment",paymentMethod:{name:"CHECK"},clearingStatus:"CLEARED"}),undefined);
 });
+
+
+test("invoice list requests have a deadline and propagate cancellation on both endpoints", async () => {
+ const calls=[];
+ const api=loadFeature("src/lib/invoices/api/invoices-api.ts", {
+   get:async (...args)=>{calls.push(args);return {success:true,data:[],total:0};},
+   post:async (...args)=>{calls.push(args);return {success:true,data:[],total:0};},
+ });
+ const controller=new AbortController();
+ await api.fetchInvoices({},controller.signal);
+ await api.fetchInvoices({search:{field:"invoice",value:"123"}},controller.signal);
+ assert.equal(calls.length,2);
+ for(const args of calls){const config=args.at(-1);assert.equal(config.timeout,60000);assert.equal(config.signal,controller.signal);}
+});
+
+test("pending financial activity opens as a desktop workspace tab", () => {
+ const filename=path.join(root,"src/lib/layout/workspace-registry.ts");
+ const source=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+ const components=new Map();
+ function boundary(specifier){
+   if(specifier.includes("-workspace")){if(!components.has(specifier)) components.set(specifier,new Proxy({}, {get:(target,name)=>target[name]??(target[name]=function Workspace(){return String(name);})}));return components.get(specifier);}
+   return {};
+ }
+ const loaded={exports:{}};
+ new Function("require","module","exports",source)(boundary,loaded,loaded.exports);
+ const registry=loaded.exports;
+ assert.equal(registry.isWorkspaceRoute("/accounting/pending-financial-activity"),true);
+ assert.equal(registry.resolveWorkspaceComponent("/accounting/pending-financial-activity?tab=8"),components.get("@/components/accounting/financial-activity-workspace").FinancialActivityWorkspace);
+});
