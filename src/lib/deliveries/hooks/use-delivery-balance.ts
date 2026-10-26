@@ -9,7 +9,7 @@ import { fetchCurrentUser } from "@/lib/users/api/users-api";
 import { fetchEmployees } from "@/lib/employees/api/employees-api";
 import { fetchActiveRoutes } from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-api";
 import { fetchChartAccounts } from "@/lib/accounting/chart-accounts/api/chart-accounts-api";
-import { createDailyIncomeJournal, createIncomeStatement, fetchAccountingPaymentMethods, searchIncomeStatementForDate } from "@/lib/accounting/daily-income/api";
+import { createDailyIncomeJournal, fetchAccountingPaymentMethods, fetchCurrentIncomeStatement } from "@/lib/accounting/daily-income/api";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
 import { DuplicatePaymentCancelledError, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
 import { toApiPaymentMethodName, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
@@ -59,14 +59,13 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const balance = invoice.isSuccess ? invoice.data.balance ?? null : null;
   const enabled = active && canPay && balance != null && balance !== 0;
   const profile = useWorkspaceQuery({ queryKey: [...scope, "profile"], queryFn: fetchCurrentUser, enabled });
-  const now = new Date();
-  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const branchId = profile.data?.branch.id ?? 0;
   const statement = useWorkspaceQuery({
-    queryKey: [...scope, "statement", branchId, date],
-    queryFn: () => searchIncomeStatementForDate(branchId, date),
+    queryKey: [...scope, "statement", branchId],
+    queryFn: () => fetchCurrentIncomeStatement(branchId),
     enabled: enabled && branchId > 0,
   });
+  const date = statement.data?.businessDate || statement.data?.date || "";
   const employees = useWorkspaceQuery({
     queryKey: [...scope, "employees"],
     queryFn: () => fetchEmployees({ page: 1, limit: 100, sort: "name:asc", active: true }),
@@ -75,7 +74,7 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const routes = useWorkspaceQuery({
     queryKey: [...scope, "routes", date],
     queryFn: () => fetchActiveRoutes({ page: 1, limit: 100, date }),
-    enabled: enabled && has(PERMISSIONS.routesView),
+    enabled: enabled && Boolean(date) && has(PERMISSIONS.routesView),
   });
   const banks = useWorkspaceQuery({
     queryKey: [...scope, "banks"],
@@ -100,23 +99,7 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const overridden = overrideAccepted && canOverride;
   const confirmation = useDuplicatePaymentConfirmation(active);
 
-  const createStatement = useMutation({
-    retry: false,
-    mutationFn: async () => {
-      const branch = profile.data?.branch;
-      if (!canPay || !branch?.id || rate == null || store.getState().auth.companyId !== access.companyId)
-        throw new Error(t("deliveries.wizard.balance.paymentUnavailable"));
-      return createIncomeStatement({ date, branchId: branch.id, branchCode: "", branchName: branch.name ?? "", currency: "USD", rate });
-    },
-    onSuccess: async () => {
-      setError(null);
-      await Promise.all([
-        statement.refetch(),
-        client.invalidateQueries({ queryKey: queryKeys.accounting.all }),
-      ]);
-    },
-    onError: (failure) => setError(normalizeApiError(failure).message),
-  });
+
 
   const mutation = useMutation({
     retry: false,
@@ -195,8 +178,7 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     overrideAccepted, setOverrideAccepted,
     ready: balance === 0 || overridden,
     verify,
-    createStatement: () => createStatement.mutate(),
-    creatingStatement: createStatement.isPending,
-    busy: confirmation.isSubmitting || mutation.isPending || createStatement.isPending,
+    creatingStatement: false,
+    busy: confirmation.isSubmitting || mutation.isPending,
   };
 }

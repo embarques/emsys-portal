@@ -5,11 +5,9 @@ import { AlertCircle, CheckCircle2, Info, Loader2, Plus, RefreshCw, Wallet } fro
 import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from "react";
 import { useForm } from "react-hook-form";
 
-import { PreviousOpenStatementsBanner } from "@/components/accounting/previous-open-statements-banner";
 import { InvoiceDailyIncomeDialog } from "@/components/invoices/invoice-daily-income-dialog";
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
 import { Button } from "@/components/ui/button";
-import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -18,10 +16,8 @@ import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import {
   useCreateIncomeStatement,
   useDailyIncomeInvoiceRegistration,
-  useIncomeStatement,
-  useSetIncomeStatementStatus,
+  useCloseoutCalendar, useCurrentIncomeStatement,
 } from "@/lib/accounting/daily-income/hooks";
-import { parseOpenIncomeStatements, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import type {
   DailyIncomeJournal,
@@ -93,14 +89,6 @@ function PendingPaymentBranchField({
   );
 }
 
-function todayDateValue() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function MobileCreateDailyIncomePage({
   date,
   onCreated,
@@ -110,11 +98,9 @@ function MobileCreateDailyIncomePage({
 }) {
   const { t } = useTranslation();
   const [statementError, setStatementError] = useState<string | null>(null);
-  const [openStatements, setOpenStatements] = useState<OpenIncomeStatementRef[]>([]);
   const currentUserQuery = useCurrentUser();
   const branchesQuery = useBranchPicker(200);
   const createStatement = useCreateIncomeStatement();
-  const closeStatement = useSetIncomeStatementStatus();
   const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const statementSchema = useMemo(
     () =>
@@ -172,52 +158,15 @@ function MobileCreateDailyIncomePage({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
-      setOpenStatements([]);
       const created = await createStatement.mutateAsync(values);
       await onCreated(created);
     } catch (error) {
       const message = normalizeApiError(error).message;
       setStatementError(message);
-      setOpenStatements(parseOpenIncomeStatements(message));
     }
   }
 
-  async function closeOpenStatements() {
-    if (openStatements.length === 0) return;
-    const remaining = [...openStatements];
-    try {
-      setStatementError(null);
-      while (remaining.length > 0) {
-        const next = remaining[0];
-        await closeStatement.mutateAsync({
-          statement: {
-            id: next.id,
-            date: next.date,
-            status: "OPEN",
-            branch: selectedStatementBranch
-              ? {
-                  id: selectedStatementBranch.id,
-                  code: selectedStatementBranch.code,
-                  name: selectedStatementBranch.name,
-                }
-              : undefined,
-            currency: statementCurrency,
-            rate: form.getValues("rate") || 1,
-          },
-          open: false,
-        });
-        remaining.shift();
-        setOpenStatements([...remaining]);
-      }
-      setOpenStatements([]);
-    } catch (error) {
-      const message = normalizeApiError(error).message;
-      setOpenStatements(remaining);
-      setStatementError(message);
-      const stillOpen = parseOpenIncomeStatements(message);
-      if (stillOpen.length > 0) setOpenStatements(stillOpen);
-    }
-  }
+
 
   return (
     <section className="space-y-5">
@@ -237,6 +186,7 @@ function MobileCreateDailyIncomePage({
           </Label>
           <SearchableSelect
             id="invoice-mobile-statement-branch"
+            disabled
             value={statementBranchId ? String(statementBranchId) : ""}
             onValueChange={(next) => {
               const branch = branches.find((item) => item.id === Number(next));
@@ -255,7 +205,7 @@ function MobileCreateDailyIncomePage({
 
         <div className="space-y-2">
           <Label htmlFor="invoice-mobile-statement-date">{t("invoices.form.fields.date")}</Label>
-          <DateInput id="invoice-mobile-statement-date" {...form.register("date")} />
+          <Input id="invoice-mobile-statement-date" value={date} readOnly disabled />
           {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
         </div>
 
@@ -292,48 +242,7 @@ function MobileCreateDailyIncomePage({
           </div>
         ) : null}
 
-        {statementError && openStatements.length > 0 ? (
-          <PreviousOpenStatementsBanner
-            className="rounded-xl"
-            title={
-              openStatements.length === 1
-                ? t("invoices.wizard.dailyIncome.dialog.previousOpenTitle")
-                : t("invoices.wizard.dailyIncome.dialog.previousOpenTitles")
-            }
-            description={
-              openStatements.length === 1 ? (
-                t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
-                  id: openStatements[0].id,
-                  date: openStatements[0].date,
-                })
-              ) : (
-                <div className="space-y-1.5">
-                  <p>{t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}</p>
-                  <ul className="list-disc space-y-0.5 pl-5">
-                    {openStatements.map((item) => (
-                      <li key={item.id}>
-                        {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
-                          id: item.id,
-                          date: item.date,
-                        })}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            }
-            closeLabel={
-              openStatements.length > 1
-                ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
-                : t("invoices.wizard.dailyIncome.dialog.closeOpenStatement", {
-                    id: openStatements[0].id,
-                  })
-            }
-            closingLabel={t("invoices.wizard.dailyIncome.dialog.closing")}
-            isClosing={closeStatement.isPending}
-            onClose={closeOpenStatements}
-          />
-        ) : statementError ? (
+        {statementError ? (
           <p className="text-sm text-destructive">{statementError}</p>
         ) : null}
 
@@ -342,8 +251,6 @@ function MobileCreateDailyIncomePage({
           className="sticky bottom-0 z-10 h-12 w-full rounded-xl text-base font-semibold"
           disabled={
             createStatement.isPending ||
-            closeStatement.isPending ||
-            openStatements.length > 0 ||
             currentUserQuery.isLoading ||
             branchesQuery.isLoading
           }
@@ -379,12 +286,12 @@ export function InvoiceDailyIncomeStep({
   const [localStatement, setLocalStatement] = useState<DailyIncomeStatement | null>(null);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
-  const currentDate = todayDateValue();
+  const closeoutCalendar = useCloseoutCalendar(branchId);
+ const currentDate = closeoutCalendar.data?.today ?? "";
   const registrationQuery = useDailyIncomeInvoiceRegistration(values.invoiceNumber);
   const registration = registrationQuery.data ?? localRegistration;
-  const statementQuery = useIncomeStatement(branchId, currentDate);
+  const statementQuery = useCurrentIncomeStatement(branchId);
   const statement = localStatement ?? statementQuery.data ?? null;
-  const reopenMutation = useSetIncomeStatementStatus();
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
     enabled: values.pickupSource === "route" && Boolean(values.routeId),
   });
@@ -526,16 +433,7 @@ export function InvoiceDailyIncomeStep({
     await Promise.all([registrationQuery.refetch(), statementQuery.refetch()]);
   }
 
-  async function reopenDailyIncome() {
-    if (!statement) return;
-    try {
-      setStatusError(null);
-      await reopenMutation.mutateAsync({ statement, open: true });
-      await statementQuery.refetch();
-    } catch (error) {
-      setStatusError(normalizeApiError(error).message);
-    }
-  }
+
 
   if (isLoading) {
     return (
@@ -631,12 +529,11 @@ export function InvoiceDailyIncomeStep({
               <Button
                 type="button"
                 className="h-11 flex-1 rounded-xl"
-                onClick={reopenDailyIncome}
-                disabled={reopenMutation.isPending}
+                onClick={() => setDialogOpen(true)}
+
                 data-invoice-wizard-focus="daily-income"
               >
-                {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                {t("invoices.wizard.dailyIncome.reopenCuadre")}
+                {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={refreshStatus}>
                 <RefreshCw className="size-4" />
@@ -838,12 +735,11 @@ export function InvoiceDailyIncomeStep({
                     {statement?.status === "CLOSED" ? (
                       <Button
                         type="button"
-                        onClick={reopenDailyIncome}
-                        disabled={reopenMutation.isPending}
+                        onClick={() => setDialogOpen(true)}
+
                         data-invoice-wizard-focus="daily-income"
                       >
-                        {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
-                        {t("invoices.wizard.dailyIncome.reopenDailyIncome")}
+                        {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
                       </Button>
                     ) : (
                       <Button
@@ -859,7 +755,7 @@ export function InvoiceDailyIncomeStep({
                       type="button"
                       variant="ghost"
                       onClick={refreshStatus}
-                      disabled={statementQuery.isFetching || registrationQuery.isFetching || reopenMutation.isPending}
+                      disabled={statementQuery.isFetching || registrationQuery.isFetching}
                     >
                       <RefreshCw className={cn("size-4", (statementQuery.isFetching || registrationQuery.isFetching) && "animate-spin")} aria-hidden="true" />
                       {t("invoices.wizard.dailyIncome.refresh")}

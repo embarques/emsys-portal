@@ -14,7 +14,7 @@ import {
   fetchDailyIncomeJournal,
   fetchDailyIncomeJournals,
   fetchDailyIncomeInvoiceRegistration,
-  fetchIncomeStatement,fetchCurrentIncomeStatement,
+  fetchIncomeStatement,fetchCurrentIncomeStatement, fetchCloseoutCalendar,
   fetchOpenIncomeStatements,
   fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
@@ -211,9 +211,16 @@ export function useSessionDailyIncomeTransactions(statementId: number, sessionId
     filters: { mutationKey: ["daily-income-created", companyId, user?.uid, ...(sessionId ? [sessionId] : [])], status: "success", exact: true },
     select: (mutation) => {
       const variables = mutation.state.variables as { statement: DailyIncomeStatement; values: DailyIncomeJournalValues };
-      return { journal: mutation.state.data as DailyIncomeJournal, values: variables.values, statementId: variables.statement.id, savedAt: mutation.state.submittedAt };
+      const journal = mutation.state.data as DailyIncomeJournal;
+      return { journal, values: variables.values, statementId: journal?.incomeStatementId || variables.statement.id, savedAt: mutation.state.submittedAt };
     },
   }).filter((entry) => companyId && user?.uid && entry.journal && entry.statementId === statementId).sort((a, b) => b.savedAt - a.savedAt);
 }
 
 export function useCurrentIncomeStatement(branchId:number){const {companyId}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0);return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:()=>fetchCurrentIncomeStatement(branchId),enabled,refetchInterval:30000});}
+
+export function useCloseoutCalendar(branchId: number) {
+ const {companyId,user} = useAuth();
+ const enabled = useAccountingQueryEnabled(branchId > 0);
+ return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"closeout-calendar",companyId,user?.uid,branchId],queryFn:()=>fetchCloseoutCalendar(branchId),enabled,refetchInterval:30000});
+}

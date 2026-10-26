@@ -277,6 +277,22 @@ The goal is to maintain a centralized financial history of the company's operati
 
 ### Daily Income
 
+Closeouts use the server clock and configured location timezone. Transactions
+require the latest closeout to be open and dated today; 409 CLOSEOUT_REQUIRED
+reasons are NONE_EXISTS, STALE_OPEN_CLOSEOUT, and LATEST_CLOSED. The transaction
+attempt never closes rows. Prompt for currency/rate, then POST income-statements
+with only those two fields. The server owns location/date, preserves today's
+existing open row, atomically closes all other open location rows, and returns
+or creates today's row. Manual close/reopen/edit/delete and automatic cron
+rollover are retired. Calendar navigation uses the context endpoint's server
+date/timezone and current/previous metadata. Treat businessDate as a date label.
+Draft transaction values survive the recovery dialog, and successful entries
+are attributed to the closeout ID actually returned by the server.
+
+When a financial transaction omits both assignee families, the API defaults to
+the creator's linked employee, if present. An explicit employee/daily route is
+preserved. Inventory dispatch continues to require an explicit stock recipient.
+
 Daily Income is used to manage and record the company's daily incoming transactions.
 
 It provides a way to record and track income received each day and maintain a historical record of daily revenue.

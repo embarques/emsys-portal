@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
-import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -118,12 +117,8 @@ export function DailyIncomeStatementForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="statement-date">{t("accounting.dailyIncome.statement.fields.date")}</Label>
-            <DateInput
-              id="statement-date"
-              aria-invalid={Boolean(errors.date)}
-              disabled={fieldsDisabled}
-              {...register("date")}
-            />
+            <Input id="statement-date" value={initialValues.date} readOnly disabled />
+            <input type="hidden" {...register("date")} />
             {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
           </div>
           <div className={cn("space-y-2", !showExchangeRate && "sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]")}>

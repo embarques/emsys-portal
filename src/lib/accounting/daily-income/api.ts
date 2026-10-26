@@ -129,13 +129,14 @@ function normalizeLookup(value: unknown): AccountingLookup | undefined {
   };
 }
 
-function normalizeIncomeStatement(value: unknown): DailyIncomeStatement | null {
+export function normalizeIncomeStatement(value: unknown): DailyIncomeStatement | null {
   const raw = objectValue(value);
   const id = numberValue(firstDefined(raw.id, raw._id));
   if (!id) return null;
   const status = stringValue(raw.status).toUpperCase();
   return {
     id,
+    ...(Array.isArray(raw.closedCloseouts) ? {closedCloseouts:raw.closedCloseouts.map(normalizeIncomeStatement).filter((item):item is DailyIncomeStatement=>item!=null)} : {}),
     date: stringValue(raw.businessDate || raw.date).slice(0, 10),
  automated:raw.automated===true, periodStart:stringValue(raw.periodStart),periodEnd:stringValue(raw.periodEnd),businessDate:stringValue(raw.businessDate),timezone:stringValue(raw.timezone),
     status: status === "INACTIVE" || status === "CLOSED" || status === "CLOSE" ? "CLOSED" : "OPEN",
@@ -489,13 +490,7 @@ export async function fetchCurrentIncomeStatement(branchId:number){if(!branchId)
 
 function incomeStatementPayload(values: DailyIncomeStatementValues) {
   return {
-    date: `${values.date}T00:00:00Z`,
-    branch: {
-      id: values.branchId,
-      ...(values.branchCode.trim() ? { code: values.branchCode } : {}),
-      name: values.branchName,
-    },
-    currency: values.currency,
+        currency: values.currency,
     rate: values.rate,
   };
 }
@@ -842,4 +837,15 @@ export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[
     { id: 4, name: "ZELLE" },
     { id: 5, name: "CREDIT-CARD" },
   ];
+}
+
+export type CloseoutCalendar = {
+ today: string; serverTimezone: string; serverTime: string;
+ current: DailyIncomeStatement | null; previous: DailyIncomeStatement | null;
+ latest: DailyIncomeStatement | null; requiredReason: string;
+};
+export async function fetchCloseoutCalendar(branchId: number): Promise<CloseoutCalendar> {
+ const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/context?branchId=${branchId}`);
+ const data = objectValue(unwrap(payload));
+ return {today:stringValue(data.today),serverTimezone:stringValue(data.serverTimezone),serverTime:stringValue(data.serverTime),current:normalizeIncomeStatement(data.current),previous:normalizeIncomeStatement(data.previous),latest:normalizeIncomeStatement(data.latest),requiredReason:stringValue(data.requiredReason)};
 }

@@ -641,7 +641,9 @@
       "placeholders": {
         "selectBranch": "Select branch",
         "searchBranches": "Search branches…"
-      }
+      },
+      "rolloverHelp": "Choose currency and exchange rate for today. Other open closeouts at your location will close automatically. The server sets the date.",
+      "createPermission": "Closeout creation permission is required."
     },
     "delete": {
       "title": "Delete transaction?",
@@ -970,8 +972,8 @@
     "deposits": "Deposits",
     "cards": "Credit cards",
     "historyHelp": "Collection and clearing events preserve the original transaction and closeout.",
-    "automation": "Automatic end-of-day closing",
-    "automationHelp": "Close the previous day and open the new day at midnight in the configured timezone. An administrator must install the server schedule before enabling this feature.",
+    "automation": "Closeout calendar",
+    "automationHelp": "Closeouts open explicitly with currency and exchange rate. Dates use the configured location timezone.",
     "enabled": "Enable automatic daily closeouts",
     "timezone": "Timezone",
     "currency": "Currency",

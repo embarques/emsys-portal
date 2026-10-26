@@ -38,6 +38,7 @@ function rowKey(row: AssignedDeliveryBarcode) {
 export function DeliveriesWorkspace() {
   const { t } = useTranslation();
   const access = useDeliveryAccess();
+  const [sort,setSort] = useState(DEFAULT_ASSIGNED_DELIVERY_SORT);
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export function DeliveriesWorkspace() {
     keepPrevious: false,
     enabled: access.canList,
     keyPrefix: "deliveries.filters.fields",
-    sort: DEFAULT_ASSIGNED_DELIVERY_SORT,
+    sort,
     queryKey: (params) => queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params),
     fetchPage: fetchAssignedDeliveryBarcodesPage,
   });
@@ -63,7 +64,7 @@ export function DeliveriesWorkspace() {
     t("deliveries.columns.senderPhones"),
     t("deliveries.columns.receiverName"),
     t("deliveries.columns.address"),
-    t("deliveries.columns.province"),
+    t("deliveries.columns.city"),
     t("deliveries.columns.phones"),
   ];
 
@@ -86,6 +87,11 @@ export function DeliveriesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
+          <label className="flex items-center gap-2 text-sm">{t("deliveries.sort.label")}
+            <select className="h-10 rounded-md border bg-background px-3" value={sort} onChange={event => { setSort(event.target.value); table.pagination.setPage(1); }}>
+              {[ ["receiver.address.city", "city"], ["number", "barcode"], ["invoice.number", "invoice"], ["invoice.balance", "invoiceBalance"], ["name", "name"], ["container.name", "container"], ["sender.name", "senderName"], ["receiver.name", "receiverName"] ].flatMap(([field,key]) => ["asc","desc"].map(direction => <option key={`${field}:${direction}`} value={`${field}:${direction}`}>{t(`deliveries.columns.${key}`)} · {t(`deliveries.sort.${direction}`)}</option>))}
+            </select>
+          </label>
           <CatalogTableToolbar
             state={table}
             presetScope="deliveries"
@@ -113,12 +119,12 @@ export function DeliveriesWorkspace() {
         ) : (<>
           <ul className="md:hidden" aria-label={t("deliveries.title")}>
             {table.items.map((row, index) => {
-              const province = row.receiver?.province || t("deliveries.noProvince");
-              const previous = index > 0 ? table.items[index - 1]!.receiver?.province || t("deliveries.noProvince") : null;
+              const city = row.receiver?.city || t("deliveries.noCity");
+              const previous = index > 0 ? table.items[index - 1]!.receiver?.city || t("deliveries.noCity") : null;
               return (
                 <li key={rowKey(row)}>
-                  {province !== previous ? (
-                    <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{province}</h3>
+                  {sort.startsWith("receiver.address.city:") && city !== previous ? (
+                    <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{city}</h3>
                   ) : null}
                   <DeliveryMobileRow row={row} canDeliver={access.canDeliver} onDeliver={setDeliverRow} canPrint={access.canPrint} onPrint={setPrintRow} />
                 </li>
@@ -199,7 +205,7 @@ export function DeliveriesWorkspace() {
                       </td>
                       <td className="px-4 py-3">{row.receiver?.name}</td>
                       <td className="px-4 py-3">{formatDeliveryAddress(row.receiver)}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{row.receiver?.province}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{row.receiver?.city}</td>
                       <td className="min-w-[260px] px-4 py-3">
                         <TablePhoneCell phones={row.receiver?.phones ?? []} callable />
                       </td>

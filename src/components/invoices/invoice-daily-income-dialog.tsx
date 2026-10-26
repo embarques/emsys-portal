@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
-import { DateInput } from "@/components/ui/date-input";
+import { isCloseoutRequired } from "@/lib/accounting/daily-income/closeout-required";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { PreviousOpenStatementsBanner } from "@/components/accounting/previous-open-statements-banner";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
@@ -26,9 +25,7 @@ import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
   useCreateIncomeStatement,
-  useSetIncomeStatementStatus,
 } from "@/lib/accounting/daily-income/hooks";
-import { parseOpenIncomeStatements, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import {
   findCashPaymentMethod,
@@ -85,7 +82,6 @@ export function InvoiceDailyIncomeDialog({
   const { t } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statementError, setStatementError] = useState<string | null>(null);
-  const [openStatements, setOpenStatements] = useState<OpenIncomeStatementRef[]>([]);
   const [activeStatement, setActiveStatement] = useState(statement);
   const currentUserQuery = useCurrentUser();
   const branchesQuery = useBranchPicker(200, { enabled: open });
@@ -95,7 +91,6 @@ export function InvoiceDailyIncomeDialog({
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, open);
   const createJournal = useCreateDailyIncomeJournal();
   const createStatement = useCreateIncomeStatement();
-  const closeStatement = useSetIncomeStatementStatus();
   const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const invoiceSubtotal = useMemo(
     () => invoice.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0),
@@ -162,7 +157,6 @@ export function InvoiceDailyIncomeDialog({
     );
     setSubmitError(null);
     setStatementError(null);
-    setOpenStatements([]);
     setActiveStatement(statement);
     // Only re-seed when the dialog opens or the invoice assignee inputs change.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- payment/route catalogs enrich via later effects
@@ -275,7 +269,6 @@ export function InvoiceDailyIncomeDialog({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
-      setOpenStatements([]);
       const created = await createStatement.mutateAsync(values);
       // Close before the parent passes the new statement back in, or the dialog
       // briefly switches to its registration view while closing.
@@ -284,46 +277,10 @@ export function InvoiceDailyIncomeDialog({
     } catch (error) {
       const message = normalizeApiError(error).message;
       setStatementError(message);
-      setOpenStatements(parseOpenIncomeStatements(message));
     }
   }
 
-  async function closeOpenStatements() {
-    if (openStatements.length === 0) return;
-    const remaining = [...openStatements];
-    try {
-      while (remaining.length > 0) {
-        const next = remaining[0];
-        await closeStatement.mutateAsync({
-          statement: {
-            id: next.id,
-            date: next.date,
-            status: "OPEN",
-            branch: selectedStatementBranch
-              ? {
-                  id: selectedStatementBranch.id,
-                  code: selectedStatementBranch.code,
-                  name: selectedStatementBranch.name,
-                }
-              : undefined,
-            currency: statementCurrency,
-            rate: statementForm.getValues("rate") || 1,
-          },
-          open: false,
-        });
-        remaining.shift();
-        setOpenStatements([...remaining]);
-      }
-      setStatementError(null);
-      setOpenStatements([]);
-    } catch (error) {
-      const message = normalizeApiError(error).message;
-      setOpenStatements(remaining);
-      setStatementError(message);
-      const stillOpen = parseOpenIncomeStatements(message);
-      if (stillOpen.length > 0) setOpenStatements(stillOpen);
-    }
-  }
+
 
   async function submit(values: InvoiceDailyIncomeRegistrationValues) {
     if (!activeStatement || activeStatement.status !== "OPEN") {
@@ -332,10 +289,6 @@ export function InvoiceDailyIncomeDialog({
     }
 
     const assignedToRoute = Boolean(values.routeId?.trim());
-    if (!assignedToRoute && !values.employeeId) {
-      setSubmitError(t("accounting.dailyIncome.form.validation.employeeRequired"));
-      return;
-    }
 
     const paymentRequired = values.amount > 0;
     const cash = findCashPaymentMethod(paymentMethods);
@@ -388,6 +341,7 @@ export function InvoiceDailyIncomeDialog({
       await onRegistered(journal);
       onOpenChange(false);
     } catch (error) {
+      if (isCloseoutRequired(error)) { setActiveStatement(null); return; }
       setSubmitError(normalizeApiError(error).message);
     }
   }
@@ -429,11 +383,8 @@ export function InvoiceDailyIncomeDialog({
               <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="invoice-statement-date">{t("invoices.form.fields.date")}</Label>
-                  <DateInput
-                    id="invoice-statement-date"
-                    className="h-10"
-                    {...statementForm.register("date")}
-                  />
+                  <Input id="invoice-statement-date" value={date} readOnly disabled />
+                  <input type="hidden" {...statementForm.register("date")} />
                   {statementErrors.date ? (
                     <p className="text-sm text-destructive">{statementErrors.date.message}</p>
                   ) : null}
@@ -456,6 +407,7 @@ export function InvoiceDailyIncomeDialog({
                   <Label htmlFor="invoice-statement-branch">{t("invoices.wizard.dailyIncome.dialog.branch")}</Label>
                   <SearchableSelect
                     id="invoice-statement-branch"
+                    disabled
                     value={statementBranchId ? String(statementBranchId) : ""}
                     onValueChange={(next) => {
                       const branch = branches.find((item) => item.id === Number(next));
@@ -491,46 +443,7 @@ export function InvoiceDailyIncomeDialog({
                 ) : null}
               </div>
 
-              {statementError && openStatements.length > 0 ? (
-                <PreviousOpenStatementsBanner
-                  title={
-                    openStatements.length === 1
-                      ? t("invoices.wizard.dailyIncome.dialog.previousOpenTitle")
-                      : t("invoices.wizard.dailyIncome.dialog.previousOpenTitles")
-                  }
-                  description={
-                    openStatements.length === 1 ? (
-                      t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
-                        id: openStatements[0].id,
-                        date: openStatements[0].date,
-                      })
-                    ) : (
-                      <div className="space-y-1.5">
-                        <p>{t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}</p>
-                        <ul className="list-disc space-y-0.5 pl-5">
-                          {openStatements.map((item) => (
-                            <li key={item.id}>
-                              {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
-                                id: item.id,
-                                date: item.date,
-                              })}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  }
-                  closeLabel={
-                    openStatements.length > 1
-                      ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
-                      : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")
-                  }
-                  closingLabel={t("invoices.wizard.dailyIncome.dialog.closing")}
-                  isClosing={closeStatement.isPending}
-                  onClose={closeOpenStatements}
-                  closeButtonTestId="invoice-daily-income-close-previous"
-                />
-              ) : statementError ? (
+              {statementError ? (
                 <p className="break-words text-sm text-destructive">{statementError}</p>
               ) : null}
 
@@ -545,8 +458,6 @@ export function InvoiceDailyIncomeDialog({
                 className="h-9"
                 disabled={
                   createStatement.isPending ||
-                  closeStatement.isPending ||
-                  openStatements.length > 0 ||
                   !currentUserQuery.data ||
                   branchesQuery.isLoading ||
                   !statementBranchId
@@ -605,6 +516,7 @@ export function InvoiceDailyIncomeDialog({
 
             {statementOpen ? (
               <TransactionAssigneeSelect
+            required={false}
                 id="invoice-payment-assignee"
                 employees={employees}
                 dailyRoutes={dailyRoutes}

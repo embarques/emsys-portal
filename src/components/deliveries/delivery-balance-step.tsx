@@ -3,6 +3,7 @@
 import { useId, useMemo, useState, type ComponentProps } from "react";
 import { AlertTriangle } from "lucide-react";
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
+import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
@@ -73,6 +74,7 @@ function PendingPayments({ state, balance }: { state: BalanceState; balance: num
 export function DeliveryBalanceStep({ state }: { state: BalanceState }) {
   const { t } = useTranslation();
   const formId = useId();
+  const [rolloverOpen,setRolloverOpen]=useState(false);
   const invoice = state.invoice.data;
   const statement = state.statement.data;
   const initialValues = useMemo<DailyIncomeJournalValues>(() => withDefaultCashPaymentMethod<DailyIncomeJournalValues>({
@@ -115,7 +117,7 @@ export function DeliveryBalanceStep({ state }: { state: BalanceState }) {
           <Button type="button" variant="outline" onClick={() => void Promise.all([state.profile, state.statement, state.employees, state.routes, state.banks, state.methods].filter((query) => query.isError).map((query) => query.refetch()))}>{t("deliveries.deliver.retry")}</Button>
         </div> : state.profile.isPending || (state.profile.data?.branch.id && state.statement.isPending) || state.methods.isPending ? <p role="status">{t("common.loading")}</p> : !statement ? <div className="space-y-3">
           <p role="status">{t(state.rate != null ? "deliveries.wizard.balance.noStatementCreate" : "deliveries.wizard.balance.noStatementNoRate")}</p>
-          {state.rate != null ? <Button type="button" variant="outline" disabled={state.busy || !state.profile.data?.branch.id} onClick={state.createStatement}>
+          {state.rate != null ? <Button type="button" variant="outline" disabled={state.busy || !state.profile.data?.branch.id} onClick={()=>setRolloverOpen(true)}>
             {t(state.creatingStatement ? "deliveries.wizard.balance.creatingStatement" : "deliveries.wizard.balance.createStatement")}
           </Button> : null}
           {state.error ? <p role="alert" className="text-sm text-destructive">{state.error}</p> : null}
@@ -135,6 +137,7 @@ export function DeliveryBalanceStep({ state }: { state: BalanceState }) {
         </>}
       </>}
     </>}
+    {rolloverOpen ? <CloseoutRolloverDialog open={rolloverOpen} onOpenChange={setRolloverOpen} onReady={async()=>{await state.statement.refetch();}} /> : null}
     <Dialog open={Boolean(state.confirmation.pendingValues)} onOpenChange={(open) => { if (!open) state.confirmation.respond(false); }}>
       <DialogContent centerInWorkspace>
         <DialogHeader><DialogTitle>{t("accounting.dailyIncome.duplicatePayment.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.duplicatePayment.description")}</DialogDescription></DialogHeader>

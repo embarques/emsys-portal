@@ -110,12 +110,11 @@ test("customer search with no results does not trap Enter", async () => {
   } finally { await page.close(); }
 });
 
-test("daily income statement follows branch, date, currency, and save", async () => {
+test("daily income statement skips the server-owned date and follows branch, currency, and save", async () => {
   const page = await fixture(1280, "statement");
   try {
     await page.locator("#statement-branch").press("Enter");
-    await page.waitForFunction(() => document.activeElement.id === "statement-date");
-    await page.keyboard.press("Enter");
+    assert.equal(await page.locator("#statement-date").isDisabled(), true);
     await page.waitForFunction(() => document.activeElement.id === "statement-currency");
     await page.keyboard.press("Enter");
     await page.waitForFunction(() => document.activeElement.type === "submit");
