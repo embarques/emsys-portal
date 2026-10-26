@@ -14,3 +14,8 @@ export function useCreateIncomeStatement() {
     },
   };
 }
+
+export function useBranchPicker() {
+ const code = (window as unknown as { closeoutBranch?: string }).closeoutBranch ?? "RD";
+ return { data: { items: [{ id: 1, code, name: code === "RD" ? "Dominican Republic" : "New York" }] }, isError: false };
+}

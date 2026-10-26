@@ -110,22 +110,25 @@ test("customer search with no results does not trap Enter", async () => {
   } finally { await page.close(); }
 });
 
-test("daily income statement skips the server-owned date and follows branch, currency, and save", async () => {
+test("daily income statement skips server-owned date and US currency settings", async () => {
   const page = await fixture(1280, "statement");
   try {
     await page.locator("#statement-branch").press("Enter");
     assert.equal(await page.locator("#statement-date").isDisabled(), true);
-    await page.waitForFunction(() => document.activeElement.id === "statement-currency");
-    await page.keyboard.press("Enter");
+    assert.equal(await page.locator("#statement-currency").count(), 0);
+    assert.equal(await page.locator("#statement-rate").count(), 0);
     await page.waitForFunction(() => document.activeElement.type === "submit");
     await page.keyboard.press("Enter");
     await page.waitForFunction(() => document.getElementById("submitted").textContent === "1");
   } finally { await page.close(); }
 });
 
-test("daily income reveals and focuses exchange rate after choosing DOP", async () => {
+test("daily income RD exposes exchange rate and focuses it after choosing DOP", async () => {
   const page = await fixture(1280, "statement");
   try {
+    await page.locator("#statement-branch").click();
+    await page.getByRole("option", { name: "RD — Dominican Republic", exact: true }).click();
+    assert.equal(await page.locator("#statement-rate").isVisible(), true);
     await page.locator("#statement-currency").press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");

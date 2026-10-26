@@ -398,7 +398,7 @@
         "searchEmployees": "Search employees…",
         "createDailyIncome": "Create daily income",
         "createDailyIncomeTitle": "Create daily income",
-        "createDailyIncomeHint": "Choose the date, currency, and branch for your daily income.",
+        "createDailyIncomeHint": "Open today’s daily income for your branch. Currency and exchange rate are requested only for RD.",
         "branch": "Branch",
         "selectBranch": "Select branch",
         "searchBranches": "Search branches…",

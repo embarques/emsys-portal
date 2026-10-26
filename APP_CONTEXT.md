@@ -280,8 +280,8 @@ The goal is to maintain a centralized financial history of the company's operati
 Closeouts use the server clock and configured location timezone. Transactions
 require the latest closeout to be open and dated today; 409 CLOSEOUT_REQUIRED
 reasons are NONE_EXISTS, STALE_OPEN_CLOSEOUT, and LATEST_CLOSED. The transaction
-attempt never closes rows. Prompt for currency/rate, then POST income-statements
-with only those two fields. The server owns location/date, preserves today's
+attempt never closes rows. Only RD prompts for currency/rate; other branches
+use USD/rate 1. POST income-statements with only those two fields. The server owns location/date, preserves today's
 existing open row, atomically closes all other open location rows, and returns
 or creates today's row. Manual close/reopen/edit/delete and automatic cron
 rollover are retired. Calendar navigation uses the context endpoint's server
@@ -546,8 +546,10 @@ be migrated before switching clients.
 
 ### Automatic daily closeouts and pending financial activity
 
-Daily closeout scheduling lives in the API CLI (`daily-income end-of-day`) and cron. Each tenant can opt in through the financial activity workspace; settings include company defaults and API-supported branch overrides for timezone, currency and rate. Scheduling infrastructure must be installed before activation.
+Scheduled closeout rollover is retired. The financial activity workspace retains calendar/timezone configuration; closeouts are created explicitly during daily income recovery. Only RD asks for currency and exchange rate; other branches use USD/rate 1.
 
 New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Posted transactions cannot be edited/deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
 
 Pending Financial Activity lists unresolved amounts across all dates with server-side filters and pagination. Collection, employee cash handover, receiving-employee verification, expenses and payment clearing remain separate from daily accounting totals. Method-specific clearing directories retain their update permissions. Financial activity has dedicated view/update permissions; generic reversals additionally require journal-create permission. Reconciliation events preserve the original period and invoice payments are applied/reversed transactionally.
+
+Currency and exchange-rate inputs for daily closeout creation appear only for branch code RD. Other branches use USD/rate 1 without asking the user; this also applies to rollover recovery and invoice registration. RD exchange rate remains editable for either USD or DOP.

@@ -237,6 +237,7 @@ export function InvoiceDailyIncomeDialog({
 
   useEffect(() => {
     if (!showExchangeRate) {
+      statementForm.setValue("currency", "USD", { shouldValidate: true });
       statementForm.setValue("rate", 1, { shouldValidate: true });
     }
   }, [showExchangeRate, statementForm]);
@@ -269,7 +270,7 @@ export function InvoiceDailyIncomeDialog({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
-      const created = await createStatement.mutateAsync(values);
+      const created = await createStatement.mutateAsync(showExchangeRate ? values : { ...values, currency: "USD", rate: 1 });
       // Close before the parent passes the new statement back in, or the dialog
       // briefly switches to its registration view while closing.
       onOpenChange(false);
@@ -389,20 +390,22 @@ export function InvoiceDailyIncomeDialog({
                     <p className="text-sm text-destructive">{statementErrors.date.message}</p>
                   ) : null}
                 </div>
-                <div className="min-w-0 space-y-2">
-                  <Label htmlFor="invoice-statement-currency">{t("invoices.wizard.dailyIncome.dialog.currency")}</Label>
-                  <SearchableSelect
-                    id="invoice-statement-currency"
-                    value={statementCurrency}
-                    onValueChange={(next) => statementForm.setValue("currency", next, { shouldValidate: true })}
-                    options={[
-                      { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
-                      { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
-                    ]}
-                    placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
-                    truncateSelection={false}
-                  />
-                </div>
+                {showExchangeRate ? (
+                  <div className="min-w-0 space-y-2">
+                    <Label htmlFor="invoice-statement-currency">{t("invoices.wizard.dailyIncome.dialog.currency")}</Label>
+                    <SearchableSelect
+                      id="invoice-statement-currency"
+                      value={statementCurrency}
+                      onValueChange={(next) => statementForm.setValue("currency", next, { shouldValidate: true })}
+                      options={[
+                        { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
+                        { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
+                      ]}
+                      placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
+                      truncateSelection={false}
+                    />
+                  </div>
+                ) : null}
                 <div className="min-w-0 space-y-2 sm:col-span-2">
                   <Label htmlFor="invoice-statement-branch">{t("invoices.wizard.dailyIncome.dialog.branch")}</Label>
                   <SearchableSelect

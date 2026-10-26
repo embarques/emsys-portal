@@ -643,6 +643,7 @@
         "searchBranches": "Search branches…"
       },
       "rolloverHelp": "Choose currency and exchange rate for today. Other open closeouts at your location will close automatically. The server sets the date.",
+      "rolloverHelpDefault": "Open today’s closeout. Other open closeouts at your location will close automatically. The server sets the date.",
       "createPermission": "Closeout creation permission is required."
     },
     "delete": {
@@ -973,7 +974,7 @@
     "cards": "Credit cards",
     "historyHelp": "Collection and clearing events preserve the original transaction and closeout.",
     "automation": "Closeout calendar",
-    "automationHelp": "Closeouts open explicitly with currency and exchange rate. Dates use the configured location timezone.",
+    "automationHelp": "Closeouts open explicitly. Only RD asks for currency and exchange rate. Dates use the configured location timezone.",
     "enabled": "Enable automatic daily closeouts",
     "timezone": "Timezone",
     "currency": "Currency",

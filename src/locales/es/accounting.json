@@ -643,6 +643,7 @@
         "searchBranches": "Buscar sucursales…"
       },
       "rolloverHelp": "Elija la moneda y la tasa para hoy. Los demás cuadres abiertos de su sucursal se cerrarán automáticamente. El servidor establece la fecha.",
+      "rolloverHelpDefault": "Abra el cuadre de hoy. Los demás cuadres abiertos de su sucursal se cerrarán automáticamente. El servidor establece la fecha.",
       "createPermission": "Se requiere permiso para crear cuadres."
     },
     "delete": {
@@ -973,7 +974,7 @@
     "cards": "Tarjetas de crédito",
     "historyHelp": "Los eventos de cobro y confirmación conservan la transacción y su cuadre original.",
     "automation": "Calendario de cuadres",
-    "automationHelp": "Los cuadres se abren explícitamente con moneda y tasa. Las fechas usan la zona horaria de la sucursal.",
+    "automationHelp": "Los cuadres se abren explícitamente. Solo RD solicita la moneda y la tasa de cambio. Las fechas usan la zona horaria de la sucursal.",
     "enabled": "Activar los cuadres diarios automáticos",
     "timezone": "Zona horaria",
     "currency": "Moneda",

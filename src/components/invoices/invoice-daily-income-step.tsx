@@ -151,6 +151,7 @@ function MobileCreateDailyIncomePage({
 
   useEffect(() => {
     if (!showExchangeRate) {
+      form.setValue("currency", "USD", { shouldValidate: true });
       form.setValue("rate", 1, { shouldValidate: true });
     }
   }, [form, showExchangeRate]);
@@ -158,7 +159,7 @@ function MobileCreateDailyIncomePage({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
-      const created = await createStatement.mutateAsync(values);
+      const created = await createStatement.mutateAsync(showExchangeRate ? values : { ...values, currency: "USD", rate: 1 });
       await onCreated(created);
     } catch (error) {
       const message = normalizeApiError(error).message;
@@ -209,22 +210,24 @@ function MobileCreateDailyIncomePage({
           {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="invoice-mobile-statement-currency">
-            {t("invoices.wizard.dailyIncome.dialog.currency")}
-          </Label>
-          <SearchableSelect
-            id="invoice-mobile-statement-currency"
-            value={statementCurrency}
-            onValueChange={(next) => form.setValue("currency", next, { shouldValidate: true })}
-            options={[
-              { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
-              { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
-            ]}
-            placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
-            mobileSheet
-          />
-        </div>
+        {showExchangeRate ? (
+          <div className="space-y-2">
+            <Label htmlFor="invoice-mobile-statement-currency">
+              {t("invoices.wizard.dailyIncome.dialog.currency")}
+            </Label>
+            <SearchableSelect
+              id="invoice-mobile-statement-currency"
+              value={statementCurrency}
+              onValueChange={(next) => form.setValue("currency", next, { shouldValidate: true })}
+              options={[
+                { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
+                { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
+              ]}
+              placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
+              mobileSheet
+            />
+          </div>
+        ) : null}
 
         {showExchangeRate ? (
           <div className="space-y-2">

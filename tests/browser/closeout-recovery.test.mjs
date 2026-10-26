@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { chromium } from "@playwright/test";
 import webpackPackage from "next/dist/compiled/webpack/webpack.js";
 
-test("closeout recovery preserves transaction values and retries after explicit currency/rate selection", async () => {
+for (const branch of ["RD", "NY"]) test(`closeout recovery preserves draft with ${branch} branch settings`, async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "emsys-closeout-test-"));
   let browser;
   try {
@@ -21,7 +21,7 @@ test("closeout recovery preserves transaction values and retries after explicit 
         "@/lib/users/hooks/use-users$": path.join(fixtures, "closeout-hooks.ts"),
         "@/lib/auth/hooks/use-auth$": path.join(fixtures, "documents-auth.ts"),
         "@/lib/i18n$": path.join(fixtures, "i18n.ts"),
-        "@/lib/branches/hooks/use-branches$": path.join(fixtures, "branches.ts"),
+        "@/lib/branches/hooks/use-branches$": path.join(fixtures, "closeout-hooks.ts"),
         "@/lib/inventory/hooks/use-inventory$": path.join(fixtures, "inventory-hooks.ts"),
         "@/lib/employees/hooks/use-employees$": path.join(fixtures, "inventory-hooks.ts"),
         "@": path.resolve("src"),
@@ -33,20 +33,27 @@ test("closeout recovery preserves transaction values and retries after explicit 
     browser = await chromium.launch({headless:true});
     const page = await browser.newPage();
     await page.setContent('<div id="root"></div>');
+    await page.evaluate(code => { window.closeoutBranch = code; }, branch);
     await page.addScriptTag({content:await readFile(path.join(directory,"fixture.js"),"utf8")});
     await page.locator("#journal-description").fill("Keep this draft while opening the closeout");
     await page.locator("#record").click();
     await page.getByRole("dialog").waitFor();
     assert.equal(await page.locator("#statement-date").inputValue(), "2026-10-26");
     assert.equal(await page.locator("#statement-date").isDisabled(), true);
+    if (branch === "RD") {
+    assert.equal(await page.locator("#statement-rate").isVisible(), true);
     await page.locator("#statement-currency").click();
     await page.getByRole("option", {name:"accounting.dailyIncome.currency.dop",exact:true}).click();
     await page.locator("#statement-rate").fill("60");
+    } else {
+      assert.equal(await page.locator("#statement-currency").count(), 0);
+      assert.equal(await page.locator("#statement-rate").count(), 0);
+    }
     await page.getByRole("button", {name:"accounting.dailyIncome.statement.save",exact:true}).click();
     await page.waitForFunction(()=>document.getElementById("attempts").textContent === "2");
     await page.waitForFunction(()=>document.getElementById("saved").textContent === "Keep this draft while opening the closeout");
     const requests = await page.evaluate(()=>window.closeoutRequests);
-    assert.equal(requests.length,1);assert.equal(requests[0].currency,"DOP");assert.equal(requests[0].rate,60);
+    assert.equal(requests.length,1);assert.equal(requests[0].currency,branch === "RD" ? "DOP" : "USD");assert.equal(requests[0].rate,branch === "RD" ? 60 : 1);
     assert.equal(await page.locator("#journal-description").inputValue(),"Keep this draft while opening the closeout");
   } finally {
     await browser?.close();

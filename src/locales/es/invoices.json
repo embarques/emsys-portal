@@ -398,7 +398,7 @@
         "searchEmployees": "Buscar empleados…",
         "createDailyIncome": "Crear ingresos diarios",
         "createDailyIncomeTitle": "Crear ingresos diarios",
-        "createDailyIncomeHint": "Seleccione la fecha, la moneda y la sucursal de los ingresos diarios.",
+        "createDailyIncomeHint": "Abra los ingresos diarios de hoy para su sucursal. La moneda y la tasa de cambio se solicitan solo para RD.",
         "branch": "Sucursal",
         "selectBranch": "Seleccionar sucursal",
         "searchBranches": "Buscar sucursales…",
