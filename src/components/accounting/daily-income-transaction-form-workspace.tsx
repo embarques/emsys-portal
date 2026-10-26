@@ -17,6 +17,7 @@ import {
   useCreateDailyIncomeJournal,
   useDailyIncomeJournal,
   useIncomeStatementById,
+  useCurrentIncomeStatement,
   useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
@@ -31,7 +32,19 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 import { useTranslation } from "@/lib/i18n";
 
-export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+export function DailyIncomeTransactionFormWorkspace(props: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
+  const { closeFormTabAndReturn } = useWorkspaceTabs();
+  if (props.mode === "edit") {
+    return <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
+      <p className="p-5">{t("accounting.financialActivity.postedImmutable")}</p>
+      <Button variant="outline" onClick={() => closeFormTabAndReturn(props.tabId)}>{t("common.actions.close")}</Button>
+    </FormTabShell>;
+  }
+  return <DailyIncomeTransactionEntry {...props} />;
+}
+
+function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
   const transactionSessionId = useId();
@@ -46,7 +59,8 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   const editStatementId = journalQuery.data?.incomeStatementId ?? 0;
   const statementId = isEditing ? editStatementId : addStatementId;
   const statementQuery = useIncomeStatementById(statementId > 0 ? statementId : null);
-  const sessionTransactions = useSessionDailyIncomeTransactions(statementId, transactionSessionId);
+  const currentStatementQuery = useCurrentIncomeStatement(statementQuery.data?.branch?.id ?? 0);
+  const sessionTransactions = useSessionDailyIncomeTransactions(currentStatementQuery.data?.id ?? statementId, transactionSessionId);
 
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
   const employees = useMemo(
@@ -62,7 +76,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   const createJournal = useCreateDailyIncomeJournal(transactionSessionId);
   const updateJournal = useUpdateDailyIncomeJournal();
 
-  const statement = statementQuery.data ?? null;
+  const statement = currentStatementQuery.data ?? null;
   const editingJournal = journalQuery.data ?? null;
   const initialValues = useMemo(
     () => (isEditing && editingJournal ? journalToFormValues(editingJournal) : undefined),
@@ -132,7 +146,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
     );
   }
 
-  if (!isEditing && statementQuery.isLoading) {
+  if (!isEditing && (statementQuery.isLoading || currentStatementQuery.isLoading)) {
     return (
       <FormTabShell title={t("accounting.dailyIncome.wizard.addTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
@@ -144,8 +158,8 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   }
 
   if (!statement) {
-    const message = statementQuery.isError
-      ? normalizeApiError(statementQuery.error).message
+    const message = statementQuery.isError || currentStatementQuery.isError
+      ? normalizeApiError(statementQuery.error ?? currentStatementQuery.error).message
       : t("accounting.dailyIncome.errors.closeoutNotFound");
     return (
       <FormTabShell title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}>

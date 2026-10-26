@@ -1672,7 +1672,7 @@ export async function createInvoice(
 ): Promise<Invoice> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.INVOICES,
-    // Income statement (Cuadre) is optional: skip when none is open, or link an open one.
+    // The server selects the current accounting period; do not send a viewed period ID.
     {
       ...buildInvoiceWritePayload(values, context, { requireIncomeStatement: false }),
       ...(context.customerSignature ? { customerSignature: customerSignatureSchema.parse(context.customerSignature) } : {}),

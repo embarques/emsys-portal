@@ -30,9 +30,9 @@ test("renders closeout totals and transaction directory only when a closeout exi
   const main = workspaceMain(page);
 
   await expect(main.getByRole("heading", { name: "Daily Income" })).toBeVisible();
-  await expect(main.getByText(/No closeout for this date|(?:OPEN|CLOSED) · #/)).toBeVisible();
+  await expect(main.getByText(/No closeout for this date|(?:Active|Inactive) · #/)).toBeVisible();
 
-  const hasCloseout = (await main.getByText(/(?:OPEN|CLOSED) · #/).count()) > 0;
+  const hasCloseout = (await main.getByText(/(?:Active|Inactive) · #/).count()) > 0;
   if (!hasCloseout) {
     await expect(main.getByText("Total income")).toHaveCount(0);
     await expect(main.getByText("Transactions", { exact: true })).toHaveCount(0);
@@ -49,4 +49,9 @@ test("renders closeout totals and transaction directory only when a closeout exi
 test("opens the route in a workspace tab", async ({ page }) => {
   await expect(page).toHaveURL(/\/accounting\/daily-income\?.*tab=\d+/);
   await expect(workspaceMain(page).locator("[data-tab-id]").filter({ hasText: "Daily Income" })).toBeVisible();
+});
+
+test("daily closeout lifecycle is automatic", async ({ page }) => {
+  const main = workspaceMain(page);
+  await expect(main.getByRole("button", { name: /^(Create closeout|Close day|Reopen day|Edit closeout)$/ })).toHaveCount(0);
 });

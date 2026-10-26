@@ -84,3 +84,47 @@ test("pending financial activity opens as a desktop workspace tab", () => {
  assert.equal(registry.isWorkspaceRoute("/accounting/pending-financial-activity"),true);
  assert.equal(registry.resolveWorkspaceComponent("/accounting/pending-financial-activity?tab=8"),components.get("@/components/accounting/financial-activity-workspace").FinancialActivityWorkspace);
 });
+
+test("reconciliation keeps expense verification separate from cash handovers and clearing", () => {
+ const workflow=loadFeature("src/lib/accounting/financial-activity/workflow.ts",{});
+ const cash={id:"activity",journalId:"journal",transactionType:"PAYMENT",paymentMethod:{name:"CASH"}};
+ const handover={id:"handover",type:"HANDED_OVER",amount:10};
+ assert.deepEqual(workflow.reconciliationActions(cash,[]),["HANDED_OVER"]);
+ assert.deepEqual(workflow.reconciliationActions(cash,[handover]),["HANDED_OVER","VERIFIED","REJECTED"]);
+ assert.deepEqual(workflow.pendingHandovers([handover,{type:"VERIFIED",handoverId:"handover"}]),[]);
+ assert.deepEqual(workflow.reconciliationActions({...cash,transactionType:"EXPENSE"},[handover]),["VERIFIED"]);
+ assert.deepEqual(workflow.reconciliationActions({...cash,paymentMethod:{name:"CHECK"}},[]),[]);
+ assert.deepEqual(workflow.reconciliationActions({...cash,journalId:undefined},[]),[]);
+ assert.deepEqual(workflow.reconciliationActions(cash,[{type:"REVERSED"}]),[]);
+});
+
+test("generic reversals exclude invoice lifecycle, inventory, loans and unlinked payments", () => {
+ const workflow=loadFeature("src/lib/accounting/financial-activity/workflow.ts",{});
+ for(const transactionType of ["INITIAL-PAYMENT","VOID","INVENTORY","LOAN","LOAN-PAYMENT","UNKNOWN"])
+  assert.equal(workflow.canReverseFinancialActivity({journalId:"journal",transactionType}),false);
+ assert.equal(workflow.canReverseFinancialActivity({journalId:"journal",transactionType:"PAYMENT"}),true);
+ assert.equal(workflow.canReverseFinancialActivity({transactionType:"PAYMENT"}),false);
+});
+
+test("current period lookup uses branch scope and cancellation without a browser date",async()=>{
+ const calls=[];
+ const api=loadFeature("src/lib/accounting/daily-income/api.ts",{get:async(...args)=>{calls.push(args);return{data:{id:9,status:"ACTIVE",businessDate:"2026-11-01",periodStart:"2026-11-01T04:00:00Z",periodEnd:"2026-11-02T05:00:00Z",timezone:"America/New_York"}};}});
+ const controller=new AbortController();
+ const statement=await api.fetchCurrentIncomeStatement(3,controller.signal);
+ assert.equal(calls[0][0],"/income-statements/current?branchId=3");
+ assert.equal(calls[0][1].signal,controller.signal);
+ assert.equal(statement.date,"2026-11-01");
+ assert.equal(statement.periodEnd,"2026-11-02T05:00:00Z");
+ assert.equal(statement.status,"OPEN");
+});
+
+test("handover and reversal forms reject missing recipients, nonpositive amounts and empty reasons", () => {
+ const {activityFormSchema}=loadFeature("src/lib/accounting/financial-activity/schemas.ts",{});
+ const values={type:"HANDED_OVER",amount:"10",from:[{id:1,name:"Sender"}],to:[{id:2,name:"Receiver"}],reference:"",handover:""};
+ assert.equal(activityFormSchema.safeParse(values).success,true);
+ assert.equal(activityFormSchema.safeParse({...values,to:values.from}).success,false);
+ assert.equal(activityFormSchema.safeParse({...values,to:[]}).success,false);
+ assert.equal(activityFormSchema.safeParse({...values,amount:"0"}).success,false);
+ assert.equal(activityFormSchema.safeParse({...values,type:"REVERSED"}).success,false);
+ assert.equal(activityFormSchema.safeParse({...values,type:"REVERSED",reference:"Duplicate receipt"}).success,true);
+});

@@ -114,12 +114,8 @@ export function DeliveryBalanceStep({ state }: { state: BalanceState }) {
           <p>{t("deliveries.wizard.balance.paymentLoadError")}</p>
           <Button type="button" variant="outline" onClick={() => void Promise.all([state.profile, state.statement, state.employees, state.routes, state.banks, state.methods].filter((query) => query.isError).map((query) => query.refetch()))}>{t("deliveries.deliver.retry")}</Button>
         </div> : state.profile.isPending || (state.profile.data?.branch.id && state.statement.isPending) || state.methods.isPending ? <p role="status">{t("common.loading")}</p> : !statement ? <div className="space-y-3">
-          <p role="status">{t(state.rate != null ? "deliveries.wizard.balance.noStatementCreate" : "deliveries.wizard.balance.noStatementNoRate")}</p>
-          {state.rate != null ? <Button type="button" variant="outline" disabled={state.busy || !state.profile.data?.branch.id} onClick={state.createStatement}>
-            {t(state.creatingStatement ? "deliveries.wizard.balance.creatingStatement" : "deliveries.wizard.balance.createStatement")}
-          </Button> : null}
-          {state.error ? <p role="alert" className="text-sm text-destructive">{state.error}</p> : null}
-        </div> : statement.status !== "OPEN" ? <p role="status">{t("deliveries.wizard.balance.statementClosed")}</p> : <>
+          <p role="status">{t("accounting.financialActivity.noCurrentCloseout")}</p>
+        </div> : statement.status !== "OPEN" ? <p role="status">{t("accounting.financialActivity.noCurrentCloseout")}</p> : <>
           <fieldset disabled={state.busy} className="min-w-0">
             <DeliveryPaymentForm
               key={`${invoice.invoiceId}:${statement.id}`}
