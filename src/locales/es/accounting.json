@@ -512,7 +512,7 @@
       "nextDay": "Día siguiente",
       "today": "Hoy",
       "openTitle": "Cierres abiertos",
-      "openDescription": "Cierres abiertos de esta sucursal, del más antiguo al más reciente. Revisa un día o ciérralo aquí.",
+      "openDescription": "Revise los cuadres activos. El proceso programado los cierra automáticamente.",
       "loading": "Cargando cierres abiertos…",
       "retry": "Reintentar",
       "empty": "No hay cierres abiertos en esta página.",
@@ -523,7 +523,7 @@
       "confirm": "¿Cerrar el cierre #{{id}} del {{date}}? Las transacciones quedarán bloqueadas hasta que se vuelva a abrir."
     },
     "title": "Ingresos diarios",
-    "description": "Registre y controle las transacciones de ingreso diarias y los ingresos de la empresa.",
+    "description": "Los cuadres se abren y cierran automáticamente a medianoche de la sucursal. Actualice después del cambio de día; contacte a un administrador si el cuadre actual no está disponible.",
     "noun": "transacciones",
     "transactionNoun": "transacción",
     "actions": {
@@ -996,8 +996,9 @@
     "branchOverrides": "Zona horaria y moneda por sucursal",
     "companyDefaults": "Usar valores de la empresa",
     "unknownCurrency": "Sin especificar",
-    "noCurrentCloseout": "No hay un cuadre diario actual disponible. Revise el ingreso diario o el cierre programado.",
+    "noCurrentCloseout": "Los cuadres se abren y cierran automáticamente a medianoche de la sucursal. Actualice después del cambio de día; contacte a un administrador si el cuadre actual no está disponible.",
     "occurrenceDate": "Fecha real de la transacción",
-    "refresh": "Actualizar"
+    "refresh": "Actualizar",
+    "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos."
   }
 }

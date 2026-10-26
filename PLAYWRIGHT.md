@@ -97,7 +97,7 @@ In the sidebar, run:
 
 The test verifies:
 
-- OPEN closeout is found or created
+- An active closeout prepared by the non-production CLI is available
 - Register invoice wizard (employee, invoice number, cost, amount, balance, payment method)
 - Success toast: **`New invoice #xxxx created and payment registered.`**
 - Wizard stays open with **employee retained** and invoice fields cleared for the next entry
@@ -159,7 +159,7 @@ The test user must:
 
 ### 2. Daily Income branch and closeout behavior
 
-Daily income tests pick the **date automatically** (today, then walk back up to 14 days). They **create** a closeout when the page shows “No closeout for this date”, **reuse** one when the API returns **HTTP 409** (already exists), or **reopen** a CLOSED one.
+Daily income tests use the configured current business date (runner today by default). Prepare the active period with the backend CLI in the approved test environment. Fixtures never create or reopen periods.
 
 Pin the branch in `.env.local`:
 
@@ -174,7 +174,7 @@ PLAYWRIGHT_DAILY_INCOME_BRANCH=NY
 | `PLAYWRIGHT_DAILY_INCOME_DATE` | *(Optional, debug only)* Force a specific ISO date — normally leave unset |
 | `PLAYWRIGHT_DAILY_INCOME_INVOICE_NUMBER` | *(Optional)* Pin a specific invoice in the register-invoice wizard |
 
-**Permissions:** The test user needs API permission to **create**, **search**, and **reopen** daily income closeouts, and to **create journals** for transaction tests.
+**Permissions:** The test user needs API permission to view/search income statements and create journals for transaction tests. Manual closeout creation and reopening are not used.
 
 ### 2b. Invoice create wizard
 
@@ -328,7 +328,7 @@ Use this to reproduce what the tests see **before** debugging Playwright itself.
 
 6. **Verify the closeout**:
    - Branch and date match your env vars (or today + pinned branch).
-   - Status badge shows **`OPEN · #…`**.
+   - Status badge shows **`Active · #…`**.
    - **Add transaction** is enabled.
 
 7. **Optional — Network tab**:
@@ -697,7 +697,7 @@ The error message includes the last HTTP status and whether the forbidden banner
 
 #### Closeout loads but `POST /journals` returns HTTP 403
 
-The test reaches Daily Income, shows **`OPEN · #…`**, fills the register-invoice wizard, then fails on save.
+The test reaches Daily Income, shows **`Active · #…`**, fills the register-invoice wizard, then fails on save.
 
 **Typical causes**
 
@@ -842,3 +842,7 @@ such as `emsys_codex_test`. The test rejects non-loopback API URLs. Localhost po
 `PLAYWRIGHT_PORT`/`PLAYWRIGHT_HOST` are optional; other suites keep their existing
 127.0.0.1:3100 defaults. Stop test dev servers after validation; no authentication
 bypass or test credential belongs in a production deployment.
+
+### Automatic daily closeout prerequisite
+
+Accounting payment fixtures no longer create or reopen closeouts. Prepare an opted-in branch with the backend `daily-income end-of-day` CLI in an approved non-production environment. Set `PLAYWRIGHT_DAILY_INCOME_BRANCH` and, when the branch timezone differs from the runner, `PLAYWRIGHT_DAILY_INCOME_DATE` to the current branch-local business date. An inactive historical closeout is read-only and cannot satisfy payment-entry tests.

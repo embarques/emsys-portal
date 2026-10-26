@@ -8,7 +8,6 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
   createDailyIncomeJournal,
-  createIncomeStatement,
   deleteDailyIncomeJournal,
   fetchAccountingPaymentMethods,
   fetchDailyIncomeJournal,
@@ -18,16 +17,13 @@ import {
   fetchOpenIncomeStatements,
   fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
-  setIncomeStatementStatus,
   updateDailyIncomeJournal,
-  updateIncomeStatement,
 } from "@/lib/accounting/daily-income/api";
 import type {
   DailyIncomeJournal,
   DailyIncomeJournalListParams,
   DailyIncomeJournalValues,
   DailyIncomeStatement,
-  DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useAppSelector } from "@/lib/store/hooks";
@@ -147,32 +143,6 @@ function invalidateDailyIncome(queryClient: ReturnType<typeof useQueryClient>) {
   return queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
 }
 
-export function useCreateIncomeStatement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (values: DailyIncomeStatementValues) => createIncomeStatement(values),
-    onSuccess: () => invalidateAccounting(queryClient),
-  });
-}
-
-export function useUpdateIncomeStatement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: number; values: DailyIncomeStatementValues }) =>
-      updateIncomeStatement(id, values),
-    onSuccess: () => invalidateAccounting(queryClient),
-  });
-}
-
-export function useSetIncomeStatementStatus() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ statement, open }: { statement: DailyIncomeStatement; open: boolean }) =>
-      setIncomeStatementStatus(statement, open),
-    onSuccess: () => invalidateAccounting(queryClient),
-  });
-}
-
 export function useCreateDailyIncomeJournal(sessionId?: string) {
   const queryClient = useQueryClient();
   const { companyId, user } = useAuth();
@@ -216,4 +186,4 @@ export function useSessionDailyIncomeTransactions(statementId: number, sessionId
   }).filter((entry) => companyId && user?.uid && entry.journal && entry.statementId === statementId).sort((a, b) => b.savedAt - a.savedAt);
 }
 
-export function useCurrentIncomeStatement(branchId:number){const {companyId}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0);return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:()=>fetchCurrentIncomeStatement(branchId),enabled,refetchInterval:30000});}
+export function useCurrentIncomeStatement(branchId:number){const {companyId,hasPermission}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0 && hasPermission("canViewIncomeStatement", "income_statement"));return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:({signal})=>fetchCurrentIncomeStatement(branchId,signal),enabled,refetchInterval:30000});}

@@ -9,7 +9,7 @@ import { fetchCurrentUser } from "@/lib/users/api/users-api";
 import { fetchEmployees } from "@/lib/employees/api/employees-api";
 import { fetchActiveRoutes } from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-api";
 import { fetchChartAccounts } from "@/lib/accounting/chart-accounts/api/chart-accounts-api";
-import { createDailyIncomeJournal, createIncomeStatement, fetchAccountingPaymentMethods, searchIncomeStatementForDate } from "@/lib/accounting/daily-income/api";
+import { createDailyIncomeJournal, fetchAccountingPaymentMethods, fetchCurrentIncomeStatement } from "@/lib/accounting/daily-income/api";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
 import { DuplicatePaymentCancelledError, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
 import { toApiPaymentMethodName, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
@@ -54,8 +54,8 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     enabled: access.canDeliver && Boolean(target.invoiceId),
     staleTime: 0,
   });
-  // Recording payment, opening a Cuadre and overriding clearance share one gate.
-  const canPay = access.canDeliver && access.canList && has(PERMISSIONS.incomeStatementsCreate) && has(PERMISSIONS.journalsCreate);
+  // The API selects the current closeout; recording payments does not create periods.
+  const canPay = access.canDeliver && access.canList && has(PERMISSIONS.incomeView) && has(PERMISSIONS.journalsCreate);
   const balance = invoice.isSuccess ? invoice.data.balance ?? null : null;
   const enabled = active && canPay && balance != null && balance !== 0;
   const profile = useWorkspaceQuery({ queryKey: [...scope, "profile"], queryFn: fetchCurrentUser, enabled });
@@ -64,7 +64,7 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const branchId = profile.data?.branch.id ?? 0;
   const statement = useWorkspaceQuery({
     queryKey: [...scope, "statement", branchId, date],
-    queryFn: () => searchIncomeStatementForDate(branchId, date),
+    queryFn: ({ signal }) => fetchCurrentIncomeStatement(branchId, signal),
     enabled: enabled && branchId > 0,
   });
   const employees = useWorkspaceQuery({
@@ -99,24 +99,6 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const canOverride = canPay && balance != null && balance > 0 && pending.isSuccess && pendingTotal > 0 && covers(pendingTotal, balance);
   const overridden = overrideAccepted && canOverride;
   const confirmation = useDuplicatePaymentConfirmation(active);
-
-  const createStatement = useMutation({
-    retry: false,
-    mutationFn: async () => {
-      const branch = profile.data?.branch;
-      if (!canPay || !branch?.id || rate == null || store.getState().auth.companyId !== access.companyId)
-        throw new Error(t("deliveries.wizard.balance.paymentUnavailable"));
-      return createIncomeStatement({ date, branchId: branch.id, branchCode: "", branchName: branch.name ?? "", currency: "USD", rate });
-    },
-    onSuccess: async () => {
-      setError(null);
-      await Promise.all([
-        statement.refetch(),
-        client.invalidateQueries({ queryKey: queryKeys.accounting.all }),
-      ]);
-    },
-    onError: (failure) => setError(normalizeApiError(failure).message),
-  });
 
   const mutation = useMutation({
     retry: false,
@@ -195,8 +177,6 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     overrideAccepted, setOverrideAccepted,
     ready: balance === 0 || overridden,
     verify,
-    createStatement: () => createStatement.mutate(),
-    creatingStatement: createStatement.isPending,
-    busy: confirmation.isSubmitting || mutation.isPending || createStatement.isPending,
+    busy: confirmation.isSubmitting || mutation.isPending,
   };
 }
