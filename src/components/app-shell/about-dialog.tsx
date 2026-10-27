@@ -16,7 +16,12 @@ export function AboutDialog({ open, onOpenChange }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent
+        // The mobile navigation drawer uses z-[9999]. Both portaled layers
+        // must sit above it so About remains visible and interactive.
+        overlayClassName="z-[10000]"
+        className="z-[10001] max-w-[calc(100vw-2rem)] sm:max-w-sm"
+      >
         <DialogHeader>
           <DialogTitle>{t("shell.profileMenu.about")}</DialogTitle>
           <DialogDescription>{t("shell.profileMenu.aboutDescription")}</DialogDescription>

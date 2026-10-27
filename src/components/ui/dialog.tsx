@@ -85,8 +85,10 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     /** Center within the visible workspace tab body and size to content within it. */
     centerInWorkspace?: boolean;
+    /** Match the backdrop to dialogs displayed above shell overlays. */
+    overlayClassName?: string;
   }
->(({ className, children, onPointerDownOutside, onInteractOutside, centerInWorkspace = false, ...props }, ref) => {
+>(({ className, children, onPointerDownOutside, onInteractOutside, centerInWorkspace = false, overlayClassName, ...props }, ref) => {
   const portalContainer = useWorkspaceTabPortalContainer();
   const tabScoped = portalContainer != null;
   const centeredInBody = centerInWorkspace && tabScoped;
@@ -124,7 +126,7 @@ const DialogContent = React.forwardRef<
 
   return (
     <DialogPortal container={portalContainer ?? undefined}>
-      <DialogOverlay tabScoped={tabScoped} />
+      <DialogOverlay tabScoped={tabScoped} className={overlayClassName} />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
