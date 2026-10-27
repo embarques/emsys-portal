@@ -81,7 +81,12 @@
     "settings": "Settings",
     "notifications": "Notifications",
     "changePassword": "Change Password",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "about": "About",
+    "portalVersion": "Portal version",
+    "apiVersion": "API version",
+    "versionUnavailable": "Unavailable",
+    "aboutDescription": "Installed portal and API versions."
   },
   "theme": {
     "change": "Change theme",
