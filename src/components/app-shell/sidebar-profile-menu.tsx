@@ -12,6 +12,8 @@ import {
   UserCircle,
 } from "lucide-react";
 
+import { AboutDialog } from "@/components/app-shell/about-dialog";
+import { Info } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/configuration/change-password-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -75,6 +77,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
   const currentUserQuery = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const rawProfileName =
@@ -269,6 +272,18 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
               <KeyRound className="h-4 w-4 shrink-0" />
               {t("shell.profileMenu.changePassword")}
             </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setAboutOpen(true);
+              }}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-accent hover:text-accent-foreground"
+            >
+              <Info className="h-4 w-4 shrink-0" />
+              {t("shell.profileMenu.about")}
+            </button>
           </div>
 
           <div className="border-t p-2">
@@ -285,6 +300,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
         </div>
       ) : null}
 
+      <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
       <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </div>
   );

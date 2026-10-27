@@ -160,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setDevSessionExpiresAt(null);
     dispatch(clearAuthTransport());
     queryClient.removeQueries({ queryKey: queryKeys.permissions.all });
+    queryClient.removeQueries({ queryKey: queryKeys.sessionVersion.all });
   }, [dispatch, queryClient]);
 
   useEffect(() => {
