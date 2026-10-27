@@ -9,7 +9,7 @@ import type { Branch } from "@/lib/branches/types";
 import type { ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 
-const branches = [{ id: 1, code: "NY", name: "New York" }] as Branch[];
+const branches = [{ id: 1, code: "NY", name: "New York" }, { id: 2, code: "RD", name: "Dominican Republic" }] as Branch[];
 const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const accounts = [
   { id: 1, name: "Cash", displayName: "Cash", type: "ASSET" },

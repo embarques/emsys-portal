@@ -62,8 +62,8 @@ function AutomationForm({ initial }: {
     const [settings, setSettings] = useState(initial);
     const save = useSaveAutomation();
     const text = (key: string) => t(`accounting.financialActivity.${key}`);
-    return <form className="space-y-4 rounded-xl border p-4" onSubmit={event => { event.preventDefault(); save.mutate(settings); }}><h3 className="text-lg font-semibold">{text("automation")}</h3><p className="text-sm text-muted-foreground">{text("automationHelp")}</p>
- <Label className="flex items-center gap-2"><input type="checkbox" checked={settings.enabled} onChange={event => setSettings(current => ({ ...current, enabled: event.target.checked }))}/>{text("enabled")}</Label>
+    return <form className="space-y-4 rounded-xl border p-4" onSubmit={event => { event.preventDefault(); save.mutate({...settings,enabled:false}); }}><h3 className="text-lg font-semibold">{text("automation")}</h3><p className="text-sm text-muted-foreground">{text("automationHelp")}</p>
+
  <div className="grid gap-3 sm:grid-cols-3"><Label>{text("timezone")}<Input required value={settings.timezone} onChange={event => setSettings(current => ({ ...current, timezone: event.target.value }))}/></Label><Label>{text("currency")}<select className="h-10 w-full rounded-md border bg-background px-3" value={settings.currency} onChange={event => setSettings(current => ({ ...current, currency: event.target.value }))}><option>USD</option><option>DOP</option></select></Label><Label>{text("rate")}<Input type="number" required min="0.000001" step="any" value={settings.rate} onChange={event => setSettings(current => ({ ...current, rate: Number(event.target.value) }))}/></Label></div>
  <CloseoutBranchSettings settings={settings} onChange={setSettings}/>
  {save.isError ? <p role="alert" className="text-destructive">{normalizeApiError(save.error).message}</p> : null}{save.isSuccess ? <p role="status">{text("saved")}</p> : null}<Button type="submit" disabled={save.isPending || JSON.stringify(initial) === JSON.stringify(settings)}>{text("save")}</Button></form>;

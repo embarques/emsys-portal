@@ -59,14 +59,13 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const balance = invoice.isSuccess ? invoice.data.balance ?? null : null;
   const enabled = active && canPay && balance != null && balance !== 0;
   const profile = useWorkspaceQuery({ queryKey: [...scope, "profile"], queryFn: fetchCurrentUser, enabled });
-  const now = new Date();
-  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const branchId = profile.data?.branch.id ?? 0;
   const statement = useWorkspaceQuery({
-    queryKey: [...scope, "statement", branchId, date],
+    queryKey: [...scope, "statement", branchId],
     queryFn: ({ signal }) => fetchCurrentIncomeStatement(branchId, signal),
     enabled: enabled && branchId > 0,
   });
+  const date = statement.data?.businessDate || statement.data?.date || "";
   const employees = useWorkspaceQuery({
     queryKey: [...scope, "employees"],
     queryFn: () => fetchEmployees({ page: 1, limit: 100, sort: "name:asc", active: true }),
@@ -75,7 +74,7 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const routes = useWorkspaceQuery({
     queryKey: [...scope, "routes", date],
     queryFn: () => fetchActiveRoutes({ page: 1, limit: 100, date }),
-    enabled: enabled && has(PERMISSIONS.routesView),
+    enabled: enabled && Boolean(date) && has(PERMISSIONS.routesView),
   });
   const banks = useWorkspaceQuery({
     queryKey: [...scope, "banks"],
@@ -99,6 +98,8 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const canOverride = canPay && balance != null && balance > 0 && pending.isSuccess && pendingTotal > 0 && covers(pendingTotal, balance);
   const overridden = overrideAccepted && canOverride;
   const confirmation = useDuplicatePaymentConfirmation(active);
+
+
 
   const mutation = useMutation({
     retry: false,
@@ -177,6 +178,7 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     overrideAccepted, setOverrideAccepted,
     ready: balance === 0 || overridden,
     verify,
+    creatingStatement: false,
     busy: confirmation.isSubmitting || mutation.isPending,
   };
 }

@@ -641,7 +641,10 @@
       "placeholders": {
         "selectBranch": "Seleccionar sucursal",
         "searchBranches": "Buscar sucursales…"
-      }
+      },
+      "rolloverHelp": "Elija la moneda y la tasa para hoy. Los demás cuadres abiertos de su sucursal se cerrarán automáticamente. El servidor establece la fecha.",
+      "rolloverHelpDefault": "Abra el cuadre de hoy. Los demás cuadres abiertos de su sucursal se cerrarán automáticamente. El servidor establece la fecha.",
+      "createPermission": "Se requiere permiso para crear cuadres."
     },
     "delete": {
       "title": "¿Eliminar transacción?",
@@ -970,8 +973,8 @@
     "deposits": "Depósitos",
     "cards": "Tarjetas de crédito",
     "historyHelp": "Los eventos de cobro y confirmación conservan la transacción y su cuadre original.",
-    "automation": "Cierre automático de fin de día",
-    "automationHelp": "Cierra el día anterior y abre el nuevo a medianoche en la zona horaria configurada. Un administrador debe instalar la programación del servidor antes de activar esta función.",
+    "automation": "Calendario de cuadres",
+    "automationHelp": "Los cuadres se abren explícitamente. Solo RD solicita la moneda y la tasa de cambio. Las fechas usan la zona horaria de la sucursal.",
     "enabled": "Activar los cuadres diarios automáticos",
     "timezone": "Zona horaria",
     "currency": "Moneda",
@@ -996,7 +999,7 @@
     "branchOverrides": "Zona horaria y moneda por sucursal",
     "companyDefaults": "Usar valores de la empresa",
     "unknownCurrency": "Sin especificar",
-    "noCurrentCloseout": "Los cuadres se abren y cierran automáticamente a medianoche de la sucursal. Actualice después del cambio de día; contacte a un administrador si el cuadre actual no está disponible.",
+    "noCurrentCloseout": "No hay un cuadre abierto para hoy. Abra el cuadre de hoy en Ingresos diarios y actualice. Solo RD solicita moneda y tasa de cambio.",
     "occurrenceDate": "Fecha real de la transacción",
     "refresh": "Actualizar",
     "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos."

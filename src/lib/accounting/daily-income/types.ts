@@ -21,6 +21,7 @@ export type DailyIncomePartyRef = {
 export type IncomeStatementStatus = "OPEN" | "CLOSED";
 
 export type DailyIncomeStatement = {
+  closedCloseouts?: DailyIncomeStatement[];
   automated?: boolean;
   /** Fixed UTC boundaries; do not calculate these by adding 24 hours locally. */
   periodStart?: string;

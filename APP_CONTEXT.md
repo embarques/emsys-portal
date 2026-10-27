@@ -277,6 +277,22 @@ The goal is to maintain a centralized financial history of the company's operati
 
 ### Daily Income
 
+Closeouts use the server clock and configured location timezone. Transactions
+require the latest closeout to be open and dated today; 409 CLOSEOUT_REQUIRED
+reasons are NONE_EXISTS, STALE_OPEN_CLOSEOUT, and LATEST_CLOSED. The transaction
+attempt never closes rows. Only RD prompts for currency/rate; other branches
+use USD/rate 1. POST income-statements with only those two fields. The server owns location/date, preserves today's
+existing open row, atomically closes all other open location rows, and returns
+or creates today's row. Manual close/reopen/edit/delete and automatic cron
+rollover are retired. Calendar navigation uses the context endpoint's server
+date/timezone and current/previous metadata. Treat businessDate as a date label.
+Draft transaction values survive the recovery dialog, and successful entries
+are attributed to the closeout ID actually returned by the server.
+
+When a financial transaction omits both assignee families, the API defaults to
+the creator's linked employee, if present. An explicit employee/daily route is
+preserved. Inventory dispatch continues to require an explicit stock recipient.
+
 Daily Income is used to manage and record the company's daily incoming transactions.
 
 It provides a way to record and track income received each day and maintain a historical record of daily revenue.
@@ -530,12 +546,14 @@ be migrated before switching clients.
 
 ### Automatic daily closeouts and pending financial activity
 
-Daily closeout scheduling lives in the API CLI (`daily-income end-of-day`) and cron. Each tenant can opt in through the financial activity workspace; settings include company defaults and API-supported branch overrides for timezone, currency and rate. Scheduling infrastructure must be installed before activation.
+Scheduled closeout rollover is retired. The financial activity workspace retains calendar/timezone configuration; closeouts are created explicitly during daily income recovery. Only RD asks for currency and exchange rate; other branches use USD/rate 1.
 
 New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Posted transactions cannot be edited/deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
 
 Pending Financial Activity lists unresolved amounts across all dates with server-side filters and pagination. Collection, employee cash handover, receiving-employee verification, expenses and payment clearing remain separate from daily accounting totals. Method-specific clearing directories retain their update permissions. Financial activity has dedicated view/update permissions; generic reversals additionally require journal-create permission. Reconciliation events preserve the original period and invoice payments are applied/reversed transactionally.
 
-The portal exposes no manual create, open, reopen or close actions for daily accounting periods, including invoice and delivery payment flows. Those flows query the server-selected current closeout; a missing period shows a refresh/support message. Occurrence dates do not determine period membership. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections, and require `canCreateFinancialAdjustment` in addition to the existing journal/reconciliation grants.
+Currency and exchange-rate inputs for daily closeout creation appear only for branch code RD. Other branches use USD/rate 1 without asking the user; this also applies to rollover recovery and invoice registration. RD exchange rate remains editable for either USD or DOP.
 
-The supplied `api-docs.json` snapshot still lacks the new automation, current-period, financial-activity and reversal endpoint schemas. Its workflow descriptions have been updated from the accounting requirements; regenerate those endpoint definitions from the backend export before claiming full OpenAPI parity.
+Invoice and delivery flows query the server-selected current closeout. Missing periods use explicit server-dated creation with RD-only settings; manual closing/reopening remains unavailable. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections and require `canCreateFinancialAdjustment` in addition to existing journal/reconciliation grants.
+
+The supplied `api-docs.json` snapshot still lacks the new automation, current-period, financial-activity and reversal endpoint schemas. Regenerate those definitions from the backend export before claiming full OpenAPI parity.

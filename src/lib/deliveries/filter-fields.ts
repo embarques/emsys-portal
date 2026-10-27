@@ -8,7 +8,7 @@ export const ASSIGNED_DELIVERY_BAR_OR_SEARCH_FIELDS = [
   "invoice.number",
   "name",
   "receiver.name",
-  "receiver.address.state",
+  "receiver.address.city",
   "container.name",
 ] as const;
 

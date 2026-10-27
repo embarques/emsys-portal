@@ -43,10 +43,10 @@ export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementS
   return z.object({
     date: z.string().min(1, messages.dateRequired),
     branchId: z.number().positive(messages.branchRequired),
-    branchCode: z.string().min(1, messages.branchRequired),
+    branchCode: z.string(),
     branchName: z.string().min(1, messages.branchRequired),
     currency: z.string().min(1, messages.currencyRequired),
-    rate: z.number().min(0, messages.rateNonNegative),
+    rate: z.number().positive(messages.rateNonNegative),
   });
 }
 
@@ -225,9 +225,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (values.transactionType === "INITIAL-PAYMENT") {
-        if (!hasJournalAssignee(values)) {
-          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
-        }
+
         if (!values.invoiceNumber?.trim() && !values.autoGenerateInvoiceNumber) {
           context.addIssue({ code: "custom", path: ["invoiceNumber"], message: messages.invoiceRequired });
         }
@@ -262,9 +260,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (values.transactionType === "PAYMENT") {
-        if (!hasJournalAssignee(values)) {
-          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
-        }
+
         if (!values.invoiceId) {
           context.addIssue({ code: "custom", path: ["invoiceId"], message: messages.invoiceRequired });
         }
@@ -285,9 +281,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         return;
       }
 
-      if (!hasJournalAssignee(values)) {
-        addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
-      }
+
 
       const invoiceRelated = ["DISCOUNT", "SURCHARGE"].includes(values.transactionType);
       if (invoiceRelated && !values.invoiceId) {
