@@ -85,8 +85,7 @@
     "about": "About",
     "portalVersion": "Portal version",
     "apiVersion": "API version",
-    "versionUnavailable": "Unavailable",
-    "aboutDescription": "Installed portal and API versions."
+    "versionUnavailable": "Unavailable"
   },
   "theme": {
     "change": "Change theme",
