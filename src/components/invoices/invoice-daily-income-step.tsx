@@ -1,19 +1,28 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Info, Loader2, RefreshCw, Wallet } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, CheckCircle2, Info, Loader2, Plus, RefreshCw, Wallet } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from "react";
+import { useForm } from "react-hook-form";
 
+import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import {
+  useCreateIncomeStatement,
   useDailyIncomeInvoiceRegistration,
-  useCurrentIncomeStatement,
+  useCloseoutCalendar, useCurrentIncomeStatement,
 } from "@/lib/accounting/daily-income/hooks";
+import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import type {
   DailyIncomeJournal,
+  DailyIncomeStatement,
+  DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -80,6 +89,185 @@ function PendingPaymentBranchField({
   );
 }
 
+function MobileCreateDailyIncomePage({
+  date,
+  onCreated,
+}: {
+  date: string;
+  onCreated: (statement: DailyIncomeStatement) => void | Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [statementError, setStatementError] = useState<string | null>(null);
+  const currentUserQuery = useCurrentUser();
+  const branchesQuery = useBranchPicker(200);
+  const createStatement = useCreateIncomeStatement();
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
+  const statementSchema = useMemo(
+    () =>
+      createDailyIncomeStatementSchema({
+        dateRequired: t("accounting.dailyIncome.form.validation.dateRequired"),
+        branchRequired: t("accounting.dailyIncome.form.validation.branchRequired"),
+        currencyRequired: t("accounting.dailyIncome.form.validation.currencyRequired"),
+        rateNonNegative: t("accounting.dailyIncome.form.validation.rateNonNegative"),
+      }),
+    [t],
+  );
+  const form = useForm<DailyIncomeStatementValues>({
+    resolver: zodResolver(statementSchema),
+    defaultValues: {
+      date,
+      branchId: 0,
+      branchCode: "",
+      branchName: "",
+      currency: "USD",
+      rate: 1,
+    },
+  });
+  const statementCurrency = form.watch("currency");
+  const statementBranchId = form.watch("branchId");
+  const selectedStatementBranch = branches.find((branch) => branch.id === statementBranchId);
+  const showExchangeRate = selectedStatementBranch?.code.trim().toUpperCase() === "RD";
+  const errors = form.formState.errors;
+  const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
+  const branchOptions = branches.map((branch) => ({
+    value: String(branch.id),
+    label: `${branch.code} — ${branch.name}`,
+    keywords: [branch.code, branch.name],
+  }));
+
+  useEffect(() => {
+    const userBranch = currentUserQuery.data?.branch;
+    if (!userBranch || branches.length === 0 || statementBranchId) return;
+    const branch = branches.find((item) => item.id === userBranch.id) ?? branches[0];
+    form.reset({
+      date,
+      branchId: branch.id,
+      branchCode: branch.code,
+      branchName: branch.name,
+      currency: "USD",
+      rate: 1,
+    });
+  }, [branches, currentUserQuery.data?.branch, date, form, statementBranchId]);
+
+  useEffect(() => {
+    if (!showExchangeRate) {
+      form.setValue("currency", "USD", { shouldValidate: true });
+      form.setValue("rate", 1, { shouldValidate: true });
+    }
+  }, [form, showExchangeRate]);
+
+  async function createDailyIncome(values: DailyIncomeStatementValues) {
+    try {
+      setStatementError(null);
+      const created = await createStatement.mutateAsync(showExchangeRate ? values : { ...values, currency: "USD", rate: 1 });
+      await onCreated(created);
+    } catch (error) {
+      const message = normalizeApiError(error).message;
+      setStatementError(message);
+    }
+  }
+
+
+
+  return (
+    <section className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">
+          {t("invoices.wizard.dailyIncome.dialog.createDailyIncomeTitle")}
+        </h2>
+        <p className="mt-2 text-base leading-relaxed text-muted-foreground">
+          {t("invoices.wizard.dailyIncome.dialog.createDailyIncomeHint")}
+        </p>
+      </div>
+
+      <form className="space-y-5" onKeyDown={navigateOnEnter} onSubmit={form.handleSubmit(createDailyIncome)}>
+        <div className="space-y-2" data-invoice-wizard-focus="daily-income">
+          <Label htmlFor="invoice-mobile-statement-branch">
+            {t("invoices.wizard.dailyIncome.dialog.branch")}
+          </Label>
+          <SearchableSelect
+            id="invoice-mobile-statement-branch"
+            disabled
+            value={statementBranchId ? String(statementBranchId) : ""}
+            onValueChange={(next) => {
+              const branch = branches.find((item) => item.id === Number(next));
+              form.setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
+              form.setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
+              form.setValue("branchName", branch?.name ?? "", { shouldValidate: true });
+            }}
+            options={branchOptions}
+            loading={branchesQuery.isLoading}
+            placeholder={t("invoices.wizard.dailyIncome.dialog.selectBranch")}
+            searchPlaceholder={t("invoices.wizard.dailyIncome.dialog.searchBranches")}
+            mobileSheet
+          />
+          {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="invoice-mobile-statement-date">{t("invoices.form.fields.date")}</Label>
+          <Input id="invoice-mobile-statement-date" value={date} readOnly disabled />
+          {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
+        </div>
+
+        {showExchangeRate ? (
+          <div className="space-y-2">
+            <Label htmlFor="invoice-mobile-statement-currency">
+              {t("invoices.wizard.dailyIncome.dialog.currency")}
+            </Label>
+            <SearchableSelect
+              id="invoice-mobile-statement-currency"
+              value={statementCurrency}
+              onValueChange={(next) => form.setValue("currency", next, { shouldValidate: true })}
+              options={[
+                { value: "USD", label: t("invoices.wizard.dailyIncome.dialog.currencyUsd") },
+                { value: "DOP", label: t("invoices.wizard.dailyIncome.dialog.currencyDop") },
+              ]}
+              placeholder={t("invoices.wizard.dailyIncome.dialog.selectCurrency")}
+              mobileSheet
+            />
+          </div>
+        ) : null}
+
+        {showExchangeRate ? (
+          <div className="space-y-2">
+            <Label htmlFor="invoice-mobile-statement-rate">
+              {t("invoices.wizard.dailyIncome.dialog.exchangeRate")}
+            </Label>
+            <Input
+              id="invoice-mobile-statement-rate"
+              type="number"
+              min={0}
+              step="0.01"
+              {...form.register("rate", { valueAsNumber: true })}
+            />
+            {errors.rate ? <p className="text-sm text-destructive">{errors.rate.message}</p> : null}
+          </div>
+        ) : null}
+
+        {statementError ? (
+          <p className="text-sm text-destructive">{statementError}</p>
+        ) : null}
+
+        <Button
+          type="submit"
+          className="sticky bottom-0 z-10 h-12 w-full rounded-xl text-base font-semibold"
+          disabled={
+            createStatement.isPending ||
+            currentUserQuery.isLoading ||
+            branchesQuery.isLoading
+          }
+        >
+          {createStatement.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          {createStatement.isPending
+            ? t("invoices.wizard.dailyIncome.dialog.creating")
+            : t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
+        </Button>
+      </form>
+    </section>
+  );
+}
+
 export function InvoiceDailyIncomeStep({
   values,
   onContextChange,
@@ -89,6 +277,7 @@ export function InvoiceDailyIncomeStep({
 }: Props) {
   const { t } = useTranslation();
   const isMobileLayout = useIsMobileViewport();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const paymentLocationField = (
     <PendingPaymentBranchField
       value={values.paymentLocation}
@@ -97,12 +286,15 @@ export function InvoiceDailyIncomeStep({
   );
   const [statusError, setStatusError] = useState<string | null>(null);
   const [localRegistration, setLocalRegistration] = useState<DailyIncomeJournal | null>(null);
+  const [localStatement, setLocalStatement] = useState<DailyIncomeStatement | null>(null);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
+  const closeoutCalendar = useCloseoutCalendar(branchId);
+ const currentDate = closeoutCalendar.data?.today ?? "";
   const registrationQuery = useDailyIncomeInvoiceRegistration(values.invoiceNumber);
   const registration = registrationQuery.data ?? localRegistration;
   const statementQuery = useCurrentIncomeStatement(branchId);
-  const statement = statementQuery.data ?? null;
+  const statement = localStatement ?? statementQuery.data ?? null;
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
     enabled: values.pickupSource === "route" && Boolean(values.routeId),
   });
@@ -110,6 +302,10 @@ export function InvoiceDailyIncomeStep({
   useEffect(() => {
     setLocalRegistration((current) => current?.invoice?.number === values.invoiceNumber ? current : null);
   }, [values.invoiceNumber]);
+
+  useEffect(() => {
+    setLocalStatement(null);
+  }, [branchId, currentDate]);
 
   const statementOpen = statement?.status === "OPEN";
   const associatedStatementId = statementOpen && statement ? statement.id : null;
@@ -223,10 +419,20 @@ export function InvoiceDailyIncomeStep({
     </div>
   ) : null;
 
+  async function handleStatementCreated(created?: DailyIncomeStatement) {
+    setStatusError(null);
+    if (created) {
+      setLocalStatement(created);
+    }
+    await statementQuery.refetch();
+  }
+
   async function refreshStatus() {
     setStatusError(null);
     await Promise.all([registrationQuery.refetch(), statementQuery.refetch()]);
   }
+
+
 
   if (isLoading) {
     return (
@@ -299,8 +505,7 @@ export function InvoiceDailyIncomeStep({
       return (
         <div className="space-y-5">
           {paymentLocationField}
-          <p role="status">{t("accounting.financialActivity.noCurrentCloseout")}</p>
-          <Button type="button" variant="outline" onClick={refreshStatus}>{t("accounting.financialActivity.refresh")}</Button>
+          <MobileCreateDailyIncomePage date={currentDate} onCreated={handleStatementCreated} />
         </div>
       );
     }
@@ -320,6 +525,15 @@ export function InvoiceDailyIncomeStep({
               {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
             </div>
             <div className="mt-4 flex gap-2">
+              <Button
+                type="button"
+                className="h-11 flex-1 rounded-xl"
+                onClick={() => setDialogOpen(true)}
+
+                data-invoice-wizard-focus="daily-income"
+              >
+                {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
+              </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
                 <RefreshCw className="size-4" />
               </Button>
@@ -357,7 +571,7 @@ export function InvoiceDailyIncomeStep({
                 ) : null}
               </p>
             </div>
-            <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
+            <Button type="button" variant="ghost" size="sm" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
               <RefreshCw className="size-4" />
               {t("invoices.wizard.dailyIncome.refresh")}
             </Button>
@@ -489,7 +703,7 @@ export function InvoiceDailyIncomeStep({
                     </div>
                     {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
                   </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
+                  <Button type="button" variant="ghost" size="sm" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
                     <RefreshCw className="size-4" />
                     {t("invoices.wizard.dailyIncome.refresh")}
                   </Button>
@@ -517,6 +731,25 @@ export function InvoiceDailyIncomeStep({
                   </p>
                   {statusError ? <p role="alert" className="mt-3 text-sm text-destructive">{statusError}</p> : null}
                   <div className="mt-5 flex flex-wrap items-center gap-2">
+                    {statement?.status === "CLOSED" ? (
+                      <Button
+                        type="button"
+                        onClick={() => setDialogOpen(true)}
+
+                        data-invoice-wizard-focus="daily-income"
+                      >
+                        {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={() => setDialogOpen(true)}
+                        data-invoice-wizard-focus="daily-income"
+                      >
+                        <Plus className="size-4" aria-hidden="true" />
+                        {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"
@@ -540,7 +773,7 @@ export function InvoiceDailyIncomeStep({
         </div>
       ) : null}
 
-
+      {dialogOpen ? <CloseoutRolloverDialog open onOpenChange={setDialogOpen} onReady={handleStatementCreated} /> : null}
     </div>
   );
 }

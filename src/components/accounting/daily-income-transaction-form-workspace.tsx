@@ -57,7 +57,8 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const journalQuery = useDailyIncomeJournal(isEditing ? (entityId ?? null) : null);
   const addStatementId = !isEditing && entityId ? Number(entityId) : 0;
   const editStatementId = journalQuery.data?.incomeStatementId ?? 0;
-  const statementId = isEditing ? editStatementId : addStatementId;
+  const [recordingStatementId, setRecordingStatementId] = useState(0);
+  const statementId = isEditing ? editStatementId : recordingStatementId || addStatementId;
   const statementQuery = useIncomeStatementById(statementId > 0 ? statementId : null);
   const currentStatementQuery = useCurrentIncomeStatement(statementQuery.data?.branch?.id ?? 0);
   const sessionTransactions = useSessionDailyIncomeTransactions(currentStatementQuery.data?.id ?? statementId, transactionSessionId);
@@ -110,6 +111,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       }
 
       const journal = await createJournal.mutateAsync({ statement, values, options });
+      if (journal?.incomeStatementId) setRecordingStatementId(journal.incomeStatementId);
       notifySuccess(journalCreatedToastMessage({ ...values, invoiceNumber: journal?.invoice?.number || values.invoiceNumber }, t));
     } catch (error) {
       if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;

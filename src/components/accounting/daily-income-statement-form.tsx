@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
-import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -69,7 +68,13 @@ export function DailyIncomeStatementForm({
   const branchCode = watch("branchCode");
   const branchName = watch("branchName");
   const currency = watch("currency");
-  const showExchangeRate = currency?.trim().toUpperCase() === "DOP";
+  const showExchangeRate = branchCode?.trim().toUpperCase() === "RD";
+  useEffect(() => {
+    if (!showExchangeRate) {
+      setValue("currency", "USD", { shouldValidate: true });
+      setValue("rate", 1, { shouldValidate: true });
+    }
+  }, [showExchangeRate, setValue]);
   const fieldsDisabled = disabled || isSubmitting;
   const branchOptions = branches.map((branch) => ({
     value: String(branch.id),
@@ -82,7 +87,7 @@ export function DailyIncomeStatementForm({
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit((values) => onSubmit(showExchangeRate ? values : { ...values, currency: "USD", rate: 1 }))}
       onKeyDown={navigateOnEnter}
       className={cn(
         "min-w-0 space-y-5 max-md:[&_button]:h-12 max-md:[&_button]:rounded-xl max-md:[&_input]:h-12 max-md:[&_input]:rounded-xl max-md:[&_input]:text-base max-md:[&_label]:text-base",
@@ -118,33 +123,28 @@ export function DailyIncomeStatementForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="statement-date">{t("accounting.dailyIncome.statement.fields.date")}</Label>
-            <DateInput
-              id="statement-date"
-              aria-invalid={Boolean(errors.date)}
-              disabled={fieldsDisabled}
-              {...register("date")}
-            />
+            <Input id="statement-date" value={initialValues.date} readOnly disabled />
+            <input type="hidden" {...register("date")} />
             {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
           </div>
-          <div className={cn("space-y-2", !showExchangeRate && "sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]")}>
-            <Label htmlFor="statement-currency">{t("accounting.dailyIncome.statement.fields.currency")}</Label>
-            <SearchableSelect
-              id="statement-currency"
-              aria-invalid={Boolean(errors.currency)}
-              disabled={fieldsDisabled}
-              value={currency ?? ""}
-              onValueChange={(next) => {
-                setValue("currency", next, { shouldValidate: true });
-                if (next.trim().toUpperCase() !== "DOP") {
-                  setValue("rate", 1, { shouldValidate: true });
-                }
-              }}
-              options={currencyOptions}
-              placeholder={t("accounting.dailyIncome.currency.select")}
-              searchable={false}
-              mobileSheet
-            />
-          </div>
+          {showExchangeRate ? (
+            <div className="space-y-2">
+              <Label htmlFor="statement-currency">{t("accounting.dailyIncome.statement.fields.currency")}</Label>
+              <SearchableSelect
+                id="statement-currency"
+                aria-invalid={Boolean(errors.currency)}
+                disabled={fieldsDisabled}
+                value={currency ?? ""}
+                onValueChange={(next) => {
+                  setValue("currency", next, { shouldValidate: true });
+                }}
+                options={currencyOptions}
+                placeholder={t("accounting.dailyIncome.currency.select")}
+                searchable={false}
+                mobileSheet
+              />
+            </div>
+          ) : <input type="hidden" {...register("currency")} />}
           {showExchangeRate ? (
             <div className="space-y-2">
               <Label htmlFor="statement-rate">{t("accounting.dailyIncome.statement.fields.exchangeRate")}</Label>

@@ -25,7 +25,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CloseoutDateNavigation } from "@/components/accounting/closeout-date-navigation";
-import { OpenCloseoutsPanel } from "@/components/accounting/open-closeouts-panel";
+import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -37,13 +39,15 @@ import {
   useDeleteDailyIncomeJournal,
   useIncomeStatement,
   useIncomeStatementSummaryTotals,
+  useCloseoutCalendar,
   useUpdateDailyIncomeJournal,
+
 } from "@/lib/accounting/daily-income/hooks";
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
-import type { DailyIncomeJournal, DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatement } from "@/lib/accounting/daily-income/types";
 import {
   dailyIncomeCurrencyDescription,
   formatDailyIncomeMoney,
@@ -70,14 +74,6 @@ import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 import { buildPaymentReceiptRequest, canPrintPaymentReceipt } from "@/lib/accounting/daily-income/print-payment-receipt";
-
-function today() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function transactionTitle(row: DailyIncomeJournal, fallback: string) {
   return (row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? row.refNumber) || fallback;
@@ -350,17 +346,18 @@ function DailyIncomeMobileTransactionRow({
 }
 
 export function DailyIncomeWorkspace() {
- const [closeoutNow,setCloseoutNow]=useState(()=>Date.now());
- useEffect(()=>{const timer=setInterval(()=>setCloseoutNow(Date.now()),30000);return()=>clearInterval(timer);},[]);
+ const currentUser = useCurrentUser();
+ const {hasPermission} = useAuth();
   const { t } = useTranslation();
   const feedback = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const [branchCode, setBranchCode] = useState("");
   const [requestedBranchId, setRequestedBranchId] = useState<number | null>(null);
-  const [date, setDate] = useState(today());
+  const [selectedDate, setDate] = useState("");
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
+  const [statementDialog, setStatementDialog] = useState(false);
   const [printDialog, setPrintDialog] = useState(false);
   const [transactionDialog, setTransactionDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<DailyIncomeJournal | null>(null);
@@ -368,6 +365,7 @@ export function DailyIncomeWorkspace() {
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [openCreateOnLoad, setOpenCreateOnLoad] = useState(false);
 
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
@@ -377,16 +375,27 @@ export function DailyIncomeWorkspace() {
     const branchId = Number(params.get("branchId"));
     if (requestedDate) setDate(requestedDate);
     if (Number.isInteger(branchId) && branchId > 0) setRequestedBranchId(branchId);
+    if (params.get("create") === "1") setOpenCreateOnLoad(true);
   }, []);
   useEffect(() => {
-    if (branchCode) return;
+    if (branchCode || (!requestedBranchId && currentUser.isLoading)) return;
     const requestedBranch = branches.find((branch) => branch.id === requestedBranchId);
-    const nextBranchCode = requestedBranch?.code ?? branches[0]?.code;
+    const nextBranchCode = requestedBranch?.code ?? branches.find(branch=>branch.id===currentUser.data?.branch.id)?.code ?? branches[0]?.code;
     if (nextBranchCode) setBranchCode(nextBranchCode);
-  }, [branchCode, branches, requestedBranchId]);
+  }, [branchCode, branches, requestedBranchId,branches.find(branch=>branch.id===currentUser.data?.branch.id)?.code,currentUser.isLoading]);
   const selectedBranch = branches.find((branch) => branch.code === branchCode);
+  const calendar = useCloseoutCalendar(selectedBranch?.id ?? 0);
+  const serverToday = calendar.data?.today ?? "";
+  const date = selectedDate || serverToday;
   const statementQuery = useIncomeStatement(selectedBranch?.id ?? 0, date);
   const statement = statementQuery.data ?? null;
+  useEffect(() => {
+    if (!openCreateOnLoad) return;
+    if (statementQuery.isLoading) return;
+    if (!branchCode) return;
+    if (!statement) setStatementDialog(true);
+    setOpenCreateOnLoad(false);
+  }, [branchCode, openCreateOnLoad, statement, statementQuery.isLoading]);
   const summaryTotalsQuery = useIncomeStatementSummaryTotals(statement?.id ?? 0);
   const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: pageLimit, query: deferredQuery });
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
@@ -408,6 +417,7 @@ export function DailyIncomeWorkspace() {
     () => (journalForForm ? journalToFormValues(journalForForm) : undefined),
     [journalForForm],
   );
+
   const createJournal = useCreateDailyIncomeJournal();
   const updateJournal = useUpdateDailyIncomeJournal();
   const deleteMutation = useDeleteDailyIncomeJournal();
@@ -442,7 +452,7 @@ export function DailyIncomeWorkspace() {
   }
 
   const selectedJournal = rows.find((row) => selectedIds.includes(row.id));
-  const statementOpen = statement?.status === "OPEN" && (statement.periodEnd ? closeoutNow < new Date(statement.periodEnd).getTime() && closeoutNow >= new Date(statement.periodStart ?? statement.date).getTime() : statement.date === today());
+  const statementOpen = statement?.id === calendar.data?.current?.id && statement?.status === "OPEN" && selectedBranch?.id === currentUser.data?.branch.id;
 
   const stats = useMemo((): StatCardItem[] => {
     const summary = summaryTotalsQuery.data;
@@ -499,7 +509,7 @@ export function DailyIncomeWorkspace() {
       ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values, options })
       : createJournal.mutateAsync({ statement, values, options })
     )
-      .then((journal) => {
+      .then(async (journal) => {
         if (editingJournal) {
           feedback.notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
           setTransactionDialog(false);
@@ -507,6 +517,10 @@ export function DailyIncomeWorkspace() {
           return;
         }
 
+        if (journal?.incomeStatementId && journal.incomeStatementId !== statement.id) {
+          const current = await calendar.refetch();
+          if (current.data?.current?.id === journal.incomeStatementId) setDate(current.data.current.date);
+        }
         feedback.notifySuccess(journalCreatedToastMessage({ ...values, invoiceNumber: journal?.invoice?.number || values.invoiceNumber }, t));
       })
       .catch((error) => {
@@ -673,12 +687,12 @@ export function DailyIncomeWorkspace() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="daily-date-mobile">{t("accounting.dailyIncome.filters.date")}</Label>
-            <CloseoutDateNavigation id="daily-date-mobile" date={date} today={today()} onChange={(next) => { setDate(next); setPage(1); }} />
+            <CloseoutDateNavigation id="daily-date-mobile" date={date} today={serverToday || date} onChange={(next) => { setDate(next); setPage(1); }} />
           </div>
         </div>
       </div>
 
-      <OpenCloseoutsPanel key={selectedBranch?.id ?? 0} branchId={selectedBranch?.id ?? 0} date={date} onReview={(next) => { setDate(next); setPage(1); }} />
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);setPage(1);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
 
       {statement ? (
         <DailyIncomeMobileSummary
@@ -691,6 +705,12 @@ export function DailyIncomeWorkspace() {
           <p className="text-lg font-semibold">{t("accounting.dailyIncome.filters.noCloseout")}</p>
           <p className="mt-1 text-sm text-muted-foreground">{t("accounting.dailyIncome.description")}</p>
 
+          {hasPermission("canCreateIncomeStatement", "income_statement") && selectedBranch?.id === currentUser.data?.branch.id ? (
+            <Button className="mt-5 h-12 w-full rounded-xl text-base" onClick={() => setStatementDialog(true)} disabled={!serverToday}>
+              <Plus className="size-5" />
+              {t("accounting.dailyIncome.actions.createCloseout")}
+            </Button>
+          ) : null}
         </div>
       )}
 
@@ -768,6 +788,7 @@ export function DailyIncomeWorkspace() {
           {t("accounting.dailyIncome.actions.printReport")}
         </Button>
       ) : null}
+      {!calendar.data?.current && hasPermission("canCreateIncomeStatement","income_statement") && selectedBranch?.id === currentUser.data?.branch?.id ? <Button onClick={() => setStatementDialog(true)} disabled={!serverToday}><Plus className="h-4 w-4" />{t("accounting.dailyIncome.actions.createCloseout")}</Button> : null}
     </>} />
 
     {statement ? (
@@ -804,7 +825,7 @@ export function DailyIncomeWorkspace() {
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
-          <CloseoutDateNavigation id="daily-date" date={date} today={today()} onChange={(next) => { setDate(next); setPage(1); }} />
+          <CloseoutDateNavigation id="daily-date" date={date} today={serverToday || date} onChange={(next) => { setDate(next); setPage(1); }} />
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label>{t("accounting.dailyIncome.filters.status")}</Label>
@@ -828,7 +849,7 @@ export function DailyIncomeWorkspace() {
       </CardContent>
     </Card>
 
-    <OpenCloseoutsPanel key={selectedBranch?.id ?? 0} branchId={selectedBranch?.id ?? 0} date={date} onReview={(next) => { setDate(next); setPage(1); }} />
+    <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);setPage(1);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
 
     {statement ? <>
     <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={openAddTransactionForm} disabled={!statementOpen}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
@@ -865,6 +886,7 @@ export function DailyIncomeWorkspace() {
     </> : null}
     </div>
 
+    {statementDialog ? <CloseoutRolloverDialog open={statementDialog} onOpenChange={setStatementDialog} onReady={async created=>{setBranchCode(created.branch?.code??branchCode);setDate(created.date);await calendar.refetch();}} /> : null}
     <DailyIncomePrintDialog
       open={printDialog}
       onOpenChange={setPrintDialog}

@@ -20,7 +20,8 @@
     "receiverName": "Receiver name",
     "address": "Address",
     "province": "Province",
-    "phones": "Receiver phones"
+    "phones": "Receiver phones",
+    "city": "City"
   },
   "view": {
     "title": "View delivery",
@@ -200,5 +201,11 @@
         "creditCard": "Credit card"
       }
     }
+  },
+  "noCity": "No city",
+  "sort": {
+    "label": "Sort by",
+    "asc": "Ascending",
+    "desc": "Descending"
   }
 }

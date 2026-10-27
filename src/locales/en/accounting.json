@@ -641,7 +641,10 @@
       "placeholders": {
         "selectBranch": "Select branch",
         "searchBranches": "Search branches…"
-      }
+      },
+      "rolloverHelp": "Choose currency and exchange rate for today. Other open closeouts at your location will close automatically. The server sets the date.",
+      "rolloverHelpDefault": "Open today’s closeout. Other open closeouts at your location will close automatically. The server sets the date.",
+      "createPermission": "Closeout creation permission is required."
     },
     "delete": {
       "title": "Delete transaction?",
@@ -970,8 +973,8 @@
     "deposits": "Deposits",
     "cards": "Credit cards",
     "historyHelp": "Collection and clearing events preserve the original transaction and closeout.",
-    "automation": "Automatic end-of-day closing",
-    "automationHelp": "Close the previous day and open the new day at midnight in the configured timezone. An administrator must install the server schedule before enabling this feature.",
+    "automation": "Closeout calendar",
+    "automationHelp": "Closeouts open explicitly. Only RD asks for currency and exchange rate. Dates use the configured location timezone.",
     "enabled": "Enable automatic daily closeouts",
     "timezone": "Timezone",
     "currency": "Currency",
@@ -996,7 +999,7 @@
     "branchOverrides": "Branch timezone and currency overrides",
     "companyDefaults": "Use company defaults",
     "unknownCurrency": "Unspecified",
-    "noCurrentCloseout": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+    "noCurrentCloseout": "No open closeout is available for today. Open today’s closeout in Daily Income, then refresh. Only RD requests currency and exchange rate.",
     "occurrenceDate": "Actual transaction date",
     "refresh": "Refresh",
     "postedImmutable": "Posted transactions cannot be edited. Use Pending Financial Activity for reconciliation and eligible adjustments."

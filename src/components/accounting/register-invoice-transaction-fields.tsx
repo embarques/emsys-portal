@@ -296,6 +296,7 @@ export function RegisterInvoiceTransactionFields({
       {showEmployee ? (
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
+            required={false}
             employees={employees}
             dailyRoutes={dailyRoutes}
             statementDate={statementDate}

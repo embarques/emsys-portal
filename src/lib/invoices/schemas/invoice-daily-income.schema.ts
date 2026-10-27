@@ -43,22 +43,13 @@ function refineInvoiceDailyIncomeRegistration(
   values: z.infer<typeof invoiceDailyIncomeRegistrationBaseSchema>,
   context: z.RefinementCtx,
   invoiceTotal: number | undefined,
-  messages: InvoiceDailyIncomeRegistrationSchemaMessages,
+  _messages: InvoiceDailyIncomeRegistrationSchemaMessages,
 ) {
   if (typeof invoiceTotal === "number" && values.amount > invoiceTotal) {
     context.addIssue({
       code: "custom",
       path: ["amount"],
       message: "Payment amount cannot exceed the invoice total.",
-    });
-  }
-
-  const hasAssignee = Boolean(values.employeeId) || Boolean(values.routeId?.trim());
-  if (!hasAssignee) {
-    context.addIssue({
-      code: "custom",
-      path: values.assigneeSource === "route" ? ["routeId"] : ["employeeId"],
-      message: messages.assigneeRequired,
     });
   }
 
