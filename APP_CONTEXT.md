@@ -553,3 +553,7 @@ New journals send an optional branch, never a historical closeout ID or the curr
 Pending Financial Activity lists unresolved amounts across all dates with server-side filters and pagination. Collection, employee cash handover, receiving-employee verification, expenses and payment clearing remain separate from daily accounting totals. Method-specific clearing directories retain their update permissions. Financial activity has dedicated view/update permissions; generic reversals additionally require journal-create permission. Reconciliation events preserve the original period and invoice payments are applied/reversed transactionally.
 
 Currency and exchange-rate inputs for daily closeout creation appear only for branch code RD. Other branches use USD/rate 1 without asking the user; this also applies to rollover recovery and invoice registration. RD exchange rate remains editable for either USD or DOP.
+
+Invoice and delivery flows query the server-selected current closeout. Missing periods use explicit server-dated creation with RD-only settings; manual closing/reopening remains unavailable. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections and require `canCreateFinancialAdjustment` in addition to existing journal/reconciliation grants.
+
+The supplied `api-docs.json` snapshot still lacks the new automation, current-period, financial-activity and reversal endpoint schemas. Regenerate those definitions from the backend export before claiming full OpenAPI parity.

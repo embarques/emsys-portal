@@ -22,7 +22,13 @@ export type IncomeStatementStatus = "OPEN" | "CLOSED";
 
 export type DailyIncomeStatement = {
   closedCloseouts?: DailyIncomeStatement[];
- automated?:boolean; periodStart?:string; periodEnd?:string; businessDate?:string; timezone?:string;
+  automated?: boolean;
+  /** Fixed UTC boundaries; do not calculate these by adding 24 hours locally. */
+  periodStart?: string;
+  periodEnd?: string;
+  /** Branch-local YYYY-MM-DD, independent of the occurrence date. */
+  businessDate?: string;
+  timezone?: string;
   id: number;
   date: string;
   status: IncomeStatementStatus;

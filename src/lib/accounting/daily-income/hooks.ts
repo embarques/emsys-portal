@@ -18,9 +18,7 @@ import {
   fetchOpenIncomeStatements,
   fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
-  setIncomeStatementStatus,
   updateDailyIncomeJournal,
-  updateIncomeStatement,
 } from "@/lib/accounting/daily-income/api";
 import type {
   DailyIncomeJournal,
@@ -155,24 +153,6 @@ export function useCreateIncomeStatement() {
   });
 }
 
-export function useUpdateIncomeStatement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: number; values: DailyIncomeStatementValues }) =>
-      updateIncomeStatement(id, values),
-    onSuccess: () => invalidateAccounting(queryClient),
-  });
-}
-
-export function useSetIncomeStatementStatus() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ statement, open }: { statement: DailyIncomeStatement; open: boolean }) =>
-      setIncomeStatementStatus(statement, open),
-    onSuccess: () => invalidateAccounting(queryClient),
-  });
-}
-
 export function useCreateDailyIncomeJournal(sessionId?: string) {
   const queryClient = useQueryClient();
   const { companyId, user } = useAuth();
@@ -217,10 +197,10 @@ export function useSessionDailyIncomeTransactions(statementId: number, sessionId
   }).filter((entry) => companyId && user?.uid && entry.journal && entry.statementId === statementId).sort((a, b) => b.savedAt - a.savedAt);
 }
 
-export function useCurrentIncomeStatement(branchId:number){const {companyId}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0);return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:()=>fetchCurrentIncomeStatement(branchId),enabled,refetchInterval:30000});}
+export function useCurrentIncomeStatement(branchId:number){const {companyId,hasPermission}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0 && hasPermission("canViewIncomeStatement", "income_statement"));return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:({signal})=>fetchCurrentIncomeStatement(branchId,signal),enabled,refetchInterval:30000});}
 
 export function useCloseoutCalendar(branchId: number) {
- const {companyId,user} = useAuth();
- const enabled = useAccountingQueryEnabled(branchId > 0);
- return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"closeout-calendar",companyId,user?.uid,branchId],queryFn:()=>fetchCloseoutCalendar(branchId),enabled,refetchInterval:30000});
+ const {companyId,user,hasPermission} = useAuth();
+ const enabled = useAccountingQueryEnabled(branchId > 0 && hasPermission("canViewIncomeStatement", "income_statement"));
+ return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"closeout-calendar",companyId,user?.uid,branchId],queryFn:({signal})=>fetchCloseoutCalendar(branchId,signal),enabled,refetchInterval:30000});
 }

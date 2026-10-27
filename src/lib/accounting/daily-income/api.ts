@@ -486,7 +486,7 @@ export async function searchIncomeStatementForDate(branchId: number, isoDate: st
 export async function resolveOpenIncomeStatementId(branchId:number):Promise<number>{
  const statement=await fetchCurrentIncomeStatement(branchId);return statement?.status==="OPEN"?statement.id:0;
 }
-export async function fetchCurrentIncomeStatement(branchId:number){if(!branchId)return null;const payload=await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/current?branchId=${branchId}`);return normalizeIncomeStatement(unwrap(payload));}
+export async function fetchCurrentIncomeStatement(branchId:number, signal?: AbortSignal){if(!branchId)return null;const payload=await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/current?branchId=${branchId}`, { signal });return normalizeIncomeStatement(unwrap(payload));}
 
 function incomeStatementPayload(values: DailyIncomeStatementValues) {
   return {
@@ -504,23 +504,6 @@ export async function createIncomeStatement(values: DailyIncomeStatementValues) 
   const result = normalizeIncomeStatement(unwrapArray(payload)[0] ?? unwrap(payload));
   if (!result) throw new Error("The API did not return the created daily income statement.");
   return result;
-}
-
-export async function updateIncomeStatement(id: number, values: DailyIncomeStatementValues) {
-  const payload = await apiClient.put<ApiEnvelope>(
-    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/${id}`,
-    { id, ...incomeStatementPayload(values) },
-  );
-  assertMutation(payload, "Unable to update daily income statement.");
-  return normalizeIncomeStatement(unwrapArray(payload)[0] ?? unwrap(payload));
-}
-
-export async function setIncomeStatementStatus(statement: DailyIncomeStatement, open: boolean) {
-  const payload = await apiClient.post<ApiEnvelope>(
-    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/${statement.id}/${open ? "open" : "close"}`,
-  );
-  assertMutation(payload, `Unable to ${open ? "open" : "close"} daily income statement.`);
-  return normalizeIncomeStatement(unwrapArray(payload)[0] ?? unwrap(payload));
 }
 
 function parseJournalSearchRows(payload: unknown): unknown[] {
@@ -844,8 +827,8 @@ export type CloseoutCalendar = {
  current: DailyIncomeStatement | null; previous: DailyIncomeStatement | null;
  latest: DailyIncomeStatement | null; requiredReason: string;
 };
-export async function fetchCloseoutCalendar(branchId: number): Promise<CloseoutCalendar> {
- const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/context?branchId=${branchId}`);
+export async function fetchCloseoutCalendar(branchId: number, signal?: AbortSignal): Promise<CloseoutCalendar> {
+ const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/context?branchId=${branchId}`, { signal });
  const data = objectValue(unwrap(payload));
  return {today:stringValue(data.today),serverTimezone:stringValue(data.serverTimezone),serverTime:stringValue(data.serverTime),current:normalizeIncomeStatement(data.current),previous:normalizeIncomeStatement(data.previous),latest:normalizeIncomeStatement(data.latest),requiredReason:stringValue(data.requiredReason)};
 }

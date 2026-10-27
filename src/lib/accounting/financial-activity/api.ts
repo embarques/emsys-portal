@@ -27,7 +27,7 @@ export type FinancialActivity = {
     outstandingAmount: number;
     pendingHandoverAmount: number;
     clearingStatus?: string;
-    currency: string;
+    currency?: string;
     ageDays: number;
 };
 export type ActivityEvent = {

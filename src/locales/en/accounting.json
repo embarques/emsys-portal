@@ -512,7 +512,7 @@
       "nextDay": "Next day",
       "today": "Today",
       "openTitle": "Open closeouts",
-      "openDescription": "Open closeouts for this branch, oldest first. Review a day or close it here.",
+      "openDescription": "Review active closeouts. The scheduled process closes them automatically.",
       "loading": "Loading open closeouts…",
       "retry": "Try again",
       "empty": "No open closeouts on this page.",
@@ -523,7 +523,7 @@
       "confirm": "Close closeout #{{id}} for {{date}}? Transactions will be locked until this closeout is reopened."
     },
     "title": "Daily Income",
-    "description": "Record and track the company's daily incoming transactions and revenue.",
+    "description": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
     "noun": "transactions",
     "transactionNoun": "transaction",
     "actions": {
@@ -999,8 +999,9 @@
     "branchOverrides": "Branch timezone and currency overrides",
     "companyDefaults": "Use company defaults",
     "unknownCurrency": "Unspecified",
-    "noCurrentCloseout": "No current daily closeout is available. Review Daily Income or scheduled closing status.",
+    "noCurrentCloseout": "No open closeout is available for today. Open today’s closeout in Daily Income, then refresh. Only RD requests currency and exchange rate.",
     "occurrenceDate": "Actual transaction date",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "postedImmutable": "Posted transactions cannot be edited. Use Pending Financial Activity for reconciliation and eligible adjustments."
   }
 }

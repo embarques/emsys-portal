@@ -704,10 +704,13 @@ export function DailyIncomeWorkspace() {
         <div className="rounded-3xl border bg-card px-5 py-6 shadow-sm">
           <p className="text-lg font-semibold">{t("accounting.dailyIncome.filters.noCloseout")}</p>
           <p className="mt-1 text-sm text-muted-foreground">{t("accounting.dailyIncome.description")}</p>
-          <Button className="mt-5 h-12 w-full rounded-xl text-base" onClick={() => setStatementDialog(true)} disabled={!branchCode}>
-            <Plus className="size-5" />
-            {t("accounting.dailyIncome.actions.createCloseout")}
-          </Button>
+
+          {hasPermission("canCreateIncomeStatement", "income_statement") && selectedBranch?.id === currentUser.data?.branch.id ? (
+            <Button className="mt-5 h-12 w-full rounded-xl text-base" onClick={() => setStatementDialog(true)} disabled={!serverToday}>
+              <Plus className="size-5" />
+              {t("accounting.dailyIncome.actions.createCloseout")}
+            </Button>
+          ) : null}
         </div>
       )}
 

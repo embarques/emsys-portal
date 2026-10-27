@@ -592,6 +592,19 @@ test("failed balance reads block continuation", async () => {
   } finally { await page.close(); }
 });
 
+test("rejected item reads show the API reason; local failures stay generic", async () => {
+  let page = await fixture({ wizardVisual: true, wizardItemsApiError: "invoice is not assigned to this delivery" });
+  try {
+    await page.getByText("Unable to load the items for this delivery.", { exact: true }).waitFor();
+    await page.getByText("Reason: invoice is not assigned to this delivery", { exact: true }).waitFor();
+  } finally { await page.close(); }
+  page = await fixture({ wizardVisual: true, wizardNoItems: true });
+  try {
+    await page.getByText("Unable to load the items for this delivery.", { exact: true }).waitFor();
+    assert.equal(await page.getByText(/^Reason:/).count(), 0);
+  } finally { await page.close(); }
+});
+
 test("completion rechecks the balance and returns to balance review if it changed", async () => {
   const page = await fixture();
   try {

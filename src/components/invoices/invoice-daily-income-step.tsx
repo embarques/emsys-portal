@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, Info, Loader2, Plus, RefreshCw, Wallet } fro
 import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from "react";
 import { useForm } from "react-hook-form";
 
-import { InvoiceDailyIncomeDialog } from "@/components/invoices/invoice-daily-income-dialog";
+import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -385,10 +385,6 @@ export function InvoiceDailyIncomeStep({
     registrationQuery.error ??
     (!registration ? statementQuery.error : null);
 
-  async function handleRegistered(journal: DailyIncomeJournal) {
-    await applyRegistration(journal);
-  }
-
   async function handlePaymentPosted(journal: DailyIncomeJournal) {
     await applyRegistration(journal);
     onContinue?.({
@@ -464,7 +460,7 @@ export function InvoiceDailyIncomeStep({
               </div>
             </div>
           </div>
-          <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={refreshStatus}>
+          <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
             <RefreshCw className="size-4" />
             {t("invoices.wizard.dailyIncome.refresh")}
           </Button>
@@ -538,7 +534,7 @@ export function InvoiceDailyIncomeStep({
               >
                 {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
               </Button>
-              <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={refreshStatus}>
+              <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
                 <RefreshCw className="size-4" />
               </Button>
             </div>
@@ -575,7 +571,7 @@ export function InvoiceDailyIncomeStep({
                 ) : null}
               </p>
             </div>
-            <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
+            <Button type="button" variant="ghost" size="sm" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
               <RefreshCw className="size-4" />
               {t("invoices.wizard.dailyIncome.refresh")}
             </Button>
@@ -707,7 +703,7 @@ export function InvoiceDailyIncomeStep({
                     </div>
                     {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
                   </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
+                  <Button type="button" variant="ghost" size="sm" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
                     <RefreshCw className="size-4" />
                     {t("invoices.wizard.dailyIncome.refresh")}
                   </Button>
@@ -777,15 +773,7 @@ export function InvoiceDailyIncomeStep({
         </div>
       ) : null}
 
-      <InvoiceDailyIncomeDialog
-        open={dialogOpen}
-        statement={statement}
-        date={currentDate}
-        invoice={values}
-        onOpenChange={setDialogOpen}
-        onStatementCreated={handleStatementCreated}
-        onRegistered={handleRegistered}
-      />
+      {dialogOpen ? <CloseoutRolloverDialog open onOpenChange={setDialogOpen} onReady={handleStatementCreated} /> : null}
     </div>
   );
 }

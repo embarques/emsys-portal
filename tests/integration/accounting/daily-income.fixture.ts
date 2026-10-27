@@ -2,28 +2,6 @@ import { expect, type Locator, type Page, type Response, type TestInfo } from "@
 
 import { attachApiCurlToTest, logApiResponse, waitForApiResponse } from "../workspace.fixture";
 
-type CloseoutAttemptResult = {
-  ok: boolean;
-  createStatus?: number;
-  reopenStatus?: number;
-};
-
-async function selectFirstRealOption(select: Locator, fieldName: string) {
-  const optionCount = await select.locator("option").count();
-  if (optionCount <= 1) {
-    throw new Error(
-      `No ${fieldName} options loaded (found ${optionCount} option(s)). Ensure the API returns at least one ${fieldName}.`,
-    );
-  }
-  await expect(select.locator("option").nth(1)).toBeAttached({ timeout: 30_000 });
-  const value = await select.locator("option").nth(1).getAttribute("value");
-  if (!value) {
-    throw new Error(`Expected at least one selectable ${fieldName} option.`);
-  }
-  await select.selectOption(value);
-  return value;
-}
-
 async function selectSearchableOption(page: Page, trigger: Locator, label: string) {
   await trigger.click();
   const option = page.locator("[cmdk-item]").filter({ hasText: label }).first();
@@ -158,44 +136,9 @@ async function logIncomeStatementResponse(response: Response, context: string) {
 }
 
 async function waitForCloseoutBadge(main: Locator) {
-  await expect(main.getByText(/No closeout for this date|(?:OPEN|CLOSED) · #/)).toBeVisible({
+  await expect(main.getByText(/No closeout for this date|(?:Active|Inactive) · #/)).toBeVisible({
     timeout: 15_000,
   });
-}
-
-function isoDateOffset(isoDate: string, dayOffset: number) {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + dayOffset);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-/** Re-fetch the closeout for the current branch/date (e.g. after HTTP 409 "already exists"). */
-async function refreshDailyIncomeStatement(page: Page, main: Locator) {
-  const date = await main.locator("#daily-date").inputValue();
-  if (!date) return false;
-
-  const neighborDate = isoDateOffset(date, -1);
-  console.log(
-    `[playwright:daily-income] Refreshing closeout state (${neighborDate} → ${date}) after duplicate create.`,
-  );
-
-  if (!(await setDailyIncomeDate(page, main, neighborDate))) {
-    return false;
-  }
-
-  return setDailyIncomeDate(page, main, date);
-}
-
-async function responseIndicatesExistingCloseout(response: Response) {
-  if (response.status() !== 409) return false;
-
-  try {
-    const body = await response.text();
-    return body.includes("income statement already exists");
-  } catch {
-    return false;
-  }
 }
 
 async function setDailyIncomeDate(page: Page, main: Locator, isoDate: string): Promise<boolean> {
@@ -204,9 +147,6 @@ async function setDailyIncomeDate(page: Page, main: Locator, isoDate: string): P
     const currentDate = await dateInput.inputValue();
     if (currentDate === isoDate) {
       await waitForCloseoutBadge(main);
-      if (await main.getByText("No closeout for this date").isVisible()) {
-        return refreshDailyIncomeStatement(page, main);
-      }
       return true;
     }
 
@@ -250,263 +190,19 @@ async function selectBranchAndWait(page: Page, main: Locator, branchCode: string
   }
 }
 
-async function selectBranchInCreateDialog(dialog: Locator, branchCode: string | null) {
-  const branchSelect = dialog.locator("#statement-branch");
-  if (branchCode) {
-    const option = branchSelect.locator("option").filter({ hasText: new RegExp(`^${branchCode}\\s*—`) });
-    if (await option.count()) {
-      const value = await option.first().getAttribute("value");
-      if (value) {
-        await branchSelect.selectOption(value);
-        return;
-      }
-    }
-  }
-
-  if (!(await branchSelect.inputValue())) {
-    await selectFirstRealOption(branchSelect, "branch");
-  }
-}
-
-async function tryCreateCloseout(page: Page, main: Locator): Promise<CloseoutAttemptResult> {
-  if (!(await main.getByText("No closeout for this date").isVisible())) {
-    return { ok: false };
-  }
-
-  const branchCode = await main.locator("#daily-branch").inputValue();
-  const date = await main.locator("#daily-date").inputValue();
-  console.log(
-    `[playwright:daily-income] No closeout for branch=${branchCode || "(none)"} date=${date}; creating daily income.`,
-  );
-
-  await main.getByRole("button", { name: "Create closeout" }).click();
-  const dialog = page.getByRole("dialog", { name: "Create daily income" });
-  await expect(dialog).toBeVisible();
-
-  await selectBranchInCreateDialog(dialog, branchCode || null);
-
-  const statementDate = dialog.locator("#statement-date");
-  if ((await statementDate.inputValue()) !== date) {
-    await statementDate.fill(date);
-  }
-
-  const createResponse = waitForApiResponse(page, "/income-statements", "POST", { requireOk: false });
-  await dialog.getByRole("button", { name: "Save daily income" }).click();
-  const created = await createResponse;
-
-  if (!created.ok()) {
-    const alreadyExists = await responseIndicatesExistingCloseout(created);
-    await logApiResponse(created, alreadyExists ? "create income-statement conflict (already exists)" : "create income-statement failed", {
-      includeCurl: !alreadyExists,
-    });
-    await dialog.getByRole("button", { name: "Cancel" }).click();
-    await expect(dialog).toBeHidden();
-
-    if (alreadyExists) {
-      console.log(
-        "[playwright:daily-income] Closeout already exists for this branch/date — loading it instead of creating.",
-      );
-      return ensureCloseoutVisibleAfterExisting(page, main);
-    }
-
-    return { ok: false, createStatus: created.status() };
-  }
-
-  await expect(page.getByText("Daily income created.")).toBeVisible({ timeout: 15_000 });
-  await expect(main.getByText(/^OPEN · #/)).toBeVisible({ timeout: 15_000 });
-  console.log(`[playwright:daily-income] Created OPEN closeout for branch=${branchCode} date=${date}.`);
-  return { ok: true };
-}
-
-async function tryReopenCloseout(page: Page, main: Locator): Promise<CloseoutAttemptResult> {
-  const reopenButton = main.getByRole("button", { name: "Reopen day" });
-  if (!(await reopenButton.isVisible())) {
-    return { ok: false };
-  }
-
-  const date = await main.locator("#daily-date").inputValue();
-  console.log(`[playwright:daily-income] Closeout is CLOSED for date=${date}; reopening.`);
-
-  const reopenResponse = waitForApiResponse(page, "/income-statements/", "POST", { requireOk: false });
-  await reopenButton.click();
-  const reopened = await reopenResponse;
-
-  if (!reopened.ok()) {
-    await logApiResponse(reopened, "reopen income-statement failed");
-    return { ok: false, reopenStatus: reopened.status() };
-  }
-
-  await expect(page.getByText("Daily income opened.")).toBeVisible({ timeout: 15_000 });
-  await expect(main.getByText(/^OPEN · #/)).toBeVisible({ timeout: 15_000 });
-  return { ok: true };
-}
-
-async function tryEnsureOpenOnCurrentDate(page: Page, main: Locator): Promise<CloseoutAttemptResult> {
-  await waitForCloseoutBadge(main);
-
-  try {
-    await expect(main.getByText(/^OPEN · #/)).toBeVisible({ timeout: 8_000 });
-    return { ok: true };
-  } catch {
-    // Not open yet — reopen or create below.
-  }
-
-  const reopened = await tryReopenCloseout(page, main);
-  if (reopened.ok) return reopened;
-
-  return tryCreateCloseout(page, main);
-}
-
-async function ensureCloseoutVisibleAfterExisting(page: Page, main: Locator): Promise<CloseoutAttemptResult> {
-  if (await refreshDailyIncomeStatement(page, main)) {
-    try {
-      await expect(main.getByText(/^OPEN · #/)).toBeVisible({ timeout: 8_000 });
-      return { ok: true };
-    } catch {
-      return tryReopenCloseout(page, main);
-    }
-  }
-
-  return { ok: false };
-}
-
-function buildDatesToTry() {
-  const defaults = Array.from({ length: 15 }, (_, offset) => isoDateDaysAgo(offset));
-  const override = configuredCloseoutDateOverride();
-  if (!override) return defaults;
-
-  return [override, ...defaults.filter((date) => date !== override)];
-}
-
-async function getBranchCodesToTry(main: Locator) {
-  const configured = configuredBranchCode();
-  if (configured) return [configured];
-
-  return getBranchCodes(main);
-}
-
-async function ensureOpenDailyCloseoutOnBranch(
-  page: Page,
-  main: Locator,
-  branchCode: string,
-  dates: string[],
-  branchCodes: string[] = [],
-  logBranch = true,
-) {
-  if (logBranch) {
-    logRunningTestForBranch(branchCode, branchCodes);
-  }
-
-  if (!(await selectBranchAndWait(page, main, branchCode))) {
-    return { ok: false as const };
-  }
-
-  let lastCreateStatus: number | undefined;
-  let lastReopenStatus: number | undefined;
-  let sawForbiddenMessage = false;
-
-  for (const isoDate of dates) {
-    if (!(await setDailyIncomeDate(page, main, isoDate))) {
-      continue;
-    }
-
-    const result = await tryEnsureOpenOnCurrentDate(page, main);
-    if (result.ok) {
-      const branch = await main.locator("#daily-branch").inputValue();
-      const date = await main.locator("#daily-date").inputValue();
-      console.log(`[playwright:daily-income] OPEN closeout ready (branch=${branch}, date=${date}).`);
-      return { ok: true as const };
-    }
-
-    if (result.createStatus) {
-      lastCreateStatus = result.createStatus;
-      if (result.createStatus === 403) {
-        sawForbiddenMessage = true;
-        break;
-      }
-    }
-    if (result.reopenStatus) lastReopenStatus = result.reopenStatus;
-    if (await main.getByText(/This action is forbidden/i).isVisible()) {
-      sawForbiddenMessage = true;
-    }
-  }
-
-  return {
-    ok: false as const,
-    lastCreateStatus,
-    lastReopenStatus,
-    sawForbiddenMessage,
-  };
-}
-
-/**
- * Ensures an OPEN daily closeout exists for the configured branch (or all branches).
- * Picks the date automatically: today first, then walks back up to 14 days.
- * Creates or reopens a closeout when the page shows "No closeout for this date" or CLOSED.
- */
+/** Fixtures consume periods prepared by the non-production CLI; never create or reopen them. */
 export async function ensureOpenDailyCloseout(page: Page, main: Locator) {
-  await expect(main.locator("#daily-branch")).not.toHaveValue("", { timeout: 30_000 });
-
-  const configuredBranch = configuredBranchCode();
-  const branchCodes = await getBranchCodesToTry(main);
-  const dates = buildDatesToTry();
-  let lastCreateStatus: number | undefined;
-  let lastReopenStatus: number | undefined;
-  let sawForbiddenMessage = false;
-
-  logDailyIncomeBranchPlan(branchCodes);
-  console.log(
-    `[playwright:daily-income] Looking for OPEN closeout (dates=${dates[0]} … ${dates.at(-1)}).`,
-  );
-
-  for (const branchCode of branchCodes) {
-    const result = await ensureOpenDailyCloseoutOnBranch(
-      page,
-      main,
-      branchCode,
-      dates,
-      branchCodes,
-      !configuredBranch,
-    );
-    if (result.ok) {
-      return;
-    }
-
-    if (result.lastCreateStatus) {
-      lastCreateStatus = result.lastCreateStatus;
-      if (result.lastCreateStatus === 403) {
-        sawForbiddenMessage = true;
-      }
-    }
-    if (result.lastReopenStatus) lastReopenStatus = result.lastReopenStatus;
-    if (result.sawForbiddenMessage) sawForbiddenMessage = true;
+  const branches = await resolveDailyIncomeBranchesForTest(main);
+  logDailyIncomeBranchPlan(branches);
+  for (const branch of branches) {
+    if (!(await selectBranchAndWait(page, main, branch))) continue;
+    const date = configuredCloseoutDateOverride() ?? isoDateDaysAgo(0);
+    if (!(await setDailyIncomeDate(page, main, date))) continue;
+    if (await main.getByRole("button", { name: "Add transaction", exact: true }).isEnabled().catch(() => false)) return;
   }
-
-  const hints = ["Unable to find or open an OPEN daily closeout after trying create/reopen."];
-
-  if (configuredBranch) {
-    hints.push(`Branch: PLAYWRIGHT_DAILY_INCOME_BRANCH=${configuredBranch}.`);
-  } else {
-    hints.push("Set PLAYWRIGHT_DAILY_INCOME_BRANCH in .env.local to pin a branch (recommended).");
-  }
-
-  hints.push(
-    `Dates tried (newest first): ${dates.slice(0, 5).join(", ")}${dates.length > 5 ? ", …" : ""}.`,
-    "The test creates a closeout when the page shows “No closeout for this date”, or reopens a CLOSED one.",
-    "Grant the Playwright test user permission to create/reopen daily income closeouts if create/reopen returned HTTP 403.",
-    "See PLAYWRIGHT.md — Register invoice transaction test.",
-  );
-
-  if (lastCreateStatus) hints.push(`Last create closeout response: HTTP ${lastCreateStatus}.`);
-  if (lastReopenStatus) hints.push(`Last reopen closeout response: HTTP ${lastReopenStatus}.`);
-  if (sawForbiddenMessage) {
-    hints.push('The page showed "This action is forbidden".');
-  }
-
-  throw new Error(hints.join(" "));
+  throw new Error("No current active closeout. Run daily-income end-of-day in the approved test environment and set PLAYWRIGHT_DAILY_INCOME_DATE to its branch-local business date.");
 }
 
-/** Ensures an OPEN closeout on one branch (logs "Running test for … branch" unless logBranch is false). */
 export async function ensureOpenDailyCloseoutForBranch(
   page: Page,
   main: Locator,
@@ -514,21 +210,13 @@ export async function ensureOpenDailyCloseoutForBranch(
   branchCodes: string[] = [branchCode],
   logBranch = true,
 ) {
-  await expect(main.locator("#daily-branch")).not.toHaveValue("", { timeout: 30_000 });
-  const result = await ensureOpenDailyCloseoutOnBranch(
-    page,
-    main,
-    branchCode,
-    buildDatesToTry(),
-    branchCodes,
-    logBranch,
-  );
-  if (result.ok) return;
-
-  throw new Error(
-    `Unable to find or open an OPEN daily closeout for branch ${branchCode}.` +
-      (result.lastCreateStatus ? ` Last create response: HTTP ${result.lastCreateStatus}.` : ""),
-  );
+  if (logBranch) logRunningTestForBranch(branchCode, branchCodes);
+  const date = configuredCloseoutDateOverride() ?? isoDateDaysAgo(0);
+  if (!(await selectBranchAndWait(page, main, branchCode)) || !(await setDailyIncomeDate(page, main, date))) {
+    throw new Error(`Unable to load closeout for ${branchCode} on ${date}.`);
+  }
+  await expect(main.getByRole("button", { name: "Add transaction", exact: true }),
+    "Prepare the current branch-local period with the test environment CLI before running payment tests.").toBeEnabled();
 }
 
 type RegisterInvoiceTransactionOptions = {
@@ -541,7 +229,7 @@ type RegisterInvoiceTransactionOptions = {
 
 /** Wait until the closeout badge and transaction list have finished loading. */
 export async function waitForCloseoutTransactionsReady(main: Locator) {
-  await expect(main.getByText(/^OPEN · #/)).toBeVisible({ timeout: 15_000 });
+  await expect(main.getByText(/^Active · #/)).toBeVisible({ timeout: 15_000 });
   await expect(main.getByText("Loading transactions")).toHaveCount(0, { timeout: 30_000 });
 }
 

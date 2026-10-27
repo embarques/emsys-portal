@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { normalizeApiError } from "@/lib/api/axios";
 import { useDeliveryWizard } from "@/lib/deliveries/hooks/use-delivery-wizard";
 import type { DeliverTarget } from "@/lib/deliveries/hooks/use-deliver-invoice";
 import { useTranslation } from "@/lib/i18n";
@@ -41,6 +42,9 @@ export function DeliveryWizard({
   const state = useDeliveryWizard(target);
   const [print, setPrint] = useState(false);
   const review = state.query.data;
+  const loadFailure = state.query.isError ? normalizeApiError(state.query.error) : null;
+  // Only API responses carry a reason worth showing; local parse/identity checks stay generic.
+  const loadErrorDetail = loadFailure?.status != null ? loadFailure.message : "";
   const invoiceNumber = review?.invoiceNumber || target.invoiceNumber || "";
   const values = state.form.watch();
   const errors = state.form.formState.errors;
@@ -195,7 +199,14 @@ export function DeliveryWizard({
             </p>
           ) : state.query.isError || !review ? (
             <div className="space-y-4 p-6">
-              <p role="alert">{t("deliveries.deliver.loadError")}</p>
+              <div role="alert" className="space-y-1">
+                <p>{t("deliveries.deliver.loadError")}</p>
+                {loadErrorDetail ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("deliveries.deliver.loadErrorReason", { reason: loadErrorDetail })}
+                  </p>
+                ) : null}
+              </div>
               <Button
                 type="button"
                 variant="outline"

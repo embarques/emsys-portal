@@ -54,15 +54,15 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     enabled: access.canDeliver && Boolean(target.invoiceId),
     staleTime: 0,
   });
-  // Recording payment, opening a Cuadre and overriding clearance share one gate.
-  const canPay = access.canDeliver && access.canList && has(PERMISSIONS.incomeStatementsCreate) && has(PERMISSIONS.journalsCreate);
+  // The API selects the current closeout; recording payments does not create periods.
+  const canPay = access.canDeliver && access.canList && has(PERMISSIONS.incomeView) && has(PERMISSIONS.journalsCreate);
   const balance = invoice.isSuccess ? invoice.data.balance ?? null : null;
   const enabled = active && canPay && balance != null && balance !== 0;
   const profile = useWorkspaceQuery({ queryKey: [...scope, "profile"], queryFn: fetchCurrentUser, enabled });
   const branchId = profile.data?.branch.id ?? 0;
   const statement = useWorkspaceQuery({
     queryKey: [...scope, "statement", branchId],
-    queryFn: () => fetchCurrentIncomeStatement(branchId),
+    queryFn: ({ signal }) => fetchCurrentIncomeStatement(branchId, signal),
     enabled: enabled && branchId > 0,
   });
   const date = statement.data?.businessDate || statement.data?.date || "";

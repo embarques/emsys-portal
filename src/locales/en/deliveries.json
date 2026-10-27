@@ -76,6 +76,7 @@
     "description": "Complete the selected items for this invoice and delivery.",
     "unavailable": "You do not have access to complete this delivery.",
     "loadError": "Unable to load the items for this delivery.",
+    "loadErrorReason": "Reason: {{reason}}",
     "retry": "Retry",
     "changed": "The barcode assignment changed. Close and reopen the delivery to review the current items.",
     "count": "{{items}} line items · {{barcodes}} barcodes",
