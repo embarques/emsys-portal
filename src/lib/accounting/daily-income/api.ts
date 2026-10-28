@@ -1,3 +1,4 @@
+import { buildTodayCloseoutPayload, type TransactionBranch, type CloseoutSetupValues } from "./start-transaction";
 import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
 import { resolveJournalRefNumberForWrite } from "@/lib/accounting/daily-income/ref-number";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
@@ -820,6 +821,20 @@ export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[
     { id: 4, name: "ZELLE" },
     { id: 5, name: "CREDIT-CARD" },
   ];
+}
+
+/** Explicit creation uses the server's date and branch timezone, never a viewed date. */
+export async function createTodayIncomeStatement(branch: TransactionBranch, values: CloseoutSetupValues) {
+  const payload = await apiClient.post<ApiEnvelope>(
+    API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS,
+    buildTodayCloseoutPayload(branch, values),
+  );
+  assertMutation(payload, "Unable to create today's closeout.");
+  const statement = normalizeIncomeStatement(unwrap(payload));
+  if (!statement || statement.branch?.id !== branch.id || statement.status !== "OPEN") {
+    throw new Error("The API did not return an open closeout for this branch.");
+  }
+  return statement;
 }
 
 export type CloseoutCalendar = {

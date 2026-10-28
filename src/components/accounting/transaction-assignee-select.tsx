@@ -25,7 +25,6 @@ import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 type Props = {
   id?: string;
-  required?: boolean;
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
@@ -64,15 +63,6 @@ type TransactionAssigneeSetValue = (
   options?: { shouldValidate?: boolean },
 ) => void;
 
-function RequiredLabel({ htmlFor, children, required }: { htmlFor: string; children: React.ReactNode; required: boolean }) {
-  return (
-    <Label htmlFor={htmlFor}>
-      {children}
-      {required ? <span className="text-destructive"> *</span> : null}
-    </Label>
-  );
-}
-
 function clearEmployee(setValue: TransactionAssigneeSetValue) {
   setValue("employeeId", undefined, { shouldValidate: true });
   setValue("employeeName", "");
@@ -89,7 +79,6 @@ function clearRoute(setValue: TransactionAssigneeSetValue) {
 
 export function TransactionAssigneeSelect({
   id = "journal-employee",
-  required = true,
   employees,
   dailyRoutes = [],
   statementDate,
@@ -265,9 +254,9 @@ export function TransactionAssigneeSelect({
     <div className="grid gap-4 sm:grid-cols-2">
       {allowDailyRoute ? (
         <div className="space-y-2">
-          <RequiredLabel required={required} htmlFor={`${id}-source`}>
+          <Label htmlFor={`${id}-source`}>
             {t("accounting.dailyIncome.form.fields.assignedTo")}
-          </RequiredLabel>
+          </Label>
           <SearchableSelect
             id={`${id}-source`}
             value={source}
@@ -280,9 +269,9 @@ export function TransactionAssigneeSelect({
       ) : null}
 
       <div className="space-y-2">
-        <RequiredLabel required={required} htmlFor={`${id}-branch`}>
+        <Label htmlFor={`${id}-branch`}>
           {t("accounting.dailyIncome.form.fields.branch")}
-        </RequiredLabel>
+        </Label>
         <SearchableSelect
           id={`${id}-branch`}
           value={branchId != null ? String(branchId) : ""}
@@ -298,9 +287,9 @@ export function TransactionAssigneeSelect({
       {source === "route" ? (
         <div className="space-y-2 sm:col-span-2">
           <div className="flex items-center justify-between gap-2">
-            <RequiredLabel required={required} htmlFor="journal-route">
+            <Label htmlFor="journal-route">
               {t("accounting.dailyIncome.form.fields.route")}
-            </RequiredLabel>
+            </Label>
             {onAddRoute ? (
               <FieldEntityActions
                 hasSelection={Boolean(routeId)}
@@ -324,7 +313,7 @@ export function TransactionAssigneeSelect({
       ) : (
         <div className="space-y-2 sm:col-span-2">
           <div className="flex items-center justify-between gap-2">
-            <RequiredLabel required={required} htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
+            <Label htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</Label>
             {onAddEmployee ? (
               <FieldEntityActions
                 hasSelection={Boolean(employeeId)}
@@ -346,6 +335,7 @@ export function TransactionAssigneeSelect({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       )}
+      <p className="text-sm text-muted-foreground sm:col-span-2">{t("accounting.dailyIncome.form.creatorAssigneeHint")}</p>
     </div>
   );
 }

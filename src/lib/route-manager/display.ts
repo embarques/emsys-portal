@@ -148,10 +148,6 @@ export function routeMatchesSearch(
         return getRouteBranchCode(assignment);
       case "date":
         return assignment.date;
-      case "vehicle.id":
-        return assignment.vehicle.id;
-      case "vehicle.name":
-        return assignment.vehicle.name;
       case "employees.name":
         return formatRouteEmployeeNames(assignment.employees);
       case "createdBy":
@@ -175,8 +171,6 @@ export function routeMatchesQuery(assignment: Route, query: string): boolean {
     assignment.date,
     assignment.createdBy,
     getRouteBranchCode(assignment),
-    assignment.vehicle.id,
-    assignment.vehicle.name,
     formatRouteEmployeeNames(assignment.employees),
     formatRouteDate(assignment.date),
   ]
@@ -186,14 +180,12 @@ export function routeMatchesQuery(assignment: Route, query: string): boolean {
 }
 
 export function computeRouteKpis(assignments: Route[]) {
-  const uniqueVehicles = new Set(assignments.map((assignment) => assignment.vehicle.id).filter(Boolean)).size;
   const uniqueEmployees = new Set(
     assignments.flatMap((assignment) => assignment.employees.map((employee) => employee.id)),
   ).size;
 
   return {
     total: assignments.length,
-    uniqueVehicles,
     uniqueEmployees,
   };
 }

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import {
+  accountingClearingNavigationItems,
   navigation,
   topNavigationItems,
   type NavigationGroup,
@@ -147,6 +148,8 @@ function buildPathSectionsFromNavigation(
     if (!section) continue;
     collectLeafHrefs(group.items, section, pathSections);
   }
+
+  collectLeafHrefs(accountingClearingNavigationItems, "accounting", pathSections);
 
   return pathSections;
 }

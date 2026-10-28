@@ -1,25 +1,37 @@
 "use client";
-import { useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { activityFormSchema, type ActivityFormValues } from "@/lib/accounting/financial-activity/schemas";
-import Link from "next/link";
-import { CloseoutBranchSettings } from "@/components/accounting/closeout-branch-settings";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
+import { getEmployeeBadgeClass, getPaymentMethodBadgeClass } from "@/lib/accounting/financial-activity/display";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollText, SlidersHorizontal } from "lucide-react";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { resolveUserBranchRef } from "@/lib/branches/user-branch";
+import { useEmployees } from "@/lib/employees/hooks/use-employees";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { RouteEmployeeRef } from "@/lib/route-manager/types";
 import { canReverseFinancialActivity, pendingHandovers, reconciliationActions } from "@/lib/accounting/financial-activity/workflow";
-import { clearingAction, type FinancialActivity, type ActivityFilters, type AutomationSettings } from "@/lib/accounting/financial-activity/api";
-import { useClearFinancialPayment, useFinancialActivity, useActivityHistory, useRecordActivity, useReverseActivity, useAutomationSettings, useSaveAutomation } from "@/lib/accounting/financial-activity/hooks";
+import { clearingAction, type FinancialActivity, type ActivityFilters } from "@/lib/accounting/financial-activity/api";
+import { useClearFinancialPayment, useFinancialActivity, useActivityHistory, useRecordActivity, useReverseActivity } from "@/lib/accounting/financial-activity/hooks";
 const initialFilters: ActivityFilters = { employee: "", method: "", branch: "", from: "", through: "", minimum: "", age: "" };
+const ALL_VALUE = "all";
+const PAYMENT_METHODS = ["CASH", "CHECK", "ZELLE", "DEPOSIT", "CREDIT-CARD"];
+const ADDITIONAL_FILTERS = ["from", "through", "minimum", "age"] as const;
 function money(amount: number, currency?: string) { return new Intl.NumberFormat(undefined,currency ? {style:"currency",currency} : {maximumFractionDigits:2}).format(amount); }
 export function FinancialActivityWorkspace() {
     const { t } = useTranslation();
@@ -30,43 +42,66 @@ export function FinancialActivityWorkspace() {
  const selected=selection?.companyId===companyId?selection.row:null;
  function setSelected(row:FinancialActivity|null){setSelection(row?{companyId,row}:null);}
 
+    const [branchChoice, setBranchChoice] = useState<{ companyId: string | null; value: string } | null>(null);
+    const currentUserQuery = useCurrentUser();
+    const branchesQuery = useBranchPicker(200);
+    const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
+    const userBranch = currentUserQuery.data?.branch;
+    const userBranchRef = useMemo(() => resolveUserBranchRef(userBranch, branches), [userBranch, branches]);
+    const userSettled = Boolean(currentUserQuery.data) || currentUserQuery.isFetched || currentUserQuery.isError;
+    // A name-only user branch needs the directory to resolve its id before the first search.
+    const branchReady = userSettled && !(userBranch && !userBranchRef && branchesQuery.isPending);
+    const branchValue = branchChoice?.companyId === companyId ? branchChoice.value : (userBranchRef?.id ? String(userBranchRef.id) : "");
+    const employeeBranch = branches.find(branch => String(branch.id) === branchValue) ?? (String(userBranchRef?.id) === branchValue ? userBranchRef : undefined);
+    const employeesQuery = useEmployees(
+        { page: 1, limit: 200, sort: "name:asc", branch: employeeBranch?.code || "all" },
+        { enabled: branchReady && (!branchValue || Boolean(employeeBranch?.code)) },
+    );
     const debounced = useDebouncedValue(filters, 300);
-    const query = useFinancialActivity(debounced, page);
-    const settings = useAutomationSettings();
+    const activeFilters = useMemo(() => ({ ...debounced, employee: filters.employee, method: filters.method, branch: branchValue }), [debounced, filters.employee, filters.method, branchValue]);
+    const query = useFinancialActivity(activeFilters, page, { enabled: branchReady });
     const text = (key: string) => t(`accounting.financialActivity.${key}`);
+    const employeeOptions = useMemo(() => [
+        { value: ALL_VALUE, label: t("accounting.financialActivity.allEmployees") },
+        ...(employeesQuery.isPlaceholderData || !branchReady || (branchValue && !employeeBranch?.code) ? [] : employeesQuery.data?.items ?? []).map(employee => ({ value: String(employee.id), label: employee.name, keywords: [employee.name, employee.title, employee.branch?.code].filter(Boolean) as string[] })),
+    ], [employeesQuery.data?.items, employeesQuery.isPlaceholderData, branchReady, branchValue, employeeBranch?.code, t]);
+    const branchOptions = useMemo(() => {
+        const extra = userBranchRef && !branches.some(branch => branch.id === userBranchRef.id) ? [userBranchRef] : [];
+        return [
+            { value: ALL_VALUE, label: t("accounting.financialActivity.allBranches") },
+            ...[...extra, ...branches].map(branch => ({ value: String(branch.id), label: formatBranchFilterLabel(branch), keywords: [branch.code, branch.name] })),
+        ];
+    }, [branches, userBranchRef, t]);
+    const methodOptions = useMemo(() => [
+        { value: ALL_VALUE, label: t("accounting.financialActivity.all") },
+        ...PAYMENT_METHODS.map(method => ({ value: method, label: method })),
+    ], [t]);
     function filter(name: keyof ActivityFilters, value: string) { setPage(1); setFilters(current => ({ ...current, [name]: value })); }
+    const additionalCount = ADDITIONAL_FILTERS.filter(name => filters[name] !== "").length;
+    function chooseBranch(value: string) { setFilters(current => ({ ...current, employee: "" })); setPage(1); setBranchChoice({ companyId, value: value === ALL_VALUE ? "" : value }); }
     const canView = hasPermission("canViewFinancialActivity", "financial_activity");
     if (!canView)
         return <p>{t("common.errors.forbidden")}</p>;
     return <div className="space-y-6"><PageHeader title={text("title")} description={text("description")}/>
- <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
- {(["employee", "branch", "from", "through", "minimum", "age"] as const).map(name => <Label key={name} className="space-y-2">{text(name)}<Input type={name === "from" || name === "through" ? "date" : name === "minimum" || name === "age" ? "number" : "text"} min={name === "minimum" || name === "age" ? 0 : undefined} value={filters[name]} onChange={event => filter(name, event.target.value)}/></Label>)}
- <Label className="space-y-2">{text("method")}<select className="h-10 w-full rounded-md border bg-background px-3" value={filters.method} onChange={event => filter("method", event.target.value)}><option value="">{text("all")}</option>{["CASH", "CHECK", "ZELLE", "DEPOSIT", "CREDIT-CARD"].map(method => <option key={method} value={method}>{method}</option>)}</select></Label>
- <Button variant="outline" onClick={() => { setFilters(initialFilters); setPage(1); }}>{text("reset")}</Button></div>
+ <div className="grid items-end gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto_auto]">
+ <div className="space-y-2"><Label htmlFor="financial-activity-branch">{text("branch")}</Label><SearchableSelect id="financial-activity-branch" value={branchReady ? (branchValue || ALL_VALUE) : ""} onValueChange={chooseBranch} options={branchOptions} loading={!branchReady || branchesQuery.isLoading} placeholder={text("selectBranch")} searchPlaceholder={text("searchBranches")} emptyMessage={text("noBranchesFound")} mobileSheet/></div>
+ <div className="space-y-2"><Label htmlFor="financial-activity-employee">{text("employee")}</Label><SearchableSelect id="financial-activity-employee" value={filters.employee || ALL_VALUE} onValueChange={value => filter("employee", value === ALL_VALUE ? "" : value)} options={employeeOptions} loading={employeesQuery.isLoading} placeholder={text("selectEmployee")} searchPlaceholder={text("searchEmployees")} emptyMessage={text("noEmployeesFound")} mobileSheet/></div>
+ <div className="space-y-2"><Label htmlFor="financial-activity-method">{text("method")}</Label><SearchableSelect id="financial-activity-method" value={filters.method || ALL_VALUE} onValueChange={value => filter("method", value === ALL_VALUE ? "" : value)} options={methodOptions} placeholder={text("all")} searchPlaceholder={text("searchMethods")} emptyMessage={text("noMethodsFound")} mobileSheet/></div>
+ <Popover><PopoverTrigger asChild><Button type="button" variant="outline"><SlidersHorizontal className="size-4"/>{text("additionalFilters")}{additionalCount ? ` (${additionalCount})` : ""}</Button></PopoverTrigger>
+ <PopoverContent align="end" className="grid w-[30rem] max-w-[calc(100vw-2rem)] grid-cols-[max-content_minmax(0,1fr)] items-center gap-x-4 gap-y-3 p-4">{ADDITIONAL_FILTERS.map(name => <Fragment key={name}><Label htmlFor={`financial-activity-${name}`} className="whitespace-nowrap">{text(name)}</Label><Input id={`financial-activity-${name}`} className="w-full" type={name === "from" || name === "through" ? "date" : "number"} min={name === "minimum" || name === "age" ? 0 : undefined} value={filters[name]} onChange={event => filter(name, event.target.value)}/></Fragment>)}</PopoverContent></Popover>
+ <Button variant="outline" onClick={() => { setFilters(initialFilters); setBranchChoice(null); setPage(1); }}>{text("reset")}</Button>
+ </div>
  {query.isError ? <p role="alert" className="text-destructive">{normalizeApiError(query.error).message}</p> : null}
- <div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><thead><tr>{["date", "employee", "branch", "method", "currency", "amount", "outstanding", "age", "actions"].map(key => <th scope="col" className="p-3" key={key}>{text(key)}</th>)}</tr></thead><tbody>
- {query.data?.items.map(row => <tr key={row.id} className="border-t"><td className="p-3">{row.date ? new Date(row.date).toLocaleDateString() : "—"}</td><td className="p-3">{row.employee?.name ?? "—"}</td><td className="p-3">{row.branch?.name ?? "—"}</td><td className="p-3">{row.paymentMethod?.name ?? "—"}</td><td className="p-3">{row.currency||text("unknownCurrency")}</td><td className="p-3">{money(row.transactionAmount, row.currency)}</td><td className="p-3">{money(row.outstandingAmount, row.currency)}</td><td className="p-3">{row.ageDays}</td><td className="p-3"><Button variant="outline" onClick={() => setSelected(row)}>{text("activity")}</Button></td></tr>)}
+ {query.isPending || !branchReady ? <DirectoryTableLoader icon={ScrollText} title={text("loading")} description={text("loadingDescription")} columns={["date", "employee", "branch", "method", "amount", "outstanding"].map(text)}/> : !query.isError ? <>
+ <div className="overflow-x-auto rounded-xl border" aria-busy={query.isFetching}><table className="w-full text-left text-sm"><thead><tr>{["date", "employee", "branch", "method", "currency", "amount", "outstanding", "age", "actions"].map(key => <th scope="col" className="p-3" key={key}>{text(key)}</th>)}</tr></thead><tbody>
+ {query.data?.items.map(row => <tr key={row.id} className="border-t"><td className="p-3">{row.date ? new Date(row.date).toLocaleDateString() : "—"}</td><td className="p-3">{row.employee?.name ? <TableTagText className={getEmployeeBadgeClass(row.employee.id)}>{row.employee.name}</TableTagText> : "—"}</td><td className="p-3">{row.branch?.name ?? "—"}</td><td className="p-3">{row.paymentMethod?.name ? <TableTagText className={getPaymentMethodBadgeClass(row.paymentMethod.name)}>{row.paymentMethod.name}</TableTagText> : "—"}</td><td className="p-3">{row.currency||text("unknownCurrency")}</td><td className="p-3">{money(row.transactionAmount, row.currency)}</td><td className="p-3">{money(row.outstandingAmount, row.currency)}</td><td className="p-3">{row.ageDays}</td><td className="p-3"><Button variant="outline" onClick={() => setSelected(row)}>{text("activity")}</Button></td></tr>)}
  {!query.isFetching && !query.data?.items.length ? <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">{text("empty")}</td></tr> : null}
  </tbody></table></div>
- {query.isFetching ? <p role="status">{text("loading")}</p> : null}
+ {query.isFetching ? <p role="status" className="text-sm text-muted-foreground">{text("loading")}</p> : null}
  <div className="flex items-center justify-end gap-3"><Button variant="outline" disabled={page <= 1 || query.isFetching} onClick={() => setPage(value => value - 1)}>{text("previous")}</Button><span>{page}</span><Button variant="outline" disabled={page * 40 >= (query.data?.total ?? 0) || query.isFetching} onClick={() => setPage(value => value + 1)}>{text("next")}</Button></div>
- <p className="text-sm text-muted-foreground">{text("clearingHelp")} <Link className="underline" href="/accounting/checks">{text("checks")}</Link> · <Link className="underline" href="/accounting/zelle">Zelle</Link> · <Link className="underline" href="/accounting/deposits">{text("deposits")}</Link> · <Link className="underline" href="/accounting/credit-cards">{text("cards")}</Link></p>
- {settings.data && hasPermission("canUpdateSettings", "settings") ? <AutomationForm key={`${companyId}:${JSON.stringify(settings.data)}`} initial={settings.data}/> : null}
+ </> : null}
  <Dialog open={!!selected} onOpenChange={open => { if (!open)
         setSelected(null); }}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>{text("activity")}</DialogTitle><DialogDescription>{text("historyHelp")}</DialogDescription></DialogHeader>{selected ? <ActivityDetails key={`${companyId}:${selected.id}`} row={selected}/> : null}</DialogContent></Dialog></div>;
-}
-function AutomationForm({ initial }: {
-    initial: AutomationSettings;
-}) {
-    const { t } = useTranslation();
-    const [settings, setSettings] = useState(initial);
-    const save = useSaveAutomation();
-    const text = (key: string) => t(`accounting.financialActivity.${key}`);
-    return <form className="space-y-4 rounded-xl border p-4" onSubmit={event => { event.preventDefault(); save.mutate({...settings,enabled:false}); }}><h3 className="text-lg font-semibold">{text("automation")}</h3><p className="text-sm text-muted-foreground">{text("automationHelp")}</p>
-
- <div className="grid gap-3 sm:grid-cols-3"><Label>{text("timezone")}<Input required value={settings.timezone} onChange={event => setSettings(current => ({ ...current, timezone: event.target.value }))}/></Label><Label>{text("currency")}<select className="h-10 w-full rounded-md border bg-background px-3" value={settings.currency} onChange={event => setSettings(current => ({ ...current, currency: event.target.value }))}><option>USD</option><option>DOP</option></select></Label><Label>{text("rate")}<Input type="number" required min="0.000001" step="any" value={settings.rate} onChange={event => setSettings(current => ({ ...current, rate: Number(event.target.value) }))}/></Label></div>
- <CloseoutBranchSettings settings={settings} onChange={setSettings}/>
- {save.isError ? <p role="alert" className="text-destructive">{normalizeApiError(save.error).message}</p> : null}{save.isSuccess ? <p role="status">{text("saved")}</p> : null}<Button type="submit" disabled={save.isPending || JSON.stringify(initial) === JSON.stringify(settings)}>{text("save")}</Button></form>;
 }
 function ActivityDetails({ row }: {
     row: FinancialActivity;

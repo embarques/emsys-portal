@@ -11,5 +11,5 @@ export const ROUTE_API_TABLE_FIELDS = [
   { field: "name" },
   { field: "updatedAt", format: "date" },
   { field: "updatedBy" },
-  { field: "vehicle" },
+  { field: "vehicle", column: false },
 ] as const satisfies readonly ApiTableField[];
