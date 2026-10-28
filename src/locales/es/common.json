@@ -65,10 +65,6 @@
     "pageSizeEmpty": "Sin tamaños de página",
     "all": "Todos"
   },
-  "legacySync": {
-    "lastSynced": "Última sincronización {{at}}",
-    "neverSynced": "Nunca sincronizado"
-  },
   "listSummary": {
     "searching": "Buscando {{noun}}…",
     "matching": "{{matched}} {{noun}} coincidentes",
