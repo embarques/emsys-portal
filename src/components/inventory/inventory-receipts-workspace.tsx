@@ -207,14 +207,15 @@ export function InventoryReceiptsWorkspace() {
     {
       id: "supplier",
       label: t("inventory.columns.supplier"),
+      sortable: false,
       cellClassName: "font-medium",
       renderCell: (row) => getSupplierNameById(row.supplierId, suppliers) || dash,
     },
-    { id: "holder", label: t("inventory.columns.warehouse"), renderCell: (row) => getHolderNameById(row.toHolderId, holders) || dash },
-    { id: "lines", label: t("inventory.columns.lines"), renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
-    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
-    { id: "totalCost", label: t("inventory.columns.totalCost"), cellClassName: "tabular-nums", renderCell: (row) => formatInventoryMinor(sumReceiptLinesMinor(row.lines)) },
-    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDateTime(row.receivedAt) },
+    { id: "holder", label: t("inventory.columns.warehouse"), sortable: false, renderCell: (row) => getHolderNameById(row.toHolderId, holders) || dash },
+    { id: "lines", label: t("inventory.columns.lines"), sortable: false, renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
+    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), sortable: false, cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
+    { id: "totalCost", label: t("inventory.columns.totalCost"), sortable: false, cellClassName: "tabular-nums", renderCell: (row) => formatInventoryMinor(sumReceiptLinesMinor(row.lines)) },
+    { id: "date", label: t("inventory.columns.date"), sortField: "receivedAt", renderCell: (row) => formatInventoryDateTime(row.receivedAt) },
     { id: "status", label: t("inventory.columns.status"), renderCell: (row) => <InventoryDocumentStatusBadge status={row.status} /> },
   ];
 
@@ -339,7 +340,8 @@ export function InventoryReceiptsWorkspace() {
             rowKey={(row) => row.id}
             rowLabel={(row) => getSupplierNameById(row.supplierId, suppliers)}
             columnLayout={columnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={960}
             onRowClick={setViewReceipt}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}

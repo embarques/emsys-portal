@@ -63,6 +63,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -85,6 +86,7 @@ export function InventoryDispatchesWorkspace() {
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS.sort, () => setPage(1));
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingDispatch, setEditingDispatch] = useState<InventoryDispatch | null>(null);
   const [viewDispatch, setViewDispatch] = useState<InventoryDispatch | null>(null);
@@ -121,6 +123,7 @@ export function InventoryDispatchesWorkspace() {
       ...DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
       page,
       limit: pageLimit,
+      sort,
       search: createInventorySearchFilter(debouncedQuery),
       searchReferenceMatches: holderIds.length
         ? [
@@ -130,7 +133,7 @@ export function InventoryDispatchesWorkspace() {
         : undefined,
       ...(filterRows.length ? { filterRows } : {}),
     };
-  }, [debouncedQuery, filterRows, holders, page, pageLimit]);
+  }, [debouncedQuery, filterRows, holders, page, pageLimit, sort]);
   const directoryQuery = useInventoryDirectoryPage("dispatches", directoryParams);
   const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);
   const totalMatched = directoryQuery.data?.total ?? 0;
@@ -202,19 +205,21 @@ export function InventoryDispatchesWorkspace() {
     {
       id: "toHolder",
       label: t("inventory.form.fields.toHolder"),
+      sortable: false,
       cellClassName: "font-medium",
       renderCell: (row) => getHolderNameById(row.toHolderId, holders) || dash,
     },
-    { id: "fromHolder", label: t("inventory.form.fields.fromHolder"), renderCell: (row) => getHolderNameById(row.fromHolderId, holders) || dash },
-    { id: "lines", label: t("inventory.columns.lines"), renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
-    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
+    { id: "fromHolder", label: t("inventory.form.fields.fromHolder"), sortable: false, renderCell: (row) => getHolderNameById(row.fromHolderId, holders) || dash },
+    { id: "lines", label: t("inventory.columns.lines"), sortable: false, renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
+    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), sortable: false, cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
     {
       id: "assignee",
       label: t("inventory.form.fields.assigneeEmployee"),
       defaultVisible: false,
+      sortable: false,
       renderCell: (row) => (row.assigneeEmployeeId ? employeeNames.get(row.assigneeEmployeeId) ?? row.assigneeEmployeeId : dash),
     },
-    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDateTime(row.dispatchedAt) },
+    { id: "date", label: t("inventory.columns.date"), sortField: "dispatchedAt", renderCell: (row) => formatInventoryDateTime(row.dispatchedAt) },
     { id: "status", label: t("inventory.columns.status"), renderCell: (row) => <InventoryDocumentStatusBadge status={row.status} /> },
   ];
 
@@ -340,7 +345,8 @@ export function InventoryDispatchesWorkspace() {
             rowKey={(row) => row.id}
             rowLabel={(row) => getHolderNameById(row.toHolderId, holders)}
             columnLayout={columnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={960}
             onRowClick={setViewDispatch}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
