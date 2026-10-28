@@ -7,8 +7,14 @@ export type FinancialActivity = {
     paymentId?: string;
     date?: string;
     recordedAt?: string;
+    /** Accountable employee; the responsible supervisor for daily-route collections. */
     employee?: {
         id: number;
+        name: string;
+    };
+    /** Original daily-route attribution, kept after reconciliation. */
+    dailyRoute?: {
+        id: string;
         name: string;
     };
     branch?: {

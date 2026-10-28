@@ -41,7 +41,8 @@
         "date": "Elige el día en que trabajarán este vehículo y equipo.",
         "branch": "Elige primero la sucursal para ver los vehículos y equipos disponibles.",
         "previous": "Parte de una ruta diaria existente y confirma la fecha y las asignaciones.",
-        "roles": "Asigna las funciones de chofer, supervisor y ayudante a los miembros del equipo."
+        "roles": "Agrega empleados y asigna las funciones de chofer, supervisor y ayudante. Un mismo empleado puede ser chofer y supervisor.",
+        "crew": "Atajo opcional: elige una cuadrilla de ruta para cargar los empleados. Solo se guardan los empleados y sus funciones, no la cuadrilla."
       }
     },
     "view": {
@@ -195,7 +196,7 @@
     "route": "Cuadrilla de ruta",
     "driver": "Conductor",
     "supervisor": "Supervisor",
-    "helper": "Ayudante",
+    "helper": "Ayudantes",
     "recordId": "ID de registro",
     "rate": "Tasa de cambio"
   },
@@ -274,10 +275,6 @@
       "active": {
         "label": "Estado",
         "placeholder": "Seleccione el estado…"
-      },
-      "dayOfWeek": {
-        "label": "Día de la semana",
-        "placeholder": "Seleccione el día…"
       },
       "tripNumber": {
         "label": "Número de viaje",
@@ -366,21 +363,6 @@
     "searchRouteTypes": "Buscar tipos…",
     "schedule": "Programación",
     "scheduleDate": "Fecha",
-    "scheduleDayOfWeek": "Día de la semana",
-    "dayOfWeek": "Día de la semana",
-    "dayOfWeekPlaceholder": "Seleccionar un día…",
-    "dayOfWeekSearch": "Buscar días…",
-    "days": {
-      "monday": "Lunes",
-      "tuesday": "Martes",
-      "wednesday": "Miércoles",
-      "thursday": "Jueves",
-      "friday": "Viernes",
-      "saturday": "Sábado",
-      "sunday": "Domingo",
-      "everyDay": "Todos los días"
-    },
-    "namePlaceholder": "Nombre de ruta (opcional)",
     "status": "Estado",
     "active": "Activa",
     "inactive": "Inactiva",
@@ -411,6 +393,8 @@
     "helper": "Ayudante",
     "crewRoles": "Asignar roles",
     "crewRolesEmpty": "Esta cuadrilla de ruta no tiene miembros de la cuadrilla.",
+    "employeesEmpty": "Agrega empleados o elige una cuadrilla de ruta. Necesitas un conductor y un supervisor; un mismo empleado puede ser ambos.",
+    "selectBranchFirstEmployees": "Seleccione una sucursal para agregar empleados.",
     "driverFor": "Conductor — {{name}}",
     "supervisorFor": "Supervisor — {{name}}",
     "helperFor": "Ayudante — {{name}}",
@@ -430,10 +414,10 @@
       "routeType": "El tipo es obligatorio.",
       "container": "El contenedor es obligatorio para rutas de entrega.",
       "date": "La fecha es obligatoria.",
-      "dayOfWeek": "Selecciona al menos un día.",
       "branch": "La sucursal es obligatoria.",
       "vehicle": "El vehículo es obligatorio.",
-      "route": "La cuadrilla de ruta es obligatorio.",
+      "route": "Agrega al menos un empleado o elige una cuadrilla de ruta.",
+      "leadRoles": "Asigna un conductor y un supervisor. Un mismo empleado puede tener ambos roles.",
       "pickupContainer": "Las rutas de citas no pueden incluir un contenedor."
     }
   },
@@ -486,8 +470,8 @@
     "searchCrewMembers": "Buscar miembros de la cuadrilla…",
     "loadingCrewMembers": "Cargando miembros de la cuadrilla…",
     "noCrewMembersFound": "No se encontraron miembros activos de la cuadrilla.",
-    "selectAtLeastOneCrewMember": "Seleccione al menos un miembro de la cuadrilla para esta cuadrilla de ruta.",
-    "crewMemberRequired": "Seleccione al menos un miembro de la cuadrilla.",
+    "selectAtLeastOneCrewMember": "Seleccione al menos dos miembros para esta cuadrilla de ruta. Para un solo empleado, asigne el empleado directamente.",
+    "crewMemberRequired": "Seleccione al menos dos miembros de la cuadrilla.",
     "validation": {
       "branchRequired": "La sucursal es obligatoria.",
       "vehicleRequired": "El vehículo es obligatorio."
@@ -495,7 +479,7 @@
     "design": {
       "status": "Márcala como inactiva para retirar esta cuadrilla sin eliminarla.",
       "branch": "Elige la sucursal de este equipo reutilizable.",
-      "crew": "Selecciona los empleados del equipo. Asigna sus funciones al crear una ruta diaria."
+      "crew": "Selecciona al menos dos empleados para el equipo. Asigna sus funciones al crear una ruta diaria."
     }
   }
 }

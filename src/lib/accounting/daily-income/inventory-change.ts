@@ -1,4 +1,40 @@
-import { findCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import {
+  findCashPaymentMethod,
+  type AccountingLookup,
+  type ChartAccount,
+  type DailyIncomeJournalValues,
+  type InventoryHoldersRef,
+} from "@/lib/accounting/daily-income/types";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+
+/** Selected holders, deduplicated; `null` vehicle when none is chosen. */
+export function inventoryHoldersFromValues(values: DailyIncomeJournalValues): InventoryHoldersRef {
+  const vehicleId = values.inventoryHolderVehicleId?.trim();
+  const seen = new Set<number>();
+  const employees = (values.inventoryHolderEmployees ?? []).filter((employee) => {
+    if (!(employee.id > 0) || seen.has(employee.id)) return false;
+    seen.add(employee.id);
+    return true;
+  });
+  return {
+    vehicle: vehicleId ? { id: vehicleId, name: values.inventoryHolderVehicleName?.trim() || vehicleId } : null,
+    employees: employees.map((employee) => ({ id: employee.id, name: employee.name })),
+  };
+}
+
+export function hasInventoryHolders(values: DailyIncomeJournalValues): boolean {
+  const holders = inventoryHoldersFromValues(values);
+  return holders.vehicle != null || holders.employees.length > 0;
+}
+
+/** Shortcut only: the user still decides who is responsible for the inventory. */
+export function dailyRouteInventoryHolders(route: Pick<ActiveRoute, "vehicle" | "employees">): InventoryHoldersRef {
+  const vehicleId = route.vehicle?.id?.trim();
+  return {
+    vehicle: vehicleId ? { id: vehicleId, name: route.vehicle.name?.trim() || vehicleId } : null,
+    employees: route.employees.map((employee) => ({ id: employee.id, name: employee.name })),
+  };
+}
 
 function isCashAccount(account: ChartAccount) {
   const searchable = [account.name, account.displayName].filter(Boolean).join(" ").toLowerCase();

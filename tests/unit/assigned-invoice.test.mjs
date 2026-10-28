@@ -41,7 +41,7 @@ const employee = (overrides = {}) => ({
 });
 const dailyRoute = (overrides = {}) => ({
   id: "route-1", name: "Truck 1 · 10/23", routeType: "pickup", active: true, date: DATE,
-  branch: { id: 2, code: "NY" }, route: { id: "crew-1", name: "Crew A" },
+  branch: { id: 2, code: "NY" },
   employees: [{ id: 5, name: "Jane Driver", role: "driver" }], ...overrides,
 });
 const base = {
@@ -54,7 +54,7 @@ const base = {
 test("crew on today's pickup route is received via that route with the latest container", () => {
   const context = assigned.resolveAssignedInvoiceContext({ ...base, employee: employee(), routes: [dailyRoute()] });
   assert.deepEqual(context.receivedBy, {
-    source: "route", dailyRoute: { id: "route-1", name: "Truck 1 · 10/23" }, routeCrew: { id: "crew-1", name: "Crew A" },
+    source: "route", dailyRoute: { id: "route-1", name: "Truck 1 · 10/23" },
   });
   assert.deepEqual(context.container, { id: 674, name: "95-25" });
   assert.deepEqual(context.branch, { id: 2, code: "NY", name: "New York" });
@@ -64,6 +64,7 @@ test("crew on today's pickup route is received via that route with the latest co
   assert.equal(values.containerId, "674");
   assert.equal(values.pickupSource, "route");
   assert.equal(values.routeId, "route-1");
+  assert.equal(values.routeCrewId, "");
   assert.equal(values.pickupEmployeeId, "");
 });
 

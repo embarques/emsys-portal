@@ -97,6 +97,10 @@ export function DailyIncomeTransactionViewSheet({
     resolved.employeeGroup,
   );
   const invoice = resolved.invoice;
+  const holders = resolved.inventoryHolders;
+  const inventoryHolderNames = holders
+    ? [holders.vehicle?.name, ...holders.employees.map((employee) => employee.name)].filter(Boolean).join(", ") || undefined
+    : undefined;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -124,6 +128,14 @@ export function DailyIncomeTransactionViewSheet({
             <RecordViewSheetDetailRow
               label={t("accounting.dailyIncome.form.fields.assignedTo")}
               value={assignedTo}
+            />
+            <RecordViewSheetDetailRow
+              label={t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
+              value={resolved.route && resolved.transactionType !== "INVENTORY" ? resolved.employee?.name : undefined}
+            />
+            <RecordViewSheetDetailRow
+              label={t("accounting.dailyIncome.form.fields.inventoryHolders")}
+              value={inventoryHolderNames}
             />
             <RecordViewSheetDetailRow
               label={t("accounting.dailyIncome.form.fields.invoice")}

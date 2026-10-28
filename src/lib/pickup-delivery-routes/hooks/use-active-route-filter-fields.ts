@@ -19,10 +19,6 @@ function localizeFilterOption(
     return { ...option, label: t(`routes.filters.enums.status.${statusKey}`) };
   }
 
-  if (field === "dayOfWeek") {
-    return { ...option, label: t(`routes.activeRoute.days.${option.value}`) };
-  }
-
   return option;
 }
 

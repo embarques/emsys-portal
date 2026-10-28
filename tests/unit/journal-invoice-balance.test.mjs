@@ -52,7 +52,7 @@ for (const [name, fields, expected] of [
 for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE", "EXPENSE", "SALES", "TRANSFER", "LOAN", "INVENTORY"]) {
  test(`${transactionType} permits the server to assign the creator's linked employee`, () => {
   const { dailyIncomeJournalSchema } = loadFeature("src/lib/accounting/daily-income/schemas.ts", {});
-  const values = { transactionType, refNumber: "", description: "", amount: 10, invoiceId: "invoice-1", invoiceNumber: "123", invoiceCost: 100, invoiceBalance: 100, accountId: 1, sourceAccountId: 2, paymentMethodId: 1, paymentMethodName: "CASH", inventoryDirection: "dispatched", inventoryItemId: "box", inventoryQuantity: 1, inventoryTotal: 10 };
+  const values = { transactionType, refNumber: "", description: "", amount: 10, invoiceId: "invoice-1", invoiceNumber: "123", invoiceCost: 100, invoiceBalance: 100, accountId: 1, sourceAccountId: 2, paymentMethodId: 1, paymentMethodName: "CASH", inventoryDirection: "dispatched", inventoryItemId: "box", inventoryQuantity: 1, inventoryTotal: 10, inventoryHolderEmployees: [{ id: 4, name: "Holder" }] };
   assert.equal(dailyIncomeJournalSchema.safeParse(values).success, true);
   const invalid = dailyIncomeJournalSchema.safeParse({ ...values, amount: -1 });
   assert.equal(invalid.success, false, "amount validation must remain enforced");

@@ -72,6 +72,8 @@ type SearchableSelectProps = {
    * Set false when the parent handles post-select focus (e.g. skip an auto-filled field).
    */
   advanceFocusOnSelect?: boolean;
+  /** Require typing or arrow navigation before Enter accepts a suggested option. */
+  requireSelectionInteraction?: boolean;
   /**
    * Open the list when Enter navigation moves focus here from a previous field
    * (closed by default so selections settle without a second popup).
@@ -281,6 +283,7 @@ export function SearchableSelect({
   onClose,
   selectAllOnFocus = false,
   advanceFocusOnSelect = true,
+  requireSelectionInteraction = false,
   openOnNavigationFocus = false,
   mobileSheet = false,
   "aria-label": ariaLabel,
@@ -475,6 +478,14 @@ export function SearchableSelect({
 
     if (event.key !== "Enter") return;
     const field = searchable ? inputRef.current : triggerRef.current;
+    if (requireSelectionInteraction && !selectionEditedRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeDropdown();
+      changeQuery("");
+      advanceFocus();
+      return;
+    }
     // Own desktop Enter before cmdk consumes it, including when its list is closed.
     if (isDesktopFormNavigation() && field?.closest("form") &&
       (!open || (advanceFocusOnSelect && value !== "" && !selectionEditedRef.current))) {

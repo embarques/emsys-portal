@@ -135,19 +135,11 @@ export const queryKeys = {
       [...queryKeys.pickupRouteSchedules.all, "detail", date] as const,
     byId: (recordId: string) =>
       [...queryKeys.pickupRouteSchedules.all, "by-id", recordId] as const,
-    byCrewAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
+    byEmployeesAndDate: (employeeSetKey: string, date: string, vehicleId?: string) =>
       [
         ...queryKeys.pickupRouteSchedules.all,
-        "by-crew-date",
-        routeRecordId,
-        date,
-        vehicleId?.trim() || "none",
-      ] as const,
-    byGroupAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
-      [
-        ...queryKeys.pickupRouteSchedules.all,
-        "by-crew-date",
-        routeRecordId,
+        "by-employees-date",
+        employeeSetKey,
         date,
         vehicleId?.trim() || "none",
       ] as const,
@@ -176,11 +168,11 @@ export const queryKeys = {
       ] as const,
     byId: (recordId: string) =>
       [...queryKeys.deliveryRouteSchedules.all, "by-id", recordId] as const,
-    byCrewAndDate: (routeRecordId: string, date: string, containerId?: number) =>
+    byEmployeesAndDate: (employeeSetKey: string, date: string, containerId?: number) =>
       [
         ...queryKeys.deliveryRouteSchedules.all,
-        "by-crew-date",
-        routeRecordId,
+        "by-employees-date",
+        employeeSetKey,
         date,
         containerId ?? "none",
       ] as const,

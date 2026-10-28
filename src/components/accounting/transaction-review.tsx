@@ -4,6 +4,7 @@ import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
+import { inventoryHoldersFromValues } from "@/lib/accounting/daily-income/inventory-change";
 import { isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { getTransactionStepLabelKey, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { useTranslation } from "@/lib/i18n";
@@ -17,12 +18,18 @@ export function TransactionReview({ values: v, onEdit }: Props) {
   const { t } = useTranslation();
   const inventory = v.transactionType === "INVENTORY";
   const money = (value: number | undefined) => value == null ? undefined : formatAccountingMoney(value);
+  const dispatched = inventory && v.inventoryDirection === "dispatched";
+  const holders = dispatched ? inventoryHoldersFromValues(v) : null;
+  const holderNames = holders ? [holders.vehicle?.name, ...holders.employees.map((employee) => employee.name)].filter(Boolean).join(", ") : undefined;
   const groups: { step: TransactionFormStep; rows: [string, string | number | undefined][] }[] = [
     {
       step: "assignment", rows: [
-        ["accounting.dailyIncome.form.fields.assignedTo", v.routeName || v.employeeName || v.routeId || v.employeeId || t("accounting.dailyIncome.form.creatorAssignee")],
+        ["accounting.dailyIncome.form.fields.assignedTo", inventory ? undefined : v.routeName || v.employeeName || v.routeId || v.employeeId || t("accounting.dailyIncome.form.creatorAssignee")],
+        ["accounting.dailyIncome.form.fields.responsibleSupervisor", !inventory && v.routeId ? v.supervisorName || v.supervisorId : undefined],
         ["accounting.dailyIncome.form.fields.inventoryDirection", inventory && v.inventoryDirection ? t(`accounting.dailyIncome.form.inventory.${v.inventoryDirection}`) : undefined],
         ["inventory.form.fields.supplier", inventory ? v.inventorySupplierName : undefined],
+        ["accounting.dailyIncome.form.fields.route", dispatched ? v.routeName || v.routeId : undefined],
+        ["accounting.dailyIncome.form.fields.inventoryHolders", holderNames],
       ]
     },
     {

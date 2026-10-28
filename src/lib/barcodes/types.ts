@@ -36,6 +36,9 @@ export const DEFAULT_BARCODE_LIST_PARAMS = {
   sort: "id:desc",
 } as const satisfies Pick<BarcodeListParams, "page" | "limit" | "sort">;
 
+/** Barcodes directory table opens on the Invoice column, highest first. */
+export const DEFAULT_BARCODE_DIRECTORY_SORT = "invoice.number:desc";
+
 export function createEmptyBarcodeForm(): BarcodeFormValues {
   return {
     id: 0,

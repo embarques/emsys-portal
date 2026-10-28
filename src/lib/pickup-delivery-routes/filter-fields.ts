@@ -1,4 +1,4 @@
-import { DAYS_OF_WEEK, type RouteType } from "@/lib/pickup-delivery-routes/types";
+import type { RouteType } from "@/lib/pickup-delivery-routes/types";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
 const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
@@ -26,11 +26,6 @@ const ACTIVE_STATUS_OPTIONS = [
   { value: "false", label: "Inactive" },
 ] as const;
 
-const DAY_OF_WEEK_OPTIONS = DAYS_OF_WEEK.map((day) => ({
-  value: day,
-  label: day.charAt(0).toUpperCase() + day.slice(1),
-}));
-
 const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "id",
@@ -52,20 +47,6 @@ const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
-  },
-  {
-    field: "route.name",
-    label: "Route crew",
-    operators: [...TEXT_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter route name…",
-  },
-  {
-    field: "route.id",
-    label: "Route ID",
-    operators: ["eq", "neq"],
-    valueType: "text",
-    placeholder: "Enter route id…",
   },
   {
     field: "employees.name",
@@ -117,13 +98,6 @@ const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     options: [...ACTIVE_STATUS_OPTIONS],
   },
   {
-    field: "dayOfWeek",
-    label: "Day of week",
-    operators: ["eq", "neq", "in", "notIn"],
-    valueType: "select",
-    options: DAY_OF_WEEK_OPTIONS,
-  },
-  {
     field: "rate",
     label: "Exchange rate",
     operators: [...NUMERIC_OPERATORS],
@@ -160,7 +134,7 @@ export function getActiveRouteTableFilterFields(
   routeType?: RouteType,
 ): TableFilterFieldDefinition[] {
   const shared = SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS.filter(
-    (field) => field.field !== "active" && field.field !== "dayOfWeek",
+    (field) => field.field !== "active",
   );
   if (routeType === "pickup") {
     return shared;

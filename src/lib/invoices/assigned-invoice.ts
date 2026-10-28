@@ -13,7 +13,6 @@ export type AssignedInvoiceReceivedBy =
   | {
       source: "route";
       dailyRoute: { id: string; name: string };
-      routeCrew: { id: string; name: string };
     }
   | {
       source: "office" | "warehouse";
@@ -89,11 +88,11 @@ export function findEmployeeDailyRoute(
   );
 }
 
-function formatDailyRouteCrewName(route: ActiveRoute): string {
+function formatDailyRouteName(route: ActiveRoute): string {
   return (
-    route.route.name.trim() ||
+    route.name.trim() ||
     route.employees.map((member) => member.name.trim()).filter(Boolean).join(", ") ||
-    route.name
+    route.id
   );
 }
 
@@ -119,8 +118,7 @@ export function resolveAssignedInvoiceContext(input: {
   if (route) {
     receivedBy = {
       source: "route",
-      dailyRoute: { id: route.id, name: route.name },
-      routeCrew: { id: route.route.id, name: formatDailyRouteCrewName(route) },
+      dailyRoute: { id: route.id, name: formatDailyRouteName(route) },
     };
   } else {
     const employeeBranch = branches.find((branch) => branch.id === employee.branch.id);
@@ -181,8 +179,6 @@ export function applyAssignedInvoiceContext(
     return {
       ...base,
       routeId: context.receivedBy.dailyRoute.id,
-      routeCrewId: context.receivedBy.routeCrew.id,
-      routeCrewName: context.receivedBy.routeCrew.name,
     };
   }
 
@@ -203,7 +199,7 @@ export function buildAssignedInvoiceWriteContext(
   const { receivedBy } = context;
   const pickupAssignment: InvoiceWriteContext["pickupAssignment"] =
     receivedBy.source === "route"
-      ? { source: "route", dailyRoute: receivedBy.dailyRoute, routeCrew: receivedBy.routeCrew }
+      ? { source: "route", dailyRoute: receivedBy.dailyRoute }
       : {
           source: receivedBy.source,
           pickupEmployee: receivedBy.employee,

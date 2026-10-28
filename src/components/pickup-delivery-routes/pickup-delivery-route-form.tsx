@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
+import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
 import { FieldEntityActions, fieldEntityActionClassName } from "@/components/forms/field-entity-actions";
 import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pickup-route-orders-section";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
@@ -24,7 +25,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { SearchableSelectOption } from "@/components/ui/searchable-select";
-import type { RouteCrewRole } from "@/lib/route-manager/types";
+import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
 import type { ActiveRouteFormValues } from "@/lib/pickup-delivery-routes/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -59,6 +60,8 @@ type ActiveRouteFormProps = {
   onRateChange: (rate: string) => void;
   onRouteRecordChange: (routeRecordId: string) => void;
   onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
+  onEmployeesChange: (employees: RouteEmployeeRef[]) => void;
+  onRemoveEmployee: (employeeId: number) => void;
   onCreateVehicleClick: () => void;
   onEditVehicleClick?: () => void;
   onCreateRouteClick: () => void;
@@ -99,6 +102,8 @@ export function ActiveRouteForm({
   onRateChange,
   onRouteRecordChange,
   onRoleChange,
+  onEmployeesChange,
+  onRemoveEmployee,
   onCreateVehicleClick,
   onEditVehicleClick,
   onCreateRouteClick,
@@ -228,9 +233,9 @@ export function ActiveRouteForm({
 
           <FormSection
             variant="card"
+            description={t("routes.dailyRoutes.form.design.crew")}
             icon={RouteIcon}
             title={t("routes.activeRoute.route")}
-            required
             action={
               <FieldEntityActions
                 onAdd={onCreateRouteClick}
@@ -260,21 +265,32 @@ export function ActiveRouteForm({
                   : t("routes.activeRoute.selectBranchFirst")
               }
               options={routeOptions}
-              required
             />
           </FormSection>
 
-          {values.routeRecordId ? (
-            <FormSection variant="card" className="@4xl:col-span-2" description={t("routes.dailyRoutes.form.design.roles")} icon={Users} title={t("routes.activeRoute.crewRoles")}>
+          <FormSection variant="card" className="@4xl:col-span-2" description={t("routes.dailyRoutes.form.design.roles")} icon={Users} title={t("routes.activeRoute.crewRoles")} required>
+            <div className="space-y-3">
+              {hasBranch ? (
+                <RouteEmployeeSelect
+                  value={values.employees}
+                  onChange={onEmployeesChange}
+                  branchCode={branchCode}
+                  showSelectedList={false}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("routes.activeRoute.selectBranchFirstEmployees")}</p>
+              )}
               <CrewRolePicker
                 employees={values.employees}
                 onRoleChange={onRoleChange}
+                onRemove={onRemoveEmployee}
                 roles={crewRoles}
                 toggleLeadRoles
                 loading={selectedRouteLoading}
+                emptyMessage={t("routes.activeRoute.employeesEmpty")}
               />
-            </FormSection>
-          ) : null}
+            </div>
+          </FormSection>
 
           {isDeliveryBranch ? (
             <div className="grid items-stretch gap-5 @4xl:col-span-2 @4xl:grid-cols-2">

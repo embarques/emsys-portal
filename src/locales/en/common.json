@@ -136,7 +136,8 @@
       "emptyState": "No saved presets yet. Build a filter and use “Save preset”."
     },
     "noMatches": "No records match your search or filters.",
-    "matchCount": "{{count}} matches"
+    "matchCount": "{{count}} matches",
+    "sortBy": "Sort by {{column}}"
   },
   "filterOperators": {
     "eq": "Equals",

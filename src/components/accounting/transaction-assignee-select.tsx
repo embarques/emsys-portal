@@ -7,6 +7,7 @@ import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
+  buildDailyRouteSupervisorOptions,
   buildTransactionAssigneeOptions,
   dailyRoutesForAssigneeBranch,
   dailyRoutesForStatement,
@@ -14,6 +15,7 @@ import {
   getTransactionAssigneeSelectValue,
   resolveAssigneeBranchId,
   resolveDailyIncomeAssigneeSource,
+  resolveDailyRouteSupervisor,
 } from "@/lib/accounting/daily-income/assignee";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeAssigneeSource } from "@/lib/accounting/daily-income/types";
@@ -34,8 +36,11 @@ type Props = {
   employeeName?: string;
   routeId?: string;
   routeName?: string;
+  supervisorId?: number;
+  supervisorName?: string;
   assigneeSource?: DailyIncomeAssigneeSource;
   error?: string;
+  supervisorError?: string;
   setValue: TransactionAssigneeSetValue;
   /** When false, only the employee picker is shown (invoice payment wizard). */
   allowDailyRoute?: boolean;
@@ -55,6 +60,8 @@ type TransactionAssigneeFormValues = {
   routeName?: string;
   routeCrewId?: string;
   routeCrewName?: string;
+  supervisorId?: number;
+  supervisorName?: string;
 };
 
 type TransactionAssigneeSetValue = (
@@ -70,11 +77,20 @@ function clearEmployee(setValue: TransactionAssigneeSetValue) {
   setValue("employeeGroupName", "");
 }
 
+function setSupervisor(
+  setValue: TransactionAssigneeSetValue,
+  supervisor: { id: number; name: string } | null,
+) {
+  setValue("supervisorId", supervisor?.id, { shouldValidate: true });
+  setValue("supervisorName", supervisor?.name ?? "");
+}
+
 function clearRoute(setValue: TransactionAssigneeSetValue) {
   setValue("routeId", undefined, { shouldValidate: true });
   setValue("routeName", "");
   setValue("routeCrewId", undefined, { shouldValidate: true });
   setValue("routeCrewName", "");
+  setSupervisor(setValue, null);
 }
 
 export function TransactionAssigneeSelect({
@@ -87,8 +103,11 @@ export function TransactionAssigneeSelect({
   employeeName,
   routeId,
   routeName,
+  supervisorId,
+  supervisorName,
   assigneeSource,
   error,
+  supervisorError,
   setValue,
   allowDailyRoute = true,
   onAddEmployee,
@@ -168,6 +187,24 @@ export function TransactionAssigneeSelect({
     );
   }, [branchScopedRoutes, dailyRoutes, routeId, routeName, t]);
 
+  // A route missing from the loaded list still needs an accountable supervisor.
+  const supervisorOptions = useMemo(
+    () =>
+      withPinnedSelectOption(
+        selectedRoute ? buildDailyRouteSupervisorOptions(selectedRoute) : buildTransactionAssigneeOptions(branchScopedEmployees),
+        supervisorId,
+        supervisorName,
+      ),
+    [branchScopedEmployees, selectedRoute, supervisorId, supervisorName],
+  );
+
+  // Fill the supervisor for prefilled routes; never replace one that was already recorded.
+  useEffect(() => {
+    if (source !== "route" || !selectedRoute || supervisorId) return;
+    const supervisor = resolveDailyRouteSupervisor(selectedRoute);
+    if (supervisor) setSupervisor(setValue, supervisor);
+  }, [selectedRoute, setValue, source, supervisorId]);
+
   const branchOptions = useMemo(
     () =>
       branches.map((branch) => ({
@@ -235,19 +272,28 @@ export function TransactionAssigneeSelect({
     }
 
     const route = dailyRoutes.find((item) => item.id === next);
-    const crewName =
-      route?.route?.name.trim() ||
-      route?.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
-      "";
+    const employeeNames =
+      route?.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") || "";
     setValue("assigneeSource", "route", { shouldValidate: true });
     setValue("routeId", route?.id ?? next, { shouldValidate: true });
-    setValue("routeName", route?.name.trim() || crewName || next);
-    setValue("routeCrewId", route?.route?.id || undefined, { shouldValidate: true });
-    setValue("routeCrewName", crewName);
+    setValue("routeName", route?.name.trim() || employeeNames || next);
+    setValue("routeCrewId", undefined, { shouldValidate: true });
+    setValue("routeCrewName", "");
+    setSupervisor(setValue, resolveDailyRouteSupervisor(route));
     clearEmployee(setValue);
     if (route?.branch?.id) {
       setBranchId(route.branch.id);
     }
+  }
+
+  function handleSupervisorChange(next: string) {
+    const id = Number(next);
+    if (!next || !Number.isInteger(id) || id <= 0) {
+      setSupervisor(setValue, null);
+      return;
+    }
+    const option = supervisorOptions.find((item) => item.value === next);
+    setSupervisor(setValue, { id, name: option?.label ?? "" });
   }
 
   return (
@@ -309,6 +355,33 @@ export function TransactionAssigneeSelect({
             options={routeOptions}
           />
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+      ) : null}
+
+      {source === "route" ? (
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor={`${id}-supervisor`}>
+            {t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
+          </Label>
+          <SearchableSelect
+            id={`${id}-supervisor`}
+            value={supervisorId ? String(supervisorId) : ""}
+            onValueChange={handleSupervisorChange}
+            placeholder={t(
+              routeId
+                ? "accounting.dailyIncome.form.placeholders.selectSupervisor"
+                : "accounting.dailyIncome.form.placeholders.selectRouteFirst",
+            )}
+            searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSupervisors")}
+            emptyMessage={t("accounting.dailyIncome.form.placeholders.noRouteSupervisors")}
+            disabled={!routeId}
+            mobileSheet
+            options={supervisorOptions}
+          />
+          {supervisorError ? <p className="text-sm text-destructive">{supervisorError}</p> : null}
+          <p className="text-xs text-muted-foreground">
+            {t("accounting.dailyIncome.form.hints.routeSupervisorAccountability")}
+          </p>
         </div>
       ) : (
         <div className="space-y-2 sm:col-span-2">

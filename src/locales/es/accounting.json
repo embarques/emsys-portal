@@ -802,7 +802,12 @@
         "unitPrice": "Precio unitario",
         "total": "Total",
         "externalReferenceNumber": "Referencia de transacción de la institución",
-        "externalReferenceHint": "ID opcional del banco o proveedor de pagos."
+        "externalReferenceHint": "ID opcional del banco o proveedor de pagos.",
+        "responsibleSupervisor": "Supervisor responsable",
+        "inventoryHolders": "Responsables del inventario",
+        "holderVehicle": "Vehículo",
+        "holderEmployees": "Empleados",
+        "inventoryDailyRoute": "Ruta diaria (opcional)"
       },
       "partyActions": {
         "new": "Nuevo",
@@ -814,7 +819,9 @@
         "priceHint": "Complete el precio unitario o el total; el otro monto se actualiza automáticamente.",
         "receivedDescription": "Recibido {{item}} × {{quantity}} de {{supplier}}",
         "receivedDescriptionNoSupplier": "Recibido {{item}} × {{quantity}}",
-        "dispatchedDescription": "Despachado {{item}} × {{quantity}}"
+        "dispatchedDescription": "Despachado {{item}} × {{quantity}}",
+        "useRouteHolders": "Usar vehículo y tripulación de la ruta",
+        "removeHolderEmployee": "Quitar a {{name}}"
       },
       "placeholders": {
         "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
@@ -846,12 +853,27 @@
         "selectReceiver": "Seleccionar destinatario",
         "selectInventoryDirection": "Seleccione recibido o despachado",
         "amount": "0.00",
-        "externalReferenceNumber": "Ingresa la referencia de transacción de la institución"
+        "externalReferenceNumber": "Ingresa la referencia de transacción de la institución",
+        "selectSupervisor": "Seleccionar supervisor",
+        "searchSupervisors": "Buscar supervisores…",
+        "noRouteSupervisors": "Esta ruta diaria no tiene supervisor.",
+        "selectRouteFirst": "Primero seleccione una ruta diaria",
+        "selectHolderVehicle": "Seleccionar vehículo (opcional)",
+        "searchVehicles": "Buscar vehículos…",
+        "noVehiclesFound": "No se encontraron vehículos.",
+        "addHolderEmployee": "Agregar empleado",
+        "noEmployeesFound": "No se encontraron empleados.",
+        "noVehicle": "Sin vehículo",
+        "noDailyRoute": "Sin ruta diaria"
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 si aún no se ha pagado.",
         "paymentMethodOptionalZero": "Se registra como efectivo mientras el monto sea $0.00.",
-        "costFromLineItems": "Tomado de los renglones de la factura."
+        "costFromLineItems": "Tomado de los renglones de la factura.",
+        "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. El supervisor es responsable de cuadrar esta transacción.",
+        "inventoryHolders": "Los responsables comparten una sola asignación: 20 cajas para un vehículo y dos empleados son 20 cajas en total.",
+        "inventoryDailyRoute": "Solo se usa para reportes. No hace responsable a la tripulación de la ruta.",
+        "noHolderEmployees": "No hay empleados seleccionados."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -891,7 +913,9 @@
         "inventoryQuantityRequired": "La cantidad debe ser mayor que cero.",
         "inventoryPriceRequired": "Ingrese un precio unitario o un total.",
         "supplierRequired": "El proveedor es obligatorio.",
-        "balanceNegative": "El saldo no puede ser negativo."
+        "balanceNegative": "El saldo no puede ser negativo.",
+        "supervisorRequired": "Seleccione el supervisor de la ruta diaria responsable de esta transacción.",
+        "inventoryHoldersRequired": "Seleccione un vehículo o al menos un empleado responsable de este inventario."
       },
       "sections": {
         "assignment": "Asignación",
@@ -963,7 +987,7 @@
     "loadingDescription": "Cargando la actividad financiera pendiente y los montos pendientes.",
     "title": "Actividad financiera pendiente",
     "description": "Cobros, custodia de efectivo y pagos pendientes de todas las fechas.",
-    "employee": "Empleado",
+    "employee": "Responsable",
     "branch": "Sucursal",
     "allEmployees": "Todos los empleados",
     "allBranches": "Todas las sucursales",
@@ -1022,6 +1046,7 @@
     "noCurrentCloseout": "No hay un cuadre abierto para hoy. Abra el cuadre de hoy en Ingresos diarios y actualice. Solo RD solicita moneda y tasa de cambio.",
     "occurrenceDate": "Fecha real de la transacción",
     "refresh": "Actualizar",
-    "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos."
+    "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos.",
+    "dailyRoute": "Ruta diaria"
   }
 }

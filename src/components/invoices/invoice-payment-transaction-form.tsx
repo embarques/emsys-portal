@@ -29,6 +29,7 @@ import {
 import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { dailyRouteSupervisors, resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
 import { buildInvoiceDailyIncomeAssigneeDefaults } from "@/lib/invoices/schemas/invoice-daily-income.schema";
 import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
@@ -166,6 +167,8 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         inventoryQuantityRequired: t("accounting.dailyIncome.form.validation.inventoryQuantityRequired"),
         inventoryPriceRequired: t("accounting.dailyIncome.form.validation.inventoryPriceRequired"),
         supplierRequired: t("accounting.dailyIncome.form.validation.supplierRequired"),
+        supervisorRequired: t("accounting.dailyIncome.form.validation.supervisorRequired"),
+        inventoryHoldersRequired: t("accounting.dailyIncome.form.validation.inventoryHoldersRequired"),
       }),
     [t],
   );
@@ -219,6 +222,17 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   // Keep assignee in sync with invoice step 1 without resetting amount / payment method.
   useEffect(() => {
     const assignee = buildInvoiceDailyIncomeAssigneeDefaults(invoiceRef.current, routeNameById);
+    const sameRoute = Boolean(assignee.routeId) && getValues("routeId") === assignee.routeId;
+    const chosenSupervisorId = sameRoute ? getValues("supervisorId") : undefined;
+    const route = assignee.routeId ? dailyRoutes.find((item) => item.id === assignee.routeId) : undefined;
+    // Payments on a route invoice are registered under the route supervisor, not the whole crew.
+    const supervisor = !assignee.routeId
+      ? null
+      : route
+        ? resolveDailyRouteSupervisor(route, chosenSupervisorId)
+        : chosenSupervisorId
+          ? { id: chosenSupervisorId, name: getValues("supervisorName") ?? "" }
+          : null;
     setValue("assigneeSource", assignee.assigneeSource, { shouldValidate: false });
     setValue("employeeId", assignee.employeeId, { shouldValidate: false });
     setValue("employeeName", assignee.employeeName ?? "", { shouldValidate: false });
@@ -226,7 +240,11 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     setValue("routeName", assignee.routeName ?? "", { shouldValidate: false });
     setValue("routeCrewId", assignee.routeCrewId, { shouldValidate: false });
     setValue("routeCrewName", assignee.routeCrewName ?? "", { shouldValidate: false });
+    setValue("supervisorId", supervisor?.id, { shouldValidate: false });
+    setValue("supervisorName", supervisor?.name ?? "", { shouldValidate: false });
   }, [
+    dailyRoutes,
+    getValues,
     invoice.pickupEmployeeId,
     invoice.pickupEmployeeName,
     invoice.pickupSource,
@@ -236,6 +254,13 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     routeNameById,
     setValue,
   ]);
+
+  // Unless the route has exactly one supervisor, the user must choose one even when step 1 set the route.
+  const step1RouteId = step1AssigneeSeed.routeId?.trim();
+  const step1Route = step1RouteId ? dailyRoutes.find((item) => item.id === step1RouteId) : undefined;
+  const needsSupervisorChoice = Boolean(step1RouteId) && pickupRoutesQuery.isSuccess
+    && (!step1Route || dailyRouteSupervisors(step1Route).length !== 1);
+  const assigneeVisible = showAssignee || needsSupervisorChoice;
 
   // Default Cash once methods load, only if the user has not chosen a method yet.
   useEffect(() => {
@@ -325,6 +350,8 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           routeName: assignedToRoute ? values.routeName : undefined,
           routeCrewId: assignedToRoute ? values.routeCrewId : undefined,
           routeCrewName: assignedToRoute ? values.routeCrewName : undefined,
+          supervisorId: assignedToRoute ? values.supervisorId : undefined,
+          supervisorName: assignedToRoute ? values.supervisorName : undefined,
           invoiceNumber: invoice.invoiceNumber,
           autoGenerateInvoiceNumber: Boolean(invoice.autoGenerateNumber && !invoice.generatedInvoiceNumber),
           invoiceCost: invoiceLineItemsTotal,
@@ -420,8 +447,8 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         register={register}
         setValue={setValue}
         watch={watch}
-        showEmployee={showAssignee}
-        allowDailyRoute={showAssignee}
+        showEmployee={assigneeVisible}
+        allowDailyRoute={assigneeVisible}
         showInvoiceNumber={false}
         showParties={false}
         invoiceCostReadOnly

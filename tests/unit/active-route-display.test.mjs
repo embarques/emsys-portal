@@ -46,12 +46,10 @@ function route(overrides) {
     routeType: "pickup",
     container: { id: 70, name: "70-26" },
     date: "2026-10-22",
-    dayOfWeek: [],
     branch: { id: 1, code: "NY", name: "New York" },
     vehicle: { id: "v1", name: "Truck 1" },
     active: true,
-    route: { id: "crew-1", name: "Basilio crew" },
-    employees: [],
+    employees: [{ id: 1, name: "Basilio", role: "driver", roles: ["driver", "supervisor"] }],
     createdAt: "",
     createdBy: "",
     updatedAt: "",
@@ -77,14 +75,21 @@ test("delivery daily routes display the stored conduce name", () => {
   assert.equal(formatActiveRouteAssignmentLabel(delivery), "2-70-26");
 });
 
-test("pickup daily routes keep the schedule · crew label, including at RD", () => {
+test("pickup daily routes display the API-generated name", () => {
+  const generated = "2026-10-22_Truck 1_Basilio+Ana";
+  const pickup = route({ routeType: "pickup", name: generated, container: null });
+  assert.equal(formatActiveRouteRowLabel(pickup), generated);
+  assert.equal(formatActiveRouteAssignmentLabel(pickup), generated);
+});
+
+test("daily routes without a generated name fall back to the schedule · employees label", () => {
   const pickup = route({
     routeType: "pickup",
     branch: { id: 2, code: "RD", name: "RD" },
-    name: "should-not-show",
+    name: "",
     container: null,
   });
   const label = formatActiveRouteRowLabel(pickup);
-  assert.equal(label.includes("should-not-show"), false);
-  assert.equal(label.includes("Basilio crew"), true);
+  assert.equal(label.includes("Basilio"), true);
+  assert.equal(label.includes("2026"), true);
 });

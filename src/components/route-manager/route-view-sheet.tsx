@@ -9,7 +9,12 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { getRouteEmployeesLabel, truncateObjectId, truncateRouteId } from "@/lib/route-manager/display";
+import {
+  formatRouteName,
+  getRouteEmployeesLabel,
+  truncateObjectId,
+  truncateRouteId,
+} from "@/lib/route-manager/display";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import { getRouteBranchCode, type Route } from "@/lib/route-manager/types";
@@ -44,7 +49,7 @@ export function RouteViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={assignment.name}
+          title={formatRouteName(assignment)}
           description={<span className="font-mono text-xs">{assignment.routeId}</span>}
         />
 
@@ -57,10 +62,6 @@ export function RouteViewSheet({
             <RecordViewSheetDetailRow
               label={t("routes.routeDetails.routeId")}
               value={truncateRouteId(assignment.routeId)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("routes.columns.name")}
-              value={assignment.name}
             />
             <RecordViewSheetDetailRow
               label={t("routes.activeRoute.status")}

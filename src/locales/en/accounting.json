@@ -802,7 +802,12 @@
         "unitPrice": "Unit price",
         "total": "Total",
         "externalReferenceNumber": "Institution transaction reference",
-        "externalReferenceHint": "Optional ID from the bank or payment provider."
+        "externalReferenceHint": "Optional ID from the bank or payment provider.",
+        "responsibleSupervisor": "Responsible supervisor",
+        "inventoryHolders": "Responsible holders",
+        "holderVehicle": "Vehicle",
+        "holderEmployees": "Employees",
+        "inventoryDailyRoute": "Daily route (optional)"
       },
       "partyActions": {
         "new": "New",
@@ -814,7 +819,9 @@
         "priceHint": "Fill unit price or total; the other amount updates automatically.",
         "receivedDescription": "Received {{item}} × {{quantity}} from {{supplier}}",
         "receivedDescriptionNoSupplier": "Received {{item}} × {{quantity}}",
-        "dispatchedDescription": "Dispatched {{item}} × {{quantity}}"
+        "dispatchedDescription": "Dispatched {{item}} × {{quantity}}",
+        "useRouteHolders": "Use route vehicle and crew",
+        "removeHolderEmployee": "Remove {{name}}"
       },
       "placeholders": {
         "selectAssigneeSource": "Select employee or daily route",
@@ -846,12 +853,27 @@
         "selectReceiver": "Select receiver",
         "selectInventoryDirection": "Select received or dispatched",
         "amount": "0.00",
-        "externalReferenceNumber": "Enter the institution’s transaction reference"
+        "externalReferenceNumber": "Enter the institution’s transaction reference",
+        "selectSupervisor": "Select supervisor",
+        "searchSupervisors": "Search supervisors…",
+        "noRouteSupervisors": "This daily route has no supervisor.",
+        "selectRouteFirst": "Select a daily route first",
+        "selectHolderVehicle": "Select vehicle (optional)",
+        "searchVehicles": "Search vehicles…",
+        "noVehiclesFound": "No vehicles found.",
+        "addHolderEmployee": "Add employee",
+        "noEmployeesFound": "No employees found.",
+        "noVehicle": "No vehicle",
+        "noDailyRoute": "No daily route"
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 if nothing was paid yet.",
         "paymentMethodOptionalZero": "Recorded as Cash while the amount is $0.00.",
-        "costFromLineItems": "From the invoice line items."
+        "costFromLineItems": "From the invoice line items.",
+        "routeSupervisorAccountability": "The daily route is kept for reporting. The supervisor is responsible for reconciling this transaction.",
+        "inventoryHolders": "Holders share one assignment: 20 boxes for a vehicle and two employees is 20 boxes in total.",
+        "inventoryDailyRoute": "Kept for reporting only. It does not make the route crew responsible.",
+        "noHolderEmployees": "No employees selected."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -891,7 +913,9 @@
         "inventoryQuantityRequired": "Quantity must be greater than zero.",
         "inventoryPriceRequired": "Enter a unit price or total.",
         "supplierRequired": "Supplier is required.",
-        "balanceNegative": "Balance cannot be negative."
+        "balanceNegative": "Balance cannot be negative.",
+        "supervisorRequired": "Select the daily-route supervisor responsible for this transaction.",
+        "inventoryHoldersRequired": "Select a vehicle or at least one employee responsible for this inventory."
       },
       "sections": {
         "assignment": "Assignment",
@@ -963,7 +987,7 @@
     "loadingDescription": "Loading pending financial activity and outstanding amounts.",
     "title": "Pending Financial Activity",
     "description": "Outstanding collections, cash custody and payment clearing across all dates.",
-    "employee": "Employee",
+    "employee": "Responsible",
     "branch": "Branch",
     "allEmployees": "All employees",
     "allBranches": "All branches",
@@ -1022,6 +1046,7 @@
     "noCurrentCloseout": "No open closeout is available for today. Open today’s closeout in Daily Income, then refresh. Only RD requests currency and exchange rate.",
     "occurrenceDate": "Actual transaction date",
     "refresh": "Refresh",
-    "postedImmutable": "Posted transactions cannot be edited. Use Pending Financial Activity for reconciliation and eligible adjustments."
+    "postedImmutable": "Posted transactions cannot be edited. Use Pending Financial Activity for reconciliation and eligible adjustments.",
+    "dailyRoute": "Daily route"
   }
 }

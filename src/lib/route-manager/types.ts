@@ -143,7 +143,6 @@ export function setVehicleRouteCrewRole(
 export type Route = ApiTableRecord & {
   id: string;
   routeId: string;
-  name: string;
   date: string;
   tripNumber: number;
   branch: RouteBranchRef | null;
@@ -158,7 +157,6 @@ export type Route = ApiTableRecord & {
 export type RouteFormValues = {
   id: string;
   routeId: string;
-  name: string;
   branch: RouteBranchRef;
   employees: RouteEmployeeRef[];
   active: boolean;
@@ -191,9 +189,11 @@ export const DEFAULT_ROUTE_LIST_PARAMS = {
   sort: "date:desc",
 } as const satisfies RouteListParams;
 
+/** Route crews directory table opens newest-first. */
+export const DEFAULT_ROUTE_DIRECTORY_SORT = "createdAt:desc";
+
 /** Fields the bar search fans out across with an OR group (must be in the `/routes/search` allow-list). */
 export const ROUTE_BAR_OR_SEARCH_FIELDS = [
-  "name",
   "branch.code",
   "employees.name",
 ] as const;
@@ -267,7 +267,6 @@ export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormV
   return {
     id: "",
     routeId: "",
-    name: "",
     branch: createEmptyRouteBranchRef(),
     employees: [],
     active: true,
@@ -282,7 +281,6 @@ export function routeToFormValues(assignment: Route): RouteFormValues {
   return {
     id: assignment.id,
     routeId: assignment.routeId,
-    name: assignment.name,
     branch: assignment.branch?.code.trim()
       ? { ...assignment.branch }
       : createEmptyRouteBranchRef(),
