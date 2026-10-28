@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
   Check,
@@ -31,7 +31,6 @@ import { useCreateAppointmentInvoice } from "@/lib/orders/hooks/use-create-appoi
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { LegacyLastSynced } from "@/components/app-shell/legacy-last-synced";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -105,10 +104,8 @@ import {
   useDeleteOrders,
   useOrderStats,
   useOrders,
-  usePreviewLegacyPickupSync,
   useRetryOrderLegacySync,
   useSetOrdersCompleted,
-  useSyncLegacyPickups,
   useUpdateOrder,
 } from "@/lib/orders/hooks/use-orders";
 import {
@@ -131,7 +128,6 @@ import { usePredefinedRouteWorkspace } from "@/lib/predefined-routes/hooks/use-p
 import { usePredefinedRouteFilterOptions } from "@/lib/predefined-routes/hooks/use-predefined-routes";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
-import { useLegacyLastSynced } from "@/lib/legacy-sync/use-legacy-last-synced";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import {
@@ -146,64 +142,6 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { useTranslation } from "@/lib/i18n";
 
 const PICKUP_ACCESS_UNAVAILABLE_PREFIX = "Pickup access unavailable.";
-const LEGACY_SYNC_PERMISSION_ERROR_NAMES = [
-  "syncLegacyPickups",
-  "canSyncLegacyPickups",
-] as const;
-const LEGACY_SYNC_FALLBACK_TOTAL = 1;
-
-function LegacyPickupSyncLoader({
-  current,
-  total,
-  title,
-  description,
-}: {
-  current: number;
-  total: number;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div
-      className="relative overflow-hidden border-y bg-gradient-to-b from-primary/[0.06] via-background to-background px-6 py-8"
-      role="status"
-      aria-live="polite"
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
-
-      <div className="flex flex-col items-center text-center">
-        <div className="relative mb-4 grid h-16 w-16 place-items-center">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
-          <div className="absolute inset-0 rounded-full border border-primary/15" />
-          <RefreshCw
-            className="absolute inset-0 h-16 w-16 animate-spin text-primary drop-shadow-sm"
-            strokeWidth={2.25}
-            aria-hidden="true"
-          />
-          <div className="relative grid h-12 w-12 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
-            <PackageOpen className="h-7 w-7 text-primary" aria-hidden="true" />
-          </div>
-        </div>
-
-        <p className="font-semibold text-foreground">{title}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-        <div className="mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-500"
-            style={{ width: `${Math.min(100, Math.max(0, (current / total) * 100))}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function isLegacySyncPermissionError(message: string): boolean {
-  const normalized = message.toLowerCase();
-  return LEGACY_SYNC_PERMISSION_ERROR_NAMES.some((name) =>
-    normalized.includes(name.toLowerCase()),
-  );
-}
 
 function formatStreetAndApt(customer: Customer, dash: string) {
   const primary = getPrimaryAddress(customer);
@@ -392,10 +330,6 @@ export function OrdersWorkspace() {
   const listActive = tabScope?.isActive ?? true;
   const { notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { loading: authLoading, companyId, hasPermission } = useAuth();
-  const canSyncLegacyPickups = hasPermission(
-    PERMISSIONS.pickupsSyncLegacy.name,
-    PERMISSIONS.pickupsSyncLegacy.resourceType,
-  );
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
@@ -417,9 +351,6 @@ export function OrdersWorkspace() {
   const [completionConfirm, setCompletionConfirm] = useState<boolean | null>(null);
   const [completionExpanded, setCompletionExpanded] = useState(false);
   const [routesExpanded, setRoutesExpanded] = useState(false);
-  const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
-  const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
-  const legacySyncResetTimerRef = useRef<number | null>(null);
   const listParams = useMemo(
     () =>
       buildOrderListParams({
@@ -447,8 +378,6 @@ export function OrdersWorkspace() {
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
-  const previewLegacyPickupSyncMutation = usePreviewLegacyPickupSync();
-  const syncLegacyPickupsMutation = useSyncLegacyPickups();
   const retryLegacySyncMutation = useRetryOrderLegacySync();
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
@@ -487,30 +416,17 @@ export function OrdersWorkspace() {
     />
   ) : null;
   const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
-  const legacyTimestamps = useMemo(
-    () => orders.map((order) => order.legacySyncedAt),
-    [orders],
-  );
-  const { lastSyncedAt, markSynced } = useLegacyLastSynced("pickups", {
-    enabled: canSyncLegacyPickups,
-    timestamps: legacyTimestamps,
-  });
   const totalOrders = data?.total ?? 0;
   rememberTotal(totalOrders);
   const totalPages = Math.max(1, Math.ceil(totalOrders / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     orders.length > 0 && orders.every((order) => selectedIds.includes(getOrderRecordId(order)));
-  const isLegacySyncing =
-    previewLegacyPickupSyncMutation.isPending ||
-    syncLegacyPickupsMutation.isPending ||
-    legacySyncStageIndex !== null;
   const isSaving =
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
     deleteOrdersMutation.isPending ||
     setOrdersCompletedMutation.isPending ||
-    isLegacySyncing ||
     retryLegacySyncMutation.isPending ||
     clearRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
@@ -533,29 +449,6 @@ export function OrdersWorkspace() {
       setFiltersOpen(true);
     }
   }, [listActive, tabScope?.tabId]);
-
-  useEffect(() => {
-    if (!syncLegacyPickupsMutation.isPending) return;
-
-    const timer = window.setInterval(() => {
-      setLegacySyncStageIndex((current) => {
-        const total = Math.max(LEGACY_SYNC_FALLBACK_TOTAL, legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL);
-        const maxIndex = Math.max(0, total - 1);
-        const next = current == null ? 0 : current + 1;
-        return Math.min(next, maxIndex);
-      });
-    }, 450);
-
-    return () => window.clearInterval(timer);
-  }, [legacySyncTotal, syncLegacyPickupsMutation.isPending]);
-
-  useEffect(() => {
-    return () => {
-      if (legacySyncResetTimerRef.current != null) {
-        window.clearTimeout(legacySyncResetTimerRef.current);
-      }
-    };
-  }, []);
 
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
@@ -886,64 +779,6 @@ export function OrdersWorkspace() {
     }
   }
 
-  async function handleSyncLegacyPickups() {
-    if (legacySyncResetTimerRef.current != null) {
-      window.clearTimeout(legacySyncResetTimerRef.current);
-      legacySyncResetTimerRef.current = null;
-    }
-
-    setLegacySyncStageIndex(0);
-    setLegacySyncTotal(null);
-    try {
-      try {
-        const preview = await previewLegacyPickupSyncMutation.mutateAsync();
-        setLegacySyncTotal(Math.max(0, preview.total));
-      } catch {
-        setLegacySyncTotal(LEGACY_SYNC_FALLBACK_TOTAL);
-      }
-
-      const result = await syncLegacyPickupsMutation.mutateAsync();
-      const total =
-        result.summary.total ||
-        result.summary.imported + result.summary.updated + result.summary.skipped;
-      const syncedCount = result.summary.imported + result.summary.updated;
-      setLegacySyncTotal(Math.max(0, total));
-      setLegacySyncStageIndex(Math.max(0, total - 1));
-      markSynced(result.summary.lastSyncedAt);
-      notifySuccess(
-        syncedCount > 0
-          ? t(
-              syncedCount === 1
-                ? "orders.toasts.legacySyncSynced"
-                : "orders.toasts.legacySyncSynced_plural",
-              {
-                count: syncedCount,
-                imported: result.summary.imported,
-                updated: result.summary.updated,
-              },
-            )
-          : result.message,
-      );
-      setPage(1);
-    } catch (mutationError) {
-      const message = normalizeApiError(mutationError).message;
-      notifyError(
-        isLegacySyncPermissionError(message)
-          ? t("orders.errors.legacySyncPermissionMissing")
-          : message,
-      );
-      setLegacySyncStageIndex(null);
-      setLegacySyncTotal(null);
-      return;
-    }
-
-    legacySyncResetTimerRef.current = window.setTimeout(() => {
-      setLegacySyncStageIndex(null);
-      setLegacySyncTotal(null);
-      legacySyncResetTimerRef.current = null;
-    }, 700);
-  }
-
   async function handleRetryLegacySync(order: Order) {
     try {
       const syncedOrder = await retryLegacySyncMutation.mutateAsync(getOrderRecordId(order));
@@ -1158,35 +993,6 @@ export function OrdersWorkspace() {
     },
     t,
   );
-  const legacySyncDisplayTotal = Math.max(
-    LEGACY_SYNC_FALLBACK_TOTAL,
-    legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL,
-  );
-  const legacySyncCurrentStep = Math.min(
-    legacySyncDisplayTotal,
-    legacySyncTotal === 0 ? 0 : (legacySyncStageIndex ?? 0) + 1,
-  );
-  const legacySyncDescriptions = [
-    t("orders.loading.legacySyncStages.prepare"),
-    t("orders.loading.legacySyncStages.fetch"),
-    t("orders.loading.legacySyncStages.apply"),
-    t("orders.loading.legacySyncStages.refresh"),
-  ];
-  const legacySyncLoader = (
-    <LegacyPickupSyncLoader
-      current={legacySyncCurrentStep}
-      total={legacySyncDisplayTotal}
-      title={t("orders.loading.legacySyncProgress", {
-        current: legacySyncCurrentStep,
-        total: legacySyncTotal ?? legacySyncDisplayTotal,
-      })}
-      description={
-        legacySyncDescriptions[
-          Math.min(legacySyncDescriptions.length - 1, Math.max(0, legacySyncCurrentStep - 1))
-        ] ?? legacySyncDescriptions[0]
-      }
-    />
-  );
 
   return (
     <>
@@ -1200,22 +1006,6 @@ export function OrdersWorkspace() {
             <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {canSyncLegacyPickups ? (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  className="mt-1 size-12 rounded-full"
-                  onClick={handleSyncLegacyPickups}
-                  disabled={isSaving}
-                  aria-label={t("orders.actions.syncLegacy")}
-                  title={t("orders.actions.syncLegacy")}
-                >
-                  <RefreshCw
-                    className={cn("size-5", isLegacySyncing && "animate-spin")}
-                  />
-                </Button>
-              ) : null}
               <Button
                 type="button"
                 size="icon"
@@ -1432,9 +1222,7 @@ export function OrdersWorkspace() {
         ) : null}
 
         <div className="rounded-3xl bg-card px-4 shadow-sm">
-          {isLegacySyncing ? (
-            legacySyncLoader
-          ) : isLoading ? (
+          {isLoading ? (
             <div className="space-y-4 py-5">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="border-b border-border/80 py-3 last:border-b-0">
@@ -1475,11 +1263,6 @@ export function OrdersWorkspace() {
             ))
           )}
         </div>
-        {canSyncLegacyPickups ? (
-          <div className="px-1">
-            <LegacyLastSynced at={lastSyncedAt} />
-          </div>
-        ) : null}
       </section>
 
       <div className="hidden md:block">
@@ -1488,21 +1271,6 @@ export function OrdersWorkspace() {
         description={t("orders.pages.description")}
         actions={
           <div className="flex items-center gap-2">
-            {canSyncLegacyPickups ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSyncLegacyPickups}
-                disabled={isSaving}
-              >
-                <RefreshCw
-                  className={cn("h-4 w-4", isLegacySyncing && "animate-spin")}
-                />
-                {isLegacySyncing
-                  ? t("orders.actions.syncingLegacy")
-                  : t("orders.actions.syncLegacy")}
-              </Button>
-            ) : null}
             <Button onClick={openAddForm} disabled={isSaving}>
               <Plus className="h-4 w-4" />
               {t("orders.actions.add")}
@@ -1717,9 +1485,7 @@ export function OrdersWorkspace() {
           }
         />
 
-        {isLegacySyncing ? (
-          legacySyncLoader
-        ) : isLoading ? (
+        {isLoading ? (
           <DirectoryTableLoader
             icon={PackageOpen}
             title={t("orders.loading.title")}
@@ -1780,7 +1546,6 @@ export function OrdersWorkspace() {
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">{listSummary}</p>
-            {canSyncLegacyPickups ? <LegacyLastSynced at={lastSyncedAt} /> : null}
           </div>
           <TablePaginationControls
             page={currentPage}

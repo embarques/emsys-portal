@@ -22,8 +22,6 @@
     "print": "Imprimir",
     "preparing": "Preparando…",
     "sync": "Sync",
-    "syncLegacy": "Sync legacy",
-    "syncingLegacy": "Sincronizando…",
     "retryLegacySync": "Reintentar sync legacy",
     "markComplete": "Marcar completada",
     "markIncomplete": "Marcar incompleta",
@@ -130,14 +128,7 @@
     "description": "Coordinando clientes, rutas, paquetes y estado de entrega…",
     "order": "Cargando cita…",
     "columns": "Cita, Fecha, Remitente, Destinatario, Estado",
-    "pickupHistory": "Cargando historial de citas…",
-    "legacySyncProgress": "Sincronizando {{current}} de {{total}}...",
-    "legacySyncStages": {
-      "prepare": "Preparando la sincronización legacy de recogidas.",
-      "fetch": "Leyendo recogidas abiertas desde el API legacy.",
-      "apply": "Agregando recogidas nuevas y actualizando las existentes.",
-      "refresh": "Actualizando la lista de citas."
-    }
+    "pickupHistory": "Cargando historial de citas…"
   },
   "empty": {
     "noMatch": "Ninguna cita coincide con su búsqueda o filtros.",
@@ -331,15 +322,12 @@
     "routeCleared_plural": "Se quitó la asignación de ruta de {{count}} citas.",
     "manifestReady": "Manifiesto de recogida listo para {{count}} cita.",
     "manifestReady_plural": "Manifiesto de recogida listo para {{count}} citas.",
-    "legacySyncSynced": "{{count}} recogida sincronizada ({{imported}} importadas, {{updated}} actualizadas).",
-    "legacySyncSynced_plural": "{{count}} recogidas sincronizadas ({{imported}} importadas, {{updated}} actualizadas).",
     "legacyRetrySynced": "Recogida {{id}} sincronizada con legacy.",
     "comingSoon": "{{label}} estará disponible pronto."
   },
   "errors": {
     "missingCompanyContext": "Falta el contexto de empresa para esta cuenta. Las solicitudes a la API de EMSYS requieren el encabezado x-company-id. Agregue companyId a su perfil de Firebase o al claim personalizado del JWT y vuelva a iniciar sesión.",
-    "pickupAccessUnavailable": "Acceso a recogidas no disponible. Su usuario no está vinculado a un empleado de recogidas y no tiene permiso para ver todas las recogidas.",
-    "legacySyncPermissionMissing": "Falta el permiso: Access legacy pickups. Pida a un administrador que otorgue el permiso requerido e intente nuevamente."
+    "pickupAccessUnavailable": "Acceso a recogidas no disponible. Su usuario no está vinculado a un empleado de recogidas y no tiene permiso para ver todas las recogidas."
   },
   "map": {
     "title": "Vista de mapa de citas",
