@@ -60,6 +60,8 @@ export const PERMISSIONS = {
   inventoryDispatchesCreate: { name: "canCreateInventoryDispatch", resourceType: "inventory_dispatch" },
   inventoryDispatchesUpdate: { name: "canUpdateInventoryDispatch", resourceType: "inventory_dispatch" },
   inventoryDispatchesDelete: { name: "canDeleteInventoryDispatch", resourceType: "inventory_dispatch" },
+  /** Records how dispatched supplies were accounted for. Deliberately has no legacy alias. */
+  inventoryDispatchesReconcile: { name: "canReconcileInventoryDispatch", resourceType: "inventory_dispatch" },
   inventorySuppliersList: { name: "canListInventorySupplier", resourceType: "inventory_supplier" },
   inventorySuppliersView: { name: "canViewInventorySupplier", resourceType: "inventory_supplier" },
   inventorySuppliersCreate: { name: "canCreateInventorySupplier", resourceType: "inventory_supplier" },
