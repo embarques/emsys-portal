@@ -30,7 +30,7 @@ export function PredefinedRouteDialog({
 
   return (
     <Dialog open={state.open} onOpenChange={state.setOpen}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent centerInWorkspace className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
           <DialogTitle>{t(state.editing ? "predefinedRoutes.edit" : "predefinedRoutes.add")}</DialogTitle>
           <DialogDescription>{t("predefinedRoutes.description")}</DialogDescription>

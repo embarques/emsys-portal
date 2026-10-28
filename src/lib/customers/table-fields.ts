@@ -7,7 +7,7 @@ export const CUSTOMER_API_TABLE_FIELDS = [
   { field: "active", defaultVisible: false },
   { field: "addresses", columnId: "address" },
   { field: "branch", defaultVisible: false },
-  { field: "createdAt", format: "date", defaultVisible: false },
+  { field: "createdAt", format: "date" },
   { field: "createdBy", defaultVisible: false },
   { field: "customerType" },
   { field: "email", defaultVisible: false },

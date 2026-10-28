@@ -1,3 +1,4 @@
+import { routeCrewMembersSchema } from "@/lib/route-manager/schemas/route-crew.schema";
 import { ROUTE_API_TABLE_FIELDS } from "@/lib/route-manager/table-fields";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
@@ -93,7 +94,6 @@ type ApiRoute = {
 /** POST/PUT /routes — `name` and `routeId` are server-generated on create. */
 type ApiRouteWritePayload = {
   routeId?: string;
-  name?: string;
   branch?: ApiBranchDtoPayload;
   employees: { id: number; name: string }[];
   active: boolean;
@@ -177,7 +177,6 @@ export function normalizeApiRoute(raw: unknown): Route | null {
     ...captureApiTableFields(raw, ROUTE_API_TABLE_FIELDS),
     id,
     routeId: String(item.routeId ?? item.routeAssignmentId ?? "").trim(),
-    name: String(item.name ?? "").trim(),
     date: String(item.date ?? "").trim(),
     tripNumber: Number(item.tripNumber ?? 0),
     branch,
@@ -351,10 +350,9 @@ export async function fetchRouteById(routeId: string): Promise<Route> {
 
 function buildRouteWritePayload(
   values: RouteFormValues,
-  mode: "create" | "update",
 ): ApiRouteWritePayload {
-  if (values.employees.length === 0) {
-    throw new Error("Select at least one employee.");
+  if (!routeCrewMembersSchema.safeParse(values.employees).success) {
+    throw new Error("Select at least two crew members.");
   }
 
   const branchCode = values.branch?.code.trim() ?? "";
@@ -378,12 +376,6 @@ function buildRouteWritePayload(
     })),
     active: values.active,
   };
-
-  if (mode === "update") {
-    if (values.name.trim()) {
-      payload.name = values.name.trim();
-    }
-  }
 
   return payload;
 }
@@ -445,7 +437,7 @@ export async function createRoute(
 ): Promise<Route> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.ROUTES,
-    buildRouteWritePayload(values, "create"),
+    buildRouteWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to create route.");
@@ -464,7 +456,7 @@ export async function updateRoute(
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.ROUTES}/${id}`,
-    buildRouteWritePayload(values, "update"),
+    buildRouteWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to update route.");

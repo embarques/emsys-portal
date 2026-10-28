@@ -7,6 +7,7 @@ import {
   resolveJournalCheckNumberFromApi,
 } from "./check-payment-reference";
 import { isAutoClearEligible } from "./auto-clear";
+import { inventoryHoldersFromValues } from "./inventory-change";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -27,6 +28,9 @@ import {
   type DailyIncomeJournalListParams,
   type DailyIncomeJournalValues,
   type DailyIncomePartyRef,
+  type DailyRouteAttribution,
+  type InventoryHolderEmployeeRef,
+  type InventoryHoldersRef,
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
   type DailyIncomeSummary,
@@ -177,6 +181,47 @@ function normalizeJournalRoute(raw: Record<string, unknown>): DailyIncomePartyRe
   return undefined;
 }
 
+function normalizeEmployeeRef(value: unknown): { id: number; name: string } | null {
+  const raw = objectValue(value);
+  const id = numberValue(firstDefined(raw.id, raw._id));
+  const name = stringValue(firstDefined(raw.name, raw.displayName));
+  return id > 0 ? { id, name: name || String(id) } : null;
+}
+
+function normalizeVehicleRef(value: unknown): { id: string; name: string } | null {
+  const raw = objectValue(value);
+  const id = stringValue(firstDefined(raw.id, raw._id));
+  const name = stringValue(firstDefined(raw.name, raw.displayName));
+  return id ? { id, name: name || id } : null;
+}
+
+function normalizeDailyRouteAttribution(value: unknown, route: DailyIncomePartyRef): DailyRouteAttribution {
+  const raw = objectValue(value);
+  const helpers = Array.isArray(raw.helpers)
+    ? raw.helpers.map(normalizeEmployeeRef).filter((helper): helper is { id: number; name: string } => helper != null)
+    : [];
+  return {
+    id: stringValue(firstDefined(raw.id, raw._id)) || String(route.id),
+    name: stringValue(raw.name) || route.name,
+    date: stringValue(raw.date).slice(0, 10) || undefined,
+    vehicle: normalizeVehicleRef(raw.vehicle),
+    supervisor: normalizeEmployeeRef(raw.supervisor),
+    driver: normalizeEmployeeRef(raw.driver),
+    helpers,
+  };
+}
+
+function normalizeInventoryHolders(value: unknown): InventoryHoldersRef | undefined {
+  if (value == null) return undefined;
+  const raw = objectValue(value);
+  const employees = Array.isArray(raw.employees)
+    ? raw.employees
+        .map(normalizeEmployeeRef)
+        .filter((employee): employee is InventoryHolderEmployeeRef => employee != null)
+    : [];
+  return { vehicle: normalizeVehicleRef(raw.vehicle), employees };
+}
+
 function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const raw = objectValue(value);
   const id = stringValue(firstDefined(raw.id, raw._id));
@@ -219,7 +264,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const primaryLine = accountLines.find((account) => !["CASH ON HAND", "ACCOUNTS RECEIVABLE"].includes(account.name));
   const sourceLine = accountLines.find((account) => account.credit > 0 && account.id !== primaryLine?.id);
   const route = normalizeJournalRoute(raw);
-  const employee = route ? undefined : normalizeLookup(raw.employee);
+  const employee = normalizeLookup(raw.employee);
   const employeeGroupRaw = normalizePartyRef(raw.employeeGroup);
   const employeeGroup =
     route && employeeGroupRaw && looksLikeDailyRouteId(employeeGroupRaw.id)
@@ -243,6 +288,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     employee,
     employeeGroup,
     route,
+    ...(route ? { dailyRoute: normalizeDailyRouteAttribution(raw.dailyRoute, route) } : {}),
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
@@ -286,6 +332,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
         objectValue(raw.supplier).companyName,
       ),
     ) || undefined,
+    inventoryHolders: normalizeInventoryHolders(raw.inventoryHolders),
     accounts: accountLines,
     invoice: hasInvoice
       ? {
@@ -682,20 +729,18 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     ? {
         id: values.routeId,
         name: values.routeName?.trim() || values.routeCrewName?.trim() || values.routeId,
-        ...(values.routeCrewId || values.routeCrewName
-          ? {
-              route: {
-                id: values.routeCrewId,
-                name: values.routeCrewName?.trim() || values.routeCrewId,
-              },
-            }
-          : {}),
       }
     : null;
-  const employeeRef =
-    !assignedToRoute && values.employeeId
-      ? { id: values.employeeId, name: values.employeeName ?? "" }
-      : null;
+  // Inventory accountability is carried by the holders, not by the journal employee.
+  const employeeRef = isInventory
+    ? null
+    : assignedToRoute
+      ? values.supervisorId
+        ? { id: values.supervisorId, name: values.supervisorName ?? "" }
+        : null
+      : values.employeeId
+        ? { id: values.employeeId, name: values.employeeName ?? "" }
+        : null;
   const refNumber = resolveJournalRefNumberForWrite(values);
 
   return {
@@ -714,8 +759,9 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     description: values.description,
     currency: statement.currency,
     rate: statement.rate,
-    // One assignee family only — do not leave leftover fields from the other.
+    // Accountable employee (the route supervisor on route journals); independent of attribution.
     employee: employeeRef,
+    // Daily-route attribution for analytics.
     vehicleRoute: dailyRouteRef,
     route: dailyRouteRef,
     // Legacy compatibility field for route journals; cleared on employee journals.
@@ -771,11 +817,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
             ? {
                 incomeGained: values.inventoryTotal,
                 dispatchedAt: statement.date,
-                dispatchedTo: assignedToRoute
-                  ? dailyRouteRef
-                  : values.employeeId
-                    ? { id: values.employeeId, name: values.employeeName ?? "" }
-                    : undefined,
+                inventoryHolders: inventoryHoldersFromValues(values),
               }
             : {}),
         }

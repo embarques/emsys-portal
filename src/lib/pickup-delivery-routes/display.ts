@@ -1,11 +1,10 @@
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
-import { DAYS_OF_WEEK } from "@/lib/pickup-delivery-routes/types";
 import {
   getActiveRouteSupervisors,
   getActiveRouteEmployeesByRole,
   getActiveRouteHelpers,
 } from "@/lib/pickup-delivery-routes/types";
-import type { Route } from "@/lib/route-manager/types";
+import { formatRouteEmployeeNames } from "@/lib/route-manager/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import { formatRouteDate } from "@/lib/route-manager/display";
 
@@ -70,40 +69,8 @@ export function formatPreviousDailyRouteLabel(
 ): string {
   const date = record.date ? formatRouteDate(record.date) : emptyValue;
   const branch = record.branch?.code?.trim() || emptyValue;
-  const crew = record.route.name.trim() || emptyValue;
+  const crew = formatRouteEmployeeNames(record.employees) || emptyValue;
   return `${date} · ${branch} · ${crew}`;
-}
-
-/** Linked route manager assignment name for the Route table column. */
-export function formatActiveRouteRouteName(
-  record: ActiveRoute,
-  getRouteByKey?: (key: string | undefined) => Pick<Route, "name" | "routeId"> | undefined,
-  emptyValue = "—",
-): string {
-  const linked = record.route;
-  if (!linked?.id) return emptyValue;
-
-  const resolved =
-    getRouteByKey?.(linked.id) ??
-    (linked.routeId ? getRouteByKey?.(linked.routeId) : undefined);
-
-  const resolvedName = resolved?.name.trim();
-  if (resolvedName) return resolvedName;
-
-  const embeddedName = String(linked.name ?? "").trim();
-  if (embeddedName && embeddedName !== linked.id) return embeddedName;
-
-  const routeId = String(linked.routeId ?? resolved?.routeId ?? "").trim();
-  return routeId || embeddedName || linked.id || emptyValue;
-}
-
-/** A conduce is a delivery daily route (`routeType === "delivery"`). */
-function isConduceDailyRoute(record: ActiveRoute): boolean {
-  return record.routeType === "delivery";
-}
-
-function formatConduceRecordName(record: ActiveRoute): string {
-  return String(record.name ?? "").trim();
 }
 
 export function formatActiveRouteRowLabel(
@@ -112,13 +79,10 @@ export function formatActiveRouteRowLabel(
   t?: (key: string) => string,
 ): string {
   if (!record) return emptyValue;
-  if (isConduceDailyRoute(record)) {
-    return formatConduceRecordName(record) || emptyValue;
-  }
   return formatActiveRouteReferenceLabel(record, t, emptyValue);
 }
 
-/** Schedule portion of a pickup/delivery route label (date or recurring weekdays). */
+/** Schedule portion of a pickup/delivery route label (the route date). */
 export function formatActiveRouteScheduleLabel(
   record: ActiveRoute,
   t?: (key: string) => string,
@@ -128,31 +92,13 @@ export function formatActiveRouteScheduleLabel(
     return formatRouteDate(record.date);
   }
 
-  if (record.dayOfWeek.length > 0) {
-    const days = record.dayOfWeek;
-    const isEveryDay =
-      days.length === DAYS_OF_WEEK.length &&
-      DAYS_OF_WEEK.every((day) => days.includes(day));
-
-    if (isEveryDay) {
-      return t?.("routes.activeRoute.days.everyDay") ?? "Every day";
-    }
-
-    if (t) {
-      return days.map((day) => t(`routes.activeRoute.days.${day}`)).join(", ");
-    }
-
-    return days
-      .map((day) => day.slice(0, 3).replace(/^./, (character) => character.toUpperCase()))
-      .join(", ");
-  }
-
   return emptyValue;
 }
 
 /**
- * Human-readable pickup/delivery route reference: schedule · route manager name · container.
- * Delivery conduces use the stored `{trip}-{container}` name instead.
+ * Human-readable pickup/delivery route reference. Prefers the API-generated
+ * name (`YYYY-MM-DD_Vehicle_Supervisor+Employee+…`); records without one fall
+ * back to schedule · employees · container.
  * Used in assignment pickers, order route columns, and feedback toasts.
  */
 export function formatActiveRouteReferenceLabel(
@@ -160,21 +106,19 @@ export function formatActiveRouteReferenceLabel(
   t?: (key: string) => string,
   emptyValue = "—",
 ): string {
-  if (isConduceDailyRoute(record)) {
-    return formatConduceRecordName(record) || emptyValue;
-  }
+  const generatedName = String(record.name ?? "").trim();
+  if (generatedName) return generatedName;
 
   const schedule = formatActiveRouteScheduleLabel(record, t, "");
-  const routeName = record.route?.name?.trim();
+  const employees = formatRouteEmployeeNames(record.employees);
   const container = record.container?.name?.trim();
-  const parts = [schedule, routeName, container].filter(Boolean);
+  const parts = [schedule, employees, container].filter(Boolean);
 
   if (parts.length > 0) {
     return parts.join(" · ");
   }
 
-  const name = String(record.name ?? "").trim();
-  return name || record.id || emptyValue;
+  return record.id || emptyValue;
 }
 
 /** Report ids from vehicle-route directory rows (`GET /vehicle-routes`). */
@@ -221,8 +165,6 @@ export function buildActiveRouteAssignmentOptions(
     label: formatActiveRouteAssignmentLabel(record, t),
     keywords: [
       record.name,
-      record.route?.name,
-      record.route?.routeId,
       record.date,
       record.container?.name,
       record.vehicle?.name,
@@ -261,8 +203,6 @@ export function activeRouteMatchesSearch(
         return String(record.name ?? "");
       case "date":
         return record.date;
-      case "route.name":
-        return String(record.route?.name ?? "");
       case "employees.name":
         return record.employees.map((employee) => employee.name).join(" ");
       case "driver.name":
@@ -299,8 +239,6 @@ export function activeRouteMatchesQuery(record: ActiveRoute, query: string): boo
     String(record.name ?? ""),
     record.date,
     formatRouteDate(record.date),
-    String(record.route?.name ?? ""),
-    record.route?.routeId ?? "",
     record.employees.map((employee) => employee.name).join(" "),
     record.container?.name ?? "",
     record.vehicle?.name ?? "",

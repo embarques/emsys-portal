@@ -137,6 +137,8 @@ export function RegisterInvoiceTransactionFields({
   const employeeName = watch("employeeName");
   const routeId = watch("routeId");
   const routeName = watch("routeName");
+  const supervisorId = watch("supervisorId");
+  const supervisorName = watch("supervisorName");
   const assigneeSource = watch("assigneeSource");
   const refNumberMode = watch("refNumberMode");
   const paymentMethodId = watch("paymentMethodId");
@@ -304,9 +306,12 @@ export function RegisterInvoiceTransactionFields({
             employeeName={employeeName}
             routeId={routeId}
             routeName={routeName}
+            supervisorId={supervisorId}
+            supervisorName={supervisorName}
             assigneeSource={assigneeSource}
             allowDailyRoute={allowDailyRoute}
             error={errors.employeeId?.message ?? errors.routeId?.message}
+            supervisorError={errors.supervisorId?.message}
             setValue={setValue}
           />
         </div>

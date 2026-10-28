@@ -20,7 +20,9 @@ import {
 import {
   activeRouteToFormValues,
   areActiveRouteFormValuesEquivalent,
+  applyDailyRouteEmployeeSelection,
   createEmptyActiveRouteForm,
+  hasDailyRouteLeadRoles,
   isDeliveryBranchCode,
   routeTypeForBranchCode,
   type ActiveRoute,
@@ -47,7 +49,6 @@ import {
   formatPreviousDailyRouteLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import {
-  formatRouteAssignmentName,
   formatRouteAssignmentOptionLabel,
   getVehicleRefLabel,
 } from "@/lib/route-manager/display";
@@ -63,6 +64,7 @@ import {
   getRouteBranchCode,
   setVehicleRouteCrewRole,
   type RouteCrewRole,
+  type RouteEmployeeRef,
   type RouteFormValues,
 } from "@/lib/route-manager/types";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
@@ -102,11 +104,7 @@ export function ActiveRouteSection({
 
   const [values, setValues] = useState<ActiveRouteFormValues>(() =>
     initialRecord
-      ? {
-          ...activeRouteToFormValues(initialRecord),
-          scheduleType: "date",
-          dayOfWeek: [],
-        }
+      ? activeRouteToFormValues(initialRecord)
       : {
           ...createEmptyActiveRouteForm("pickup"),
           ...(defaultDate?.trim() ? { date: defaultDate.trim() } : {}),
@@ -193,11 +191,7 @@ export function ActiveRouteSection({
   useEffect(() => {
     if (initialRecord) {
       syncedRouteRecordIdRef.current = "";
-      setValues({
-        ...activeRouteToFormValues(initialRecord),
-        scheduleType: "date",
-        dayOfWeek: [],
-      });
+      setValues(activeRouteToFormValues(initialRecord));
       setPreviousRouteId("");
     }
   }, [initialRecord]);
@@ -214,7 +208,6 @@ export function ActiveRouteSection({
         value: route.id,
         label: formatRouteAssignmentOptionLabel(route),
         keywords: [
-          route.name,
           route.routeId,
           getRouteBranchCode(route),
           ...route.employees.map((employee) => employee.name),
@@ -232,23 +225,13 @@ export function ActiveRouteSection({
     const crew = selectedRoute.employees;
 
     setValues((current) => {
-      const alreadySynced = syncedRouteRecordIdRef.current === routeRecordId;
+      // Sync once per crew pick; later hand edits to the employee list are kept.
+      if (syncedRouteRecordIdRef.current === routeRecordId) return current;
       const nextEmployees = crewFromRouteGroup(crew, current.employees);
-      const crewIds = nextEmployees.map((employee) => employee.id).join(",");
-      const currentIds = current.employees.map((employee) => employee.id).join(",");
-      const nextName = formatRouteAssignmentName(selectedRoute);
-      if (
-        alreadySynced &&
-        crewIds === currentIds &&
-        current.routeAssignmentName === nextName
-      ) {
-        return current;
-      }
 
       syncedRouteRecordIdRef.current = routeRecordId;
       return {
         ...current,
-        routeAssignmentName: nextName,
         employees: nextEmployees,
       };
     });
@@ -272,7 +255,6 @@ export function ActiveRouteSection({
           keywords: [
             record.date,
             record.branch?.code ?? "",
-            record.route.name,
             record.vehicle.name,
             ...record.employees.map((employee) => employee.name),
           ],
@@ -326,7 +308,7 @@ export function ActiveRouteSection({
     !values.date.trim() ||
     !(values.branch.id > 0) ||
     !values.vehicle.id.trim() ||
-    !values.routeRecordId.trim() ||
+    values.employees.length === 0 ||
     (isDeliveryBranch && (!values.container || values.container.id <= 0));
 
   function resetCrew(partial: Partial<ActiveRouteFormValues>) {
@@ -334,7 +316,6 @@ export function ActiveRouteSection({
     setValues((current) => ({
       ...current,
       routeRecordId: "",
-      routeAssignmentName: "",
       employees: [],
       ...partial,
     }));
@@ -365,11 +346,7 @@ export function ActiveRouteSection({
     setFormError(null);
 
     if (initialRecord) {
-      setValues({
-        ...activeRouteToFormValues(initialRecord),
-        scheduleType: "date",
-        dayOfWeek: [],
-      });
+      setValues(activeRouteToFormValues(initialRecord));
       return;
     }
 
@@ -390,13 +367,11 @@ export function ActiveRouteSection({
   function handlePreviousRouteChange(routeId: string) {
     const record = previousRoutes.find((entry) => entry.id === routeId);
     if (!record) return;
-    syncedRouteRecordIdRef.current = record.route.id;
+    syncedRouteRecordIdRef.current = "";
     setPreviousRouteId(routeId);
     setValues((current) => ({
       ...activeRouteToFormValues(record),
       date: current.date,
-      scheduleType: "date",
-      dayOfWeek: [],
       routeType: routeTypeForBranchCode(record.branch?.code),
     }));
     setFormError(null);
@@ -423,6 +398,22 @@ export function ActiveRouteSection({
     setFormError(null);
   }
 
+  function handleEmployeesChange(employees: RouteEmployeeRef[]) {
+    setValues((current) => ({
+      ...current,
+      employees: applyDailyRouteEmployeeSelection(current.employees, employees),
+    }));
+    setFormError(null);
+  }
+
+  function handleRemoveEmployee(employeeId: number) {
+    setValues((current) => ({
+      ...current,
+      employees: current.employees.filter((employee) => employee.id !== employeeId),
+    }));
+    setFormError(null);
+  }
+
   async function saveActiveRoute() {
     setFormError(null);
 
@@ -442,16 +433,18 @@ export function ActiveRouteSection({
       setFormError(t("routes.activeRoute.errors.container"));
       return;
     }
-    if (!values.routeRecordId.trim()) {
+    if (values.employees.length === 0) {
       setFormError(t("routes.activeRoute.errors.route"));
+      return;
+    }
+    if (!hasDailyRouteLeadRoles(values.employees)) {
+      setFormError(t("routes.activeRoute.errors.leadRoles"));
       return;
     }
 
     try {
       const payload = {
         ...values,
-        scheduleType: "date" as const,
-        dayOfWeek: [],
         routeType: effectiveRouteType,
         container: isDeliveryBranch ? values.container : null,
         active: true,
@@ -460,8 +453,6 @@ export function ActiveRouteSection({
         initialRecord &&
         areActiveRouteFormValuesEquivalent(payload, {
           ...activeRouteToFormValues(initialRecord),
-          scheduleType: "date",
-          dayOfWeek: [],
           active: true,
         })
       ) {
@@ -512,7 +503,6 @@ export function ActiveRouteSection({
       setValues((current) => ({
         ...current,
         routeRecordId: created.id,
-        routeAssignmentName: created.name,
         employees: crewFromRouteGroup(created.employees),
       }));
       setCreateDialogOpen(false);
@@ -571,7 +561,7 @@ export function ActiveRouteSection({
         onResetFields={handleResetFields}
         onBranchChange={handleBranchChange}
         onDateChange={(date) => {
-          setValues((current) => ({ ...current, date, scheduleType: "date", dayOfWeek: [] }));
+          setValues((current) => ({ ...current, date }));
           setFormError(null);
         }}
         onVehicleChange={(vehicleId) => {
@@ -599,12 +589,13 @@ export function ActiveRouteSection({
           setValues((current) => ({
             ...current,
             routeRecordId,
-            routeAssignmentName: assignment ? formatRouteAssignmentName(assignment) : "",
             employees: assignment ? crewFromRouteGroup(assignment.employees) : [],
           }));
           setFormError(null);
         }}
         onRoleChange={handleRoleChange}
+        onEmployeesChange={handleEmployeesChange}
+        onRemoveEmployee={handleRemoveEmployee}
         onCreateVehicleClick={() => {
           if (isDesktopTabs) {
             openFormTab({

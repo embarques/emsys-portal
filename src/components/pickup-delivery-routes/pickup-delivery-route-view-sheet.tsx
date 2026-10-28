@@ -44,10 +44,6 @@ function formatScheduleLabel(
     return formatRouteDate(record.date);
   }
 
-  if (record.dayOfWeek.length > 0) {
-    return record.dayOfWeek.map((day) => t(`routes.activeRoute.days.${day}`)).join(", ");
-  }
-
   return dash;
 }
 
@@ -66,22 +62,13 @@ export function ActiveRouteViewSheet({
   if (!record) return null;
 
   const title = formatActiveRouteRowLabel(record, dash, t);
-  const routeName = record.route.name?.trim() ?? "";
-  const showRouteName = Boolean(routeName) && !title.includes(routeName);
   const showDeliveryFields =
     record.routeType === "delivery" || isDeliveryBranchCode(record.branch?.code);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader
-          title={title}
-          description={
-            showRouteName ? (
-              <span className="text-sm text-muted-foreground">{routeName}</span>
-            ) : undefined
-          }
-        />
+        <RecordViewSheetHeader title={title} />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("routes.activeRouteForm.sections.schedule")}>
@@ -118,10 +105,6 @@ export function ActiveRouteViewSheet({
             <RecordViewSheetDetailRow
               label={t("routes.columns.vehicle")}
               value={formatActiveRouteVehicleLabel(record, dash)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("routes.columns.route")}
-              value={record.route.name || dash}
             />
             {showDeliveryFields ? (
               <RecordViewSheetDetailRow

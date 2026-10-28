@@ -84,6 +84,30 @@ export type DailyIncomeAssigneeSource = "employee" | "route";
 
 export type InventoryChangeDirection = "received" | "dispatched";
 
+export type InventoryHolderEmployeeRef = { id: number; name: string };
+
+export type InventoryHolderVehicleRef = { id: string; name: string };
+
+/**
+ * Holders jointly accountable for one inventory assignment. Quantities are counted
+ * once for the assignment, never once per holder.
+ */
+export type InventoryHoldersRef = {
+  vehicle: InventoryHolderVehicleRef | null;
+  employees: InventoryHolderEmployeeRef[];
+};
+
+/** Daily route captured on a record for analytics; never a source of accountability. */
+export type DailyRouteAttribution = {
+  id: string;
+  name: string;
+  date?: string;
+  vehicle?: { id: string; name: string } | null;
+  supervisor?: { id: number; name: string } | null;
+  driver?: { id: number; name: string } | null;
+  helpers?: Array<{ id: number; name: string }>;
+};
+
 export type DailyIncomeJournal = ApiTableRecord & {
   id: string;
   incomeStatementId: number;
@@ -95,10 +119,13 @@ export type DailyIncomeJournal = ApiTableRecord & {
   description: string;
   currency: string;
   rate: number;
+  /** Financially accountable employee; the responsible supervisor on daily-route journals. */
   employee?: AccountingLookup;
   employeeGroup?: DailyIncomePartyRef;
-  /** Daily vehicle-route when the journal is posted under a route instead of an employee. */
+  /** Daily vehicle-route the journal is attributed to for analytics. */
   route?: DailyIncomePartyRef;
+  /** API snapshot of the daily route at recording time (date, vehicle and crew roles). */
+  dailyRoute?: DailyRouteAttribution;
   account?: AccountingLookup;
   paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
@@ -128,6 +155,7 @@ export type DailyIncomeJournal = ApiTableRecord & {
   inventoryTotal?: number;
   inventorySupplierId?: string;
   inventorySupplierName?: string;
+  inventoryHolders?: InventoryHoldersRef;
   accounts: Array<{
     id: number;
     name: string;
@@ -245,6 +273,9 @@ export type DailyIncomeJournalValues = {
   routeName?: string;
   routeCrewId?: string;
   routeCrewName?: string;
+  /** Daily-route supervisor accountable for a route financial transaction. */
+  supervisorId?: number;
+  supervisorName?: string;
   accountId?: number;
   accountName?: string;
   accountType?: string;
@@ -280,6 +311,10 @@ export type DailyIncomeJournalValues = {
   inventoryTotal?: number;
   inventorySupplierId?: string;
   inventorySupplierName?: string;
+  /** Dispatched inventory: a vehicle and/or employees jointly responsible for the assignment. */
+  inventoryHolderVehicleId?: string;
+  inventoryHolderVehicleName?: string;
+  inventoryHolderEmployees?: InventoryHolderEmployeeRef[];
 };
 
 export type {

@@ -74,7 +74,7 @@ export function PickupRoutesSelectionActions({
             id: route.id,
             routeType: route.routeType,
             branchCode: route.branch?.code,
-            routeName: route.route?.name,
+            routeName: route.name,
           })),
       });
     }

@@ -41,7 +41,8 @@
         "date": "Choose the day this vehicle and crew will operate.",
         "branch": "Choose the branch first to see the available vehicles and crews.",
         "previous": "Start with an existing daily route, then confirm the date and assignments.",
-        "roles": "Assign driver, supervisor, and helper roles to the selected crew members."
+        "roles": "Add employees and assign driver, supervisor, and helper roles. One employee can be both driver and supervisor.",
+        "crew": "Optional shortcut: pick a route crew to fill in the employees. Only the employees and their roles are saved, not the crew."
       }
     },
     "view": {
@@ -195,7 +196,7 @@
     "route": "Route crew",
     "driver": "Driver",
     "supervisor": "Supervisor",
-    "helper": "Helper",
+    "helper": "Helpers",
     "recordId": "Record ID",
     "rate": "Exchange rate"
   },
@@ -274,10 +275,6 @@
       "active": {
         "label": "Status",
         "placeholder": "Select status…"
-      },
-      "dayOfWeek": {
-        "label": "Day of week",
-        "placeholder": "Select day…"
       },
       "tripNumber": {
         "label": "Trip number",
@@ -366,21 +363,6 @@
     "searchRouteTypes": "Search types…",
     "schedule": "Schedule",
     "scheduleDate": "Date",
-    "scheduleDayOfWeek": "Day of week",
-    "dayOfWeek": "Day of week",
-    "dayOfWeekPlaceholder": "Select a day…",
-    "dayOfWeekSearch": "Search days…",
-    "days": {
-      "monday": "Monday",
-      "tuesday": "Tuesday",
-      "wednesday": "Wednesday",
-      "thursday": "Thursday",
-      "friday": "Friday",
-      "saturday": "Saturday",
-      "sunday": "Sunday",
-      "everyDay": "Every day"
-    },
-    "namePlaceholder": "Optional route name",
     "status": "Status",
     "active": "Active",
     "inactive": "Inactive",
@@ -411,6 +393,8 @@
     "helper": "Helper",
     "crewRoles": "Assign roles",
     "crewRolesEmpty": "This route crew has no crew members.",
+    "employeesEmpty": "Add employees or pick a route crew. You need a driver and a supervisor; one employee can be both.",
+    "selectBranchFirstEmployees": "Select a branch to add employees.",
     "driverFor": "Driver — {{name}}",
     "supervisorFor": "Supervisor — {{name}}",
     "helperFor": "Helper — {{name}}",
@@ -430,10 +414,10 @@
       "routeType": "Type is required.",
       "container": "Container is required for delivery routes.",
       "date": "Date is required.",
-      "dayOfWeek": "Select at least one day.",
       "branch": "Branch is required.",
       "vehicle": "Vehicle is required.",
-      "route": "Route crew is required.",
+      "route": "Add at least one employee or pick a route crew.",
+      "leadRoles": "Assign a driver and a supervisor. One employee can hold both roles.",
       "pickupContainer": "Appointment routes cannot include a container."
     }
   },
@@ -486,8 +470,8 @@
     "searchCrewMembers": "Search crew members…",
     "loadingCrewMembers": "Loading crew members…",
     "noCrewMembersFound": "No active crew members found.",
-    "selectAtLeastOneCrewMember": "Select at least one crew member for this route crew.",
-    "crewMemberRequired": "Select at least one crew member.",
+    "selectAtLeastOneCrewMember": "Select at least two crew members for this route crew. For a single employee, assign the employee directly instead.",
+    "crewMemberRequired": "Select at least two crew members.",
     "validation": {
       "branchRequired": "Branch is required.",
       "vehicleRequired": "Vehicle is required."
@@ -495,7 +479,7 @@
     "design": {
       "status": "Set to Inactive to retire this crew without deleting it.",
       "branch": "Choose the branch this reusable crew belongs to.",
-      "crew": "Select the employees in this crew. Assign their working roles when creating a daily route."
+      "crew": "Select at least two employees for this crew. Assign their working roles when creating a daily route."
     }
   }
 }

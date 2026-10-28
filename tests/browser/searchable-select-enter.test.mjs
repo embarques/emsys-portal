@@ -497,3 +497,27 @@ test("appointment step buttons allow valid forward jumps and disable invalid des
     assert.equal(await purpose.isDisabled(), true);
   } finally { await page.close(); }
 });
+
+
+test("autofocused pickup reference skips Enter until typing or arrow navigation", async () => {
+  for (const interaction of ["none", "ArrowDown", "ArrowUp", "typing", "click"]) {
+    const page = await fixture(1280, "pickup-reference");
+    try {
+      await page.waitForFunction(() => document.activeElement?.id === "branch");
+      await page.getByRole("option", { name: "Pickup one", exact: true }).waitFor();
+      if (interaction === "typing") await page.locator("#branch").fill("Pickup two");
+      else if (interaction === "click") await page.getByRole("option", { name: "Pickup one", exact: true }).click();
+      else if (interaction !== "none") await page.keyboard.press(interaction);
+      if (interaction !== "click") await page.keyboard.press("Enter");
+      if (interaction === "none") {
+        await page.waitForFunction(() => document.activeElement?.id === "sender");
+        assert.equal(await page.locator("#value").textContent(), "");
+        assert.equal(await page.locator("#changes").textContent(), "0");
+      } else {
+        assert.equal(await page.locator("#changes").textContent(), "1");
+        assert.match(await page.locator("#value").textContent(), /^pickup-/);
+        if (interaction === "typing") assert.equal(await page.locator("#value").textContent(), "pickup-2");
+      }
+    } finally { await page.close(); }
+  }
+});

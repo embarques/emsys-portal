@@ -66,6 +66,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -88,6 +89,7 @@ export function InventoryReceiptsWorkspace() {
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS.sort, () => setPage(1));
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingReceipt, setEditingReceipt] = useState<InventoryReceipt | null>(null);
   const [viewReceipt, setViewReceipt] = useState<InventoryReceipt | null>(null);
@@ -116,6 +118,7 @@ export function InventoryReceiptsWorkspace() {
       ...DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS,
       page,
       limit: pageLimit,
+      sort,
       search: createInventorySearchFilter(debouncedQuery),
       searchReferenceMatches: debouncedQuery.trim()
         ? [
@@ -131,7 +134,7 @@ export function InventoryReceiptsWorkspace() {
         : undefined,
       ...(filterRows.length ? { filterRows } : {}),
     }),
-    [debouncedQuery, filterRows, holders, page, pageLimit, suppliers],
+    [debouncedQuery, filterRows, holders, page, pageLimit, sort, suppliers],
   );
   const directoryQuery = useInventoryDirectoryPage("receipts", directoryParams);
   const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);

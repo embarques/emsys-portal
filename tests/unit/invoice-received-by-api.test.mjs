@@ -50,7 +50,7 @@ for (const method of ["createInvoice", "updateInvoice"]) {
    const context = {
     branch:{id:1,name:"NY",code:"NY"}, container:{id:1,name:"66-26"},
     pickupAssignment: source === "route"
-     ? {source, dailyRoute:{id:"daily-route-1",name:"Daily route"},routeCrew:{id:"crew-1",name:"Crew"}}
+     ? {source, dailyRoute:{id:"daily-route-1",name:"Daily route"}}
      : {source, pickupEmployee:{id:73,name:" Maria ",userName:"maria"},officeBranch:{id:1,name:"NY",code:"NY"}},
    };
    const request = method === "updateInvoice"
@@ -59,7 +59,8 @@ for (const method of ["createInvoice", "updateInvoice"]) {
    await assert.rejects(request, (error) => error === stop);
    if (source === "route") {
     assert.equal(payload.receivedBy.id,"daily-route-1");
-    assert.equal(payload.receivedBy.route.id,"crew-1");
+    assert.equal(Object.hasOwn(payload.receivedBy,"route"),false);
+    assert.equal(payload.routeCrew,method === "updateInvoice" ? null : undefined);
    } else {
     assert.equal(payload.receivedBy.id,"73");
     assert.equal(payload.receivedBy.name,"Maria");

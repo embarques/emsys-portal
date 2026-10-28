@@ -136,7 +136,8 @@
       "emptyState": "Aún no hay preajustes guardados. Configure un filtro y use «Guardar preajuste»."
     },
     "noMatches": "Ningún registro coincide con la búsqueda o los filtros.",
-    "matchCount": "{{count}} coincidencias"
+    "matchCount": "{{count}} coincidencias",
+    "sortBy": "Ordenar por {{column}}"
   },
   "filterOperators": {
     "eq": "Igual a",

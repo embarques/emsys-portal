@@ -37,6 +37,8 @@ export type DailyIncomeJournalSchemaMessages = {
   inventoryQuantityRequired: string;
   inventoryPriceRequired: string;
   supplierRequired: string;
+  supervisorRequired: string;
+  inventoryHoldersRequired: string;
 };
 
 export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementSchemaMessages) {
@@ -81,6 +83,8 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       routeName: z.string().optional(),
       routeCrewId: z.string().optional(),
       routeCrewName: z.string().optional(),
+      supervisorId: z.number().optional(),
+      supervisorName: z.string().optional(),
       accountId: z.number().optional(),
       accountName: z.string().optional(),
       accountType: z.string().optional(),
@@ -114,6 +118,9 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       inventoryTotal: z.number().optional(),
       inventorySupplierId: z.string().optional(),
       inventorySupplierName: z.string().optional(),
+      inventoryHolderVehicleId: z.string().optional(),
+      inventoryHolderVehicleName: z.string().optional(),
+      inventoryHolderEmployees: z.array(z.object({ id: z.number(), name: z.string() })).optional(),
     })
     .superRefine((values, context) => {
       if (values.refNumberMode === "custom" && !values.refNumber.trim()) {
@@ -160,7 +167,22 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
             message: messages.supplierRequired,
           });
         }
+        if (
+          values.inventoryDirection === "dispatched" &&
+          !values.inventoryHolderVehicleId?.trim() &&
+          !(values.inventoryHolderEmployees ?? []).some((employee) => employee.id > 0)
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryHolderEmployees"],
+            message: messages.inventoryHoldersRequired,
+          });
+        }
         return;
+      }
+
+      if (values.routeId?.trim() && !values.supervisorId) {
+        context.addIssue({ code: "custom", path: ["supervisorId"], message: messages.supervisorRequired });
       }
 
       // INITIAL-PAYMENT allows $0 (unpaid registration). Blank amount defaults to 0 in the form.
@@ -320,6 +342,8 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   inventoryQuantityRequired: "Quantity must be greater than zero.",
   inventoryPriceRequired: "Enter a unit price or total.",
   supplierRequired: "Supplier is required.",
+  supervisorRequired: "Select the daily-route supervisor responsible for this transaction.",
+  inventoryHoldersRequired: "Select a vehicle or at least one employee responsible for this inventory.",
 };
 
 export const dailyIncomeStatementSchema = createDailyIncomeStatementSchema(defaultStatementMessages);

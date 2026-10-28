@@ -142,6 +142,8 @@ export function DailyIncomeTransactionForm({
         inventoryQuantityRequired: t("accounting.dailyIncome.form.validation.inventoryQuantityRequired"),
         inventoryPriceRequired: t("accounting.dailyIncome.form.validation.inventoryPriceRequired"),
         supplierRequired: t("accounting.dailyIncome.form.validation.supplierRequired"),
+        supervisorRequired: t("accounting.dailyIncome.form.validation.supervisorRequired"),
+        inventoryHoldersRequired: t("accounting.dailyIncome.form.validation.inventoryHoldersRequired"),
       }),
     [t],
   );
@@ -224,6 +226,8 @@ export function DailyIncomeTransactionForm({
   const employeeName = watch("employeeName");
   const routeId = watch("routeId");
   const routeName = watch("routeName");
+  const supervisorId = watch("supervisorId");
+  const supervisorName = watch("supervisorName");
   const assigneeSource = watch("assigneeSource");
   const invoiceId = watch("invoiceId");
   const invoiceNumber = watch("invoiceNumber");
@@ -486,7 +490,6 @@ export function DailyIncomeTransactionForm({
         ) : isInventoryChange ? (
           <RegisterInventoryChangeFields
             activeStep={activeStep}
-            employees={employees}
             dailyRoutes={dailyRoutes}
             statementDate={statementDate}
             statementBranchId={statementBranchId}
@@ -508,8 +511,11 @@ export function DailyIncomeTransactionForm({
                     employeeName={employeeName}
                     routeId={routeId}
                     routeName={routeName}
+                    supervisorId={supervisorId}
+                    supervisorName={supervisorName}
                     assigneeSource={assigneeSource}
                     error={errors.employeeId?.message ?? errors.routeId?.message}
+                    supervisorError={errors.supervisorId?.message}
                     setValue={setValue}
                   />
                 </div>

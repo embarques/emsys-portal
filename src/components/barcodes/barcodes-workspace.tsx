@@ -69,7 +69,7 @@ import {
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useBarcodeKpis, useBarcodeStats, useBarcodes } from "@/lib/barcodes/hooks/use-barcodes";
 import {
-  DEFAULT_BARCODE_LIST_PARAMS,
+  DEFAULT_BARCODE_DIRECTORY_SORT,
   buildBarcodeListParams,
   type Barcode,
   type BarcodeFilterState,
@@ -119,7 +119,7 @@ export function BarcodesWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
-  const { sort, onSortChange } = useTableSort(DEFAULT_BARCODE_LIST_PARAMS.sort, () => setPage(1));
+  const { sort, onSortChange } = useTableSort(DEFAULT_BARCODE_DIRECTORY_SORT, () => setPage(1));
   const [viewBarcode, setViewBarcode] = useState<Barcode | null>(null);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   const [editInvoiceInitialStep, setEditInvoiceInitialStep] = useState<number | undefined>(undefined);
@@ -424,6 +424,7 @@ export function BarcodesWorkspace() {
     {
       id: "invoice",
       label: t("barcodes.columns.invoice"),
+      sortField: "invoice.number",
       renderCell: (barcode) => barcode.invoiceNumber?.trim() || t("common.empty.dash"),
     },
     {

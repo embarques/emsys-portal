@@ -74,6 +74,7 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 
 const defaultFilters: InventoryFilterState = { query: "" };
 const SEARCH_DEBOUNCE_MS = 300;
@@ -105,6 +106,7 @@ export function InventoryItemsWorkspace() {
   const [filters, setFilters] = useState<InventoryFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVENTORY_ITEM_LIST_PARAMS.sort, () => setPage(1));
   const [viewItem, setViewItem] = useState<InventoryItem | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -127,10 +129,11 @@ export function InventoryItemsWorkspace() {
       ...DEFAULT_INVENTORY_ITEM_LIST_PARAMS,
       page,
       limit: pageLimit,
+      sort,
       search: createInventorySearchFilter(debouncedQuery),
       ...(filterRows.length ? { filterRows } : {}),
     }),
-    [debouncedQuery, filterRows, page, pageLimit],
+    [debouncedQuery, filterRows, page, pageLimit, sort],
   );
   const directoryQuery = useInventoryDirectoryPage("items", directoryParams);
   const pageItems = useResolvedPaginatedItems(
@@ -244,18 +247,20 @@ export function InventoryItemsWorkspace() {
   ];
 
   const tableColumns: DataTableColumn<InventoryItem>[] = [
-    { id: "item", label: t("inventory.columns.item"), cellClassName: "font-medium", renderCell: (item) => item.name },
+    { id: "item", label: t("inventory.columns.item"), sortField: "name", cellClassName: "font-medium", renderCell: (item) => item.name },
     { id: "sku", label: t("inventory.columns.sku"), renderCell: (item) => item.sku || dash },
     { id: "category", label: t("inventory.columns.category"), renderCell: (item) => item.category || dash },
     {
       id: "quantityLeft",
       label: t("inventory.columns.available"),
+      sortable: false,
       cellClassName: "tabular-nums",
       renderCell: (item) => getItemStockSummary(item.id, summaries).available,
     },
     {
       id: "quarantined",
       label: t("inventory.columns.quarantined"),
+      sortable: false,
       cellClassName: "tabular-nums",
       defaultVisible: false,
       renderCell: (item) => getItemStockSummary(item.id, summaries).quarantined,
@@ -270,10 +275,11 @@ export function InventoryItemsWorkspace() {
     {
       id: "defaultSellingPrice",
       label: t("inventory.form.fields.defaultSellingPrice"),
+      sortField: "defaultSellingPriceMinor",
       cellClassName: "tabular-nums",
       renderCell: (item) => formatInventoryMinor(item.defaultSellingPriceMinor),
     },
-    { id: "status", label: t("inventory.columns.status"), renderCell: (item) => <InventoryActiveBadge isActive={item.isActive} /> },
+    { id: "status", label: t("inventory.columns.status"), sortField: "isActive", renderCell: (item) => <InventoryActiveBadge isActive={item.isActive} /> },
   ];
 
   const columnVisibility = useApiTableColumns("inventory-items", tableColumns, INVENTORY_ITEM_API_TABLE_FIELDS);
@@ -425,7 +431,8 @@ export function InventoryItemsWorkspace() {
             rowKey={(row) => row.id}
             rowLabel={(row) => row.name}
             columnLayout={columnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={900}
             selectable
             selectedIds={selectedIds}

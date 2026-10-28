@@ -8,7 +8,6 @@ export const ROUTE_API_TABLE_FIELDS = [
   { field: "createdBy" },
   { field: "employees" },
   { field: "id" },
-  { field: "name" },
   { field: "updatedAt", format: "date" },
   { field: "updatedBy" },
   { field: "vehicle", column: false },

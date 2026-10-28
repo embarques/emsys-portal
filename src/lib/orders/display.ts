@@ -1,7 +1,7 @@
 import { formatCoreAddressLine } from "@/lib/customers/display";
 import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/phones/phones";
 import { getBranchLabel } from "@/lib/vehicles/display";
-import type { Route } from "@/lib/route-manager/types";
+import { formatRouteEmployeeNames, type Route } from "@/lib/route-manager/types";
 import { truncateObjectId } from "@/lib/route-manager/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import {
@@ -21,7 +21,7 @@ import {
   type PickupComment,
 } from "./types";
 
-type RouteLabelSource = Pick<Route, "name" | "date">;
+type RouteLabelSource = Pick<Route, "employees" | "date">;
 
 export function getOrderBranchLabel(branch: Order["branch"]): string {
   return branch.name.trim() || getBranchLabel(branch.code);
@@ -103,7 +103,7 @@ export function getRouteLabel(
 ): string {
   if (!routeId) return "—";
   if (!assignment) return routeId;
-  return `${assignment.name} · ${formatOrderDate(assignment.date)}`;
+  return `${formatRouteEmployeeNames(assignment.employees)} · ${formatOrderDate(assignment.date)}`;
 }
 
 export function formatOrderRoute(
