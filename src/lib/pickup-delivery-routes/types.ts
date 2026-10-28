@@ -312,7 +312,7 @@ export function areActiveRouteFormValuesEquivalent(
 
 
 export function assertActiveRouteFormValues(values: ActiveRouteFormValues): void {
-  // TODO(backend): uniqueness + legacy alignment — see APP_CONTEXT.md Routes.
+  // The API enforces employee-set + vehicle + date uniqueness; see APP_CONTEXT.md.
   if (values.scheduleType === "date" && !values.date.trim()) {
     throw new Error("Date is required.");
   }

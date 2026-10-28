@@ -20,7 +20,7 @@ export function TransactionReview({ values: v, onEdit }: Props) {
   const groups: { step: TransactionFormStep; rows: [string, string | number | undefined][] }[] = [
     {
       step: "assignment", rows: [
-        ["accounting.dailyIncome.form.fields.assignedTo", v.routeName || v.employeeName || v.routeId || v.employeeId],
+        ["accounting.dailyIncome.form.fields.assignedTo", v.routeName || v.employeeName || v.routeId || v.employeeId || t("accounting.dailyIncome.form.creatorAssignee")],
         ["accounting.dailyIncome.form.fields.inventoryDirection", inventory && v.inventoryDirection ? t(`accounting.dailyIncome.form.inventory.${v.inventoryDirection}`) : undefined],
         ["inventory.form.fields.supplier", inventory ? v.inventorySupplierName : undefined],
       ]

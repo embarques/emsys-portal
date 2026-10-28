@@ -14,6 +14,7 @@ import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
 import { DeliveryViewSheet } from "@/components/deliveries/delivery-view-sheet";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
 import { fetchAssignedDeliveryBarcodesPage } from "@/lib/deliveries/api/assigned-deliveries-api";
@@ -42,12 +43,13 @@ export function DeliveriesWorkspace() {
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
+  const [sort, setSort] = useState(DEFAULT_ASSIGNED_DELIVERY_SORT);
   const table = useCatalogTable({
     fields: ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS,
     keepPrevious: false,
     enabled: access.canList,
     keyPrefix: "deliveries.filters.fields",
-    sort: DEFAULT_ASSIGNED_DELIVERY_SORT,
+    sort,
     queryKey: (params) => queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params),
     fetchPage: fetchAssignedDeliveryBarcodesPage,
   });
@@ -63,7 +65,7 @@ export function DeliveriesWorkspace() {
     t("deliveries.columns.senderPhones"),
     t("deliveries.columns.receiverName"),
     t("deliveries.columns.address"),
-    t("deliveries.columns.province"),
+    t("deliveries.view.city"),
     t("deliveries.columns.phones"),
   ];
 
@@ -91,6 +93,17 @@ export function DeliveriesWorkspace() {
             presetScope="deliveries"
             searchPlaceholder={t("deliveries.searchPlaceholder")}
           />
+          <div className="flex items-center gap-2">
+            <Label htmlFor="delivery-sort">{t("deliveries.sort.label")}</Label>
+            <select id="delivery-sort" className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={sort}
+              onChange={(event) => { setSort(event.target.value); table.pagination.setPage(1); }}>
+              <option value="receiver.address.city:asc">{t("deliveries.sort.cityAsc")}</option>
+              <option value="receiver.address.city:desc">{t("deliveries.sort.cityDesc")}</option>
+              <option value="receiver.address.state:asc">{t("deliveries.columns.province")}</option>
+              <option value="invoice.number:asc">{t("deliveries.columns.invoice")}</option>
+              <option value="number:asc">{t("deliveries.columns.barcode")}</option>
+            </select>
+          </div>
         </CardHeader>
 
         {!access.canList ? (
@@ -113,12 +126,12 @@ export function DeliveriesWorkspace() {
         ) : (<>
           <ul className="md:hidden" aria-label={t("deliveries.title")}>
             {table.items.map((row, index) => {
-              const province = row.receiver?.province || t("deliveries.noProvince");
-              const previous = index > 0 ? table.items[index - 1]!.receiver?.province || t("deliveries.noProvince") : null;
+              const city = row.receiver?.city || t("deliveries.noCity");
+              const previous = index > 0 ? table.items[index - 1]!.receiver?.city || t("deliveries.noCity") : null;
               return (
                 <li key={rowKey(row)}>
-                  {province !== previous ? (
-                    <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{province}</h3>
+                  {sort.startsWith("receiver.address.city:") && city !== previous ? (
+                    <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{city}</h3>
                   ) : null}
                   <DeliveryMobileRow row={row} canDeliver={access.canDeliver} onDeliver={setDeliverRow} canPrint={access.canPrint} onPrint={setPrintRow} />
                 </li>
@@ -199,7 +212,7 @@ export function DeliveriesWorkspace() {
                       </td>
                       <td className="px-4 py-3">{row.receiver?.name}</td>
                       <td className="px-4 py-3">{formatDeliveryAddress(row.receiver)}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{row.receiver?.province}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{row.receiver?.city}</td>
                       <td className="min-w-[260px] px-4 py-3">
                         <TablePhoneCell phones={row.receiver?.phones ?? []} callable />
                       </td>

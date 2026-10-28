@@ -806,71 +806,20 @@
     "incomestatement.IncomeStatement": {
       "type": "object",
       "properties": {
-        "branch": {
-          "$ref": "#/definitions/core.BranchDTO"
-        },
-        "container": {
-          "$ref": "#/definitions/core.Container"
-        },
-        "createdAt": {
-          "type": "string"
-        },
-        "createdBy": {
-          "$ref": "#/definitions/core.User"
-        },
-        "currency": {
-          "type": "string"
-        },
-        "date": {
-          "type": "string"
-        },
-        "delivery": {
-          "$ref": "#/definitions/core.Delivery"
-        },
-        "id": {
-          "type": "integer"
-        },
-        "rate": {
-          "type": "number"
-        },
-        "status": {
-          "type": "string"
-        },
-        "summaryTotal": {
-          "$ref": "#/definitions/incomestatement.Total"
-        },
-        "updatedAt": {
-          "type": "string"
-        },
-        "updatedBy": {
-          "$ref": "#/definitions/core.User"
-        },
-        "businessDate": {
-          "type": "string",
-          "description": "Branch-local business date (YYYY-MM-DD).",
-          "readOnly": true
-        },
-        "timezone": {
-          "type": "string",
-          "description": "IANA timezone used when the period was created.",
-          "readOnly": true
-        },
-        "periodStart": {
-          "type": "string",
-          "description": "Inclusive UTC start of the accounting period.",
-          "readOnly": true
-        },
-        "periodEnd": {
-          "type": "string",
-          "description": "Exclusive UTC end of the accounting period.",
-          "readOnly": true
-        },
-        "automated": {
-          "type": "boolean",
-          "readOnly": true
-        }
-      },
-      "description": "Accounting period managed automatically at branch-local midnight by the daily-income end-of-day CLI. Business dates are DST-safe; periodStart and periodEnd are fixed UTC boundaries. Inactive periods cannot reopen. Reconciliation preserves original period membership."
+        "branch": { "$ref": "#/definitions/core.BranchDTO" },
+        "container": { "$ref": "#/definitions/core.Container" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "$ref": "#/definitions/core.User" },
+        "currency": { "type": "string" },
+        "date": { "type": "string" },
+        "delivery": { "$ref": "#/definitions/core.Delivery" },
+        "id": { "type": "integer" },
+        "rate": { "type": "number" },
+        "status": { "type": "string" },
+        "summaryTotal": { "$ref": "#/definitions/incomestatement.Total" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "$ref": "#/definitions/core.User" }
+      }
     },
     "incomestatement.SummaryTotalLine": {
       "type": "object",
@@ -1990,38 +1939,18 @@
     },
     "invoice.CreateInvoiceRequest": {
       "type": "object",
-      "required": [
-        "container",
-        "sender"
-      ],
+      "required": ["container", "sender"],
       "properties": {
-        "autoGenerateNumber": {
-          "type": "boolean"
-        },
-        "balance": {
-          "type": "number"
-        },
-        "branch": {
-          "$ref": "#/definitions/invoice.CreateInvoiceBranch"
-        },
-        "container": {
-          "$ref": "#/definitions/invoice.CreateInvoiceContainer"
-        },
-        "cost": {
-          "type": "number"
-        },
-        "date": {
-          "type": "string"
-        },
-        "discount": {
-          "type": "number"
-        },
-        "employee": {
-          "$ref": "#/definitions/invoice.CreateInvoiceEmployee"
-        },
+        "autoGenerateNumber": { "type": "boolean" },
+        "balance": { "type": "number" },
+        "branch": { "$ref": "#/definitions/invoice.CreateInvoiceBranch" },
+        "container": { "$ref": "#/definitions/invoice.CreateInvoiceContainer" },
+        "cost": { "type": "number" },
+        "date": { "type": "string" },
+        "discount": { "type": "number" },
+        "employee": { "$ref": "#/definitions/invoice.CreateInvoiceEmployee" },
         "incomeStatement": {
-          "$ref": "#/definitions/invoice.CreateInvoiceIncomeStatement",
-          "description": "Legacy field. Omit for ordinary recording; the API selects the current period."
+          "$ref": "#/definitions/invoice.CreateInvoiceIncomeStatement"
         },
         "invoiceDetails": {
           "type": "array",
@@ -2029,49 +1958,24 @@
             "$ref": "#/definitions/invoice.CreateInvoiceDetailRequest"
           }
         },
-        "isVoid": {
-          "type": "boolean"
-        },
-        "number": {
-          "type": "string"
-        },
-        "officeBranch": {
-          "$ref": "#/definitions/invoice.CreateInvoiceBranch"
-        },
-        "paidRegion": {
-          "type": "string"
-        },
-        "paidStatus": {
-          "type": "string"
-        },
-        "payment": {
-          "type": "number",
-          "description": "Must reflect authoritative recorded payments; cannot create payment history."
-        },
-        "pickup": {
-          "type": "string"
-        },
+        "isVoid": { "type": "boolean" },
+        "number": { "type": "string" },
+        "officeBranch": { "$ref": "#/definitions/invoice.CreateInvoiceBranch" },
+        "paidRegion": { "type": "string" },
+        "paidStatus": { "type": "string" },
+        "payment": { "type": "number" },
+        "pickup": { "type": "string" },
         "pickupEmployee": {
           "$ref": "#/definitions/invoice.CreateInvoiceEmployee"
         },
-        "pickupSource": {
-          "type": "string"
-        },
+        "pickupSource": { "type": "string" },
         "receivedBy": {
           "$ref": "#/definitions/invoice.CreateInvoiceReceivedBy"
         },
-        "receiver": {
-          "$ref": "#/definitions/invoice.CreateInvoiceCustomer"
-        },
-        "route": {
-          "$ref": "#/definitions/route.RouteDTO"
-        },
-        "sender": {
-          "$ref": "#/definitions/invoice.CreateInvoiceCustomer"
-        },
-        "surcharge": {
-          "type": "number"
-        }
+        "receiver": { "$ref": "#/definitions/invoice.CreateInvoiceCustomer" },
+        "route": { "$ref": "#/definitions/route.RouteDTO" },
+        "sender": { "$ref": "#/definitions/invoice.CreateInvoiceCustomer" },
+        "surcharge": { "type": "number" }
       }
     },
     "invoice.Invoice": {
@@ -2464,98 +2368,40 @@
     },
     "journal.PostEntryRequest": {
       "type": "object",
-      "required": [
-        "transactionType"
-      ],
+      "required": ["transactionType"],
       "properties": {
-        "account": {
-          "$ref": "#/definitions/journal.AccountDTO"
-        },
-        "allowDuplicatePayment": {
-          "type": "boolean"
-        },
-        "allowDuplicateZellePayment": {
-          "type": "boolean"
-        },
-        "amount": {
-          "type": "number"
-        },
-        "autoClear": {
-          "type": "boolean",
-          "default": false
-        },
-        "checkNumber": {
-          "type": "string"
-        },
-        "currency": {
-          "type": "string"
-        },
-        "date": {
-          "type": "string",
-          "description": "Occurrence date; does not select the accounting period."
-        },
-        "description": {
-          "type": "string"
-        },
-        "employee": {
-          "$ref": "#/definitions/journal.PostEntryRouteAssignee"
-        },
+        "account": { "$ref": "#/definitions/journal.AccountDTO" },
+        "allowDuplicatePayment": { "type": "boolean" },
+        "allowDuplicateZellePayment": { "type": "boolean" },
+        "amount": { "type": "number" },
+        "autoClear": { "type": "boolean", "default": false },
+        "checkNumber": { "type": "string" },
+        "currency": { "type": "string" },
+        "date": { "type": "string" },
+        "description": { "type": "string" },
+        "employee": { "$ref": "#/definitions/journal.PostEntryRouteAssignee" },
         "employeeGroup": {
           "$ref": "#/definitions/journal.PostEntryRouteAssignee"
         },
-        "employeeId": {
-          "type": "integer"
-        },
-        "externalReferenceNumber": {
-          "type": "string"
-        },
-        "external_reference_number": {
-          "type": "string"
-        },
-        "idempotencyKey": {
-          "type": "string"
-        },
+        "employeeId": { "type": "integer" },
+        "externalReferenceNumber": { "type": "string" },
+        "external_reference_number": { "type": "string" },
+        "idempotencyKey": { "type": "string" },
         "incomeStatement": {
-          "$ref": "#/definitions/journal.PostEntryIncomeStatement",
-          "description": "Legacy field. Omit for ordinary recording; the server selects the current closeout."
+          "$ref": "#/definitions/journal.PostEntryIncomeStatement"
         },
-        "incomeStatementId": {
-          "type": "integer",
-          "description": "Legacy field. Omit for ordinary recording; the server selects the current closeout."
-        },
-        "invoice": {
-          "$ref": "#/definitions/journal.PostEntryInvoice"
-        },
-        "invoiceId": {
-          "type": "string"
-        },
-        "paymentAccount": {
-          "$ref": "#/definitions/journal.AccountDTO"
-        },
-        "paymentMethod": {
-          "$ref": "#/definitions/journal.PaymentMethod"
-        },
-        "paymentReference": {
-          "type": "string"
-        },
-        "rate": {
-          "type": "number"
-        },
-        "receiver": {
-          "$ref": "#/definitions/journal.InvoicePartyDTO"
-        },
-        "refNumber": {
-          "type": "string"
-        },
-        "route": {
-          "$ref": "#/definitions/journal.PostEntryRouteAssignee"
-        },
-        "sender": {
-          "$ref": "#/definitions/journal.InvoicePartyDTO"
-        },
-        "sourceAccount": {
-          "$ref": "#/definitions/journal.AccountDTO"
-        },
+        "incomeStatementId": { "type": "integer" },
+        "invoice": { "$ref": "#/definitions/journal.PostEntryInvoice" },
+        "invoiceId": { "type": "string" },
+        "paymentAccount": { "$ref": "#/definitions/journal.AccountDTO" },
+        "paymentMethod": { "$ref": "#/definitions/journal.PaymentMethod" },
+        "paymentReference": { "type": "string" },
+        "rate": { "type": "number" },
+        "receiver": { "$ref": "#/definitions/journal.InvoicePartyDTO" },
+        "refNumber": { "type": "string" },
+        "route": { "$ref": "#/definitions/journal.PostEntryRouteAssignee" },
+        "sender": { "$ref": "#/definitions/journal.InvoicePartyDTO" },
+        "sourceAccount": { "$ref": "#/definitions/journal.AccountDTO" },
         "transactionType": {
           "type": "string",
           "enum": [
@@ -2577,9 +2423,6 @@
         },
         "vehicleRoute": {
           "$ref": "#/definitions/journal.PostEntryRouteAssignee"
-        },
-        "branch": {
-          "$ref": "#/definitions/journal.BranchDTO"
         }
       }
     },
@@ -3685,15 +3528,7 @@
       "url": "https://embarques.net/support",
       "email": "emsys.embarques@gmail.com"
     },
-    "version": "0.1.0",
-    "x-accounting-workflow": {
-      "automation": "Tenant opt-in, company defaults, and branch timezone/currency/rate overrides. External cron invokes daily-income end-of-day; no scheduler runs inside the API. Install the backend-provided cron/host installer before activation.",
-      "cli": "Exact company ID/name or all-enabled targeting; bounded operations, transactional settings/period fences, safe retries, unique active/day indexes, catch-up and safe draining when disabled.",
-      "reconciliation": "Pending Financial Activity covers all dates with server filters and pagination. Cash handover and receiving-employee verification are separate from independent expense verification and method-specific clearing. History is append-only.",
-      "adjustments": "Separate reversing entries belong to the current period and retain the original entry. Dedicated financial-adjustment authorization is additional to ordinary journal/reconciliation grants. Invoice balance changes and retries are protected transactionally.",
-      "models": "Existing payment entities and account classifications remain; no unified Payment migration. Legacy payments retain missing period/currency metadata.",
-      "contractSource": "Workflow semantics supplied with this portal update. Regenerate endpoint/schema additions from the updated backend OpenAPI export; this snapshot does not yet include the financial-activity, automation, current-period or reversal endpoint definitions."
-    }
+    "version": "0.1.0"
   },
   "paths": {
     "/audit-events": {
@@ -5222,21 +5057,10 @@
     },
     "/checks/{id}": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Requires canViewCheck; a list grant alone does not authorize detail reads.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "check"
-        ],
+        "produces": ["application/json"],
+        "tags": ["check"],
         "summary": "Retrieve a check",
         "parameters": [
           {
@@ -5252,15 +5076,11 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/check.Check"
-                    }
+                    "data": { "$ref": "#/definitions/check.Check" }
                   }
                 }
               ]
@@ -5269,24 +5089,11 @@
         }
       },
       "put": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Accepts partial fields, including status and clearedAt alone. Outstanding checks do not change invoice payment or balance; clearing applies the payment atomically. Payment identity is immutable. Method-specific clearing remains available across all dates, including legacy directory-only and dangling-journal payments, without inventing period links or currencies. Clearing requires the existing method-specific update permission and preserves original period membership.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "check"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Accepts partial fields, including status and clearedAt alone. Outstanding checks do not change invoice payment or balance; clearing applies the payment atomically.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["check"],
         "summary": "Update a check",
         "parameters": [
           {
@@ -5301,9 +5108,7 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/check.Check"
-            }
+            "schema": { "$ref": "#/definitions/check.Check" }
           }
         ],
         "responses": {
@@ -5311,15 +5116,11 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/check.Check"
-                    }
+                    "data": { "$ref": "#/definitions/check.Check" }
                   }
                 }
               ]
@@ -5328,20 +5129,9 @@
         }
       },
       "delete": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "check"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "produces": ["application/json"],
+        "tags": ["check"],
         "summary": "Delete a check",
         "parameters": [
           {
@@ -5355,12 +5145,9 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/responses.Success"
-            }
+            "schema": { "$ref": "#/definitions/responses.Success" }
           }
-        },
-        "description": "Posted payment identity cannot be deleted. Corrections use auditable adjustments or the relevant domain workflow."
+        }
       }
     },
     "/cities": {
@@ -6144,21 +5931,10 @@
     },
     "/credit-card-payments/{id}": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Requires canViewCreditCardPayment; a list grant alone does not authorize detail reads.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "credit_card_payment"
-        ],
+        "produces": ["application/json"],
+        "tags": ["credit_card_payment"],
         "summary": "Retrieve a credit_card_payment",
         "parameters": [
           {
@@ -6174,9 +5950,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -6191,24 +5965,11 @@
         }
       },
       "put": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Accepts partial fields. OUTSTANDING leaves invoice totals unchanged; CLEARED applies payment atomically. Reopening or deleting a cleared payment reverses its invoice effect. Dates use RFC3339. Payment identity is immutable. Method-specific clearing remains available across all dates, including legacy directory-only and dangling-journal payments, without inventing period links or currencies. Clearing requires the existing method-specific update permission and preserves original period membership.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "credit_card_payment"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Accepts partial fields. OUTSTANDING leaves invoice totals unchanged; CLEARED applies payment atomically. Reopening or deleting a cleared payment reverses its invoice effect. Dates use RFC3339.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["credit_card_payment"],
         "summary": "Update a credit card payment",
         "parameters": [
           {
@@ -6233,9 +5994,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -6250,20 +6009,9 @@
         }
       },
       "delete": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "credit_card_payment"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "produces": ["application/json"],
+        "tags": ["credit_card_payment"],
         "summary": "Delete a credit_card_payment",
         "parameters": [
           {
@@ -6277,12 +6025,9 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/responses.Success"
-            }
+            "schema": { "$ref": "#/definitions/responses.Success" }
           }
-        },
-        "description": "Posted payment identity cannot be deleted. Corrections use auditable adjustments or the relevant domain workflow."
+        }
       }
     },
     "/customers": {
@@ -7482,21 +7227,10 @@
     },
     "/deposits/{id}": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Requires canViewDeposit; a list grant alone does not authorize detail reads.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "deposit"
-        ],
+        "produces": ["application/json"],
+        "tags": ["deposit"],
         "summary": "Retrieve a deposit",
         "parameters": [
           {
@@ -7512,15 +7246,11 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/deposit.Deposit"
-                    }
+                    "data": { "$ref": "#/definitions/deposit.Deposit" }
                   }
                 }
               ]
@@ -7529,24 +7259,11 @@
         }
       },
       "put": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Accepts partial fields. OUTSTANDING leaves invoice totals unchanged; CLEARED applies payment atomically. Reopening or deleting a cleared payment reverses its invoice effect. Dates use RFC3339. Payment identity is immutable. Method-specific clearing remains available across all dates, including legacy directory-only and dangling-journal payments, without inventing period links or currencies. Clearing requires the existing method-specific update permission and preserves original period membership.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "deposit"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Accepts partial fields. OUTSTANDING leaves invoice totals unchanged; CLEARED applies payment atomically. Reopening or deleting a cleared payment reverses its invoice effect. Dates use RFC3339.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["deposit"],
         "summary": "Update a deposit",
         "parameters": [
           {
@@ -7561,9 +7278,7 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/deposit.Deposit"
-            }
+            "schema": { "$ref": "#/definitions/deposit.Deposit" }
           }
         ],
         "responses": {
@@ -7571,15 +7286,11 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/deposit.Deposit"
-                    }
+                    "data": { "$ref": "#/definitions/deposit.Deposit" }
                   }
                 }
               ]
@@ -7588,20 +7299,9 @@
         }
       },
       "delete": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "deposit"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "produces": ["application/json"],
+        "tags": ["deposit"],
         "summary": "Delete a deposit",
         "parameters": [
           {
@@ -7615,12 +7315,9 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/responses.Success"
-            }
+            "schema": { "$ref": "#/definitions/responses.Success" }
           }
-        },
-        "description": "Posted payment identity cannot be deleted. Corrections use auditable adjustments or the relevant domain workflow."
+        }
       }
     },
     "/employee-departments": {
@@ -8939,21 +8636,10 @@
     },
     "/income-statements": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Returns a list of income statements for the current company tenant. Optional query filters and pagination apply. For nested AND/OR filters, use Search (`POST /income-statements/search`).",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "income_statement"
-        ],
+        "produces": ["application/json"],
+        "tags": ["income_statement"],
         "summary": "List all income statements",
         "parameters": [
           {
@@ -9007,9 +8693,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -9026,37 +8710,20 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       },
       "post": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Ordinary portal workflows do not create accounting periods. Tenant-enabled automation opens the next business day through daily-income end-of-day; ordinary recording uses the server-selected current period.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "income_statement"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Creates a new open income statement (cuadre) with an auto-incremented ID. Requires income statement create permission.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["income_statement"],
         "summary": "Create an income statement",
         "parameters": [
           {
@@ -9074,9 +8741,7 @@
             "description": "Created",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -9090,12 +8755,9 @@
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
-        },
-        "deprecated": true
+        }
       }
     },
     "/income-statements/search": {
@@ -9168,21 +8830,10 @@
     },
     "/income-statements/{id}": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Requires income statement view permission.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "income_statement"
-        ],
+        "produces": ["application/json"],
+        "tags": ["income_statement"],
         "summary": "Retrieve an income statement",
         "parameters": [
           {
@@ -9198,9 +8849,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -9214,37 +8863,20 @@
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       },
       "put": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Period status and fixed UTC boundaries are not editable through ordinary portal workflows. Inactive periods cannot reopen.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "income_statement"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Requires income statement update permission. Status and summary totals are preserved; use Close/Open endpoints to change them.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["income_statement"],
         "summary": "Update an income statement",
         "parameters": [
           {
@@ -9269,9 +8901,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -9285,34 +8915,19 @@
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       },
       "delete": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Requires income statement delete permission.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "income_statement"
-        ],
+        "produces": ["application/json"],
+        "tags": ["income_statement"],
         "summary": "Delete an income statement",
         "parameters": [
           {
@@ -9326,42 +8941,25 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/responses.Success"
-            }
+            "schema": { "$ref": "#/definitions/responses.Success" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       }
     },
     "/income-statements/{id}/close": {
       "post": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Period closing is performed by daily-income end-of-day through external scheduling. The portal does not expose manual close actions.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "income_statement"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Closes all open income statements through today, stores their materialized summaries, and sets status to closed. Requires income statement update permission.",
+        "produces": ["application/json"],
+        "tags": ["income_statement"],
         "summary": "Close an income statement",
         "parameters": [
           {
@@ -9377,9 +8975,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -9393,43 +8989,25 @@
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "409": {
             "description": "Conflict",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
-        },
-        "deprecated": true
+        }
       }
     },
     "/income-statements/{id}/open": {
       "post": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Inactive accounting periods cannot reopen. Historical transactions remain reconcilable through Pending Financial Activity without reopening or changing their original period.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "income_statement"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Sets status back to open, clears stored statement totals, and marks the materialized summary open. Requires income statement update permission on the route and canOpenIncomeStatementAfterClose in the reopen workflow.",
+        "produces": ["application/json"],
+        "tags": ["income_statement"],
         "summary": "Reopen an income statement",
         "parameters": [
           {
@@ -9441,26 +9019,35 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/incomestatement.IncomeStatement"
+                    }
+                  }
+                }
+              ]
+            }
+          },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "409": {
             "description": "Conflict",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
-        },
-        "deprecated": true
+        }
       }
     },
     "/income-statements/{id}/summary-total": {
@@ -15373,19 +14960,10 @@
     },
     "/invoices": {
       "get": {
-        "security": [
-          {
-            "CompanyID": [],
-            "Token": []
-          }
-        ],
+        "security": [{ "CompanyID": [], "Token": [] }],
         "description": "Returns a list of invoices for the current company tenant (Stripe-style list endpoint). Optional query filters and pagination apply. For nested AND/OR filters, use Search (`POST /invoices/search`).",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "invoice"
-        ],
+        "produces": ["application/json"],
+        "tags": ["invoice"],
         "summary": "List all invoices",
         "parameters": [
           {
@@ -15439,17 +15017,13 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/definitions/invoice.Invoice"
-                      }
+                      "items": { "$ref": "#/definitions/invoice.Invoice" }
                     }
                   }
                 }
@@ -15458,35 +15032,20 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       },
       "post": {
-        "security": [
-          {
-            "CompanyID": [],
-            "Token": []
-          }
-        ],
-        "description": "Requires invoice create permission. The server selects the current closeout. Client-supplied payment/balance totals cannot invent payment history; invoice payment application and reversal are transactional.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "invoice"
-        ],
+        "security": [{ "CompanyID": [], "Token": [] }],
+        "description": "Requires invoice create permission.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["invoice"],
         "summary": "Create a invoice",
         "parameters": [
           {
@@ -15494,9 +15053,7 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/invoice.CreateInvoiceRequest"
-            }
+            "schema": { "$ref": "#/definitions/invoice.CreateInvoiceRequest" }
           }
         ],
         "responses": {
@@ -15504,15 +15061,11 @@
             "description": "Created",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/invoice.Invoice"
-                    }
+                    "data": { "$ref": "#/definitions/invoice.Invoice" }
                   }
                 }
               ]
@@ -15520,15 +15073,11 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       }
@@ -16258,21 +15807,10 @@
     },
     "/journals": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Returns a list of journals for the current company tenant (Stripe-style list endpoint). Optional query filters and pagination apply. For nested AND/OR filters, use Search (`POST /journals/search`).",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "journal"
-        ],
+        "produces": ["application/json"],
+        "tags": ["journal"],
         "summary": "List all journals",
         "parameters": [
           {
@@ -16326,17 +15864,13 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/definitions/journal.Journal"
-                      }
+                      "items": { "$ref": "#/definitions/journal.Journal" }
                     }
                   }
                 }
@@ -16345,37 +15879,20 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       },
       "post": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Records a balanced double-entry journal. Receipt/refund entries require paymentMethod.name: CASH posts to CASH ON HAND; ZELLE and DEPOSIT require a BANK paymentAccount; CHECK posts to CHECKS TO DEPOSIT unless a BANK paymentAccount is supplied; CREDIT-CARD posts to CARD PROCESSOR RECEIVABLE. PAYMENT and INITIAL-PAYMENT accept account as a backward-compatible Zelle/deposit destination alias. ZELLE, DEPOSIT, CHECK and CREDIT-CARD invoice receipts create outstanding directory records; invoice payment and balance change only when the record is CLEARED. The server selects the current accounting period at recording time using the optional branch. Ordinary clients omit incomeStatement and incomeStatementId. Occurrence date is separate from period membership. INITIAL-PAYMENT without invoice.id creates a PENDING invoice and accepts either employee or vehicleRoute/route/employeeGroup assignees, including zero-amount registrations. Employee and route assignees are mutually exclusive after normalization: employee clears route fields, route clears employee. Response data is PostEntryResult with current statement totals. Optional autoClear (default false) on creation immediately clears CHECK/CHEQUE, ZELLE, DEPOSIT and CREDIT-CARD PAYMENT/INITIAL-PAYMENT receipts, requiring that method's update grant; clearedAt equals datePosted and clearedBy/audit identify the actor. Cash ignores autoClear. Journal PUT rejects this flag; later clearing uses the payment record PUT.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "journal"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Records a balanced double-entry journal. Receipt/refund entries require paymentMethod.name: CASH posts to CASH ON HAND; ZELLE and DEPOSIT require a BANK paymentAccount; CHECK posts to CHECKS TO DEPOSIT unless a BANK paymentAccount is supplied; CREDIT-CARD posts to CARD PROCESSOR RECEIVABLE. PAYMENT and INITIAL-PAYMENT accept account as a backward-compatible Zelle/deposit destination alias. ZELLE, DEPOSIT, CHECK and CREDIT-CARD invoice receipts create outstanding directory records; invoice payment and balance change only when the record is CLEARED. incomeStatement.id or incomeStatementId must reference an open statement. INITIAL-PAYMENT without invoice.id creates a PENDING invoice and accepts either employee or vehicleRoute/route/employeeGroup assignees, including zero-amount registrations. Employee and route assignees are mutually exclusive after normalization: employee clears route fields, route clears employee. Response data is PostEntryResult with current statement totals. Optional autoClear (default false) on creation immediately clears CHECK/CHEQUE, ZELLE, DEPOSIT and CREDIT-CARD PAYMENT/INITIAL-PAYMENT receipts, requiring that method's update grant; clearedAt equals datePosted and clearedBy/audit identify the actor. Cash ignores autoClear. Journal PUT rejects this flag; later clearing uses the payment record PUT.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["journal"],
         "summary": "Post a journal entry",
         "parameters": [
           {
@@ -16383,9 +15900,7 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/journal.PostEntryRequest"
-            }
+            "schema": { "$ref": "#/definitions/journal.PostEntryRequest" }
           }
         ],
         "responses": {
@@ -16393,15 +15908,11 @@
             "description": "Created",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/journal.PostEntryResult"
-                    }
+                    "data": { "$ref": "#/definitions/journal.PostEntryResult" }
                   }
                 }
               ]
@@ -16409,27 +15920,19 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "409": {
             "description": "Conflict",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       }
@@ -16502,21 +16005,10 @@
     },
     "/journals/{id}": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Requires journal view permission.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "journal"
-        ],
+        "produces": ["application/json"],
+        "tags": ["journal"],
         "summary": "Retrieve a journal",
         "parameters": [
           {
@@ -16532,15 +16024,11 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/journal.Journal"
-                    }
+                    "data": { "$ref": "#/definitions/journal.Journal" }
                   }
                 }
               ]
@@ -16548,37 +16036,20 @@
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
         }
       },
       "put": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Posted journals are immutable and cannot be edited or deleted. Eligible financial corrections create separate auditable reversing entries in the current period, with a dedicated financial-adjustment permission in addition to ordinary journal/reconciliation grants. Invoice-lifecycle, inventory and loan corrections retain their domain workflows.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "journal"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Re-posts an existing journal with PostEntryRequest (same ID) using the same payment-account rules as creation. incomeStatement.id must reference an open income statement. INITIAL-PAYMENT and VOID entries are managed through the invoice lifecycle and cannot be updated here. Requires journal update permission.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["journal"],
         "summary": "Update a journal entry",
         "parameters": [
           {
@@ -16593,9 +16064,7 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/journal.PostEntryRequest"
-            }
+            "schema": { "$ref": "#/definitions/journal.PostEntryRequest" }
           }
         ],
         "responses": {
@@ -16603,15 +16072,11 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/definitions/journal.Journal"
-                    }
+                    "data": { "$ref": "#/definitions/journal.Journal" }
                   }
                 }
               ]
@@ -16619,47 +16084,27 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "409": {
             "description": "Conflict",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
-        },
-        "deprecated": true
+        }
       },
       "delete": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Posted journals are immutable and cannot be edited or deleted. Eligible financial corrections create separate auditable reversing entries in the current period, with a dedicated financial-adjustment permission in addition to ordinary journal/reconciliation grants. Invoice-lifecycle, inventory and loan corrections retain their domain workflows.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "journal"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Removes the journal document. Running totals are calculated dynamically, so nothing is recalculated; the only exception is an invoice-payment entry, where the invoice's stored total is updated to remove the deleted entry's effect. Deleting INITIAL-PAYMENT also removes the linked PENDING invoice stub when it has not been completed. VOID entries cannot be deleted here. Requires journal delete permission.",
+        "produces": ["application/json"],
+        "tags": ["journal"],
         "summary": "Delete a journal entry",
         "parameters": [
           {
@@ -16673,30 +16118,21 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/responses.Success"
-            }
+            "schema": { "$ref": "#/definitions/responses.Success" }
           },
           "403": {
             "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "404": {
             "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           },
           "409": {
             "description": "Conflict",
-            "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
-            }
+            "schema": { "$ref": "#/definitions/responses.APIResponse" }
           }
-        },
-        "deprecated": true
+        }
       }
     },
     "/loans": {
@@ -21407,21 +20843,10 @@
     },
     "/zelle-payments/{id}": {
       "get": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
         "description": "Requires canViewZellePayment; a list grant alone does not authorize detail reads.",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "zelle_payment"
-        ],
+        "produces": ["application/json"],
+        "tags": ["zelle_payment"],
         "summary": "Retrieve a zelle_payment",
         "parameters": [
           {
@@ -21437,9 +20862,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -21454,24 +20877,11 @@
         }
       },
       "put": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "description": "Accepts partial fields. OUTSTANDING leaves invoice totals unchanged; CLEARED applies payment atomically. Reopening or deleting a cleared payment reverses its invoice effect. Dates use RFC3339. Payment identity is immutable. Method-specific clearing remains available across all dates, including legacy directory-only and dangling-journal payments, without inventing period links or currencies. Clearing requires the existing method-specific update permission and preserves original period membership.",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "zelle_payment"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "description": "Accepts partial fields. OUTSTANDING leaves invoice totals unchanged; CLEARED applies payment atomically. Reopening or deleting a cleared payment reverses its invoice effect. Dates use RFC3339.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["zelle_payment"],
         "summary": "Update a zelle payment",
         "parameters": [
           {
@@ -21486,9 +20896,7 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/zelle_payment.ZellePayment"
-            }
+            "schema": { "$ref": "#/definitions/zelle_payment.ZellePayment" }
           }
         ],
         "responses": {
@@ -21496,9 +20904,7 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                {
-                  "$ref": "#/definitions/responses.Success"
-                },
+                { "$ref": "#/definitions/responses.Success" },
                 {
                   "type": "object",
                   "properties": {
@@ -21513,20 +20919,9 @@
         }
       },
       "delete": {
-        "security": [
-          {
-            "Token": []
-          },
-          {
-            "CompanyID": []
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "zelle_payment"
-        ],
+        "security": [{ "Token": [] }, { "CompanyID": [] }],
+        "produces": ["application/json"],
+        "tags": ["zelle_payment"],
         "summary": "Delete a zelle_payment",
         "parameters": [
           {
@@ -21540,12 +20935,9 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/responses.Success"
-            }
+            "schema": { "$ref": "#/definitions/responses.Success" }
           }
-        },
-        "description": "Posted payment identity cannot be deleted. Corrections use auditable adjustments or the relevant domain workflow."
+        }
       }
     }
   },

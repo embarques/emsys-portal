@@ -39,10 +39,21 @@ test("pending activity defaults to all dates and keeps filters on the server",()
  const api=loadFeature("src/lib/accounting/financial-activity/api.ts",{});
  const empty={employee:"",branch:"",method:"",from:"",through:"",minimum:"",age:""};const base=api.buildActivitySearch(empty,2);
  assert.deepEqual(base.filters,[]);assert.deepEqual(base.pagination,{page:2,limit:40});
- const filtered=api.buildActivitySearch({...empty,employee:"Maria",method:"CHECK",minimum:"0",age:"7"},1);
- assert.ok(filtered.filters.some(filter=>filter.field==="employee.name"&&filter.value==="Maria"));
+ const filtered=api.buildActivitySearch({...empty,employee:"12",branch:"3",method:"CHECK",minimum:"0",age:"7"},1);
+ assert.ok(filtered.filters.some(filter=>filter.field==="employee.id"&&filter.operator==="eq"&&filter.value===12));
+ assert.ok(filtered.filters.some(filter=>filter.field==="branch.id"&&filter.operator==="eq"&&filter.value===3));
  assert.ok(filtered.filters.some(filter=>filter.field==="outstandingAmount"&&filter.value===0));
  assert.ok(filtered.filters.some(filter=>filter.field==="ageDays"&&filter.value===7));
+});
+test("payment methods and employees get stable color codes", () => {
+ const display=loadFeature("src/lib/accounting/financial-activity/display.ts",{});
+ assert.match(display.getPaymentMethodBadgeClass("CASH"),/emerald/);
+ assert.equal(display.getPaymentMethodBadgeClass("credit_card"),display.getPaymentMethodBadgeClass("CREDIT-CARD"));
+ assert.equal(display.getPaymentMethodBadgeClass("CHEQUE"),display.getPaymentMethodBadgeClass("CHECK"));
+ assert.match(display.getPaymentMethodBadgeClass("UNKNOWN"),/muted/);
+ assert.equal(display.getEmployeeBadgeClass(7),display.getEmployeeBadgeClass(7));
+ assert.notEqual(display.getEmployeeBadgeClass(7),display.getEmployeeBadgeClass(8));
+ assert.match(display.getEmployeeBadgeClass(undefined),/muted/);
 });
 test("ordinary new journal omits historical period selection and its date",async()=>{
  const calls=[];const api=loadFeature("src/lib/accounting/daily-income/api.ts",{post:async(url,body)=>{calls.push([url,body]);return{success:true,data:{id:"68f800000000000000000001",transactionType:"SALES",transactionAmount:10}};}});

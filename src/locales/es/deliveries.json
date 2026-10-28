@@ -1,6 +1,9 @@
 {
+  "noCity": "Sin ciudad",
+  "sort": {"label": "Ordenar por", "cityAsc": "Ciudad (A–Z)", "cityDesc": "Ciudad (Z–A)"},
+
   "title": "Entregas",
-  "description": "Todos los códigos de entrega pendientes, ordenados por provincia.",
+  "description": "Todos los códigos de entrega pendientes, ordenados por ciudad de forma predeterminada.",
   "searchPlaceholder": "Buscar código, factura, artículo, destinatario, provincia o contenedor…",
   "empty": "No tienes entregas pendientes.",
   "noAccess": "No tienes acceso para ver las entregas.",

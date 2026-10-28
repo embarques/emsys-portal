@@ -191,17 +191,17 @@ Routes organize day-to-day appointment stops and delivery stops.
 
 **Daily routes** are the dated working route for a visit or delivery day: **branch**, **date**, **vehicle**, **route crew**, and **crew roles** for each employee on that crew (driver, supervisor, helper(s)). If the branch is RD, the form also includes **container** and **exchange rate**. They have no status/active flag. Daily-route employees come from the selected route crew; roles are assigned on the daily route, not on the crew template.
 
-A new daily route can start from a previous day’s configuration. Copying to another date is allowed; the same route crew cannot be used twice on the same date at the same branch.
+A new daily route can start from a previous day’s configuration. Copying to another date is allowed; the API rejects duplicates using the exact employee ID set (independent of order), vehicle, and date.
 
 The same employee can be driver and supervisor, or driver, or supervisor, or helper.
 
 **Predefined routes** (`/predefined-routes`) are reusable named coverage filters, separate from route crews and daily routes. The list shows ID, name, Cities, and ZIP codes. The form retains one ordered mixed city/ZIP textbox list. Data is persisted through `/v1/predefined-routes` in the tenant `predefined_routes` collection. The appointment Route selector (below advanced filters) sends `predefinedRoute.id`; the API matches the customer sender address city OR ZIP and combines this restriction with existing filters using AND before counting/pagination. Add is available beside the selector; Edit/Delete are only in the catalog. Contract: `docs/predefined-routes.md`.
 
-TODO (backend) — route modeling (portal now follows this; align API + legacy data):
+Route modeling (backend changes reported; verify against the next OpenAPI export):
 
 **Route crews** (`/v1/routes`): reusable people templates. Persist only **active**, **branch** (`id` + `code` + `name`), and **employees** (`id` + `name`). Do not persist date, vehicle, trip number, or driver/supervisor/helper roles on the crew. Strip those fields from existing crew records. Reject create/update when another crew in the same company already has the same **branch** and the same **employee id set** (order-independent; compare ids, not names).
 
-**Daily routes** (`/v1/vehicle-routes`): dated working route. Persist **branch**, **date**, **vehicle** (`id` + `name`, optional `branch`), **route** (crew ref `id` + `name`), and **employees with roles** (`driver` | `supervisor` | `helper`; one person may be both driver and supervisor). RD/DR/DO branches also require **container** and may include **rate**. Daily-route `employees` must be the selected crew’s members (no extras). `vehicle` is required. Do not use `active` as a user-facing status. Reject a second daily route for the same **date + branch + route crew**. Multiple daily routes on the same date and branch are allowed when the route crews differ. Copying a previous day’s configuration onto a new date is allowed. Backfill legacy daily routes that stored vehicle only on the crew, or that have extra/missing employees vs the linked crew.
+**Daily routes** (`/v1/vehicle-routes`): dated working route. Persist **branch**, **date**, **vehicle** (`id` + `name`, optional `branch`), **route** (crew ref `id` + `name`), and **employees with roles** (`driver` | `supervisor` | `helper`; one person may be both driver and supervisor). RD/DR/DO branches also require **container** and may include **rate**. Daily-route `employees` must be the selected crew’s members (no extras). `vehicle` is required. Do not use `active` as a user-facing status. Duplicate detection compares the exact **employee ID set + vehicle + date**, independent of employee order; the API enforces company/branch scope. Copying a previous day’s configuration onto a new date is allowed. Backfill legacy daily routes that stored vehicle only on the crew, or that have extra/missing employees vs the linked crew.
 
 Daily routes can be created from the Daily routes workspace, or when assigning appointments or invoice barcodes (choose an existing daily route, or open the add daily route form).
 
@@ -220,7 +220,7 @@ This section helps coordinate the day-to-day movement of employees and merchandi
 
 **Complete delivery balance gate:** The current completion wizard starts with Review balance, then items, photos, signature, and finish. The balance is shown in USD and in DOP at the barcode's daily route `rate`. The API invoice balance must be exactly zero before proceeding and is rechecked before completion. Cash payments apply immediately; check, Zelle, deposit and card payments count only once **cleared**. Users with delivery view (`canViewDelivery`), Cuadre create (`canCreateIncomeStatement`) and journal create (`canCreateJournal`) may post a PAYMENT on today's open Cuadre for their branch (opening today's Cuadre at the route rate when none exists), or refresh after another user settles the invoice. When outstanding non-cash payments for the invoice cover the balance, the same users may **override** the clearance requirement after accepting that they are liable for the payment if it does not clear; the override is rechecked before completion. Payments persist independently of delivery. Atomic backend enforcement is a required follow-up; see the zero-balance section of `docs/delivery-completion-api-contract.md`.
 
-Portal route: `/deliveries` (Routes sidebar, `canViewDelivery`). The driver's work list: barcodes on DR daily routes whose crew includes the signed-in user's employee (`employee.user.id`), excluding barcodes already delivered. Columns: barcode, invoice, invoice balance (open balance of the barcode's invoice, from the list row's `invoice.balance`; blank when the API omits it; with its DOP equivalent at the row's daily route `rate`), name (merchandise), container, status, sender name and sender phones (from the list row's `sender`; blank when the API omits it), receiver name, address + apartment, province (receiver address `state`), receiver phones, and **Deliver**. Sort is fixed to province (headers do not re-sort). The status is always chosen by the driver; there is no preselected default. On phones the table becomes cards grouped under province headings, with tap-to-call phone buttons and a full-width Deliver button. This keeps Barcodes strictly for barcode management — Barcodes has no Deliver or signing actions.
+Portal route: `/deliveries` (Routes sidebar, `canViewDelivery`). The driver's work list: barcodes on DR daily routes whose crew includes the signed-in user's employee (`employee.user.id`), excluding barcodes already delivered. Columns: barcode, invoice, invoice balance (open balance of the barcode's invoice, from the list row's `invoice.balance`; blank when the API omits it; with its DOP equivalent at the row's daily route `rate`), name (merchandise), container, status, sender name and sender phones (from the list row's `sender`; blank when the API omits it), receiver name, address + apartment, city (receiver address `city`), receiver phones, and **Deliver**. Default server sort is city ascending; the sort selector also offers city descending, province, invoice number, and barcode. The status is always chosen by the driver; there is no preselected default. On phones the table becomes cards grouped under city headings when sorting by city, with tap-to-call phone buttons and a full-width Deliver button. This keeps Barcodes strictly for barcode management — Barcodes has no Deliver or signing actions.
 
 The list comes from `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`; the API owns the "assigned to me" and "pending" scoping and joins the invoice receiver. The portal never resolves the current employee or filters assignment client-side. Contract: `docs/delivery-completion-api-contract.md`.
 
@@ -287,6 +287,7 @@ A journal can be posted under an **employee** `{ id, name }` **or** a **daily ve
 
 API assignee rules (`POST` / `PUT` `/v1/journals`):
 
+- If neither assignee is provided, default to the creator’s linked employee on the server. Portal validation permits an empty assignee and explains this default.
 - Accept **either** `employee` **or** a daily vehicle-route (`vehicleRoute`, `route`, and legacy `employeeGroup`).
 - Discriminate by id shape: numeric id → employee; 24-char Mongo ObjectID → daily route.
 - Normalize writes to one assignee family:
@@ -302,7 +303,7 @@ Checks manages invoice payments made by check.
 
 CHECK or CHEQUE invoice payments (`INITIAL-PAYMENT` and `PAYMENT`) create an **outstanding check** and do **not** update the invoice `payment` / `balance`. The invoice payment is applied only when the check is marked **cleared**.
 
-The Checks workspace is view-only aside from that status change. Staff can search and open a check, and can mark **outstanding** checks as **cleared**. They cannot add checks or delete them from this directory, and a cleared check cannot be moved back to outstanding here. Outstanding status is shown in red and cleared status in green. The sidebar shows a count of outstanding checks next to Checks.
+The Checks workspace is view-only aside from that status change. Staff can search and open a check, and can mark **outstanding** checks as **cleared**. They cannot add checks or delete them from this directory, and a cleared check cannot be moved back to outstanding here. Outstanding status is shown in red and cleared status in green. Checks is not listed in the sidebar. Payments are cleared through Activity and reconciliation in **Pending Financial Activity**, whose sidebar entry shows the combined count of outstanding checks, Zelle, deposit, and credit card payments.
 
 **Check number vs internal reference:** The UI always labels this **Check number**. On the backend that value is `paymentReference` (legacy `checkNumber` still dual-read/written). The portal normalizes it to `checkNumber` for UI/code. Keep it as a **string** so leading zeros are preserved when it carries into generated checks. `refNumber` is the **internal** transaction reference only — never use it as the paper check number.
 
@@ -320,7 +321,7 @@ Each check stores:
 
 ### Zelle, Deposits, and Credit Cards (clearing directories)
 
-These Accounting directories mirror Checks for invoice payments made by Zelle, bank deposit, or credit card: outstanding payments do not change the invoice balance until marked **cleared**. Each method has its own sidebar page with search, view, and multi-select **Mark cleared**.
+These Accounting directories mirror Checks for invoice payments made by Zelle, bank deposit, or credit card: outstanding payments do not change the invoice balance until marked **cleared**. Each method retains its own directory with search, view, and multi-select **Mark cleared**. The portal uses Activity and reconciliation in **Pending Financial Activity** for clearing payments; that view does not link to the directories.
 
 **API:** `/v1/zelle-payments`, `/v1/deposits`, `/v1/credit-card-payments` — same outstanding/cleared lifecycle and endpoints as `/v1/checks` (list, search, detail, create, update/clear, delete). Each method has its own role permissions (list, view, create, update, delete) on resources `zelle_payment`, `deposit`, and `credit_card_payment`; they are independent of check grants.
 
@@ -528,14 +529,55 @@ Driver/supervisor combined assignments and singleton lead-role behavior remain
 supported. Deploy with the API supervisor contract change; legacy role data must
 be migrated before switching clients.
 
-### Automatic daily closeouts and pending financial activity
+### Transaction-triggered closeouts and pending financial activity
 
-Daily closeout scheduling lives in the API CLI (`daily-income end-of-day`) and cron. Each tenant can opt in through the financial activity workspace; settings include company defaults and API-supported branch overrides for timezone, currency and rate. Scheduling infrastructure must be installed before activation.
+Scheduled midnight closeouts are retired. The portal no longer exposes automation settings or requests the automation endpoint. The replacement is a transaction-triggered, server-clock closeout workflow: the user chooses currency and exchange rate when today’s cuadre is required. Backend implementation and portal integration are pending confirmation of the endpoint, payload, permissions and response contract; see `docs/transaction-triggered-closeouts.md`. Removing portal settings does not disable an already deployed API cron job.
 
 New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Posted transactions cannot be edited/deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
 
 Pending Financial Activity lists unresolved amounts across all dates with server-side filters and pagination. Collection, employee cash handover, receiving-employee verification, expenses and payment clearing remain separate from daily accounting totals. Method-specific clearing directories retain their update permissions. Financial activity has dedicated view/update permissions; generic reversals additionally require journal-create permission. Reconciliation events preserve the original period and invoice payments are applied/reversed transactionally.
 
-The portal exposes no manual create, open, reopen or close actions for daily accounting periods, including invoice and delivery payment flows. Those flows query the server-selected current closeout; a missing period shows a refresh/support message. Occurrence dates do not determine period membership. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections, and require `canCreateFinancialAdjustment` in addition to the existing journal/reconciliation grants.
+**TODO — Pending Financial Activity summaries and aggregation:** Add total income, total expenses, and net income for all matching records across every page, with filtered and selected-record scopes and grouping by employee, branch, or payment method. This requires a documented backend aggregation contract using the same permission and company scope as the list. Keep currencies separate and define transaction classification and whether totals represent original transaction or outstanding amounts. Do not substitute current-page totals or download the full directory. Deferred pending backend support; the shared portal table loader is implemented independently.
 
-The supplied `api-docs.json` snapshot still lacks the new automation, current-period, financial-activity and reversal endpoint schemas. Its workflow descriptions have been updated from the accounting requirements; regenerate those endpoint definitions from the backend export before claiming full OpenAPI parity.
+The current portal still queries the server-selected current closeout for invoice and delivery payment flows and blocks creation when it is missing. The replacement must respond to a backend-detected transaction date mismatch: the backend closes old closeouts and requests setup of the new one; the frontend prompts for currency and exchange rate and then continues the pending transaction. There are no standalone manual create, open, close, or reopen actions for cuadres. Until the backend contract is available, this replacement is not wired and the existing block remains. Occurrence dates do not determine period membership. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections, and require `canCreateFinancialAdjustment` in addition to the existing journal/reconciliation grants.
+
+The supplied `api-docs.json` snapshot lacks the transaction-triggered rollover, current-period, financial-activity and reversal endpoint schemas. Regenerate those endpoint definitions from the backend export before claiming full OpenAPI parity; do not restore the retired automation contract.
+
+
+### Portal alignment status (2026-10-26)
+
+The closeout workspace defaults to the server-selected current closeout and offers a
+Current shortcut alongside historical date navigation. Open status is checked
+against that current record, without browser-clock period expiration. Current mode
+uses the existing current query; a history query only runs for a selected date.
+Customer edit conflicts already use the duplicate-customer error presentation;
+route and invoice uniqueness remain server-enforced, with mutation failures shown
+without clearing the form.
+
+Backend changes reported in this update replace the older proposed rollover
+semantics: explicit creation of today's closeout closes older open periods, using
+the server date and branch timezone. Scheduled/manual closing and reopening are
+retired. Only RD prompts for currency/rate; other branches use USD at 1. The local
+OpenAPI export still lacks the confirmed recovery error and creation response.
+Transaction recovery, RD-only setup, and retry integration remain pending that
+contract; do not infer new wire fields or retry a possibly successful transaction.
+
+
+### Add transaction starts the current closeout
+
+Daily Income's Add transaction action is available with a selected branch and
+journal-create/closeout-view permissions even when no closeout is open. The action
+refreshes the server-selected current closeout. If missing (null or HTTP 404) or
+closed, it requires `canCreateIncomeStatement` and posts to the documented
+`POST /income-statements` endpoint with branch, currency, and rate only. No browser
+or historical date is sent. RD/DR/DO branches show currency/rate setup; others use
+USD at 1. Successful creation continues into transaction entry on desktop or
+mobile using the returned closeout. Setup failures preserve the currency/rate
+inputs and allow retry. Other lookup errors never trigger creation. Rapid clicks
+are serialized, and changed company/user/branch context prevents continuation.
+
+This implements setup **before transaction entry**. Recovery of a draft rejected
+at submission time (for example after midnight) still requires the confirmed
+`CLOSEOUT_REQUIRED` response contract; this action does not automatically retry a
+journal mutation or reopen a closed period. Backend creation must enforce the
+reported server-date/timezone, stale-period closure, and concurrency invariants.

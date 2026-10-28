@@ -79,7 +79,8 @@ type ApiRoute = {
   date?: string;
   tripNumber?: number;
   branch?: ApiBranchRef | null;
-  vehicle?: ApiRef | null;
+  /** Legacy crew rows may carry their branch only on a stored vehicle. */
+  vehicle?: Pick<ApiRef, "branch"> | null;
   employees?: ApiEmployeeRef[];
   employeeGroup?: ApiEmployeeGroupRef | null;
   active?: boolean;
@@ -112,16 +113,6 @@ function readUserName(user: unknown): string {
     return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
   }
   return "";
-}
-
-function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
-  const ref = raw ?? {};
-  const branch = String(ref.branch ?? "").trim();
-  return {
-    id: String(ref.id ?? "").trim(),
-    name: String(ref.name ?? "").trim(),
-    ...(branch ? { branch } : {}),
-  };
 }
 
 function normalizeCrewRole(raw: unknown): RouteCrewRole {
@@ -177,10 +168,10 @@ export function normalizeApiRoute(raw: unknown): Route | null {
   const id = String(item.id ?? "").trim();
   if (!id) return null;
 
-  const vehicle = normalizeVehicleRef(item.vehicle);
+  const legacyBranchCode = String(item.vehicle?.branch ?? "").trim();
   const branch =
     normalizeBranchRef(item.branch) ??
-    (vehicle.branch ? { id: 0, code: vehicle.branch } : null);
+    (legacyBranchCode ? { id: 0, code: legacyBranchCode } : null);
 
   return {
     ...captureApiTableFields(raw, ROUTE_API_TABLE_FIELDS),
@@ -190,7 +181,6 @@ export function normalizeApiRoute(raw: unknown): Route | null {
     date: String(item.date ?? "").trim(),
     tripNumber: Number(item.tripNumber ?? 0),
     branch,
-    vehicle,
     employees: normalizeRouteEmployees(item),
     active: item.active !== false,
     createdAt: String(item.createdAt ?? "").trim(),

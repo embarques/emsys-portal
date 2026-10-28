@@ -38,8 +38,8 @@ export function toDopAmount(usd: number, rate: number | undefined): number | und
   return Math.round(usd * rate * 100) / 100;
 }
 
-/** Province is the receiver address `state`; the API orders ties by invoice, then barcode. */
-export const DEFAULT_ASSIGNED_DELIVERY_SORT = "receiver.address.state:asc";
+/** Default delivery order is the receiver city; sorting stays on the server. */
+export const DEFAULT_ASSIGNED_DELIVERY_SORT = "receiver.address.city:asc";
 
 export function formatDeliveryAddress(receiver: DeliveryReceiver | null): string {
   if (!receiver) return "";

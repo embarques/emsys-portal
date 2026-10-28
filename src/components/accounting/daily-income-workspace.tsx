@@ -5,6 +5,8 @@ import { readApiUserUsername } from "@/lib/table/api-table-fields";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronUp, Edit, Loader2, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
 
+import { TransactionCloseoutSetup } from "@/components/accounting/transaction-closeout-setup";
+import { useStartTransaction } from "@/lib/accounting/daily-income/use-start-transaction";
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomePrintDialog, type DailyIncomePrintSelection } from "@/components/accounting/daily-income-print-dialog";
 import { DailyIncomeTransactionViewSheet } from "@/components/accounting/daily-income-transaction-view-sheet";
@@ -36,6 +38,7 @@ import {
   useDailyIncomeJournals,
   useDeleteDailyIncomeJournal,
   useIncomeStatement,
+  useCurrentIncomeStatement,
   useIncomeStatementSummaryTotals,
   useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
@@ -43,7 +46,7 @@ import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
-import type { DailyIncomeJournal, DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatement } from "@/lib/accounting/daily-income/types";
 import {
   dailyIncomeCurrencyDescription,
   formatDailyIncomeMoney,
@@ -70,14 +73,6 @@ import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 import { buildPaymentReceiptRequest, canPrintPaymentReceipt } from "@/lib/accounting/daily-income/print-payment-receipt";
-
-function today() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function transactionTitle(row: DailyIncomeJournal, fallback: string) {
   return (row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? row.refNumber) || fallback;
@@ -350,14 +345,12 @@ function DailyIncomeMobileTransactionRow({
 }
 
 export function DailyIncomeWorkspace() {
- const [closeoutNow,setCloseoutNow]=useState(()=>Date.now());
- useEffect(()=>{const timer=setInterval(()=>setCloseoutNow(Date.now()),30000);return()=>clearInterval(timer);},[]);
   const { t } = useTranslation();
   const feedback = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const [branchCode, setBranchCode] = useState("");
   const [requestedBranchId, setRequestedBranchId] = useState<number | null>(null);
-  const [date, setDate] = useState(today());
+  const [requestedDate, setDate] = useState("");
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -385,7 +378,12 @@ export function DailyIncomeWorkspace() {
     if (nextBranchCode) setBranchCode(nextBranchCode);
   }, [branchCode, branches, requestedBranchId]);
   const selectedBranch = branches.find((branch) => branch.code === branchCode);
-  const statementQuery = useIncomeStatement(selectedBranch?.id ?? 0, date);
+  const currentStatementQuery = useCurrentIncomeStatement(selectedBranch?.id ?? 0);
+  const transactionStatement = currentStatementQuery.data ?? null;
+  const historicalStatementQuery = useIncomeStatement(selectedBranch?.id ?? 0, requestedDate);
+  const statementQuery = requestedDate ? historicalStatementQuery : currentStatementQuery;
+  const currentDate = currentStatementQuery.data?.date.slice(0, 10) ?? "";
+  const date = requestedDate || currentDate;
   const statement = statementQuery.data ?? null;
   const summaryTotalsQuery = useIncomeStatementSummaryTotals(statement?.id ?? 0);
   const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: pageLimit, query: deferredQuery });
@@ -442,7 +440,7 @@ export function DailyIncomeWorkspace() {
   }
 
   const selectedJournal = rows.find((row) => selectedIds.includes(row.id));
-  const statementOpen = statement?.status === "OPEN" && (statement.periodEnd ? closeoutNow < new Date(statement.periodEnd).getTime() && closeoutNow >= new Date(statement.periodStart ?? statement.date).getTime() : statement.date === today());
+  const startTransaction = useStartTransaction(selectedBranch, openAddTransactionForm);
 
   const stats = useMemo((): StatCardItem[] => {
     const summary = summaryTotalsQuery.data;
@@ -484,7 +482,8 @@ export function DailyIncomeWorkspace() {
   ], [displayCurrency, t]);
   const columnLayout = useApiTableColumns("daily-income-v3", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
   function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
-    if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
+    const saveStatement = editingJournal ? statement : transactionStatement;
+    if (!saveStatement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
     if (
       journalForForm &&
@@ -496,8 +495,8 @@ export function DailyIncomeWorkspace() {
       return Promise.resolve();
     }
     return (editingJournal
-      ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values, options })
-      : createJournal.mutateAsync({ statement, values, options })
+      ? updateJournal.mutateAsync({ id: editingJournal.id, statement: saveStatement, values, options })
+      : createJournal.mutateAsync({ statement: saveStatement, values, options })
     )
       .then((journal) => {
         if (editingJournal) {
@@ -563,14 +562,15 @@ export function DailyIncomeWorkspace() {
     }
   }
 
-  function openAddTransactionForm() {
-    if (!statement) return;
+  function openAddTransactionForm(nextStatement: DailyIncomeStatement) {
+    setDate("");
+    setPage(1);
     if (isDesktopTabs) {
       openFormTab({
         feature: "daily-income-transactions",
         baseHref: "/accounting/daily-income",
         mode: "add",
-        entityId: String(statement.id),
+        entityId: String(nextStatement.id),
         label: t("accounting.dailyIncome.actions.addTransaction"),
       });
       return;
@@ -603,6 +603,8 @@ export function DailyIncomeWorkspace() {
   }
 
   return <div className="overflow-x-hidden">
+    {startTransaction.error && !startTransaction.setupOpen && <p role="alert" className="mb-4 text-sm text-destructive">{startTransaction.error}</p>}
+    {startTransaction.setupOpen && <TransactionCloseoutSetup pending={startTransaction.isPending} error={startTransaction.error} onSubmit={(values) => void startTransaction.start(values)} onCancel={startTransaction.cancel} />}
     <div className="space-y-5 md:hidden">
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4">
@@ -659,6 +661,7 @@ export function DailyIncomeWorkspace() {
               value={branchCode}
               onValueChange={(next) => {
                 setBranchCode(next);
+                setDate("");
                 setPage(1);
               }}
               options={branches.map((branch) => ({
@@ -673,7 +676,7 @@ export function DailyIncomeWorkspace() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="daily-date-mobile">{t("accounting.dailyIncome.filters.date")}</Label>
-            <CloseoutDateNavigation id="daily-date-mobile" date={date} today={today()} onChange={(next) => { setDate(next); setPage(1); }} />
+            <CloseoutDateNavigation id="daily-date-mobile" date={date} today={currentDate} onCurrent={() => { setDate(""); setPage(1); }} onChange={(next) => { setDate(next); setPage(1); }} />
           </div>
         </div>
       </div>
@@ -694,15 +697,14 @@ export function DailyIncomeWorkspace() {
         </div>
       )}
 
+      <div className="grid gap-3">
+        <Button className="h-12 rounded-xl text-base" onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}>
+          <Plus className="size-5" />
+          {t("accounting.dailyIncome.actions.addTransaction")}
+        </Button>
+      </div>
       {statement ? (
         <div className="space-y-4">
-          <div className="grid gap-3">
-            <Button className="h-12 rounded-xl text-base" onClick={openAddTransactionForm} disabled={!statementOpen}>
-              <Plus className="size-5" />
-              {t("accounting.dailyIncome.actions.addTransaction")}
-            </Button>
-          </div>
-
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-2xl font-bold tracking-normal">{t("accounting.dailyIncome.transactions.title")}</h2>
@@ -791,6 +793,7 @@ export function DailyIncomeWorkspace() {
             value={branchCode}
             onValueChange={(next) => {
               setBranchCode(next);
+              setDate("");
               setPage(1);
             }}
             options={branches.map((branch) => ({
@@ -804,7 +807,7 @@ export function DailyIncomeWorkspace() {
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
-          <CloseoutDateNavigation id="daily-date" date={date} today={today()} onChange={(next) => { setDate(next); setPage(1); }} />
+          <CloseoutDateNavigation id="daily-date" date={date} today={currentDate} onCurrent={() => { setDate(""); setPage(1); }} onChange={(next) => { setDate(next); setPage(1); }} />
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label>{t("accounting.dailyIncome.filters.status")}</Label>
@@ -830,9 +833,9 @@ export function DailyIncomeWorkspace() {
 
     <OpenCloseoutsPanel key={selectedBranch?.id ?? 0} branchId={selectedBranch?.id ?? 0} date={date} onReview={(next) => { setDate(next); setPage(1); }} />
 
-    {statement ? <>
-    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={openAddTransactionForm} disabled={!statementOpen}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
+    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
 
+    {statement ? <>
     <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={buildToolbarSearchSummary({ isFiltered: Boolean(deferredQuery.trim()), query: deferredQuery, isSearchPending: query !== deferredQuery, matched: total, catalogTotal: total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isLoading, catalogLoading: journalsQuery.isLoading }, t)} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")} />} /></CardHeader>
       {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title={t("accounting.dailyIncome.transactions.loadingTitle")} description={t("accounting.dailyIncome.transactions.loadingDescription")} columns={[t("accounting.dailyIncome.columns.date"), t("accounting.dailyIncome.columns.accountInvoice"), t("accounting.dailyIncome.columns.assignedTo"), t("accounting.dailyIncome.columns.type"), t("accounting.dailyIncome.columns.reference"), t("accounting.dailyIncome.columns.amount")]} /> : <>
         <TableSelectionToolbar
@@ -873,7 +876,7 @@ export function DailyIncomeWorkspace() {
       isPending={generateIncomeReportMutation.isPending}
       onConfirm={handlePrintReport}
     />
-    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} statementBranchId={statement?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} statementBranchId={statement?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
+    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
     <DailyIncomeTransactionViewSheet
       journal={viewJournal}
       currency={displayCurrency}

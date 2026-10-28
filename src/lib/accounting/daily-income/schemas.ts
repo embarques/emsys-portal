@@ -50,22 +50,6 @@ export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementS
   });
 }
 
-function hasJournalAssignee(values: { employeeId?: number; routeId?: string }) {
-  return Boolean(values.employeeId) || Boolean(values.routeId?.trim());
-}
-
-function addAssigneeRequiredIssue(
-  context: z.RefinementCtx,
-  message: string,
-  source?: "employee" | "route",
-) {
-  context.addIssue({
-    code: "custom",
-    path: source === "route" ? ["routeId"] : ["employeeId"],
-    message,
-  });
-}
-
 export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchemaMessages) {
   return z
     .object({
@@ -176,9 +160,6 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
             message: messages.supplierRequired,
           });
         }
-        if (values.inventoryDirection === "dispatched" && !hasJournalAssignee(values)) {
-          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
-        }
         return;
       }
 
@@ -225,9 +206,6 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (values.transactionType === "INITIAL-PAYMENT") {
-        if (!hasJournalAssignee(values)) {
-          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
-        }
         if (!values.invoiceNumber?.trim() && !values.autoGenerateInvoiceNumber) {
           context.addIssue({ code: "custom", path: ["invoiceNumber"], message: messages.invoiceRequired });
         }
@@ -262,9 +240,6 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (values.transactionType === "PAYMENT") {
-        if (!hasJournalAssignee(values)) {
-          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
-        }
         if (!values.invoiceId) {
           context.addIssue({ code: "custom", path: ["invoiceId"], message: messages.invoiceRequired });
         }
@@ -283,10 +258,6 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
           });
         }
         return;
-      }
-
-      if (!hasJournalAssignee(values)) {
-        addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
       }
 
       const invoiceRelated = ["DISCOUNT", "SURCHARGE"].includes(values.transactionType);

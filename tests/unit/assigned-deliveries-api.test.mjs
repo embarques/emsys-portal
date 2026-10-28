@@ -59,7 +59,7 @@ function createClient() {
   };
 }
 
-test("unfiltered list requests the assigned-barcodes endpoint sorted by province", async () => {
+test("unfiltered list requests the assigned-barcodes endpoint sorted by city", async () => {
   const client = createClient();
   const { fetchAssignedDeliveryBarcodesPage } = loadFeature("src/lib/deliveries/api/assigned-deliveries-api.ts", client);
   const { DEFAULT_ASSIGNED_DELIVERY_SORT } = loadFeature("src/lib/deliveries/types.ts", client);
@@ -68,7 +68,7 @@ test("unfiltered list requests the assigned-barcodes endpoint sorted by province
   assert.equal(client.calls.length, 1);
   assert.equal(client.calls[0].method, "GET");
   assert.match(client.calls[0].url, /^\/deliveries\/assigned-barcodes\?/);
-  assert.match(decodeURIComponent(client.calls[0].url), /sort=receiver\.address\.state:asc/);
+  assert.match(decodeURIComponent(client.calls[0].url), /sort=receiver\.address\.city:asc/);
   assert.equal(client.calls[0].config.signal, controller.signal);
   assert.equal(result.total, 1);
   const [item] = result.items;

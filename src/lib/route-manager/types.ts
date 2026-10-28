@@ -147,8 +147,6 @@ export type Route = ApiTableRecord & {
   date: string;
   tripNumber: number;
   branch: RouteBranchRef | null;
-  /** Present on older API rows; route crews no longer store a vehicle. */
-  vehicle: RouteVehicleRef;
   employees: RouteEmployeeRef[];
   active: boolean;
   createdAt: string;
@@ -261,8 +259,8 @@ export function crewFromRouteGroup(
   });
 }
 
-export function getRouteBranchCode(route: Pick<Route, "branch" | "vehicle">): string {
-  return route.branch?.code?.trim() || route.vehicle.branch?.trim() || "";
+export function getRouteBranchCode(route: Pick<Route, "branch">): string {
+  return route.branch?.code?.trim() || "";
 }
 
 export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormValues {
@@ -281,14 +279,13 @@ export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormV
 }
 
 export function routeToFormValues(assignment: Route): RouteFormValues {
-  const fallbackCode = assignment.vehicle.branch?.trim() ?? "";
   return {
     id: assignment.id,
     routeId: assignment.routeId,
     name: assignment.name,
     branch: assignment.branch?.code.trim()
       ? { ...assignment.branch }
-      : { id: 0, code: fallbackCode, name: "" },
+      : createEmptyRouteBranchRef(),
     employees: assignment.employees.map((employee) => ({
       id: employee.id,
       name: employee.name,

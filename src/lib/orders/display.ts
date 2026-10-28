@@ -21,7 +21,7 @@ import {
   type PickupComment,
 } from "./types";
 
-type RouteLabelSource = Pick<Route, "name" | "date" | "vehicle">;
+type RouteLabelSource = Pick<Route, "name" | "date">;
 
 export function getOrderBranchLabel(branch: Order["branch"]): string {
   return branch.name.trim() || getBranchLabel(branch.code);
@@ -103,7 +103,7 @@ export function getRouteLabel(
 ): string {
   if (!routeId) return "—";
   if (!assignment) return routeId;
-  return `${assignment.name} · ${formatOrderDate(assignment.date)} · ${assignment.vehicle.name || assignment.vehicle.id}`;
+  return `${assignment.name} · ${formatOrderDate(assignment.date)}`;
 }
 
 export function formatOrderRoute(

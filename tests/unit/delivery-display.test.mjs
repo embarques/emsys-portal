@@ -71,3 +71,18 @@ test("an unavailable route rate displays a dash rather than zero",()=>{
  for(const value of [undefined,NaN,Infinity,0,-1])assert.equal(formatDeliveryRate(value),"—");
  assert.match(formatDeliveryRate(61.25),/^61[.,]25$/);
 });
+
+test("deliveries default to city sorting and render city rather than province in the list", () => {
+ const {DEFAULT_ASSIGNED_DELIVERY_SORT}=loadComponent("src/lib/deliveries/types.ts");
+ assert.equal(DEFAULT_ASSIGNED_DELIVERY_SORT,"receiver.address.city:asc");
+ const original=row.receiver;
+ row.receiver={...original,city:"CITY ONLY",province:"PROVINCE ONLY"};
+ try {
+  const {DeliveriesWorkspace}=loadComponent("src/components/deliveries/deliveries-workspace.tsx");
+  const html=renderToStaticMarkup(React.createElement(DeliveriesWorkspace));
+  assert.match(html,/>CITY ONLY<\/td>/);
+  assert.match(html,/>CITY ONLY<\/h3>/);
+  assert.doesNotMatch(html,/>PROVINCE ONLY<\/td>/);
+  for(const sort of ["receiver.address.city:desc","receiver.address.state:asc","invoice.number:asc","number:asc"]) assert.ok(html.includes(`value="${sort}"`));
+ } finally {row.receiver=original;}
+});
