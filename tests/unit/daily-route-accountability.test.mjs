@@ -96,6 +96,29 @@ test("inventory dispatch sends joint holders and route attribution, never a jour
     employees: [{ id: 1, name: "Ana" }, { id: 2, name: "Ben" }],
   });
   assert.equal("dispatchedTo" in sent, false);
+  assert.equal("autoReconcile" in sent, false);
+});
+
+test("auto-reconcile is sent only for dispatched inventory with a quantity", async () => {
+  const bodies = [];
+  const api = loadFeature("src/lib/accounting/daily-income/api.ts", {
+    post: async (_url, body) => { bodies.push(body); return { success: true, data: { id: "journal-3" } }; },
+  });
+  const dispatched = {
+    transactionType: "INVENTORY", inventoryDirection: "dispatched", inventoryItemId: "box", inventoryItemName: "Box",
+    inventoryQuantity: 5, inventoryUnitPrice: 2, inventoryTotal: 10, amount: 10, refNumber: "", description: "",
+    inventoryHolderEmployees: [{ id: 1, name: "Ana" }], autoReconcile: true,
+  };
+  await api.createDailyIncomeJournal(statement, dispatched);
+  await api.createDailyIncomeJournal(statement, { ...dispatched, inventoryDirection: "received", inventorySupplierId: "sup-1" });
+  await api.createDailyIncomeJournal(statement, { ...dispatched, inventoryQuantity: 0 });
+  await api.createDailyIncomeJournal(statement, { transactionType: "PAYMENT", amount: 20, invoiceId: "inv-1", paymentMethodName: "CASH", refNumber: "", description: "", employeeId: 1, autoReconcile: true });
+  assert.deepEqual(bodies.map((body) => body.autoReconcile ?? false), [true, false, false, false]);
+
+  const { isAutoReconcileEligible, AUTO_RECONCILE_PERMISSION } = loadFeature("src/lib/accounting/daily-income/auto-reconcile.ts");
+  assert.deepEqual(AUTO_RECONCILE_PERMISSION, { name: "canReconcileInventoryDispatch", resourceType: "inventory_dispatch" });
+  assert.equal(isAutoReconcileEligible(dispatched), true);
+  assert.equal(isAutoReconcileEligible({ ...dispatched, transactionType: "SALES" }), false);
 });
 
 test("validation requires a route supervisor and at least one inventory holder", () => {

@@ -6,6 +6,7 @@ import { PackageCheck, Plus } from "lucide-react";
 import { InventoryDocumentCommandDialog, type InventoryDocumentCommand } from "@/components/inventory/inventory-document-command-dialog";
 import { InventoryDocumentMobileList } from "@/components/inventory/inventory-document-mobile-list";
 import { InventoryDocumentMobileRow } from "@/components/inventory/inventory-document-mobile-row";
+import { InventoryConfirmationDialog } from "@/components/inventory/inventory-confirmation-dialog";
 import { InventoryReceiptForm } from "@/components/inventory/inventory-receipt-form";
 import { InventoryReceiptViewSheet } from "@/components/inventory/inventory-receipt-view-sheet";
 import { InventoryDocumentStatusBadge } from "@/components/inventory/inventory-status-badge";
@@ -47,6 +48,7 @@ import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCancelReceipt,
+  useConfirmReceipt,
   useCreateReceipt,
   useInventoryHolders,
   useInventoryItems,
@@ -54,8 +56,10 @@ import {
   useInventoryReceipts,
   useInventorySuppliers,
   usePostReceipt,
+  useRejectReceipt,
   useUpdateReceipt,
 } from "@/lib/inventory/hooks/use-inventory";
+import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import {
   receiptToFormValues,
   sumLineQuantities,
@@ -84,6 +88,8 @@ export function InventoryReceiptsWorkspace() {
   const updateReceipt = useUpdateReceipt();
   const postReceipt = usePostReceipt();
   const cancelReceipt = useCancelReceipt();
+  const confirmReceipt = useConfirmReceipt();
+  const rejectReceipt = useRejectReceipt();
   const canCreate = hasPermission(PERMISSIONS.inventoryReceiptsCreate.name, PERMISSIONS.inventoryReceiptsCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.inventoryReceiptsUpdate.name, PERMISSIONS.inventoryReceiptsUpdate.resourceType);
 
@@ -94,6 +100,7 @@ export function InventoryReceiptsWorkspace() {
   const [editingReceipt, setEditingReceipt] = useState<InventoryReceipt | null>(null);
   const [viewReceipt, setViewReceipt] = useState<InventoryReceipt | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ command: InventoryDocumentCommand; receipt: InventoryReceipt } | null>(null);
+  const [confirmationTarget, setConfirmationTarget] = useState<{ action: ConfirmationActionOption; receipt: InventoryReceipt } | null>(null);
 
   const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -149,6 +156,7 @@ export function InventoryReceiptsWorkspace() {
       ? toErrorMessage(error)
       : null;
   const commandPending = postReceipt.isPending || cancelReceipt.isPending;
+  const confirmationPending = confirmReceipt.isPending || rejectReceipt.isPending;
   const editingReceiptValues = useMemo(() => (editingReceipt ? receiptToFormValues(editingReceipt) : undefined), [editingReceipt]);
 
   function openAddForm() {
@@ -197,6 +205,24 @@ export function InventoryReceiptsWorkspace() {
         notifySuccess(t("inventory.toasts.receiptCancelled"));
       }
       setCommandTarget(null);
+      setViewReceipt(null);
+    } catch (mutationError) {
+      notifyError(toErrorMessage(mutationError));
+    }
+  }
+
+  async function submitConfirmation(action: ConfirmationActionOption, text: string) {
+    if (!confirmationTarget) return;
+    const command = { ref: confirmationTarget.receipt, party: action.party, text };
+    try {
+      if (action.kind === "confirm") {
+        await confirmReceipt.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.confirmed"));
+      } else {
+        await rejectReceipt.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.rejected"));
+      }
+      setConfirmationTarget(null);
       setViewReceipt(null);
     } catch (mutationError) {
       notifyError(toErrorMessage(mutationError));
@@ -372,11 +398,25 @@ export function InventoryReceiptsWorkspace() {
         suppliers={suppliers}
         holders={holders}
         open={Boolean(viewReceipt)}
-        isBusy={commandPending}
+        isBusy={commandPending || confirmationPending}
         onOpenChange={(open) => !open && setViewReceipt(null)}
         onEdit={canUpdate ? openEditForm : undefined}
         onPost={canUpdate ? (receipt) => setCommandTarget({ command: "post", receipt }) : undefined}
         onCancelDraft={canUpdate ? (receipt) => setCommandTarget({ command: "cancel", receipt }) : undefined}
+        onConfirmationAction={(receipt, action) => setConfirmationTarget({ receipt, action })}
+      />
+
+      <InventoryConfirmationDialog
+        action={confirmationTarget?.action ?? null}
+        subject="receipt"
+        description={confirmationTarget
+          ? t(confirmationTarget.action.kind === "reject" ? "inventory.confirmations.receipt.reject" : "inventory.confirmations.receipt.WAREHOUSE", {
+              name: getSupplierNameById(confirmationTarget.receipt.supplierId, suppliers),
+            })
+          : ""}
+        isPending={confirmationPending}
+        onSubmit={submitConfirmation}
+        onOpenChange={(open) => !open && setConfirmationTarget(null)}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>

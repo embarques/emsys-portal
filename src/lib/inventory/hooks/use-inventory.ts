@@ -7,6 +7,8 @@ import type { PaginatedResult } from "@/lib/api/types";
 import {
   cancelInventoryDispatch,
   cancelInventoryReceipt,
+  confirmInventoryDispatch,
+  confirmInventoryReceipt,
   createAndPostInventoryAdjustment,
   createInventoryDispatch,
   createInventoryHolder,
@@ -24,12 +26,15 @@ import {
   fetchRouteCrews,
   postInventoryDispatch,
   postInventoryReceipt,
+  rejectInventoryDispatch,
+  rejectInventoryReceipt,
   setInventoryItemsActive,
   setInventorySuppliersActive,
   updateInventoryDispatch,
   updateInventoryItem,
   updateInventoryReceipt,
   updateInventorySupplier,
+  type InventoryConfirmationCommand,
   type InventoryVersionedRef,
 } from "@/lib/inventory/api/inventory-api";
 import { queryKeys } from "@/lib/query/query-keys";
@@ -80,10 +85,14 @@ export function useInventoryStockBalances(params: InventoryListParams = DEFAULT_
   });
 }
 
-/** Company-wide available / quarantined / reserved quantity per item. */
+/** Company-wide available / quarantined / reserved quantity per item, split into warehouse and pending custody. */
 export function useInventoryStockSummary() {
   const stockQuery = useInventoryStockBalances();
-  const summaries = useMemo(() => summarizeItemStock(stockQuery.data ?? []), [stockQuery.data]);
+  const holdersQuery = useInventoryHolders();
+  const summaries = useMemo(
+    () => summarizeItemStock(stockQuery.data ?? [], new Map((holdersQuery.data ?? []).map((holder) => [holder.id, holder.type]))),
+    [holdersQuery.data, stockQuery.data],
+  );
   return { ...stockQuery, summaries };
 }
 
@@ -230,6 +239,22 @@ export function usePostReceipt() {
 
 export function useCancelReceipt() {
   return useInventoryMutation((receipt: InventoryVersionedRef) => cancelInventoryReceipt(receipt));
+}
+
+export function useConfirmReceipt() {
+  return useInventoryMutation((command: InventoryConfirmationCommand) => confirmInventoryReceipt(command));
+}
+
+export function useRejectReceipt() {
+  return useInventoryMutation((command: InventoryConfirmationCommand) => rejectInventoryReceipt(command));
+}
+
+export function useConfirmDispatch() {
+  return useInventoryMutation((command: InventoryConfirmationCommand) => confirmInventoryDispatch(command));
+}
+
+export function useRejectDispatch() {
+  return useInventoryMutation((command: InventoryConfirmationCommand) => rejectInventoryDispatch(command));
 }
 
 export function useCreateDispatch() {

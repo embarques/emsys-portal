@@ -62,6 +62,9 @@ export const PERMISSIONS = {
   inventoryDispatchesDelete: { name: "canDeleteInventoryDispatch", resourceType: "inventory_dispatch" },
   /** Records how dispatched supplies were accounted for. Deliberately has no legacy alias. */
   inventoryDispatchesReconcile: { name: "canReconcileInventoryDispatch", resourceType: "inventory_dispatch" },
+  /** Warehouse / custodian side of receipt, dispatch and reconciliation confirmations. No legacy aliases. */
+  inventoryConfirmWarehouse: { name: "canConfirmInventoryWarehouse", resourceType: "inventory_confirmation" },
+  inventoryConfirmCustodian: { name: "canConfirmInventoryCustodian", resourceType: "inventory_confirmation" },
   inventorySuppliersList: { name: "canListInventorySupplier", resourceType: "inventory_supplier" },
   inventorySuppliersView: { name: "canViewInventorySupplier", resourceType: "inventory_supplier" },
   inventorySuppliersCreate: { name: "canCreateInventorySupplier", resourceType: "inventory_supplier" },

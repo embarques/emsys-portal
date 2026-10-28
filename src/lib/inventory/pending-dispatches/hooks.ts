@@ -6,7 +6,14 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
-import { fetchDispatchReconciliations, fetchPendingDispatches, reconcileDispatch } from "./api";
+import {
+  confirmReconciliation,
+  fetchDispatchReconciliations,
+  fetchPendingDispatches,
+  reconcileDispatch,
+  rejectReconciliation,
+  type ReconciliationConfirmationCommand,
+} from "./api";
 import type { DispatchReconciliationInput, PendingDispatchFilters } from "./types";
 
 export function usePendingDispatches(filters: PendingDispatchFilters, page: number) {
@@ -30,15 +37,33 @@ export function useDispatchReconciliations(dispatchId: string | null) {
   });
 }
 
+/** Submitting only moves quantities to "awaiting confirmation"; stock and income change on the final confirmation. */
 export function useReconcileDispatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ dispatchId, input }: { dispatchId: string; input: DispatchReconciliationInput }) =>
       reconcileDispatch(dispatchId, input),
-    // Returns, dispositions and sales change holder and warehouse stock as well as the pending list.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
+  });
+}
+
+function useReconciliationConfirmationMutation(mutationFn: (command: ReconciliationConfirmationCommand) => Promise<unknown>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    // The final confirmation moves stock and posts income journals, cash handovers and clearing records.
     onSuccess: () => Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
       queryClient.invalidateQueries({ queryKey: ["inventory-workflow"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
     ]),
   });
+}
+
+export function useConfirmReconciliation() {
+  return useReconciliationConfirmationMutation(confirmReconciliation);
+}
+
+export function useRejectReconciliation() {
+  return useReconciliationConfirmationMutation(rejectReconciliation);
 }

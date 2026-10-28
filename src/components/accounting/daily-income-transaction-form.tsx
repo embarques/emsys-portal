@@ -493,6 +493,7 @@ export function DailyIncomeTransactionForm({
             dailyRoutes={dailyRoutes}
             statementDate={statementDate}
             statementBranchId={statementBranchId}
+            allowAutoReconcile={allowAutoClear}
             errors={errors}
             setValue={setValue}
             watch={watch}

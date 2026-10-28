@@ -115,7 +115,11 @@
     "reserved": "Reserved",
     "totalCost": "Total cost",
     "totalQuantity": "Total quantity",
-    "warehouse": "Warehouse"
+    "warehouse": "Warehouse",
+    "inWarehouse": "In warehouse",
+    "pendingCustody": "Pending",
+    "submittedAt": "Submitted at",
+    "submittedBy": "Submitted by"
   },
   "search": {
     "items": "Search inventory…",
@@ -425,12 +429,13 @@
       "addressesDetailsHint": "Search for the supplier’s address or enter it manually.",
       "phonesDetailsHint": "Add contact numbers and use the star to choose the main number.",
       "emailsDetailsHint": "Add email addresses for supplier correspondence.",
-      "receiptDraftHint": "Saved as a draft. Stock and valuation change only when the receipt is posted.",
-      "dispatchDraftHint": "Saved as a draft. Posting moves stock from the warehouse to the destination holder; dispatches record no revenue.",
+      "receiptDraftHint": "Saved as a draft. Stock and valuation change only after the receipt is posted and the warehouse confirms it.",
+      "dispatchDraftHint": "Saved as a draft. After posting, the warehouse and the employee / route confirm the handoff and stock moves to the destination holder; dispatches record no revenue.",
       "holderHint": "Stock always belongs to a persistent holder: a warehouse, employee, vehicle or route crew.",
       "priceHint": "Used as the suggested price for supply sales.",
       "adjustmentHint": "Corrects a holder's ledger balance. The adjustment is posted immediately and cannot be edited.",
-      "readOnlyPosted": "Posted and cancelled documents are read-only. Record a correcting document instead."
+      "readOnlyPosted": "Posted and cancelled documents are read-only. Record a correcting document instead.",
+      "readOnlyPending": "Documents awaiting confirmation are read-only. Reject to return it to draft."
     },
     "addHolderTitle": "Add inventory holder",
     "editReceiptTitle": "Edit draft receipt",
@@ -520,8 +525,52 @@
   },
   "documentStatuses": {
     "DRAFT": "Draft",
+    "PENDING_CONFIRMATION": "Pending confirmation",
     "POSTED": "Posted",
     "CANCELLED": "Cancelled"
+  },
+  "confirmations": {
+    "title": "Confirmations",
+    "parties": {
+      "WAREHOUSE": "Warehouse",
+      "CUSTODIAN": "Employee / route"
+    },
+    "awaiting": "Awaiting confirmation",
+    "confirmedBy": "{{name}} · {{date}}",
+    "lastRejection": "Last rejection",
+    "rejectedBy": "{{party}} · {{name}} · {{date}}",
+    "confirmAs": "Confirm as {{party}}",
+    "reject": "Reject",
+    "notes": "Notes (optional)",
+    "reason": "Reason",
+    "reasonRequired": "Enter why you are rejecting.",
+    "confirm": "Confirm",
+    "saving": "Saving…",
+    "confirmed": "Confirmation saved.",
+    "rejected": "Rejected.",
+    "confirmTitle": "Confirm as {{party}}",
+    "rejectTitle": "Reject {{subject}}?",
+    "receipt": {
+      "WAREHOUSE": "Confirm that the warehouse received the supplies from {{name}}. Stock and valuation increase when you confirm.",
+      "reject": "The receipt from {{name}} returns to draft so the lines can be corrected."
+    },
+    "dispatch": {
+      "WAREHOUSE": "Confirm that the warehouse released these supplies to {{name}}.",
+      "CUSTODIAN": "Confirm that {{name}} received these supplies.",
+      "reject": "The dispatch to {{name}} returns to draft and its reserved stock is released.",
+      "final": "Stock moves when both the warehouse and the employee / route have confirmed."
+    },
+    "reconciliation": {
+      "WAREHOUSE": "Confirm what came back to the warehouse: returned and damaged supplies and the money handed in.",
+      "CUSTODIAN": "Confirm the sold, lost, missing and stolen quantities.",
+      "reject": "The reconciliation is rejected and its quantities become outstanding again.",
+      "final": "Stock and income are updated when both the warehouse and the employee / route have confirmed."
+    },
+    "subjects": {
+      "receipt": "receipt",
+      "dispatch": "dispatch",
+      "reconciliation": "reconciliation"
+    }
   },
   "holderTypes": {
     "WAREHOUSE": "Warehouse",
@@ -536,13 +585,13 @@
   "commands": {
     "receipt": {
       "postTitle": "Post receipt?",
-      "postDescription": "Posting the receipt from {{name}} adds its lines to warehouse stock and valuation. Posted receipts cannot be edited.",
+      "postDescription": "Posting sends the receipt from {{name}} to the warehouse for confirmation. Stock and valuation increase when the warehouse confirms. Pending and posted receipts cannot be edited.",
       "cancelTitle": "Cancel draft receipt?",
       "cancelDescription": "The draft receipt from {{name}} will be cancelled. Stock is not affected."
     },
     "dispatch": {
       "postTitle": "Post dispatch?",
-      "postDescription": "Posting moves the dispatched lines from the source warehouse to {{name}}. Posted dispatches cannot be edited.",
+      "postDescription": "Posting reserves the lines in the source warehouse for {{name}}. Stock moves when both the warehouse and the employee / route confirm the handoff. Pending and posted dispatches cannot be edited.",
       "cancelTitle": "Cancel draft dispatch?",
       "cancelDescription": "The draft dispatch to {{name}} will be cancelled. Stock is not affected."
     }
@@ -568,9 +617,9 @@
   "toasts": {
     "deactivated": "{{count}} record(s) deactivated.",
     "reactivated": "{{count}} record(s) reactivated.",
-    "receiptPosted": "Receipt posted. Stock updated.",
+    "receiptPosted": "Receipt posted. Waiting for warehouse confirmation.",
     "receiptCancelled": "Draft receipt cancelled.",
-    "dispatchPosted": "Dispatch posted. Stock moved to the destination holder.",
+    "dispatchPosted": "Dispatch posted. Waiting for the warehouse and the employee / route to confirm the handoff.",
     "dispatchCancelled": "Draft dispatch cancelled."
   },
   "selection": {

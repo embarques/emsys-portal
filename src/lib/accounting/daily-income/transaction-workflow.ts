@@ -16,11 +16,12 @@ export const TRANSACTION_FIELD_IDS: Partial<Record<keyof DailyIncomeJournalValue
   inventoryDirection: "journal-inventory-direction", inventorySupplierId: "journal-inventory-supplier",
   inventoryItemId: "journal-inventory-item", inventoryQuantity: "journal-inventory-quantity",
   inventoryUnitPrice: "journal-inventory-unit-price", inventoryTotal: "journal-inventory-total",
+  autoReconcile: "journal-auto-reconcile",
 };
 
 export const TRANSACTION_STEP_FIELDS: Record<Exclude<TransactionFormStep, "review">, (keyof DailyIncomeJournalValues)[]> = {
   assignment: ["employeeId", "routeId", "supervisorId", "inventoryDirection", "inventorySupplierId", "inventoryHolderVehicleId", "inventoryHolderEmployees"],
-  amounts: ["invoiceId", "invoiceNumber", "invoiceCost", "invoiceDiscount", "amount", "accountId", "sourceAccountId", "includeSender", "senderId", "includeReceiver", "receiverId", "inventoryItemId", "inventoryQuantity", "inventoryUnitPrice", "inventoryTotal"],
+  amounts: ["invoiceId", "invoiceNumber", "invoiceCost", "invoiceDiscount", "amount", "accountId", "sourceAccountId", "includeSender", "senderId", "includeReceiver", "receiverId", "inventoryItemId", "inventoryQuantity", "inventoryUnitPrice", "inventoryTotal", "autoReconcile"],
   payment: ["paymentMethodId", "paymentMethodName", "paymentAccountId", "paymentAccountType", "checkNumber", "autoClear", "externalReferenceNumber", "refNumberMode", "refNumber", "description"],
 };
 

@@ -258,6 +258,20 @@ export function InventoryItemsWorkspace() {
       renderCell: (item) => getItemStockSummary(item.id, summaries).available,
     },
     {
+      id: "inWarehouse",
+      label: t("inventory.columns.inWarehouse"),
+      sortable: false,
+      cellClassName: "tabular-nums",
+      renderCell: (item) => getItemStockSummary(item.id, summaries).inWarehouse,
+    },
+    {
+      id: "pendingCustody",
+      label: t("inventory.columns.pendingCustody"),
+      sortable: false,
+      cellClassName: "tabular-nums",
+      renderCell: (item) => getItemStockSummary(item.id, summaries).pendingCustody,
+    },
+    {
       id: "quarantined",
       label: t("inventory.columns.quarantined"),
       sortable: false,
