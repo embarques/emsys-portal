@@ -14,7 +14,6 @@ import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
 import { DeliveryViewSheet } from "@/components/deliveries/delivery-view-sheet";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
 import { fetchAssignedDeliveryBarcodesPage } from "@/lib/deliveries/api/assigned-deliveries-api";
@@ -39,11 +38,11 @@ function rowKey(row: AssignedDeliveryBarcode) {
 export function DeliveriesWorkspace() {
   const { t } = useTranslation();
   const access = useDeliveryAccess();
+  const [sort,setSort] = useState(DEFAULT_ASSIGNED_DELIVERY_SORT);
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
-  const [sort, setSort] = useState(DEFAULT_ASSIGNED_DELIVERY_SORT);
   const table = useCatalogTable({
     fields: ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS,
     keepPrevious: false,
@@ -65,7 +64,7 @@ export function DeliveriesWorkspace() {
     t("deliveries.columns.senderPhones"),
     t("deliveries.columns.receiverName"),
     t("deliveries.columns.address"),
-    t("deliveries.view.city"),
+    t("deliveries.columns.city"),
     t("deliveries.columns.phones"),
   ];
 
@@ -88,22 +87,16 @@ export function DeliveriesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
+          <label className="flex items-center gap-2 text-sm">{t("deliveries.sort.label")}
+            <select className="h-10 rounded-md border bg-background px-3" value={sort} onChange={event => { setSort(event.target.value); table.pagination.setPage(1); }}>
+              {[ ["receiver.address.city", "city"], ["number", "barcode"], ["invoice.number", "invoice"], ["invoice.balance", "invoiceBalance"], ["name", "name"], ["container.name", "container"], ["sender.name", "senderName"], ["receiver.name", "receiverName"] ].flatMap(([field,key]) => ["asc","desc"].map(direction => <option key={`${field}:${direction}`} value={`${field}:${direction}`}>{t(`deliveries.columns.${key}`)} · {t(`deliveries.sort.${direction}`)}</option>))}
+            </select>
+          </label>
           <CatalogTableToolbar
             state={table}
             presetScope="deliveries"
             searchPlaceholder={t("deliveries.searchPlaceholder")}
           />
-          <div className="flex items-center gap-2">
-            <Label htmlFor="delivery-sort">{t("deliveries.sort.label")}</Label>
-            <select id="delivery-sort" className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={sort}
-              onChange={(event) => { setSort(event.target.value); table.pagination.setPage(1); }}>
-              <option value="receiver.address.city:asc">{t("deliveries.sort.cityAsc")}</option>
-              <option value="receiver.address.city:desc">{t("deliveries.sort.cityDesc")}</option>
-              <option value="receiver.address.state:asc">{t("deliveries.columns.province")}</option>
-              <option value="invoice.number:asc">{t("deliveries.columns.invoice")}</option>
-              <option value="number:asc">{t("deliveries.columns.barcode")}</option>
-            </select>
-          </div>
         </CardHeader>
 
         {!access.canList ? (

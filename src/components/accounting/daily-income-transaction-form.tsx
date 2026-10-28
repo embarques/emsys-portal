@@ -32,6 +32,9 @@ import { useTranslation } from "@/lib/i18n";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { cn } from "@/lib/utils";
 
+import { CloseoutRolloverDialog } from "./closeout-rollover-dialog";
+import { isCloseoutRequired } from "@/lib/accounting/daily-income/closeout-required";
+
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
@@ -103,6 +106,7 @@ export function DailyIncomeTransactionForm({
 }: Props) {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
+  const [pendingCloseoutValues, setPendingCloseoutValues] = useState<DailyIncomeJournalValues | null>(null);
   const [stepError, setStepError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -365,6 +369,14 @@ export function DailyIncomeTransactionForm({
     setValue("sourceAccountType", account.type);
   }, [expenseSourceAccounts, setValue, sourceAccountDefaultCleared, sourceAccountId, type]);
 
+  async function submitEntry(values: DailyIncomeJournalValues) {
+    try {
+      await onSubmit(values);
+    } catch (error) {
+      if (!isCloseoutRequired(error)) throw error;
+      setPendingCloseoutValues(structuredClone(values));
+    }
+  }
   const submitTransaction = handleSubmit(async (values) => {
     if (values.transactionType === "INVENTORY") {
       const item = values.inventoryItemName?.trim() || values.inventoryItemId || "";
@@ -383,11 +395,11 @@ export function DailyIncomeTransactionForm({
         { ...values, description: values.description.trim() || autoDescription },
         { accounts, paymentMethods },
       );
-      await onSubmit(finalized);
+      await submitEntry(finalized);
       await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
       return;
     }
-    await onSubmit(values);
+    await submitEntry(values);
   }, (validationErrors) => {
     const field = Object.keys(validationErrors)[0];
     if (field) {
@@ -397,6 +409,7 @@ export function DailyIncomeTransactionForm({
   });
 
   return (
+    <>
     <form
       id={formId}
       ref={formRef}
@@ -747,5 +760,17 @@ export function DailyIncomeTransactionForm({
         )}
       </FormBody>
     </form>
+    {pendingCloseoutValues != null ? (
+      <CloseoutRolloverDialog
+        open
+        onOpenChange={(open) => { if (!open) setPendingCloseoutValues(null); }}
+        onReady={async () => {
+          const values = pendingCloseoutValues;
+          setPendingCloseoutValues(null);
+          if (values) await submitEntry(values);
+        }}
+      />
+    ) : null}
+    </>
   );
 }

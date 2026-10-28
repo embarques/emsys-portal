@@ -54,6 +54,7 @@ export function useStartTransaction(branch: TransactionBranch | undefined, onRea
       await Promise.all([
         client.invalidateQueries({ queryKey: [...queryKeys.accounting.all, "income-statement", String(branch.id)] }),
         client.invalidateQueries({ queryKey: [...queryKeys.accounting.all, "open-income-statements", branch.id] }),
+        client.invalidateQueries({ queryKey: [...queryKeys.accounting.all, "closeout-calendar", companyId] }),
         ...(current ? [client.invalidateQueries({ queryKey: queryKeys.accounting.incomeStatementById(current.id) })] : []),
       ]);
       return statement;

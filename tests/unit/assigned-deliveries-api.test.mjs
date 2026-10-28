@@ -82,17 +82,17 @@ test("unfiltered list requests the assigned-barcodes endpoint sorted by city", a
   });
 });
 
-test("search posts the bar query across barcode, invoice, item, receiver, province, and container", async () => {
+test("search posts the bar query across barcode, invoice, item, receiver, city, and container", async () => {
   const client = createClient();
   const { fetchAssignedDeliveryBarcodesPage } = loadFeature("src/lib/deliveries/api/assigned-deliveries-api.ts", client);
-  await fetchAssignedDeliveryBarcodesPage({ page: 2, limit: 25, sort: "receiver.address.state:asc", query: "santiago" });
+  await fetchAssignedDeliveryBarcodesPage({ page: 2, limit: 25, sort: "receiver.address.city:asc", query: "santiago" });
   assert.equal(client.calls[0].method, "POST");
   assert.match(client.calls[0].url, /^\/deliveries\/assigned-barcodes\/search\?/);
   const fields = JSON.stringify(client.calls[0].body);
-  for (const field of ["number", "invoice.number", "name", "receiver.name", "receiver.address.state", "container.name"]) {
+  for (const field of ["number", "invoice.number", "name", "receiver.name", "receiver.address.city", "container.name"]) {
     assert.ok(fields.includes(`"${field}"`), field);
   }
-  assert.ok(fields.includes("receiver.address.state"));
+  assert.ok(fields.includes("receiver.address.city"));
 });
 
 test("address and phone helpers format the receiver columns", () => {

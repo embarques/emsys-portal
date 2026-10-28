@@ -1,7 +1,4 @@
 {
-  "noCity": "No city",
-  "sort": {"label": "Sort by", "cityAsc": "City (A–Z)", "cityDesc": "City (Z–A)"},
-
   "title": "Deliveries",
   "description": "All pending delivery barcodes, ordered by city by default.",
   "searchPlaceholder": "Search barcode, invoice, item, receiver, province, or container…",
@@ -23,7 +20,8 @@
     "receiverName": "Receiver name",
     "address": "Address",
     "province": "Province",
-    "phones": "Receiver phones"
+    "phones": "Receiver phones",
+    "city": "City"
   },
   "view": {
     "title": "View delivery",
@@ -203,5 +201,11 @@
         "creditCard": "Credit card"
       }
     }
+  },
+  "noCity": "No city",
+  "sort": {
+    "label": "Sort by",
+    "asc": "Ascending",
+    "desc": "Descending"
   }
 }

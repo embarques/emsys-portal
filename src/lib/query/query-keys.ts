@@ -25,6 +25,10 @@ import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOpera
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
 export const queryKeys = {
+  sessionVersion: {
+    all: ["session-version"] as const,
+    detail: (companyId: string | null) => ["session-version", companyId] as const,
+  },
   employeeTitles: {
     all: ["employee-titles"] as const,
     list: () => ["employee-titles", "list"] as const,

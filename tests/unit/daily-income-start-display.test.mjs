@@ -14,6 +14,7 @@ function render(canStart=true){
  const special={
   useTranslation:()=>({t:(key)=>key}),
   useStartTransaction:()=>({canStart,isPending:false,setupOpen:false,error:null,start:()=>{}}),
+  useAuth:()=>({hasPermission:()=>false}),
   useFeedback:()=>({}),
   useWorkspaceTabs:()=>({isDesktopTabs:true}),
   useTablePageSize:()=>({page:1,pageSize:20,pageLimit:20,rememberTotal:()=>{}}),

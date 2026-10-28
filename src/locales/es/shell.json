@@ -81,7 +81,11 @@
     "settings": "Configuración",
     "notifications": "Notificaciones",
     "changePassword": "Cambiar contraseña",
-    "logOut": "Cerrar sesión"
+    "logOut": "Cerrar sesión",
+    "about": "Acerca de",
+    "portalVersion": "Versión del portal",
+    "apiVersion": "Versión de la API",
+    "versionUnavailable": "No disponible"
   },
   "theme": {
     "change": "Cambiar tema",

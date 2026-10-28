@@ -1,7 +1,4 @@
 {
-  "noCity": "Sin ciudad",
-  "sort": {"label": "Ordenar por", "cityAsc": "Ciudad (A–Z)", "cityDesc": "Ciudad (Z–A)"},
-
   "title": "Entregas",
   "description": "Todos los códigos de entrega pendientes, ordenados por ciudad de forma predeterminada.",
   "searchPlaceholder": "Buscar código, factura, artículo, destinatario, provincia o contenedor…",
@@ -23,7 +20,8 @@
     "receiverName": "Nombre del destinatario",
     "address": "Dirección",
     "province": "Provincia",
-    "phones": "Teléfonos del destinatario"
+    "phones": "Teléfonos del destinatario",
+    "city": "Ciudad"
   },
   "view": {
     "title": "Ver entrega",
@@ -203,5 +201,11 @@
         "creditCard": "Tarjeta de crédito"
       }
     }
+  },
+  "noCity": "Sin ciudad",
+  "sort": {
+    "label": "Ordenar por",
+    "asc": "Ascendente",
+    "desc": "Descendente"
   }
 }

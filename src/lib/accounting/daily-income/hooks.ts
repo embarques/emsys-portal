@@ -8,12 +8,13 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
   createDailyIncomeJournal,
+  createIncomeStatement,
   deleteDailyIncomeJournal,
   fetchAccountingPaymentMethods,
   fetchDailyIncomeJournal,
   fetchDailyIncomeJournals,
   fetchDailyIncomeInvoiceRegistration,
-  fetchIncomeStatement,fetchCurrentIncomeStatement,
+  fetchIncomeStatement,fetchCurrentIncomeStatement, fetchCloseoutCalendar,
   fetchOpenIncomeStatements,
   fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
@@ -24,6 +25,7 @@ import type {
   DailyIncomeJournalListParams,
   DailyIncomeJournalValues,
   DailyIncomeStatement,
+  DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useAppSelector } from "@/lib/store/hooks";
@@ -143,6 +145,14 @@ function invalidateDailyIncome(queryClient: ReturnType<typeof useQueryClient>) {
   return queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
 }
 
+export function useCreateIncomeStatement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (values: DailyIncomeStatementValues) => createIncomeStatement(values),
+    onSuccess: () => invalidateAccounting(queryClient),
+  });
+}
+
 export function useCreateDailyIncomeJournal(sessionId?: string) {
   const queryClient = useQueryClient();
   const { companyId, user } = useAuth();
@@ -181,9 +191,16 @@ export function useSessionDailyIncomeTransactions(statementId: number, sessionId
     filters: { mutationKey: ["daily-income-created", companyId, user?.uid, ...(sessionId ? [sessionId] : [])], status: "success", exact: true },
     select: (mutation) => {
       const variables = mutation.state.variables as { statement: DailyIncomeStatement; values: DailyIncomeJournalValues };
-      return { journal: mutation.state.data as DailyIncomeJournal, values: variables.values, statementId: variables.statement.id, savedAt: mutation.state.submittedAt };
+      const journal = mutation.state.data as DailyIncomeJournal;
+      return { journal, values: variables.values, statementId: journal?.incomeStatementId || variables.statement.id, savedAt: mutation.state.submittedAt };
     },
   }).filter((entry) => companyId && user?.uid && entry.journal && entry.statementId === statementId).sort((a, b) => b.savedAt - a.savedAt);
 }
 
 export function useCurrentIncomeStatement(branchId:number){const {companyId,hasPermission}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0 && hasPermission("canViewIncomeStatement", "income_statement"));return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:({signal})=>fetchCurrentIncomeStatement(branchId,signal),enabled,refetchInterval:30000});}
+
+export function useCloseoutCalendar(branchId: number) {
+ const {companyId,user,hasPermission} = useAuth();
+ const enabled = useAccountingQueryEnabled(branchId > 0 && hasPermission("canViewIncomeStatement", "income_statement"));
+ return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"closeout-calendar",companyId,user?.uid,branchId],queryFn:({signal})=>fetchCloseoutCalendar(branchId,signal),enabled,refetchInterval:30000});
+}

@@ -83,6 +83,6 @@ test("deliveries default to city sorting and render city rather than province in
   assert.match(html,/>CITY ONLY<\/td>/);
   assert.match(html,/>CITY ONLY<\/h3>/);
   assert.doesNotMatch(html,/>PROVINCE ONLY<\/td>/);
-  for(const sort of ["receiver.address.city:desc","receiver.address.state:asc","invoice.number:asc","number:asc"]) assert.ok(html.includes(`value="${sort}"`));
+  for(const sort of ["receiver.address.city:desc","invoice.number:asc","number:asc"]) assert.ok(html.includes(`value="${sort}"`));
  } finally {row.receiver=original;}
 });

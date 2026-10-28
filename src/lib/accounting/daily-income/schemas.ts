@@ -43,10 +43,10 @@ export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementS
   return z.object({
     date: z.string().min(1, messages.dateRequired),
     branchId: z.number().positive(messages.branchRequired),
-    branchCode: z.string().min(1, messages.branchRequired),
+    branchCode: z.string(),
     branchName: z.string().min(1, messages.branchRequired),
     currency: z.string().min(1, messages.currencyRequired),
-    rate: z.number().min(0, messages.rateNonNegative),
+    rate: z.number().positive(messages.rateNonNegative),
   });
 }
 

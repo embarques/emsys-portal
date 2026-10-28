@@ -651,7 +651,10 @@
       "placeholders": {
         "selectBranch": "Seleccionar sucursal",
         "searchBranches": "Buscar sucursales…"
-      }
+      },
+      "rolloverHelp": "Elija la moneda y la tasa para hoy. Los demás cuadres abiertos de su sucursal se cerrarán automáticamente. El servidor establece la fecha.",
+      "rolloverHelpDefault": "Abra el cuadre de hoy. Los demás cuadres abiertos de su sucursal se cerrarán automáticamente. El servidor establece la fecha.",
+      "createPermission": "Se requiere permiso para crear cuadres."
     },
     "delete": {
       "title": "¿Eliminar transacción?",
@@ -1016,7 +1019,7 @@
       "REVERSED": "Asiento de reversión"
     },
     "unknownCurrency": "Sin especificar",
-    "noCurrentCloseout": "Se requiere un cuadre de hoy antes de registrar transacciones para esta ubicación.",
+    "noCurrentCloseout": "No hay un cuadre abierto para hoy. Abra el cuadre de hoy en Ingresos diarios y actualice. Solo RD solicita moneda y tasa de cambio.",
     "occurrenceDate": "Fecha real de la transacción",
     "refresh": "Actualizar",
     "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos."

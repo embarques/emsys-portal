@@ -220,7 +220,7 @@ This section helps coordinate the day-to-day movement of employees and merchandi
 
 **Complete delivery balance gate:** The current completion wizard starts with Review balance, then items, photos, signature, and finish. The balance is shown in USD and in DOP at the barcode's daily route `rate`. The API invoice balance must be exactly zero before proceeding and is rechecked before completion. Cash payments apply immediately; check, Zelle, deposit and card payments count only once **cleared**. Users with delivery view (`canViewDelivery`), Cuadre create (`canCreateIncomeStatement`) and journal create (`canCreateJournal`) may post a PAYMENT on today's open Cuadre for their branch (opening today's Cuadre at the route rate when none exists), or refresh after another user settles the invoice. When outstanding non-cash payments for the invoice cover the balance, the same users may **override** the clearance requirement after accepting that they are liable for the payment if it does not clear; the override is rechecked before completion. Payments persist independently of delivery. Atomic backend enforcement is a required follow-up; see the zero-balance section of `docs/delivery-completion-api-contract.md`.
 
-Portal route: `/deliveries` (Routes sidebar, `canViewDelivery`). The driver's work list: barcodes on DR daily routes whose crew includes the signed-in user's employee (`employee.user.id`), excluding barcodes already delivered. Columns: barcode, invoice, invoice balance (open balance of the barcode's invoice, from the list row's `invoice.balance`; blank when the API omits it; with its DOP equivalent at the row's daily route `rate`), name (merchandise), container, status, sender name and sender phones (from the list row's `sender`; blank when the API omits it), receiver name, address + apartment, city (receiver address `city`), receiver phones, and **Deliver**. Default server sort is city ascending; the sort selector also offers city descending, province, invoice number, and barcode. The status is always chosen by the driver; there is no preselected default. On phones the table becomes cards grouped under city headings when sorting by city, with tap-to-call phone buttons and a full-width Deliver button. This keeps Barcodes strictly for barcode management — Barcodes has no Deliver or signing actions.
+Portal route: `/deliveries` (Routes sidebar, `canViewDelivery`). The driver's work list: barcodes on DR daily routes whose crew includes the signed-in user's employee (`employee.user.id`), excluding barcodes already delivered. Columns: barcode, invoice, invoice balance (open balance of the barcode's invoice, from the list row's `invoice.balance`; blank when the API omits it; with its DOP equivalent at the row's daily route `rate`), name (merchandise), container, status, sender name and sender phones (from the list row's `sender`; blank when the API omits it), receiver name, address + apartment, city (receiver address `city`), receiver phones, and **Deliver**. Default server sort is city ascending; the sort selector offers ascending or descending order by city, barcode, invoice, invoice balance, item name, container, sender name, or receiver name. The status is always chosen by the driver; there is no preselected default. On phones the table becomes cards grouped under city headings when sorting by city, with tap-to-call phone buttons and a full-width Deliver button. This keeps Barcodes strictly for barcode management — Barcodes has no Deliver or signing actions.
 
 The list comes from `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`; the API owns the "assigned to me" and "pending" scoping and joins the invoice receiver. The portal never resolves the current employee or filters assignment client-side. Contract: `docs/delivery-completion-api-contract.md`.
 
@@ -276,6 +276,22 @@ It includes:
 The goal is to maintain a centralized financial history of the company's operations.
 
 ### Daily Income
+
+Closeouts use the server clock and configured location timezone. Transactions
+require the latest closeout to be open and dated today; 409 CLOSEOUT_REQUIRED
+reasons are NONE_EXISTS, STALE_OPEN_CLOSEOUT, and LATEST_CLOSED. The transaction
+attempt never closes rows. Only RD prompts for currency/rate; other branches
+use USD/rate 1. POST income-statements with only those two fields. The server owns location/date, preserves today's
+existing open row, atomically closes all other open location rows, and returns
+or creates today's row. Manual close/reopen/edit/delete and automatic cron
+rollover are retired. Calendar navigation uses the context endpoint's server
+date/timezone and current/previous metadata. Treat businessDate as a date label.
+Draft transaction values survive the recovery dialog, and successful entries
+are attributed to the closeout ID actually returned by the server.
+
+When a financial transaction omits both assignee families, the API defaults to
+the creator's linked employee, if present. An explicit employee/daily route is
+preserved. Inventory dispatch continues to require an explicit stock recipient.
 
 Daily Income is used to manage and record the company's daily incoming transactions.
 
@@ -531,7 +547,7 @@ be migrated before switching clients.
 
 ### Transaction-triggered closeouts and pending financial activity
 
-Scheduled midnight closeouts are retired. The portal no longer exposes automation settings or requests the automation endpoint. The replacement is a transaction-triggered, server-clock closeout workflow: the user chooses currency and exchange rate when today’s cuadre is required. Backend implementation and portal integration are pending confirmation of the endpoint, payload, permissions and response contract; see `docs/transaction-triggered-closeouts.md`. Removing portal settings does not disable an already deployed API cron job.
+Scheduled midnight closeouts are retired. The portal no longer exposes automation settings or requests the automation endpoint; closeouts are created explicitly with the server date and branch timezone, either when Add transaction finds no open current closeout or during Daily Income recovery (`CLOSEOUT_REQUIRED`). Only RD (codes RD/DR/DO) asks for currency and exchange rate; other branches use USD/rate 1. See `docs/transaction-triggered-closeouts.md`. Removing portal settings does not disable an already deployed API cron job.
 
 New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Posted transactions cannot be edited/deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
 
@@ -539,7 +555,9 @@ Pending Financial Activity lists unresolved amounts across all dates with server
 
 **TODO — Pending Financial Activity summaries and aggregation:** Add total income, total expenses, and net income for all matching records across every page, with filtered and selected-record scopes and grouping by employee, branch, or payment method. This requires a documented backend aggregation contract using the same permission and company scope as the list. Keep currencies separate and define transaction classification and whether totals represent original transaction or outstanding amounts. Do not substitute current-page totals or download the full directory. Deferred pending backend support; the shared portal table loader is implemented independently.
 
-The current portal still queries the server-selected current closeout for invoice and delivery payment flows and blocks creation when it is missing. The replacement must respond to a backend-detected transaction date mismatch: the backend closes old closeouts and requests setup of the new one; the frontend prompts for currency and exchange rate and then continues the pending transaction. There are no standalone manual create, open, close, or reopen actions for cuadres. Until the backend contract is available, this replacement is not wired and the existing block remains. Occurrence dates do not determine period membership. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections, and require `canCreateFinancialAdjustment` in addition to the existing journal/reconciliation grants.
+Currency and exchange-rate inputs for daily closeout creation appear only for branch code RD. Other branches use USD/rate 1 without asking the user; this also applies to rollover recovery and invoice registration. RD exchange rate remains editable for either USD or DOP.
+
+Invoice and delivery flows query the server-selected current closeout. Missing periods use explicit server-dated creation with RD-only settings; manual closing/reopening remains unavailable. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections and require `canCreateFinancialAdjustment` in addition to existing journal/reconciliation grants. Occurrence dates do not determine period membership.
 
 The supplied `api-docs.json` snapshot lacks the transaction-triggered rollover, current-period, financial-activity and reversal endpoint schemas. Regenerate those endpoint definitions from the backend export before claiming full OpenAPI parity; do not restore the retired automation contract.
 
@@ -558,9 +576,8 @@ Backend changes reported in this update replace the older proposed rollover
 semantics: explicit creation of today's closeout closes older open periods, using
 the server date and branch timezone. Scheduled/manual closing and reopening are
 retired. Only RD prompts for currency/rate; other branches use USD at 1. The local
-OpenAPI export still lacks the confirmed recovery error and creation response.
-Transaction recovery, RD-only setup, and retry integration remain pending that
-contract; do not infer new wire fields or retry a possibly successful transaction.
+OpenAPI export still lacks the recovery error and creation response; do not infer
+new wire fields or retry a possibly successful transaction.
 
 
 ### Add transaction starts the current closeout
@@ -576,8 +593,8 @@ mobile using the returned closeout. Setup failures preserve the currency/rate
 inputs and allow retry. Other lookup errors never trigger creation. Rapid clicks
 are serialized, and changed company/user/branch context prevents continuation.
 
-This implements setup **before transaction entry**. Recovery of a draft rejected
-at submission time (for example after midnight) still requires the confirmed
-`CLOSEOUT_REQUIRED` response contract; this action does not automatically retry a
-journal mutation or reopen a closed period. Backend creation must enforce the
+This implements setup **before transaction entry**. A draft rejected at submission
+time with `CLOSEOUT_REQUIRED` (for example after midnight) is handled separately by
+the closeout rollover dialog; this action does not automatically retry a journal
+mutation or reopen a closed period. Backend creation must enforce the
 reported server-date/timezone, stale-period closure, and concurrency invariants.

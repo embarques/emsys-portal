@@ -651,7 +651,10 @@
       "placeholders": {
         "selectBranch": "Select branch",
         "searchBranches": "Search branches…"
-      }
+      },
+      "rolloverHelp": "Choose currency and exchange rate for today. Other open closeouts at your location will close automatically. The server sets the date.",
+      "rolloverHelpDefault": "Open today’s closeout. Other open closeouts at your location will close automatically. The server sets the date.",
+      "createPermission": "Closeout creation permission is required."
     },
     "delete": {
       "title": "Delete transaction?",
@@ -1016,7 +1019,7 @@
       "REVERSED": "Reversing adjustment"
     },
     "unknownCurrency": "Unspecified",
-    "noCurrentCloseout": "A closeout for today is required before recording transactions for this location.",
+    "noCurrentCloseout": "No open closeout is available for today. Open today’s closeout in Daily Income, then refresh. Only RD requests currency and exchange rate.",
     "occurrenceDate": "Actual transaction date",
     "refresh": "Refresh",
     "postedImmutable": "Posted transactions cannot be edited. Use Pending Financial Activity for reconciliation and eligible adjustments."

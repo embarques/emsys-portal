@@ -38,7 +38,7 @@ export function toDopAmount(usd: number, rate: number | undefined): number | und
   return Math.round(usd * rate * 100) / 100;
 }
 
-/** Default delivery order is the receiver city; sorting stays on the server. */
+/** Default delivery order is the receiver address `city`; the server sorts and orders ties by invoice, then barcode. */
 export const DEFAULT_ASSIGNED_DELIVERY_SORT = "receiver.address.city:asc";
 
 export function formatDeliveryAddress(receiver: DeliveryReceiver | null): string {
