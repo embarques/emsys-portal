@@ -4,6 +4,7 @@ import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
+import { isAutoReconcileEligible } from "@/lib/accounting/daily-income/auto-reconcile";
 import { inventoryHoldersFromValues } from "@/lib/accounting/daily-income/inventory-change";
 import { isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { getTransactionStepLabelKey, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
@@ -46,6 +47,7 @@ export function TransactionReview({ values: v, onEdit }: Props) {
         ["inventory.form.fields.quantity", inventory ? v.inventoryQuantity : undefined],
         ["accounting.dailyIncome.form.fields.unitPrice", inventory ? money(v.inventoryUnitPrice) : undefined],
         ["accounting.dailyIncome.form.fields.total", inventory ? money(v.inventoryTotal) : undefined],
+        ["accounting.dailyIncome.form.fields.autoReconcile", v.autoReconcile && isAutoReconcileEligible(v) ? t("accounting.dailyIncome.form.fields.autoReconcileReviewValue") : undefined],
       ]
     },
     ...(!inventory ? [{

@@ -24,7 +24,7 @@ import type { PendingDispatchFilters, PendingInventoryDispatch } from "@/lib/inv
 const initialFilters: PendingDispatchFilters = { holder: "", from: "", through: "", age: "" };
 const ALL_VALUE = "all";
 const DATE_FILTERS = ["from", "through"] as const;
-const COLUMNS = ["dispatchedAt", "holder", "responsible", "dailyRoute", "items", "dispatched", "outstanding", "age", "actions"] as const;
+const COLUMNS = ["dispatchedAt", "holder", "responsible", "dailyRoute", "items", "dispatched", "awaiting", "outstanding", "age", "actions"] as const;
 const VISIBLE_ITEMS = 2;
 
 export function PendingInventoryDispatchesPanel() {
@@ -73,6 +73,7 @@ export function PendingInventoryDispatchesPanel() {
           <td className="p-3">{row.dailyRoute?.name || "—"}</td>
           <td className="max-w-64 p-3">{itemsSummary(row) || "—"}</td>
           <td className="p-3">{row.dispatchedQuantity}</td>
+          <td className="p-3">{row.awaitingConfirmationQuantity}</td>
           <td className="p-3 font-medium">{row.outstandingQuantity}</td>
           <td className="p-3">{row.ageDays}</td>
           <td className="p-3"><Button variant="outline" onClick={() => setSelection({ companyId, row })}>{text(canReconcile ? "reconcile" : "view")}</Button></td>

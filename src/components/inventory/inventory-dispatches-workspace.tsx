@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Truck } from "lucide-react";
 
+import { InventoryConfirmationDialog } from "@/components/inventory/inventory-confirmation-dialog";
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
 import { InventoryDispatchViewSheet } from "@/components/inventory/inventory-dispatch-view-sheet";
 import { InventoryDocumentCommandDialog, type InventoryDocumentCommand } from "@/components/inventory/inventory-document-command-dialog";
@@ -46,14 +47,17 @@ import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCancelDispatch,
+  useConfirmDispatch,
   useCreateDispatch,
   useInventoryDirectoryPage,
   useInventoryDispatches,
   useInventoryHolders,
   useInventoryItems,
   usePostDispatch,
+  useRejectDispatch,
   useUpdateDispatch,
 } from "@/lib/inventory/hooks/use-inventory";
+import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import {
   dispatchToFormValues,
   sumLineQuantities,
@@ -81,6 +85,8 @@ export function InventoryDispatchesWorkspace() {
   const updateDispatch = useUpdateDispatch();
   const postDispatch = usePostDispatch();
   const cancelDispatch = useCancelDispatch();
+  const confirmDispatch = useConfirmDispatch();
+  const rejectDispatch = useRejectDispatch();
   const canCreate = hasPermission(PERMISSIONS.inventoryDispatchesCreate.name, PERMISSIONS.inventoryDispatchesCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.inventoryDispatchesUpdate.name, PERMISSIONS.inventoryDispatchesUpdate.resourceType);
 
@@ -91,6 +97,7 @@ export function InventoryDispatchesWorkspace() {
   const [editingDispatch, setEditingDispatch] = useState<InventoryDispatch | null>(null);
   const [viewDispatch, setViewDispatch] = useState<InventoryDispatch | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ command: InventoryDocumentCommand; dispatch: InventoryDispatch } | null>(null);
+  const [confirmationTarget, setConfirmationTarget] = useState<{ action: ConfirmationActionOption; dispatch: InventoryDispatch } | null>(null);
 
   const employeeNames = useMemo(
     () => new Map((employeesQuery.data?.items ?? []).map((employee) => [String(employee.id), employee.name])),
@@ -147,6 +154,7 @@ export function InventoryDispatchesWorkspace() {
       ? toErrorMessage(error)
       : null;
   const commandPending = postDispatch.isPending || cancelDispatch.isPending;
+  const confirmationPending = confirmDispatch.isPending || rejectDispatch.isPending;
   const editingDispatchValues = useMemo(() => (editingDispatch ? dispatchToFormValues(editingDispatch) : undefined), [editingDispatch]);
 
   function openAddForm() {
@@ -200,6 +208,26 @@ export function InventoryDispatchesWorkspace() {
       notifyError(toErrorMessage(mutationError));
     }
   }
+
+  async function submitConfirmation(action: ConfirmationActionOption, text: string) {
+    if (!confirmationTarget) return;
+    const command = { ref: confirmationTarget.dispatch, party: action.party, text };
+    try {
+      if (action.kind === "confirm") {
+        await confirmDispatch.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.confirmed"));
+      } else {
+        await rejectDispatch.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.rejected"));
+      }
+      setConfirmationTarget(null);
+      setViewDispatch(null);
+    } catch (mutationError) {
+      notifyError(toErrorMessage(mutationError));
+    }
+  }
+
+  const confirmationLabel = confirmationTarget ? getHolderNameById(confirmationTarget.dispatch.toHolderId, holders) : "";
 
   const columns: DataTableColumn<InventoryDispatch>[] = [
     {
@@ -377,11 +405,26 @@ export function InventoryDispatchesWorkspace() {
         holders={holders}
         employeeName={(employeeId) => employeeNames.get(employeeId) ?? employeeId}
         open={Boolean(viewDispatch)}
-        isBusy={commandPending}
+        isBusy={commandPending || confirmationPending}
         onOpenChange={(open) => !open && setViewDispatch(null)}
         onEdit={canUpdate ? openEditForm : undefined}
         onPost={canUpdate ? (dispatch) => setCommandTarget({ command: "post", dispatch }) : undefined}
         onCancelDraft={canUpdate ? (dispatch) => setCommandTarget({ command: "cancel", dispatch }) : undefined}
+        onConfirmationAction={(dispatch, action) => setConfirmationTarget({ dispatch, action })}
+      />
+
+      <InventoryConfirmationDialog
+        action={confirmationTarget?.action ?? null}
+        subject="dispatch"
+        description={confirmationTarget
+          ? t(confirmationTarget.action.kind === "reject"
+            ? "inventory.confirmations.dispatch.reject"
+            : `inventory.confirmations.dispatch.${confirmationTarget.action.party}`, { name: confirmationLabel })
+          : ""}
+        note={confirmationTarget?.action.kind === "confirm" ? t("inventory.confirmations.dispatch.final") : undefined}
+        isPending={confirmationPending}
+        onSubmit={submitConfirmation}
+        onOpenChange={(open) => !open && setConfirmationTarget(null)}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>

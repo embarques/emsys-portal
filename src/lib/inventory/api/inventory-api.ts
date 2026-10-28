@@ -55,7 +55,9 @@ import {
   isInventoryDocumentStatus,
   isInventoryStockCondition,
   type InventoryAuditFields,
+  type InventoryConfirmationParty,
 } from "@/lib/inventory/types/common";
+import { confirmationIdempotencyKey, readConfirmationState } from "@/lib/inventory/utils/confirmations";
 import type {
   DispatchFormValues,
   InventoryDispatch,
@@ -348,9 +350,12 @@ export function normalizeInventoryHolder(raw: unknown): InventoryHolder | null {
 function readDocumentBase(entry: Record<string, unknown>, id: string) {
   return {
     ...readAudit(entry),
+    ...readConfirmationState(entry),
     id,
     status: isInventoryDocumentStatus(entry.status) ? entry.status : "DRAFT",
     notes: readString(entry.notes),
+    submittedAt: readString(entry.submittedAt),
+    submittedBy: readApiUserUsername(entry.submittedBy),
     postedAt: readString(entry.postedAt),
     postedBy: readApiUserUsername(entry.postedBy),
     correctsSourceId: readString(entry.correctsSourceId),
@@ -503,6 +508,51 @@ async function runDocumentCommand(
   );
   assertMutationSuccess(response, fallbackMessage);
 }
+
+/** Confirms one party of a document awaiting confirmation; the last party applies the stock movement. */
+async function confirmDocument(
+  endpoint: string,
+  kind: string,
+  ref: InventoryVersionedRef,
+  party: InventoryConfirmationParty,
+  notes: string,
+  fallbackMessage: string,
+): Promise<void> {
+  const id = parseInventoryPathId(ref.id);
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    `${endpoint}/${id}/confirm`,
+    { party, notes: notes.trim() },
+    headers({
+      ...inventoryIfMatchHeaders(ref.version),
+      "Idempotency-Key": confirmationIdempotencyKey(kind, ref.id, ref.version, party),
+    }),
+  );
+  assertMutationSuccess(response, fallbackMessage);
+}
+
+/** Returns a document awaiting confirmation to DRAFT with the party's reason. */
+async function rejectDocument(
+  endpoint: string,
+  ref: InventoryVersionedRef,
+  party: InventoryConfirmationParty,
+  reason: string,
+  fallbackMessage: string,
+): Promise<void> {
+  const id = parseInventoryPathId(ref.id);
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    `${endpoint}/${id}/reject`,
+    { party, reason: reason.trim() },
+    headers(inventoryIfMatchHeaders(ref.version)),
+  );
+  assertMutationSuccess(response, fallbackMessage);
+}
+
+export type InventoryConfirmationCommand = {
+  ref: InventoryVersionedRef;
+  party: InventoryConfirmationParty;
+  /** Confirmation notes, or the rejection reason. */
+  text: string;
+};
 
 function listResource<T>(
   endpoint: string,
@@ -710,6 +760,14 @@ export function cancelInventoryReceipt(receipt: InventoryVersionedRef): Promise<
   return runDocumentCommand(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", "cancel", receipt, "Unable to cancel inventory receipt.");
 }
 
+export function confirmInventoryReceipt({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
+  return confirmDocument(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", ref, party, text, "Unable to confirm inventory receipt.");
+}
+
+export function rejectInventoryReceipt({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
+  return rejectDocument(API_ENDPOINTS.INVENTORY_RECEIPTS, ref, party, text, "Unable to reject inventory receipt.");
+}
+
 /* ------------------------------------------------------------ Dispatches */
 
 export function fetchInventoryDispatches(
@@ -765,6 +823,14 @@ export function postInventoryDispatch(dispatch: InventoryVersionedRef): Promise<
 
 export function cancelInventoryDispatch(dispatch: InventoryVersionedRef): Promise<void> {
   return runDocumentCommand(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", "cancel", dispatch, "Unable to cancel inventory dispatch.");
+}
+
+export function confirmInventoryDispatch({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
+  return confirmDocument(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", ref, party, text, "Unable to confirm inventory dispatch.");
+}
+
+export function rejectInventoryDispatch({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
+  return rejectDocument(API_ENDPOINTS.INVENTORY_DISPATCHES, ref, party, text, "Unable to reject inventory dispatch.");
 }
 
 /* ----------------------------------------------------------- Adjustments */

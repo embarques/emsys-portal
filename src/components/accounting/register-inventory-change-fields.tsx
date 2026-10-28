@@ -7,6 +7,7 @@ import type { FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form
 import { FormSection } from "@/components/forms/form-shell";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { InventoryAutoReconcileField } from "@/components/accounting/inventory-auto-reconcile-field";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
@@ -62,6 +63,8 @@ type Props = {
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
   statementBranchId?: number | null;
+  /** Create only, like auto-clear. */
+  allowAutoReconcile?: boolean;
   errors: FieldErrors<DailyIncomeJournalValues>;
   setValue: UseFormSetValue<DailyIncomeJournalValues>;
   watch: UseFormWatch<DailyIncomeJournalValues>;
@@ -87,6 +90,7 @@ export function RegisterInventoryChangeFields({
   dailyRoutes = [],
   statementDate,
   statementBranchId,
+  allowAutoReconcile = false,
   errors,
   setValue,
   watch,
@@ -104,6 +108,7 @@ export function RegisterInventoryChangeFields({
   const quantity = watch("inventoryQuantity");
   const unitPrice = watch("inventoryUnitPrice");
   const total = watch("inventoryTotal");
+  const autoReconcile = watch("autoReconcile");
   const supplierId = watch("inventorySupplierId");
   const supplierName = watch("inventorySupplierName");
   const routeId = watch("routeId");
@@ -591,6 +596,15 @@ export function RegisterInventoryChangeFields({
             <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.inventory.priceHint")}</p>
           </div>
 
+          {allowAutoReconcile ? (
+            <InventoryAutoReconcileField
+              className="sm:col-span-3"
+              inventoryDirection={direction}
+              inventoryQuantity={quantity}
+              checked={Boolean(autoReconcile)}
+              onCheckedChange={(checked) => setValue("autoReconcile", checked, { shouldDirty: true })}
+            />
+          ) : null}
         </div>
       </FormSection>
 

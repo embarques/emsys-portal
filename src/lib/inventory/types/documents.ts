@@ -5,6 +5,7 @@ import { minorToUsdInput } from "@/lib/inventory/utils/money";
 import {
   createInventoryLineKey,
   type InventoryAuditFields,
+  type InventoryConfirmationState,
   type InventoryDocumentStatus,
   type InventoryVersioned,
 } from "./common";
@@ -12,10 +13,14 @@ import {
 /** Fields shared by versioned stock documents (receipts, dispatches). */
 type InventoryDocumentBase = ApiTableRecord &
   InventoryAuditFields &
-  InventoryVersioned & {
+  InventoryVersioned &
+  InventoryConfirmationState & {
     id: string;
     status: InventoryDocumentStatus;
     notes: string;
+    /** When Post submitted the document for confirmation. */
+    submittedAt: string;
+    submittedBy: string;
     postedAt: string;
     postedBy: string;
     /** Set when this document corrects an earlier posted one. */

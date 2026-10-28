@@ -115,7 +115,11 @@
     "reserved": "Reservado",
     "totalCost": "Costo total",
     "totalQuantity": "Cantidad total",
-    "warehouse": "Almacén"
+    "warehouse": "Almacén",
+    "inWarehouse": "En almacén",
+    "pendingCustody": "Pendiente",
+    "submittedAt": "Enviado el",
+    "submittedBy": "Enviado por"
   },
   "search": {
     "items": "Buscar inventario…",
@@ -425,12 +429,13 @@
       "addressesDetailsHint": "Busca la dirección del proveedor o ingrésala manualmente.",
       "phonesDetailsHint": "Agrega teléfonos de contacto y usa la estrella para elegir el principal.",
       "emailsDetailsHint": "Agrega correos para comunicarte con el proveedor.",
-      "receiptDraftHint": "Se guarda como borrador. El inventario y la valoración cambian solo al contabilizar la recepción.",
-      "dispatchDraftHint": "Se guarda como borrador. Al contabilizar, el inventario pasa del almacén al custodio de destino; los despachos no registran ingresos.",
+      "receiptDraftHint": "Se guarda como borrador. El inventario y la valoración cambian solo después de contabilizar la recepción y de que el almacén la confirme.",
+      "dispatchDraftHint": "Se guarda como borrador. Después de contabilizar, el almacén y el empleado / ruta confirman la entrega y el inventario pasa al custodio de destino; los despachos no registran ingresos.",
       "holderHint": "El inventario siempre pertenece a un custodio permanente: un almacén, empleado, vehículo o cuadrilla de ruta.",
       "priceHint": "Se usa como precio sugerido en las ventas de suministros.",
       "adjustmentHint": "Corrige el saldo de un custodio. El ajuste se contabiliza de inmediato y no se puede editar.",
-      "readOnlyPosted": "Los documentos contabilizados o anulados son de solo lectura. Registre un documento de corrección."
+      "readOnlyPosted": "Los documentos contabilizados o anulados son de solo lectura. Registre un documento de corrección.",
+      "readOnlyPending": "Los documentos pendientes de confirmación son de solo lectura. Rechácelo para volver a borrador."
     },
     "addHolderTitle": "Agregar custodio de inventario",
     "editReceiptTitle": "Editar recepción en borrador",
@@ -520,8 +525,52 @@
   },
   "documentStatuses": {
     "DRAFT": "Borrador",
+    "PENDING_CONFIRMATION": "Pendiente de confirmación",
     "POSTED": "Contabilizado",
     "CANCELLED": "Anulado"
+  },
+  "confirmations": {
+    "title": "Confirmaciones",
+    "parties": {
+      "WAREHOUSE": "Almacén",
+      "CUSTODIAN": "Empleado / ruta"
+    },
+    "awaiting": "Pendiente de confirmación",
+    "confirmedBy": "{{name}} · {{date}}",
+    "lastRejection": "Último rechazo",
+    "rejectedBy": "{{party}} · {{name}} · {{date}}",
+    "confirmAs": "Confirmar como {{party}}",
+    "reject": "Rechazar",
+    "notes": "Notas (opcional)",
+    "reason": "Motivo",
+    "reasonRequired": "Indique por qué rechaza.",
+    "confirm": "Confirmar",
+    "saving": "Guardando…",
+    "confirmed": "Confirmación guardada.",
+    "rejected": "Rechazado.",
+    "confirmTitle": "Confirmar como {{party}}",
+    "rejectTitle": "¿Rechazar {{subject}}?",
+    "receipt": {
+      "WAREHOUSE": "Confirme que el almacén recibió los suministros de {{name}}. El inventario y la valoración aumentan al confirmar.",
+      "reject": "La recepción de {{name}} vuelve a borrador para corregir las líneas."
+    },
+    "dispatch": {
+      "WAREHOUSE": "Confirme que el almacén entregó estos suministros a {{name}}.",
+      "CUSTODIAN": "Confirme que {{name}} recibió estos suministros.",
+      "reject": "El despacho para {{name}} vuelve a borrador y se libera el inventario reservado.",
+      "final": "El inventario se mueve cuando el almacén y el empleado / ruta hayan confirmado."
+    },
+    "reconciliation": {
+      "WAREHOUSE": "Confirme lo que regresó al almacén: suministros devueltos y dañados, y el dinero entregado.",
+      "CUSTODIAN": "Confirme las cantidades vendidas, perdidas, faltantes y robadas.",
+      "reject": "La conciliación se rechaza y sus cantidades vuelven a quedar pendientes.",
+      "final": "El inventario y los ingresos se actualizan cuando el almacén y el empleado / ruta hayan confirmado."
+    },
+    "subjects": {
+      "receipt": "la recepción",
+      "dispatch": "el despacho",
+      "reconciliation": "la conciliación"
+    }
   },
   "holderTypes": {
     "WAREHOUSE": "Almacén",
@@ -536,13 +585,13 @@
   "commands": {
     "receipt": {
       "postTitle": "¿Contabilizar recepción?",
-      "postDescription": "Al contabilizar la recepción de {{name}} se suman sus líneas al inventario y la valoración del almacén. Las recepciones contabilizadas no se pueden editar.",
+      "postDescription": "Al contabilizar, la recepción de {{name}} pasa al almacén para su confirmación. El inventario y la valoración aumentan cuando el almacén confirma. Las recepciones pendientes o contabilizadas no se pueden editar.",
       "cancelTitle": "¿Anular la recepción en borrador?",
       "cancelDescription": "Se anulará la recepción en borrador de {{name}}. El inventario no cambia."
     },
     "dispatch": {
       "postTitle": "¿Contabilizar despacho?",
-      "postDescription": "Al contabilizar se mueven las líneas despachadas del almacén de origen a {{name}}. Los despachos contabilizados no se pueden editar.",
+      "postDescription": "Al contabilizar se reservan las líneas en el almacén de origen para {{name}}. El inventario se mueve cuando el almacén y el empleado / ruta confirman la entrega. Los despachos pendientes o contabilizados no se pueden editar.",
       "cancelTitle": "¿Anular el despacho en borrador?",
       "cancelDescription": "Se anulará el despacho en borrador para {{name}}. El inventario no cambia."
     }
@@ -568,9 +617,9 @@
   "toasts": {
     "deactivated": "{{count}} registro(s) desactivado(s).",
     "reactivated": "{{count}} registro(s) reactivado(s).",
-    "receiptPosted": "Recepción contabilizada. Inventario actualizado.",
+    "receiptPosted": "Recepción contabilizada. Pendiente de confirmación del almacén.",
     "receiptCancelled": "Recepción en borrador anulada.",
-    "dispatchPosted": "Despacho contabilizado. El inventario pasó al custodio de destino.",
+    "dispatchPosted": "Despacho contabilizado. Pendiente de que el almacén y el empleado / ruta confirmen la entrega.",
     "dispatchCancelled": "Despacho en borrador anulado."
   },
   "selection": {
