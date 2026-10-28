@@ -985,8 +985,13 @@
   },
   "financialActivity": {
     "loadingDescription": "Cargando la actividad financiera pendiente y los montos pendientes.",
-    "title": "Actividad financiera pendiente",
-    "description": "Cobros, custodia de efectivo y pagos pendientes de todas las fechas.",
+    "title": "Transacciones pendientes",
+    "description": "Cobros, custodia de efectivo, pagos y suministros despachados pendientes de conciliar de todas las fechas.",
+    "tabs": {
+      "label": "Tipos de transacciones pendientes",
+      "financial": "Financieras",
+      "inventory": "Inventario"
+    },
     "employee": "Responsable",
     "branch": "Sucursal",
     "allEmployees": "Todos los empleados",
@@ -1046,7 +1051,81 @@
     "noCurrentCloseout": "No hay un cuadre abierto para hoy. Abra el cuadre de hoy en Ingresos diarios y actualice. Solo RD solicita moneda y tasa de cambio.",
     "occurrenceDate": "Fecha real de la transacción",
     "refresh": "Actualizar",
-    "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos.",
+    "postedImmutable": "Las transacciones registradas no se pueden editar. Use Transacciones pendientes para conciliación y ajustes permitidos.",
     "dailyRoute": "Ruta diaria"
+  },
+  "pendingInventory": {
+    "holder": "Custodio",
+    "allHolders": "Todos los custodios",
+    "selectHolder": "Seleccionar custodio",
+    "searchHolders": "Buscar custodios…",
+    "noHoldersFound": "No se encontraron custodios",
+    "from": "Despachado desde",
+    "through": "Despachado hasta",
+    "age": "Antigüedad mínima (días)",
+    "reset": "Restablecer",
+    "loading": "Cargando despachos pendientes…",
+    "loadingDescription": "Buscando despachos registrados con suministros que aún no se han conciliado.",
+    "empty": "No hay despachos pendientes de conciliar.",
+    "columns": {
+      "dispatchedAt": "Despachado",
+      "holder": "Custodio",
+      "responsible": "Responsable",
+      "dailyRoute": "Ruta diaria",
+      "items": "Artículos pendientes",
+      "dispatched": "Cant. despachada",
+      "outstanding": "Cant. pendiente",
+      "age": "Antigüedad (días)",
+      "actions": "Acciones"
+    },
+    "moreItems": "+{{count}} más",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "reconcile": "Conciliar",
+    "view": "Ver",
+    "outcomes": {
+      "SOLD": "Vendido",
+      "RETURNED": "Devuelto",
+      "DAMAGED": "Dañado",
+      "LOST": "Perdido",
+      "MISSING": "Faltante",
+      "STOLEN": "Robado"
+    },
+    "resolutions": {
+      "QUARANTINE": "Cuarentena",
+      "WRITE_OFF": "Dar de baja"
+    },
+    "dialog": {
+      "title": "Conciliar despacho",
+      "description": "{{holder}} · Despachado {{date}}",
+      "dispatched": "Despachado",
+      "reconciled": "Conciliado",
+      "outstanding": "Pendiente",
+      "history": "Historial de conciliación",
+      "loadingHistory": "Cargando historial de conciliación…",
+      "noHistory": "Aún no se ha conciliado nada de este despacho.",
+      "historyLine": "{{outcome}} {{quantity}} × {{item}}",
+      "occurredAt": "Conciliado el",
+      "notes": "Notas",
+      "lineSummary": "Pendiente {{outstanding}} · Restante {{remaining}}",
+      "returnRemaining": "Marcar restante como devuelto",
+      "revenue": "Ingreso por venta (USD)",
+      "damageResolution": "Suministros dañados",
+      "selectResolution": "Cuarentena o dar de baja",
+      "searchResolutions": "Buscar…",
+      "noResolutions": "No se encontraron opciones",
+      "save": "Guardar conciliación",
+      "saving": "Guardando…",
+      "saved": "Conciliación del despacho guardada.",
+      "readOnly": "Puede ver este despacho, pero no tiene permiso para conciliarlo."
+    },
+    "errors": {
+      "occurredAt": "Indique cuándo ocurrió la conciliación.",
+      "quantity": "Ingrese números enteros de 0 o más.",
+      "exceeds": "Las cantidades suman más que la cantidad pendiente.",
+      "revenue": "Ingrese el ingreso por venta en USD, por ejemplo 120.00.",
+      "resolution": "Elija si los suministros dañados van a cuarentena o se dan de baja.",
+      "nothing": "Ingrese al menos una cantidad para conciliar."
+    }
   }
 }

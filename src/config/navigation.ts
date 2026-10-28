@@ -262,7 +262,7 @@ const accountingGroup: NavigationGroup = {
 };
 
 /**
- * Payment clearing workspaces opened from Pending financial activity.
+ * Payment clearing workspaces opened from Pending Transactions.
  * Not shown in the sidebar, but still used for workspace tab labels and accents.
  */
 export const accountingClearingNavigationItems: NavigationItem[] = [

@@ -77,7 +77,7 @@ Journal responses should return:
   supervisor of existing payments.
 - `inventoryHolders` on inventory journals, in the request shape.
 
-## Pending Financial Activity (`POST /v1/financial-activity/search`)
+## Pending Transactions — Financial tab (`POST /v1/financial-activity/search`)
 
 - Reconciliation operates per **supervisor**: route collections carry the
   supervisor in `employee`, so the existing `employee.id` filter, the payment

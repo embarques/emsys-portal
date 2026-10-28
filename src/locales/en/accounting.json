@@ -985,8 +985,13 @@
   },
   "financialActivity": {
     "loadingDescription": "Loading pending financial activity and outstanding amounts.",
-    "title": "Pending Financial Activity",
-    "description": "Outstanding collections, cash custody and payment clearing across all dates.",
+    "title": "Pending Transactions",
+    "description": "Outstanding collections, cash custody, payment clearing and dispatched supplies awaiting reconciliation across all dates.",
+    "tabs": {
+      "label": "Pending transaction types",
+      "financial": "Financial",
+      "inventory": "Inventory"
+    },
     "employee": "Responsible",
     "branch": "Branch",
     "allEmployees": "All employees",
@@ -1046,7 +1051,81 @@
     "noCurrentCloseout": "No open closeout is available for today. Open today’s closeout in Daily Income, then refresh. Only RD requests currency and exchange rate.",
     "occurrenceDate": "Actual transaction date",
     "refresh": "Refresh",
-    "postedImmutable": "Posted transactions cannot be edited. Use Pending Financial Activity for reconciliation and eligible adjustments.",
+    "postedImmutable": "Posted transactions cannot be edited. Use Pending Transactions for reconciliation and eligible adjustments.",
     "dailyRoute": "Daily route"
+  },
+  "pendingInventory": {
+    "holder": "Holder",
+    "allHolders": "All holders",
+    "selectHolder": "Select holder",
+    "searchHolders": "Search holders…",
+    "noHoldersFound": "No holders found",
+    "from": "Dispatched from",
+    "through": "Dispatched through",
+    "age": "Minimum age (days)",
+    "reset": "Reset",
+    "loading": "Loading pending dispatches…",
+    "loadingDescription": "Finding posted dispatches with supplies that are not accounted for yet.",
+    "empty": "No dispatches are waiting for reconciliation.",
+    "columns": {
+      "dispatchedAt": "Dispatched",
+      "holder": "Holder",
+      "responsible": "Responsible",
+      "dailyRoute": "Daily route",
+      "items": "Pending items",
+      "dispatched": "Dispatched qty",
+      "outstanding": "Outstanding qty",
+      "age": "Age (days)",
+      "actions": "Actions"
+    },
+    "moreItems": "+{{count}} more",
+    "previous": "Previous",
+    "next": "Next",
+    "reconcile": "Reconcile",
+    "view": "View",
+    "outcomes": {
+      "SOLD": "Sold",
+      "RETURNED": "Returned",
+      "DAMAGED": "Damaged",
+      "LOST": "Lost",
+      "MISSING": "Missing",
+      "STOLEN": "Stolen"
+    },
+    "resolutions": {
+      "QUARANTINE": "Quarantine",
+      "WRITE_OFF": "Write off"
+    },
+    "dialog": {
+      "title": "Reconcile dispatch",
+      "description": "{{holder}} · Dispatched {{date}}",
+      "dispatched": "Dispatched",
+      "reconciled": "Reconciled",
+      "outstanding": "Outstanding",
+      "history": "Reconciliation history",
+      "loadingHistory": "Loading reconciliation history…",
+      "noHistory": "Nothing has been reconciled for this dispatch yet.",
+      "historyLine": "{{outcome}} {{quantity}} × {{item}}",
+      "occurredAt": "Reconciled at",
+      "notes": "Notes",
+      "lineSummary": "Outstanding {{outstanding}} · Remaining {{remaining}}",
+      "returnRemaining": "Mark remaining as returned",
+      "revenue": "Sale revenue (USD)",
+      "damageResolution": "Damaged supplies",
+      "selectResolution": "Quarantine or write off",
+      "searchResolutions": "Search…",
+      "noResolutions": "No options found",
+      "save": "Save reconciliation",
+      "saving": "Saving…",
+      "saved": "Dispatch reconciliation saved.",
+      "readOnly": "You can view this dispatch, but you do not have permission to reconcile it."
+    },
+    "errors": {
+      "occurredAt": "Enter when the reconciliation happened.",
+      "quantity": "Enter whole numbers of 0 or more.",
+      "exceeds": "The quantities add up to more than the outstanding amount.",
+      "revenue": "Enter the sale revenue in USD, for example 120.00.",
+      "resolution": "Choose whether damaged supplies are quarantined or written off.",
+      "nothing": "Enter at least one quantity to reconcile."
+    }
   }
 }

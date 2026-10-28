@@ -377,6 +377,10 @@ export const queryKeys = {
     directory: (resource: "items" | "receipts" | "dispatches" | "suppliers", params: InventoryListParams) =>
       [...queryKeys.inventory.all, "directory", resource, params] as const,
     routeCrews: () => [...queryKeys.inventory.all, "route-crews"] as const,
+    pendingDispatches: (companyId: string, filters: unknown, page: number) =>
+      [...queryKeys.inventory.all, "pending-dispatches", companyId, filters, page] as const,
+    dispatchReconciliations: (companyId: string, dispatchId: string) =>
+      [...queryKeys.inventory.all, "dispatch-reconciliations", companyId, dispatchId] as const,
   },
 } as const;
 
