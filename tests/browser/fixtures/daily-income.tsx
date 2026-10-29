@@ -7,7 +7,7 @@ import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income
 import { FormKeyboardNavigation } from "@/components/forms/form-keyboard-navigation";
 import type { Branch } from "@/lib/branches/types";
 import type { ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
-import type { TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import { getTransactionFormSteps, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import type { Invoice } from "@/lib/invoices/types";
 
 const branches = [{ id: 1, code: "NY", name: "New York" }, { id: 2, code: "RD", name: "Dominican Republic" }] as Branch[];
@@ -41,7 +41,10 @@ export function DailyIncomeFixture({ transaction = false }: { transaction?: bool
           quickEntry={document.documentElement.dataset.quickEntry === "true"}
           formId="transaction" transactionType={defaults.transactionType} initialValues={defaults}
           activeStep={step} onStepChange={setStep}
-          onContinue={() => setStep(step === "assignment" ? "amounts" : step === "amounts" && defaults.transactionType !== "INVENTORY" ? "payment" : "review")}
+          onContinue={() => {
+            const steps = getTransactionFormSteps(defaults.transactionType);
+            setStep(steps[steps.indexOf(step ?? "assignment") + 1] ?? "review");
+          }}
           employees={[]} accounts={accounts} bankAccounts={[accounts[3]]} invoices={[]}
           paymentMethods={paymentMethods} statementBranchId={1} onSubmit={() => { setSubmitted((n) => n + 1); }}
         />

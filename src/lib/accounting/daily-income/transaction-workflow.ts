@@ -25,13 +25,34 @@ export const TRANSACTION_STEP_FIELDS: Record<Exclude<TransactionFormStep, "revie
   payment: ["paymentMethodId", "paymentMethodName", "paymentAccountId", "paymentAccountType", "checkNumber", "autoClear", "externalReferenceNumber", "refNumberMode", "refNumber", "description"],
 };
 
-export function getTransactionFormSteps(type: JournalTransactionType | null): TransactionFormStep[] {
-  return type === "INVENTORY" ? ["assignment", "amounts", "review"] : ["assignment", "amounts", "payment", "review"];
+/**
+ * Surcharges only add to the invoice total and expenses are paid from their source account, so both
+ * skip payment details: the request always posts Cash with a system reference.
+ */
+export function hasPaymentDetailsStep(type: JournalTransactionType | null): boolean {
+  return type !== "INVENTORY" && !isFixedCashTransactionType(type);
 }
 
-export function getTransactionFieldStep(field: string): Exclude<TransactionFormStep, "review"> {
-  return (Object.keys(TRANSACTION_STEP_FIELDS) as Exclude<TransactionFormStep, "review">[])
-    .find((step) => TRANSACTION_STEP_FIELDS[step].includes(field as keyof DailyIncomeJournalValues)) ?? "payment";
+export function isFixedCashTransactionType(type: JournalTransactionType | null | undefined): boolean {
+  return type === "SURCHARGE" || type === "EXPENSE";
+}
+
+export function getTransactionFormSteps(type: JournalTransactionType | null): TransactionFormStep[] {
+  return hasPaymentDetailsStep(type) ? ["assignment", "amounts", "payment", "review"] : ["assignment", "amounts", "review"];
+}
+
+export function getTransactionStepFields(
+  step: Exclude<TransactionFormStep, "review">,
+  type: JournalTransactionType | null,
+): (keyof DailyIncomeJournalValues)[] {
+  const fields = TRANSACTION_STEP_FIELDS[step];
+  return step === "amounts" && isFixedCashTransactionType(type) ? [...fields, "description"] : fields;
+}
+
+export function getTransactionFieldStep(field: string, type: JournalTransactionType | null = null): Exclude<TransactionFormStep, "review"> {
+  const step = (Object.keys(TRANSACTION_STEP_FIELDS) as Exclude<TransactionFormStep, "review">[])
+    .find((entry) => TRANSACTION_STEP_FIELDS[entry].includes(field as keyof DailyIncomeJournalValues)) ?? "payment";
+  return step === "payment" && !hasPaymentDetailsStep(type) ? "amounts" : step;
 }
 
 export function getTransactionStepLabelKey(step: TransactionFormStep, type: JournalTransactionType | null): string {

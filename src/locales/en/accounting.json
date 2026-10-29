@@ -876,6 +876,8 @@
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 if nothing was paid yet.",
+        "expenseAccount": "The expense category this spending belongs to.",
+        "sourceAccount": "Where the funds are coming from.",
         "paymentMethodOptionalZero": "Recorded as Cash while the amount is $0.00.",
         "costFromLineItems": "From the invoice line items.",
         "routeSupervisorAccountability": "The daily route is kept for reporting. The supervisor is responsible for reconciling this transaction.",

@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 
 type SharedProps = {
   onEntryActiveChange?: (active: boolean) => void;
+  /** When set, the parent renders the selected type summary instead of the form body. */
+  onSelectedTypeChange?: (type: JournalTransactionType | null) => void;
   open: boolean;
   presentation?: "dialog" | "tab";
   appearance?: "default" | "phone";
@@ -87,6 +89,16 @@ function continueTransactionValues(
     routeCrewName: values.routeCrewName,
     paymentMethodId: values.paymentMethodId,
     paymentMethodName: values.paymentMethodName,
+    paymentAccountId: values.paymentAccountId,
+    paymentAccountName: values.paymentAccountName,
+    paymentAccountType: values.paymentAccountType,
+    refNumberMode: values.refNumberMode ?? "system",
+    accountId: values.accountId,
+    accountName: values.accountName,
+    accountType: values.accountType,
+    sourceAccountId: values.sourceAccountId,
+    sourceAccountName: values.sourceAccountName,
+    sourceAccountType: values.sourceAccountType,
     transactionType: type,
   };
 }
@@ -138,6 +150,8 @@ export function AddTransactionWizard(props: Props) {
   }, []);
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const footerError = stepError || props.error;
   const detailSteps = getTransactionFormSteps(selectedType);
   const activeFormStep = detailSteps[step - 2] ?? "assignment";
   const totalSteps = detailSteps.length + 1;
@@ -149,6 +163,10 @@ export function AddTransactionWizard(props: Props) {
   useEffect(() => {
     props.onEntryActiveChange?.(props.open && step >= 2);
   }, [props.onEntryActiveChange, props.open, step]);
+  const { onSelectedTypeChange, open } = props;
+  useEffect(() => {
+    onSelectedTypeChange?.(open && step >= 2 ? selectedType : null);
+  }, [onSelectedTypeChange, open, selectedType, step]);
   function goToFormStep(target: TransactionFormStep) {
     setStep(detailSteps.indexOf(target) + 2);
   }
@@ -296,12 +314,13 @@ export function AddTransactionWizard(props: Props) {
               bankAccounts={props.bankAccounts}
               invoices={props.invoices}
               paymentMethods={props.paymentMethods}
-              showTypeSummary={!isEdit}
+              showTypeSummary={!isEdit && !props.onSelectedTypeChange}
               appearance={appearance}
               focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
               allowAutoClear={!isEdit}
               invoiceMode={selectedType === "PAYMENT" || selectedType === "INITIAL-PAYMENT" ? (isEdit ? "locked" : "selectable") : undefined}
               onValuesChange={rememberFormValues}
+              onStepErrorChange={setStepError}
               onSubmit={handleFormSubmit}
             />
           </div>
@@ -332,13 +351,13 @@ export function AddTransactionWizard(props: Props) {
               ) : (
                 <span className="flex-1" aria-hidden />
               )}
-              {props.error && !isPhone ? (
-                <p className="ml-3 min-w-0 truncate text-sm text-destructive">{props.error}</p>
+              {footerError && !isPhone ? (
+                <p role="alert" title={footerError} className="ml-3 line-clamp-2 min-w-0 text-sm text-destructive">{footerError}</p>
               ) : null}
             </div>
-            {props.error && isPhone ? (
-              <p className="w-full rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {props.error}
+            {footerError && isPhone ? (
+              <p role="alert" className="w-full rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {footerError}
               </p>
             ) : null}
             <div className={cn("flex shrink-0 items-center gap-2", isPhone && "grid grid-cols-2")}>

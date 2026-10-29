@@ -397,7 +397,6 @@ export const DAILY_INCOME_TRANSACTION_SPECS: DailyIncomeTransactionSpec[] = [
     label: "Apply surcharge",
     sectionTitle: "Surcharge information",
     needsInvoice: true,
-    needsPaymentMethod: true,
   },
   {
     slug: "transfer-account",

@@ -12,6 +12,7 @@ import { journalMatchesFilterRows } from "./filter-fields";
 import { isAutoReconcileEligible } from "./auto-reconcile";
 import { inventoryHoldersFromValues } from "./inventory-change";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
+import { isFixedCashTransactionType } from "./transaction-workflow";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
@@ -670,7 +671,9 @@ function resolveJournalPaymentMethod(values: DailyIncomeJournalValues): { id?: n
   const apiName = toApiPaymentMethodName(values.paymentMethodName);
 
   // Unpaid registration still posts an invoice-payment entry; always classify as Cash.
-  if (isInvoicePayment && amount === 0) {
+  // Surcharges only raise the invoice total and expenses are paid from their source account,
+  // so the method is irrelevant and always Cash.
+  if ((isInvoicePayment && amount === 0) || isFixedCashTransactionType(values.transactionType)) {
     return {
       ...(values.paymentMethodId && apiName === "CASH" ? { id: values.paymentMethodId } : {}),
       name: "CASH",
@@ -746,7 +749,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     ...(refNumber ? { refNumber } : {}),
     // Check number maps to API paymentReference; skip payment reference for checks.
     ...journalPaymentFields(
-      isCheckPaymentMethod(paymentMethod?.name ?? values.paymentMethodName)
+      isCheckPaymentMethod(paymentMethod?.name ?? values.paymentMethodName) || isFixedCashTransactionType(values.transactionType)
         ? { externalReferenceNumber: undefined }
         : values,
       options,

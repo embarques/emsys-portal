@@ -6,6 +6,7 @@ import { Route, UserPlus } from "lucide-react";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   buildDailyRouteSupervisorOptions,
   buildTransactionAssigneeOptions,
@@ -218,7 +219,7 @@ export function TransactionAssigneeSelect({
   );
 
   const employeeValue = getTransactionAssigneeSelectValue(employeeId);
-  const sourceOptions = [
+  const sourceOptions: { value: DailyIncomeAssigneeSource; label: string }[] = [
     { value: "employee", label: t("accounting.dailyIncome.form.fields.employee") },
     { value: "route", label: t("accounting.dailyIncome.form.fields.route") },
   ];
@@ -318,15 +319,14 @@ export function TransactionAssigneeSelect({
 
       {allowDailyRoute ? (
         <div className="space-y-2">
-          <Label htmlFor={`${id}-source`}>
+          <Label id={`${id}-source-label`}>
             {t("accounting.dailyIncome.form.fields.assignedTo")}
           </Label>
-          <SearchableSelect
+          <SegmentedControl
             id={`${id}-source`}
+            aria-labelledby={`${id}-source-label`}
             value={source}
             onValueChange={handleSourceChange}
-            placeholder={t("accounting.dailyIncome.form.placeholders.selectAssigneeSource")}
-            searchable={false}
             options={sourceOptions}
           />
         </div>

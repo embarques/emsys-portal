@@ -59,6 +59,42 @@ for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHA
  });
 }
 
+test("surcharge always posts Cash with a system-generated reference", async () => {
+ let sent;
+ const api = loadFeature("src/lib/accounting/daily-income/api.ts", {post: async (_url, body) => { sent = body; return {success: true, data: {id:"journal-1"}}; }});
+ await api.createDailyIncomeJournal({id: 1, date: "2026-10-29", status: "OPEN", branch: {id:2}, currency:"USD", rate:1}, {transactionType:"SURCHARGE", amount:15, invoiceId:"invoice-1", paymentMethodId:3, paymentMethodName:"ZELLE", paymentAccountId:4, paymentAccountType:"BANK", externalReferenceNumber:"ZL-1", refNumberMode:"system", refNumber:"", description:""});
+ assert.deepEqual(sent.paymentMethod, {name:"CASH"});
+ assert.equal("refNumber" in sent, false);
+ assert.equal(sent.paymentAccount, undefined);
+ assert.equal(sent.external_reference_number, undefined);
+ assert.equal(sent.invoiceId, "invoice-1");
+});
+
+test("expense always posts Cash with a system-generated reference and keeps its source account", async () => {
+ let sent;
+ const api = loadFeature("src/lib/accounting/daily-income/api.ts", {post: async (_url, body) => { sent = body; return {success: true, data: {id:"journal-1"}}; }});
+ await api.createDailyIncomeJournal({id: 1, date: "2026-10-29", status: "OPEN", branch: {id:2}, currency:"USD", rate:1}, {transactionType:"EXPENSE", amount:40, accountId:7, accountName:"Fuel", accountType:"EXPENSE", sourceAccountId:4, sourceAccountName:"Bank", sourceAccountType:"BANK", paymentMethodId:3, paymentMethodName:"ZELLE", paymentAccountId:4, paymentAccountType:"BANK", checkNumber:"0012", externalReferenceNumber:"ZL-1", refNumberMode:"system", refNumber:"", description:"Fuel"});
+ assert.deepEqual(sent.paymentMethod, {name:"CASH"});
+ assert.equal("refNumber" in sent, false);
+ assert.equal(sent.paymentAccount, undefined);
+ assert.equal(sent.external_reference_number, undefined);
+ assert.equal(sent.paymentReference, undefined);
+ assert.deepEqual(sent.sourceAccount, {id:4, name:"Bank", type:"BANK"});
+ assert.deepEqual(sent.account, {id:7, name:"Fuel", type:"EXPENSE"});
+});
+
+test("expense does not require payment method details", () => {
+ const { dailyIncomeJournalSchema } = loadFeature("src/lib/accounting/daily-income/schemas.ts", {});
+ const result = dailyIncomeJournalSchema.safeParse({ transactionType: "EXPENSE", amount: 40, accountId: 7, sourceAccountId: 4, paymentMethodName: "ZELLE", refNumber: "", description: "", employeeId: 1 });
+ assert.deepEqual(result.success ? [] : result.error.issues.map((issue) => issue.path.join(".")).filter((field) => ["paymentAccountId", "checkNumber", "paymentMethodId"].includes(field)), []);
+});
+
+test("surcharge does not require a payment method selection", () => {
+ const { dailyIncomeJournalSchema } = loadFeature("src/lib/accounting/daily-income/schemas.ts", {});
+ const result = dailyIncomeJournalSchema.safeParse({ transactionType: "SURCHARGE", amount: 15, invoiceId: "invoice-1", refNumber: "", description: "" });
+ assert.equal(result.success, true);
+});
+
 test("unassigned transaction sends no fabricated employee and retains the branch", async () => {
  let sent;
  const api = loadFeature("src/lib/accounting/daily-income/api.ts", {post: async (_url, body) => { sent = body; return {success: true, data: {id:"journal-1"}}; }});

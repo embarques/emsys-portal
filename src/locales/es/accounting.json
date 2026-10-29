@@ -876,6 +876,8 @@
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 si aún no se ha pagado.",
+        "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
+        "sourceAccount": "De dónde provienen los fondos.",
         "paymentMethodOptionalZero": "Se registra como efectivo mientras el monto sea $0.00.",
         "costFromLineItems": "Tomado de los renglones de la factura.",
         "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. El supervisor es responsable de cuadrar esta transacción.",

@@ -4,6 +4,7 @@ import {
   isCheckPaymentMethod,
   requiresBankAccount,
 } from "@/lib/accounting/daily-income/types";
+import { isFixedCashTransactionType } from "@/lib/accounting/daily-income/transaction-workflow";
 
 export type DailyIncomeStatementSchemaMessages = {
   dateRequired: string;
@@ -203,7 +204,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         });
       }
 
-      const paymentDetailsRequired = (values.amount ?? 0) > 0;
+      const paymentDetailsRequired = (values.amount ?? 0) > 0 && !isFixedCashTransactionType(values.transactionType);
 
       if (
         paymentDetailsRequired &&
@@ -291,7 +292,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       if (invoiceRelated && !values.invoiceId) {
         context.addIssue({ code: "custom", path: ["invoiceId"], message: messages.invoiceRequired });
       }
-      if ((invoiceRelated || values.transactionType === "SALES") && !values.paymentMethodId) {
+      if ((values.transactionType === "DISCOUNT" || values.transactionType === "SALES") && !values.paymentMethodId) {
         context.addIssue({
           code: "custom",
           path: ["paymentMethodId"],

@@ -17,10 +17,19 @@ Transactions tables. Portal pieces that already ship are listed under
 - Both pages share the **same table functionality**: columns, advanced filters,
   multi-select and selected-row Income / Expenses / Net income.
 - Reconciliation is **a field on the journal**, not a separate resource.
+- **Reconciliation is internal accounting, not payment application.** A
+  payment is applied to the invoice (payment and balance) **as soon as the
+  journal is created**, for every payment method, whether it is Outstanding or
+  Reconciled. Reconciling never changes an invoice. See
+  [Payments apply on create](#payments-apply-on-create).
+- **Outstanding means someone is accountable.** Until it is reconciled, the
+  journal's assignee (employee or daily route) is responsible for the money or
+  expense it records.
 - **Only admins reconcile.** Reconciling is the admin's OK that the money was
-  received (income) or the expense is approved. It never changes the journal's
-  date, closeout, amount, employee or daily route. OK'ing is the **only**
-  action, the same for every payment method including cash.
+  received (income) or the expense is approved, which releases the assignee's
+  responsibility. It never changes the journal's date, closeout, amount,
+  employee, daily route or any invoice. OK'ing is the **only** action, the same
+  for every payment method including cash.
 - **Auto-reconcile skips the queue.** When an admin adds a transaction in Daily
   Income → Add transaction with **Auto-approve (mark as cleared)** on, the
   journal is created Reconciled. Anything created without it (or by a non-admin)
@@ -45,7 +54,8 @@ Transactions tables. Portal pieces that already ship are listed under
   linked journal's `reconciliationStatus` (or removed), and clearing through
   `PUT /v1/checks/{id}`, `/zelle-payments/{id}`, `/deposits/{id}` and
   `/credit-card-payments/{id}` is retired. Reconciling a non-cash invoice
-  payment journal applies the invoice payment/balance in the same transaction.
+  payment journal does **not** touch the invoice; its payment was already
+  applied when the journal was created.
 - `PUT /v1/journals/{id}` must not change these fields; only the reconcile
   endpoint (or `autoClear` on create) does.
 - **Reconciled is final.** A `RECONCILED` journal cannot be reversed
@@ -144,9 +154,68 @@ extended aggregation contract).
 - Requires `canReconcileJournal`; same company scope as search.
 - 1–200 ids, all with the **same payment method** → otherwise `422` listing the ids.
 - All must be `OUTSTANDING` and not reversed → otherwise `409` listing the ids.
-- **Atomic** (all or none), applying invoice payments transactionally.
+- **Atomic** (all or none). Only reconciliation fields change; invoice payments
+  and balances are not touched.
 - **Idempotent** by `requestId`.
 - Response: `{ "success": true, "data": { "reconciled": ["j_101", "j_102"], "reconciledAt": "…" } }`.
+
+## Payments apply on create
+
+**Rule:** an invoice payment changes the invoice's payment and balance when the
+journal is created, regardless of payment method or reconciliation status.
+Reconciliation only records that an admin accounted for the transaction.
+
+**Verified 2026-10-29 — the current API does not follow this rule.** From
+`api-docs.json`:
+
+- `POST /v1/journals`: "ZELLE, DEPOSIT, CHECK and CREDIT-CARD invoice receipts
+  create outstanding directory records; invoice payment and balance change only
+  when the record is CLEARED." Only cash applies immediately.
+- `PUT /v1/checks/{id}`, `/zelle-payments/{id}`, `/deposits/{id}`,
+  `/credit-card-payments/{id}`: "OUTSTANDING leaves invoice totals unchanged;
+  CLEARED applies payment atomically. Reopening or deleting a cleared payment
+  reverses its invoice effect."
+- `autoClear` exists today mainly so non-cash payments apply on save.
+
+Backend TODOs:
+
+- [ ] `POST /v1/journals`: apply `PAYMENT` / `INITIAL-PAYMENT` to the invoice on
+      create for every payment method, including check, Zelle, deposit and
+      credit card.
+- [ ] Clearing (until retired) and `POST /v1/journals/reconcile`: never change
+      invoice payment or balance. Reopening or deleting a directory record must
+      not reverse an invoice effect either.
+- [ ] Reversing an Outstanding journal (`POST /v1/journals/{id}/reverse`)
+      reverses its invoice effect, since it was applied on create.
+- [ ] `autoClear` only sets the journal Reconciled; it no longer controls
+      whether the payment is applied.
+- [ ] Backfill decision: invoices with outstanding non-cash payments today have
+      not had them applied. Decide whether to apply them when the rule ships.
+- [ ] Update the endpoint descriptions in the OpenAPI docs.
+
+Portal TODOs (only once the API ships; until then this copy and logic match the
+live behavior):
+
+- [ ] Copy (en + es) that says outstanding payments do not change the balance
+      or that clearing applies them:
+      `accounting.{checks,zellePayments,deposits,creditCardPayments}.description`,
+      `accounting.checks.form.createDescription`,
+      `accounting.dailyIncome.toasts.checkPaymentHeld`,
+      `accounting.dailyIncome.form.fields.{checkNumberHint,autoClearHint,autoClearReviewValue}`,
+      `invoices.wizard.dailyIncome.{checkPaymentRecordedToast,dialog.checkNumberHint}`,
+      `deliveries.wizard.balance.{required,recordedPending,pendingShort,overrideWarning}`.
+- [ ] Delivery balance step (`src/lib/deliveries/hooks/use-delivery-balance.ts`,
+      `delivery-pending-payments-api.ts`): the "pending payments cover the
+      balance" override exists only because non-cash payments do not reduce the
+      balance. Remove it; recording any payment reduces the balance.
+- [ ] Keep invalidating invoice balance, payment badges and invoice lists after
+      every payment create; drop the invoice invalidations after clearing /
+      reconcile (`clearable-payments/hooks.ts`, `checks/hooks/use-checks.ts`,
+      `financial-activity/hooks.ts` `useClearFinancialPayment`).
+
+Not affected: inventory dispatch reconciliation
+(`docs/inventory-dispatch-workflows.md`) settles stock custody and records the
+supply sale income; it does not apply invoice payments.
 
 ## Retiring the separate financial-activity list
 

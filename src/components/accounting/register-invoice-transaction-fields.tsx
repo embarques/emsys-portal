@@ -452,6 +452,7 @@ export function RegisterInvoiceTransactionFields({
             autoGenerate={automaticNumber}
             invoiceNumber={watch("invoiceNumber") ?? ""}
             canUseManualNumber={canUseManualNumber}
+            variant="segmented"
             onModeChange={(nextAutoGenerate) => {
               setValue("autoGenerateInvoiceNumber", nextAutoGenerate, { shouldValidate: true, shouldDirty: true });
               if (nextAutoGenerate) {

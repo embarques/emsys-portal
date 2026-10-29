@@ -7,7 +7,7 @@ import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
 import { isAutoReconcileEligible } from "@/lib/accounting/daily-income/auto-reconcile";
 import { inventoryHoldersFromValues } from "@/lib/accounting/daily-income/inventory-change";
 import { isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
-import { getTransactionStepLabelKey, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import { getTransactionStepLabelKey, hasPaymentDetailsStep, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { useTranslation } from "@/lib/i18n";
 
 type Props = {
@@ -19,6 +19,7 @@ export function TransactionReview({ values: v, onEdit }: Props) {
   const { t } = useTranslation();
   const inventory = v.transactionType === "INVENTORY";
   const registerInvoice = v.transactionType === "INITIAL-PAYMENT";
+  const paymentDetails = hasPaymentDetailsStep(v.transactionType);
   const money = (value: number | undefined) => value == null ? undefined : formatAccountingMoney(value);
   const dispatched = inventory && v.inventoryDirection === "dispatched";
   const holders = dispatched ? inventoryHoldersFromValues(v) : null;
@@ -50,9 +51,10 @@ export function TransactionReview({ values: v, onEdit }: Props) {
         ["accounting.dailyIncome.form.fields.unitPrice", inventory ? money(v.inventoryUnitPrice) : undefined],
         ["accounting.dailyIncome.form.fields.total", inventory ? money(v.inventoryTotal) : undefined],
         ["accounting.dailyIncome.form.fields.autoReconcile", v.autoReconcile && isAutoReconcileEligible(v) ? t("accounting.dailyIncome.form.fields.autoReconcileReviewValue") : undefined],
+        ["accounting.dailyIncome.form.fields.description", !inventory && !paymentDetails ? v.description : undefined],
       ]
     },
-    ...(!inventory ? [{
+    ...(paymentDetails ? [{
       step: "payment" as const, rows: [
         ["accounting.dailyIncome.form.fields.paymentMethod", v.paymentMethodName],
         ["accounting.dailyIncome.form.fields.bankAccount", requiresBankAccount(v.paymentMethodName) ? v.paymentAccountName : undefined],
