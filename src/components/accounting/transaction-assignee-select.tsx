@@ -27,6 +27,7 @@ import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 type Props = {
   id?: string;
+  singleColumn?: boolean;
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
@@ -95,6 +96,7 @@ function clearRoute(setValue: TransactionAssigneeSetValue) {
 
 export function TransactionAssigneeSelect({
   id = "journal-employee",
+  singleColumn = false,
   employees,
   dailyRoutes = [],
   statementDate,
@@ -297,23 +299,7 @@ export function TransactionAssigneeSelect({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {allowDailyRoute ? (
-        <div className="space-y-2">
-          <Label htmlFor={`${id}-source`}>
-            {t("accounting.dailyIncome.form.fields.assignedTo")}
-          </Label>
-          <SearchableSelect
-            id={`${id}-source`}
-            value={source}
-            onValueChange={handleSourceChange}
-            placeholder={t("accounting.dailyIncome.form.placeholders.selectAssigneeSource")}
-            searchable={false}
-            options={sourceOptions}
-          />
-        </div>
-      ) : null}
-
+    <div className={singleColumn ? "flex flex-col gap-4" : "grid gap-4 sm:grid-cols-2"}>
       <div className="space-y-2">
         <Label htmlFor={`${id}-branch`}>
           {t("accounting.dailyIncome.form.fields.branch")}
@@ -329,6 +315,22 @@ export function TransactionAssigneeSelect({
           options={branchOptions}
         />
       </div>
+
+      {allowDailyRoute ? (
+        <div className="space-y-2">
+          <Label htmlFor={`${id}-source`}>
+            {t("accounting.dailyIncome.form.fields.assignedTo")}
+          </Label>
+          <SearchableSelect
+            id={`${id}-source`}
+            value={source}
+            onValueChange={handleSourceChange}
+            placeholder={t("accounting.dailyIncome.form.placeholders.selectAssigneeSource")}
+            searchable={false}
+            options={sourceOptions}
+          />
+        </div>
+      ) : null}
 
       {source === "route" ? (
         <div className="space-y-2 sm:col-span-2">

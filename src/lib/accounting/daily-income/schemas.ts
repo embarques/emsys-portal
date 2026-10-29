@@ -21,6 +21,7 @@ export type DailyIncomeJournalSchemaMessages = {
   descriptionTooLong: string;
   costPositive: string;
   discountNonNegative: string;
+  discountExceedsTotal: string;
   checkNumberRequired: string;
   bankAccountRequired: string;
   employeeRequired: string;
@@ -235,6 +236,9 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         if (!values.invoiceCost || values.invoiceCost <= 0) {
           context.addIssue({ code: "custom", path: ["invoiceCost"], message: messages.costPositive });
         }
+        if (values.invoiceCost != null && (values.invoiceDiscount ?? 0) > values.invoiceCost) {
+          context.addIssue({ code: "custom", path: ["invoiceDiscount"], message: messages.discountExceedsTotal });
+        }
         if (paymentDetailsRequired && !values.paymentMethodId) {
           context.addIssue({
             code: "custom",
@@ -327,6 +331,7 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   descriptionTooLong: "Description is too long.",
   costPositive: "Cost must be greater than zero.",
   discountNonNegative: "Discount cannot be negative.",
+  discountExceedsTotal: "Discount cannot exceed the total.",
   checkNumberRequired: "Check number is required.",
   bankAccountRequired: "Select a bank account for this payment method.",
   employeeRequired: "Select an employee or a daily route.",

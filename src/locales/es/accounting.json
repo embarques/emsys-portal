@@ -680,7 +680,7 @@
     },
     "tabs": {
       "editType": "Editar {{type}}",
-      "closeoutLabel": "Cierre #{{id}} · {{date}}"
+      "closeoutLabel": "{{date}} · Cierre #{{id}}"
     },
     "loading": {
       "transaction": "Cargando transacción…",
@@ -720,7 +720,7 @@
       "payment": {
         "label": "Registrar pago",
         "shortLabel": "Pago",
-        "description": "Registrar un pago recibido",
+        "description": "Registrar un pago de una factura existente o nueva",
         "sectionTitle": "Información del pago"
       },
       "expense": {
@@ -794,12 +794,16 @@
         "account": "Cuenta",
         "sourceAccount": "Cuenta origen",
         "amount": "Monto",
+        "paymentAmount": "Monto del pago",
         "description": "Descripción",
         "cost": "Costo",
         "balance": "Saldo",
-        "includeSender": "Incluir cliente remitente",
+        "skipSender": "Omitir cliente remitente",
         "senderClient": "Cliente remitente",
-        "includeReceiver": "Incluir cliente destinatario",
+        "skipReceiver": "Omitir cliente destinatario",
+        "invoiceMode": "Pago para",
+        "invoiceModeExisting": "Factura existente",
+        "invoiceModeNew": "Factura nueva",
         "receiverClient": "Cliente destinatario",
         "inventoryDirection": "Recibido o despachado",
         "unitPrice": "Precio unitario",
@@ -843,6 +847,7 @@
         "searchAccounts": "Buscar cuentas…",
         "selectSourceAccount": "Seleccionar cuenta origen",
         "selectInvoice": "Seleccionar factura",
+        "selectInvoiceMode": "Seleccionar factura existente o nueva",
         "searchInvoices": "Buscar facturas",
         "enterCheckNumber": "Ingrese el número de cheque",
         "enterReferenceNumber": "Ingresa el número de referencia interna",
@@ -900,6 +905,7 @@
         "costPositive": "El costo debe ser mayor que cero.",
         "costFromLineItemsRequired": "Agregue renglones con precio a la factura antes de registrar un pago.",
         "discountNonNegative": "El descuento no puede ser negativo.",
+        "discountExceedsTotal": "El descuento no puede ser mayor que el total.",
         "checkNumberRequired": "El número de cheque es obligatorio.",
         "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
         "employeeRequired": "Seleccione un empleado o una ruta diaria.",
@@ -923,6 +929,7 @@
       "sections": {
         "assignment": "Asignación",
         "invoiceDetails": "Datos de la factura",
+        "invoiceAmount": "Monto de la factura",
         "paymentDetails": "Pago y referencias",
         "customers": "Remitente y destinatario (opcional)",
         "inventoryMovement": "Movimiento de inventario",

@@ -680,7 +680,7 @@
     },
     "tabs": {
       "editType": "Edit {{type}}",
-      "closeoutLabel": "Closeout #{{id}} · {{date}}"
+      "closeoutLabel": "{{date}} · Closeout #{{id}}"
     },
     "loading": {
       "transaction": "Loading transaction…",
@@ -720,7 +720,7 @@
       "payment": {
         "label": "Register payment",
         "shortLabel": "Payment",
-        "description": "Record a payment received",
+        "description": "Record a payment for an existing or new invoice",
         "sectionTitle": "Payment information"
       },
       "expense": {
@@ -794,12 +794,16 @@
         "account": "Account",
         "sourceAccount": "Source account",
         "amount": "Amount",
+        "paymentAmount": "Payment amount",
         "description": "Description",
         "cost": "Cost",
         "balance": "Balance",
-        "includeSender": "Include sender client",
+        "skipSender": "Skip sender client",
         "senderClient": "Sender client",
-        "includeReceiver": "Include receiver client",
+        "skipReceiver": "Skip receiver client",
+        "invoiceMode": "Payment for",
+        "invoiceModeExisting": "Existing invoice",
+        "invoiceModeNew": "New invoice",
         "receiverClient": "Receiver client",
         "inventoryDirection": "Received or dispatched",
         "unitPrice": "Unit price",
@@ -843,6 +847,7 @@
         "searchAccounts": "Search accounts…",
         "selectSourceAccount": "Select source account",
         "selectInvoice": "Select invoice",
+        "selectInvoiceMode": "Select existing or new invoice",
         "searchInvoices": "Search invoices",
         "enterCheckNumber": "Enter check number",
         "enterReferenceNumber": "Enter internal reference number",
@@ -900,6 +905,7 @@
         "costPositive": "Cost must be greater than zero.",
         "costFromLineItemsRequired": "Add priced line items to the invoice before posting a payment.",
         "discountNonNegative": "Discount cannot be negative.",
+        "discountExceedsTotal": "Discount cannot exceed the total.",
         "checkNumberRequired": "Check number is required.",
         "bankAccountRequired": "Select a bank account for this payment method.",
         "employeeRequired": "Select an employee or a daily route.",
@@ -923,6 +929,7 @@
       "sections": {
         "assignment": "Assignment",
         "invoiceDetails": "Invoice details",
+        "invoiceAmount": "Invoice amount",
         "paymentDetails": "Payment & references",
         "customers": "Sender & receiver (optional)",
         "inventoryMovement": "Inventory movement",
