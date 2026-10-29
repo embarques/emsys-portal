@@ -989,7 +989,7 @@
   "financialActivity": {
     "loadingDescription": "Loading pending financial activity and outstanding amounts.",
     "title": "Pending Transactions",
-    "description": "Outstanding collections, cash custody, payment clearing and dispatched supplies awaiting reconciliation across all dates.",
+    "description": "Outstanding collections, cash custody and payment clearing across all dates.",
     "tabs": {
       "label": "Pending transaction types",
       "financial": "Financial",
@@ -1058,6 +1058,8 @@
     "dailyRoute": "Daily route"
   },
   "pendingInventory": {
+    "title": "Pending Transactions",
+    "description": "Dispatched supplies awaiting reconciliation across all dates.",
     "holder": "Holder",
     "allHolders": "All holders",
     "selectHolder": "Select holder",

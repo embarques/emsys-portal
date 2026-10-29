@@ -62,6 +62,7 @@
     "employeeDepartments": "Departamentos de empleados",
     "employeeTitles": "Cargos de empleados",
     "invoicePolicies": "Políticas de factura",
+    "pendingInventoryTransactions": "Transacciones pendientes",
     "pendingFinancialActivity": "Transacciones pendientes"
   }
 }

@@ -989,7 +989,7 @@
   "financialActivity": {
     "loadingDescription": "Cargando la actividad financiera pendiente y los montos pendientes.",
     "title": "Transacciones pendientes",
-    "description": "Cobros, custodia de efectivo, pagos y suministros despachados pendientes de conciliar de todas las fechas.",
+    "description": "Cobros, custodia de efectivo y pagos pendientes de conciliar de todas las fechas.",
     "tabs": {
       "label": "Tipos de transacciones pendientes",
       "financial": "Financieras",
@@ -1058,6 +1058,8 @@
     "dailyRoute": "Ruta diaria"
   },
   "pendingInventory": {
+    "title": "Transacciones pendientes",
+    "description": "Suministros despachados pendientes de conciliar de todas las fechas.",
     "holder": "Custodio",
     "allHolders": "Todos los custodios",
     "selectHolder": "Seleccionar custodio",

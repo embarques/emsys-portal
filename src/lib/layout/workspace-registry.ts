@@ -1,3 +1,4 @@
+import { PendingInventoryWorkspace } from "@/components/inventory/pending-inventory-workspace";
 import { InventoryWorkflowWorkspace } from "@/lib/inventory/workflow/components/inventory-workflow-workspace";
 import { EmployeeTitlesWorkspace } from "@/components/employee-titles/employee-titles-workspace";
 import { EmployeeDepartmentsWorkspace } from "@/components/employee-departments/employee-departments-workspace";
@@ -59,6 +60,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/inventory/items": InventoryItemsWorkspace,
   "/inventory/receipts": InventoryReceiptsWorkspace,
   "/inventory/dispatches": InventoryDispatchesWorkspace,
+  "/inventory/pending-transactions": PendingInventoryWorkspace,
   "/inventory/suppliers": InventorySuppliersWorkspace,
   "/items": ItemsWorkspace,
   "/containers": ContainersWorkspace,
