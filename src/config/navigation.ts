@@ -155,6 +155,12 @@ const inventoryItem: NavigationItem = {
   labelKey: "navigation.submenus.inventory",
   icon: Warehouse,
   children: [
+    {
+      labelKey: "navigation.items.pendingInventoryTransactions",
+      href: "/inventory/pending-transactions",
+      icon: PackageCheck,
+      permission: PERMISSIONS.inventoryDispatchesList,
+    },
     { labelKey: "navigation.items.inventoryWorkflow", href: "/inventory/workflow", icon: Boxes, permission: PERMISSIONS.inventoryWorkflowRead },
     {
       labelKey: "navigation.items.inventoryStock",

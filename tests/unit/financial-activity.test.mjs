@@ -81,7 +81,7 @@ test("invoice list requests have a deadline and propagate cancellation on both e
  for(const args of calls){const config=args.at(-1);assert.equal(config.timeout,60000);assert.equal(config.signal,controller.signal);}
 });
 
-test("pending financial activity opens as a desktop workspace tab", () => {
+test("accounting and inventory pending transactions open separate desktop workspace tabs", () => {
  const filename=path.join(root,"src/lib/layout/workspace-registry.ts");
  const source=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
  const components=new Map();
@@ -93,6 +93,8 @@ test("pending financial activity opens as a desktop workspace tab", () => {
  new Function("require","module","exports",source)(boundary,loaded,loaded.exports);
  const registry=loaded.exports;
  assert.equal(registry.isWorkspaceRoute("/accounting/pending-financial-activity"),true);
+ assert.equal(registry.isWorkspaceRoute("/inventory/pending-transactions"),true);
+ assert.equal(registry.resolveWorkspaceComponent("/inventory/pending-transactions?tab=9"),components.get("@/components/inventory/pending-inventory-workspace").PendingInventoryWorkspace);
  assert.equal(registry.resolveWorkspaceComponent("/accounting/pending-financial-activity?tab=8"),components.get("@/components/accounting/financial-activity-workspace").FinancialActivityWorkspace);
 });
 
@@ -138,4 +140,11 @@ test("handover and reversal forms reject missing recipients, nonpositive amounts
  assert.equal(activityFormSchema.safeParse({...values,amount:"0"}).success,false);
  assert.equal(activityFormSchema.safeParse({...values,type:"REVERSED"}).success,false);
  assert.equal(activityFormSchema.safeParse({...values,type:"REVERSED",reference:"Duplicate receipt"}).success,true);
+});
+
+
+test("pending transaction routes require their own section permissions", () => {
+ const { permissionForPath } = loadFeature("src/lib/auth/page-permissions.ts", {});
+ assert.deepEqual(permissionForPath("/inventory/pending-transactions"), { name: "canListInventoryDispatch", resourceType: "inventory_dispatch" });
+ assert.deepEqual(permissionForPath("/accounting/pending-financial-activity"), { name: "canViewFinancialActivity", resourceType: "financial_activity" });
 });

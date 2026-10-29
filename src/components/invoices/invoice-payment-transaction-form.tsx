@@ -151,6 +151,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         descriptionTooLong: t("accounting.dailyIncome.form.validation.descriptionTooLong"),
         costPositive: t("accounting.dailyIncome.form.validation.costPositive"),
         discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
+        discountExceedsTotal: t("accounting.dailyIncome.form.validation.discountExceedsTotal"),
         checkNumberRequired: t("accounting.dailyIncome.form.validation.checkNumberRequired"),
         bankAccountRequired: t("accounting.dailyIncome.form.validation.bankAccountRequired"),
         employeeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),

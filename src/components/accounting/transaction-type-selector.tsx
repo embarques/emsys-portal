@@ -112,7 +112,7 @@ export function TransactionTypeSelector({ value, onChange, appearance = "default
       <div
         role="radiogroup"
         aria-label={t("accounting.dailyIncome.wizard.typeSelector.ariaLabel")}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         {options.map((option) => (
           <TypeCard

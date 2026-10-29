@@ -7,7 +7,7 @@ export const TRANSACTION_FIELD_IDS: Partial<Record<keyof DailyIncomeJournalValue
   inventoryHolderVehicleId: "journal-inventory-holder-vehicle",
   inventoryHolderEmployees: "journal-inventory-holder-employee",
   invoiceId: "journal-invoice", invoiceNumber: "journal-invoice-number",
-  invoiceCost: "journal-invoice-cost", amount: "journal-amount",
+  invoiceCost: "journal-invoice-cost", invoiceDiscount: "journal-invoice-discount", amount: "journal-amount",
   accountId: "journal-account", sourceAccountId: "journal-source",
   senderId: "journal-sender", receiverId: "journal-receiver",
   paymentMethodId: "journal-payment", paymentMethodName: "journal-payment",

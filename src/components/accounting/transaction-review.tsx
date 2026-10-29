@@ -18,6 +18,7 @@ type Props = {
 export function TransactionReview({ values: v, onEdit }: Props) {
   const { t } = useTranslation();
   const inventory = v.transactionType === "INVENTORY";
+  const registerInvoice = v.transactionType === "INITIAL-PAYMENT";
   const money = (value: number | undefined) => value == null ? undefined : formatAccountingMoney(value);
   const dispatched = inventory && v.inventoryDirection === "dispatched";
   const holders = dispatched ? inventoryHoldersFromValues(v) : null;
@@ -38,9 +39,10 @@ export function TransactionReview({ values: v, onEdit }: Props) {
         ["accounting.dailyIncome.form.fields.invoice", v.autoGenerateInvoiceNumber ? t("invoices.form.autoNumber.assignedOnSave") : v.invoiceNumber],
         ["accounting.dailyIncome.form.fields.account", v.accountName],
         ["accounting.dailyIncome.form.fields.sourceAccount", v.sourceAccountName],
-        ["accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],
-        ["accounting.dailyIncome.form.fields.amount", inventory ? undefined : money(v.amount)],
-        ["accounting.dailyIncome.form.fields.balance", v.transactionType === "INITIAL-PAYMENT" && v.invoiceCost != null ? money(v.invoiceCost - (v.amount ?? 0)) : undefined],
+        [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.total" : "accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],
+        ["accounting.dailyIncome.form.invoiceSummary.discount", registerInvoice ? money(v.invoiceDiscount ?? 0) : undefined],
+        [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.paid" : "accounting.dailyIncome.form.fields.amount", inventory ? undefined : money(v.amount)],
+        ["accounting.dailyIncome.form.fields.balance", registerInvoice && v.invoiceCost != null ? money(v.invoiceCost - (v.invoiceDiscount ?? 0) - (v.amount ?? 0)) : undefined],
         ["accounting.dailyIncome.form.fields.senderClient", v.includeSender ? v.senderName : undefined],
         ["accounting.dailyIncome.form.fields.receiverClient", v.includeReceiver ? v.receiverName : undefined],
         ["inventory.form.fields.item", inventory ? v.inventoryItemName : undefined],
