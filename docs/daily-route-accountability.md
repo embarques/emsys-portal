@@ -77,8 +77,13 @@ Journal responses should return:
   supervisor of existing payments.
 - `inventoryHolders` on inventory journals, in the request shape.
 
-## Pending Transactions — Financial tab (`POST /v1/financial-activity/search`)
+## Accounting → Pending Transactions (`POST /v1/financial-activity/search`)
 
+- Pending Transactions is a separate page aggregating Outstanding (not yet
+  cleared) journals from all closeouts, with the same filters and multi-select
+  as Daily Income; admins reconcile them unless they were auto-approved on
+  entry. See
+  `docs/pending-transactions-update.md`.
 - Reconciliation operates per **supervisor**: route collections carry the
   supervisor in `employee`, so the existing `employee.id` filter, the payment
   method filter and the date range reconcile by supervisor, method and

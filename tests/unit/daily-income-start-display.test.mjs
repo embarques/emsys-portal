@@ -20,6 +20,7 @@ function render(canStart=true){
   useTablePageSize:()=>({page:1,pageSize:20,pageLimit:20,rememberTotal:()=>{}}),
   useApiTableColumns:()=>({columns:[]}),
   useTableSelectionReset:()=>{},
+  useDebouncedValue:(value)=>value,
   Button:({children,disabled})=>React.createElement("button",{disabled},children),
   Card:block,CardContent:block,CardHeader:block,CardTitle:block,Badge:block,Label:block,
  };

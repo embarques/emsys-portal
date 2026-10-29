@@ -7,6 +7,8 @@ import {
   resolveJournalCheckNumberFromApi,
 } from "./check-payment-reference";
 import { isAutoClearEligible } from "./auto-clear";
+import { journalCountsAsIncome, journalExpenseAmount } from "./journal-classification";
+import { journalMatchesFilterRows } from "./filter-fields";
 import { isAutoReconcileEligible } from "./auto-reconcile";
 import { inventoryHoldersFromValues } from "./inventory-change";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
@@ -376,15 +378,7 @@ function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary 
       summary.invoice += item.amount;
     }
 
-    const expenseLines = item.accounts.filter((account) => account.type === "EXPENSE");
-    if (expenseLines.length > 0) {
-      summary.expense += expenseLines.reduce((total, account) => total + account.debit, 0);
-    } else if (
-      item.transactionType === "EXPENSE" ||
-      (item.transactionType === "INVENTORY" && item.inventoryDirection === "received")
-    ) {
-      summary.expense += item.amount;
-    }
+    summary.expense += journalExpenseAmount(item);
 
     for (const account of item.accounts) {
       if (account.name === "ACCOUNTS RECEIVABLE") {
@@ -392,10 +386,7 @@ function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary 
       }
     }
 
-    const countsAsIncome =
-      ["INITIAL-PAYMENT", "PAYMENT", "SALES"].includes(item.transactionType) ||
-      (item.transactionType === "INVENTORY" && item.inventoryDirection === "dispatched");
-    if (!countsAsIncome) {
+    if (!journalCountsAsIncome(item)) {
       continue;
     }
 
@@ -595,8 +586,11 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
         .some((value) => value?.toLowerCase().includes(search)),
     );
   }
+  const filterRows = params.filterRows ?? [];
+  const filtered = filterRows.length > 0;
+  if (filtered) items = items.filter((item) => journalMatchesFilterRows(item, filterRows));
 
-  const total = search ? items.length : numberValue(envelope.total, items.length);
+  const total = search || filtered ? items.length : numberValue(envelope.total, items.length);
   const offset = (page - 1) * limit;
   const pageItems = items.slice(offset, offset + limit);
 
