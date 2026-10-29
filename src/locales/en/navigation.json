@@ -62,6 +62,7 @@
     "employeeDepartments": "Employee departments",
     "employeeTitles": "Employee titles",
     "invoicePolicies": "Invoice policies",
+    "pendingInventoryTransactions": "Pending Transactions",
     "pendingFinancialActivity": "Pending Transactions"
   }
 }

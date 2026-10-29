@@ -4,8 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { activityFormSchema, type ActivityFormValues } from "@/lib/accounting/financial-activity/schemas";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { TableDirectoryTabs, type TableDirectoryTab } from "@/components/app-shell/table-directory-tabs";
-import { PendingInventoryDispatchesPanel } from "@/components/accounting/pending-inventory-dispatches-panel";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { getEmployeeBadgeClass, getPaymentMethodBadgeClass } from "@/lib/accounting/financial-activity/display";
@@ -36,22 +34,16 @@ const ALL_VALUE = "all";
 const PAYMENT_METHODS = ["CASH", "CHECK", "ZELLE", "DEPOSIT", "CREDIT-CARD"];
 const ADDITIONAL_FILTERS = ["from", "through", "minimum", "age"] as const;
 function money(amount: number, currency?: string) { return new Intl.NumberFormat(undefined,currency ? {style:"currency",currency} : {maximumFractionDigits:2}).format(amount); }
-type PendingTransactionsTab = "financial" | "inventory";
-/** Pending Transactions: financial activity and inventory dispatches awaiting reconciliation. */
+/** Accounting transactions awaiting reconciliation. */
 export function FinancialActivityWorkspace() {
     const { t } = useTranslation();
     const { hasPermission } = useAuth();
-    const [tab, setTab] = useState<PendingTransactionsTab>("financial");
-    const tabs: TableDirectoryTab<PendingTransactionsTab>[] = [
-        ...(hasPermission("canViewFinancialActivity", "financial_activity") ? [{ id: "financial" as const, label: t("accounting.financialActivity.tabs.financial") }] : []),
-        ...(hasPermission(PERMISSIONS.inventoryDispatchesList.name, PERMISSIONS.inventoryDispatchesList.resourceType) ? [{ id: "inventory" as const, label: t("accounting.financialActivity.tabs.inventory") }] : []),
-    ];
-    const active = tabs.some(item => item.id === tab) ? tab : tabs[0]?.id;
-    if (!active)
+    if (!hasPermission(PERMISSIONS.financialActivityView.name, PERMISSIONS.financialActivityView.resourceType))
         return <p>{t("common.errors.forbidden")}</p>;
-    return <div className="space-y-6"><PageHeader title={t("accounting.financialActivity.title")} description={t("accounting.financialActivity.description")}/>
- {tabs.length > 1 ? <TableDirectoryTabs tabs={tabs} value={active} onValueChange={setTab} aria-label={t("accounting.financialActivity.tabs.label")} className="border-b"/> : null}
- <div role={tabs.length > 1 ? "tabpanel" : undefined} id={`directory-panel-${active}`} aria-labelledby={tabs.length > 1 ? `directory-tab-${active}` : undefined}>{active === "financial" ? <FinancialActivityPanel/> : <PendingInventoryDispatchesPanel/>}</div></div>;
+    return <div className="space-y-6">
+        <PageHeader title={t("accounting.financialActivity.title")} description={t("accounting.financialActivity.description")} />
+        <FinancialActivityPanel />
+    </div>;
 }
 function FinancialActivityPanel() {
     const { t } = useTranslation();

@@ -8,6 +8,7 @@ import { FormKeyboardNavigation } from "@/components/forms/form-keyboard-navigat
 import type { Branch } from "@/lib/branches/types";
 import type { ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import type { Invoice } from "@/lib/invoices/types";
 
 const branches = [{ id: 1, code: "NY", name: "New York" }, { id: 2, code: "RD", name: "Dominican Republic" }] as Branch[];
 const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -53,11 +54,16 @@ export function DailyIncomeFixture({ transaction = false }: { transaction?: bool
   );
 }
 
+const wizardInvoices = [{
+  invoiceId: "inv-1", invoiceNumber: "80430", lineItems: [], cost: 200, discount: 20, amountPaid: 50, balance: 130,
+  sender: { name: "Ana Sender", phones: [] }, receiver: { name: "Luis Receiver", phones: [] },
+}] as unknown as Invoice[];
+
 export function DailyIncomeWizardFixture() {
   const [submitted, setSubmitted] = useState(0);
   return <QueryClientProvider client={client}>
     <AddTransactionWizard open presentation="tab" mode="add" employees={[{ ...createEmptyEmployeeForm(), id: 1, name: "Maria", department: "Office", title: "Clerk", active: true, branch: branches[0] } as Employee]}
-      statementBranchId={1} accounts={accounts} bankAccounts={[accounts[3]]} invoices={[]} paymentMethods={paymentMethods} isSubmitting={false}
+      statementBranchId={1} accounts={accounts} bankAccounts={[accounts[3]]} invoices={wizardInvoices} paymentMethods={paymentMethods} isSubmitting={false}
       onSubmit={async () => { setSubmitted(n => n + 1); }} onCancel={() => {}} />
     <output id="submitted">{submitted}</output>
   </QueryClientProvider>;

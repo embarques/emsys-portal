@@ -412,7 +412,14 @@ export function DailyIncomeWorkspace() {
   );
   const dailyRoutesQuery = useDailyRoutePicker(200);
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
-  const invoicesQuery = useInvoices({ page: 1, limit: 200, sort: "number:desc" });
+  // Only invoices with an outstanding balance can receive a payment. The API search
+  // allowlist has no `balance` field, so filter by paidStatus != CLOSED (OPEN or PARTIAL).
+  const invoicesQuery = useInvoices({
+    page: 1,
+    limit: 200,
+    sort: "number:desc",
+    filterRows: [{ id: "payment-outstanding", join: "and", field: "paidStatus", operator: "neq", value: "CLOSED" }],
+  });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, transactionDialog);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, transactionDialog);
   const paymentMethodsQuery = useAccountingPaymentMethods(transactionDialog);
@@ -704,8 +711,6 @@ export function DailyIncomeWorkspace() {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);setPage(1);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
-
       {statement ? (
         <DailyIncomeMobileSummary
           stats={stats}
@@ -860,8 +865,6 @@ export function DailyIncomeWorkspace() {
         </div>
       </CardContent>
     </Card>
-
-    <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);setPage(1);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
 
     <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
 
