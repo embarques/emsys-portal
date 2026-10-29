@@ -944,6 +944,91 @@
       "confirm": "Registrar pago duplicado",
       "auditLabel": "Pago duplicado",
       "auditConfirmed": "Confirmado explícitamente"
+    },
+    "advancedFilters": {
+      "fields": {
+        "invoice": {
+          "number": {
+            "label": "Factura #",
+            "placeholder": "Ingrese el número de factura…"
+          },
+          "cost": {
+            "label": "Costo",
+            "placeholder": "0.00"
+          },
+          "payment": {
+            "label": "Pago",
+            "placeholder": "0.00"
+          },
+          "balance": {
+            "label": "Balance",
+            "placeholder": "0.00"
+          }
+        },
+        "date": {
+          "label": "Fecha",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "dateRange": {
+          "label": "Rango de fechas",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "Usuario",
+            "placeholder": "Ingrese el nombre del usuario…"
+          }
+        },
+        "accounts": {
+          "name": {
+            "label": "Cuenta",
+            "placeholder": "Ingrese el nombre de la cuenta…"
+          }
+        },
+        "transactionAmount": {
+          "label": "Monto",
+          "placeholder": "0.00"
+        },
+        "employee": {
+          "name": {
+            "label": "Empleado",
+            "placeholder": "Ingrese el nombre del empleado…"
+          }
+        },
+        "transactionType": {
+          "label": "Transacción"
+        },
+        "paymentMethod": {
+          "name": {
+            "label": "Método de pago"
+          }
+        },
+        "paymentReference": {
+          "label": "Número de cheque",
+          "placeholder": "Ingrese el número de cheque…"
+        },
+        "external_reference_number": {
+          "label": "Número de referencia externa",
+          "placeholder": "Ingrese la referencia externa…"
+        },
+        "incomeStatement": {
+          "id": {
+            "label": "Cuadre",
+            "placeholder": "32685"
+          }
+        },
+        "refNumber": {
+          "label": "Número de referencia interna",
+          "placeholder": "Ingrese la referencia interna…"
+        }
+      }
+    },
+    "selectionTotals": {
+      "label": "Totales de las transacciones seleccionadas",
+      "selected": "Seleccionadas: {{count}} · {{currency}}",
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "net": "Ingreso neto"
     }
   },
   "loans": {

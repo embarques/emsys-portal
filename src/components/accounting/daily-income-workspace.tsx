@@ -17,6 +17,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards, type StatCardItem } from "@/components/app-shell/stat-cards-carousel";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
@@ -72,11 +73,20 @@ import {
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
+import { countCompleteFilterRows, isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { DAILY_INCOME_TABLE_FILTER_FIELDS } from "@/lib/accounting/daily-income/filter-fields";
+import { summarizeJournalTotals } from "@/lib/accounting/daily-income/journal-classification";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 import { buildPaymentReceiptRequest, canPrintPaymentReceipt } from "@/lib/accounting/daily-income/print-payment-receipt";
+
+function localizeDailyIncomeFilterOption(field: string, option: { value: string; label: string }, t: (key: string) => string) {
+  return field === "transactionType" ? { ...option, label: transactionTypeLabel(option.value, t) } : option;
+}
 
 function transactionTitle(row: DailyIncomeJournal, fallback: string) {
   return (row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? row.refNumber) || fallback;
@@ -360,6 +370,15 @@ export function DailyIncomeWorkspace() {
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
+  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterFields = useLocalizedFilterFields(DAILY_INCOME_TABLE_FILTER_FIELDS, "accounting.dailyIncome.advancedFilters.fields", localizeDailyIncomeFilterOption);
+  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
+  const debouncedFilterRows = useDebouncedValue(filterRows, 300);
+  const appliedFilterRows = useMemo(
+    () => debouncedFilterRows.filter((row) => isCompleteFilterRow(row, DAILY_INCOME_TABLE_FILTER_FIELDS)),
+    [debouncedFilterRows],
+  );
   const [statementDialog, setStatementDialog] = useState(false);
   const [printDialog, setPrintDialog] = useState(false);
   const [transactionDialog, setTransactionDialog] = useState(false);
@@ -404,7 +423,7 @@ export function DailyIncomeWorkspace() {
     setOpenCreateOnLoad(false);
   }, [branchCode, openCreateOnLoad, statement, statementQuery.isLoading]);
   const summaryTotalsQuery = useIncomeStatementSummaryTotals(statement?.id ?? 0);
-  const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: pageLimit, query: deferredQuery });
+  const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: pageLimit, query: deferredQuery, filterRows: appliedFilterRows });
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
   const employees = useMemo(
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
@@ -444,9 +463,10 @@ export function DailyIncomeWorkspace() {
   const displayCurrency = summaryTotalsQuery.data?.currency ?? statement?.currency ?? "USD";
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(deferredQuery, page, statement?.id),
+    buildTableSelectionResetKey(deferredQuery, appliedFilterRows, page, statement?.id),
     setSelectedIds,
   );
+  const selectedTotals = summarizeJournalTotals(rows.filter((row) => selectedIds.includes(row.id)));
 
   const allPageSelected =
     rows.length > 0 && rows.every((row) => selectedIds.includes(row.id));
@@ -869,7 +889,7 @@ export function DailyIncomeWorkspace() {
     <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
 
     {statement ? <>
-    <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={buildToolbarSearchSummary({ isFiltered: Boolean(deferredQuery.trim()), query: deferredQuery, isSearchPending: query !== deferredQuery, matched: total, catalogTotal: total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isLoading, catalogLoading: journalsQuery.isLoading }, t)} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")} />} /></CardHeader>
+    <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar filtersOpen={filtersOpen} onFiltersOpenChange={setFiltersOpen} activeFilterCount={activeFilterCount} filterPanel={<TableAdvancedFilterPanel presetScope="accounting-daily-income" open={filtersOpen} rows={filterRows} fields={filterFields} resultSummary={formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isFiltered: activeFilterCount > 0 || Boolean(deferredQuery.trim()), isLoading: journalsQuery.isFetching }, t)} onRowsChange={(next) => { setFilterRows(next); setPage(1); }} onClearAll={activeFilterCount > 0 || query.trim() ? () => { setQuery(""); setFilterRows([]); setPage(1); } : undefined} />} columnLayout={columnLayout} searchSummary={buildToolbarSearchSummary({ isFiltered: Boolean(deferredQuery.trim()) || appliedFilterRows.length > 0, query: deferredQuery, isSearchPending: query !== deferredQuery, matched: total, catalogTotal: total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isLoading, catalogLoading: journalsQuery.isLoading }, t)} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")} />} /></CardHeader>
       {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title={t("accounting.dailyIncome.transactions.loadingTitle")} description={t("accounting.dailyIncome.transactions.loadingDescription")} columns={[t("accounting.dailyIncome.columns.date"), t("accounting.dailyIncome.columns.accountInvoice"), t("accounting.dailyIncome.columns.assignedTo"), t("accounting.dailyIncome.columns.type"), t("accounting.dailyIncome.columns.reference"), t("accounting.dailyIncome.columns.amount")]} /> : <>
         <TableSelectionToolbar
           actions={selectedJournal && canPrintPaymentReceipt(selectedJournal) ? (
@@ -894,6 +914,18 @@ export function DailyIncomeWorkspace() {
           canDelete={false}
           deleteDisabled={deleteMutation.isPending}
         />
+        {selectedTotals.length > 0 ? (
+          <div role="status" aria-label={t("accounting.dailyIncome.selectionTotals.label")} className="flex flex-wrap items-center gap-x-6 gap-y-1 border-b px-6 py-3 text-sm">
+            {selectedTotals.map((totals) => (
+              <div key={totals.currency} className="flex flex-wrap items-center gap-x-6 gap-y-1">
+                <span className="font-medium text-muted-foreground">{t("accounting.dailyIncome.selectionTotals.selected", { count: totals.count, currency: totals.currency || displayCurrency })}</span>
+                <span>{t("accounting.dailyIncome.selectionTotals.income")}: <strong className="tabular-nums">{formatDailyIncomeMoney(totals.income, totals.currency || displayCurrency)}</strong></span>
+                <span>{t("accounting.dailyIncome.selectionTotals.expenses")}: <strong className="tabular-nums">{formatDailyIncomeMoney(totals.expenses, totals.currency || displayCurrency)}</strong></span>
+                <span>{t("accounting.dailyIncome.selectionTotals.net")}: <strong className={cn("tabular-nums", totals.net < 0 && "text-destructive")}>{formatDailyIncomeMoney(totals.net, totals.currency || displayCurrency)}</strong></span>
+              </div>
+            ))}
+          </div>
+        ) : null}
         <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} selectable selectedIds={selectedIds} allPageSelected={allPageSelected} onToggleSelectAll={toggleSelectAll} onToggleSelect={toggleSelect} onRowClick={setViewJournal} onRowDoubleClick={undefined} activeRowId={viewJournal?.id} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />
       </>}
       {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><TablePaginationControls page={page} totalPages={totalPages} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={changePageSize} disabled={journalsQuery.isFetching} /></div> : null}

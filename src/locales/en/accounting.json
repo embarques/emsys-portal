@@ -944,6 +944,91 @@
       "confirm": "Post duplicate payment",
       "auditLabel": "Duplicate payment",
       "auditConfirmed": "Explicitly confirmed"
+    },
+    "advancedFilters": {
+      "fields": {
+        "invoice": {
+          "number": {
+            "label": "Invoice #",
+            "placeholder": "Enter invoice number…"
+          },
+          "cost": {
+            "label": "Cost",
+            "placeholder": "0.00"
+          },
+          "payment": {
+            "label": "Payment",
+            "placeholder": "0.00"
+          },
+          "balance": {
+            "label": "Balance",
+            "placeholder": "0.00"
+          }
+        },
+        "date": {
+          "label": "Date",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "dateRange": {
+          "label": "Date range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "User",
+            "placeholder": "Enter user name…"
+          }
+        },
+        "accounts": {
+          "name": {
+            "label": "Account",
+            "placeholder": "Enter account name…"
+          }
+        },
+        "transactionAmount": {
+          "label": "Amount",
+          "placeholder": "0.00"
+        },
+        "employee": {
+          "name": {
+            "label": "Employee",
+            "placeholder": "Enter employee name…"
+          }
+        },
+        "transactionType": {
+          "label": "Transaction"
+        },
+        "paymentMethod": {
+          "name": {
+            "label": "Payment method"
+          }
+        },
+        "paymentReference": {
+          "label": "Check number",
+          "placeholder": "Enter check number…"
+        },
+        "external_reference_number": {
+          "label": "External reference number",
+          "placeholder": "Enter external reference…"
+        },
+        "incomeStatement": {
+          "id": {
+            "label": "Income statement",
+            "placeholder": "32685"
+          }
+        },
+        "refNumber": {
+          "label": "Internal reference number",
+          "placeholder": "Enter internal reference…"
+        }
+      }
+    },
+    "selectionTotals": {
+      "label": "Totals for selected transactions",
+      "selected": "Selected: {{count}} · {{currency}}",
+      "income": "Income",
+      "expenses": "Expenses",
+      "net": "Net income"
     }
   },
   "loans": {

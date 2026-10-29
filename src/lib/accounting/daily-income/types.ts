@@ -1,4 +1,5 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
+import type { TableFilterRowState } from "@/lib/table/filter-types";
 import type { DailyIncomeRefNumberMode } from "@/lib/accounting/daily-income/ref-number";
 
 export type { DailyIncomeRefNumberMode };
@@ -180,6 +181,8 @@ export type DailyIncomeJournalListParams = {
   page?: number;
   limit?: number;
   query?: string;
+  /** Advanced filter rows applied to the loaded closeout rows (`DAILY_INCOME_TABLE_FILTER_FIELDS`). */
+  filterRows?: TableFilterRowState[];
   employeeId?: number;
 };
 
