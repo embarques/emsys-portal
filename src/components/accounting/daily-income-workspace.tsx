@@ -5,6 +5,8 @@ import {JournalTransactionsTable} from "@/components/accounting/journal-transact
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronUp, Plus, Printer } from "lucide-react";
 
+import { TransactionCloseoutSetup } from "@/components/accounting/transaction-closeout-setup";
+import { useStartTransaction } from "@/lib/accounting/daily-income/use-start-transaction";
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomePrintDialog, type DailyIncomePrintSelection } from "@/components/accounting/daily-income-print-dialog";
 import { DailyIncomeTransactionViewSheet } from "@/components/accounting/daily-income-transaction-view-sheet";
@@ -28,6 +30,7 @@ import {
   useDailyIncomeJournal,
   useDeleteDailyIncomeJournal,
   useIncomeStatement,
+  useCurrentIncomeStatement,
   useIncomeStatementSummaryTotals,
   useCloseoutCalendar,
   useUpdateDailyIncomeJournal,
@@ -191,6 +194,7 @@ function DailyIncomeMobileSummary({
   loading: boolean;
   error?: string | null;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (error) {
@@ -198,7 +202,7 @@ function DailyIncomeMobileSummary({
   }
 
   if (loading) {
-    return <p className="rounded-2xl border bg-card px-4 py-5 text-sm text-muted-foreground">Loading summary totals…</p>;
+    return <p className="rounded-2xl border bg-card px-4 py-5 text-sm text-muted-foreground">{t("accounting.dailyIncome.summary.loadingTotals")}</p>;
   }
 
   if (stats.length === 0) return null;
@@ -236,8 +240,8 @@ function DailyIncomeMobileSummary({
 }
 
 export function DailyIncomeWorkspace() {
- const currentUser = useCurrentUser();
- const {hasPermission} = useAuth();
+  const currentUser = useCurrentUser();
+  const { hasPermission } = useAuth();
   const { t } = useTranslation();
   const feedback = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
@@ -272,8 +276,12 @@ export function DailyIncomeWorkspace() {
   const selectedBranch = branches.find((branch) => branch.code === branchCode);
   const calendar = useCloseoutCalendar(selectedBranch?.id ?? 0);
   const serverToday = calendar.data?.today ?? "";
-  const date = selectedDate || serverToday;
-  const statementQuery = useIncomeStatement(selectedBranch?.id ?? 0, date);
+  const currentStatementQuery = useCurrentIncomeStatement(selectedBranch?.id ?? 0);
+  const transactionStatement = currentStatementQuery.data ?? null;
+  const historicalStatementQuery = useIncomeStatement(selectedBranch?.id ?? 0, selectedDate);
+  const statementQuery = selectedDate ? historicalStatementQuery : currentStatementQuery;
+  const currentDate = currentStatementQuery.data?.date.slice(0, 10) ?? "";
+  const date = selectedDate || currentDate || serverToday;
   const statement = statementQuery.data ?? null;
   useEffect(() => {
     if (!openCreateOnLoad) return;
@@ -291,7 +299,14 @@ export function DailyIncomeWorkspace() {
   );
   const dailyRoutesQuery = useDailyRoutePicker(200);
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
-  const invoicesQuery = useInvoices({ page: 1, limit: 200, sort: "number:desc" });
+  // Only invoices with an outstanding balance can receive a payment. The API search
+  // allowlist has no `balance` field, so filter by paidStatus != CLOSED (OPEN or PARTIAL).
+  const invoicesQuery = useInvoices({
+    page: 1,
+    limit: 200,
+    sort: "number:desc",
+    filterRows: [{ id: "payment-outstanding", join: "and", field: "paidStatus", operator: "neq", value: "CLOSED" }],
+  });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, transactionDialog);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, transactionDialog);
   const paymentMethodsQuery = useAccountingPaymentMethods(transactionDialog);
@@ -309,6 +324,7 @@ export function DailyIncomeWorkspace() {
   const deleteMutation = useDeleteDailyIncomeJournal();
   const generateIncomeReportMutation = useGenerateIncomeReport();
   const generateReceiptMutation = useGenerateReport();
+  const startTransaction = useStartTransaction(selectedBranch, openAddTransactionForm);
   const displayCurrency = statement?.currency || "USD";
   const statementOpen = statement?.id === calendar.data?.current?.id && statement?.status === "OPEN" && selectedBranch?.id === currentUser.data?.branch.id;
 
@@ -339,7 +355,8 @@ export function DailyIncomeWorkspace() {
 
 
   function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
-    if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
+    const saveStatement = editingJournal ? statement : transactionStatement;
+    if (!saveStatement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
     if (
       journalForForm &&
@@ -351,8 +368,8 @@ export function DailyIncomeWorkspace() {
       return Promise.resolve();
     }
     return (editingJournal
-      ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values, options })
-      : createJournal.mutateAsync({ statement, values, options })
+      ? updateJournal.mutateAsync({ id: editingJournal.id, statement: saveStatement, values, options })
+      : createJournal.mutateAsync({ statement: saveStatement, values, options })
     )
       .then(async (journal) => {
         if (editingJournal) {
@@ -362,9 +379,9 @@ export function DailyIncomeWorkspace() {
           return;
         }
 
-        if (journal?.incomeStatementId && journal.incomeStatementId !== statement.id) {
-          const current = await calendar.refetch();
-          if (current.data?.current?.id === journal.incomeStatementId) setDate(current.data.current.date);
+        if (journal?.incomeStatementId && journal.incomeStatementId !== saveStatement.id) {
+          const [current] = await Promise.all([calendar.refetch(), currentStatementQuery.refetch()]);
+          if (current.data?.current?.id === journal.incomeStatementId) setDate("");
         }
         feedback.notifySuccess(journalCreatedToastMessage({ ...values, invoiceNumber: journal?.invoice?.number || values.invoiceNumber }, t));
       })
@@ -422,14 +439,14 @@ export function DailyIncomeWorkspace() {
     }
   }
 
-  function openAddTransactionForm() {
-    if (!statement) return;
+  function openAddTransactionForm(nextStatement: DailyIncomeStatement) {
+    setDate("");
     if (isDesktopTabs) {
       openFormTab({
         feature: "daily-income-transactions",
         baseHref: "/accounting/daily-income",
         mode: "add",
-        entityId: String(statement.id),
+        entityId: String(nextStatement.id),
         label: t("accounting.dailyIncome.actions.addTransaction"),
       });
       return;
@@ -462,6 +479,8 @@ export function DailyIncomeWorkspace() {
   }
 
   return <div className="overflow-x-hidden">
+    {startTransaction.error && !startTransaction.setupOpen && <p role="alert" className="mb-4 text-sm text-destructive">{startTransaction.error}</p>}
+    {startTransaction.setupOpen && <TransactionCloseoutSetup pending={startTransaction.isPending} error={startTransaction.error} onSubmit={(values) => void startTransaction.start(values)} onCancel={startTransaction.cancel} />}
     <div className="space-y-5 md:hidden">
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4">
@@ -637,14 +656,10 @@ export function DailyIncomeWorkspace() {
 
     <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
 
-    {statement ? <>
-    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={openAddTransactionForm} disabled={!statementOpen}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
-
-
-    </> : null}
+    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
     </div>
 
-    {statement ? <div className="flex items-center justify-between gap-3 md:hidden"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2><Button onClick={openAddTransactionForm} disabled={!statementOpen}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button></div> : null}
+    <div className="flex items-center justify-between gap-3 md:hidden"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
     {statement ? <JournalTransactionsTable key={`${currentUser.data?.id}:${statement.id}`} incomeStatementId={statement.id} isPrintingReceipt={generateReceiptMutation.isPending} onView={setViewJournal} onPrintReceipt={journal => void printReceipt(journal)} /> : null}
 
     {statementDialog ? <CloseoutRolloverDialog open={statementDialog} onOpenChange={setStatementDialog} onReady={async created=>{setBranchCode(created.branch?.code??branchCode);setDate(created.date);await calendar.refetch();}} /> : null}
@@ -656,7 +671,7 @@ export function DailyIncomeWorkspace() {
       isPending={generateIncomeReportMutation.isPending}
       onConfirm={handlePrintReport}
     />
-    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} statementBranchId={statement?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} statementBranchId={statement?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
+    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
     <DailyIncomeTransactionViewSheet
       journal={viewJournal}
       currency={displayCurrency}

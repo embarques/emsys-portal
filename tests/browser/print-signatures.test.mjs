@@ -63,14 +63,19 @@ async function fixture(flags = {}) {
 }
 
 const ready = page => page.locator("form").waitFor();
+const receivers = page => page.locator('input[id^="print-receiver-"]');
+async function chooseReceiver(page, name) {
+ await receivers(page).first().click();
+ await page.getByRole("option",{name}).click();
+}
 test("20 invoices load in one metadata request and submit reference-only choices", async () => {
  const page=await fixture(); try {
  await ready(page);
- assert.equal(await page.locator('select[id^="print-receiver-"]').count(),5);
- await page.locator('select[id^="print-receiver-"]').first().selectOption("68f800000000000000000005");
+ assert.equal(await receivers(page).count(),10);
+ await chooseReceiver(page,/^Delivery five/);
  await page.getByRole("button",{name:"invoices.printSignatures.next",exact:true}).click();
  await page.getByRole("button",{name:"invoices.printSignatures.previous",exact:true}).click();
- assert.equal(await page.locator('select[id^="print-receiver-"]').first().inputValue(),"68f800000000000000000005");
+ assert.match(await receivers(page).first().inputValue(),/^Delivery five/);
  await page.locator("form").evaluate(form => { form.requestSubmit(); form.requestSubmit(); });
  await page.waitForFunction(() => window.printClosed);
  const result=await page.evaluate(() => ({calls:window.metadataRequests,requests:window.printRequests,opened:window.opened}));
@@ -85,9 +90,9 @@ test("first sender and receiver are selected by default and can be omitted",asyn
  const page=await fixture();try{
   await ready(page);
   assert.equal(await page.locator('input[type="checkbox"]').first().isChecked(),true);
-  assert.equal(await page.locator('select[id^="print-receiver-"]').first().inputValue(),"68f800000000000000000005");
+  assert.match(await receivers(page).first().inputValue(),/^Delivery five/);
   await page.locator('input[type="checkbox"]').first().uncheck();
-  await page.locator('select[id^="print-receiver-"]').first().selectOption("");
+  await chooseReceiver(page,"invoices.printSignatures.none");
   await page.locator("form").evaluate(form=>form.requestSubmit());
   await page.waitForFunction(()=>window.printClosed);
   const choice=await page.evaluate(()=>window.printRequests[0].signatureSelections[0]);
@@ -96,10 +101,54 @@ test("first sender and receiver are selected by default and can be omitted",asyn
  }finally{await page.close();}
 });
 test("delivery printing selects that barcode delivery, not the globally latest receipt",async()=>{
- const page=await fixture({trip:true}); try {await ready(page); assert.equal(await page.locator('select[id^="print-receiver-"]').inputValue(),"68f800000000000000000005");} finally {await page.close();}
+ const page=await fixture({trip:true}); try {await ready(page); assert.match(await receivers(page).inputValue(),/^Delivery five/);} finally {await page.close();}
 });
-test("latest receipt can replace the first receipt by applying it to all",async()=>{
- const page=await fixture(); try {await ready(page); await page.locator("#print-signature-default").selectOption("latest"); await page.getByRole("button",{name:"invoices.printSignatures.applyAll",exact:true}).click(); assert.equal(await page.locator('select[id^="print-receiver-"]').first().inputValue(),"68f800000000000000000006");}finally{await page.close();}
+test("latest receipt can replace the first receipt with one quick-apply click",async()=>{
+ const page=await fixture(); try {
+  await ready(page); await page.getByRole("button",{name:"invoices.printSignatures.latest",exact:true}).click();
+  assert.match(await receivers(page).first().inputValue(),/^Delivery six/);
+  await page.getByRole("button",{name:"invoices.printSignatures.senderOnly",exact:true}).click();
+  assert.equal(await receivers(page).first().inputValue(),"invoices.printSignatures.none");
+ }finally{await page.close();}
+});
+test("invoices without signatures are hidden until requested and still printed",async()=>{
+ const page=await fixture({visual:true,someUnsigned:true}); try {
+  await ready(page);
+  await page.getByText("10 invoices have no saved signatures and will print without them.").waitFor();
+  assert.equal(await page.getByText("INV-2",{exact:true}).count(),0);
+  assert.equal(await receivers(page).count(),10);
+  await page.getByText("Sender signature on 10 of 20 invoices",{exact:true}).waitFor();
+  await page.getByRole("button",{name:"Show them",exact:true}).click();
+  await page.getByText("INV-2",{exact:true}).waitFor();
+  assert.equal(await page.getByText("No receiver signatures collected",{exact:true}).count(),5);
+  await page.locator("form").evaluate(form=>form.requestSubmit());
+  await page.waitForFunction(()=>window.printClosed);
+  assert.equal(await page.evaluate(()=>window.printRequests[0].signatureSelections.length),20);
+ }finally{await page.close();}
+});
+test("a batch with no saved signatures shows one notice instead of empty rows",async()=>{
+ const page=await fixture({visual:true,noSignatures:true}); try {
+  await ready(page);
+  await page.getByText("None of the 20 selected invoices have saved signatures. They will print without signatures.",{exact:true}).waitFor();
+  assert.equal(await page.locator('input[type="checkbox"]').count(),0);
+  assert.equal(await page.getByRole("button",{name:"Sender signature only",exact:true}).count(),0);
+  assert.equal(await page.getByRole("button",{name:"Print 20 invoices",exact:true}).isEnabled(),true);
+ }finally{await page.close();}
+});
+test("workspace tabs stay clickable while choosing and choices survive switching back",async()=>{
+ const page=await fixture({visual:true,tabbed:true}); try {
+  await page.setViewportSize({width:1280,height:800}); await ready(page);
+  const dialog=await page.getByRole("dialog").boundingBox();
+  assert.ok(dialog.y>=120,`dialog top ${dialog.y} overlaps the tab bar`);
+  await page.locator('input[type="checkbox"]').first().uncheck();
+  await page.getByRole("button",{name:"Other tab",exact:true}).click();
+  assert.equal(await page.evaluate(()=>window.tabClicks),1);
+  assert.equal(await page.getByRole("dialog").isVisible(),false);
+  await page.getByRole("button",{name:"Invoices tab",exact:true}).click();
+  await ready(page);
+  assert.equal(await page.locator('input[type="checkbox"]').first().isChecked(),false);
+  assert.equal(await page.evaluate(()=>window.printClosed??false),false);
+ }finally{await page.close();}
 });
 test("missing print permission performs no metadata request",async()=>{
  const page=await fixture({readOnly:true});try{await page.getByRole("alert").waitFor();assert.equal(await page.evaluate(()=>window.metadataRequests??0),0);}finally{await page.close();}
@@ -108,7 +157,7 @@ test("failed metadata blocks printing until retry succeeds",async()=>{
  const page=await fixture({failMetadata:true});try{await page.getByRole("alert").waitFor();assert.equal(await page.locator("form").count(),0);await page.evaluate(()=>window.failMetadata=false);await page.getByRole("button",{name:"invoices.printSignatures.retry",exact:true}).click();await ready(page);}finally{await page.close();}
 });
 test("failed generation preserves chosen signature",async()=>{
- const page=await fixture({failPrint:true});try{await ready(page);await page.locator('select[id^="print-receiver-"]').first().selectOption("68f800000000000000000005");await page.locator("form").evaluate(form=>form.requestSubmit());await page.getByRole("alert").waitFor();assert.equal(await page.locator('select[id^="print-receiver-"]').first().inputValue(),"68f800000000000000000005");assert.equal(await page.evaluate(()=>window.opened),undefined);}finally{await page.close();}
+ const page=await fixture({failPrint:true});try{await ready(page);await chooseReceiver(page,/^Delivery six/);await page.locator("form").evaluate(form=>form.requestSubmit());await page.getByRole("alert").waitFor();assert.match(await receivers(page).first().inputValue(),/^Delivery six/);assert.equal(await page.evaluate(()=>window.opened),undefined);}finally{await page.close();}
 });
 
 test("signature picker fits desktop and mobile without a preview",async()=>{
@@ -118,9 +167,9 @@ test("signature picker fits desktop and mobile without a preview",async()=>{
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
    assert.equal(await page.locator("canvas,img,iframe").count(),0);
    await page.screenshot({path:`/tmp/emsys-print-signatures-${width}.png`});
-   await page.getByText("INV-5",{exact:true}).scrollIntoViewIfNeeded();
+   await page.getByText("INV-10",{exact:true}).scrollIntoViewIfNeeded();
    await page.getByRole("button",{name:"Next",exact:true}).click();
-   await page.getByText("INV-6",{exact:true}).waitFor();
+   await page.getByText("INV-11",{exact:true}).waitFor();
   }finally{await page.close();}
  }
 });
@@ -133,7 +182,7 @@ test("English and Spanish counts render without raw placeholders",async()=>{
    const text=await page.locator('[role="dialog"]').innerText();
    assert.equal(/\{(?:count|total|first|last|number)\}/.test(text),false);
    assert.ok(text.includes(spanish ? "20 facturas seleccionadas" : "20 selected invoices"));
-   assert.ok(text.includes(spanish ? "Facturas 1–5 de 20" : "Invoices 1–5 of 20"));
+   assert.ok(text.includes(spanish ? "Facturas 1–10 de 20" : "Invoices 1–10 of 20"));
   }finally{await page.close();}
  }
 });
@@ -142,7 +191,7 @@ test("single invoice identifies its number and explains absent signatures",async
   await ready(page);
   await page.getByText("Invoice INV-1 · Choose signatures for this PDF",{exact:true}).waitFor();
   await page.getByText("This invoice has no saved signatures. You can print it without signatures.",{exact:true}).waitFor();
-  assert.equal(await page.locator("#print-signature-default").count(),0);
+  assert.equal(await page.getByRole("button",{name:"Sender signature only",exact:true}).count(),0);
   assert.equal(await page.getByRole("button",{name:"Print invoice",exact:true}).isEnabled(),true);
  }finally{await page.close();}
 });

@@ -44,12 +44,6 @@ type TransactionTypeMeta = Pick<
 /** Types offered when adding a new daily-income transaction. Loans are managed on the Loans page. */
 const SELECTABLE_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
   {
-    value: "INITIAL-PAYMENT",
-    icon: FileText,
-    iconClassName: "text-blue-600",
-    iconBackgroundClassName: "bg-blue-50",
-  },
-  {
     value: "PAYMENT",
     icon: Banknote,
     iconClassName: "text-emerald-600",
@@ -66,12 +60,6 @@ const SELECTABLE_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
     icon: ArrowUpCircle,
     iconClassName: "text-emerald-600",
     iconBackgroundClassName: "bg-emerald-50",
-  },
-  {
-    value: "INVENTORY",
-    icon: Package,
-    iconClassName: "text-teal-700",
-    iconBackgroundClassName: "bg-teal-50",
   },
   {
     value: "DISCOUNT",
@@ -93,8 +81,21 @@ const SELECTABLE_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
   },
 ];
 
-/** Lookup meta for existing journal types that are no longer offered in Add transaction. */
+/** Lookup meta for journal types not offered as their own card in Add transaction. */
 const LEGACY_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
+  {
+    // Entered through Register payment → New invoice.
+    value: "INITIAL-PAYMENT",
+    icon: FileText,
+    iconClassName: "text-blue-600",
+    iconBackgroundClassName: "bg-blue-50",
+  },
+  {
+    value: "INVENTORY",
+    icon: Package,
+    iconClassName: "text-teal-700",
+    iconBackgroundClassName: "bg-teal-50",
+  },
   {
     value: "LOAN",
     icon: Landmark,

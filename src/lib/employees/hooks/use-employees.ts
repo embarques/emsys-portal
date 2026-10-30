@@ -60,11 +60,12 @@ export function useEmployeeSearch(
   });
 }
 
-export function useEmployees(params: EmployeeListParams) {
+export function useEmployees(params: EmployeeListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isEmployeeListFiltered(params);
 
   return useWorkspaceQuery({
     queryKey: queryKeys.employees.list(params),
+    enabled: options.enabled ?? true,
     queryFn: () => fetchEmployees(params),
     placeholderData: keepPreviousData,
     staleTime: isFiltered ? 0 : 60_000,

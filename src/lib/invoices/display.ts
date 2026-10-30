@@ -1,4 +1,5 @@
 import { formatContainerIdLabel } from "@/lib/containers/display";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import { formatAddressLine, formatCoreAddressLines } from "@/lib/customers/display";
 import type { CustomerCoreAddress } from "@/lib/customers/types";
 import { formatAddressLine as formatSnapshotAddressLine } from "@/lib/customers/utils/address-utils";
@@ -70,8 +71,10 @@ export function formatInvoicePickupAssignmentLabel(
   return getInvoicePickupAssignmentValue(invoice) || empty;
 }
 
-export function getPaymentMethodLabel(method: InvoicePaymentMethod): string {
-  return INVOICE_PAYMENT_METHODS.find((entry) => entry.value === method)?.label ?? method;
+export function getPaymentMethodLabel(method: InvoicePaymentMethod, t?: TranslateFn): string {
+  const entry = INVOICE_PAYMENT_METHODS.find((option) => option.value === method);
+  if (!entry) return method;
+  return t ? t(`invoices.view.payments.methods.${entry.value}`) : entry.label;
 }
 
 export function formatInvoiceTabLabel(
@@ -154,7 +157,11 @@ export function resolveInvoicePaidStatus(invoice: Invoice): InvoicePaidStatusVie
   return getInvoiceBalanceAmount(invoice) <= 0 ? "closed" : "open";
 }
 
-export function getInvoicePaidStatusLabel(status: InvoicePaidStatusView): string {
+/** Without `t`, returns the English label used for client-side search matching. */
+export function getInvoicePaidStatusLabel(status: InvoicePaidStatusView, t?: TranslateFn): string {
+  if (t) {
+    return t(status === "closed" ? "invoices.columns.statusClosed" : "invoices.columns.statusOpen");
+  }
   return status === "closed" ? "Closed" : "Open";
 }
 

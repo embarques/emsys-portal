@@ -28,7 +28,7 @@ Nested objects and arrays are displayed within their owning field column. Existi
 | `pickup.Pickup` | [orders-workspace.tsx](../src/components/orders/orders-workspace.tsx) | 19 | `completedAt`, `completedBy`, `id`, `legacySyncError`, `legacySyncStatus`, `legacySyncedAt`, `purpose`, `receivers`, `routeNumber`, `updatedBy` |
 | `report.ReportDefinition` | [reports-workspace.tsx](../src/components/reports/reports-workspace.tsx) | 11 | See existing/catalog columns |
 | `role.Role` | [roles-workspace.tsx](../src/components/roles/roles-workspace.tsx) | 9 | `active`, `systemRole`, `updatedBy` |
-| `route.Route` | [route-manager-workspace.tsx](../src/components/route-manager/route-manager-workspace.tsx) | 10 | `id`, `updatedBy`, `vehicle` |
+| `route.Route` | [route-manager-workspace.tsx](../src/components/route-manager/route-manager-workspace.tsx) | 10 | `id`, `updatedBy` |
 | `user.User` | [users-workspace.tsx](../src/components/users/users-workspace.tsx) | 13 | `createdBy`, `updatedBy` |
 | `useractivity.Activity` | [user-activities-workspace.tsx](../src/components/user-activities/user-activities-workspace.tsx) | 8 | `activityId` |
 | `vehicle_route.VehicleRoute` | [pickup-delivery-routes-directory-workspace.tsx](../src/components/pickup-delivery-routes/pickup-delivery-routes-directory-workspace.tsx) | 16 | `active`, `dayOfWeek`, `employees`, `rate`, `tripNumber`, `type` |

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { Search, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type TableSearchInputProps = {
@@ -17,10 +18,12 @@ type TableSearchInputProps = {
 export function TableSearchInput({
   value,
   onChange,
-  placeholder = "Search...",
+  placeholder: placeholderProp,
   className,
   inputClassName,
 }: TableSearchInputProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t("common.table.search");
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -45,8 +48,8 @@ export function TableSearchInput({
             onChange("");
             inputRef.current?.focus();
           }}
-          aria-label="Clear search"
-          title="Clear search"
+          aria-label={t("common.table.clearSearch")}
+          title={t("common.table.clearSearch")}
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>

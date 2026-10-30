@@ -63,6 +63,7 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -82,6 +83,7 @@ export function InventorySuppliersWorkspace() {
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS.sort, () => setPage(1));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
@@ -105,10 +107,11 @@ export function InventorySuppliersWorkspace() {
       ...DEFAULT_INVENTORY_SUPPLIER_LIST_PARAMS,
       page,
       limit: pageLimit,
+      sort,
       search: createInventorySearchFilter(debouncedQuery),
       ...(filterRows.length ? { filterRows } : {}),
     }),
-    [debouncedQuery, filterRows, page, pageLimit],
+    [debouncedQuery, filterRows, page, pageLimit, sort],
   );
   useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, filterRows), setSelectedIds);
   const directoryQuery = useInventoryDirectoryPage("suppliers", directoryParams);
@@ -134,11 +137,11 @@ export function InventorySuppliersWorkspace() {
       cellClassName: "font-medium",
       renderCell: (row) => row.companyName,
     },
-    { id: "contacts", label: t("inventory.columns.contacts"), renderCell: (row) => formatSupplierContactNames(row) || dash },
-    { id: "phones", label: t("inventory.form.fields.phones"), renderCell: (row) => formatSupplierPhones(row) || dash },
-    { id: "emails", label: t("inventory.form.fields.emails"), renderCell: (row) => formatSupplierEmails(row) || dash },
-    { id: "addresses", label: t("inventory.form.fields.addresses"), renderCell: (row) => formatSupplierList(row.addresses) || dash },
-    { id: "status", label: t("inventory.columns.status"), renderCell: (row) => <InventoryActiveBadge isActive={row.isActive} /> },
+    { id: "contacts", label: t("inventory.columns.contacts"), sortable: false, renderCell: (row) => formatSupplierContactNames(row) || dash },
+    { id: "phones", label: t("inventory.form.fields.phones"), sortable: false, renderCell: (row) => formatSupplierPhones(row) || dash },
+    { id: "emails", label: t("inventory.form.fields.emails"), sortable: false, renderCell: (row) => formatSupplierEmails(row) || dash },
+    { id: "addresses", label: t("inventory.form.fields.addresses"), sortable: false, renderCell: (row) => formatSupplierList(row.addresses) || dash },
+    { id: "status", label: t("inventory.columns.status"), sortField: "isActive", renderCell: (row) => <InventoryActiveBadge isActive={row.isActive} /> },
   ];
 
   const columnVisibility = useApiTableColumns("inventory-suppliers", columns, INVENTORY_SUPPLIER_API_TABLE_FIELDS);
@@ -328,7 +331,8 @@ export function InventorySuppliersWorkspace() {
             rowKey={(row) => row.id}
             rowLabel={(row) => row.companyName}
             columnLayout={columnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={900}
             selectable
             selectedIds={selectedIds}

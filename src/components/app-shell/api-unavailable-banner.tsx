@@ -6,8 +6,10 @@ import {
   useApiConnectivityMessage,
   useApiHealth,
 } from "@/lib/api/hooks/use-api-health";
+import { useTranslation } from "@/lib/i18n";
 
 export function ApiUnavailableBanner() {
+  const { t } = useTranslation();
   const { isError, error, isPending } = useApiHealth();
   const message = useApiConnectivityMessage(isError ? error : null);
 
@@ -22,7 +24,7 @@ export function ApiUnavailableBanner() {
     >
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
       <p>
-        <strong>API unavailable.</strong> {message}
+        <strong>{t("shell.api.unavailable")}</strong> {message}
       </p>
     </div>
   );

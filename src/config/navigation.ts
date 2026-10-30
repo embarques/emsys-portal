@@ -155,6 +155,12 @@ const inventoryItem: NavigationItem = {
   labelKey: "navigation.submenus.inventory",
   icon: Warehouse,
   children: [
+    {
+      labelKey: "navigation.items.pendingInventoryTransactions",
+      href: "/inventory/pending-transactions",
+      icon: PackageCheck,
+      permission: PERMISSIONS.inventoryDispatchesList,
+    },
     { labelKey: "navigation.items.inventoryWorkflow", href: "/inventory/workflow", icon: Boxes, permission: PERMISSIONS.inventoryWorkflowRead },
     {
       labelKey: "navigation.items.inventoryStock",
@@ -253,30 +259,6 @@ const accountingGroup: NavigationGroup = {
       permission: PERMISSIONS.incomeView,
     },
     {
-      labelKey: "navigation.items.checks",
-      href: "/accounting/checks",
-      icon: ScrollText,
-      permission: PERMISSIONS.checksList,
-    },
-    {
-      labelKey: "navigation.items.zelle",
-      href: "/accounting/zelle",
-      icon: Smartphone,
-      permission: PERMISSIONS.zellePaymentsList,
-    },
-    {
-      labelKey: "navigation.items.deposits",
-      href: "/accounting/deposits",
-      icon: Landmark,
-      permission: PERMISSIONS.depositsList,
-    },
-    {
-      labelKey: "navigation.items.creditCards",
-      href: "/accounting/credit-cards",
-      icon: CreditCard,
-      permission: PERMISSIONS.creditCardPaymentsList,
-    },
-    {
       labelKey: "navigation.items.chartOfAccounts",
       href: "/accounting/accounts",
       icon: BookOpenText,
@@ -284,6 +266,37 @@ const accountingGroup: NavigationGroup = {
     },
   ],
 };
+
+/**
+ * Payment clearing workspaces opened from Pending Transactions.
+ * Not shown in the sidebar, but still used for workspace tab labels and accents.
+ */
+export const accountingClearingNavigationItems: NavigationItem[] = [
+  {
+    labelKey: "navigation.items.checks",
+    href: "/accounting/checks",
+    icon: ScrollText,
+    permission: PERMISSIONS.checksList,
+  },
+  {
+    labelKey: "navigation.items.zelle",
+    href: "/accounting/zelle",
+    icon: Smartphone,
+    permission: PERMISSIONS.zellePaymentsList,
+  },
+  {
+    labelKey: "navigation.items.deposits",
+    href: "/accounting/deposits",
+    icon: Landmark,
+    permission: PERMISSIONS.depositsList,
+  },
+  {
+    labelKey: "navigation.items.creditCards",
+    href: "/accounting/credit-cards",
+    icon: CreditCard,
+    permission: PERMISSIONS.creditCardPaymentsList,
+  },
+];
 
 /**
  * Sidebar sections in usage order.

@@ -18,6 +18,7 @@ import {
   type BranchRef,
 } from "@/lib/branches/user-branch";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
+import { routeCrewMembersSchema } from "@/lib/route-manager/schemas/route-crew.schema";
 import { cn } from "@/lib/utils";
 
 const EMPTY_BRANCHES: BranchRef[] = [];
@@ -138,13 +139,15 @@ export function RouteForm({
 
   const hasBranch = values.branch.id > 0 && Boolean(values.branch.name?.trim());
 
+  const hasEnoughMembers = routeCrewMembersSchema.safeParse(values.employees).success;
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!hasBranch) {
       setEmployeeError(t("routes.form.validation.branchRequired"));
       return;
     }
-    if (values.employees.length === 0) {
+    if (!hasEnoughMembers) {
       setEmployeeError(t("routes.form.crewMemberRequired"));
       return;
     }
@@ -156,7 +159,7 @@ export function RouteForm({
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody workflow isBusy={isSubmitting}>
         <div className="grid items-stretch gap-5 @4xl:grid-cols-2">
-          {isEditing && (values.routeId.trim() || values.name.trim()) ? (
+          {isEditing && values.routeId.trim() ? (
             <FormSection variant="card" className="@4xl:col-span-2" icon={ClipboardList} title={t("routes.form.sections.details")}>
               <div className="grid gap-4 sm:grid-cols-2">
                 {values.routeId.trim() ? (
@@ -164,15 +167,6 @@ export function RouteForm({
                     <Label htmlFor="route-display-id">{t("routes.routeDetails.routeId")}</Label>
                     <p id="route-display-id" className="font-mono text-sm">
                       {values.routeId}
-                    </p>
-                  </div>
-                ) : null}
-
-                {values.name.trim() ? (
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label htmlFor="route-display-name">{t("routes.routeDetails.name")}</Label>
-                    <p id="route-display-name" className="text-sm font-medium">
-                      {values.name}
                     </p>
                   </div>
                 ) : null}
@@ -247,7 +241,7 @@ export function RouteForm({
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         error={externalError}
-        submitDisabled={!hasBranch || values.employees.length === 0}
+        submitDisabled={!hasBranch || !hasEnoughMembers}
         onCancel={onCancel}
       />
     </form>

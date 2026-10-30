@@ -10,6 +10,7 @@ import {
   normalizeWorkspaceTabColor,
   WORKSPACE_TAB_PRESET_COLORS,
 } from "@/lib/layout/workspace-tab-colors";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type WorkspaceTabColorMenuProps = {
@@ -25,6 +26,7 @@ export function WorkspaceTabColorMenu({
   canReset = false,
   onColorChange,
 }: WorkspaceTabColorMenuProps) {
+  const { t } = useTranslation();
   const activeColor = normalizeWorkspaceTabColor(currentColor);
 
   function applyColor(color: string | null, options?: { swapWithSections?: boolean }) {
@@ -33,7 +35,7 @@ export function WorkspaceTabColorMenu({
 
   return (
     <ContextMenuSub>
-      <ContextMenuSubTrigger>Set color</ContextMenuSubTrigger>
+      <ContextMenuSubTrigger>{t("shell.tabs.color.set")}</ContextMenuSubTrigger>
       <ContextMenuSubContent className="w-56 p-2">
         <div className="grid grid-cols-5 gap-1.5 px-1 py-1">
           {WORKSPACE_TAB_PRESET_COLORS.map((color) => {
@@ -44,7 +46,7 @@ export function WorkspaceTabColorMenu({
                 key={color}
                 type="button"
                 title={color}
-                aria-label={`Set tab color ${color}`}
+                aria-label={t("shell.tabs.color.setPreset", { color })}
                 aria-pressed={selected}
                 className={cn(
                   "h-7 w-7 rounded-md border border-border/60 transition hover:scale-105",
@@ -62,11 +64,11 @@ export function WorkspaceTabColorMenu({
           className="mt-2 flex items-center gap-2 rounded-sm px-2 py-2 text-sm hover:bg-accent"
           onPointerDown={(event) => event.preventDefault()}
         >
-          <span className="shrink-0 text-muted-foreground">Custom</span>
+          <span className="shrink-0 text-muted-foreground">{t("shell.tabs.color.custom")}</span>
           <input
             type="color"
             value={activeColor ?? "#3b82f6"}
-            aria-label="Pick a custom tab color"
+            aria-label={t("shell.tabs.color.pickCustom")}
             className="h-8 w-full cursor-pointer rounded border border-border bg-transparent p-0.5"
             onChange={(event) => applyColor(event.target.value, { swapWithSections: false })}
           />
@@ -77,7 +79,7 @@ export function WorkspaceTabColorMenu({
           onSelect={() => applyColor(null)}
           className="mt-1"
         >
-          Reset color
+          {t("shell.tabs.color.reset")}
         </ContextMenuItem>
       </ContextMenuSubContent>
     </ContextMenuSub>

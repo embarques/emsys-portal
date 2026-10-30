@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -9,6 +9,7 @@ import { PredefinedRouteCoverageCell } from "@/components/predefined-routes/pred
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
+import { getPrimarySortSpec } from "@/lib/api/list-query";
 import { useTranslation } from "@/lib/i18n";
 import { fetchPredefinedRoutesPage } from "@/lib/predefined-routes/api/predefined-routes-api";
 import { PREDEFINED_ROUTE_TABLE_FILTER_FIELDS } from "@/lib/predefined-routes/filter-fields";
@@ -19,6 +20,46 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { isRouteZipCode } from "@/lib/orders/predefined-route-filter";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
+import { useTableSort } from "@/lib/table/use-table-sort";
+
+function SortableHeader({
+  label,
+  field,
+  sort,
+  onSort,
+}: {
+  label: string;
+  field: string;
+  sort: string;
+  onSort: (field: string) => void;
+}) {
+  const { t } = useTranslation();
+  const active = getPrimarySortSpec(sort);
+  const direction = active?.field === field ? active.direction : undefined;
+
+  return (
+    <th
+      className="px-4 py-3 font-medium"
+      aria-sort={direction === "desc" ? "descending" : direction === "asc" ? "ascending" : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        aria-label={t("common.table.sortBy", { column: label })}
+        className="group/sort flex items-center gap-0.5 text-left"
+      >
+        {label}
+        {direction === "desc" ? (
+          <ChevronDown className="size-3.5 shrink-0 text-foreground/80" />
+        ) : direction === "asc" ? (
+          <ChevronUp className="size-3.5 shrink-0 text-foreground/80" />
+        ) : (
+          <ChevronsUpDown className="size-3.5 shrink-0 text-foreground/30 opacity-0 transition-opacity group-hover/sort:opacity-100" />
+        )}
+      </button>
+    </th>
+  );
+}
 
 export function PredefinedRoutesWorkspace() {
   const { t } = useTranslation();
@@ -27,15 +68,22 @@ export function PredefinedRoutesWorkspace() {
   const canCreate = hasPermission(PERMISSIONS.predefinedRoutesCreate.name, PERMISSIONS.predefinedRoutesCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.predefinedRoutesUpdate.name, PERMISSIONS.predefinedRoutesUpdate.resourceType);
   const canDelete = hasPermission(PERMISSIONS.predefinedRoutesDelete.name, PERMISSIONS.predefinedRoutesDelete.resourceType);
+  const { sort, onSortChange } = useTableSort("name:asc");
   const table = useCatalogTable({
     fields: PREDEFINED_ROUTE_TABLE_FILTER_FIELDS,
     keepPrevious: false,
     enabled: Boolean(companyId) && hasPermission(PERMISSIONS.predefinedRoutesView.name, PERMISSIONS.predefinedRoutesView.resourceType),
     keyPrefix: "predefinedRoutes.filters.fields",
-    sort: "name:asc",
+    sort,
     queryKey: (params) => [...queryKeys.predefinedRoutes.page(params), companyId],
     fetchPage: fetchPredefinedRoutesPage,
   });
+
+  function toggleSort(field: string) {
+    const active = getPrimarySortSpec(sort);
+    onSortChange(field, active?.field === field && active.direction === "asc" ? "desc" : "asc");
+    table.pagination.setPage(1);
+  }
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -79,8 +127,8 @@ export function PredefinedRoutesWorkspace() {
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left">
                 <tr>
-                  <th className="px-4 py-3 font-medium">{t("common.apiColumns.id")}</th>
-                  <th className="px-4 py-3 font-medium">{t("predefinedRoutes.fields.name")}</th>
+                  <SortableHeader label={t("common.apiColumns.id")} field="id" sort={sort} onSort={toggleSort} />
+                  <SortableHeader label={t("predefinedRoutes.fields.name")} field="name" sort={sort} onSort={toggleSort} />
                   <th className="px-4 py-3 font-medium">{t("predefinedRoutes.fields.cities")}</th>
                   <th className="px-4 py-3 font-medium">{t("predefinedRoutes.fields.zipcodes")}</th>
                   <th className="px-4 py-3 text-right font-medium">{t("common.actions.actions")}</th>

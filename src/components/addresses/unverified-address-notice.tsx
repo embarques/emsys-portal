@@ -7,6 +7,7 @@ import {
   customerHasUnverifiedPrimaryAddress,
   type Customer,
 } from "@/lib/customers/types";
+import { useTranslation } from "@/lib/i18n";
 import { customerHasUnverifiedAddressAtIndex } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ export function UnverifiedAddressNotice({
   onUpdateAddress,
   className,
 }: UnverifiedAddressNoticeProps) {
+  const { t } = useTranslation();
   const isUnverified =
     addressIndex == null
       ? customerHasUnverifiedPrimaryAddress(customer)
@@ -46,9 +48,9 @@ export function UnverifiedAddressNotice({
     >
       <ShieldAlert className="mt-0.5 size-4 shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="font-medium">This client&apos;s address isn&apos;t verified.</p>
+        <p className="font-medium">{t("customers.address.unverifiedNotice.title")}</p>
         <p className="text-xs text-amber-700/90 dark:text-amber-300/90">
-          Update it with a Google-suggested address to confirm the location.
+          {t("customers.address.unverifiedNotice.description")}
         </p>
       </div>
       <Button
@@ -58,7 +60,7 @@ export function UnverifiedAddressNotice({
         className="h-7 shrink-0 border-amber-500/50 bg-transparent text-amber-800 hover:bg-amber-500/15 dark:text-amber-200"
         onClick={onUpdateAddress}
       >
-        Update address
+        {t("customers.address.unverifiedNotice.action")}
       </Button>
     </div>
   );

@@ -48,6 +48,7 @@ import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/ty
 import { useReportDefinitions, useReportDeliveryOptions, useRequestReportGeneration } from "@/lib/reports/hooks/use-reports";
 import { openReportUrl, downloadReportFile } from "@/lib/reports/open-report";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useTranslation } from "@/lib/i18n";
 import type {
   NormalizedReportRequest,
   ReportDefinition,
@@ -95,67 +96,83 @@ const FILTER_VALUE_KEYS: Record<string, string[]> = {
   rate: ["rate"],
 };
 
-const INVOICE_STATUS_OPTIONS = [
-  { value: "", label: "[All Status]" },
-  { value: "open", label: "Open" },
-  { value: "paid", label: "Paid" },
-  { value: "partial", label: "Partial" },
-  { value: "cancelled", label: "Cancelled" },
+type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
+
+type ReportOptionDefinition = { value: string; labelKey: string };
+
+const OPTION_KEY_PREFIX = "reports.workspace.options";
+
+const INVOICE_STATUS_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allStatus` },
+  { value: "open", labelKey: `${OPTION_KEY_PREFIX}.open` },
+  { value: "paid", labelKey: `${OPTION_KEY_PREFIX}.paid` },
+  { value: "partial", labelKey: `${OPTION_KEY_PREFIX}.partial` },
+  { value: "cancelled", labelKey: `${OPTION_KEY_PREFIX}.cancelled` },
 ];
 
-const PAYMENT_STATUS_OPTIONS = [
-  { value: "", label: "[All Status]" },
-  { value: "paid", label: "Paid" },
-  { value: "pending", label: "Pending" },
-  { value: "partial", label: "Partial" },
+const PAYMENT_STATUS_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allStatus` },
+  { value: "paid", labelKey: `${OPTION_KEY_PREFIX}.paid` },
+  { value: "pending", labelKey: `${OPTION_KEY_PREFIX}.pending` },
+  { value: "partial", labelKey: `${OPTION_KEY_PREFIX}.partial` },
 ];
 
-const INVOICE_PAYMENT_STATUS_OPTIONS = [
-  { value: "", label: "[All Status]" },
-  { value: "OPEN", label: "Open" },
-  { value: "CLOSED", label: "Closed" },
+const INVOICE_PAYMENT_STATUS_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allStatus` },
+  { value: "OPEN", labelKey: `${OPTION_KEY_PREFIX}.open` },
+  { value: "CLOSED", labelKey: `${OPTION_KEY_PREFIX}.closed` },
 ];
 
-const SHIPMENT_PAYMENT_STATUS_OPTIONS = [
-  { value: "", label: "[All Status]" },
-  { value: "OPEN", label: "Open" },
-  { value: "CLOSED", label: "Closed" },
+const SHIPMENT_PAYMENT_STATUS_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allStatus` },
+  { value: "OPEN", labelKey: `${OPTION_KEY_PREFIX}.open` },
+  { value: "CLOSED", labelKey: `${OPTION_KEY_PREFIX}.closed` },
 ];
 
-const CUSTOMER_TYPE_SEGMENT_OPTIONS = [
-  { value: "", label: "All" },
-  { value: "sender", label: "Sender" },
-  { value: "receiver", label: "Receiver" },
+const CUSTOMER_TYPE_SEGMENT_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.all` },
+  { value: "sender", labelKey: `${OPTION_KEY_PREFIX}.sender` },
+  { value: "receiver", labelKey: `${OPTION_KEY_PREFIX}.receiver` },
 ];
 
-const PAYMENT_METHOD_OPTIONS = [
-  { value: "", label: "[All Methods]" },
-  { value: "cash", label: "Cash" },
-  { value: "check", label: "Check" },
-  { value: "card", label: "Card" },
-  { value: "transfer", label: "Transfer" },
+const PAYMENT_METHOD_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allMethods` },
+  { value: "cash", labelKey: `${OPTION_KEY_PREFIX}.cash` },
+  { value: "check", labelKey: `${OPTION_KEY_PREFIX}.check` },
+  { value: "card", labelKey: `${OPTION_KEY_PREFIX}.card` },
+  { value: "transfer", labelKey: `${OPTION_KEY_PREFIX}.transfer` },
 ];
 
-const LOAN_STATUS_OPTIONS = [
-  { value: "", label: "[All Status]" },
-  { value: "open", label: "Open" },
-  { value: "paid", label: "Paid" },
+const LOAN_STATUS_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allStatus` },
+  { value: "open", labelKey: `${OPTION_KEY_PREFIX}.open` },
+  { value: "paid", labelKey: `${OPTION_KEY_PREFIX}.paid` },
 ];
 
-const STATUS_OPTIONS = [
-  { value: "", label: "[All Status]" },
-  { value: "active", label: "Active" },
-  { value: "pending", label: "Pending" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
+const STATUS_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allStatus` },
+  { value: "active", labelKey: `${OPTION_KEY_PREFIX}.active` },
+  { value: "pending", labelKey: `${OPTION_KEY_PREFIX}.pending` },
+  { value: "completed", labelKey: `${OPTION_KEY_PREFIX}.completed` },
+  { value: "cancelled", labelKey: `${OPTION_KEY_PREFIX}.cancelled` },
 ];
 
-const PORT_OPTIONS = [
-  { value: "", label: "[All Ports]" },
-  { value: "dominican-republic", label: "Dominican Republic" },
-  { value: "new-york", label: "New York" },
-  { value: "new-jersey", label: "New Jersey" },
+const PORT_OPTIONS: ReportOptionDefinition[] = [
+  { value: "", labelKey: `${OPTION_KEY_PREFIX}.allPorts` },
+  { value: "dominican-republic", labelKey: `${OPTION_KEY_PREFIX}.dominicanRepublic` },
+  { value: "new-york", labelKey: `${OPTION_KEY_PREFIX}.newYork` },
+  { value: "new-jersey", labelKey: `${OPTION_KEY_PREFIX}.newJersey` },
 ];
+
+function localizeOptions(options: ReportOptionDefinition[], t: TranslateFn): SearchableSelectOption[] {
+  return options.map((option) => ({ value: option.value, label: t(option.labelKey) }));
+}
+
+function reportCategoryLabel(category: string, t: TranslateFn): string {
+  if (category === ALL_CATEGORY) return t("reports.workspace.categories.all");
+  if (category === LOANS_REPORT_CATEGORY) return t("reports.workspace.categories.loans");
+  return category;
+}
 
 function isInvoiceReportKey(key: string): boolean {
   return (
@@ -209,6 +226,7 @@ function defaultReportFilterValues(
 }
 
 export function ReportsWorkspace() {
+  const { t } = useTranslation();
   const feedback = useFeedback();
   const reportsQuery = useReportDefinitions();
   const generation = useRequestReportGeneration();
@@ -312,10 +330,10 @@ export function ReportsWorkspace() {
 
   async function generateSelectedReport(format?: ReportOutputFormat) {
     if (!selectedReport) return;
-    const validation = validateReportFilters(selectedReport, selectedValues);
+    const validation = validateReportFilters(selectedReport, selectedValues, t);
     setErrors(validation.errors);
     if (!validation.valid) {
-      feedback.notifyError("Review the highlighted filters before generating the report.");
+      feedback.notifyError(t("reports.workspace.toasts.reviewFilters"));
       return;
     }
 
@@ -329,14 +347,14 @@ export function ReportsWorkspace() {
             response.result.url,
             response.result.fileName || "report.xlsx",
           );
-          feedback.notifySuccess("Excel report downloaded.");
+          feedback.notifySuccess(t("reports.workspace.toasts.excelDownloaded"));
           return;
         }
         openReportUrl(response.result.url);
-        feedback.notifySuccess("Report generated.");
+        feedback.notifySuccess(t("reports.workspace.toasts.generated"));
         return;
       }
-      feedback.notifyError("This report is not available yet.");
+      feedback.notifyError(t("reports.workspace.toasts.notAvailable"));
     } catch (error) {
       feedback.notifyError(normalizeApiError(error).message);
     }
@@ -361,12 +379,12 @@ export function ReportsWorkspace() {
   return (
     <div className="max-w-full overflow-x-hidden">
       <div className="hidden md:block">
-        <PageHeader title="Reports" description="Generate and export reports from your data" />
+        <PageHeader title={t("reports.page.title")} description={t("reports.workspace.description")} />
       </div>
 
       <section className={cn("mb-5 md:hidden", mobileConfigOpen && selectedReport ? "hidden" : "block")}>
-        <h1 className="text-3xl font-bold tracking-normal text-foreground">Reports</h1>
-        <p className="mt-1 text-base text-muted-foreground">Generate and export reports from your data</p>
+        <h1 className="text-3xl font-bold tracking-normal text-foreground">{t("reports.page.title")}</h1>
+        <p className="mt-1 text-base text-muted-foreground">{t("reports.workspace.description")}</p>
       </section>
 
       <div className="hidden gap-4 xl:grid xl:grid-cols-[minmax(0,1.55fr)_minmax(22rem,1fr)]">
@@ -412,7 +430,7 @@ export function ReportsWorkspace() {
               onClick={() => setMobileConfigOpen(false)}
             >
               <ArrowLeft className="size-4" />
-              Reports
+              {t("reports.page.title")}
             </button>
             {filtersPanel}
           </div>
@@ -437,10 +455,11 @@ export function ReportsWorkspace() {
 }
 
 function ReportCatalogPanel(props: ReportCatalogProps) {
+  const { t } = useTranslation();
   return (
     <Card className="overflow-hidden">
       <CardHeader className="space-y-4 pb-3">
-        <CardTitle>Available Reports</CardTitle>
+        <CardTitle>{t("reports.workspace.availableReports")}</CardTitle>
         <ReportSearchAndCategories {...props} />
       </CardHeader>
       <CardContent className="px-4 pb-4">
@@ -471,12 +490,13 @@ function ReportSearchAndCategories({
   onSearchChange,
   onCategoryChange,
 }: ReportCatalogProps) {
+  const { t } = useTranslation();
   return (
     <>
       <TableSearchInput
         value={search}
         onChange={onSearchChange}
-        placeholder="Search reports by name, type or description..."
+        placeholder={t("reports.workspace.searchPlaceholder")}
       />
       <div className="flex flex-wrap gap-2">
         {categories.map((item) => (
@@ -488,7 +508,7 @@ function ReportSearchAndCategories({
             className="h-8 rounded-lg px-3"
             onClick={() => onCategoryChange(item)}
           >
-            {item}
+            {reportCategoryLabel(item, t)}
           </Button>
         ))}
       </div>
@@ -504,18 +524,31 @@ function ReportCatalogContent({
   error,
   onSelect,
 }: ReportCatalogProps) {
+  const { t } = useTranslation();
   if (loading) return <ReportLoadingState />;
-  if (error) return <ReportEmptyState title="Unable to load reports" description="Refresh the page and try again." />;
+  if (error) {
+    return (
+      <ReportEmptyState
+        title={t("reports.workspace.states.loadErrorTitle")}
+        description={t("reports.workspace.states.loadErrorDescription")}
+      />
+    );
+  }
   if (total === 0) {
     return (
       <ReportEmptyState
-        title="No reports available"
-        description="No reports are currently configured or available for this account."
+        title={t("reports.workspace.states.noneAvailableTitle")}
+        description={t("reports.workspace.states.noneAvailableDescription")}
       />
     );
   }
   if (reports.length === 0) {
-    return <ReportEmptyState title="No reports found" description="Try changing your search or report category." />;
+    return (
+      <ReportEmptyState
+        title={t("reports.workspace.states.noneFoundTitle")}
+        description={t("reports.workspace.states.noneFoundDescription")}
+      />
+    );
   }
 
   return (
@@ -524,9 +557,9 @@ function ReportCatalogContent({
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs font-semibold text-muted-foreground">
             <tr>
-              <th className="px-3 py-2">Type</th>
-              <th className="px-3 py-2">Report Name</th>
-              <th className="px-3 py-2">Description</th>
+              <th className="px-3 py-2">{t("reports.workspace.table.type")}</th>
+              <th className="px-3 py-2">{t("reports.workspace.table.name")}</th>
+              <th className="px-3 py-2">{t("reports.workspace.table.description")}</th>
             </tr>
           </thead>
           <tbody>
@@ -542,7 +575,7 @@ function ReportCatalogContent({
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-2 font-medium text-primary">
                     <ReportIcon icon={report.icon} type={reportDisplayType(report)} className="size-4" />
-                    {reportDisplayType(report)}
+                    {reportCategoryLabel(reportDisplayType(report), t)}
                   </span>
                 </td>
                 <td className="px-3 py-2 font-medium text-foreground">{report.name}</td>
@@ -553,7 +586,7 @@ function ReportCatalogContent({
         </table>
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
-        Showing 1-{reports.length} of {reports.length} reports
+        {t("reports.workspace.showing", { count: reports.length, total: reports.length })}
       </p>
     </>
   );
@@ -561,24 +594,38 @@ function ReportCatalogContent({
 
 function ReportMobileCatalog(props: ReportCatalogProps) {
   const { reports, total, loading, error, selectedKey, onSelect } = props;
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-4">
       <ReportSearchAndCategories {...props} />
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{reports.length} {reports.length === 1 ? "report" : "reports"}</span>
+        <span>
+          {t(
+            reports.length === 1 ? "reports.workspace.reportCountOne" : "reports.workspace.reportCountOther",
+            { count: reports.length },
+          )}
+        </span>
         <span className="font-medium">A-Z</span>
       </div>
       {loading ? <ReportLoadingState /> : null}
-      {error ? <ReportEmptyState title="Unable to load reports" description="Refresh the page and try again." /> : null}
+      {error ? (
+        <ReportEmptyState
+          title={t("reports.workspace.states.loadErrorTitle")}
+          description={t("reports.workspace.states.loadErrorDescription")}
+        />
+      ) : null}
       {!loading && !error && total === 0 ? (
         <ReportEmptyState
-          title="No reports available"
-          description="No reports are currently configured or available for this account."
+          title={t("reports.workspace.states.noneAvailableTitle")}
+          description={t("reports.workspace.states.noneAvailableDescription")}
         />
       ) : null}
       {!loading && !error && total > 0 && reports.length === 0 ? (
-        <ReportEmptyState title="No reports found" description="Try changing your search or report category." />
+        <ReportEmptyState
+          title={t("reports.workspace.states.noneFoundTitle")}
+          description={t("reports.workspace.states.noneFoundDescription")}
+        />
       ) : null}
       <div className="space-y-3">
         {reports.map((report) => (
@@ -597,7 +644,7 @@ function ReportMobileCatalog(props: ReportCatalogProps) {
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold leading-snug text-foreground">{report.name}</span>
               <Badge variant="secondary" className="mt-1 bg-primary/10 text-primary hover:bg-primary/10">
-                {reportDisplayType(report)}
+                {reportCategoryLabel(reportDisplayType(report), t)}
               </Badge>
               <span className="mt-1 block text-sm leading-snug text-muted-foreground">{report.description}</span>
             </span>
@@ -628,14 +675,15 @@ function ReportConfigurationPanel({
   onGenerate?: () => void;
   onDownloadExcel?: () => void;
 }) {
+  const { t } = useTranslation();
   if (!report) {
     return (
       <Card className="min-h-[24rem]">
         <CardContent className="flex min-h-[24rem] flex-col items-center justify-center text-center">
           <FileText className="mb-4 size-12 text-primary/70" />
-          <h3 className="text-xl font-semibold">Select a report</h3>
+          <h3 className="text-xl font-semibold">{t("reports.workspace.config.selectTitle")}</h3>
           <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-            Choose a report from the list to configure its filters and generate it.
+            {t("reports.workspace.config.selectDescription")}
           </p>
         </CardContent>
       </Card>
@@ -655,7 +703,7 @@ function ReportConfigurationPanel({
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-bold leading-tight text-foreground">{report.name}</h2>
               <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/10">
-                {reportDisplayType(report)}
+                {reportCategoryLabel(reportDisplayType(report), t)}
               </Badge>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{report.description}</p>
@@ -665,8 +713,8 @@ function ReportConfigurationPanel({
         <div className="my-5 border-t" />
 
         <div>
-          <h3 className="text-lg font-semibold">Report Filters</h3>
-          <p className="text-sm text-muted-foreground">Select the filters to generate the report.</p>
+          <h3 className="text-lg font-semibold">{t("reports.workspace.config.filtersTitle")}</h3>
+          <p className="text-sm text-muted-foreground">{t("reports.workspace.config.filtersDescription")}</p>
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -679,7 +727,7 @@ function ReportConfigurationPanel({
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={onClear} className="h-11">
               <X className="size-4" />
-              Clear Filters
+              {t("reports.workspace.config.clearFilters")}
             </Button>
             {onDownloadExcel ? (
               <Button
@@ -688,15 +736,15 @@ function ReportConfigurationPanel({
                 onClick={onDownloadExcel}
                 disabled={generating}
                 className="h-11 border-emerald-600/40 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-500/40 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
-                aria-label="Download Excel report"
-                title="Download Excel"
+                aria-label={t("reports.workspace.config.downloadExcelAria")}
+                title={t("reports.workspace.config.downloadExcel")}
               >
                 {generating ? (
                   <LoaderCircle className="size-4 animate-spin" />
                 ) : (
                   <FileSpreadsheet className="size-4 text-emerald-600 dark:text-emerald-400" />
                 )}
-                Download Excel
+                {t("reports.workspace.config.downloadExcel")}
               </Button>
             ) : null}
             {onGenerate ? (
@@ -705,11 +753,11 @@ function ReportConfigurationPanel({
                 onClick={onGenerate}
                 disabled={generating}
                 className="h-11"
-                aria-label="Generate PDF report"
-                title="Generate PDF"
+                aria-label={t("reports.workspace.config.generatePdfAria")}
+                title={t("reports.workspace.config.generatePdf")}
               >
                 {generating ? <LoaderCircle className="size-4 animate-spin" /> : <FileType className="size-4" />}
-                Generate PDF
+                {t("reports.workspace.config.generatePdf")}
               </Button>
             ) : null}
           </div>
@@ -728,6 +776,22 @@ function DynamicReportFilter({
   reportKey: string;
   context: FilterContext;
 }) {
+  const { t } = useTranslation();
+  const localizedOptions = useMemo(
+    () => ({
+      invoiceStatus: localizeOptions(INVOICE_STATUS_OPTIONS, t),
+      paymentStatus: localizeOptions(PAYMENT_STATUS_OPTIONS, t),
+      invoicePaymentStatus: localizeOptions(INVOICE_PAYMENT_STATUS_OPTIONS, t),
+      shipmentPaymentStatus: localizeOptions(SHIPMENT_PAYMENT_STATUS_OPTIONS, t),
+      customerTypeSegment: localizeOptions(CUSTOMER_TYPE_SEGMENT_OPTIONS, t),
+      paymentMethod: localizeOptions(PAYMENT_METHOD_OPTIONS, t),
+      loanStatus: localizeOptions(LOAN_STATUS_OPTIONS, t),
+      status: localizeOptions(STATUS_OPTIONS, t),
+      port: localizeOptions(PORT_OPTIONS, t),
+    }),
+    [t],
+  );
+
   switch (filter) {
     case "date-range":
       return <DateRangeFilter context={context} allowDisable={isInvoiceReportKey(reportKey)} />;
@@ -740,56 +804,127 @@ function DynamicReportFilter({
         <SegmentedFilter
           context={context}
           icon={UsersRound}
-          label="Customer Type"
+          label={t("reports.workspace.filters.customerType")}
           valueKey="customerType"
-          options={CUSTOMER_TYPE_SEGMENT_OPTIONS}
+          options={localizedOptions.customerTypeSegment}
         />
       );
     case "receipt-number":
-      return <TextFilter context={context} icon={ReceiptText} label="Internal Receipt Number" valueKey="receiptNumber" placeholder="Enter receipt number" />;
+      return (
+        <TextFilter
+          context={context}
+          icon={ReceiptText}
+          label={t("reports.workspace.filters.receiptNumber")}
+          valueKey="receiptNumber"
+          placeholder={t("reports.workspace.filters.receiptNumberPlaceholder")}
+        />
+      );
     case "delivery-number":
       return <DeliveryNumberFilter context={context} />;
     case "rate":
-      return <TextFilter context={context} icon={CircleDollarSign} label="Rate" valueKey="rate" placeholder="Optional" inputMode="decimal" />;
+      return (
+        <TextFilter
+          context={context}
+          icon={CircleDollarSign}
+          label={t("reports.workspace.filters.rate")}
+          valueKey="rate"
+          placeholder={t("reports.workspace.filters.ratePlaceholder")}
+          inputMode="decimal"
+        />
+      );
     case "container":
-      return <ContainerFilter context={context} label={isInvoiceReportKey(reportKey) || isInvoiceDetailsReportKey(reportKey) ? "Furgon" : "Container"} />;
+      return <ContainerFilter context={context} furgon={isInvoiceReportKey(reportKey) || isInvoiceDetailsReportKey(reportKey)} />;
     case "invoice":
       return <InvoiceFilter context={context} />;
     case "invoice-status":
-      return <StaticSelectFilter context={context} icon={FileText} label="Invoice Status" valueKey="invoiceStatus" options={INVOICE_STATUS_OPTIONS} />;
+      return (
+        <StaticSelectFilter
+          context={context}
+          icon={FileText}
+          label={t("reports.workspace.filters.invoiceStatus")}
+          valueKey="invoiceStatus"
+          options={localizedOptions.invoiceStatus}
+        />
+      );
     case "payment-status":
       return (
         <StaticSelectFilter
           context={context}
           icon={ReceiptText}
-          label="Payment Status"
+          label={t("reports.workspace.filters.paymentStatus")}
           valueKey="paymentStatus"
           options={
             isInvoiceReportKey(reportKey)
               || isInvoiceDetailsReportKey(reportKey)
-              ? INVOICE_PAYMENT_STATUS_OPTIONS
+              ? localizedOptions.invoicePaymentStatus
               : reportKey === "shipment-relation"
-                ? SHIPMENT_PAYMENT_STATUS_OPTIONS
-                : PAYMENT_STATUS_OPTIONS
+                ? localizedOptions.shipmentPaymentStatus
+                : localizedOptions.paymentStatus
           }
         />
       );
     case "payment-method":
-      return <StaticSelectFilter context={context} icon={CircleDollarSign} label="Payment Method" valueKey="paymentMethod" options={PAYMENT_METHOD_OPTIONS} />;
+      return (
+        <StaticSelectFilter
+          context={context}
+          icon={CircleDollarSign}
+          label={t("reports.workspace.filters.paymentMethod")}
+          valueKey="paymentMethod"
+          options={localizedOptions.paymentMethod}
+        />
+      );
     case "employee":
-      return <EmployeeFilter context={context} label="Employee" valueKey="employeeId" />;
+      return (
+        <EmployeeFilter
+          context={context}
+          label={t("reports.workspace.filters.employee")}
+          allLabel={t("reports.workspace.options.allEmployees")}
+          valueKey="employeeId"
+        />
+      );
     case "driver":
-      return <EmployeeFilter context={context} label="Driver / Chofer" valueKey="driverId" />;
+      return (
+        <EmployeeFilter
+          context={context}
+          label={t("reports.workspace.filters.driver")}
+          allLabel={t("reports.workspace.options.allDrivers")}
+          valueKey="driverId"
+        />
+      );
     case "vehicle":
       return <VehicleFilter context={context} />;
     case "loan-status":
-      return <StaticSelectFilter context={context} icon={BriefcaseBusiness} label="Loan Status" valueKey="loanStatus" options={LOAN_STATUS_OPTIONS} />;
+      return (
+        <StaticSelectFilter
+          context={context}
+          icon={BriefcaseBusiness}
+          label={t("reports.workspace.filters.loanStatus")}
+          valueKey="loanStatus"
+          options={localizedOptions.loanStatus}
+        />
+      );
     case "location":
       return <LocationFilter context={context} />;
     case "port-destination":
-      return <StaticSelectFilter context={context} icon={Anchor} label="Port / Destination" valueKey="portDestination" options={PORT_OPTIONS} />;
+      return (
+        <StaticSelectFilter
+          context={context}
+          icon={Anchor}
+          label={t("reports.workspace.filters.portDestination")}
+          valueKey="portDestination"
+          options={localizedOptions.port}
+        />
+      );
     case "status":
-      return <StaticSelectFilter context={context} icon={ClipboardList} label="Status" valueKey="status" options={STATUS_OPTIONS} />;
+      return (
+        <StaticSelectFilter
+          context={context}
+          icon={ClipboardList}
+          label={t("reports.workspace.filters.status")}
+          valueKey="status"
+          options={localizedOptions.status}
+        />
+      );
     default:
       if (process.env.NODE_ENV !== "production") {
         console.warn(`[Reports Portal] Unsupported report filter: ${filter}`);
@@ -805,12 +940,13 @@ function DateRangeFilter({
   context: FilterContext;
   allowDisable?: boolean;
 }) {
+  const { t } = useTranslation();
   const dateSearchEnabled = context.values.dateSearchDisabled !== "true";
 
   return (
     <div className="space-y-2 md:col-span-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <FilterLabel icon={CalendarDays} label="Date Range" />
+        <FilterLabel icon={CalendarDays} label={t("reports.workspace.filters.dateRange")} />
         {allowDisable ? (
           <div className="flex items-center gap-2">
             <Switch
@@ -819,7 +955,7 @@ function DateRangeFilter({
               onCheckedChange={(checked) => context.setValue("dateSearchDisabled", checked ? "" : "true")}
             />
             <Label htmlFor="invoice-date-search-enabled" className="text-sm font-medium">
-              Search by date
+              {t("reports.workspace.filters.searchByDate")}
             </Label>
           </div>
         ) : null}
@@ -829,7 +965,7 @@ function DateRangeFilter({
           <DateInput
             value={context.values.dateFrom ?? ""}
             onChange={(event) => context.setValue("dateFrom", event.target.value)}
-            aria-label="Date from"
+            aria-label={t("reports.workspace.filters.dateFrom")}
             disabled={!dateSearchEnabled}
           />
           <FilterError message={context.errors.dateFrom} />
@@ -838,7 +974,7 @@ function DateRangeFilter({
           <DateInput
             value={context.values.dateTo ?? ""}
             onChange={(event) => context.setValue("dateTo", event.target.value)}
-            aria-label="Date to"
+            aria-label={t("reports.workspace.filters.dateTo")}
             disabled={!dateSearchEnabled}
           />
           <FilterError message={context.errors.dateTo} />
@@ -849,12 +985,13 @@ function DateRangeFilter({
 }
 
 function SingleDateFilter({ context }: { context: FilterContext }) {
+  const { t } = useTranslation();
   return (
-    <FilterShell icon={CalendarDays} label="Date" error={context.errors.date}>
+    <FilterShell icon={CalendarDays} label={t("reports.workspace.filters.date")} error={context.errors.date}>
       <DateInput
         value={context.values.date ?? ""}
         onChange={(event) => context.setValue("date", event.target.value)}
-        aria-label="Date"
+        aria-label={t("reports.workspace.filters.date")}
       />
     </FilterShell>
   );
@@ -888,20 +1025,21 @@ function TextFilter({
 }
 
 function DeliveryNumberFilter({ context }: { context: FilterContext }) {
+  const { t } = useTranslation();
   const deliveries = useReportDeliveryOptions(200);
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: "[Select Delivery]" },
+    { value: "", label: t("reports.workspace.options.selectDelivery") },
     ...((deliveries.data ?? []).map((delivery) => ({
       value: delivery.id,
       label: delivery.label,
     }))),
-  ], [deliveries.data]);
+  ], [deliveries.data, t]);
 
   return (
     <StaticSelectFilter
       context={context}
       icon={Container}
-      label="Delivery Number"
+      label={t("reports.workspace.filters.deliveryNumber")}
       valueKey="deliveryNumber"
       options={options}
       loading={deliveries.isLoading}
@@ -910,6 +1048,7 @@ function DeliveryNumberFilter({ context }: { context: FilterContext }) {
 }
 
 function CustomerFilter({ context }: { context: FilterContext }) {
+  const { t } = useTranslation();
   const selectedType = context.values.customerType;
   const customerType =
     selectedType === "sender"
@@ -919,18 +1058,18 @@ function CustomerFilter({ context }: { context: FilterContext }) {
         : undefined;
   const customers = useCustomerPicker(200, { customerType });
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: "[All Customers]" },
+    { value: "", label: t("reports.workspace.options.allCustomers") },
     ...((customers.data?.items ?? []).map((customer) => ({
       value: customer.id,
       label: customer.name,
     }))),
-  ], [customers.data?.items]);
+  ], [customers.data?.items, t]);
 
   return (
     <StaticSelectFilter
       context={context}
       icon={User}
-      label="Customer"
+      label={t("reports.workspace.filters.customer")}
       valueKey="customerId"
       options={options}
       loading={customers.isLoading}
@@ -938,15 +1077,23 @@ function CustomerFilter({ context }: { context: FilterContext }) {
   );
 }
 
-function ContainerFilter({ context, label = "Container" }: { context: FilterContext; label?: string }) {
+function ContainerFilter({ context, furgon = false }: { context: FilterContext; furgon?: boolean }) {
+  const { t } = useTranslation();
   const containers = useContainerPicker(200);
+  const label = furgon ? t("reports.workspace.filters.furgon") : t("reports.workspace.filters.container");
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: label === "Furgon" ? "[All Furgons]" : "[All Containers]" },
+    {
+      value: "",
+      label: furgon ? t("reports.workspace.options.allFurgons") : t("reports.workspace.options.allContainers"),
+    },
     ...((containers.data?.items ?? []).map((container) => ({
       value: String(container.id),
-      label: container.name || container.containerNumber || `Container ${container.id}`,
+      label:
+        container.name
+        || container.containerNumber
+        || t("reports.workspace.options.containerFallback", { id: container.id }),
     }))),
-  ], [containers.data?.items, label]);
+  ], [containers.data?.items, furgon, t]);
 
   return (
     <StaticSelectFilter
@@ -961,20 +1108,23 @@ function ContainerFilter({ context, label = "Container" }: { context: FilterCont
 }
 
 function InvoiceFilter({ context }: { context: FilterContext }) {
+  const { t } = useTranslation();
   const invoices = useInvoices({ ...DEFAULT_INVOICE_LIST_PARAMS, limit: 200 });
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: "[All Invoices]" },
+    { value: "", label: t("reports.workspace.options.allInvoices") },
     ...((invoices.data?.items ?? []).map((invoice) => ({
       value: invoice.invoiceId,
-      label: invoice.invoiceNumber ? `Invoice ${invoice.invoiceNumber}` : invoice.invoiceId,
+      label: invoice.invoiceNumber
+        ? t("reports.workspace.options.invoiceNumber", { number: invoice.invoiceNumber })
+        : invoice.invoiceId,
     }))),
-  ], [invoices.data?.items]);
+  ], [invoices.data?.items, t]);
 
   return (
     <StaticSelectFilter
       context={context}
       icon={ReceiptText}
-      label="Invoice"
+      label={t("reports.workspace.filters.invoice")}
       valueKey="invoiceId"
       options={options}
       loading={invoices.isLoading}
@@ -982,16 +1132,26 @@ function InvoiceFilter({ context }: { context: FilterContext }) {
   );
 }
 
-function EmployeeFilter({ context, label, valueKey }: { context: FilterContext; label: string; valueKey: string }) {
+function EmployeeFilter({
+  context,
+  label,
+  allLabel,
+  valueKey,
+}: {
+  context: FilterContext;
+  label: string;
+  allLabel: string;
+  valueKey: string;
+}) {
   const employees = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
   const items = employees.data?.items ?? [];
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: label === "Employee" ? "[All Employees]" : "[All Drivers]" },
+    { value: "", label: allLabel },
     ...items.map((employee) => ({
       value: String(employee.id),
       label: employee.name,
     })),
-  ], [items, label]);
+  ], [items, allLabel]);
 
   return (
     <StaticSelectFilter
@@ -1006,23 +1166,24 @@ function EmployeeFilter({ context, label, valueKey }: { context: FilterContext; 
 }
 
 function VehicleFilter({ context }: { context: FilterContext }) {
+  const { t } = useTranslation();
   const vehicles = useVehiclePicker(200, { enabled: true });
   const items = vehicles.data?.items ?? [];
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: "[All Vehicles]" },
+    { value: "", label: t("reports.workspace.options.allVehicles") },
     ...items.map((vehicle) => ({
       value: vehicle.id,
       label: vehicle.name,
       description: vehicle.licensePlate || vehicle.vehicleId,
       keywords: [vehicle.name, vehicle.vehicleId, vehicle.licensePlate, vehicle.vin],
     })),
-  ], [items]);
+  ], [items, t]);
 
   return (
     <StaticSelectFilter
       context={context}
       icon={Container}
-      label="Vehicle"
+      label={t("reports.workspace.filters.vehicle")}
       valueKey="vehicleId"
       options={options}
       loading={vehicles.isLoading}
@@ -1031,20 +1192,21 @@ function VehicleFilter({ context }: { context: FilterContext }) {
 }
 
 function LocationFilter({ context }: { context: FilterContext }) {
+  const { t } = useTranslation();
   const branches = useBranchPicker(200);
   const options = useMemo<SearchableSelectOption[]>(() => [
-    { value: "", label: "[All Locations]" },
+    { value: "", label: t("reports.workspace.options.allLocations") },
     ...((branches.data?.items ?? []).map((branch) => ({
       value: String(branch.id),
-      label: branch.name || branch.code || `Branch ${branch.id}`,
+      label: branch.name || branch.code || t("reports.workspace.options.branchFallback", { id: branch.id }),
     }))),
-  ], [branches.data?.items]);
+  ], [branches.data?.items, t]);
 
   return (
     <StaticSelectFilter
       context={context}
       icon={MapPin}
-      label="Branch / Location"
+      label={t("reports.workspace.filters.location")}
       valueKey="locationId"
       options={options}
       loading={branches.isLoading}
@@ -1067,14 +1229,15 @@ function StaticSelectFilter({
   options: SearchableSelectOption[];
   loading?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <FilterShell icon={icon} label={label} error={context.errors[valueKey]}>
       <SearchableSelect
         value={context.values[valueKey] ?? ""}
         onValueChange={(value) => context.setValue(valueKey, value)}
         options={options}
-        placeholder={options[0]?.label ?? "All"}
-        emptyMessage="No options available."
+        placeholder={options[0]?.label ?? t("reports.workspace.options.all")}
+        emptyMessage={t("reports.workspace.options.noOptions")}
         loading={loading}
         mobileSheet
       />
@@ -1164,10 +1327,11 @@ function FilterError({ message }: { message?: string }) {
 }
 
 function ReportLoadingState() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed text-center">
       <LoaderCircle className="mb-3 size-8 animate-spin text-primary" />
-      <p className="text-sm font-medium">Loading reports...</p>
+      <p className="text-sm font-medium">{t("reports.workspace.states.loading")}</p>
     </div>
   );
 }
@@ -1206,10 +1370,10 @@ function normalizeSearch(value: string): string {
   return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 }
 
-function validateReportFilters(report: ReportDefinition, values: ReportFilterValues) {
+function validateReportFilters(report: ReportDefinition, values: ReportFilterValues, t: TranslateFn) {
   const errors: Record<string, string> = {};
   if (report.key === "payment-receipt" && !values.receiptNumber?.trim()) {
-    errors.receiptNumber = "Receipt number is required.";
+    errors.receiptNumber = t("reports.workspace.validation.receiptNumberRequired");
   }
   const invoiceReport = isInvoiceReportKey(report.key);
   const invoiceDetailsReport = isInvoiceDetailsReportKey(report.key);
@@ -1219,50 +1383,50 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
     const dateFrom = values.dateFrom;
     const dateTo = values.dateTo;
     if (dateFrom && dateTo && dateFrom > dateTo) {
-      errors.dateFrom = "Start date must be before end date.";
-      errors.dateTo = "End date must be after start date.";
+      errors.dateFrom = t("reports.workspace.validation.startBeforeEnd");
+      errors.dateTo = t("reports.workspace.validation.endAfterStart");
     }
   }
   if (invoiceReport) {
     if (dateSearchDisabled && !values.containerId?.trim()) {
-      errors.containerId = "Container is required when date search is disabled.";
+      errors.containerId = t("reports.workspace.validation.containerRequiredWhenDateDisabled");
     }
     if (!dateSearchDisabled && !values.dateFrom?.trim() && !values.dateTo?.trim()) {
-      errors.dateFrom = "Date range is required when date search is enabled.";
-      errors.dateTo = "Date range is required when date search is enabled.";
+      errors.dateFrom = t("reports.workspace.validation.dateRangeRequiredWhenEnabled");
+      errors.dateTo = t("reports.workspace.validation.dateRangeRequiredWhenEnabled");
     }
   }
   if (invoiceDetailsReport && !values.containerId?.trim()) {
-    errors.containerId = "Furgon is required for this report.";
+    errors.containerId = t("reports.workspace.validation.furgonRequired");
   }
   if (report.key === "invoices-by-customer" && !values.customerId) {
-    errors.customerId = "Customer is required for this report.";
+    errors.customerId = t("reports.workspace.validation.customerRequired");
   }
   if (report.key === "customs-form" && !values.containerId) {
-    errors.containerId = "Container is required for this report.";
+    errors.containerId = t("reports.workspace.validation.containerRequired");
   }
   if (report.key === "customs-invoices" && !values.containerId) {
-    errors.containerId = "Container is required for this report.";
+    errors.containerId = t("reports.workspace.validation.containerRequired");
   }
   if (report.key === "shipment-relation" && !values.containerId) {
-    errors.containerId = "Container is required for this report.";
+    errors.containerId = t("reports.workspace.validation.containerRequired");
   }
   if (isDeliveryReportKey(report.key)) {
     if (!values.deliveryNumber?.trim()) {
-      errors.deliveryNumber = "Delivery number is required for this report.";
+      errors.deliveryNumber = t("reports.workspace.validation.deliveryNumberRequired");
     }
     const rate = values.rate?.trim();
     if (rate && (!Number.isFinite(Number(rate)) || Number(rate) <= 0)) {
-      errors.rate = "Rate must be greater than zero.";
+      errors.rate = t("reports.workspace.validation.rateGreaterThanZero");
     }
   }
   if (isLoanReportKey(report.key)) {
     if (!values.employeeId?.trim()) {
-      errors.employeeId = "Employee is required for this report.";
+      errors.employeeId = t("reports.workspace.validation.employeeRequired");
     }
     if (!values.dateFrom?.trim() && !values.dateTo?.trim()) {
-      errors.dateFrom = "Date range is required for this report.";
-      errors.dateTo = "Date range is required for this report.";
+      errors.dateFrom = t("reports.workspace.validation.dateRangeRequired");
+      errors.dateTo = t("reports.workspace.validation.dateRangeRequired");
     }
   }
   return { valid: Object.keys(errors).length === 0, errors };

@@ -62,7 +62,7 @@ test("mobile About appears above the navigation drawer and can be closed", async
     }), true);
     // The backdrop must also cover the drawer, not just the dialog panel.
     assert.equal(await page.evaluate(() => Number(getComputedStyle(document.elementFromPoint(380, 20)).zIndex)), 10000);
-    await page.getByRole("button", { name: "Close", exact: true }).tap();
+    await page.getByRole("button", { name: "common.actions.close", exact: true }).tap();
     await dialog.waitFor({ state: "hidden" });
     await page.getByRole("button", { name: "About", exact: true }).tap();
     await dialog.waitFor();

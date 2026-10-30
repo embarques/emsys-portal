@@ -1,5 +1,6 @@
 {
   "title": "Invoices",
+  "entity": "Invoice",
   "registrationStatus": {
     "pending": "Pending",
     "completed": "Completed"
@@ -10,15 +11,33 @@
   "stats": {
     "total": {
       "label": "Total invoices",
-      "description": "Invoices on record"
+      "description": "Invoices on record",
+      "details": {
+        "currentPage": "Current page",
+        "page": "Page",
+        "pageValue": "{{current}} of {{total}}",
+        "pageSize": "Page size"
+      }
     },
     "outstandingCount": {
       "label": "Outstanding invoices",
-      "description": "Invoices with open balance"
+      "description": "Invoices with open balance",
+      "details": {
+        "openInvoices": "Open invoices",
+        "shareOfTotal": "Share of total",
+        "statuses": "Statuses",
+        "statusesValue": "Open / partial"
+      }
     },
     "outstandingBalance": {
       "label": "Outstanding",
-      "description": "Balance across all invoices"
+      "description": "Balance across all invoices",
+      "details": {
+        "openInvoices": "Open invoices",
+        "averageBalance": "Average balance",
+        "scope": "Scope",
+        "scopeValue": "All invoices"
+      }
     },
     "new": {
       "label": "New invoices",
@@ -71,22 +90,6 @@
   "search": {
     "placeholder": "Search invoices"
   },
-  "actions": {
-    "syncLegacy": "Sync legacy",
-    "syncingLegacy": "Syncing..."
-  },
-  "loading": {
-    "legacySyncProgress": "Syncing {{current}} out of {{total}}...",
-    "legacySyncStages": {
-      "connecting": "Connecting to the legacy invoice API.",
-      "dependencies": "Syncing customers and containers.",
-      "invoices": "Importing invoice headers.",
-      "refreshing": "Refreshing the invoice list."
-    }
-  },
-  "errors": {
-    "legacySyncPermissionMissing": "Missing permission: Access legacy invoices. Ask an administrator to grant the required permission, then try again."
-  },
   "workspace": {
     "actionsColumn": "Actions",
     "viewInvoice": "View invoice",
@@ -97,7 +100,37 @@
     "untitledTab": "Invoice",
     "invoiceNotFound": "Invoice not found.",
     "loadingAppointment": "Loading appointment…",
-    "appointmentLoadError": "Unable to load this appointment."
+    "appointmentLoadError": "Unable to load this appointment.",
+    "loadingInvoice": "Loading invoice…",
+    "invoiceLoadError": "Unable to load this invoice.",
+    "tabTitle": "Invoice #{{number}}",
+    "selectInvoice": "Select invoice",
+    "deselectInvoice": "Deselect invoice",
+    "selectForManageItems": "Select at least one invoice to manage items.",
+    "searchAria": "Search invoice",
+    "filterAria": "Filter invoices",
+    "showing": "Showing {{count}} of {{total}} invoices",
+    "refreshing": "Refreshing invoices…",
+    "outstandingReceivables": "Outstanding receivables",
+    "empty": "No invoices match your search or filters.",
+    "loader": {
+      "title": "Loading invoices",
+      "description": "Syncing customers, balances, and payment status…",
+      "customer": "Customer"
+    },
+    "delete": {
+      "titleOne": "Delete invoice?",
+      "titleMany": "Delete invoices?",
+      "descriptionOne": "This will permanently remove invoice {{number}}. {{cannotBeUndone}}",
+      "descriptionMany": "This will permanently remove {{count}} selected invoices. {{cannotBeUndone}}"
+    }
+  },
+  "print": {
+    "lookupRequired": "Enter an invoice number or save the invoice before printing.",
+    "selectRequired": "Select at least one invoice to print.",
+    "readyFor": "Invoice report ready for #{{number}}.",
+    "ready": "Invoice report ready.",
+    "readyMany": "Invoice report ready for {{count}} invoice(s)."
   },
   "assigned": {
     "loading": "Preparing your invoice…",
@@ -180,7 +213,19 @@
       "totals": "Totals"
     },
     "preview": {
-      "noEmployeeAssignment": "No employee selected"
+      "noEmployeeAssignment": "No employee selected",
+      "reviewTitle": "Review before saving",
+      "reviewHint": "Confirm the invoice details below. Use Back to make changes.",
+      "price": "Price"
+    },
+    "totals": {
+      "total": "Total",
+      "discount": "Discount",
+      "paid": "Paid",
+      "balance": "Balance"
+    },
+    "actions": {
+      "saveInvoice": "Save invoice"
     },
     "lineItems": {
       "addTitle": "Add line item",
@@ -227,6 +272,8 @@
   "wizard": {
     "navAriaLabel": "Invoice steps",
     "goToStep": "Go to {{label}}",
+    "progress": "Step {{current}} of {{total}}",
+    "phoneProgress": "{{current}} of {{total}}",
     "stepEyebrow": "Step {{step}} of {{total}} · {{label}}",
     "steps": {
       "details": "Details",
@@ -269,8 +316,8 @@
       "unverifiedSenderAddress": "The sender's address is unverified. You can continue and save the invoice; we recommend updating it with a Google-suggested address.",
       "lineItemRequired": "Add at least one line item.",
       "lineItemQuantityRequired": "Each line item needs a quantity greater than 0.",
-      "dailyIncomeContinueRequired": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
-      "dailyIncomeSaveRequired": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+      "dailyIncomeContinueRequired": "No closeout is open for today. Please open one to continue.",
+      "dailyIncomeSaveRequired": "No closeout is open for today. Please open one to continue.",
       "negativeBalance": "Balance cannot be negative. Reduce the payment or discount so it does not exceed the invoice total.",
       "registeredCostMismatch": "Line items total must match the registered Daily Income cost before saving.",
       "policiesAgreeRequired": "Confirm that you agree to the invoice policies before saving.",
@@ -357,28 +404,30 @@
       "noPaymentMethod": "No payment method (zero payment)",
       "refresh": "Refresh",
       "entryRequired": "Daily income entry required",
-      "closedStatement": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+      "closedStatement": "No closeout is open for today. Please open one to continue.",
       "registerRequired": "This invoice cannot be created until it is registered in Daily Income.",
-      "noStatement": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+      "noStatement": "No closeout is open for today. Please open one to continue.",
       "openFullPage": "Open full Daily Income page",
       "openForInvoiceDate": "Open daily income for this branch and date",
-      "openForInvoiceDateHint": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+      "openForInvoiceDateHint": "No closeout is open for today. Please open one to continue.",
       "openAssociated": "Open Cuadre linked",
       "openAssociatedHint": "Today's Daily Income #{{id}} is open. This invoice will be associated with it automatically.",
       "recordPaymentOptional": "Recording a payment is optional. You can continue without one.",
-      "setupTitle": "Waiting for the current closeout",
-      "closedTitle": "Today’s Daily Income is closed",
-      "setupHint": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
-      "closedSetupHint": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+      "setupTitle": "No open closeout for today",
+      "closedTitle": "No open closeout for today",
+      "setupHint": "No closeout is open for today. Please open one to continue.",
+      "closedSetupHint": "No closeout is open for today. Please open one to continue.",
       "reopenDailyIncome": "Reopen Daily Income",
       "zeroPaymentHint": "No payment collected? After setup, you can register the invoice with a $0 payment.",
-      "noOpenTitle": "No open Cuadre",
-      "noStatementOptional": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
-      "closedStatementOptional": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+      "noOpenTitle": "No open closeout for today",
+      "noStatementOptional": "No closeout is open for today. Please open one to continue.",
+      "closedStatementOptional": "No closeout is open for today. Please open one to continue.",
       "createOrOpenCuadre": "Create Cuadre",
       "reopenCuadre": "Reopen Cuadre",
       "paymentSkipped": "Payment skipped — no open Cuadre to register against. Create a Cuadre to record cost with $0 payment, or continue without linking.",
-      "unpaidContinueHint": "Enter a payment below, or continue to register invoice cost and balance in Daily Income #{{id}} with $0 payment.",
+      "unpaidContinueHint": "Enter a payment below, or continue with a $0 payment.",
+      "skipPayment": "Skip payment",
+      "skipPaymentHint": "No payment will be recorded for this invoice. Uncheck to enter a payment now.",
       "zeroPaymentDescription": "Initial invoice registration (unpaid)",
       "registeringZeroPayment": "Registering unpaid invoice in Daily Income…",
       "dialog": {
@@ -396,8 +445,8 @@
         "employee": "Employee",
         "selectEmployee": "Select employee",
         "searchEmployees": "Search employees…",
-        "createDailyIncome": "Create daily income",
-        "createDailyIncomeTitle": "Create daily income",
+        "createDailyIncome": "Open today's closeout",
+        "createDailyIncomeTitle": "Open today's closeout",
         "createDailyIncomeHint": "Open today’s daily income for your branch. Currency and exchange rate are requested only for RD.",
         "branch": "Branch",
         "selectBranch": "Select branch",
@@ -442,6 +491,16 @@
         "initialRegistrationDescription": "Initial invoice registration",
         "registering": "Registering…",
         "registerAndContinue": "Register & continue"
+      },
+      "validation": {
+        "amountNegative": "Payment amount cannot be negative.",
+        "amountExceedsTotal": "Payment amount cannot exceed the invoice total.",
+        "refNumberTooLong": "Reference number is too long.",
+        "descriptionTooLong": "Description is too long.",
+        "paymentMethodRequired": "Payment method is required when a payment is entered.",
+        "bankAccountRequired": "Select a bank account for this payment method.",
+        "checkNumberRequired": "Check number is required.",
+        "refNumberRequired": "Enter a reference number, or choose system generated."
       }
     }
   },
@@ -463,6 +522,7 @@
       "hideBarcodesCount_plural": "Hide {{count}} barcodes"
     },
     "comments": {
+      "entity": "Comment",
       "title": "Comments ({{count}})",
       "empty": "No comments yet.",
       "addLabel": "Add comment",
@@ -479,6 +539,10 @@
       "title": "Payments ({{count}})",
       "description": "Recorded payments for this invoice. Total paid: {{totalPaid}}.",
       "empty": "No payments recorded yet.",
+      "fallbackDescription": {
+        "initialPayment": "Initial payment",
+        "payment": "Payment"
+      },
       "methods": {
         "cash": "Cash",
         "check": "Check",
@@ -521,6 +585,12 @@
         "dateTime": "Date & time",
         "createdBy": "Created by",
         "description": "Description"
+      },
+      "messages": {
+        "labelCreated": "Label {{number}} created for {{item}}.",
+        "scannedWithStatus": "Barcode {{number}} scanned — {{status}}.",
+        "scanned": "Barcode {{number}} scanned.",
+        "status": "Barcode {{number}} status: {{status}}."
       }
     },
     "activity": {
@@ -531,6 +601,34 @@
         "dateTime": "Date & time",
         "createdBy": "Created by",
         "description": "Description"
+      },
+      "actions": {
+        "created": "Created",
+        "updated": "Edited",
+        "payment": "Payment",
+        "discount_change": "Discount",
+        "comment_added": "Comment"
+      },
+      "messages": {
+        "created": "Invoice {{number}} created.",
+        "initialPayment": "Initial payment of {{amount}} recorded.",
+        "discountApplied": "Discount of {{amount}} applied.",
+        "discountUpdated": "Discount updated: {{from}} → {{to}}.",
+        "edited": "Invoice edited: {{changes}}.",
+        "editedGeneric": "Invoice edited.",
+        "commentAdded": "Comment added: {{preview}}",
+        "paymentRecorded": "Payment of {{amount}} via {{method}} recorded.{{reference}} {{description}} Total paid: {{totalPaid}}.",
+        "paymentReference": " Ref {{reference}}.",
+        "paymentOnRecord": "Payment of {{amount}} on record."
+      },
+      "changes": {
+        "invoiceNumber": "invoice number",
+        "date": "invoice date",
+        "container": "container ({{from}} → {{to}})",
+        "paymentLocation": "paid at ({{from}} → {{to}})",
+        "sender": "sender",
+        "receiver": "receiver",
+        "lineItems": "line items ({{fromCount}} items / {{fromTotal}} → {{toCount}} items / {{toTotal}})"
       }
     }
   },
@@ -758,10 +856,17 @@
     "limit": "Select between 1 and 100 invoices to print at once.",
     "retry": "Try again",
     "loading": "Loading signature choices…",
-    "applyLabel": "Apply a default to all {{count}} invoices",
+    "applyLabel": "Quick apply to all {{count}} invoices",
+    "applyHint": "Replaces the choices below. You can still adjust any invoice afterwards.",
     "senderOnly": "Sender signature only",
     "latest": "Sender + latest receiver signature",
-    "applyAll": "Apply to all",
+    "allUnsigned": "None of the {{count}} selected invoices have saved signatures. They will print without signatures.",
+    "unsignedNote_one": "1 invoice has no saved signatures and will print without them.",
+    "unsignedNote_other": "{{count}} invoices have no saved signatures and will print without them.",
+    "showUnsigned": "Show them",
+    "hideUnsigned": "Hide them",
+    "searchReceivers": "Search signer, delivery, or date…",
+    "noMatches": "No matching signatures",
     "review": "Review each invoice",
     "invoice": "Invoice",
     "sender": "Sender",
@@ -774,7 +879,8 @@
     "range": "Invoices {{first}}–{{last}} of {{total}}",
     "previous": "Previous",
     "next": "Next",
-    "selected": "{{count}} of {{total}} invoices will include a receiver signature.",
+    "summarySender": "Sender signature on {{count}} of {{total}} invoices",
+    "summaryReceiver": "Receiver signature on {{count}} of {{total}} invoices",
     "cancel": "Cancel",
     "printing": "Preparing…",
     "print": "Print {{count}} invoices",

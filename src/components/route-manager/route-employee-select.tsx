@@ -19,6 +19,10 @@ type RouteEmployeeSelectProps = {
   branchCode?: string;
   /** When false, only the add picker is shown (selection list is elsewhere). */
   showSelectedList?: boolean;
+  id?: string;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
 };
 
 export function RouteEmployeeSelect({
@@ -27,6 +31,10 @@ export function RouteEmployeeSelect({
   error = null,
   branchCode,
   showSelectedList = true,
+  id = "route-employee-picker",
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
 }: RouteEmployeeSelectProps) {
   const { t } = useTranslation();
   const [employeeQuery, setEmployeeQuery] = useState("");
@@ -122,16 +130,16 @@ export function RouteEmployeeSelect({
   return (
     <div className="space-y-3">
       <SearchableSelect
-        id="route-employee-picker"
-        aria-label={t("routes.form.crewMembers")}
+        id={id}
+        aria-label={placeholder ?? t("routes.form.crewMembers")}
         value={pickerValue}
         onValueChange={(next) => {
           setPickerValue(next);
           addEmployee(next);
         }}
-        placeholder={t("routes.form.crewMemberPlaceholder")}
-        searchPlaceholder={t("routes.form.searchCrewMembers")}
-        emptyMessage={t("routes.form.noCrewMembersFound")}
+        placeholder={placeholder ?? t("routes.form.crewMemberPlaceholder")}
+        searchPlaceholder={searchPlaceholder ?? t("routes.form.searchCrewMembers")}
+        emptyMessage={emptyMessage ?? t("routes.form.noCrewMembersFound")}
         loadingMessage={t("routes.form.loadingCrewMembers")}
         loading={employeeLoading}
         manualFiltering={Boolean(debouncedEmployeeQuery)}

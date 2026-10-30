@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabPortalContainer } from "@/lib/layout/workspace-tab-scope";
 
 function Dialog({
@@ -89,6 +90,7 @@ const DialogContent = React.forwardRef<
     overlayClassName?: string;
   }
 >(({ className, children, onPointerDownOutside, onInteractOutside, centerInWorkspace = false, overlayClassName, ...props }, ref) => {
+  const { t } = useTranslation();
   const portalContainer = useWorkspaceTabPortalContainer();
   const tabScoped = portalContainer != null;
   const centeredInBody = centerInWorkspace && tabScoped;
@@ -144,7 +146,7 @@ const DialogContent = React.forwardRef<
       >
         {children}
         <DialogPrimitive.Close asChild>
-          <Button type="button" variant="ghost" size="icon" className="absolute right-4 top-4" aria-label="Close">
+          <Button type="button" variant="ghost" size="icon" className="absolute right-4 top-4" aria-label={t("common.actions.close")}>
             <X className="h-4 w-4" />
           </Button>
         </DialogPrimitive.Close>

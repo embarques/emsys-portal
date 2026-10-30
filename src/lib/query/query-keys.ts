@@ -135,19 +135,11 @@ export const queryKeys = {
       [...queryKeys.pickupRouteSchedules.all, "detail", date] as const,
     byId: (recordId: string) =>
       [...queryKeys.pickupRouteSchedules.all, "by-id", recordId] as const,
-    byCrewAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
+    byEmployeesAndDate: (employeeSetKey: string, date: string, vehicleId?: string) =>
       [
         ...queryKeys.pickupRouteSchedules.all,
-        "by-crew-date",
-        routeRecordId,
-        date,
-        vehicleId?.trim() || "none",
-      ] as const,
-    byGroupAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
-      [
-        ...queryKeys.pickupRouteSchedules.all,
-        "by-crew-date",
-        routeRecordId,
+        "by-employees-date",
+        employeeSetKey,
         date,
         vehicleId?.trim() || "none",
       ] as const,
@@ -176,11 +168,11 @@ export const queryKeys = {
       ] as const,
     byId: (recordId: string) =>
       [...queryKeys.deliveryRouteSchedules.all, "by-id", recordId] as const,
-    byCrewAndDate: (routeRecordId: string, date: string, containerId?: number) =>
+    byEmployeesAndDate: (employeeSetKey: string, date: string, containerId?: number) =>
       [
         ...queryKeys.deliveryRouteSchedules.all,
-        "by-crew-date",
-        routeRecordId,
+        "by-employees-date",
+        employeeSetKey,
         date,
         containerId ?? "none",
       ] as const,
@@ -237,7 +229,6 @@ export const queryKeys = {
   accounting: {
  financialActivity:(company:string,filters:unknown,page:number)=>["accounting","financial-activity",company,filters,page] as const,
  financialHistory:(company:string,id:string)=>["accounting","financial-history",company,id] as const,
- closeoutAutomation:(company:string)=>["accounting","closeout-automation",company] as const,
     all: ["accounting"] as const,
     incomeStatement: (branchCode: string, date: string) =>
       [...queryKeys.accounting.all, "income-statement", branchCode, date] as const,
@@ -386,6 +377,10 @@ export const queryKeys = {
     directory: (resource: "items" | "receipts" | "dispatches" | "suppliers", params: InventoryListParams) =>
       [...queryKeys.inventory.all, "directory", resource, params] as const,
     routeCrews: () => [...queryKeys.inventory.all, "route-crews"] as const,
+    pendingDispatches: (companyId: string, filters: unknown, page: number) =>
+      [...queryKeys.inventory.all, "pending-dispatches", companyId, filters, page] as const,
+    dispatchReconciliations: (companyId: string, dispatchId: string) =>
+      [...queryKeys.inventory.all, "dispatch-reconciliations", companyId, dispatchId] as const,
   },
 } as const;
 

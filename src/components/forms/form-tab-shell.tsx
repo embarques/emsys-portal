@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 type FormTabShellProps = {
   title: string;
   description?: string | null;
+  /** Optional content aligned to the right of the title row. */
+  actions?: React.ReactNode;
   /** The form element (e.g. CustomerForm). Should be a flex-1 flex column. */
   children: React.ReactNode;
   className?: string;
@@ -17,7 +19,7 @@ type FormTabShellProps = {
  * the former dialog (titled header + bordered card) and fills the viewport below
  * shell chrome so the form body scrolls while the footer stays pinned.
  */
-export function FormTabShell({ title, description, children, className }: FormTabShellProps) {
+export function FormTabShell({ title, description, actions, children, className }: FormTabShellProps) {
   const shellRef = useFormViewport();
 
   return (
@@ -29,11 +31,14 @@ export function FormTabShell({ title, description, children, className }: FormTa
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-        <div className="shrink-0 border-b border-border px-5 py-4">
-          <h2 className="text-base font-semibold leading-tight">{title}</h2>
-          {description ? (
-            <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-          ) : null}
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold leading-tight">{title}</h2>
+            {description ? (
+              <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+            ) : null}
+          </div>
+          {actions ? <div className="shrink-0">{actions}</div> : null}
         </div>
         {children}
       </div>

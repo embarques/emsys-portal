@@ -40,12 +40,16 @@ export function formatAccountingMoney(amount: number): string {
   }).format(amount);
 }
 
-export function formatAccountingDate(date: string): string {
+export function formatAccountingDate(date: string | null | undefined): string {
+  if (!date?.trim()) return "—";
+  const parsed = new Date(`${date.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "—";
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(`${date.slice(0, 10)}T12:00:00`));
+  }).format(parsed);
 }
 
 export function truncateAccountingEntryId(entryId: string): string {

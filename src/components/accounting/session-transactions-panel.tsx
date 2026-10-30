@@ -34,9 +34,12 @@ export function SessionTransactionsPanel({ entries, currency, onClose }: { entri
         const d = sessionTransactionDetails(entry);
         const invoice = d.type === "INITIAL-PAYMENT";
         const invoiceRelated = invoice || ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(d.type);
-        return <article key={entry.journal.id || entry.savedAt} className="space-y-3 border-b p-4 last:border-b-0">
-          <div><p className="text-xs text-muted-foreground">{transactionTypeLabel(d.type, t)}</p><h3 className="mt-1 break-words text-sm font-semibold">{invoiceRelated ? `#${d.invoice}` : d.type === "INVENTORY" ? d.item : d.account || d.reference || "—"}</h3></div>
-          {amounts(d.cost, d.amount, d.balance, invoice)}
+        return <article key={entry.journal.id || entry.savedAt} className="space-y-1.5 border-b px-4 py-3 last:border-b-0">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3">
+            <div className="min-w-0"><p className="text-xs text-muted-foreground">{transactionTypeLabel(d.type, t)}</p><h3 className="mt-0.5 break-words text-sm font-semibold">{invoiceRelated ? `#${d.invoice}` : d.type === "INVENTORY" ? d.item : d.account || d.reference || "—"}</h3></div>
+            {!invoice && <div className="text-right"><p className="text-xs text-muted-foreground">{t(`${prefix}.amount`)}</p><p className="mt-0.5 text-sm font-semibold tabular-nums">{money(d.amount)}</p></div>}
+          </div>
+          {invoice && amounts(d.cost, d.amount, d.balance, true)}
           {d.type === "INVENTORY" ? <p className="break-words text-xs text-muted-foreground">{d.direction ? t(`accounting.dailyIncome.form.inventory.${d.direction}`) : ""} · {t("inventory.form.fields.quantity")}: {d.quantity ?? "—"}{d.supplier ? ` · ${d.supplier}` : ""}</p> : !["DISCOUNT", "SURCHARGE"].includes(d.type) && <p className="break-words text-xs text-muted-foreground">{field("paymentMethod")}: {methodLabel(d.method, d.amount)}</p>}
           {d.type === "TRANSFER" && d.sourceAccount && <p className="break-words text-xs text-muted-foreground">{field("sourceAccount")}: {d.sourceAccount}</p>}
           {!invoiceRelated && d.description && <p className="break-words text-xs text-muted-foreground">{d.description}</p>}

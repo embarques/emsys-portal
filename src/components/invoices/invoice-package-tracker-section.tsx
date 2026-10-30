@@ -19,7 +19,7 @@ function isFilled(value: string): boolean {
 
 export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerSectionProps) {
   const { t } = useTranslation();
-  const timeline = useMemo(() => buildInvoicePackageTrackerEntries(invoice), [invoice]);
+  const timeline = useMemo(() => buildInvoicePackageTrackerEntries(invoice, t), [invoice, t]);
   const sortedTimeline = useMemo(() => [...timeline].reverse(), [timeline]);
   const empty = t("common.empty.dash");
 

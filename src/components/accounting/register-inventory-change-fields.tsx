@@ -1,21 +1,28 @@
 "use client";
 
-import { Building2 } from "lucide-react";
+import { Building2, Route, UserPlus, Users, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
-import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { FormSection } from "@/components/forms/form-shell";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { InventoryAutoReconcileField } from "@/components/accounting/inventory-auto-reconcile-field";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
+import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import {
+  dailyRoutesForAssigneeBranch,
+  dailyRoutesForStatement,
+} from "@/lib/accounting/daily-income/assignee";
+import {
+  dailyRouteInventoryHolders,
   linkedInventoryTotal,
   linkedInventoryUnitPrice,
 } from "@/lib/accounting/daily-income/inventory-change";
@@ -24,18 +31,12 @@ import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import type {
   DailyIncomeJournalValues,
   InventoryChangeDirection,
+  InventoryHolderEmployeeRef,
 } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
-import {
-  useCreateEmployee,
-  useUpdateEmployee,
-} from "@/lib/employees/hooks/use-employees";
-import {
-  createEmptyEmployeeForm,
-  employeeToFormValues,
-  type Employee,
-  type EmployeeFormValues,
-} from "@/lib/employees/types";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useCreateEmployee } from "@/lib/employees/hooks/use-employees";
+import { createEmptyEmployeeForm, type EmployeeFormValues } from "@/lib/employees/types";
 import { getInventoryItemLabel } from "@/lib/inventory/display";
 import {
   useCreateSupplier,
@@ -51,16 +52,19 @@ import {
 } from "@/lib/inventory/types/suppliers";
 import { useTranslation } from "@/lib/i18n";
 import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
+import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 
 type EntityDialog = "supplier" | "employee" | "route" | null;
 
 type Props = {
   activeStep?: "assignment" | "amounts" | "payment" | "review";
-  employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
   statementBranchId?: number | null;
+  /** Create only, like auto-clear. */
+  allowAutoReconcile?: boolean;
   errors: FieldErrors<DailyIncomeJournalValues>;
   setValue: UseFormSetValue<DailyIncomeJournalValues>;
   watch: UseFormWatch<DailyIncomeJournalValues>;
@@ -79,12 +83,14 @@ function numberInputValue(value: number | undefined): string {
   return value == null || Number.isNaN(value) ? "" : String(value);
 }
 
+const NO_SELECTION = "none";
+
 export function RegisterInventoryChangeFields({
   activeStep,
-  employees,
   dailyRoutes = [],
   statementDate,
   statementBranchId,
+  allowAutoReconcile = false,
   errors,
   setValue,
   watch,
@@ -95,7 +101,6 @@ export function RegisterInventoryChangeFields({
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const createEmployee = useCreateEmployee();
-  const updateEmployee = useUpdateEmployee();
 
   const direction = watch("inventoryDirection");
   const itemId = watch("inventoryItemId");
@@ -103,24 +108,118 @@ export function RegisterInventoryChangeFields({
   const quantity = watch("inventoryQuantity");
   const unitPrice = watch("inventoryUnitPrice");
   const total = watch("inventoryTotal");
+  const autoReconcile = watch("autoReconcile");
   const supplierId = watch("inventorySupplierId");
   const supplierName = watch("inventorySupplierName");
-  const employeeId = watch("employeeId");
-  const employeeName = watch("employeeName");
   const routeId = watch("routeId");
   const routeName = watch("routeName");
-  const assigneeSource = watch("assigneeSource");
+  const holderVehicleId = watch("inventoryHolderVehicleId");
+  const holderVehicleName = watch("inventoryHolderVehicleName");
+  const holderEmployeesValue = watch("inventoryHolderEmployees");
+  const holderEmployees = useMemo(() => holderEmployeesValue ?? [], [holderEmployeesValue]);
 
   const [priceSource, setPriceSource] = useState<"unit" | "total">("unit");
   const [entityDialog, setEntityDialog] = useState<EntityDialog>(null);
   const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [editingRoute, setEditingRoute] = useState<ActiveRoute | null>(null);
   const [entityError, setEntityError] = useState<string | null>(null);
 
   const selectedSupplier = suppliers.find((supplier) => supplier.id === supplierId) ?? editingSupplier;
-  const selectedEmployee = employees.find((employee) => employee.id === employeeId) ?? editingEmployee;
   const selectedRoute = dailyRoutes.find((route) => route.id === routeId) ?? editingRoute;
+
+  const dispatched = direction === "dispatched";
+  const branchesQuery = useBranchPicker(200, { enabled: dispatched });
+  const branchCode =
+    selectedRoute?.branch?.code?.trim() ||
+    branchesQuery.data?.items.find((branch) => branch.id === statementBranchId)?.code.trim() ||
+    "";
+  const vehiclesQuery = useVehiclePicker(200, { enabled: dispatched, branchCode: branchCode || undefined });
+  const vehicles = useMemo(() => vehiclesQuery.data?.items ?? [], [vehiclesQuery.data?.items]);
+
+  const vehicleOptions = useMemo(
+    () => [
+      { value: NO_SELECTION, label: t("accounting.dailyIncome.form.placeholders.noVehicle") },
+      ...withPinnedSelectOption(
+        vehicles
+          .filter((vehicle) => vehicle.active)
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map((vehicle) => ({
+            value: vehicle.id,
+            label: vehicle.name || vehicle.vehicleId || vehicle.id,
+            keywords: [vehicle.name, vehicle.vehicleId, vehicle.licensePlate].filter(Boolean),
+          })),
+        holderVehicleId,
+        holderVehicleName,
+      ),
+    ],
+    [holderVehicleId, holderVehicleName, t, vehicles],
+  );
+
+  const routeOptions = useMemo(() => {
+    const scoped = dailyRoutesForAssigneeBranch(dailyRoutesForStatement(dailyRoutes, statementDate), statementBranchId);
+    const list = selectedRoute && !scoped.some((route) => route.id === selectedRoute.id) ? [selectedRoute, ...scoped] : scoped;
+    return [
+      { value: NO_SELECTION, label: t("accounting.dailyIncome.form.placeholders.noDailyRoute") },
+      ...withPinnedSelectOption(
+        buildActiveRouteAssignmentOptions(list, t).map((option) => ({
+          value: option.value,
+          label: option.label,
+          keywords: (option as { keywords?: string[] }).keywords,
+        })),
+        routeId,
+        routeName,
+      ),
+    ];
+  }, [dailyRoutes, routeId, routeName, selectedRoute, statementBranchId, statementDate, t]);
+
+  function setRoute(route: ActiveRoute | undefined, fallbackId?: string) {
+    const id = route?.id ?? fallbackId;
+    const employeeNames = route?.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") || "";
+    setValue("routeId", id, { shouldValidate: true });
+    setValue("routeName", route ? route.name.trim() || employeeNames || route.id : id ?? "");
+    setValue("routeCrewId", undefined);
+    setValue("routeCrewName", "");
+  }
+
+  function handleRouteChange(next: string) {
+    if (!next || next === NO_SELECTION) {
+      setRoute(undefined);
+      return;
+    }
+    setRoute(dailyRoutes.find((route) => route.id === next), next);
+  }
+
+  function setHolderEmployees(next: InventoryHolderEmployeeRef[]) {
+    setValue(
+      "inventoryHolderEmployees",
+      next.map((employee) => ({ id: employee.id, name: employee.name })),
+      { shouldValidate: true },
+    );
+  }
+
+  function setHolderVehicle(vehicle: { id: string; name: string } | null) {
+    setValue("inventoryHolderVehicleId", vehicle?.id, { shouldValidate: true });
+    setValue("inventoryHolderVehicleName", vehicle?.name ?? "");
+    // The holders error lives on the employee list; revalidate it when the vehicle changes.
+    setHolderEmployees(holderEmployees);
+  }
+
+  function handleVehicleChange(next: string) {
+    if (!next || next === NO_SELECTION) {
+      setHolderVehicle(null);
+      return;
+    }
+    const option = vehicleOptions.find((item) => item.value === next);
+    setHolderVehicle({ id: next, name: option?.label ?? next });
+  }
+
+  function applyRouteHolders() {
+    if (!selectedRoute) return;
+    const holders = dailyRouteInventoryHolders(selectedRoute);
+    setValue("inventoryHolderVehicleId", holders.vehicle?.id, { shouldValidate: true });
+    setValue("inventoryHolderVehicleName", holders.vehicle?.name ?? "");
+    setHolderEmployees(holders.employees);
+  }
 
   const directionOptions = [
     { value: "received", label: t("accounting.dailyIncome.form.inventory.received") },
@@ -197,14 +296,6 @@ export function RegisterInventoryChangeFields({
   }
 
   function openAddEmployee() {
-    setEditingEmployee(null);
-    setEntityError(null);
-    setEntityDialog("employee");
-  }
-
-  function openEditEmployee() {
-    if (!selectedEmployee) return;
-    setEditingEmployee(selectedEmployee);
     setEntityError(null);
     setEntityDialog("employee");
   }
@@ -240,38 +331,19 @@ export function RegisterInventoryChangeFields({
   async function saveEmployee(values: EmployeeFormValues) {
     try {
       setEntityError(null);
-      const saved = editingEmployee
-        ? await updateEmployee.mutateAsync({ employeeId: String(editingEmployee.id), values })
-        : await createEmployee.mutateAsync(values);
-      setValue("assigneeSource", "employee", { shouldValidate: true });
-      setValue("employeeId", saved.id, { shouldValidate: true });
-      setValue("employeeName", saved.name);
-      setValue("routeId", undefined, { shouldValidate: true });
-      setValue("routeName", "");
+      const saved = await createEmployee.mutateAsync(values);
+      setHolderEmployees([
+        ...holderEmployees.filter((employee) => employee.id !== saved.id),
+        { id: saved.id, name: saved.name },
+      ]);
       setEntityDialog(null);
-      setEditingEmployee(null);
     } catch (error) {
       setEntityError(normalizeApiError(error).message);
     }
   }
 
   function selectRoute(route?: ActiveRoute) {
-    if (!route) {
-      setEntityDialog(null);
-      setEditingRoute(null);
-      return;
-    }
-    const crewName =
-      route.route?.name.trim() ||
-      route.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
-      "";
-    setValue("assigneeSource", "route", { shouldValidate: true });
-    setValue("routeId", route.id, { shouldValidate: true });
-    setValue("routeName", route.name.trim() || crewName || route.id);
-    setValue("routeCrewId", route.route?.id || undefined, { shouldValidate: true });
-    setValue("routeCrewName", crewName);
-    setValue("employeeId", undefined, { shouldValidate: true });
-    setValue("employeeName", "");
+    if (route) setRoute(route);
     setEntityDialog(null);
     setEditingRoute(null);
   }
@@ -295,6 +367,9 @@ export function RegisterInventoryChangeFields({
                   setValue("employeeName", "");
                   setValue("routeId", undefined, { shouldValidate: true });
                   setValue("routeName", "");
+                  setValue("inventoryHolderVehicleId", undefined);
+                  setValue("inventoryHolderVehicleName", "");
+                  setValue("inventoryHolderEmployees", [], { shouldValidate: true });
                 } else {
                   setValue("inventorySupplierId", undefined, { shouldValidate: true });
                   setValue("inventorySupplierName", "");
@@ -341,26 +416,107 @@ export function RegisterInventoryChangeFields({
             </div>
           ) : null}
 
-          {direction === "dispatched" ? (
-            <div className="sm:col-span-2">
-              <TransactionAssigneeSelect
-                employees={employees}
-                dailyRoutes={dailyRoutes}
-                statementDate={statementDate}
-                statementBranchId={statementBranchId}
-                employeeId={employeeId}
-                employeeName={employeeName}
-                routeId={routeId}
-                routeName={routeName}
-                assigneeSource={assigneeSource}
-                error={errors.employeeId?.message ?? errors.routeId?.message}
-                setValue={setValue}
-                onAddEmployee={openAddEmployee}
-                onEditEmployee={openEditEmployee}
-                onAddRoute={openAddRoute}
-                onEditRoute={openEditRoute}
-              />
-            </div>
+          {dispatched ? (
+            <>
+              <div className="space-y-2 sm:col-span-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="journal-route">{t("accounting.dailyIncome.form.fields.inventoryDailyRoute")}</Label>
+                  <FieldEntityActions
+                    hasSelection={Boolean(routeId)}
+                    onAdd={openAddRoute}
+                    onEdit={openEditRoute}
+                    addIcon={Route}
+                  />
+                </div>
+                <SearchableSelect
+                  id="journal-route"
+                  value={routeId || NO_SELECTION}
+                  onValueChange={handleRouteChange}
+                  placeholder={t("accounting.dailyIncome.form.placeholders.selectRoute")}
+                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchRoutes")}
+                  mobileSheet
+                  options={routeOptions}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("accounting.dailyIncome.form.hints.inventoryDailyRoute")}
+                </p>
+              </div>
+
+              <div className="space-y-3 sm:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <RequiredLabel htmlFor="journal-inventory-holder-vehicle">
+                    {t("accounting.dailyIncome.form.fields.inventoryHolders")}
+                  </RequiredLabel>
+                  {selectedRoute ? (
+                    <Button type="button" variant="outline" size="sm" onClick={applyRouteHolders}>
+                      <Users className="size-4" aria-hidden="true" />
+                      {t("accounting.dailyIncome.form.inventory.useRouteHolders")}
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="journal-inventory-holder-vehicle">
+                      {t("accounting.dailyIncome.form.fields.holderVehicle")}
+                    </Label>
+                    <SearchableSelect
+                      id="journal-inventory-holder-vehicle"
+                      value={holderVehicleId || NO_SELECTION}
+                      onValueChange={handleVehicleChange}
+                      placeholder={t("accounting.dailyIncome.form.placeholders.selectHolderVehicle")}
+                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchVehicles")}
+                      emptyMessage={t("accounting.dailyIncome.form.placeholders.noVehiclesFound")}
+                      loading={vehiclesQuery.isLoading}
+                      mobileSheet
+                      options={vehicleOptions}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="journal-inventory-holder-employee">
+                        {t("accounting.dailyIncome.form.fields.holderEmployees")}
+                      </Label>
+                      <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />
+                    </div>
+                    <RouteEmployeeSelect
+                      id="journal-inventory-holder-employee"
+                      value={holderEmployees}
+                      onChange={setHolderEmployees}
+                      branchCode={branchCode || undefined}
+                      showSelectedList={false}
+                      placeholder={t("accounting.dailyIncome.form.placeholders.addHolderEmployee")}
+                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchEmployees")}
+                      emptyMessage={t("accounting.dailyIncome.form.placeholders.noEmployeesFound")}
+                    />
+                  </div>
+                </div>
+                {holderEmployees.length > 0 ? (
+                  <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-background">
+                    {holderEmployees.map((employee) => (
+                      <li key={employee.id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
+                        <span className="min-w-0 font-medium">{employee.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => setHolderEmployees(holderEmployees.filter((item) => item.id !== employee.id))}
+                          aria-label={t("accounting.dailyIncome.form.inventory.removeHolderEmployee", { name: employee.name })}
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.hints.noHolderEmployees")}</p>
+                )}
+                {errors.inventoryHolderEmployees ? (
+                  <p className="text-sm text-destructive">{errors.inventoryHolderEmployees.message}</p>
+                ) : null}
+                <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.hints.inventoryHolders")}</p>
+              </div>
+            </>
           ) : null}
 
         </div>
@@ -440,6 +596,15 @@ export function RegisterInventoryChangeFields({
             <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.inventory.priceHint")}</p>
           </div>
 
+          {allowAutoReconcile ? (
+            <InventoryAutoReconcileField
+              className="sm:col-span-3"
+              inventoryDirection={direction}
+              inventoryQuantity={quantity}
+              checked={Boolean(autoReconcile)}
+              onCheckedChange={(checked) => setValue("autoReconcile", checked, { shouldDirty: true })}
+            />
+          ) : null}
         </div>
       </FormSection>
 
@@ -465,16 +630,14 @@ export function RegisterInventoryChangeFields({
       <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
-              {editingEmployee ? t("employees.form.editTitle") : t("employees.form.addTitle")}
-            </DialogTitle>
+            <DialogTitle>{t("employees.form.addTitle")}</DialogTitle>
           </DialogHeader>
           <EmployeeForm
-            key={editingEmployee?.id ?? "new"}
-            initialValues={editingEmployee ? employeeToFormValues(editingEmployee) : createEmptyEmployeeForm()}
-            isEditing={Boolean(editingEmployee)}
-            submitLabel={editingEmployee ? t("common.actions.saveChanges") : t("employees.actions.add")}
-            isSubmitting={createEmployee.isPending || updateEmployee.isPending}
+            key="new"
+            initialValues={createEmptyEmployeeForm()}
+            isEditing={false}
+            submitLabel={t("employees.actions.add")}
+            isSubmitting={createEmployee.isPending}
             externalError={entityError}
             onSubmit={saveEmployee}
             onCancel={() => setEntityDialog(null)}

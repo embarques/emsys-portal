@@ -47,7 +47,7 @@ export function PredefinedRouteCitiesEditor({ form, disabled, invalid, described
 
   return (
     <div className="flex flex-col gap-3">
-      <ol className="max-h-72 space-y-2 overflow-y-auto pr-1" aria-describedby={describedBy}>
+      <ol className="-m-1 max-h-72 space-y-2 overflow-y-auto p-1" aria-describedby={describedBy}>
         {fields.map((field, index) => {
           const registration = form.register(`cities.${index}.value`);
           const rowInvalid = Boolean(rowErrors?.[index]?.value);
@@ -88,20 +88,21 @@ export function PredefinedRouteCitiesEditor({ form, disabled, invalid, described
         })}
       </ol>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+        <p className="text-xs tabular-nums text-muted-foreground" aria-live="polite">
+          {t("predefinedRoutes.form.cityCount", { count: filledCount })}
+        </p>
         <Button
           type="button"
           variant="outline"
+          size="sm"
           disabled={disabled}
-          className="h-9 border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
+          className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
           onClick={() => append(createEmptyPredefinedRouteCity())}
         >
           <Plus className="size-4" />
           {t("predefinedRoutes.form.addCity")}
         </Button>
-        <p className="text-xs text-muted-foreground" aria-live="polite">
-          {t("predefinedRoutes.form.cityCount", { count: filledCount })}
-        </p>
       </div>
     </div>
   );

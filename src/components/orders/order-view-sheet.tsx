@@ -16,7 +16,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
-import { formatRecordPhoneTypeLabel, getOrderedRecordPhones } from "@/lib/phones/phones";
+import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatOrderDateWithWeekday,
@@ -71,9 +71,9 @@ function SenderViewSections({ customer }: { customer: Customer }) {
               label={
                 phone.isPrimary
                   ? t("orders.view.phonePrimary", {
-                      type: formatRecordPhoneTypeLabel(phone.type),
+                      type: t(`phones.types.${phone.type}`),
                     })
-                  : formatRecordPhoneTypeLabel(phone.type)
+                  : t(`phones.types.${phone.type}`)
               }
               number={phone.number}
               displayNumber={phone.displayNumber}

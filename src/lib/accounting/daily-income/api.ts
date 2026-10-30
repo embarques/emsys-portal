@@ -1,3 +1,4 @@
+import { buildTodayCloseoutPayload, type TransactionBranch, type CloseoutSetupValues } from "./start-transaction";
 import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
 import { resolveJournalRefNumberForWrite } from "@/lib/accounting/daily-income/ref-number";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
@@ -6,7 +7,10 @@ import {
   resolveJournalCheckNumberFromApi,
 } from "./check-payment-reference";
 import { isAutoClearEligible } from "./auto-clear";
+import { isAutoReconcileEligible } from "./auto-reconcile";
+import { inventoryHoldersFromValues } from "./inventory-change";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
+import { isFixedCashTransactionType } from "./transaction-workflow";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import {
@@ -25,6 +29,9 @@ import {
   type DailyIncomeJournalListParams,
   type DailyIncomeJournalValues,
   type DailyIncomePartyRef,
+  type DailyRouteAttribution,
+  type InventoryHolderEmployeeRef,
+  type InventoryHoldersRef,
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
   type IncomeStatementSummaryDetail,
@@ -174,6 +181,47 @@ function normalizeJournalRoute(raw: Record<string, unknown>): DailyIncomePartyRe
   return undefined;
 }
 
+function normalizeEmployeeRef(value: unknown): { id: number; name: string } | null {
+  const raw = objectValue(value);
+  const id = numberValue(firstDefined(raw.id, raw._id));
+  const name = stringValue(firstDefined(raw.name, raw.displayName));
+  return id > 0 ? { id, name: name || String(id) } : null;
+}
+
+function normalizeVehicleRef(value: unknown): { id: string; name: string } | null {
+  const raw = objectValue(value);
+  const id = stringValue(firstDefined(raw.id, raw._id));
+  const name = stringValue(firstDefined(raw.name, raw.displayName));
+  return id ? { id, name: name || id } : null;
+}
+
+function normalizeDailyRouteAttribution(value: unknown, route: DailyIncomePartyRef): DailyRouteAttribution {
+  const raw = objectValue(value);
+  const helpers = Array.isArray(raw.helpers)
+    ? raw.helpers.map(normalizeEmployeeRef).filter((helper): helper is { id: number; name: string } => helper != null)
+    : [];
+  return {
+    id: stringValue(firstDefined(raw.id, raw._id)) || String(route.id),
+    name: stringValue(raw.name) || route.name,
+    date: stringValue(raw.date).slice(0, 10) || undefined,
+    vehicle: normalizeVehicleRef(raw.vehicle),
+    supervisor: normalizeEmployeeRef(raw.supervisor),
+    driver: normalizeEmployeeRef(raw.driver),
+    helpers,
+  };
+}
+
+function normalizeInventoryHolders(value: unknown): InventoryHoldersRef | undefined {
+  if (value == null) return undefined;
+  const raw = objectValue(value);
+  const employees = Array.isArray(raw.employees)
+    ? raw.employees
+        .map(normalizeEmployeeRef)
+        .filter((employee): employee is InventoryHolderEmployeeRef => employee != null)
+    : [];
+  return { vehicle: normalizeVehicleRef(raw.vehicle), employees };
+}
+
 export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const raw = objectValue(value);
   const id = stringValue(firstDefined(raw.id, raw._id));
@@ -216,7 +264,7 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const primaryLine = accountLines.find((account) => !["CASH ON HAND", "ACCOUNTS RECEIVABLE"].includes(account.name));
   const sourceLine = accountLines.find((account) => account.credit > 0 && account.id !== primaryLine?.id);
   const route = normalizeJournalRoute(raw);
-  const employee = route ? undefined : normalizeLookup(raw.employee);
+  const employee = normalizeLookup(raw.employee);
   const employeeGroupRaw = normalizePartyRef(raw.employeeGroup);
   const employeeGroup =
     route && employeeGroupRaw && looksLikeDailyRouteId(employeeGroupRaw.id)
@@ -246,6 +294,7 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     employee,
     employeeGroup,
     route,
+    ...(route ? { dailyRoute: normalizeDailyRouteAttribution(raw.dailyRoute, route) } : {}),
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
@@ -289,6 +338,7 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
         objectValue(raw.supplier).companyName,
       ),
     ) || undefined,
+    inventoryHolders: normalizeInventoryHolders(raw.inventoryHolders),
     accounts: accountLines,
     invoice: hasInvoice
       ? {
@@ -527,7 +577,9 @@ function resolveJournalPaymentMethod(values: DailyIncomeJournalValues): { id?: n
   const apiName = toApiPaymentMethodName(values.paymentMethodName);
 
   // Unpaid registration still posts an invoice-payment entry; always classify as Cash.
-  if (isInvoicePayment && amount === 0) {
+  // Surcharges only raise the invoice total and expenses are paid from their source account,
+  // so the method is irrelevant and always Cash.
+  if ((isInvoicePayment && amount === 0) || isFixedCashTransactionType(values.transactionType)) {
     return {
       ...(values.paymentMethodId && apiName === "CASH" ? { id: values.paymentMethodId } : {}),
       name: "CASH",
@@ -581,20 +633,18 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     ? {
         id: values.routeId,
         name: values.routeName?.trim() || values.routeCrewName?.trim() || values.routeId,
-        ...(values.routeCrewId || values.routeCrewName
-          ? {
-              route: {
-                id: values.routeCrewId,
-                name: values.routeCrewName?.trim() || values.routeCrewId,
-              },
-            }
-          : {}),
       }
     : null;
-  const employeeRef =
-    !assignedToRoute && values.employeeId
-      ? { id: values.employeeId, name: values.employeeName ?? "" }
-      : null;
+  // Inventory accountability is carried by the holders, not by the journal employee.
+  const employeeRef = isInventory
+    ? null
+    : assignedToRoute
+      ? values.supervisorId
+        ? { id: values.supervisorId, name: values.supervisorName ?? "" }
+        : null
+      : values.employeeId
+        ? { id: values.employeeId, name: values.employeeName ?? "" }
+        : null;
   const refNumber = resolveJournalRefNumberForWrite(values);
 
   return {
@@ -605,7 +655,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     ...(refNumber ? { refNumber } : {}),
     // Check number maps to API paymentReference; skip payment reference for checks.
     ...journalPaymentFields(
-      isCheckPaymentMethod(paymentMethod?.name ?? values.paymentMethodName)
+      isCheckPaymentMethod(paymentMethod?.name ?? values.paymentMethodName) || isFixedCashTransactionType(values.transactionType)
         ? { externalReferenceNumber: undefined }
         : values,
       options,
@@ -613,8 +663,9 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     description: values.description,
     currency: statement.currency,
     rate: statement.rate,
-    // One assignee family only — do not leave leftover fields from the other.
+    // Accountable employee (the route supervisor on route journals); independent of attribution.
     employee: employeeRef,
+    // Daily-route attribution for analytics.
     vehicleRoute: dailyRouteRef,
     route: dailyRouteRef,
     // Legacy compatibility field for route journals; cleared on employee journals.
@@ -670,11 +721,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
             ? {
                 incomeGained: values.inventoryTotal,
                 dispatchedAt: statement.date,
-                dispatchedTo: assignedToRoute
-                  ? dailyRouteRef
-                  : values.employeeId
-                    ? { id: values.employeeId, name: values.employeeName ?? "" }
-                    : undefined,
+                inventoryHolders: inventoryHoldersFromValues(values),
               }
             : {}),
         }
@@ -686,6 +733,7 @@ export async function createDailyIncomeJournal(statement: DailyIncomeStatement, 
   const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, {
     ...journalPayload(statement, values, options),
     ...(values.autoClear && isAutoClearEligible(values) ? { autoClear: true } : {}),
+    ...(values.autoReconcile && isAutoReconcileEligible(values) ? { autoReconcile: true } : {}),
   });
   assertMutation(payload, "Unable to create transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
@@ -720,6 +768,20 @@ export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[
     { id: 4, name: "ZELLE" },
     { id: 5, name: "CREDIT-CARD" },
   ];
+}
+
+/** Explicit creation uses the server's date and branch timezone, never a viewed date. */
+export async function createTodayIncomeStatement(branch: TransactionBranch, values: CloseoutSetupValues) {
+  const payload = await apiClient.post<ApiEnvelope>(
+    API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS,
+    buildTodayCloseoutPayload(branch, values),
+  );
+  assertMutation(payload, "Unable to create today's closeout.");
+  const statement = normalizeIncomeStatement(unwrap(payload));
+  if (!statement || statement.branch?.id !== branch.id || statement.status !== "OPEN") {
+    throw new Error("The API did not return an open closeout for this branch.");
+  }
+  return statement;
 }
 
 export type CloseoutCalendar = {

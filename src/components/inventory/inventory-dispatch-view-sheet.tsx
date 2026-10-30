@@ -8,11 +8,14 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { InventoryConfirmationPanel } from "@/components/inventory/inventory-confirmation-panel";
 import { InventoryRecordActions } from "@/components/inventory/inventory-record-actions";
 import { InventoryDocumentStatusBadge } from "@/components/inventory/inventory-status-badge";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import { formatInventoryDateTime, getHolderNameById, getItemNameById } from "@/lib/inventory/display";
+import { useConfirmationActions } from "@/lib/inventory/hooks/use-confirmation-actions";
+import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import type { InventoryItem } from "@/lib/inventory/types";
 import { sumLineQuantities, type InventoryDispatch } from "@/lib/inventory/types/documents";
 import type { InventoryHolder } from "@/lib/inventory/types/holders";
@@ -28,7 +31,10 @@ type InventoryDispatchViewSheetProps = {
   onEdit?: (dispatch: InventoryDispatch) => void;
   onPost?: (dispatch: InventoryDispatch) => void;
   onCancelDraft?: (dispatch: InventoryDispatch) => void;
+  onConfirmationAction?: (dispatch: InventoryDispatch, action: ConfirmationActionOption) => void;
 };
+
+const DISPATCH_PARTIES = ["WAREHOUSE", "CUSTODIAN"] as const;
 
 export function InventoryDispatchViewSheet({
   dispatch,
@@ -41,11 +47,15 @@ export function InventoryDispatchViewSheet({
   onEdit,
   onPost,
   onCancelDraft,
+  onConfirmationAction,
 }: InventoryDispatchViewSheetProps) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
+  const isPending = dispatch?.status === "PENDING_CONFIRMATION";
+  const confirmationActions = useConfirmationActions(isPending && onConfirmationAction ? dispatch : null, DISPATCH_PARTIES);
   if (!dispatch) return null;
   const isDraft = dispatch.status === "DRAFT";
+  const showConfirmations = isPending || dispatch.status === "POSTED" || Boolean(dispatch.rejection);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -65,10 +75,28 @@ export function InventoryDispatchViewSheet({
             />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.dailyRouteId")} value={dispatch.dailyRouteId || dash} />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.dispatchedAt")} value={formatInventoryDateTime(dispatch.dispatchedAt)} />
+            {dispatch.submittedAt ? (
+              <RecordViewSheetDetailRow
+                label={t("inventory.columns.submittedAt")}
+                value={[formatInventoryDateTime(dispatch.submittedAt), dispatch.submittedBy].filter(Boolean).join(" · ")}
+              />
+            ) : null}
             <RecordViewSheetDetailRow label={t("inventory.columns.postedAt")} value={dispatch.postedAt ? formatInventoryDateTime(dispatch.postedAt) : dash} />
             <RecordViewSheetDetailRow label={t("inventory.columns.postedBy")} value={dispatch.postedBy || dash} />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.notes")} value={dispatch.notes || dash} />
           </RecordViewSheetSection>
+          {showConfirmations ? (
+            <RecordViewSheetSection title={t("inventory.confirmations.title")}>
+              <InventoryConfirmationPanel
+                state={dispatch}
+                parties={DISPATCH_PARTIES}
+                pending={isPending}
+                actions={confirmationActions}
+                disabled={isBusy}
+                onAction={onConfirmationAction ? (action) => onConfirmationAction(dispatch, action) : undefined}
+              />
+            </RecordViewSheetSection>
+          ) : null}
           <RecordViewSheetSection title={t("inventory.view.lines")}>
             {dispatch.lines.map((line, index) => (
               <RecordViewSheetDetailRow
@@ -86,7 +114,9 @@ export function InventoryDispatchViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.columns.userModified")} value={dispatch.updatedBy || dash} />
           </RecordViewSheetSection>
           {!isDraft ? (
-            <p className="px-6 pb-4 text-xs text-muted-foreground">{t("inventory.form.workflow.readOnlyPosted")}</p>
+            <p className="px-6 pb-4 text-xs text-muted-foreground">
+              {t(isPending ? "inventory.form.workflow.readOnlyPending" : "inventory.form.workflow.readOnlyPosted")}
+            </p>
           ) : null}
         </RecordViewSheetBody>
         <InventoryRecordActions

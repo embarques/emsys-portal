@@ -15,6 +15,7 @@ import {
   getCustomerPhones,
   type Customer,
 } from "@/lib/customers/types";
+import { useTranslation } from "@/lib/i18n";
 import {
   createEmptyOrderPartyAddress,
   createEmptyOrderPartyPhone,
@@ -84,6 +85,7 @@ export function OrderPartyEditor({
   onChange,
   onRemove,
 }: OrderPartyEditorProps) {
+  const { t } = useTranslation();
   const filteredCustomers = customers.filter((customer) => {
     if (customerFilter === "all") return true;
     return getCustomerClientType(customer) === customerFilter;
@@ -168,13 +170,13 @@ export function OrderPartyEditor({
         {onRemove ? (
           <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={onRemove}>
             <Trash2 className="h-4 w-4" />
-            Remove
+            {t("orders.partyEditor.remove")}
           </Button>
         ) : null}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor={`${values.id}-customer`}>Load from client directory</Label>
+        <Label htmlFor={`${values.id}-customer`}>{t("orders.partyEditor.loadFromDirectory")}</Label>
         <SearchableSelect
           id={`${values.id}-customer`}
           value={values.clientId}
@@ -185,14 +187,14 @@ export function OrderPartyEditor({
             }
             loadCustomer(clientId);
           }}
-          searchPlaceholder="Search clients…"
+          searchPlaceholder={t("orders.partyEditor.searchClients")}
           options={[
-            { value: "", label: "Enter manually or pick a client" },
+            { value: "", label: t("orders.partyEditor.manualOrPick") },
             ...filteredCustomers.map((customer): SearchableSelectOption => {
               const clientType = getCustomerClientType(customer);
               return {
                 value: getCustomerClientId(customer),
-                label: `${customer.name}${clientType ? ` · ${clientType}` : ""}`,
+                label: `${customer.name}${clientType ? ` · ${t(`customers.types.${clientType}`)}` : ""}`,
               };
             }),
           ]}
@@ -202,7 +204,7 @@ export function OrderPartyEditor({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor={`${values.id}-name`}>
-            Name <span className="text-destructive">*</span>
+            {t("orders.partyEditor.name")} <span className="text-destructive">*</span>
           </Label>
           <Input
             id={`${values.id}-name`}
@@ -213,7 +215,7 @@ export function OrderPartyEditor({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor={`${values.id}-document`}>Document ID</Label>
+          <Label htmlFor={`${values.id}-document`}>{t("orders.partyEditor.documentId")}</Label>
           <Input
             id={`${values.id}-document`}
             value={values.documentId}
@@ -222,7 +224,7 @@ export function OrderPartyEditor({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor={`${values.id}-email`}>Email</Label>
+          <Label htmlFor={`${values.id}-email`}>{t("orders.partyEditor.email")}</Label>
           <Input
             id={`${values.id}-email`}
             type="email"
@@ -235,8 +237,8 @@ export function OrderPartyEditor({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold">Phone numbers</p>
-            <p className="text-xs text-muted-foreground">At least one phone is required.</p>
+            <p className="text-sm font-semibold">{t("orders.partyEditor.phonesTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("orders.partyEditor.phonesHint")}</p>
           </div>
           <Button
             type="button"
@@ -246,14 +248,14 @@ export function OrderPartyEditor({
             onClick={addPhone}
           >
             <Plus className="size-4" />
-            Add phone
+            {t("orders.partyEditor.addPhone")}
           </Button>
         </div>
 
         {values.phones.map((phone, index) => (
           <div key={phone.id} className="rounded-lg border bg-card p-3">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-medium">Phone {index + 1}</p>
+              <p className="text-sm font-medium">{t("orders.partyEditor.phoneTitle", { index: index + 1 })}</p>
               <Button
                 type="button"
                 variant="ghost"
@@ -267,17 +269,17 @@ export function OrderPartyEditor({
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor={`${phone.id}-label`}>Label</Label>
+                <Label htmlFor={`${phone.id}-label`}>{t("orders.partyEditor.phoneLabel")}</Label>
                 <Input
                   id={`${phone.id}-label`}
                   value={phone.label}
                   onChange={(event) => updatePhone(index, { label: event.target.value })}
-                  placeholder="Mobile, office..."
+                  placeholder={t("orders.partyEditor.phoneLabelPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`${phone.id}-number`}>
-                  Number {index === 0 ? <span className="text-destructive">*</span> : null}
+                  {t("orders.partyEditor.phoneNumber")} {index === 0 ? <span className="text-destructive">*</span> : null}
                 </Label>
                 <PhoneInput
                   id={`${phone.id}-number`}
@@ -293,8 +295,8 @@ export function OrderPartyEditor({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold">Addresses</p>
-            <p className="text-xs text-muted-foreground">Select which address applies to this order.</p>
+            <p className="text-sm font-semibold">{t("orders.partyEditor.addressesTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("orders.partyEditor.addressesHint")}</p>
           </div>
           <Button
             type="button"
@@ -304,7 +306,7 @@ export function OrderPartyEditor({
             onClick={addAddress}
           >
             <Plus className="size-4" />
-            Add address
+            {t("orders.partyEditor.addAddress")}
           </Button>
         </div>
 
@@ -326,10 +328,10 @@ export function OrderPartyEditor({
                     onChange={() => updateField("orderAddressId", address.id)}
                     className="size-4 border-input"
                   />
-                  Address {index + 1}
+                  {t("orders.partyEditor.addressTitle", { index: index + 1 })}
                   {selected ? (
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      Used for order
+                      {t("orders.partyEditor.usedForOrder")}
                     </span>
                   ) : null}
                 </label>
@@ -350,7 +352,7 @@ export function OrderPartyEditor({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor={`${address.id}-street`}>
-                    Street address <span className="text-destructive">*</span>
+                    {t("orders.partyEditor.streetAddress")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id={`${address.id}-street`}
@@ -359,7 +361,7 @@ export function OrderPartyEditor({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`${address.id}-apt`}>Apt / Suite</Label>
+                  <Label htmlFor={`${address.id}-apt`}>{t("orders.partyEditor.aptSuite")}</Label>
                   <Input
                     id={`${address.id}-apt`}
                     value={address.apt}
@@ -367,7 +369,7 @@ export function OrderPartyEditor({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`${address.id}-cross`}>Cross street</Label>
+                  <Label htmlFor={`${address.id}-cross`}>{t("orders.partyEditor.crossStreet")}</Label>
                   <Input
                     id={`${address.id}-cross`}
                     value={address.crossStreet}
@@ -376,7 +378,7 @@ export function OrderPartyEditor({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`${address.id}-city`}>
-                    City <span className="text-destructive">*</span>
+                    {t("orders.partyEditor.city")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id={`${address.id}-city`}
@@ -385,7 +387,7 @@ export function OrderPartyEditor({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`${address.id}-state`}>State</Label>
+                  <Label htmlFor={`${address.id}-state`}>{t("orders.partyEditor.state")}</Label>
                   <Input
                     id={`${address.id}-state`}
                     value={address.state}
@@ -393,7 +395,7 @@ export function OrderPartyEditor({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`${address.id}-province`}>Province / Country</Label>
+                  <Label htmlFor={`${address.id}-province`}>{t("orders.partyEditor.provinceCountry")}</Label>
                   <Input
                     id={`${address.id}-province`}
                     value={address.provinceCountry}
@@ -401,7 +403,7 @@ export function OrderPartyEditor({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`${address.id}-zip`}>Zip code</Label>
+                  <Label htmlFor={`${address.id}-zip`}>{t("orders.partyEditor.zipCode")}</Label>
                   <Input
                     id={`${address.id}-zip`}
                     value={address.zipCode}

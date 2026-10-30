@@ -24,5 +24,15 @@
   "aria": {
     "type": "Phone {{index}} type",
     "number": "Phone {{index}} number"
+  },
+  "actions": {
+    "copied": "Phone number copied",
+    "copyFailed": "Could not copy phone number",
+    "copyAria": "Copy {{label}}",
+    "copyTooltip": "Copy number",
+    "callAria": "Call {{label}}",
+    "call": "Call",
+    "whatsAppAria": "WhatsApp {{label}}",
+    "whatsApp": "Message on WhatsApp"
   }
 }

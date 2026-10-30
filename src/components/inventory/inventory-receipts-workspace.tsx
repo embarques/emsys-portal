@@ -6,6 +6,7 @@ import { PackageCheck, Plus } from "lucide-react";
 import { InventoryDocumentCommandDialog, type InventoryDocumentCommand } from "@/components/inventory/inventory-document-command-dialog";
 import { InventoryDocumentMobileList } from "@/components/inventory/inventory-document-mobile-list";
 import { InventoryDocumentMobileRow } from "@/components/inventory/inventory-document-mobile-row";
+import { InventoryConfirmationDialog } from "@/components/inventory/inventory-confirmation-dialog";
 import { InventoryReceiptForm } from "@/components/inventory/inventory-receipt-form";
 import { InventoryReceiptViewSheet } from "@/components/inventory/inventory-receipt-view-sheet";
 import { InventoryDocumentStatusBadge } from "@/components/inventory/inventory-status-badge";
@@ -47,6 +48,7 @@ import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCancelReceipt,
+  useConfirmReceipt,
   useCreateReceipt,
   useInventoryHolders,
   useInventoryItems,
@@ -54,8 +56,10 @@ import {
   useInventoryReceipts,
   useInventorySuppliers,
   usePostReceipt,
+  useRejectReceipt,
   useUpdateReceipt,
 } from "@/lib/inventory/hooks/use-inventory";
+import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import {
   receiptToFormValues,
   sumLineQuantities,
@@ -66,6 +70,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -83,15 +88,19 @@ export function InventoryReceiptsWorkspace() {
   const updateReceipt = useUpdateReceipt();
   const postReceipt = usePostReceipt();
   const cancelReceipt = useCancelReceipt();
+  const confirmReceipt = useConfirmReceipt();
+  const rejectReceipt = useRejectReceipt();
   const canCreate = hasPermission(PERMISSIONS.inventoryReceiptsCreate.name, PERMISSIONS.inventoryReceiptsCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.inventoryReceiptsUpdate.name, PERMISSIONS.inventoryReceiptsUpdate.resourceType);
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS.sort, () => setPage(1));
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingReceipt, setEditingReceipt] = useState<InventoryReceipt | null>(null);
   const [viewReceipt, setViewReceipt] = useState<InventoryReceipt | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ command: InventoryDocumentCommand; receipt: InventoryReceipt } | null>(null);
+  const [confirmationTarget, setConfirmationTarget] = useState<{ action: ConfirmationActionOption; receipt: InventoryReceipt } | null>(null);
 
   const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -116,6 +125,7 @@ export function InventoryReceiptsWorkspace() {
       ...DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS,
       page,
       limit: pageLimit,
+      sort,
       search: createInventorySearchFilter(debouncedQuery),
       searchReferenceMatches: debouncedQuery.trim()
         ? [
@@ -131,7 +141,7 @@ export function InventoryReceiptsWorkspace() {
         : undefined,
       ...(filterRows.length ? { filterRows } : {}),
     }),
-    [debouncedQuery, filterRows, holders, page, pageLimit, suppliers],
+    [debouncedQuery, filterRows, holders, page, pageLimit, sort, suppliers],
   );
   const directoryQuery = useInventoryDirectoryPage("receipts", directoryParams);
   const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);
@@ -146,6 +156,7 @@ export function InventoryReceiptsWorkspace() {
       ? toErrorMessage(error)
       : null;
   const commandPending = postReceipt.isPending || cancelReceipt.isPending;
+  const confirmationPending = confirmReceipt.isPending || rejectReceipt.isPending;
   const editingReceiptValues = useMemo(() => (editingReceipt ? receiptToFormValues(editingReceipt) : undefined), [editingReceipt]);
 
   function openAddForm() {
@@ -200,18 +211,37 @@ export function InventoryReceiptsWorkspace() {
     }
   }
 
+  async function submitConfirmation(action: ConfirmationActionOption, text: string) {
+    if (!confirmationTarget) return;
+    const command = { ref: confirmationTarget.receipt, party: action.party, text };
+    try {
+      if (action.kind === "confirm") {
+        await confirmReceipt.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.confirmed"));
+      } else {
+        await rejectReceipt.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.rejected"));
+      }
+      setConfirmationTarget(null);
+      setViewReceipt(null);
+    } catch (mutationError) {
+      notifyError(toErrorMessage(mutationError));
+    }
+  }
+
   const columns: DataTableColumn<InventoryReceipt>[] = [
     {
       id: "supplier",
       label: t("inventory.columns.supplier"),
+      sortable: false,
       cellClassName: "font-medium",
       renderCell: (row) => getSupplierNameById(row.supplierId, suppliers) || dash,
     },
-    { id: "holder", label: t("inventory.columns.warehouse"), renderCell: (row) => getHolderNameById(row.toHolderId, holders) || dash },
-    { id: "lines", label: t("inventory.columns.lines"), renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
-    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
-    { id: "totalCost", label: t("inventory.columns.totalCost"), cellClassName: "tabular-nums", renderCell: (row) => formatInventoryMinor(sumReceiptLinesMinor(row.lines)) },
-    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDateTime(row.receivedAt) },
+    { id: "holder", label: t("inventory.columns.warehouse"), sortable: false, renderCell: (row) => getHolderNameById(row.toHolderId, holders) || dash },
+    { id: "lines", label: t("inventory.columns.lines"), sortable: false, renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
+    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), sortable: false, cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
+    { id: "totalCost", label: t("inventory.columns.totalCost"), sortable: false, cellClassName: "tabular-nums", renderCell: (row) => formatInventoryMinor(sumReceiptLinesMinor(row.lines)) },
+    { id: "date", label: t("inventory.columns.date"), sortField: "receivedAt", renderCell: (row) => formatInventoryDateTime(row.receivedAt) },
     { id: "status", label: t("inventory.columns.status"), renderCell: (row) => <InventoryDocumentStatusBadge status={row.status} /> },
   ];
 
@@ -336,7 +366,8 @@ export function InventoryReceiptsWorkspace() {
             rowKey={(row) => row.id}
             rowLabel={(row) => getSupplierNameById(row.supplierId, suppliers)}
             columnLayout={columnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={960}
             onRowClick={setViewReceipt}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
@@ -367,11 +398,25 @@ export function InventoryReceiptsWorkspace() {
         suppliers={suppliers}
         holders={holders}
         open={Boolean(viewReceipt)}
-        isBusy={commandPending}
+        isBusy={commandPending || confirmationPending}
         onOpenChange={(open) => !open && setViewReceipt(null)}
         onEdit={canUpdate ? openEditForm : undefined}
         onPost={canUpdate ? (receipt) => setCommandTarget({ command: "post", receipt }) : undefined}
         onCancelDraft={canUpdate ? (receipt) => setCommandTarget({ command: "cancel", receipt }) : undefined}
+        onConfirmationAction={(receipt, action) => setConfirmationTarget({ receipt, action })}
+      />
+
+      <InventoryConfirmationDialog
+        action={confirmationTarget?.action ?? null}
+        subject="receipt"
+        description={confirmationTarget
+          ? t(confirmationTarget.action.kind === "reject" ? "inventory.confirmations.receipt.reject" : "inventory.confirmations.receipt.WAREHOUSE", {
+              name: getSupplierNameById(confirmationTarget.receipt.supplierId, suppliers),
+            })
+          : ""}
+        isPending={confirmationPending}
+        onSubmit={submitConfirmation}
+        onOpenChange={(open) => !open && setConfirmationTarget(null)}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>

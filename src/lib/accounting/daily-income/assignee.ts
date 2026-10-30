@@ -1,7 +1,7 @@
 import type { SearchableSelectOption } from "@/components/ui/searchable-select";
 import type { DailyIncomeAssigneeSource } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
-import { DAYS_OF_WEEK, type ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { getActiveRouteSupervisors, type ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 export {
   dailyRoutesForAssigneeBranch,
@@ -52,23 +52,48 @@ export function resolveDailyIncomeAssigneeSource(values: {
   return "employee";
 }
 
-function statementWeekday(date: string): string | null {
-  const parsed = new Date(`${date.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return DAYS_OF_WEEK[(parsed.getDay() + 6) % 7] ?? null;
-}
-
 export function dailyRouteMatchesStatementDate(route: ActiveRoute, date: string): boolean {
-  const day = date.slice(0, 10);
-  if (route.date?.slice(0, 10) === day) return true;
-  const weekday = statementWeekday(day);
-  if (!weekday) return false;
-  return (route.dayOfWeek ?? []).some((value) => value.trim().toLowerCase() === weekday);
+  return route.date?.slice(0, 10) === date.slice(0, 10);
 }
 
-/** Prefer same-day (or weekday-recurring) daily routes; fall back to the full list. */
+/** Prefer same-day daily routes; fall back to the full list. */
 export function dailyRoutesForStatement(routes: ActiveRoute[], date?: string): ActiveRoute[] {
   if (!date?.trim()) return routes;
   const matched = routes.filter((route) => dailyRouteMatchesStatementDate(route, date));
   return matched.length > 0 ? matched : routes;
+}
+
+export type DailyRouteSupervisorRef = { id: number; name: string };
+
+export function dailyRouteSupervisors(
+  route?: Pick<ActiveRoute, "employees"> | null,
+): DailyRouteSupervisorRef[] {
+  if (!route) return [];
+  return getActiveRouteSupervisors(route).map((employee) => ({ id: employee.id, name: employee.name }));
+}
+
+/**
+ * Keep the chosen supervisor while it is still on the route; otherwise use the
+ * route's only supervisor. Routes with several supervisors need an explicit choice.
+ */
+export function resolveDailyRouteSupervisor(
+  route: Pick<ActiveRoute, "employees"> | null | undefined,
+  currentSupervisorId?: number,
+): DailyRouteSupervisorRef | null {
+  const supervisors = dailyRouteSupervisors(route);
+  const current = currentSupervisorId
+    ? supervisors.find((supervisor) => supervisor.id === currentSupervisorId)
+    : undefined;
+  if (current) return current;
+  return supervisors.length === 1 ? supervisors[0] : null;
+}
+
+export function buildDailyRouteSupervisorOptions(
+  route: Pick<ActiveRoute, "employees"> | null | undefined,
+): SearchableSelectOption[] {
+  return dailyRouteSupervisors(route).map((supervisor) => ({
+    value: String(supervisor.id),
+    label: supervisor.name,
+    keywords: [supervisor.name],
+  }));
 }

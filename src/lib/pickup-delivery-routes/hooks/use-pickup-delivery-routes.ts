@@ -8,7 +8,7 @@ import {
   fetchActiveRoute,
   fetchActiveRouteById,
   fetchActiveRoutes,
-  fetchVehicleRouteByCrewAndDate,
+  fetchVehicleRouteByEmployeesAndDate,
   deleteActiveRoute,
   deleteActiveRoutes,
   upsertActiveRoute,
@@ -170,45 +170,39 @@ export function useActiveRoute(params: ActiveRouteLookupParams | null) {
   });
 }
 
-export function useScheduledRouteByCrewAndDate(input: {
-  routeRecordId: string | null;
+/** Existing daily route on `date` with exactly these employees (order-independent). */
+export function useScheduledRouteByEmployeesAndDate(input: {
+  employeeIds: readonly number[];
   date: string;
   routeType: RouteType;
   containerId?: number;
   vehicleId?: string;
   enabled?: boolean;
 }) {
-  const id = input.routeRecordId?.trim() ?? "";
+  const employeeIds = [...new Set(input.employeeIds)].sort((left, right) => left - right);
+  const employeeSetKey = employeeIds.join(",");
   const isoDate = input.date.trim().slice(0, 10);
   const containerId = input.containerId ?? 0;
   const vehicleId = input.vehicleId?.trim() ?? "";
   const enabled =
     (input.enabled ?? true) &&
-    Boolean(id && isoDate) &&
+    Boolean(employeeSetKey && isoDate) &&
     (input.routeType === "pickup" || containerId > 0);
 
   return useWorkspaceQuery({
     queryKey:
       input.routeType === "delivery"
-        ? queryKeys.deliveryRouteSchedules.byCrewAndDate(id, isoDate, containerId)
-        : queryKeys.pickupRouteSchedules.byCrewAndDate(id, isoDate, vehicleId),
+        ? queryKeys.deliveryRouteSchedules.byEmployeesAndDate(employeeSetKey, isoDate, containerId)
+        : queryKeys.pickupRouteSchedules.byEmployeesAndDate(employeeSetKey, isoDate, vehicleId),
     queryFn: () =>
-      fetchVehicleRouteByCrewAndDate({
-        routeRecordId: id,
+      fetchVehicleRouteByEmployeesAndDate({
+        employeeIds,
         date: isoDate,
         routeType: input.routeType,
         ...(input.routeType === "delivery" ? { containerId } : { vehicleId }),
       }),
     enabled,
     staleTime: 0,
-  });
-}
-
-export function usePickupRouteByGroupAndDate(routeRecordId: string | null, date: string) {
-  return useScheduledRouteByCrewAndDate({
-    routeRecordId,
-    date,
-    routeType: "pickup",
   });
 }
 

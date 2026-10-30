@@ -171,7 +171,52 @@ test("responses read the nested audit block, versions and stock balances", () =>
   assert.equal(balance.id, "wh-1:box:QUARANTINED");
   const types = loadFeature("src/lib/inventory/types/catalog.ts", {});
   const summary = types.summarizeItemStock([balance, { ...balance, condition: "AVAILABLE", quantityOnHand: 10, quantityReserved: 0 }]).get("box");
-  assert.deepEqual(summary, { available: 10, quarantined: 3, reserved: 1 });
+  assert.deepEqual(summary, { available: 10, quarantined: 3, reserved: 1, inWarehouse: 0, pendingCustody: 0 });
+});
+
+test("stock splits available supplies into warehouse and pending custody by holder type", () => {
+  const types = loadFeature("src/lib/inventory/types/catalog.ts", {});
+  const balance = (holderId, quantityOnHand, condition = "AVAILABLE") => ({ holderId, itemId: "box", condition, quantityOnHand, quantityReserved: 0 });
+  const holderTypes = new Map([["wh-1", "WAREHOUSE"], ["truck-3", "VEHICLE"], ["ana", "EMPLOYEE"]]);
+  const summary = types.summarizeItemStock([
+    balance("wh-1", 40), balance("truck-3", 12), balance("ana", 3), balance("ana", 2, "QUARANTINED"), balance("unknown", 5),
+  ], holderTypes).get("box");
+  assert.deepEqual(summary, { available: 60, quarantined: 2, reserved: 0, inWarehouse: 40, pendingCustody: 15 });
+});
+
+test("documents read submission and confirmation state", () => {
+  const api = loadFeature("src/lib/inventory/api/inventory-api.ts", {});
+  const dispatch = api.normalizeInventoryDispatch({
+    id: "d1", status: "PENDING_CONFIRMATION", version: 2, submittedAt: "2026-10-28T12:00:00Z", submittedBy: { name: "Office" },
+    confirmations: { warehouse: { confirmedAt: "2026-10-28T13:00:00Z", confirmedBy: "luis", notes: "" } },
+    rejection: { rejectedAt: "2026-10-27T10:00:00Z", rejectedBy: { name: "Ana" }, party: "CUSTODIAN", reason: "Only 35 loaded" },
+    allowedActions: ["CONFIRM_CUSTODIAN"],
+  });
+  assert.equal(dispatch.status, "PENDING_CONFIRMATION");
+  assert.equal(dispatch.submittedBy, "Office");
+  assert.equal(dispatch.confirmations.warehouse.confirmedBy, "luis");
+  assert.equal(dispatch.confirmations.custodian, null);
+  assert.deepEqual(dispatch.rejection, { rejectedAt: "2026-10-27T10:00:00Z", rejectedBy: "Ana", party: "CUSTODIAN", reason: "Only 35 loaded" });
+  assert.deepEqual(dispatch.allowedActions, ["CONFIRM_CUSTODIAN"]);
+  const legacy = api.normalizeInventoryReceipt({ id: "r1", status: "POSTED" });
+  assert.deepEqual(legacy.confirmations, { warehouse: null, custodian: null });
+  assert.deepEqual(legacy.allowedActions, []);
+});
+
+test("receipt and dispatch confirmations send the party with If-Match and a scoped idempotency key", async () => {
+  const { calls, client } = recordingClient(() => ({ success: true }));
+  const api = loadFeature("src/lib/inventory/api/inventory-api.ts", client);
+  await api.confirmInventoryReceipt({ ref: { id: "r1", version: 4 }, party: "WAREHOUSE", text: " counted " });
+  await api.rejectInventoryDispatch({ ref: { id: "d1", version: 2 }, party: "CUSTODIAN", text: " only 35 " });
+  await api.confirmInventoryDispatch({ ref: { id: "d1", version: 2 }, party: "CUSTODIAN", text: "" });
+  assert.deepEqual(calls.map(([method, url, body]) => ({ method, url, body })), [
+    { method: "post", url: "/inventory/receipts/r1/confirm", body: { party: "WAREHOUSE", notes: "counted" } },
+    { method: "post", url: "/inventory/dispatches/d1/reject", body: { party: "CUSTODIAN", reason: "only 35" } },
+    { method: "post", url: "/inventory/dispatches/d1/confirm", body: { party: "CUSTODIAN", notes: "" } },
+  ]);
+  assert.deepEqual(calls[0][3].headers, { "If-Match": "4", "Idempotency-Key": "inventory-receipt-confirm:r1:v4:WAREHOUSE" });
+  assert.deepEqual(calls[1][3].headers, { "If-Match": "2" });
+  await assert.rejects(api.confirmInventoryDispatch({ ref: { id: "d1", version: null }, party: "WAREHOUSE", text: "" }));
 });
 
 test("adjustments are created as drafts and posted with the returned version", async () => {

@@ -50,6 +50,21 @@ function PickupCommentsFixture() {
   );
 }
 
+function PickupReferenceFixture() {
+  const [value, setValue] = useState("");
+  const [changes, setChanges] = useState(0);
+  const navigate = useFormEnterNavigation();
+  return <form onKeyDown={navigate} onSubmit={(event) => event.preventDefault()}>
+    <SearchableSelect id="branch" autoFocus defaultOpen value={value}
+      requireSelectionInteraction advanceFocusOnSelect={false}
+      placeholder="No pickup reference"
+      options={[{ value: "", label: "No pickup reference" }, { value: "pickup-1", label: "Pickup one" }, { value: "pickup-2", label: "Pickup two" }]}
+      onValueChange={(next) => { setValue(next); setChanges((count) => count + 1); }} />
+    <input id="sender" />
+    <output id="value">{value}</output><output id="changes">{changes}</output>
+  </form>;
+}
+
 function Fixture() {
   const [value, setValue] = useState("NY");
   const [changes, setChanges] = useState(0);
@@ -88,6 +103,7 @@ function WorkflowStepperFixture() {
 }
 
 createRoot(document.getElementById("root")!).render(
+  document.documentElement.dataset.fixture === "pickup-reference" ? <PickupReferenceFixture /> :
   document.documentElement.dataset.fixture === "stepper" ? <WorkflowStepperFixture /> :
   document.documentElement.dataset.fixture === "wizard" ? <DailyIncomeWizardFixture /> :
   document.documentElement.dataset.fixture === "comments" ? <PickupCommentsFixture /> :

@@ -50,6 +50,23 @@
       "other": "Otra"
     }
   },
+  "address": {
+    "copied": "Dirección copiada",
+    "copyFailed": "No se pudo copiar la dirección",
+    "copyAria": "Copiar {{label}}",
+    "copyTooltip": "Copiar dirección",
+    "openMapsAria": "Abrir {{label}} en Google Maps",
+    "viewOnMaps": "Ver en Google Maps",
+    "directionsAria": "Cómo llegar a {{label}}",
+    "directions": "Cómo llegar",
+    "verified": "Verificada",
+    "unverified": "No verificada",
+    "unverifiedNotice": {
+      "title": "La dirección de este cliente no está verificada.",
+      "description": "Actualícela con una dirección sugerida por Google para confirmar la ubicación.",
+      "action": "Actualizar dirección"
+    }
+  },
   "workspace": {
     "actionsColumn": "Acciones",
     "viewCustomer": "Ver cliente",

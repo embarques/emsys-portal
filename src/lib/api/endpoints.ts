@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
   INVENTORY_STOCK: "/inventory/stock",
   INVENTORY_RECEIPTS: "/inventory/receipts",
   INVENTORY_DISPATCHES: "/inventory/dispatches",
+  INVENTORY_PENDING_DISPATCHES: "/inventory/pending-dispatches",
   INVENTORY_SUPPLIERS: "/inventory/suppliers",
   INVENTORY_HOLDERS: "/inventory/holders",
   INVENTORY_ADJUSTMENTS: "/inventory/adjustments",

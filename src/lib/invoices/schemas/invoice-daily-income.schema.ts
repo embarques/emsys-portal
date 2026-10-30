@@ -4,13 +4,17 @@ import {
   isCheckPaymentMethod,
   requiresBankAccount,
 } from "@/lib/accounting/daily-income/types";
+import type { TranslateFn } from "@/lib/feedback/messages";
+import { translate } from "@/lib/i18n/catalog";
 import {
   isInvoiceEmployeePickupSource,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
 
-const invoiceDailyIncomeRegistrationBaseSchema = z.object({
-  amount: z.number().nonnegative("Payment amount cannot be negative."),
+const translateEnglish: TranslateFn = (key, params) => translate("en", key, params);
+
+const createInvoiceDailyIncomeRegistrationBaseSchema = (t: TranslateFn) => z.object({
+  amount: z.number().nonnegative(t("invoices.wizard.dailyIncome.validation.amountNegative")),
   assigneeSource: z.enum(["employee", "route"]).optional(),
   employeeId: z.number().optional(),
   employeeName: z.string().optional(),
@@ -25,31 +29,23 @@ const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   paymentAccountId: z.number().optional(),
   paymentAccountName: z.string().optional(),
   paymentAccountType: z.string().optional(),
-  refNumber: z.string().trim().max(20, "Reference number is too long."),
+  refNumber: z.string().trim().max(20, t("invoices.wizard.dailyIncome.validation.refNumberTooLong")),
   refNumberMode: z.enum(["system", "custom"]).optional(),
-  description: z.string().trim().max(500, "Description is too long."),
+  description: z.string().trim().max(500, t("invoices.wizard.dailyIncome.validation.descriptionTooLong")),
   checkNumber: z.string().optional(),
 });
 
-export type InvoiceDailyIncomeRegistrationSchemaMessages = {
-  assigneeRequired: string;
-};
-
-const DEFAULT_MESSAGES: InvoiceDailyIncomeRegistrationSchemaMessages = {
-  assigneeRequired: "Select an employee or a daily route.",
-};
-
 function refineInvoiceDailyIncomeRegistration(
-  values: z.infer<typeof invoiceDailyIncomeRegistrationBaseSchema>,
+  values: z.infer<ReturnType<typeof createInvoiceDailyIncomeRegistrationBaseSchema>>,
   context: z.RefinementCtx,
   invoiceTotal: number | undefined,
-  _messages: InvoiceDailyIncomeRegistrationSchemaMessages,
+  t: TranslateFn,
 ) {
   if (typeof invoiceTotal === "number" && values.amount > invoiceTotal) {
     context.addIssue({
       code: "custom",
       path: ["amount"],
-      message: "Payment amount cannot exceed the invoice total.",
+      message: t("invoices.wizard.dailyIncome.validation.amountExceedsTotal"),
     });
   }
 
@@ -59,7 +55,7 @@ function refineInvoiceDailyIncomeRegistration(
     context.addIssue({
       code: "custom",
       path: ["paymentMethodId"],
-      message: "Payment method is required when a payment is entered.",
+      message: t("invoices.wizard.dailyIncome.validation.paymentMethodRequired"),
     });
   }
 
@@ -67,7 +63,7 @@ function refineInvoiceDailyIncomeRegistration(
     context.addIssue({
       code: "custom",
       path: ["paymentAccountId"],
-      message: "Select a bank account for this payment method.",
+      message: t("invoices.wizard.dailyIncome.validation.bankAccountRequired"),
     });
   }
 
@@ -75,7 +71,7 @@ function refineInvoiceDailyIncomeRegistration(
     context.addIssue({
       code: "custom",
       path: ["checkNumber"],
-      message: "Check number is required.",
+      message: t("invoices.wizard.dailyIncome.validation.checkNumberRequired"),
     });
   }
 
@@ -83,17 +79,17 @@ function refineInvoiceDailyIncomeRegistration(
     context.addIssue({
       code: "custom",
       path: ["refNumber"],
-      message: "Enter a reference number, or choose system generated.",
+      message: t("invoices.wizard.dailyIncome.validation.refNumberRequired"),
     });
   }
 }
 
 export function createInvoiceDailyIncomeRegistrationSchema(
   invoiceTotal: number,
-  messages: InvoiceDailyIncomeRegistrationSchemaMessages = DEFAULT_MESSAGES,
+  t: TranslateFn = translateEnglish,
 ) {
-  return invoiceDailyIncomeRegistrationBaseSchema.superRefine((values, context) => {
-    refineInvoiceDailyIncomeRegistration(values, context, invoiceTotal, messages);
+  return createInvoiceDailyIncomeRegistrationBaseSchema(t).superRefine((values, context) => {
+    refineInvoiceDailyIncomeRegistration(values, context, invoiceTotal, t);
   });
 }
 
@@ -102,7 +98,7 @@ export const invoiceDailyIncomeRegistrationSchema = createInvoiceDailyIncomeRegi
 );
 
 export type InvoiceDailyIncomeRegistrationValues = z.infer<
-  typeof invoiceDailyIncomeRegistrationBaseSchema
+  ReturnType<typeof createInvoiceDailyIncomeRegistrationBaseSchema>
 >;
 
 /** Prefill payment assignee from invoice step-1 pickup route / employee. */

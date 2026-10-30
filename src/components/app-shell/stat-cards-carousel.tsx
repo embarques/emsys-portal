@@ -22,6 +22,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { useTranslation } from "@/lib/i18n";
 
 type StatCardsCarouselProps = {
   children: ReactNode;
@@ -95,6 +96,7 @@ function DesktopStatCardsCarousel({
   minimumCardWidth: number;
   minimumVisibleItems: number;
 }) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleItems, setVisibleItems] = useState(() =>
     clampVisibleItems(minimumVisibleItems, minimumVisibleItems, children.length),
@@ -138,14 +140,14 @@ function DesktopStatCardsCarousel({
   return (
     <div ref={containerRef}>
       <Carousel
-        aria-label="Summary cards"
+        aria-label={t("shell.statCards.summaryCards")}
         className="px-12"
         opts={{ align: "start", containScroll: "trimSnaps", slidesToScroll: 1 }}
       >
         <CarouselContent>
           {children.map((child, index) => (
             <CarouselItem
-              aria-label={`${index + 1} of ${children.length}`}
+              aria-label={t("shell.statCards.position", { current: index + 1, total: children.length })}
               className="[&>*]:h-full"
               key={index}
               style={{ flexBasis: `${100 / visibleItems}%` }}
@@ -165,6 +167,7 @@ function MobileStatCardsCarousel({
   children,
   requestedVisibleItems,
 }: StatCardsCarouselTrackProps & { requestedVisibleItems: number }) {
+  const { t } = useTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
   const [api, setApi] = useState<CarouselApi>();
   const visibleItems = clampVisibleItems(
@@ -224,7 +227,7 @@ function MobileStatCardsCarousel({
 
   return (
     <Carousel
-      aria-label="Summary cards"
+      aria-label={t("shell.statCards.summaryCards")}
       className="space-y-2 [&_[data-slot=carousel-content]]:h-[var(--stat-cards-carousel-height)]"
       // Vertical touch gestures belong to the page; use the arrows to page cards.
       opts={{ align: "start", slidesToScroll: 1, watchDrag: false }}
@@ -245,7 +248,7 @@ function MobileStatCardsCarousel({
       >
         {children.map((child, index) => (
           <CarouselItem
-            aria-label={`${index + 1} of ${children.length}`}
+            aria-label={t("shell.statCards.position", { current: index + 1, total: children.length })}
             key={index}
             style={{ flexBasis: `calc((100% + 1rem) / ${visibleItems})` }}
           >
@@ -255,8 +258,11 @@ function MobileStatCardsCarousel({
       </CarouselContent>
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
-          {firstVisibleIndex + 1}–
-          {Math.min(firstVisibleIndex + visibleItems, children.length)} of {children.length}
+          {t("shell.statCards.range", {
+            start: firstVisibleIndex + 1,
+            end: Math.min(firstVisibleIndex + visibleItems, children.length),
+            total: children.length,
+          })}
         </span>
         <CarouselNext
           className="static size-8 translate-x-0 rotate-90"

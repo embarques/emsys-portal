@@ -38,19 +38,18 @@ import {
   formatActiveRouteDriverNames,
   formatActiveRouteHelperNames,
   formatActiveRouteRowLabel,
-  formatActiveRouteRouteName,
   formatActiveRouteTypeLabel,
   formatActiveRouteVehicleLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import {
   buildActiveRouteListParams,
+  DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
   type ActiveRoute,
   type ActiveRouteFilterState,
 } from "@/lib/pickup-delivery-routes/types";
 import { useActiveRouteFilterFields } from "@/lib/pickup-delivery-routes/hooks/use-active-route-filter-fields";
 import { useActiveRoutes, useDeleteActiveRoutes } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useDirectoryBranchFilter } from "@/lib/branches/hooks/use-directory-branch-filter";
-import { useRouteLookup } from "@/lib/route-manager/hooks/use-route-manager";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatRouteDate } from "@/lib/route-manager/display";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
@@ -58,6 +57,7 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
@@ -116,6 +116,9 @@ export function ActiveRoutesDirectoryWorkspace({
     changePageSize,
     rememberTotal,
   } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort, () =>
+    setActiveRoutePage(1),
+  );
   const [activeRouteDialogOpen, setActiveRouteDialogOpen] = useState(false);
   const [editingActiveRoute, setEditingActiveRoute] = useState<ActiveRoute | null>(null);
   const [deleteActiveRouteTarget, setDeleteActiveRouteTarget] = useState<
@@ -131,6 +134,7 @@ export function ActiveRoutesDirectoryWorkspace({
         query: debouncedActiveRouteQuery,
         rows: activeRouteFilters.rows,
         routeType: variant.routeType,
+        sort,
         branchCode,
       }),
     [
@@ -139,6 +143,7 @@ export function ActiveRoutesDirectoryWorkspace({
       branchCode,
       debouncedActiveRouteQuery,
       pageLimit,
+      sort,
       variant.routeType,
     ],
   );
@@ -147,10 +152,6 @@ export function ActiveRoutesDirectoryWorkspace({
     enabled: isBranchFilterReady,
   });
   const deleteActiveRoutesMutation = useDeleteActiveRoutes(variant.routeType);
-  const routeLookup = useRouteLookup(200, {
-    enabled: true,
-  });
-
   const activeRoutes = useResolvedPaginatedItems(
     activeRoutesQuery.data?.items,
     activeRoutesQuery.data?.total,
@@ -272,7 +273,7 @@ export function ActiveRoutesDirectoryWorkspace({
         renderCell: (record) => {
           const schedule = record.date
             ? formatRouteDate(record.date)
-            : record.dayOfWeek.map((day) => t(`routes.activeRoute.days.${day}`)).join(", ");
+            : dash;
           return (
             <div className="flex items-center gap-1.5">
               <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
@@ -295,6 +296,7 @@ export function ActiveRoutesDirectoryWorkspace({
       {
         id: "vehicle.name",
         label: t("routes.columns.vehicle"),
+        sortable: false,
         renderCell: (record) => formatActiveRouteVehicleLabel(record, dash),
       },
       {
@@ -311,27 +313,25 @@ export function ActiveRoutesDirectoryWorkspace({
       {
         id: "container.name",
         label: t("routes.columns.container"),
+        sortField: "container.number",
         renderCell: (record) => formatActiveRouteContainerLabel(record, dash),
-      },
-      {
-        id: "route.name",
-        label: t("routes.columns.route"),
-        renderCell: (record) =>
-          formatActiveRouteRouteName(record, routeLookup.getByKey, dash),
       },
       {
         id: "driver.name",
         label: t("routes.columns.driver"),
+        sortable: false,
         renderCell: (record) => formatActiveRouteDriverNames(record) || dash,
       },
       {
         id: "supervisor.name",
         label: t("routes.columns.supervisor"),
+        sortable: false,
         renderCell: (record) => formatActiveRouteSupervisorName(record) || dash,
       },
       {
         id: "helper.name",
         label: t("routes.columns.helper"),
+        sortable: false,
         renderCell: (record) => formatActiveRouteHelperNames(record) || dash,
       },
       {
@@ -347,14 +347,10 @@ export function ActiveRoutesDirectoryWorkspace({
       if (column.id === "routeType" && !variant.showRouteTypeField) return false;
       if (column.id === "container.name" && !variant.showContainerField) return false;
       if (column.id === "id" && !showRecordIdColumn) return false;
-      if (showRecordIdColumn && (column.id === "route.name" || column.id === "driver.name" || column.id === "supervisor.name" || column.id === "helper.name")) {
-        return false;
-      }
       return true;
     });
   }, [
     dash,
-    routeLookup.getByKey,
     showRecordIdColumn,
     t,
     variant.id,
@@ -503,7 +499,8 @@ export function ActiveRoutesDirectoryWorkspace({
             rowKey={(record) => record.id}
             rowLabel={(record) => formatActiveRouteRowLabel(record, dash, t)}
             columnLayout={activeRouteColumnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={1200}
             selectable
             selectedIds={selectedActiveRouteIds}

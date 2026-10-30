@@ -75,7 +75,7 @@ import {
 
 const EMPTY_POLICIES_AGREEMENT: InvoicePoliciesAgreementState = {
   agreed: false,
-  skipSignature: true,
+  skipSignature: false,
   signatureDataUrl: null,
 };
 
@@ -201,7 +201,7 @@ export function InvoiceFormWizard({
   const agreementValues = useWatch({ control: agreementForm.control });
   const policiesAgreement = useMemo<InvoicePoliciesAgreementState>(() => ({
     agreed: agreementValues.agreed ?? false,
-    skipSignature: agreementValues.skipSignature ?? true,
+    skipSignature: agreementValues.skipSignature ?? false,
     signatureDataUrl: agreementValues.signatureDataUrl ?? null,
   }), [agreementValues.agreed, agreementValues.skipSignature, agreementValues.signatureDataUrl]);
   const setPoliciesAgreement = agreementForm.reset;
@@ -577,7 +577,7 @@ export function InvoiceFormWizard({
     includePolicies && !policiesUnavailable
       ? findInvoiceWizardPoliciesIssue({ ...policiesAgreement, agreed: activePolicies.length === 0 || policiesAgreement.agreed }, t, previewStep)
       : null;
-  const saveDisabled = preparingSave || isSubmitting || documentsBusy || documentStage || policiesUnavailable || Boolean(policiesIssue) || hasNegativeBalance || hasRegisteredCostMismatch;
+  const saveDisabled = preparingSave || isSubmitting || documentsBusy || documentStage || policiesUnavailable || hasNegativeBalance || hasRegisteredCostMismatch;
   const bannerError =
     step === previewStep
       ? submitError ?? negativeBalanceError ?? registeredCostMismatchError ?? externalError

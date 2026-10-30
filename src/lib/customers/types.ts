@@ -314,6 +314,9 @@ export const DEFAULT_CUSTOMER_LIST_PARAMS = {
   sort: "name:asc",
 } as const satisfies Pick<CustomerListParams, "page" | "limit" | "sort">;
 
+/** Customers directory table opens newest-first; pickers keep `DEFAULT_CUSTOMER_LIST_PARAMS.sort`. */
+export const DEFAULT_CUSTOMER_DIRECTORY_SORT = "createdAt:desc";
+
 const BRANCH_ID_TO_PORTAL: Record<number, CustomerPortalBranch> = {
   1: "usa",
   2: "dr",
