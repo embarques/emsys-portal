@@ -31,7 +31,8 @@
     "fieldActions": {
       "new": "New",
       "edit": "Edit"
-    }
+    },
+    "staleUpdate": "This record was changed by someone else. Your input is still here. Review the latest record before reopening the editor; saving again will not overwrite their changes."
   },
   "address": {
     "useManual": "Enter address manually",

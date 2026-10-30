@@ -31,7 +31,8 @@
     "fieldActions": {
       "new": "Nuevo",
       "edit": "Editar"
-    }
+    },
+    "staleUpdate": "Otra persona cambió este registro. Tu información sigue en el formulario. Revisa el registro actual antes de volver a abrir el editor; guardar de nuevo no sobrescribirá sus cambios."
   },
   "address": {
     "useManual": "Ingresar dirección manualmente",

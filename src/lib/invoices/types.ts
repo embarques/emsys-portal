@@ -146,6 +146,7 @@ export type InvoicePaymentInput = {
 };
 
 export type Invoice = ApiTableRecord & {
+  version?: string;
   invoiceId: string;
   invoiceNumber: string;
   date: string;
@@ -212,6 +213,7 @@ export type InvoiceLineItemFormValues = {
 };
 
 export type InvoiceFormValues = {
+  version?: string;
   autoGenerateNumber?: boolean;
   generatedInvoiceNumber?: string;
   invoiceId: string;
@@ -751,6 +753,7 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     : null;
 
   return {
+    version: invoice.version,
     invoiceId: invoice.invoiceId,
     invoiceNumber: invoice.invoiceNumber,
     date: invoice.date.slice(0, 10),
