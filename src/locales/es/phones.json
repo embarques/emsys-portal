@@ -24,5 +24,15 @@
   "aria": {
     "type": "Tipo del teléfono {{index}}",
     "number": "Número del teléfono {{index}}"
+  },
+  "actions": {
+    "copied": "Número de teléfono copiado",
+    "copyFailed": "No se pudo copiar el número de teléfono",
+    "copyAria": "Copiar {{label}}",
+    "copyTooltip": "Copiar número",
+    "callAria": "Llamar a {{label}}",
+    "call": "Llamar",
+    "whatsAppAria": "Enviar WhatsApp a {{label}}",
+    "whatsApp": "Enviar mensaje por WhatsApp"
   }
 }

@@ -5,6 +5,7 @@ import type { InputHTMLAttributes } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,8 @@ type Props = {
   canUseManualNumber?: boolean;
   disabled?: boolean;
   className?: string;
+  /** Render the mode choice as segments instead of a dropdown. */
+  variant?: "select" | "segmented";
   inputProps?: Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "disabled">;
   onModeChange: (autoGenerate: boolean) => void;
   onInvoiceNumberChange: (value: string) => void;
@@ -40,6 +43,7 @@ export function InvoiceNumberModeFields({
   canUseManualNumber = true,
   disabled = false,
   className,
+  variant = "select",
   inputProps,
   onModeChange,
   onInvoiceNumberChange,
@@ -48,7 +52,7 @@ export function InvoiceNumberModeFields({
   const mode: Mode = autoGenerate ? "system" : "custom";
   // Locked modes stay focusable so Enter navigation still stops on this field.
   const modeLocked = !canUseManualNumber || Boolean(generatedInvoiceNumber);
-  const modeOptions = [
+  const modeOptions: { value: Mode; label: string; disabled: boolean }[] = [
     {
       value: "system",
       label: t("invoices.form.autoNumber.modeSystem"),
@@ -61,25 +65,43 @@ export function InvoiceNumberModeFields({
     },
   ];
 
+  function changeMode(next: string) {
+    if (modeLocked) return;
+    onModeChange(next !== "custom");
+    if (next !== "custom") {
+      onInvoiceNumberChange("");
+    }
+  }
+
   return (
     <div className={cn("grid gap-4", mode === "custom" && "sm:grid-cols-2", className)}>
       <div className="space-y-2">
-        <Label htmlFor={`${id}-mode`}>{t("invoices.form.fields.invoiceNumber")}</Label>
-        <SearchableSelect
-          id={`${id}-mode`}
-          value={mode}
-          disabled={disabled}
-          onValueChange={(next) => {
-            if (modeLocked) return;
-            onModeChange(next !== "custom");
-            if (next !== "custom") {
-              onInvoiceNumberChange("");
-            }
-          }}
-          placeholder={t("invoices.form.placeholders.selectInvoiceNumberMode")}
-          searchable={false}
-          options={modeOptions}
-        />
+        {variant === "segmented" ? (
+          <>
+            <Label id={`${id}-mode-label`}>{t("invoices.form.fields.invoiceNumber")}</Label>
+            <SegmentedControl
+              id={`${id}-mode`}
+              aria-labelledby={`${id}-mode-label`}
+              value={mode}
+              disabled={disabled}
+              onValueChange={changeMode}
+              options={modeOptions}
+            />
+          </>
+        ) : (
+          <>
+            <Label htmlFor={`${id}-mode`}>{t("invoices.form.fields.invoiceNumber")}</Label>
+            <SearchableSelect
+              id={`${id}-mode`}
+              value={mode}
+              disabled={disabled}
+              onValueChange={changeMode}
+              placeholder={t("invoices.form.placeholders.selectInvoiceNumberMode")}
+              searchable={false}
+              options={modeOptions}
+            />
+          </>
+        )}
         {mode === "system" ? (
           <p className="text-xs text-muted-foreground">
             {generatedInvoiceNumber

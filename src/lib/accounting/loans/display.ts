@@ -1,3 +1,4 @@
+import type { TranslateFn } from "@/lib/feedback/messages";
 import type { LoanStatus, LoanTransactionType } from "@/lib/accounting/loans/types";
 
 export function formatLoanMoney(value: number, currency = "USD") {
@@ -19,25 +20,22 @@ export function formatLoanDate(value?: string | null) {
   }).format(date);
 }
 
-export function loanStatusLabel(status: LoanStatus) {
+export function loanStatusLabel(status: LoanStatus, t: TranslateFn) {
   switch (status) {
     case "ACTIVE":
-      return "Active";
     case "PAID":
-      return "Paid";
     case "VOID":
-      return "Void";
+      return t(`accounting.loans.status.${status}`);
     default:
       return status;
   }
 }
 
-export function loanTransactionTypeLabel(type: LoanTransactionType) {
+export function loanTransactionTypeLabel(type: LoanTransactionType, t: TranslateFn) {
   switch (type) {
     case "ISSUE":
-      return "Loan issued";
     case "PAYMENT":
-      return "Payment";
+      return t(`accounting.loans.transactionTypes.${type}`);
     default:
       return type;
   }

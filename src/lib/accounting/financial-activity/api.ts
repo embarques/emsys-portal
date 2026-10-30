@@ -7,8 +7,14 @@ export type FinancialActivity = {
     paymentId?: string;
     date?: string;
     recordedAt?: string;
+    /** Accountable employee; the responsible supervisor for daily-route collections. */
     employee?: {
         id: number;
+        name: string;
+    };
+    /** Original daily-route attribution, kept after reconciliation. */
+    dailyRoute?: {
+        id: string;
         name: string;
     };
     branch?: {
@@ -54,25 +60,15 @@ export type EventInput = {
     reference?: string;
 };
 export type ActivityFilters = {
+    /** Employee id, or "" for all employees. */
     employee: string;
     method: string;
+    /** Branch id, or "" for all branches. */
     branch: string;
     from: string;
     through: string;
     minimum: string;
     age: string;
-};
-export type AutomationSettings = {
-    enabled: boolean;
-    timezone: string;
-    currency: string;
-    rate: number;
-    branches?: {
-        id: number;
-        timezone: string;
-        currency: string;
-        rate: number;
-    }[];
 };
 export function buildActivitySearch(filters: ActivityFilters, page: number) {
     const conditions: {
@@ -80,10 +76,12 @@ export function buildActivitySearch(filters: ActivityFilters, page: number) {
         operator: string;
         value: string | number;
     }[] = [];
-    if (filters.employee.trim())
-        conditions.push({ field: "employee.name", operator: "contains", value: filters.employee.trim() });
-    if (filters.branch.trim())
-        conditions.push({ field: "branch.name", operator: "contains", value: filters.branch.trim() });
+    const employeeId = Number(filters.employee);
+    if (filters.employee && Number.isInteger(employeeId) && employeeId > 0)
+        conditions.push({ field: "employee.id", operator: "eq", value: employeeId });
+    const branchId = Number(filters.branch);
+    if (filters.branch && Number.isInteger(branchId) && branchId > 0)
+        conditions.push({ field: "branch.id", operator: "eq", value: branchId });
     if (filters.method)
         conditions.push({ field: "paymentMethod.name", operator: "eq", value: filters.method });
     if (filters.from)
@@ -103,9 +101,6 @@ export async function fetchFinancialActivity(filters: ActivityFilters, page: num
 export async function fetchActivityHistory(id: string, signal?: AbortSignal, directoryOnly=false) { const result = await apiClient.get<PaginatedApiEnvelope<ActivityEvent[]>>(directoryOnly ? `${API_ENDPOINTS.FINANCIAL_ACTIVITY}/payment-events/${id}` : `${API_ENDPOINTS.FINANCIAL_ACTIVITY}/${id}/events`, { signal }); return result.data ?? []; }
 export async function recordActivity(id: string, input: EventInput) { return apiClient.post(`${API_ENDPOINTS.FINANCIAL_ACTIVITY}/${id}/events`, input); }
 export async function reverseActivity(id: string, requestId: string, reason: string) { return apiClient.post(`${API_ENDPOINTS.ACCOUNTING_JOURNALS}/${id}/reverse`, { requestId, reason }); }
-export async function fetchAutomationSettings(signal?: AbortSignal) { const result = await apiClient.get<PaginatedApiEnvelope<AutomationSettings>>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/automation`, { signal }); if (!result.data)
-    throw new Error(result.message ?? "Unable to load settings"); return result.data; }
-export async function saveAutomationSettings(settings: AutomationSettings) { return apiClient.put(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/automation`, settings); }
 export function clearingAction(row: FinancialActivity) {
     const method = (row.paymentMethod?.name ?? "").trim().toUpperCase().replace(/_/g, "-");
     const actions: Record<string, {

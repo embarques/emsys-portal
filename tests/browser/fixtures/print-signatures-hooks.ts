@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import type { ReportRequest } from "@/lib/reports/types";
 declare global {
  interface Window {
-  blockPopup?:boolean; reservedBeforeRequest?:boolean; switchPrintInvoice?: (id:string)=>void; metadataDelay?:number; wrongInvoice?:boolean; noSignatures?:boolean;
+  blockPopup?:boolean; reservedBeforeRequest?:boolean; switchPrintInvoice?: (id:string)=>void; metadataDelay?:number; wrongInvoice?:boolean; noSignatures?:boolean; someUnsigned?:boolean;
   visual?: boolean; readOnly?: boolean; failPrint?: boolean; failMetadata?: boolean; trip?: boolean;
   printRequests?: ReportRequest[]; metadataRequests?: number; opened?: string; printClosed?: boolean;
  }
@@ -33,7 +33,8 @@ export const apiClient = { post: async (_path: string, body: {invoiceIds: string
  const w = window; w.metadataRequests = (w.metadataRequests ?? 0) + 1;
  if (w.failMetadata) throw new Error("Metadata failed");
  if(w.metadataDelay) await new Promise(resolve=>setTimeout(resolve,w.metadataDelay));
- return { success: true, data: body.invoiceIds.map((id) => ({ invoiceId:w.wrongInvoice ? "ffffffffffffffffffffffff" : id, invoiceNumber:`INV-${parseInt(id,16)}`, senderSignature: w.noSignatures ? null : {signerName:"Sender"}, receiverSignatures: w.noSignatures ? [] : [
+ const unsigned = (id: string) => w.noSignatures || (w.someUnsigned && parseInt(id,16) % 2 === 0);
+ return { success: true, data: body.invoiceIds.map((id) => ({ invoiceId:w.wrongInvoice ? "ffffffffffffffffffffffff" : id, invoiceNumber:`INV-${parseInt(id,16)}`, senderSignature: unsigned(id) ? null : {signerName:"Sender"}, receiverSignatures: unsigned(id) ? [] : [
  {id:"68f800000000000000000005", deliveryId:5, signerName:"Delivery five", signedAt:"2026-10-21T10:00:00Z"},
  {id:"68f800000000000000000006", deliveryId:6, signerName:"Delivery six", signedAt:"2026-10-22T10:00:00Z"}
  ] })) };

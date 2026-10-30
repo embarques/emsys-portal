@@ -58,7 +58,7 @@ export function LabelUpdaterWorkspace() {
       routes.map((route) => ({
         value: route.id,
         label: formatActiveRouteAssignmentLabel(route, t),
-        keywords: [route.name, route.route?.name, route.container?.name, route.date].filter(
+        keywords: [route.name, route.container?.name, route.date].filter(
           (entry): entry is string => Boolean(entry?.trim()),
         ),
       })),

@@ -178,22 +178,17 @@ async function resolveInvoicePickupAssignment(
 
     try {
       const daily = await fetchActiveRouteById(routeId, "pickup");
-      const crewName =
-        daily.route.name.trim() ||
-        daily.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
-        daily.name;
+      const name =
+        daily.name.trim() ||
+        daily.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ");
       return {
         source: "route",
-        dailyRoute: { id: daily.id, name: daily.name },
-        routeCrew: { id: daily.route.id, name: crewName },
+        dailyRoute: { id: daily.id, name: name || daily.id },
       };
     } catch {
-      const crewId = values.routeCrewId.trim();
-      const crewName = values.routeCrewName.trim();
       return {
         source: "route",
-        dailyRoute: { id: routeId, name: crewName || routeId },
-        ...(crewId ? { routeCrew: { id: crewId, name: crewName || crewId } } : {}),
+        dailyRoute: { id: routeId, name: values.routeCrewName.trim() || routeId },
       };
     }
   }

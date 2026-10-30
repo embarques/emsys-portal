@@ -1,5 +1,6 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import { formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import {
   computeInvoiceSubtotal,
@@ -23,12 +24,15 @@ export function createInvoiceActivityEntry(
   };
 }
 
-export function buildInvoiceCreatedActivities(invoice: Invoice): InvoiceActivityEntry[] {
+export function buildInvoiceCreatedActivities(
+  invoice: Invoice,
+  t: TranslateFn,
+): InvoiceActivityEntry[] {
   const activities: InvoiceActivityEntry[] = [
     createInvoiceActivityEntry({
       invoiceId: invoice.invoiceId,
       action: "created",
-      message: `Invoice ${invoice.invoiceNumber} created.`,
+      message: t("invoices.view.activity.messages.created", { number: invoice.invoiceNumber }),
       timestamp: invoice.createdAt,
       performedBy: invoice.createdBy,
     }),
@@ -38,14 +42,16 @@ export function buildInvoiceCreatedActivities(invoice: Invoice): InvoiceActivity
     let runningTotal = 0;
     invoice.payments.forEach((payment) => {
       runningTotal = Math.round((runningTotal + payment.amount) * 100) / 100;
-      activities.push(buildPaymentRecordedActivity(payment, runningTotal));
+      activities.push(buildPaymentRecordedActivity(payment, runningTotal, t));
     });
   } else if (invoice.amountPaid > 0) {
     activities.push(
       createInvoiceActivityEntry({
         invoiceId: invoice.invoiceId,
         action: "payment",
-        message: `Initial payment of ${formatInvoiceMoney(invoice.amountPaid)} recorded.`,
+        message: t("invoices.view.activity.messages.initialPayment", {
+          amount: formatInvoiceMoney(invoice.amountPaid),
+        }),
         timestamp: invoice.createdAt,
         performedBy: invoice.createdBy,
       })
@@ -57,7 +63,9 @@ export function buildInvoiceCreatedActivities(invoice: Invoice): InvoiceActivity
       createInvoiceActivityEntry({
         invoiceId: invoice.invoiceId,
         action: "discount_change",
-        message: `Discount of ${formatInvoiceMoney(invoice.discount)} applied.`,
+        message: t("invoices.view.activity.messages.discountApplied", {
+          amount: formatInvoiceMoney(invoice.discount),
+        }),
         timestamp: invoice.createdAt,
         performedBy: invoice.createdBy,
       })
@@ -70,6 +78,7 @@ export function buildInvoiceCreatedActivities(invoice: Invoice): InvoiceActivity
 export function buildInvoiceUpdateActivities(
   previous: Invoice,
   next: Invoice,
+  t: TranslateFn,
   performedBy = DEFAULT_CREATED_BY
 ): InvoiceActivityEntry[] {
   const timestamp = next.updatedAt;
@@ -80,7 +89,10 @@ export function buildInvoiceUpdateActivities(
       createInvoiceActivityEntry({
         invoiceId: next.invoiceId,
         action: "discount_change",
-        message: `Discount updated: ${formatInvoiceMoney(previous.discount)} → ${formatInvoiceMoney(next.discount)}.`,
+        message: t("invoices.view.activity.messages.discountUpdated", {
+          from: formatInvoiceMoney(previous.discount),
+          to: formatInvoiceMoney(next.discount),
+        }),
         timestamp,
         performedBy,
       })
@@ -89,22 +101,34 @@ export function buildInvoiceUpdateActivities(
 
   const changedFields: string[] = [];
 
-  if (previous.invoiceNumber !== next.invoiceNumber) changedFields.push("invoice number");
-  if (previous.date !== next.date) changedFields.push("invoice date");
+  if (previous.invoiceNumber !== next.invoiceNumber) {
+    changedFields.push(t("invoices.view.activity.changes.invoiceNumber"));
+  }
+  if (previous.date !== next.date) changedFields.push(t("invoices.view.activity.changes.date"));
   if (previous.containerId !== next.containerId) {
     changedFields.push(
-      `container (${getContainerLabel(previous.containerId)} → ${getContainerLabel(next.containerId)})`
+      t("invoices.view.activity.changes.container", {
+        from: getContainerLabel(previous.containerId),
+        to: getContainerLabel(next.containerId),
+      })
     );
   }
   if (previous.paymentLocation !== next.paymentLocation) {
     changedFields.push(
-      `paid at (${getPaymentLocationLabel(previous.paymentLocation)} → ${getPaymentLocationLabel(next.paymentLocation)})`
+      t("invoices.view.activity.changes.paymentLocation", {
+        from: getPaymentLocationLabel(previous.paymentLocation),
+        to: getPaymentLocationLabel(next.paymentLocation),
+      })
     );
   }
-  if (previous.sender.name !== next.sender.name) changedFields.push("sender");
+  if (previous.sender.name !== next.sender.name) {
+    changedFields.push(t("invoices.view.activity.changes.sender"));
+  }
   const previousReceiver = getInvoicePrimaryReceiver(previous);
   const nextReceiver = getInvoicePrimaryReceiver(next);
-  if ((previousReceiver?.name ?? "") !== (nextReceiver?.name ?? "")) changedFields.push("receiver");
+  if ((previousReceiver?.name ?? "") !== (nextReceiver?.name ?? "")) {
+    changedFields.push(t("invoices.view.activity.changes.receiver"));
+  }
 
   const previousSubtotal = computeInvoiceSubtotal(previous.lineItems);
   const nextSubtotal = computeInvoiceSubtotal(next.lineItems);
@@ -120,7 +144,12 @@ export function buildInvoiceUpdateActivities(
     )
   ) {
     changedFields.push(
-      `line items (${previous.lineItems.length} items / ${formatInvoiceMoney(previousSubtotal)} → ${next.lineItems.length} items / ${formatInvoiceMoney(nextSubtotal)})`
+      t("invoices.view.activity.changes.lineItems", {
+        fromCount: previous.lineItems.length,
+        fromTotal: formatInvoiceMoney(previousSubtotal),
+        toCount: next.lineItems.length,
+        toTotal: formatInvoiceMoney(nextSubtotal),
+      })
     );
   }
 
@@ -129,7 +158,7 @@ export function buildInvoiceUpdateActivities(
       createInvoiceActivityEntry({
         invoiceId: next.invoiceId,
         action: "updated",
-        message: `Invoice edited: ${changedFields.join("; ")}.`,
+        message: t("invoices.view.activity.messages.edited", { changes: changedFields.join("; ") }),
         timestamp,
         performedBy,
       })
@@ -143,7 +172,8 @@ export function buildInvoiceCommentActivity(
   invoiceId: string,
   description: string,
   performedBy: string,
-  timestamp: string
+  timestamp: string,
+  t: TranslateFn
 ): InvoiceActivityEntry {
   const preview =
     description.length > 120 ? `${description.slice(0, 117).trimEnd()}...` : description;
@@ -151,7 +181,7 @@ export function buildInvoiceCommentActivity(
   return createInvoiceActivityEntry({
     invoiceId,
     action: "comment_added",
-    message: `Comment added: ${preview}`,
+    message: t("invoices.view.activity.messages.commentAdded", { preview }),
     timestamp,
     performedBy,
   });
@@ -159,19 +189,31 @@ export function buildInvoiceCommentActivity(
 
 export function buildPaymentRecordedActivity(
   payment: InvoicePayment,
-  invoiceTotalPaid: number
+  invoiceTotalPaid: number,
+  t: TranslateFn
 ): InvoiceActivityEntry {
-  const reference = payment.referenceNumber ? ` Ref ${payment.referenceNumber}.` : "";
+  const reference = payment.referenceNumber
+    ? t("invoices.view.activity.messages.paymentReference", { reference: payment.referenceNumber })
+    : "";
   return createInvoiceActivityEntry({
     invoiceId: payment.invoiceId,
     action: "payment",
-    message: `Payment of ${formatInvoiceMoney(payment.amount)} via ${getPaymentMethodLabel(payment.paymentMethod)} recorded.${reference} ${payment.description} Total paid: ${formatInvoiceMoney(invoiceTotalPaid)}.`,
+    message: t("invoices.view.activity.messages.paymentRecorded", {
+      amount: formatInvoiceMoney(payment.amount),
+      method: getPaymentMethodLabel(payment.paymentMethod, t),
+      reference,
+      description: payment.description,
+      totalPaid: formatInvoiceMoney(invoiceTotalPaid),
+    }),
     timestamp: payment.createdAt,
     performedBy: payment.createdBy,
   });
 }
 
-export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityEntry[] {
+export function buildInvoiceActivityTimeline(
+  invoice: Invoice,
+  t: TranslateFn,
+): InvoiceActivityEntry[] {
   if (invoice.activity.length > 0) {
     return [...invoice.activity].sort(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -182,7 +224,7 @@ export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityE
     createInvoiceActivityEntry({
       invoiceId: invoice.invoiceId,
       action: "created",
-      message: `Invoice ${invoice.invoiceNumber} created.`,
+      message: t("invoices.view.activity.messages.created", { number: invoice.invoiceNumber }),
       timestamp: invoice.createdAt,
       performedBy: invoice.createdBy,
     }),
@@ -193,7 +235,9 @@ export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityE
       createInvoiceActivityEntry({
         invoiceId: invoice.invoiceId,
         action: "payment",
-        message: `Payment of ${formatInvoiceMoney(invoice.amountPaid)} on record.`,
+        message: t("invoices.view.activity.messages.paymentOnRecord", {
+          amount: formatInvoiceMoney(invoice.amountPaid),
+        }),
         timestamp: invoice.updatedAt,
         performedBy: invoice.createdBy,
       })
@@ -201,7 +245,7 @@ export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityE
   }
 
   invoice.payments.forEach((payment) => {
-    synthetic.push(buildPaymentRecordedActivity(payment, payment.amount));
+    synthetic.push(buildPaymentRecordedActivity(payment, payment.amount, t));
   });
 
   invoice.comments.forEach((comment) => {
@@ -211,7 +255,12 @@ export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityE
       createInvoiceActivityEntry({
         invoiceId: invoice.invoiceId,
         action: "comment_added",
-        message: `Comment added: ${comment.description.length > 120 ? `${comment.description.slice(0, 117).trimEnd()}...` : comment.description}`,
+        message: t("invoices.view.activity.messages.commentAdded", {
+          preview:
+            comment.description.length > 120
+              ? `${comment.description.slice(0, 117).trimEnd()}...`
+              : comment.description,
+        }),
         timestamp,
         performedBy: comment.createdBy || invoice.createdBy,
       })
@@ -223,7 +272,7 @@ export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityE
       createInvoiceActivityEntry({
         invoiceId: invoice.invoiceId,
         action: "updated",
-        message: "Invoice edited.",
+        message: t("invoices.view.activity.messages.editedGeneric"),
         timestamp: invoice.updatedAt,
         performedBy: invoice.createdBy,
       })
@@ -233,18 +282,17 @@ export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityE
   return synthetic.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 }
 
-export function formatInvoiceActivityAction(action: InvoiceActivityAction): string {
+export function formatInvoiceActivityAction(
+  action: InvoiceActivityAction,
+  t: TranslateFn,
+): string {
   switch (action) {
     case "created":
-      return "Created";
     case "updated":
-      return "Edited";
     case "payment":
-      return "Payment";
     case "discount_change":
-      return "Discount";
     case "comment_added":
-      return "Comment";
+      return t(`invoices.view.activity.actions.${action}`);
     default:
       return action;
   }

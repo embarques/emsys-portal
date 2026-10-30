@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 
 import { FieldMessage } from "@/components/forms/field-message";
 import { FormSection } from "@/components/forms/form-shell";
-import { cn } from "@/lib/utils";
+import { getInvoiceBalanceInputClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
@@ -33,13 +33,15 @@ import {
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
-function computeInvoiceBalance(cost: unknown, amount: unknown) {
+function computeInvoiceBalance(cost: unknown, discount: unknown, amount: unknown) {
   const parsedCost = typeof cost === "number" ? cost : Number(cost);
+  const parsedDiscount = typeof discount === "number" ? discount : Number(discount ?? 0);
   const parsedAmount = typeof amount === "number" ? amount : Number(amount);
   if (!Number.isFinite(parsedCost) || !Number.isFinite(parsedAmount)) return null;
-  return parsedCost - parsedAmount;
+  return Math.round((parsedCost - (Number.isFinite(parsedDiscount) ? parsedDiscount : 0) - parsedAmount) * 100) / 100;
 }
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -95,6 +97,12 @@ type Props = {
   allowAutoClear?: boolean;
   /** Grouped layout: show Payment & references before Invoice details. */
   paymentSectionFirst?: boolean;
+  /** Enter Total, Discount, and Paid by hand; Balance subtracts the discount. */
+  manualInvoiceTotals?: boolean;
+  /** Show the description field in Payment & references. */
+  showDescription?: boolean;
+  /** Rendered first in Invoice details (existing vs new invoice choice). */
+  invoiceModeField?: ReactNode;
 };
 
 export function RegisterInvoiceTransactionFields({
@@ -118,6 +126,9 @@ export function RegisterInvoiceTransactionFields({
   invoiceCostReadOnly = false,
   allowAutoClear = false,
   paymentSectionFirst = false,
+  manualInvoiceTotals = false,
+  showDescription = false,
+  invoiceModeField,
 }: Props) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
@@ -137,6 +148,8 @@ export function RegisterInvoiceTransactionFields({
   const employeeName = watch("employeeName");
   const routeId = watch("routeId");
   const routeName = watch("routeName");
+  const supervisorId = watch("supervisorId");
+  const supervisorName = watch("supervisorName");
   const assigneeSource = watch("assigneeSource");
   const refNumberMode = watch("refNumberMode");
   const paymentMethodId = watch("paymentMethodId");
@@ -146,12 +159,14 @@ export function RegisterInvoiceTransactionFields({
   const paymentAccountId = watch("paymentAccountId");
   const paymentAccountName = watch("paymentAccountName");
   const invoiceCost = watch("invoiceCost");
+  const invoiceDiscount = watch("invoiceDiscount");
   const amount = watch("amount");
   const autoClear = watch("autoClear");
   const [costDraft, setCostDraft] = useState<string | null>(null);
+  const [discountDraft, setDiscountDraft] = useState<string | null>(null);
   const [amountDraft, setAmountDraft] = useState<string | null>(null);
   const paymentDetailsRequired = (Number(amount) || 0) > 0;
-  const balance = computeInvoiceBalance(invoiceCost, amount);
+  const balance = computeInvoiceBalance(invoiceCost, manualInvoiceTotals ? invoiceDiscount : 0, amount);
   const includeSender = watch("includeSender");
   const includeReceiver = watch("includeReceiver");
   const senderId = watch("senderId");
@@ -296,7 +311,7 @@ export function RegisterInvoiceTransactionFields({
       {showEmployee ? (
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
-            required={false}
+            singleColumn
             employees={employees}
             dailyRoutes={dailyRoutes}
             statementDate={statementDate}
@@ -305,9 +320,12 @@ export function RegisterInvoiceTransactionFields({
             employeeName={employeeName}
             routeId={routeId}
             routeName={routeName}
+            supervisorId={supervisorId}
+            supervisorName={supervisorName}
             assigneeSource={assigneeSource}
             allowDailyRoute={allowDailyRoute}
             error={errors.employeeId?.message ?? errors.routeId?.message}
+            supervisorError={errors.supervisorId?.message}
             setValue={setValue}
           />
         </div>
@@ -317,7 +335,7 @@ export function RegisterInvoiceTransactionFields({
 
   const methodFields = (
     <>
-      <div className={cn("space-y-2 min-w-0", !isCheck && "sm:col-span-2")}>
+      <div className="space-y-2 min-w-0 sm:col-span-2">
         {paymentDetailsRequired ? (
           <RequiredLabel htmlFor="journal-payment">
             {t("accounting.dailyIncome.form.fields.paymentMethod")}
@@ -436,6 +454,7 @@ export function RegisterInvoiceTransactionFields({
             autoGenerate={automaticNumber}
             invoiceNumber={watch("invoiceNumber") ?? ""}
             canUseManualNumber={canUseManualNumber}
+            variant="segmented"
             onModeChange={(nextAutoGenerate) => {
               setValue("autoGenerateInvoiceNumber", nextAutoGenerate, { shouldValidate: true, shouldDirty: true });
               if (nextAutoGenerate) {
@@ -496,7 +515,9 @@ export function RegisterInvoiceTransactionFields({
   const costFields = (
     <>
       <div className="space-y-2 min-w-0">
-        <RequiredLabel htmlFor="journal-invoice-cost">{t("accounting.dailyIncome.form.fields.cost")}</RequiredLabel>
+        <RequiredLabel htmlFor="journal-invoice-cost">
+          {t(manualInvoiceTotals ? "accounting.dailyIncome.form.invoiceSummary.total" : "accounting.dailyIncome.form.fields.cost")}
+        </RequiredLabel>
         {invoiceCostReadOnly ? (
           <Input
             id="journal-invoice-cost"
@@ -542,10 +563,52 @@ export function RegisterInvoiceTransactionFields({
     </>
   );
 
+  const discountFields = manualInvoiceTotals ? (
+    <div className="space-y-2 min-w-0">
+      <Label htmlFor="journal-invoice-discount">{t("accounting.dailyIncome.form.invoiceSummary.discount")}</Label>
+      <Input
+        id="journal-invoice-discount"
+        inputMode="decimal"
+        autoComplete="off"
+        placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+        className="tabular-nums"
+        value={discountDraft ?? formatMoneyFormDisplayValue(invoiceDiscount ?? 0)}
+        onFocus={(event) => {
+          setDiscountDraft(formatMoneyFormEditValue(invoiceDiscount ?? 0));
+          selectFormFieldTextOnFocus(event);
+        }}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDiscountDraft(next);
+          setValue("invoiceDiscount", moneyFormSetValueAs(next) ?? 0, { shouldValidate: true, shouldDirty: true });
+        }}
+        onBlur={() => setDiscountDraft(null)}
+        aria-invalid={Boolean(errors.invoiceDiscount)}
+      />
+      <FieldMessage error={errors.invoiceDiscount?.message} />
+    </div>
+  ) : null;
+
+  const descriptionFields = showDescription ? (
+    <div className="space-y-2 sm:col-span-2">
+      <Label htmlFor="journal-description">{t("accounting.dailyIncome.form.fields.description")}</Label>
+      <textarea
+        id="journal-description"
+        rows={3}
+        placeholder={t("accounting.dailyIncome.form.placeholders.enterDescription")}
+        className="flex h-auto w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+        {...register("description")}
+      />
+      <FieldMessage error={errors.description?.message} />
+    </div>
+  ) : null;
+
   const amountFields = (
     <>
       <div className="space-y-2 min-w-0">
-        <Label htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</Label>
+        <Label htmlFor="journal-amount">
+          {t(manualInvoiceTotals ? "accounting.dailyIncome.form.invoiceSummary.paid" : "accounting.dailyIncome.form.fields.amount")}
+        </Label>
         <Input
           id="journal-amount"
           inputMode="decimal"
@@ -589,7 +652,7 @@ export function RegisterInvoiceTransactionFields({
           readOnly
           tabIndex={-1}
           value={balance == null ? "" : formatMoneyFormDisplayValue(balance)}
-          className="bg-muted/40 tabular-nums"
+          className={cn("tabular-nums", getInvoiceBalanceInputClassName(balance))}
           aria-invalid={balance != null && balance < 0}
         />
         <FieldMessage
@@ -602,93 +665,114 @@ export function RegisterInvoiceTransactionFields({
   const partiesFields = (
     <>
       {showParties ? (
-        <>
-          <div className={grouped ? "space-y-3 min-w-0" : "space-y-3 sm:col-span-2"}>
+        <div className="space-y-3 min-w-0 sm:col-span-2">
+          <div className="grid min-w-0 grid-cols-2 gap-4">
             <label className="flex items-center gap-2 text-sm font-medium">
               <input
-                id="journal-include-sender"
+                id="journal-skip-sender"
                 type="checkbox"
                 className="size-4 rounded border border-input"
-                checked={Boolean(includeSender)}
+                checked={!includeSender}
                 onChange={(event) => {
-                  const enabled = event.target.checked;
-                  setValue("includeSender", enabled, { shouldValidate: true });
-                  if (!enabled) {
+                  const skip = event.target.checked;
+                  setValue("includeSender", !skip, { shouldValidate: true });
+                  if (skip) {
                     setValue("senderId", undefined, { shouldValidate: true });
                     setValue("senderName", "");
                     setSenderQuery("");
                   }
                 }}
               />
-              {t("accounting.dailyIncome.form.fields.includeSender")}
+              {t("accounting.dailyIncome.form.fields.skipSender")}
             </label>
-            {includeSender ? (
-              <div className="space-y-2">
-                <Label htmlFor="journal-sender">{t("accounting.dailyIncome.form.fields.senderClient")}</Label>
-                <SearchableSelect
-                  id="journal-sender"
-                  value={senderId ?? ""}
-                  onValueChange={updateSender}
-                  placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
-                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
-                  manualFiltering
-                  mobileSheet
-                  loading={senderSearch.isFetching}
-                  onSearchChange={setSenderQuery}
-                  options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
-                />
-                <FieldMessage error={errors.senderId?.message} />
-              </div>
-            ) : null}
-          </div>
-
-          <div className={grouped ? "space-y-3 min-w-0" : "space-y-3 sm:col-span-2"}>
             <label className="flex items-center gap-2 text-sm font-medium">
               <input
-                id="journal-include-receiver"
+                id="journal-skip-receiver"
                 type="checkbox"
                 className="size-4 rounded border border-input"
-                checked={Boolean(includeReceiver)}
+                checked={!includeReceiver}
                 onChange={(event) => {
-                  const enabled = event.target.checked;
-                  setValue("includeReceiver", enabled, { shouldValidate: true });
-                  if (!enabled) {
+                  const skip = event.target.checked;
+                  setValue("includeReceiver", !skip, { shouldValidate: true });
+                  if (skip) {
                     setValue("receiverId", undefined, { shouldValidate: true });
                     setValue("receiverName", "");
                     setReceiverQuery("");
                   }
                 }}
               />
-              {t("accounting.dailyIncome.form.fields.includeReceiver")}
+              {t("accounting.dailyIncome.form.fields.skipReceiver")}
             </label>
-            {includeReceiver ? (
-              <div className="space-y-2">
-                <Label htmlFor="journal-receiver">{t("accounting.dailyIncome.form.fields.receiverClient")}</Label>
-                <SearchableSelect
-                  id="journal-receiver"
-                  value={receiverId ?? ""}
-                  onValueChange={updateReceiver}
-                  placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
-                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
-                  manualFiltering
-                  mobileSheet
-                  loading={receiverSearch.isFetching}
-                  onSearchChange={setReceiverQuery}
-                  options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
-                />
-                <FieldMessage error={errors.receiverId?.message} />
-              </div>
-            ) : null}
           </div>
-        </>
+          {includeSender || includeReceiver ? (
+            <div className={grouped ? "grid min-w-0 gap-4 sm:grid-cols-2" : "space-y-3"}>
+              {includeSender ? (
+                <div className="space-y-2 min-w-0">
+                  <Label htmlFor="journal-sender">{t("accounting.dailyIncome.form.fields.senderClient")}</Label>
+                  <SearchableSelect
+                    id="journal-sender"
+                    value={senderId ?? ""}
+                    onValueChange={updateSender}
+                    placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
+                    searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
+                    manualFiltering
+                    mobileSheet
+                    loading={senderSearch.isFetching}
+                    onSearchChange={setSenderQuery}
+                    options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
+                  />
+                  <FieldMessage error={errors.senderId?.message} />
+                </div>
+              ) : null}
+              {includeReceiver ? (
+                <div className="space-y-2 min-w-0">
+                  <Label htmlFor="journal-receiver">{t("accounting.dailyIncome.form.fields.receiverClient")}</Label>
+                  <SearchableSelect
+                    id="journal-receiver"
+                    value={receiverId ?? ""}
+                    onValueChange={updateReceiver}
+                    placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
+                    searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
+                    manualFiltering
+                    mobileSheet
+                    loading={receiverSearch.isFetching}
+                    onSearchChange={setReceiverQuery}
+                    options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
+                  />
+                  <FieldMessage error={errors.receiverId?.message} />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </>
   );
 
   if (grouped) {
-    const invoiceDetailsSection = (
-      <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
+    const amountsStepClassName = activeStep && activeStep !== "amounts" ? "hidden" : undefined;
+    const invoiceDetailsSection = manualInvoiceTotals ? (
+      <>
+        <FormSection className={amountsStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
+          <div className="space-y-4">
+            {invoiceModeField}
+            {invoiceFields}
+            {quickEntry ? null : partiesFields}
+          </div>
+        </FormSection>
+        <FormSection className={amountsStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceAmount")}>
+          <div className="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-4">
+            {costFields}
+            {discountFields}
+            {amountFields}
+            {balanceFields}
+          </div>
+        </FormSection>
+      </>
+    ) : (
+      <FormSection className={amountsStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
         {showInvoiceNumber ? <div className="mb-4">{invoiceFields}</div> : null}
+        {showParties && !quickEntry ? <div className="mb-4">{partiesFields}</div> : null}
         <div className="grid min-w-0 gap-4 sm:grid-cols-3">
           {costFields}
           {amountFields}
@@ -711,24 +795,18 @@ export function RegisterInvoiceTransactionFields({
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">
               {methodFields}
-              {checkFields}
             </div>
             <div className="grid min-w-0 gap-4 empty:hidden sm:col-span-2 sm:grid-cols-2">
               {bankFields}
+              {checkFields}
               {!quickEntry && externalReferenceFields}
             </div>
             {!quickEntry && autoClearFields}
             {!quickEntry && referenceFields}
+            {!quickEntry && descriptionFields}
           </div>
         </FormSection>
         {paymentSectionFirst ? invoiceDetailsSection : null}
-        {showParties && !quickEntry ? (
-          <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.customers")}>
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-              {partiesFields}
-            </div>
-          </FormSection>
-        ) : null}
       </div>
     );
   }
@@ -738,10 +816,10 @@ export function RegisterInvoiceTransactionFields({
       {assigneeFields}
       <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">
         {methodFields}
-        {checkFields}
       </div>
       <div className="grid min-w-0 gap-4 empty:hidden sm:col-span-2 sm:grid-cols-2">
         {bankFields}
+        {checkFields}
         {externalReferenceFields}
       </div>
       {autoClearFields}

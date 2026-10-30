@@ -63,7 +63,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <Topbar expanded={sidebarExpanded} onToggleSidebar={toggleSidebar} />
-        <main className="min-h-[calc(100vh-5rem)]">
+        <main className={cn("min-h-[calc(100vh-5rem)]", isDesktopTabs && "flex flex-col")}>
           {isDesktopTabs ? (
             <Suspense
               fallback={

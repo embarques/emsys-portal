@@ -62,6 +62,7 @@ import {
   useUpdateRoute,
 } from "@/lib/route-manager/hooks/use-route-manager";
 import {
+  DEFAULT_ROUTE_DIRECTORY_SORT,
   DEFAULT_ROUTE_LIST_PARAMS,
   createEmptyRouteForm,
   getRouteBranchCode,
@@ -72,6 +73,7 @@ import {
 } from "@/lib/route-manager/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { useTranslation } from "@/lib/i18n";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -96,6 +98,7 @@ export function RouteManagerWorkspace() {
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_ROUTE_DIRECTORY_SORT, () => setPage(1));
   const [viewAssignment, setViewAssignment] = useState<Route | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<Route | null>(null);
@@ -108,11 +111,12 @@ export function RouteManagerWorkspace() {
       ...DEFAULT_ROUTE_LIST_PARAMS,
       page,
       limit: pageLimit,
+      sort,
       search: createApiListTextSearch(debouncedQuery),
       ...(completeRows.length > 0 ? { filterRows: completeRows } : {}),
       ...(branchCode.trim() ? { branchCode: branchCode.trim() } : {}),
     };
-  }, [branchCode, debouncedQuery, filterRows, page, pageLimit]);
+  }, [branchCode, debouncedQuery, filterRows, page, pageLimit, sort]);
 
   const { data, isLoading, isError, error, isFetching } = useRoutes(listParams, {
     enabled: isBranchFilterReady,
@@ -259,12 +263,6 @@ export function RouteManagerWorkspace() {
 
   const tableColumns: DataTableColumn<Route>[] = [
     {
-      id: "name",
-      label: t("routes.columns.name"),
-      cellClassName: "font-medium",
-      renderCell: (assignment) => formatRouteName(assignment),
-    },
-    {
       id: "active",
       label: t("routes.activeRoute.status"),
       renderCell: (assignment) =>
@@ -273,11 +271,13 @@ export function RouteManagerWorkspace() {
     {
       id: "employees",
       label: t("routes.columns.employees"),
+      sortable: false,
       renderCell: (assignment) => getRouteEmployeesLabel(assignment.employees),
     },
     {
       id: "branch",
       label: t("routes.columns.branch"),
+      sortField: "branch.code",
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (assignment) => (
@@ -298,6 +298,7 @@ export function RouteManagerWorkspace() {
     {
       id: "createdBy",
       label: t("routes.columns.createdBy"),
+      sortField: "createdBy.name",
       cellClassName: "text-muted-foreground",
       renderCell: (assignment) => assignment.createdBy || dash,
     },
@@ -442,7 +443,8 @@ export function RouteManagerWorkspace() {
             rowKey={(assignment) => assignment.id}
             rowLabel={(assignment) => formatRouteName(assignment)}
             columnLayout={columnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={1500}
             selectable
             selectedIds={selectedIds}
@@ -565,9 +567,7 @@ export function RouteManagerWorkspace() {
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
                   })
                 : t("common.dialogs.deleteOneDescription", {
-                    name:
-                      deleteTarget?.name?.trim() ||
-                      (deleteTarget ? formatRouteName(deleteTarget) : t("routes.entities.route")),
+                    name: deleteTarget ? formatRouteName(deleteTarget) : t("routes.entities.route"),
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
                   })}
             </DialogDescription>

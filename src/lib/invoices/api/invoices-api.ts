@@ -1302,7 +1302,6 @@ export type InvoiceWriteContext = {
   pickupAssignment?: {
     source: InvoiceFormValues["pickupSource"];
     dailyRoute?: InvoiceWriteRouteRef;
-    routeCrew?: InvoiceWriteRouteRef;
     pickupEmployee?: InvoiceWriteEmployeeRef;
     officeBranch?: InvoiceBranch;
   };
@@ -1343,12 +1342,11 @@ type ApiInvoiceDetailWriteRef = {
 type ApiInvoiceRouteWriteRef = {
   id: string;
   name: string;
-  route?: { id: string; name: string };
 };
 
 type ApiInvoiceReceivedByWrite =
   | (Omit<InvoiceWriteEmployeeRef, "id"> & { id: string })
-  | (InvoiceWriteRouteRef & { route?: InvoiceWriteRouteRef });
+  | InvoiceWriteRouteRef;
 
 type ApiInvoiceWritePayload = {
   autoGenerateNumber?: boolean;
@@ -1475,24 +1473,14 @@ function applyInvoicePickupAssignment(
 
   if (assignment.source === "route") {
     const dailyRoute = assignment.dailyRoute;
-    const routeCrew = assignment.routeCrew;
     const dailyRouteRef = dailyRoute
-      ? {
-          id: dailyRoute.id,
-          name: dailyRoute.name.trim() || routeCrew?.name.trim() || dailyRoute.id,
-          ...(routeCrew
-            ? { route: { id: routeCrew.id, name: routeCrew.name.trim() || routeCrew.id } }
-            : {}),
-        }
+      ? { id: dailyRoute.id, name: dailyRoute.name.trim() || dailyRoute.id }
       : null;
 
     payload.receivedBy = dailyRouteRef;
     payload.route = dailyRouteRef;
-    payload.routeCrew = routeCrew
-      ? { id: routeCrew.id, name: routeCrew.name.trim() || routeCrew.id }
-      : isUpdate
-        ? null
-        : undefined;
+    // Daily routes no longer carry a route crew; clear any legacy crew on update.
+    payload.routeCrew = isUpdate ? null : undefined;
 
     if (isUpdate) {
       payload.employee = null;

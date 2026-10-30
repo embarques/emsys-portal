@@ -31,7 +31,7 @@ const WorkspaceTabPanel = memo(function WorkspaceTabPanel({ tab, active }: Works
     <div
       hidden={!active}
       aria-hidden={!active}
-      className={cn("relative", active ? "block" : "hidden")}
+      className={cn("relative", active ? "block flex-1" : "hidden")}
     >
       <WorkspaceTabScope tabId={tab.id} isActive={active} portalContainer={portalContainer}>
         <div className={workspaceContentPaddingClassName}>
@@ -84,7 +84,7 @@ export function WorkspaceTabPanels() {
   }
 
   return (
-    <div className={cn("relative", workspaceContentShellClassName)}>
+    <div className={cn("relative flex flex-1 flex-col", workspaceContentShellClassName)}>
       {tabs.map((tab) => (
         <WorkspaceTabPanel key={tab.id} tab={tab} active={tab.id === activeTabId} />
       ))}

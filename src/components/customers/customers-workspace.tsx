@@ -62,7 +62,7 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
-import { DEFAULT_CUSTOMER_LIST_PARAMS, buildCustomerListParams, CUSTOMER_TYPE_OPTIONS, CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, getCustomerClientType, type Customer, type CustomerFilterState } from "@/lib/customers/types";
+import { DEFAULT_CUSTOMER_DIRECTORY_SORT, buildCustomerListParams, CUSTOMER_TYPE_OPTIONS, CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, getCustomerClientType, type Customer, type CustomerFilterState } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
@@ -116,7 +116,7 @@ export function CustomersWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
-  const { sort, onSortChange } = useTableSort(DEFAULT_CUSTOMER_LIST_PARAMS.sort, () => setPage(1));
+  const { sort, onSortChange } = useTableSort(DEFAULT_CUSTOMER_DIRECTORY_SORT, () => setPage(1));
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CustomerDeleteTarget | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -423,7 +423,6 @@ export function CustomersWorkspace() {
     {
       id: "createdAt",
       label: t("customers.columns.createdAt"),
-      defaultVisible: false,
       cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.createdAt ? formatAuditDateTime(customer.createdAt) : t("common.empty.dash"),

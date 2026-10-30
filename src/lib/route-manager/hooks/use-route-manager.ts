@@ -117,7 +117,6 @@ export function useRouteKpis() {
 
   return {
     total: query.data?.total ?? items.length,
-    uniqueVehicles: new Set(items.map((item) => item.vehicle.id).filter(Boolean)).size,
     uniqueEmployees: new Set(items.flatMap((item) => item.employees.map((employee) => employee.id))).size,
     isLoading: query.isLoading,
     isError: query.isError,

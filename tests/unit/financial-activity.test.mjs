@@ -39,10 +39,21 @@ test("pending activity defaults to all dates and keeps filters on the server",()
  const api=loadFeature("src/lib/accounting/financial-activity/api.ts",{});
  const empty={employee:"",branch:"",method:"",from:"",through:"",minimum:"",age:""};const base=api.buildActivitySearch(empty,2);
  assert.deepEqual(base.filters,[]);assert.deepEqual(base.pagination,{page:2,limit:40});
- const filtered=api.buildActivitySearch({...empty,employee:"Maria",method:"CHECK",minimum:"0",age:"7"},1);
- assert.ok(filtered.filters.some(filter=>filter.field==="employee.name"&&filter.value==="Maria"));
+ const filtered=api.buildActivitySearch({...empty,employee:"12",branch:"3",method:"CHECK",minimum:"0",age:"7"},1);
+ assert.ok(filtered.filters.some(filter=>filter.field==="employee.id"&&filter.operator==="eq"&&filter.value===12));
+ assert.ok(filtered.filters.some(filter=>filter.field==="branch.id"&&filter.operator==="eq"&&filter.value===3));
  assert.ok(filtered.filters.some(filter=>filter.field==="outstandingAmount"&&filter.value===0));
  assert.ok(filtered.filters.some(filter=>filter.field==="ageDays"&&filter.value===7));
+});
+test("payment methods and employees get stable color codes", () => {
+ const display=loadFeature("src/lib/accounting/financial-activity/display.ts",{});
+ assert.match(display.getPaymentMethodBadgeClass("CASH"),/emerald/);
+ assert.equal(display.getPaymentMethodBadgeClass("credit_card"),display.getPaymentMethodBadgeClass("CREDIT-CARD"));
+ assert.equal(display.getPaymentMethodBadgeClass("CHEQUE"),display.getPaymentMethodBadgeClass("CHECK"));
+ assert.match(display.getPaymentMethodBadgeClass("UNKNOWN"),/muted/);
+ assert.equal(display.getEmployeeBadgeClass(7),display.getEmployeeBadgeClass(7));
+ assert.notEqual(display.getEmployeeBadgeClass(7),display.getEmployeeBadgeClass(8));
+ assert.match(display.getEmployeeBadgeClass(undefined),/muted/);
 });
 test("ordinary new journal omits historical period selection and its date",async()=>{
  const calls=[];const api=loadFeature("src/lib/accounting/daily-income/api.ts",{post:async(url,body)=>{calls.push([url,body]);return{success:true,data:{id:"68f800000000000000000001",transactionType:"SALES",transactionAmount:10}};}});
@@ -70,7 +81,7 @@ test("invoice list requests have a deadline and propagate cancellation on both e
  for(const args of calls){const config=args.at(-1);assert.equal(config.timeout,60000);assert.equal(config.signal,controller.signal);}
 });
 
-test("pending financial activity opens as a desktop workspace tab", () => {
+test("accounting and inventory pending transactions open separate desktop workspace tabs", () => {
  const filename=path.join(root,"src/lib/layout/workspace-registry.ts");
  const source=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
  const components=new Map();
@@ -82,6 +93,8 @@ test("pending financial activity opens as a desktop workspace tab", () => {
  new Function("require","module","exports",source)(boundary,loaded,loaded.exports);
  const registry=loaded.exports;
  assert.equal(registry.isWorkspaceRoute("/accounting/pending-financial-activity"),true);
+ assert.equal(registry.isWorkspaceRoute("/inventory/pending-transactions"),true);
+ assert.equal(registry.resolveWorkspaceComponent("/inventory/pending-transactions?tab=9"),components.get("@/components/inventory/pending-inventory-workspace").PendingInventoryWorkspace);
  assert.equal(registry.resolveWorkspaceComponent("/accounting/pending-financial-activity?tab=8"),components.get("@/components/accounting/financial-activity-workspace").FinancialActivityWorkspace);
 });
 
@@ -127,4 +140,11 @@ test("handover and reversal forms reject missing recipients, nonpositive amounts
  assert.equal(activityFormSchema.safeParse({...values,amount:"0"}).success,false);
  assert.equal(activityFormSchema.safeParse({...values,type:"REVERSED"}).success,false);
  assert.equal(activityFormSchema.safeParse({...values,type:"REVERSED",reference:"Duplicate receipt"}).success,true);
+});
+
+
+test("pending transaction routes require their own section permissions", () => {
+ const { permissionForPath } = loadFeature("src/lib/auth/page-permissions.ts", {});
+ assert.deepEqual(permissionForPath("/inventory/pending-transactions"), { name: "canListInventoryDispatch", resourceType: "inventory_dispatch" });
+ assert.deepEqual(permissionForPath("/accounting/pending-financial-activity"), { name: "canViewFinancialActivity", resourceType: "financial_activity" });
 });

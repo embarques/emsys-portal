@@ -12,13 +12,6 @@ export const ROUTE_BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
 /** Advanced filter fields for route crews — limited to the `/routes/search` allow-list. */
 export const ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
-    field: "name",
-    label: "Name",
-    operators: [...TEXT_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter name…",
-  },
-  {
     field: "active",
     label: "Status",
     operators: ["eq", "neq"],

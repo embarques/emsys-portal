@@ -15,10 +15,7 @@ import {
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { FlippableCustomerAddresses } from "@/components/customers/flippable-customer-addresses";
-import {
-  formatRecordPhoneTypeLabel,
-  getOrderedRecordPhones,
-} from "@/lib/phones/phones";
+import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import {
   formatAccountBalance,
   formatCustomerAuditActor,
@@ -133,9 +130,9 @@ export function CustomerViewSheet({
                   label={
                     phone.isPrimary
                       ? t("customers.view.primaryPhone", {
-                          type: formatRecordPhoneTypeLabel(phone.type),
+                          type: t(`phones.types.${phone.type}`),
                         })
-                      : formatRecordPhoneTypeLabel(phone.type)
+                      : t(`phones.types.${phone.type}`)
                   }
                   number={phone.number}
                   displayNumber={phone.displayNumber}

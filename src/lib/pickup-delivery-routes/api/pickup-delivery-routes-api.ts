@@ -85,16 +85,14 @@ type ApiVehicleRoute = {
   _id?: string | number;
   name?: string;
   routeType?: string;
-  type?: string;
   active?: boolean;
   date?: string;
-  dayOfWeek?: string | string[] | null;
   branch?: ApiBranchRef | null;
   vehicle?: ApiRef | null;
   container?: ApiContainerRef | null;
-  route?: ApiRef | null;
   driver?: ApiEmployeeRef | null;
   supervisor?: ApiEmployeeRef | null;
+  helpers?: ApiEmployeeRef[] | null;
   employees?: ApiEmployeeRef[] | null;
   rate?: number | string | null;
   createdAt?: string;
@@ -134,13 +132,6 @@ function normalizeCrewRole(raw: unknown): RouteCrewRole {
   return DEFAULT_ROUTE_CREW_ROLE;
 }
 
-function normalizeDaysOfWeek(raw: unknown): string[] {
-  const list = Array.isArray(raw) ? raw : raw != null && raw !== "" ? [raw] : [];
-  return list
-    .map((entry) => String(entry ?? "").trim().toLowerCase())
-    .filter(Boolean);
-}
-
 function normalizeEmployeeRef(
   raw?: ApiEmployeeRef | null,
   fallbackRole?: RouteCrewRole,
@@ -162,26 +153,24 @@ function normalizeEmployees(raw?: ApiEmployeeRef[] | null): ActiveRoute["employe
 function normalizeVehicleRouteCrew(item: ApiVehicleRoute): ActiveRoute["employees"] {
   const driver = normalizeEmployeeRef(item.driver, "driver");
   const supervisor = normalizeEmployeeRef(item.supervisor, "supervisor");
-  const fromEmployees = normalizeEmployees(item.employees);
-
-  if (driver && supervisor && driver.id === supervisor.id) {
-    const dualRoleEmployee = toEmployeeWithRoles(
-      { id: driver.id, name: driver.name },
-      ["driver", "supervisor"],
-    );
-    const others = fromEmployees.filter((employee) => employee.id !== driver.id);
-    if (fromEmployees.length > 0) {
-      return [dualRoleEmployee, ...others];
+  // Explicit role fields are authoritative; fall back only for older responses.
+  if (item.driver !== undefined || item.supervisor !== undefined || item.helpers !== undefined) {
+    const crew: ActiveRoute["employees"] = [];
+    if (driver && supervisor && driver.id === supervisor.id) {
+      crew.push(toEmployeeWithRoles(driver, ["driver", "supervisor"]));
+    } else {
+      if (supervisor) crew.push(supervisor);
+      if (driver) crew.push(driver);
     }
-    return [dualRoleEmployee];
+    const helpers = item.helpers !== undefined
+      ? normalizeEmployees(item.helpers).map((employee) => ({ ...employee, role: "helper" as const }))
+      : normalizeEmployees(item.employees).filter((employee) => employee.role === "helper");
+    for (const helper of helpers) {
+      if (!crew.some((employee) => employee.id === helper.id)) crew.push(helper);
+    }
+    return crew;
   }
-
-  if (fromEmployees.length > 0) return fromEmployees;
-
-  const crew: ActiveRoute["employees"] = [];
-  if (driver) crew.push(driver);
-  if (supervisor) crew.push(supervisor);
-  return crew;
+  return normalizeEmployees(item.employees);
 }
 
 function toEmployeeWithRoles(
@@ -223,19 +212,6 @@ function normalizeVehicleRef(raw?: ApiRef | null): ActiveRoute["vehicle"] {
   };
 }
 
-function normalizeRouteRef(raw?: ApiRef | null): ActiveRoute["route"] | null {
-  if (!raw || typeof raw !== "object") return null;
-  const id = String(raw.id ?? "").trim();
-  const name = String(raw.name ?? "").trim();
-  if (!id) return null;
-  const routeId = String(raw.routeId ?? "").trim();
-  return {
-    id,
-    name: name || routeId || id,
-    ...(routeId ? { routeId } : {}),
-  };
-}
-
 function normalizeRateValue(raw: unknown): number | undefined {
   if (raw == null || raw === "") return undefined;
   const parsed = Number(raw);
@@ -264,11 +240,10 @@ export function normalizeApiVehicleRoute(raw: unknown): ActiveRoute | null {
 
   const item = raw as ApiVehicleRoute;
   const id = String(item.id ?? item._id ?? "").trim();
-  const route = normalizeRouteRef(item.route);
-  if (!id || !route) return null;
+  if (!id) return null;
 
   const container = normalizeContainerRef(item.container);
-  const rawType = String(item.routeType ?? item.type ?? "").trim().toLowerCase();
+  const rawType = String(item.routeType ?? "").trim().toLowerCase();
   const routeType: RouteType =
     rawType === "pickup" || rawType === "delivery" ? rawType : deriveRouteType(container);
 
@@ -277,15 +252,13 @@ export function normalizeApiVehicleRoute(raw: unknown): ActiveRoute | null {
   return {
     ...captureApiTableFields(raw, ACTIVE_ROUTE_API_TABLE_FIELDS),
     id,
-    name: String(item.name ?? "").trim() || route.name || id,
+    name: String(item.name ?? "").trim(),
     routeType,
     container,
     date: dateRaw.includes("T") ? dateRaw.slice(0, 10) : dateRaw,
-    dayOfWeek: normalizeDaysOfWeek(item.dayOfWeek),
     branch: normalizeBranchRef(item.branch),
     vehicle: normalizeVehicleRef(item.vehicle),
     active: item.active !== false,
-    route,
     employees: normalizeVehicleRouteCrew(item),
     rate: normalizeRateValue(item.rate),
     ...normalizeAuditFields(item),
@@ -323,6 +296,9 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
   const employees = buildEmployeeWriteRefs(values);
   const driver = getActiveRouteEmployeesByRole(values, "driver")[0];
   const supervisor = getActiveRouteSupervisor(values);
+  if (!driver || !supervisor) {
+    throw new Error("A driver and a supervisor are required.");
+  }
 
   const payload: VehicleRouteWritePayload = {
     routeType: values.routeType,
@@ -332,26 +308,12 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
       code: values.branch.code.trim(),
       name: values.branch.name?.trim(),
     }),
-    route: {
-      id: values.routeRecordId.trim(),
-      name: values.routeAssignmentName.trim() || values.routeRecordId.trim(),
-    },
     employees,
-    ...(driver ? { driver: { id: driver.id, name: driver.name.trim() } } : {}),
-    ...(supervisor ? { supervisor: { id: supervisor.id, name: supervisor.name.trim() } } : {}),
+    helpers: employees.filter((employee) => employee.role === "helper").map(({ id, name }) => ({ id, name })),
+    driver: { id: driver.id, name: driver.name.trim() },
+    supervisor: { id: supervisor.id, name: supervisor.name.trim() },
+    date: toRouteDateIso(values.date),
   };
-
-  if (values.scheduleType === "dayOfWeek") {
-    payload.dayOfWeek = values.dayOfWeek.map((day) => day.trim().toLowerCase()).filter(Boolean);
-  } else {
-    payload.date = toRouteDateIso(values.date);
-  }
-
-  // Pickup name is optional (server-generated when empty); delivery name is
-  // always server-generated, so only forward a name for pickups.
-  if (values.routeType === "pickup" && values.name.trim()) {
-    payload.name = values.name.trim();
-  }
 
   if (values.routeType === "delivery" && values.container && values.container.id > 0) {
     payload.container = {
@@ -558,17 +520,22 @@ export async function fetchPickupDailyRoutesForEmployee(
     );
 }
 
-export async function fetchVehicleRouteByCrewAndDate(input: {
-  routeRecordId: string;
+function toEmployeeIdSetKey(employeeIds: readonly number[]): string {
+  return [...new Set(employeeIds)].sort((left, right) => left - right).join(",");
+}
+
+/** Daily route on `date` whose employees are exactly `employeeIds` (order-independent). */
+export async function fetchVehicleRouteByEmployeesAndDate(input: {
+  employeeIds: readonly number[];
   date: string;
   routeType: RouteType;
   containerId?: number;
   vehicleId?: string;
 }): Promise<ActiveRoute | null> {
-  const id = input.routeRecordId.trim();
+  const employeeSetKey = toEmployeeIdSetKey(input.employeeIds);
   const isoDate = input.date.trim().slice(0, 10);
   const vehicleId = input.vehicleId?.trim() ?? "";
-  if (!id || !isoDate) return null;
+  if (!employeeSetKey || !isoDate) return null;
   if (input.routeType === "delivery" && !(input.containerId && input.containerId > 0)) {
     return null;
   }
@@ -576,7 +543,7 @@ export async function fetchVehicleRouteByCrewAndDate(input: {
   const filters = [
     ...buildDayRangeFilters(isoDate),
     { field: "routeType", operator: "eq" as const, value: input.routeType },
-    { field: "route.id", operator: "eq" as const, value: id },
+    { field: "employees.id", operator: "eq" as const, value: String(input.employeeIds[0]) },
   ];
   if (input.routeType === "delivery" && input.containerId) {
     filters.push({
@@ -598,7 +565,7 @@ export async function fetchVehicleRouteByCrewAndDate(input: {
     filterGroups: [{ operator: "and", filters }],
   });
 
-  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 5, offset: 0 });
+  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 20, offset: 0 });
   const payload = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.VEHICLE_ROUTES}/search?${paginationQuery}`,
     searchBody,
@@ -607,7 +574,8 @@ export async function fetchVehicleRouteByCrewAndDate(input: {
   const items = Array.isArray(payload.data) ? payload.data : [];
   for (const row of items) {
     const record = normalizeApiVehicleRoute(row);
-    if (!record || record.routeType !== input.routeType || record.route.id !== id) continue;
+    if (!record || record.routeType !== input.routeType) continue;
+    if (toEmployeeIdSetKey(record.employees.map((employee) => employee.id)) !== employeeSetKey) continue;
     if (!(record.date === isoDate || record.date.startsWith(isoDate))) continue;
     if (input.routeType === "delivery" && record.container?.id !== input.containerId) continue;
     if (input.routeType === "pickup" && vehicleId && record.vehicle.id !== vehicleId) continue;
@@ -615,17 +583,6 @@ export async function fetchVehicleRouteByCrewAndDate(input: {
   }
 
   return null;
-}
-
-export async function fetchPickupRouteByGroupAndDate(
-  routeRecordId: string,
-  date: string,
-): Promise<ActiveRoute | null> {
-  return fetchVehicleRouteByCrewAndDate({
-    routeRecordId,
-    date,
-    routeType: "pickup",
-  });
 }
 
 export async function fetchActiveRoute(

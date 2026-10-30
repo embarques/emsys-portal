@@ -391,30 +391,6 @@ export function InvoiceForm({
     [],
   );
 
-  useEffect(() => {
-    if (values.pickupSource !== "route" || !values.routeId || values.routeCrewId) return;
-    const route = pickupRoutes.find((entry) => entry.id === values.routeId);
-    if (!route) return;
-    const crewName =
-      route.route.name.trim() ||
-      route.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ");
-    if (!route.route.id && !crewName) return;
-    commitValues((current) => {
-      if (
-        current.pickupSource !== "route" ||
-        current.routeId !== route.id ||
-        current.routeCrewId
-      ) {
-        return current;
-      }
-      return {
-        ...current,
-        routeCrewId: route.route.id,
-        routeCrewName: crewName,
-      };
-    });
-  }, [commitValues, pickupRoutes, values.pickupSource, values.routeCrewId, values.routeId]);
-
   const { markPendingPartyEdit, markPendingPartyAdd } = useApplyCustomerOnTabReturn((side, customer, { mode }) => {
     if (side === "sender") {
       commitValues((current) => {
@@ -541,16 +517,11 @@ export function InvoiceForm({
   }
 
   function updatePickupRoute(routeId: string) {
-    const route = pickupRoutes.find((entry) => entry.id === routeId);
-    const crewName =
-      route?.route.name.trim() ||
-      route?.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
-      "";
     commitValues((current) => ({
       ...current,
       routeId,
-      routeCrewId: route?.route.id ?? "",
-      routeCrewName: crewName,
+      routeCrewId: "",
+      routeCrewName: "",
     }));
     setFormError(null);
   }
@@ -659,16 +630,12 @@ export function InvoiceForm({
       setEntityDialog(null);
       return;
     }
-    const crewName =
-      route.route?.name.trim() ||
-      route.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
-      "";
     commitValues((current) => ({
       ...current,
       pickupSource: "route",
       routeId: route.id,
-      routeCrewId: route.route?.id ?? "",
-      routeCrewName: crewName,
+      routeCrewId: "",
+      routeCrewName: "",
       pickupEmployeeId: "",
       pickupEmployeeName: "",
       officeBranchId: "",
@@ -899,6 +866,7 @@ export function InvoiceForm({
     false,
     <SearchableSelect
       id="pickupId"
+      requireSelectionInteraction
       value={values.pickupId}
       onValueChange={updatePickupReference}
       placeholder={t("invoices.form.placeholders.noPickupReference")}

@@ -293,6 +293,9 @@ export const DEFAULT_INVOICE_LIST_PARAMS = {
   sort: "date:desc,number:desc",
 } as const satisfies Pick<InvoiceListParams, "page" | "limit" | "sort">;
 
+/** Invoices directory table opens on the Invoice # column, highest first. */
+export const DEFAULT_INVOICE_DIRECTORY_SORT = "number:desc";
+
 export function getInvoiceRecordId(invoice: Pick<Invoice, "invoiceId">): string {
   return invoice.invoiceId;
 }

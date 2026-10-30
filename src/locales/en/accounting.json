@@ -198,7 +198,7 @@
   },
   "zellePayments": {
     "title": "Zelle",
-    "description": "Track invoice payments made by Zelle. Outstanding payments do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "Zelle payments",
     "searchPlaceholder": "Search Zelle payments…",
     "empty": "No Zelle payments match your search.",
@@ -251,7 +251,7 @@
   },
   "deposits": {
     "title": "Deposits",
-    "description": "Track invoice payments made by bank deposit. Outstanding deposits do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "deposits",
     "searchPlaceholder": "Search deposits…",
     "empty": "No deposits match your search.",
@@ -304,7 +304,7 @@
   },
   "creditCardPayments": {
     "title": "Credit Cards",
-    "description": "Track invoice payments made by credit card. Outstanding card payments do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "credit card payments",
     "searchPlaceholder": "Search credit card payments…",
     "empty": "No credit card payments match your search.",
@@ -357,7 +357,7 @@
   },
   "checks": {
     "title": "Checks",
-    "description": "Track invoice payments made by check. Outstanding checks do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "checks",
     "searchPlaceholder": "Search checks…",
     "empty": "No checks match your search.",
@@ -390,7 +390,7 @@
     },
     "form": {
       "createTitle": "Add check",
-      "createDescription": "Record an outstanding check against an invoice. The invoice balance updates when the check is marked cleared.",
+      "createDescription": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
       "editTitle": "Edit check",
       "editDescription": "Update the selected check. Changing a cleared check reverses and re-applies the invoice payment.",
       "sections": {
@@ -507,12 +507,22 @@
     }
   },
   "dailyIncome": {
+    "start": {
+      "branchMismatch": "The closeout returned by the server does not match the selected branch.",
+      "title": "Start today’s closeout",
+      "description": "Choose the currency and exchange rate for today, then continue to your transaction. The server determines the date and closes older open periods.",
+      "continue": "Continue to transaction",
+      "noPermission": "You do not have permission to add transactions for this branch.",
+      "noCreatePermission": "Creating today’s closeout requires closeout-create permission.",
+      "ratePositive": "Enter an exchange rate greater than zero."
+    },
     "navigation": {
+      "current": "Current",
       "previousDay": "Previous day",
       "nextDay": "Next day",
       "today": "Today",
       "openTitle": "Open closeouts",
-      "openDescription": "Review active closeouts. The scheduled process closes them automatically.",
+      "openDescription": "Review open closeouts for the selected location.",
       "loading": "Loading open closeouts…",
       "retry": "Try again",
       "empty": "No open closeouts on this page.",
@@ -523,7 +533,7 @@
       "confirm": "Close closeout #{{id}} for {{date}}? Transactions will be locked until this closeout is reopened."
     },
     "title": "Daily Income",
-    "description": "Closeouts open and close automatically at branch-local midnight. Refresh after the scheduled rollover; contact an administrator if the current closeout is unavailable.",
+    "description": "Review daily closeouts and their transactions by location. Add a transaction to start today’s closeout when needed.",
     "noun": "transactions",
     "transactionNoun": "transaction",
     "actions": {
@@ -660,7 +670,7 @@
       "transactionCreatedWithTarget": "Transaction created: {{type}} - {{target}}.",
       "transactionUpdated": "Transaction updated.",
       "invoiceRegistered": "New invoice #{{invoiceNumber}} created and payment registered.",
-      "checkPaymentHeld": "Check {{checkNumber}} recorded as outstanding. Invoice {{invoiceNumber}} will not show this payment until the check is marked cleared.",
+      "checkPaymentHeld": "Payment recorded and applied. Awaiting accounting reconciliation.",
       "reportReady": "Daily income report ready."
     },
     "errors": {
@@ -670,7 +680,7 @@
     },
     "tabs": {
       "editType": "Edit {{type}}",
-      "closeoutLabel": "Closeout #{{id}} · {{date}}"
+      "closeoutLabel": "{{date}} · Closeout #{{id}}"
     },
     "loading": {
       "transaction": "Loading transaction…",
@@ -710,7 +720,7 @@
       "payment": {
         "label": "Register payment",
         "shortLabel": "Payment",
-        "description": "Record a payment received",
+        "description": "Record a payment for an existing or new invoice",
         "sectionTitle": "Payment information"
       },
       "expense": {
@@ -757,6 +767,8 @@
       }
     },
     "form": {
+      "creatorAssigneeHint": "Leave the assignee empty to use your linked employee.",
+      "creatorAssignee": "Creator’s linked employee",
       "fields": {
         "assignedTo": "Assigned to",
         "branch": "Branch",
@@ -765,10 +777,13 @@
         "paymentMethod": "Payment method",
         "bankAccount": "Bank account",
         "checkNumber": "Check number",
-        "checkNumberHint": "Stays outstanding until the check is marked cleared.",
+        "checkNumberHint": "Paper check number. Payment applies when recorded.",
         "autoClear": "Auto-approve (mark as cleared)",
-        "autoClearHint": "Skip the outstanding step: the payment is cleared and applied to the invoice balance as soon as it is saved.",
-        "autoClearReviewValue": "Cleared and applied on save",
+        "autoClearHint": "Approve this transaction immediately. Requires journal reconciliation permission; payments apply regardless.",
+        "autoClearReviewValue": "Reconciled on creation",
+        "autoReconcile": "Auto-reconcile (mark as sold)",
+        "autoReconcileHint": "Skip the pending step: the handoff is completed and the full quantity is reconciled as sold when you save, so it does not appear in Pending Transactions.",
+        "autoReconcileReviewValue": "Reconciled as sold on save",
         "invoice": "Invoice",
         "referenceNumber": "Internal reference number",
         "referenceNumberModeSystem": "System generated",
@@ -779,18 +794,27 @@
         "account": "Account",
         "sourceAccount": "Source account",
         "amount": "Amount",
+        "paymentAmount": "Payment amount",
         "description": "Description",
         "cost": "Cost",
         "balance": "Balance",
-        "includeSender": "Include sender client",
+        "skipSender": "Skip sender client",
         "senderClient": "Sender client",
-        "includeReceiver": "Include receiver client",
+        "skipReceiver": "Skip receiver client",
+        "invoiceMode": "Payment for",
+        "invoiceModeExisting": "Existing invoice",
+        "invoiceModeNew": "New invoice",
         "receiverClient": "Receiver client",
         "inventoryDirection": "Received or dispatched",
         "unitPrice": "Unit price",
         "total": "Total",
         "externalReferenceNumber": "Institution transaction reference",
-        "externalReferenceHint": "Optional ID from the bank or payment provider."
+        "externalReferenceHint": "Optional ID from the bank or payment provider.",
+        "responsibleSupervisor": "Responsible supervisor",
+        "inventoryHolders": "Responsible holders",
+        "holderVehicle": "Vehicle",
+        "holderEmployees": "Employees",
+        "inventoryDailyRoute": "Daily route (optional)"
       },
       "partyActions": {
         "new": "New",
@@ -802,7 +826,9 @@
         "priceHint": "Fill unit price or total; the other amount updates automatically.",
         "receivedDescription": "Received {{item}} × {{quantity}} from {{supplier}}",
         "receivedDescriptionNoSupplier": "Received {{item}} × {{quantity}}",
-        "dispatchedDescription": "Dispatched {{item}} × {{quantity}}"
+        "dispatchedDescription": "Dispatched {{item}} × {{quantity}}",
+        "useRouteHolders": "Use route vehicle and crew",
+        "removeHolderEmployee": "Remove {{name}}"
       },
       "placeholders": {
         "selectAssigneeSource": "Select employee or daily route",
@@ -821,6 +847,7 @@
         "searchAccounts": "Search accounts…",
         "selectSourceAccount": "Select source account",
         "selectInvoice": "Select invoice",
+        "selectInvoiceMode": "Select existing or new invoice",
         "searchInvoices": "Search invoices",
         "enterCheckNumber": "Enter check number",
         "enterReferenceNumber": "Enter internal reference number",
@@ -834,12 +861,29 @@
         "selectReceiver": "Select receiver",
         "selectInventoryDirection": "Select received or dispatched",
         "amount": "0.00",
-        "externalReferenceNumber": "Enter the institution’s transaction reference"
+        "externalReferenceNumber": "Enter the institution’s transaction reference",
+        "selectSupervisor": "Select supervisor",
+        "searchSupervisors": "Search supervisors…",
+        "noRouteSupervisors": "This daily route has no supervisor.",
+        "selectRouteFirst": "Select a daily route first",
+        "selectHolderVehicle": "Select vehicle (optional)",
+        "searchVehicles": "Search vehicles…",
+        "noVehiclesFound": "No vehicles found.",
+        "addHolderEmployee": "Add employee",
+        "noEmployeesFound": "No employees found.",
+        "noVehicle": "No vehicle",
+        "noDailyRoute": "No daily route"
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 if nothing was paid yet.",
+        "expenseAccount": "The expense category this spending belongs to.",
+        "sourceAccount": "Where the funds are coming from.",
         "paymentMethodOptionalZero": "Recorded as Cash while the amount is $0.00.",
-        "costFromLineItems": "From the invoice line items."
+        "costFromLineItems": "From the invoice line items.",
+        "routeSupervisorAccountability": "The daily route is kept for reporting. The supervisor is responsible for reconciling this transaction.",
+        "inventoryHolders": "Holders share one assignment: 20 boxes for a vehicle and two employees is 20 boxes in total.",
+        "inventoryDailyRoute": "Kept for reporting only. It does not make the route crew responsible.",
+        "noHolderEmployees": "No employees selected."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -863,6 +907,7 @@
         "costPositive": "Cost must be greater than zero.",
         "costFromLineItemsRequired": "Add priced line items to the invoice before posting a payment.",
         "discountNonNegative": "Discount cannot be negative.",
+        "discountExceedsTotal": "Discount cannot exceed the total.",
         "checkNumberRequired": "Check number is required.",
         "bankAccountRequired": "Select a bank account for this payment method.",
         "employeeRequired": "Select an employee or a daily route.",
@@ -879,11 +924,14 @@
         "inventoryQuantityRequired": "Quantity must be greater than zero.",
         "inventoryPriceRequired": "Enter a unit price or total.",
         "supplierRequired": "Supplier is required.",
-        "balanceNegative": "Balance cannot be negative."
+        "balanceNegative": "Balance cannot be negative.",
+        "supervisorRequired": "Select the daily-route supervisor responsible for this transaction.",
+        "inventoryHoldersRequired": "Select a vehicle or at least one employee responsible for this inventory."
       },
       "sections": {
         "assignment": "Assignment",
         "invoiceDetails": "Invoice details",
+        "invoiceAmount": "Invoice amount",
         "paymentDetails": "Payment & references",
         "customers": "Sender & receiver (optional)",
         "inventoryMovement": "Inventory movement",
@@ -898,9 +946,213 @@
       "confirm": "Post duplicate payment",
       "auditLabel": "Duplicate payment",
       "auditConfirmed": "Explicitly confirmed"
+    },
+    "advancedFilters": {
+      "fields": {
+        "invoice": {
+          "number": {
+            "label": "Invoice #",
+            "placeholder": "Enter invoice number…"
+          },
+          "cost": {
+            "label": "Cost",
+            "placeholder": "0.00"
+          },
+          "payment": {
+            "label": "Payment",
+            "placeholder": "0.00"
+          },
+          "balance": {
+            "label": "Balance",
+            "placeholder": "0.00"
+          }
+        },
+        "date": {
+          "label": "Date",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "dateRange": {
+          "label": "Date range",
+          "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "User",
+            "placeholder": "Enter user name…"
+          }
+        },
+        "accounts": {
+          "name": {
+            "label": "Account",
+            "placeholder": "Enter account name…"
+          }
+        },
+        "transactionAmount": {
+          "label": "Amount",
+          "placeholder": "0.00"
+        },
+        "employee": {
+          "name": {
+            "label": "Employee",
+            "placeholder": "Enter employee name…"
+          }
+        },
+        "transactionType": {
+          "label": "Transaction"
+        },
+        "paymentMethod": {
+          "name": {
+            "label": "Payment method"
+          }
+        },
+        "paymentReference": {
+          "label": "Check number",
+          "placeholder": "Enter check number…"
+        },
+        "external_reference_number": {
+          "label": "External reference number",
+          "placeholder": "Enter external reference…"
+        },
+        "incomeStatement": {
+          "id": {
+            "label": "Income statement",
+            "placeholder": "32685"
+          }
+        },
+        "refNumber": {
+          "label": "Internal reference number",
+          "placeholder": "Enter internal reference…"
+        }
+      }
+    },
+    "selectionTotals": {
+      "label": "Totals for selected transactions",
+      "selected": "Selected: {{count}} · {{currency}}",
+      "income": "Income",
+      "expenses": "Expenses",
+      "net": "Net income"
     }
   },
   "loans": {
+    "actions": {
+      "newLoan": "New loan",
+      "newLoanPayment": "New loan payment",
+      "newLoanPaymentFor": "New loan payment for {{name}}"
+    },
+    "page": {
+      "title": "Loans",
+      "description": "Track employee loan balances, payments, and journal activity.",
+      "mobileSubtitle": "Employee balances and payments"
+    },
+    "noun": "loans",
+    "fallbackDescription": "Loan",
+    "status": {
+      "ACTIVE": "Active",
+      "PAID": "Paid",
+      "VOID": "Void"
+    },
+    "transactionTypes": {
+      "ISSUE": "Loan issued",
+      "PAYMENT": "Payment"
+    },
+    "stats": {
+      "outstandingBalance": "Outstanding balance",
+      "outstandingBalanceDescription": "Calculated loan balance",
+      "loanedInRange": "Loaned in range",
+      "loanedInRangeDescription": "Principal issued",
+      "paidInRange": "Paid in range",
+      "paidInRangeDescription": "Payments received",
+      "activeLoans": "Active loans",
+      "activeLoansDescription": "Open employee loans"
+    },
+    "columns": {
+      "employee": "Employee",
+      "loanAccount": "Loan account",
+      "description": "Description",
+      "opened": "Opened",
+      "principalAmount": "Principal amount",
+      "paid": "Paid",
+      "balance": "Balance",
+      "status": "Status",
+      "lastActivity": "Last activity",
+      "actions": "Actions"
+    },
+    "table": {
+      "searchPlaceholder": "Search employee, loan, reference",
+      "loadError": "Unable to load loans.",
+      "loadingTitle": "Loading loans",
+      "loadingDescription": "Preparing employee loan balances.",
+      "loading": "Loading loans...",
+      "empty": "No loans match the current filters."
+    },
+    "details": {
+      "title": "Selected loan",
+      "subtitle": "Balance and recent activity",
+      "empty": "Select a loan to view balance details.",
+      "principal": "Principal",
+      "paid": "Paid",
+      "balance": "Balance",
+      "status": "Status",
+      "loanAccount": "Loan account",
+      "lastActivity": "Last activity",
+      "paidAmount": "{{amount}} paid"
+    },
+    "toasts": {
+      "created": "Loan created.",
+      "createdFor": "Loan created for {{name}}.",
+      "paymentRecorded": "Loan payment recorded."
+    },
+    "errors": {
+      "openCloseoutRequired": "An open Daily Income closeout is required for this loan account's branch on the selected date. Open or create that closeout below, then try again."
+    },
+    "validation": {
+      "employeeRequired": "Employee is required.",
+      "loanAccountRequired": "Loan account is required.",
+      "sourceAccountRequired": "Source asset account is required.",
+      "principalRequired": "Principal amount is required.",
+      "principalPositive": "Principal amount must be greater than zero.",
+      "dateRequired": "Date is required.",
+      "referenceTooLong": "Reference number is too long.",
+      "descriptionTooLong": "Description is too long.",
+      "receivedAccountRequired": "Payment received account is required.",
+      "paymentAmountRequired": "Payment amount is required.",
+      "paymentAmountPositive": "Payment amount must be greater than zero.",
+      "loanRequired": "Select a loan."
+    },
+    "journalPreview": {
+      "title": "Summary",
+      "debit": "Debit",
+      "credit": "Credit",
+      "selectAccount": "Select account",
+      "transactionType": "Transaction type",
+      "loanTransaction": "Loan transaction"
+    },
+    "paymentForm": {
+      "title": "Record loan payment",
+      "description": "Apply a payment to an employee loan and post its journal entry.",
+      "employee": "Employee",
+      "selectEmployee": "Select employee",
+      "searchEmployees": "Search employees",
+      "allocationMode": "Allocation mode",
+      "oldestFirst": "Oldest first",
+      "specificLoan": "Specific loan",
+      "loan": "Loan",
+      "selectLoan": "Select loan",
+      "searchLoans": "Search loans",
+      "loanBalance": "Balance {{amount}}",
+      "receivedAccount": "Payment received account",
+      "selectReceivedAccount": "Select received account",
+      "searchAssetAccounts": "Search asset accounts",
+      "amount": "Payment amount",
+      "allocation": "Payment allocation: {{allocation}}",
+      "allocationPart": "{{amount}} to {{loan}}",
+      "date": "Date",
+      "reference": "Reference number",
+      "optional": "Optional",
+      "notes": "Description",
+      "notesPlaceholder": "Payment notes",
+      "submit": "Record payment"
+    },
     "payments": {
       "title": "Payments",
       "subtitle": "All payment entries for this loan",
@@ -945,13 +1197,67 @@
       "refresh": "Refresh",
       "singleOpenBlocking": "Another open closeout (#{{id}} on {{date}}) is blocking create. Close it first, then try again.",
       "closeOther": "Close other open closeout"
+    },
+    "createForm": {
+      "title": "Create loan",
+      "description": "Record an employee loan, review its details, and post the journal entry.",
+      "steps": {
+        "employee": "Employee",
+        "details": "Loan details",
+        "review": "Review"
+      },
+      "employeeHint": "Choose the employee who will receive this loan.",
+      "employee": "Employee",
+      "selectEmployee": "Select employee",
+      "searchEmployees": "Search employees",
+      "accounts": "Accounts",
+      "loanAccount": "Loan account",
+      "sourceAccount": "Source asset account",
+      "selectLoanAccount": "Select loan account",
+      "searchLoanAccounts": "Search loan accounts",
+      "selectSourceAccount": "Select source asset account",
+      "searchAssetAccounts": "Search asset accounts",
+      "amountAndDate": "Amount and date",
+      "principal": "Principal amount",
+      "date": "Transaction date",
+      "notes": "Reference and notes",
+      "reference": "Reference number",
+      "optional": "Optional",
+      "notesDescription": "Description",
+      "notesPlaceholder": "Loan reason or notes",
+      "journalSummary": "Journal entry summary",
+      "debit": "Debit · Loan account",
+      "credit": "Credit · Source asset account",
+      "closeoutRequired": "An active Daily Income closeout is required for the selected loan account’s branch."
     }
   },
   "financialActivity": {
-    "title": "Pending Financial Activity",
+    "validation": {
+      "reasonRequired": "A reason is required.",
+      "amountPositive": "Enter an amount greater than zero.",
+      "differentEmployees": "Select different sending and receiving employees."
+    },
+    "loadingDescription": "Loading pending financial activity and outstanding amounts.",
+    "title": "Pending Transactions",
     "description": "Outstanding collections, cash custody and payment clearing across all dates.",
-    "employee": "Employee",
+    "tabs": {
+      "label": "Pending transaction types",
+      "financial": "Financial",
+      "inventory": "Inventory"
+    },
+    "employee": "Responsible",
     "branch": "Branch",
+    "allEmployees": "All employees",
+    "allBranches": "All branches",
+    "selectEmployee": "Select employee",
+    "selectBranch": "Select branch",
+    "searchEmployees": "Search employees…",
+    "searchBranches": "Search branches…",
+    "noEmployeesFound": "No employees found.",
+    "noBranchesFound": "No branches found.",
+    "searchMethods": "Search payment methods…",
+    "noMethodsFound": "No payment methods found.",
+    "additionalFilters": "Additional filters",
     "from": "Transaction date from",
     "through": "Transaction date through",
     "minimum": "Minimum outstanding amount",
@@ -968,15 +1274,13 @@
     "loading": "Loading activity…",
     "previous": "Previous",
     "next": "Next",
-    "clearingHelp": "Clear payments using their existing payment directories:",
     "checks": "Checks",
     "deposits": "Deposits",
     "cards": "Credit cards",
     "historyHelp": "Collection and clearing events preserve the original transaction and closeout.",
-    "automation": "Closeout calendar",
-    "automationHelp": "Closeouts open explicitly. Only RD asks for currency and exchange rate. Dates use the configured location timezone.",
-    "enabled": "Enable automatic daily closeouts",
     "timezone": "Timezone",
+    "searchTimezones": "Search region or city…",
+    "noTimezonesFound": "No timezones found.",
     "currency": "Currency",
     "rate": "Exchange rate",
     "save": "Save",
@@ -996,12 +1300,262 @@
       "REJECTED": "Handover rejected",
       "REVERSED": "Reversing adjustment"
     },
-    "branchOverrides": "Branch timezone and currency overrides",
-    "companyDefaults": "Use company defaults",
     "unknownCurrency": "Unspecified",
     "noCurrentCloseout": "No open closeout is available for today. Open today’s closeout in Daily Income, then refresh. Only RD requests currency and exchange rate.",
     "occurrenceDate": "Actual transaction date",
     "refresh": "Refresh",
-    "postedImmutable": "Posted transactions cannot be edited. Use Pending Financial Activity for reconciliation and eligible adjustments."
+    "postedImmutable": "Posted transactions cannot be edited. Use Pending Transactions for reconciliation and eligible adjustments.",
+    "dailyRoute": "Daily route"
+  },
+  "pendingInventory": {
+    "title": "Pending Transactions",
+    "description": "Dispatched supplies awaiting reconciliation across all dates.",
+    "holder": "Holder",
+    "allHolders": "All holders",
+    "selectHolder": "Select holder",
+    "searchHolders": "Search holders…",
+    "noHoldersFound": "No holders found",
+    "from": "Dispatched from",
+    "through": "Dispatched through",
+    "age": "Minimum age (days)",
+    "reset": "Reset",
+    "loading": "Loading pending dispatches…",
+    "loadingDescription": "Finding posted dispatches with supplies that are not accounted for yet.",
+    "empty": "No dispatches are waiting for reconciliation.",
+    "columns": {
+      "dispatchedAt": "Dispatched",
+      "holder": "Holder",
+      "responsible": "Responsible",
+      "dailyRoute": "Daily route",
+      "items": "Pending items",
+      "dispatched": "Dispatched qty",
+      "awaiting": "Awaiting confirmation",
+      "outstanding": "Outstanding qty",
+      "age": "Age (days)",
+      "actions": "Actions"
+    },
+    "moreItems": "+{{count}} more",
+    "previous": "Previous",
+    "next": "Next",
+    "reconcile": "Reconcile",
+    "view": "View",
+    "outcomes": {
+      "SOLD": "Sold",
+      "RETURNED": "Returned",
+      "DAMAGED": "Damaged",
+      "LOST": "Lost",
+      "MISSING": "Missing",
+      "STOLEN": "Stolen"
+    },
+    "resolutions": {
+      "QUARANTINE": "Quarantine",
+      "WRITE_OFF": "Write off"
+    },
+    "dialog": {
+      "title": "Reconcile dispatch",
+      "description": "{{holder}} · Dispatched {{date}}",
+      "dispatched": "Dispatched",
+      "reconciled": "Reconciled",
+      "awaiting": "Awaiting confirmation",
+      "outstanding": "Outstanding",
+      "history": "Reconciliation history",
+      "loadingHistory": "Loading reconciliation history…",
+      "noHistory": "Nothing has been reconciled for this dispatch yet.",
+      "historyLine": "{{outcome}} {{quantity}} × {{item}}",
+      "occurredAt": "Reconciled at",
+      "notes": "Description",
+      "notesHint": "Explain what happened. Required when supplies are damaged, lost, missing or stolen, or when part of the sale is on credit.",
+      "lineSummary": "Outstanding {{outstanding}} · Remaining {{remaining}}",
+      "returnRemaining": "Mark remaining as returned",
+      "revenue": "Sale revenue (USD)",
+      "damageResolution": "Damaged supplies",
+      "selectResolution": "Quarantine or write off",
+      "searchResolutions": "Search…",
+      "noResolutions": "No options found",
+      "save": "Submit reconciliation",
+      "saving": "Saving…",
+      "saved": "Reconciliation submitted. Waiting for the warehouse and the employee / route to confirm.",
+      "readOnly": "You can view this dispatch, but you do not have permission to reconcile it.",
+      "salesRecorded": "Sales for this dispatch were already recorded in Daily Income, so no revenue or payments are collected here.",
+      "incomeEmployee": "Income goes to",
+      "selectIncomeEmployee": "Select employee",
+      "searchEmployees": "Search employees…",
+      "noEmployees": "No employees found",
+      "incomeRoles": {
+        "SUPERVISOR": "Route supervisor",
+        "RESPONSIBLE": "Responsible employee",
+        "HOLDER": "Holder"
+      },
+      "incomeTo": "Income to {{name}}",
+      "payments": "Payments",
+      "paymentsHint": "Split what was collected by payment method. Any unpaid revenue is recorded on credit and must be collected later.",
+      "paymentNumber": "Payment {{number}}",
+      "addPayment": "Add payment",
+      "removePayment": "Remove payment",
+      "paymentMethod": "Payment method",
+      "selectPaymentMethod": "Select method",
+      "searchPaymentMethods": "Search methods…",
+      "noPaymentMethods": "No payment methods found",
+      "amount": "Amount (USD)",
+      "bankAccount": "Bank account",
+      "selectBankAccount": "Select bank account",
+      "searchBankAccounts": "Search bank accounts…",
+      "noBankAccounts": "No bank accounts found",
+      "checkNumber": "Check number",
+      "checkNumberValue": "Check # {{number}}",
+      "externalReference": "Reference / confirmation #",
+      "paymentTotals": "Payments {{paid}} of {{revenue}} in sales",
+      "onCredit": "On credit {{amount}}",
+      "statuses": {
+        "PENDING_CONFIRMATION": "Pending confirmation",
+        "CONFIRMED": "Confirmed",
+        "REJECTED": "Rejected"
+      }
+    },
+    "errors": {
+      "occurredAt": "Enter when the reconciliation happened.",
+      "quantity": "Enter whole numbers of 0 or more.",
+      "exceeds": "The quantities add up to more than the outstanding amount.",
+      "revenue": "Enter the sale revenue in USD, for example 120.00.",
+      "resolution": "Choose whether damaged supplies are quarantined or written off.",
+      "nothing": "Enter at least one quantity to reconcile.",
+      "notesRequired": "Describe what happened to the damaged, lost, missing or stolen supplies.",
+      "paymentMethod": "Choose a payment method.",
+      "paymentAmount": "Enter an amount greater than 0, for example 40.00.",
+      "paymentAccount": "Choose the bank account for this payment.",
+      "checkNumber": "Enter the check number.",
+      "paymentExceeds": "The payments add up to more than the sale revenue.",
+      "incomeEmployee": "Choose who receives the income.",
+      "creditNotesRequired": "Part of the sale is on credit. Describe who owes it and when it will be collected."
+    }
+  },
+  "pendingTransactions": {
+    "description": "Outstanding transactions across all closeouts awaiting reconciliation.",
+    "selectedTitle": "Selected transactions",
+    "clearSelection": "Clear selection",
+    "reconcileSelected": "Reconcile selected",
+    "selectionHelp": "Select up to 200 transactions with the same payment method, across pages. Select all adds matching rows on this page. Totals are shown separately for each currency.",
+    "confirmDescription": "Review the selected transactions and totals. Reconciliation is final and releases the employee’s responsibility. It does not change invoice payments or balances.",
+    "confirm": "Reconcile all selected",
+    "cancel": "Cancel",
+    "reconciling": "Reconciling…",
+    "summaryLoading": "Loading selected totals…",
+    "retry": "Retry",
+    "unknownCurrency": "Unknown currency",
+    "loading": "Loading outstanding transactions…",
+    "empty": "No outstanding transactions match your filters."
+  },
+  "journalReconciliation": {
+    "title": "Pending Transactions",
+    "description": "Outstanding journals across all closeouts. Reconcile after receiving income or approving expenses. Payments already apply to invoices when recorded.",
+    "createdAt": "Created at",
+    "status": "Reconciliation",
+    "OUTSTANDING": "Outstanding",
+    "RECONCILED": "Reconciled",
+    "matchingTotals": "All matching transactions",
+    "selectedTotals": "Selected transactions",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net income",
+    "selectedCount": "Selected:",
+    "totalCount": "Transactions:",
+    "clearSelection": "Clear selection",
+    "reconcileSelected": "Reconcile selected",
+    "sameMethod": "Select up to 200 transactions with the same payment method.",
+    "confirmTitle": "Reconcile selected transactions?",
+    "confirmDescription": "Confirm that income was received or expenses approved. This releases the assignee’s responsibility and is final. Invoice payments and balances stay unchanged.",
+    "pendingAlert": "{{count}} outstanding transactions",
+    "fields": {
+      "invoice": {
+        "number": {
+          "label": "Invoice #",
+          "placeholder": "Invoice #"
+        },
+        "cost": {
+          "label": "Cost",
+          "placeholder": "Cost"
+        },
+        "payment": {
+          "label": "Invoice payment",
+          "placeholder": "Invoice payment"
+        },
+        "balance": {
+          "label": "Balance",
+          "placeholder": "Balance"
+        }
+      },
+      "createdBy": {
+        "name": {
+          "label": "User",
+          "placeholder": "User"
+        }
+      },
+      "accounts": {
+        "name": {
+          "label": "Account",
+          "placeholder": "Account"
+        }
+      },
+      "employee": {
+        "name": {
+          "label": "Employee",
+          "placeholder": "Employee"
+        },
+        "id": {
+          "label": "Employee ID",
+          "placeholder": "Employee ID"
+        }
+      },
+      "paymentReference": {
+        "label": "Check number",
+        "placeholder": "Check number"
+      },
+      "external_reference_number": {
+        "label": "External reference",
+        "placeholder": "External reference"
+      },
+      "refNumber": {
+        "label": "Internal reference",
+        "placeholder": "Internal reference"
+      },
+      "incomeStatement": {
+        "id": {
+          "label": "Closeout",
+          "placeholder": "Closeout"
+        }
+      },
+      "transactionAmount": {
+        "label": "Amount",
+        "placeholder": "Amount"
+      },
+      "date": {
+        "label": "Date",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "dateRange": {
+        "label": "Date range",
+        "placeholder": "YYYY-MM-DD to YYYY-MM-DD"
+      },
+      "transactionType": {
+        "label": "Transaction",
+        "placeholder": "Transaction"
+      },
+      "paymentMethod": {
+        "name": {
+          "label": "Payment method",
+          "placeholder": "Payment method"
+        }
+      },
+      "reconciliationStatus": {
+        "label": "Reconciliation",
+        "placeholder": "Reconciliation"
+      },
+      "branch": {
+        "id": {
+          "label": "Branch ID",
+          "placeholder": "Branch ID"
+        }
+      }
+    }
   }
 }

@@ -19,7 +19,7 @@ function isFilled(value: string): boolean {
 
 export function InvoiceActivitySection({ invoice }: InvoiceActivitySectionProps) {
   const { t } = useTranslation();
-  const timeline = useMemo(() => buildInvoiceActivityTimeline(invoice), [invoice]);
+  const timeline = useMemo(() => buildInvoiceActivityTimeline(invoice, t), [invoice, t]);
   const sortedTimeline = useMemo(() => [...timeline].reverse(), [timeline]);
   const empty = t("common.empty.dash");
 

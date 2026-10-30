@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 
 import { SessionTransactionsLayout } from "@/components/accounting/session-transactions-panel";
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
+import { TransactionTypeSummary } from "@/components/accounting/transaction-type-summary";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ import {
   useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
-import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import type { DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -49,6 +50,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const isEditing = mode === "edit";
   const transactionSessionId = useId();
   const [entryActive, setEntryActive] = useState(false);
+  const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(null);
   const { notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
@@ -70,7 +72,14 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   );
   const dailyRoutesQuery = useDailyRoutePicker(200);
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
-  const invoicesQuery = useInvoices({ page: 1, limit: 200, sort: "number:desc" });
+  // Payments and discounts apply only to invoices with an outstanding balance. The API
+  // search allowlist has no `balance` field, so filter by paidStatus != CLOSED (OPEN or PARTIAL).
+  const invoicesQuery = useInvoices({
+    page: 1,
+    limit: 200,
+    sort: "number:desc",
+    filterRows: [{ id: "payment-outstanding", join: "and", field: "paidStatus", operator: "neq", value: "CLOSED" }],
+  });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
   const paymentMethodsQuery = useAccountingPaymentMethods(true);
@@ -187,6 +196,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
     <FormTabShell
       title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}
       description={description}
+      actions={!isEditing && selectedType ? <TransactionTypeSummary type={selectedType} className="py-2" /> : null}
       className="min-w-0 max-w-5xl"
     >
       {isEditing && initialValues ? (
@@ -214,6 +224,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           open
           mode="add"
           onEntryActiveChange={setEntryActive}
+          onSelectedTypeChange={setSelectedType}
           employees={employees}
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}

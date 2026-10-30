@@ -28,11 +28,12 @@ import { formatOrderRouteName } from "@/lib/orders/display";
 import { useAssignPickupsToRoute } from "@/lib/orders/hooks/use-orders";
 import { DELIVERY_BRANCH_CODE } from "@/lib/pickup-delivery-routes/directory-variant";
 import {
-  useScheduledRouteByCrewAndDate,
+  useScheduledRouteByEmployeesAndDate,
   useUpsertActiveRoute,
 } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import {
   buildScheduledRouteFormValues,
+  hasDailyRouteLeadRoles,
   type ActiveRouteBranchRef,
   type ActiveRouteContainerRef,
   type RouteType,
@@ -121,8 +122,21 @@ export function AssignRouteCrewDialog({
   const branchesQuery = useBranchPicker(200, { enabled: open });
   const containersQuery = useContainerPicker(200, { enabled: open && isDelivery });
   const selectedRouteQuery = useRoute(routeCrewId || null, open && Boolean(routeCrewId));
-  const existingRouteQuery = useScheduledRouteByCrewAndDate({
-    routeRecordId: open ? routeCrewId || null : null,
+  const routeCrews = useMemo(
+    () => (routesQuery.data?.items ?? []).filter((route) => route.active),
+    [routesQuery.data?.items],
+  );
+  const selectedCrew =
+    selectedRouteQuery.data ??
+    routeCrews.find((route) => route.id === routeCrewId) ??
+    null;
+  const crewEmployees = selectedCrew?.employees;
+  const crewEmployeeIds = useMemo(
+    () => (crewEmployees ?? []).map((employee) => employee.id),
+    [crewEmployees],
+  );
+  const existingRouteQuery = useScheduledRouteByEmployeesAndDate({
+    employeeIds: open ? crewEmployeeIds : [],
     date: open ? date : "",
     routeType,
     containerId: isDelivery ? selectedContainerId : undefined,
@@ -132,20 +146,11 @@ export function AssignRouteCrewDialog({
   const assignPickupsMutation = useAssignPickupsToRoute();
   const assignBarcodesMutation = useAssignBarcodesToRoute();
 
-  const routeCrews = useMemo(
-    () => (routesQuery.data?.items ?? []).filter((route) => route.active),
-    [routesQuery.data?.items],
-  );
   const branches = branchesQuery.data?.items ?? EMPTY_BRANCHES;
   const containers = containersQuery.data?.items ?? [];
-  const selectedCrew =
-    selectedRouteQuery.data ??
-    routeCrews.find((route) => route.id === routeCrewId) ??
-    null;
 
   const selectedCrewId = selectedCrew?.id ?? "";
   const existingRouteId = existingRouteQuery.data?.id ?? "";
-  const crewEmployees = selectedCrew?.employees;
   const existingEmployees = existingRouteQuery.data?.employees;
 
   useEffect(() => {
@@ -199,7 +204,6 @@ export function AssignRouteCrewDialog({
           value: route.id,
           label: formatRouteAssignmentOptionLabel(route),
           keywords: [
-            route.name,
             route.routeId,
             getRouteBranchCode(route),
             ...route.employees.map((employee) => employee.name),
@@ -282,6 +286,10 @@ export function AssignRouteCrewDialog({
       setFormError(t("orders.dialogs.crewRequired"));
       return;
     }
+    if (!hasDailyRouteLeadRoles(employees)) {
+      setFormError(t("routes.activeRoute.errors.leadRoles"));
+      return;
+    }
 
     const container = isDelivery ? resolveSelectedContainer() : null;
     if (isDelivery && !container) {
@@ -294,7 +302,6 @@ export function AssignRouteCrewDialog({
         values: buildScheduledRouteFormValues({
           routeType,
           routeRecordId: selectedCrew.id,
-          routeAssignmentName: formatRouteAssignmentName(selectedCrew),
           date,
           branch,
           employees,

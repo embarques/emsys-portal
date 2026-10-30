@@ -198,7 +198,7 @@
   },
   "zellePayments": {
     "title": "Zelle",
-    "description": "Controle los pagos de facturas hechos con Zelle. Los pagos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "pagos Zelle",
     "searchPlaceholder": "Buscar pagos Zelle…",
     "empty": "Ningún pago Zelle coincide con su búsqueda.",
@@ -251,7 +251,7 @@
   },
   "deposits": {
     "title": "Depósitos",
-    "description": "Controle los pagos de facturas hechos por depósito bancario. Los depósitos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "depósitos",
     "searchPlaceholder": "Buscar depósitos…",
     "empty": "Ningún depósito coincide con su búsqueda.",
@@ -304,7 +304,7 @@
   },
   "creditCardPayments": {
     "title": "Tarjetas de crédito",
-    "description": "Controle los pagos de facturas hechos con tarjeta de crédito. Los pagos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "pagos con tarjeta",
     "searchPlaceholder": "Buscar pagos con tarjeta…",
     "empty": "Ningún pago con tarjeta coincide con su búsqueda.",
@@ -357,7 +357,7 @@
   },
   "checks": {
     "title": "Cheques",
-    "description": "Controle los pagos de facturas hechos con cheque. Los cheques pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "cheques",
     "searchPlaceholder": "Buscar cheques…",
     "empty": "Ningún cheque coincide con su búsqueda.",
@@ -390,7 +390,7 @@
     },
     "form": {
       "createTitle": "Agregar cheque",
-      "createDescription": "Registre un cheque pendiente contra una factura. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
+      "createDescription": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
       "editTitle": "Editar cheque",
       "editDescription": "Actualice el cheque seleccionado. Cambiar un cheque cobrado revierte y vuelve a aplicar el pago de la factura.",
       "sections": {
@@ -507,12 +507,22 @@
     }
   },
   "dailyIncome": {
+    "start": {
+      "branchMismatch": "El cuadre devuelto por el servidor no corresponde a la sucursal seleccionada.",
+      "title": "Iniciar el cuadre de hoy",
+      "description": "Seleccione la moneda y la tasa de hoy para continuar con su transacción. El servidor determina la fecha y cierra los períodos abiertos anteriores.",
+      "continue": "Continuar a la transacción",
+      "noPermission": "No tiene permiso para agregar transacciones en esta sucursal.",
+      "noCreatePermission": "Se requiere permiso para crear el cuadre de hoy.",
+      "ratePositive": "Ingrese una tasa de cambio mayor que cero."
+    },
     "navigation": {
+      "current": "Actual",
       "previousDay": "Día anterior",
       "nextDay": "Día siguiente",
       "today": "Hoy",
       "openTitle": "Cierres abiertos",
-      "openDescription": "Revise los cuadres activos. El proceso programado los cierra automáticamente.",
+      "openDescription": "Revise los cuadres abiertos de la ubicación seleccionada.",
       "loading": "Cargando cierres abiertos…",
       "retry": "Reintentar",
       "empty": "No hay cierres abiertos en esta página.",
@@ -523,7 +533,7 @@
       "confirm": "¿Cerrar el cierre #{{id}} del {{date}}? Las transacciones quedarán bloqueadas hasta que se vuelva a abrir."
     },
     "title": "Ingresos diarios",
-    "description": "Los cuadres se abren y cierran automáticamente a medianoche de la sucursal. Actualice después del cambio de día; contacte a un administrador si el cuadre actual no está disponible.",
+    "description": "Consulte los cuadres diarios y sus transacciones por ubicación. Agregue una transacción para iniciar el cuadre de hoy cuando sea necesario.",
     "noun": "transacciones",
     "transactionNoun": "transacción",
     "actions": {
@@ -660,7 +670,7 @@
       "transactionCreatedWithTarget": "Transacción creada: {{type}} - {{target}}.",
       "transactionUpdated": "Transacción actualizada.",
       "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado.",
-      "checkPaymentHeld": "El cheque {{checkNumber}} quedó pendiente. La factura {{invoiceNumber}} no mostrará este pago hasta que el cheque se marque como cobrado.",
+      "checkPaymentHeld": "Pago registrado y aplicado. Pendiente de conciliación contable.",
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
@@ -670,7 +680,7 @@
     },
     "tabs": {
       "editType": "Editar {{type}}",
-      "closeoutLabel": "Cierre #{{id}} · {{date}}"
+      "closeoutLabel": "{{date}} · Cierre #{{id}}"
     },
     "loading": {
       "transaction": "Cargando transacción…",
@@ -710,7 +720,7 @@
       "payment": {
         "label": "Registrar pago",
         "shortLabel": "Pago",
-        "description": "Registrar un pago recibido",
+        "description": "Registrar un pago de una factura existente o nueva",
         "sectionTitle": "Información del pago"
       },
       "expense": {
@@ -757,6 +767,8 @@
       }
     },
     "form": {
+      "creatorAssigneeHint": "Deje el responsable vacío para usar su empleado vinculado.",
+      "creatorAssignee": "Empleado vinculado al creador",
       "fields": {
         "assignedTo": "Asignado a",
         "branch": "Sucursal",
@@ -765,10 +777,13 @@
         "paymentMethod": "Método de pago",
         "bankAccount": "Cuenta bancaria",
         "checkNumber": "Número de cheque",
-        "checkNumberHint": "Queda pendiente hasta que el cheque se marque como cobrado.",
+        "checkNumberHint": "Número del cheque. El pago se aplica al registrarlo.",
         "autoClear": "Aprobar automáticamente (marcar como cobrado)",
-        "autoClearHint": "Omite el paso de pendiente: el pago se marca como cobrado y se aplica al saldo de la factura al guardarlo.",
-        "autoClearReviewValue": "Cobrado y aplicado al guardar",
+        "autoClearHint": "Aprueba esta transacción de inmediato. Requiere permiso de conciliación; los pagos se aplican de todas formas.",
+        "autoClearReviewValue": "Conciliado al crear",
+        "autoReconcile": "Conciliar automáticamente (marcar como vendido)",
+        "autoReconcileHint": "Omite el paso de pendiente: al guardar se completa la entrega y toda la cantidad se concilia como vendida, por lo que no aparece en Transacciones pendientes.",
+        "autoReconcileReviewValue": "Conciliado como vendido al guardar",
         "invoice": "Factura",
         "referenceNumber": "Número de referencia interna",
         "referenceNumberModeSystem": "Generado por el sistema",
@@ -779,18 +794,27 @@
         "account": "Cuenta",
         "sourceAccount": "Cuenta origen",
         "amount": "Monto",
+        "paymentAmount": "Monto del pago",
         "description": "Descripción",
         "cost": "Costo",
         "balance": "Saldo",
-        "includeSender": "Incluir cliente remitente",
+        "skipSender": "Omitir cliente remitente",
         "senderClient": "Cliente remitente",
-        "includeReceiver": "Incluir cliente destinatario",
+        "skipReceiver": "Omitir cliente destinatario",
+        "invoiceMode": "Pago para",
+        "invoiceModeExisting": "Factura existente",
+        "invoiceModeNew": "Factura nueva",
         "receiverClient": "Cliente destinatario",
         "inventoryDirection": "Recibido o despachado",
         "unitPrice": "Precio unitario",
         "total": "Total",
         "externalReferenceNumber": "Referencia de transacción de la institución",
-        "externalReferenceHint": "ID opcional del banco o proveedor de pagos."
+        "externalReferenceHint": "ID opcional del banco o proveedor de pagos.",
+        "responsibleSupervisor": "Supervisor responsable",
+        "inventoryHolders": "Responsables del inventario",
+        "holderVehicle": "Vehículo",
+        "holderEmployees": "Empleados",
+        "inventoryDailyRoute": "Ruta diaria (opcional)"
       },
       "partyActions": {
         "new": "Nuevo",
@@ -802,7 +826,9 @@
         "priceHint": "Complete el precio unitario o el total; el otro monto se actualiza automáticamente.",
         "receivedDescription": "Recibido {{item}} × {{quantity}} de {{supplier}}",
         "receivedDescriptionNoSupplier": "Recibido {{item}} × {{quantity}}",
-        "dispatchedDescription": "Despachado {{item}} × {{quantity}}"
+        "dispatchedDescription": "Despachado {{item}} × {{quantity}}",
+        "useRouteHolders": "Usar vehículo y tripulación de la ruta",
+        "removeHolderEmployee": "Quitar a {{name}}"
       },
       "placeholders": {
         "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
@@ -821,6 +847,7 @@
         "searchAccounts": "Buscar cuentas…",
         "selectSourceAccount": "Seleccionar cuenta origen",
         "selectInvoice": "Seleccionar factura",
+        "selectInvoiceMode": "Seleccionar factura existente o nueva",
         "searchInvoices": "Buscar facturas",
         "enterCheckNumber": "Ingrese el número de cheque",
         "enterReferenceNumber": "Ingresa el número de referencia interna",
@@ -834,12 +861,29 @@
         "selectReceiver": "Seleccionar destinatario",
         "selectInventoryDirection": "Seleccione recibido o despachado",
         "amount": "0.00",
-        "externalReferenceNumber": "Ingresa la referencia de transacción de la institución"
+        "externalReferenceNumber": "Ingresa la referencia de transacción de la institución",
+        "selectSupervisor": "Seleccionar supervisor",
+        "searchSupervisors": "Buscar supervisores…",
+        "noRouteSupervisors": "Esta ruta diaria no tiene supervisor.",
+        "selectRouteFirst": "Primero seleccione una ruta diaria",
+        "selectHolderVehicle": "Seleccionar vehículo (opcional)",
+        "searchVehicles": "Buscar vehículos…",
+        "noVehiclesFound": "No se encontraron vehículos.",
+        "addHolderEmployee": "Agregar empleado",
+        "noEmployeesFound": "No se encontraron empleados.",
+        "noVehicle": "Sin vehículo",
+        "noDailyRoute": "Sin ruta diaria"
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 si aún no se ha pagado.",
+        "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
+        "sourceAccount": "De dónde provienen los fondos.",
         "paymentMethodOptionalZero": "Se registra como efectivo mientras el monto sea $0.00.",
-        "costFromLineItems": "Tomado de los renglones de la factura."
+        "costFromLineItems": "Tomado de los renglones de la factura.",
+        "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. El supervisor es responsable de cuadrar esta transacción.",
+        "inventoryHolders": "Los responsables comparten una sola asignación: 20 cajas para un vehículo y dos empleados son 20 cajas en total.",
+        "inventoryDailyRoute": "Solo se usa para reportes. No hace responsable a la tripulación de la ruta.",
+        "noHolderEmployees": "No hay empleados seleccionados."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -863,6 +907,7 @@
         "costPositive": "El costo debe ser mayor que cero.",
         "costFromLineItemsRequired": "Agregue renglones con precio a la factura antes de registrar un pago.",
         "discountNonNegative": "El descuento no puede ser negativo.",
+        "discountExceedsTotal": "El descuento no puede ser mayor que el total.",
         "checkNumberRequired": "El número de cheque es obligatorio.",
         "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
         "employeeRequired": "Seleccione un empleado o una ruta diaria.",
@@ -879,11 +924,14 @@
         "inventoryQuantityRequired": "La cantidad debe ser mayor que cero.",
         "inventoryPriceRequired": "Ingrese un precio unitario o un total.",
         "supplierRequired": "El proveedor es obligatorio.",
-        "balanceNegative": "El saldo no puede ser negativo."
+        "balanceNegative": "El saldo no puede ser negativo.",
+        "supervisorRequired": "Seleccione el supervisor de la ruta diaria responsable de esta transacción.",
+        "inventoryHoldersRequired": "Seleccione un vehículo o al menos un empleado responsable de este inventario."
       },
       "sections": {
         "assignment": "Asignación",
         "invoiceDetails": "Datos de la factura",
+        "invoiceAmount": "Monto de la factura",
         "paymentDetails": "Pago y referencias",
         "customers": "Remitente y destinatario (opcional)",
         "inventoryMovement": "Movimiento de inventario",
@@ -898,9 +946,213 @@
       "confirm": "Registrar pago duplicado",
       "auditLabel": "Pago duplicado",
       "auditConfirmed": "Confirmado explícitamente"
+    },
+    "advancedFilters": {
+      "fields": {
+        "invoice": {
+          "number": {
+            "label": "Factura #",
+            "placeholder": "Ingrese el número de factura…"
+          },
+          "cost": {
+            "label": "Costo",
+            "placeholder": "0.00"
+          },
+          "payment": {
+            "label": "Pago",
+            "placeholder": "0.00"
+          },
+          "balance": {
+            "label": "Balance",
+            "placeholder": "0.00"
+          }
+        },
+        "date": {
+          "label": "Fecha",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "dateRange": {
+          "label": "Rango de fechas",
+          "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "createdBy": {
+          "name": {
+            "label": "Usuario",
+            "placeholder": "Ingrese el nombre del usuario…"
+          }
+        },
+        "accounts": {
+          "name": {
+            "label": "Cuenta",
+            "placeholder": "Ingrese el nombre de la cuenta…"
+          }
+        },
+        "transactionAmount": {
+          "label": "Monto",
+          "placeholder": "0.00"
+        },
+        "employee": {
+          "name": {
+            "label": "Empleado",
+            "placeholder": "Ingrese el nombre del empleado…"
+          }
+        },
+        "transactionType": {
+          "label": "Transacción"
+        },
+        "paymentMethod": {
+          "name": {
+            "label": "Método de pago"
+          }
+        },
+        "paymentReference": {
+          "label": "Número de cheque",
+          "placeholder": "Ingrese el número de cheque…"
+        },
+        "external_reference_number": {
+          "label": "Número de referencia externa",
+          "placeholder": "Ingrese la referencia externa…"
+        },
+        "incomeStatement": {
+          "id": {
+            "label": "Cuadre",
+            "placeholder": "32685"
+          }
+        },
+        "refNumber": {
+          "label": "Número de referencia interna",
+          "placeholder": "Ingrese la referencia interna…"
+        }
+      }
+    },
+    "selectionTotals": {
+      "label": "Totales de las transacciones seleccionadas",
+      "selected": "Seleccionadas: {{count}} · {{currency}}",
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "net": "Ingreso neto"
     }
   },
   "loans": {
+    "actions": {
+      "newLoan": "Nuevo préstamo",
+      "newLoanPayment": "Nuevo pago de préstamo",
+      "newLoanPaymentFor": "Nuevo pago de préstamo para {{name}}"
+    },
+    "page": {
+      "title": "Préstamos",
+      "description": "Dé seguimiento a los saldos, pagos y movimientos contables de los préstamos a empleados.",
+      "mobileSubtitle": "Saldos y pagos de empleados"
+    },
+    "noun": "préstamos",
+    "fallbackDescription": "Préstamo",
+    "status": {
+      "ACTIVE": "Activo",
+      "PAID": "Pagado",
+      "VOID": "Anulado"
+    },
+    "transactionTypes": {
+      "ISSUE": "Préstamo otorgado",
+      "PAYMENT": "Pago"
+    },
+    "stats": {
+      "outstandingBalance": "Saldo pendiente",
+      "outstandingBalanceDescription": "Saldo calculado de préstamos",
+      "loanedInRange": "Prestado en el período",
+      "loanedInRangeDescription": "Principal otorgado",
+      "paidInRange": "Pagado en el período",
+      "paidInRangeDescription": "Pagos recibidos",
+      "activeLoans": "Préstamos activos",
+      "activeLoansDescription": "Préstamos abiertos de empleados"
+    },
+    "columns": {
+      "employee": "Empleado",
+      "loanAccount": "Cuenta de préstamo",
+      "description": "Descripción",
+      "opened": "Apertura",
+      "principalAmount": "Monto principal",
+      "paid": "Pagado",
+      "balance": "Saldo",
+      "status": "Estado",
+      "lastActivity": "Última actividad",
+      "actions": "Acciones"
+    },
+    "table": {
+      "searchPlaceholder": "Buscar empleado, préstamo, referencia",
+      "loadError": "No se pudieron cargar los préstamos.",
+      "loadingTitle": "Cargando préstamos",
+      "loadingDescription": "Preparando los saldos de préstamos de empleados.",
+      "loading": "Cargando préstamos...",
+      "empty": "Ningún préstamo coincide con los filtros actuales."
+    },
+    "details": {
+      "title": "Préstamo seleccionado",
+      "subtitle": "Saldo y actividad reciente",
+      "empty": "Seleccione un préstamo para ver los detalles del saldo.",
+      "principal": "Principal",
+      "paid": "Pagado",
+      "balance": "Saldo",
+      "status": "Estado",
+      "loanAccount": "Cuenta de préstamo",
+      "lastActivity": "Última actividad",
+      "paidAmount": "{{amount}} pagado"
+    },
+    "toasts": {
+      "created": "Préstamo creado.",
+      "createdFor": "Préstamo creado para {{name}}.",
+      "paymentRecorded": "Pago de préstamo registrado."
+    },
+    "errors": {
+      "openCloseoutRequired": "Se requiere un cuadre de ingresos diario abierto para la sucursal de esta cuenta de préstamo en la fecha seleccionada. Abra o cree ese cuadre abajo e intente de nuevo."
+    },
+    "validation": {
+      "employeeRequired": "El empleado es obligatorio.",
+      "loanAccountRequired": "La cuenta de préstamo es obligatoria.",
+      "sourceAccountRequired": "La cuenta de activo de origen es obligatoria.",
+      "principalRequired": "El monto principal es obligatorio.",
+      "principalPositive": "El monto principal debe ser mayor que cero.",
+      "dateRequired": "La fecha es obligatoria.",
+      "referenceTooLong": "El número de referencia es demasiado largo.",
+      "descriptionTooLong": "La descripción es demasiado larga.",
+      "receivedAccountRequired": "La cuenta de recepción del pago es obligatoria.",
+      "paymentAmountRequired": "El monto del pago es obligatorio.",
+      "paymentAmountPositive": "El monto del pago debe ser mayor que cero.",
+      "loanRequired": "Seleccione un préstamo."
+    },
+    "journalPreview": {
+      "title": "Resumen",
+      "debit": "Débito",
+      "credit": "Crédito",
+      "selectAccount": "Seleccionar cuenta",
+      "transactionType": "Tipo de transacción",
+      "loanTransaction": "Transacción de préstamo"
+    },
+    "paymentForm": {
+      "title": "Registrar pago de préstamo",
+      "description": "Aplique un pago a un préstamo de empleado y contabilice su asiento.",
+      "employee": "Empleado",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados",
+      "allocationMode": "Modo de aplicación",
+      "oldestFirst": "Más antiguo primero",
+      "specificLoan": "Préstamo específico",
+      "loan": "Préstamo",
+      "selectLoan": "Seleccionar préstamo",
+      "searchLoans": "Buscar préstamos",
+      "loanBalance": "Saldo {{amount}}",
+      "receivedAccount": "Cuenta de recepción del pago",
+      "selectReceivedAccount": "Seleccionar cuenta de recepción",
+      "searchAssetAccounts": "Buscar cuentas de activo",
+      "amount": "Monto del pago",
+      "allocation": "Aplicación del pago: {{allocation}}",
+      "allocationPart": "{{amount}} a {{loan}}",
+      "date": "Fecha",
+      "reference": "Número de referencia",
+      "optional": "Opcional",
+      "notes": "Descripción",
+      "notesPlaceholder": "Notas del pago",
+      "submit": "Registrar pago"
+    },
     "payments": {
       "title": "Pagos",
       "subtitle": "Todos los pagos de este préstamo",
@@ -945,13 +1197,67 @@
       "refresh": "Actualizar",
       "singleOpenBlocking": "Otro cuadre abierto (#{{id}} el {{date}}) impide crear uno nuevo. Ciérrelo primero e intente de nuevo.",
       "closeOther": "Cerrar el otro cuadre abierto"
+    },
+    "createForm": {
+      "title": "Crear préstamo",
+      "description": "Registre un préstamo de empleado, revise sus datos y contabilice el asiento.",
+      "steps": {
+        "employee": "Empleado",
+        "details": "Datos del préstamo",
+        "review": "Revisar"
+      },
+      "employeeHint": "Elija el empleado que recibirá este préstamo.",
+      "employee": "Empleado",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados",
+      "accounts": "Cuentas",
+      "loanAccount": "Cuenta de préstamo",
+      "sourceAccount": "Cuenta de activo de origen",
+      "selectLoanAccount": "Seleccionar cuenta de préstamo",
+      "searchLoanAccounts": "Buscar cuentas de préstamo",
+      "selectSourceAccount": "Seleccionar cuenta de activo de origen",
+      "searchAssetAccounts": "Buscar cuentas de activo",
+      "amountAndDate": "Monto y fecha",
+      "principal": "Monto principal",
+      "date": "Fecha de transacción",
+      "notes": "Referencia y notas",
+      "reference": "Número de referencia",
+      "optional": "Opcional",
+      "notesDescription": "Descripción",
+      "notesPlaceholder": "Motivo del préstamo o notas",
+      "journalSummary": "Resumen del asiento contable",
+      "debit": "Débito · Cuenta de préstamo",
+      "credit": "Crédito · Cuenta de activo de origen",
+      "closeoutRequired": "Se requiere un cierre activo de Ingresos diarios para la sucursal de la cuenta de préstamo seleccionada."
     }
   },
   "financialActivity": {
-    "title": "Actividad financiera pendiente",
-    "description": "Cobros, custodia de efectivo y pagos pendientes de todas las fechas.",
-    "employee": "Empleado",
+    "validation": {
+      "reasonRequired": "Se requiere un motivo.",
+      "amountPositive": "Ingrese un monto mayor que cero.",
+      "differentEmployees": "Seleccione empleados distintos para enviar y recibir."
+    },
+    "loadingDescription": "Cargando la actividad financiera pendiente y los montos pendientes.",
+    "title": "Transacciones pendientes",
+    "description": "Cobros, custodia de efectivo y pagos pendientes de conciliar de todas las fechas.",
+    "tabs": {
+      "label": "Tipos de transacciones pendientes",
+      "financial": "Financieras",
+      "inventory": "Inventario"
+    },
+    "employee": "Responsable",
     "branch": "Sucursal",
+    "allEmployees": "Todos los empleados",
+    "allBranches": "Todas las sucursales",
+    "selectEmployee": "Seleccionar empleado",
+    "selectBranch": "Seleccionar sucursal",
+    "searchEmployees": "Buscar empleados…",
+    "searchBranches": "Buscar sucursales…",
+    "noEmployeesFound": "No se encontraron empleados.",
+    "noBranchesFound": "No se encontraron sucursales.",
+    "searchMethods": "Buscar métodos de pago…",
+    "noMethodsFound": "No se encontraron métodos de pago.",
+    "additionalFilters": "Filtros adicionales",
     "from": "Fecha de transacción desde",
     "through": "Fecha de transacción hasta",
     "minimum": "Monto pendiente mínimo",
@@ -968,15 +1274,13 @@
     "loading": "Cargando actividad…",
     "previous": "Anterior",
     "next": "Siguiente",
-    "clearingHelp": "Confirme los pagos en sus directorios:",
     "checks": "Cheques",
     "deposits": "Depósitos",
     "cards": "Tarjetas de crédito",
     "historyHelp": "Los eventos de cobro y confirmación conservan la transacción y su cuadre original.",
-    "automation": "Calendario de cuadres",
-    "automationHelp": "Los cuadres se abren explícitamente. Solo RD solicita la moneda y la tasa de cambio. Las fechas usan la zona horaria de la sucursal.",
-    "enabled": "Activar los cuadres diarios automáticos",
     "timezone": "Zona horaria",
+    "searchTimezones": "Buscar región o ciudad…",
+    "noTimezonesFound": "No se encontraron zonas horarias.",
     "currency": "Moneda",
     "rate": "Tasa de cambio",
     "save": "Guardar",
@@ -996,12 +1300,262 @@
       "REJECTED": "Entrega rechazada",
       "REVERSED": "Asiento de reversión"
     },
-    "branchOverrides": "Zona horaria y moneda por sucursal",
-    "companyDefaults": "Usar valores de la empresa",
     "unknownCurrency": "Sin especificar",
     "noCurrentCloseout": "No hay un cuadre abierto para hoy. Abra el cuadre de hoy en Ingresos diarios y actualice. Solo RD solicita moneda y tasa de cambio.",
     "occurrenceDate": "Fecha real de la transacción",
     "refresh": "Actualizar",
-    "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos."
+    "postedImmutable": "Las transacciones registradas no se pueden editar. Use Transacciones pendientes para conciliación y ajustes permitidos.",
+    "dailyRoute": "Ruta diaria"
+  },
+  "pendingInventory": {
+    "title": "Transacciones pendientes",
+    "description": "Suministros despachados pendientes de conciliar de todas las fechas.",
+    "holder": "Custodio",
+    "allHolders": "Todos los custodios",
+    "selectHolder": "Seleccionar custodio",
+    "searchHolders": "Buscar custodios…",
+    "noHoldersFound": "No se encontraron custodios",
+    "from": "Despachado desde",
+    "through": "Despachado hasta",
+    "age": "Antigüedad mínima (días)",
+    "reset": "Restablecer",
+    "loading": "Cargando despachos pendientes…",
+    "loadingDescription": "Buscando despachos registrados con suministros que aún no se han conciliado.",
+    "empty": "No hay despachos pendientes de conciliar.",
+    "columns": {
+      "dispatchedAt": "Despachado",
+      "holder": "Custodio",
+      "responsible": "Responsable",
+      "dailyRoute": "Ruta diaria",
+      "items": "Artículos pendientes",
+      "dispatched": "Cant. despachada",
+      "awaiting": "Por confirmar",
+      "outstanding": "Cant. pendiente",
+      "age": "Antigüedad (días)",
+      "actions": "Acciones"
+    },
+    "moreItems": "+{{count}} más",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "reconcile": "Conciliar",
+    "view": "Ver",
+    "outcomes": {
+      "SOLD": "Vendido",
+      "RETURNED": "Devuelto",
+      "DAMAGED": "Dañado",
+      "LOST": "Perdido",
+      "MISSING": "Faltante",
+      "STOLEN": "Robado"
+    },
+    "resolutions": {
+      "QUARANTINE": "Cuarentena",
+      "WRITE_OFF": "Dar de baja"
+    },
+    "dialog": {
+      "title": "Conciliar despacho",
+      "description": "{{holder}} · Despachado {{date}}",
+      "dispatched": "Despachado",
+      "reconciled": "Conciliado",
+      "awaiting": "Por confirmar",
+      "outstanding": "Pendiente",
+      "history": "Historial de conciliación",
+      "loadingHistory": "Cargando historial de conciliación…",
+      "noHistory": "Aún no se ha conciliado nada de este despacho.",
+      "historyLine": "{{outcome}} {{quantity}} × {{item}}",
+      "occurredAt": "Conciliado el",
+      "notes": "Descripción",
+      "notesHint": "Explique lo ocurrido. Es obligatoria cuando hay suministros dañados, perdidos, faltantes o robados, o cuando parte de la venta queda a crédito.",
+      "lineSummary": "Pendiente {{outstanding}} · Restante {{remaining}}",
+      "returnRemaining": "Marcar restante como devuelto",
+      "revenue": "Ingreso por venta (USD)",
+      "damageResolution": "Suministros dañados",
+      "selectResolution": "Cuarentena o dar de baja",
+      "searchResolutions": "Buscar…",
+      "noResolutions": "No se encontraron opciones",
+      "save": "Enviar conciliación",
+      "saving": "Guardando…",
+      "saved": "Conciliación enviada. Pendiente de confirmación del almacén y del empleado / ruta.",
+      "readOnly": "Puede ver este despacho, pero no tiene permiso para conciliarlo.",
+      "salesRecorded": "Las ventas de este despacho ya se registraron en Ingresos diarios, por lo que aquí no se registran ingresos ni pagos.",
+      "incomeEmployee": "El ingreso se asigna a",
+      "selectIncomeEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados…",
+      "noEmployees": "No se encontraron empleados",
+      "incomeRoles": {
+        "SUPERVISOR": "Supervisor de ruta",
+        "RESPONSIBLE": "Empleado responsable",
+        "HOLDER": "Custodio"
+      },
+      "incomeTo": "Ingreso asignado a {{name}}",
+      "payments": "Pagos",
+      "paymentsHint": "Divida lo cobrado según el método de pago. El ingreso no pagado queda a crédito y debe cobrarse después.",
+      "paymentNumber": "Pago {{number}}",
+      "addPayment": "Agregar pago",
+      "removePayment": "Quitar pago",
+      "paymentMethod": "Método de pago",
+      "selectPaymentMethod": "Seleccionar método",
+      "searchPaymentMethods": "Buscar métodos…",
+      "noPaymentMethods": "No se encontraron métodos de pago",
+      "amount": "Monto (USD)",
+      "bankAccount": "Cuenta bancaria",
+      "selectBankAccount": "Seleccionar cuenta bancaria",
+      "searchBankAccounts": "Buscar cuentas bancarias…",
+      "noBankAccounts": "No se encontraron cuentas bancarias",
+      "checkNumber": "Número de cheque",
+      "checkNumberValue": "Cheque n.º {{number}}",
+      "externalReference": "Referencia / n.º de confirmación",
+      "paymentTotals": "Pagos {{paid}} de {{revenue}} en ventas",
+      "onCredit": "A crédito {{amount}}",
+      "statuses": {
+        "PENDING_CONFIRMATION": "Pendiente de confirmación",
+        "CONFIRMED": "Confirmada",
+        "REJECTED": "Rechazada"
+      }
+    },
+    "errors": {
+      "occurredAt": "Indique cuándo ocurrió la conciliación.",
+      "quantity": "Ingrese números enteros de 0 o más.",
+      "exceeds": "Las cantidades suman más que la cantidad pendiente.",
+      "revenue": "Ingrese el ingreso por venta en USD, por ejemplo 120.00.",
+      "resolution": "Elija si los suministros dañados van a cuarentena o se dan de baja.",
+      "nothing": "Ingrese al menos una cantidad para conciliar.",
+      "notesRequired": "Describa qué pasó con los suministros dañados, perdidos, faltantes o robados.",
+      "paymentMethod": "Elija un método de pago.",
+      "paymentAmount": "Ingrese un monto mayor que 0, por ejemplo 40.00.",
+      "paymentAccount": "Elija la cuenta bancaria de este pago.",
+      "checkNumber": "Ingrese el número de cheque.",
+      "paymentExceeds": "Los pagos suman más que el ingreso por venta.",
+      "incomeEmployee": "Elija quién recibe el ingreso.",
+      "creditNotesRequired": "Parte de la venta queda a crédito. Indique quién la debe y cuándo se cobrará."
+    }
+  },
+  "pendingTransactions": {
+    "description": "Transacciones pendientes de todos los cierres por conciliar.",
+    "selectedTitle": "Transacciones seleccionadas",
+    "clearSelection": "Limpiar selección",
+    "reconcileSelected": "Conciliar seleccionadas",
+    "selectionHelp": "Seleccione hasta 200 transacciones con el mismo método de pago, entre páginas. Seleccionar todo agrega las filas compatibles de esta página. Los totales se muestran por moneda.",
+    "confirmDescription": "Revise las transacciones seleccionadas y los totales. La conciliación es definitiva y libera la responsabilidad del empleado. No cambia los pagos ni los saldos de las facturas.",
+    "confirm": "Conciliar todas las seleccionadas",
+    "cancel": "Cancelar",
+    "reconciling": "Conciliando…",
+    "summaryLoading": "Cargando totales seleccionados…",
+    "retry": "Reintentar",
+    "unknownCurrency": "Moneda desconocida",
+    "loading": "Cargando transacciones pendientes…",
+    "empty": "No hay transacciones pendientes que coincidan con los filtros."
+  },
+  "journalReconciliation": {
+    "title": "Transacciones pendientes",
+    "description": "Asientos pendientes de todos los cierres. Concilia después de recibir ingresos o aprobar gastos. Los pagos se aplican a las facturas al registrarlos.",
+    "createdAt": "Creado el",
+    "status": "Conciliación",
+    "OUTSTANDING": "Pendiente",
+    "RECONCILED": "Conciliado",
+    "matchingTotals": "Todas las transacciones filtradas",
+    "selectedTotals": "Transacciones seleccionadas",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "net": "Ingreso neto",
+    "selectedCount": "Seleccionadas:",
+    "totalCount": "Transacciones:",
+    "clearSelection": "Quitar selección",
+    "reconcileSelected": "Conciliar selección",
+    "sameMethod": "Selecciona hasta 200 transacciones con el mismo método de pago.",
+    "confirmTitle": "¿Conciliar las transacciones seleccionadas?",
+    "confirmDescription": "Confirma que se recibió el ingreso o se aprobó el gasto. Libera la responsabilidad del encargado y es definitivo. Los pagos y saldos de facturas no cambian.",
+    "pendingAlert": "{{count}} transacciones pendientes",
+    "fields": {
+      "invoice": {
+        "number": {
+          "label": "Factura #",
+          "placeholder": "Factura #"
+        },
+        "cost": {
+          "label": "Costo",
+          "placeholder": "Costo"
+        },
+        "payment": {
+          "label": "Pago de factura",
+          "placeholder": "Pago de factura"
+        },
+        "balance": {
+          "label": "Saldo",
+          "placeholder": "Saldo"
+        }
+      },
+      "createdBy": {
+        "name": {
+          "label": "Usuario",
+          "placeholder": "Usuario"
+        }
+      },
+      "accounts": {
+        "name": {
+          "label": "Cuenta",
+          "placeholder": "Cuenta"
+        }
+      },
+      "employee": {
+        "name": {
+          "label": "Empleado",
+          "placeholder": "Empleado"
+        },
+        "id": {
+          "label": "ID de empleado",
+          "placeholder": "ID de empleado"
+        }
+      },
+      "paymentReference": {
+        "label": "Número de cheque",
+        "placeholder": "Número de cheque"
+      },
+      "external_reference_number": {
+        "label": "Referencia externa",
+        "placeholder": "Referencia externa"
+      },
+      "refNumber": {
+        "label": "Referencia interna",
+        "placeholder": "Referencia interna"
+      },
+      "incomeStatement": {
+        "id": {
+          "label": "Cierre",
+          "placeholder": "Cierre"
+        }
+      },
+      "transactionAmount": {
+        "label": "Monto",
+        "placeholder": "Monto"
+      },
+      "date": {
+        "label": "Fecha",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "dateRange": {
+        "label": "Rango de fechas",
+        "placeholder": "YYYY-MM-DD to YYYY-MM-DD"
+      },
+      "transactionType": {
+        "label": "Transacción",
+        "placeholder": "Transacción"
+      },
+      "paymentMethod": {
+        "name": {
+          "label": "Método de pago",
+          "placeholder": "Método de pago"
+        }
+      },
+      "reconciliationStatus": {
+        "label": "Conciliación",
+        "placeholder": "Conciliación"
+      },
+      "branch": {
+        "id": {
+          "label": "ID de sucursal",
+          "placeholder": "ID de sucursal"
+        }
+      }
+    }
   }
 }

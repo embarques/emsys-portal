@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Truck } from "lucide-react";
 
+import { InventoryConfirmationDialog } from "@/components/inventory/inventory-confirmation-dialog";
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
 import { InventoryDispatchViewSheet } from "@/components/inventory/inventory-dispatch-view-sheet";
 import { InventoryDocumentCommandDialog, type InventoryDocumentCommand } from "@/components/inventory/inventory-document-command-dialog";
@@ -46,14 +47,17 @@ import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCancelDispatch,
+  useConfirmDispatch,
   useCreateDispatch,
   useInventoryDirectoryPage,
   useInventoryDispatches,
   useInventoryHolders,
   useInventoryItems,
   usePostDispatch,
+  useRejectDispatch,
   useUpdateDispatch,
 } from "@/lib/inventory/hooks/use-inventory";
+import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import {
   dispatchToFormValues,
   sumLineQuantities,
@@ -63,6 +67,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -80,15 +85,19 @@ export function InventoryDispatchesWorkspace() {
   const updateDispatch = useUpdateDispatch();
   const postDispatch = usePostDispatch();
   const cancelDispatch = useCancelDispatch();
+  const confirmDispatch = useConfirmDispatch();
+  const rejectDispatch = useRejectDispatch();
   const canCreate = hasPermission(PERMISSIONS.inventoryDispatchesCreate.name, PERMISSIONS.inventoryDispatchesCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.inventoryDispatchesUpdate.name, PERMISSIONS.inventoryDispatchesUpdate.resourceType);
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS.sort, () => setPage(1));
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingDispatch, setEditingDispatch] = useState<InventoryDispatch | null>(null);
   const [viewDispatch, setViewDispatch] = useState<InventoryDispatch | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ command: InventoryDocumentCommand; dispatch: InventoryDispatch } | null>(null);
+  const [confirmationTarget, setConfirmationTarget] = useState<{ action: ConfirmationActionOption; dispatch: InventoryDispatch } | null>(null);
 
   const employeeNames = useMemo(
     () => new Map((employeesQuery.data?.items ?? []).map((employee) => [String(employee.id), employee.name])),
@@ -121,6 +130,7 @@ export function InventoryDispatchesWorkspace() {
       ...DEFAULT_INVENTORY_DISPATCH_LIST_PARAMS,
       page,
       limit: pageLimit,
+      sort,
       search: createInventorySearchFilter(debouncedQuery),
       searchReferenceMatches: holderIds.length
         ? [
@@ -130,7 +140,7 @@ export function InventoryDispatchesWorkspace() {
         : undefined,
       ...(filterRows.length ? { filterRows } : {}),
     };
-  }, [debouncedQuery, filterRows, holders, page, pageLimit]);
+  }, [debouncedQuery, filterRows, holders, page, pageLimit, sort]);
   const directoryQuery = useInventoryDirectoryPage("dispatches", directoryParams);
   const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);
   const totalMatched = directoryQuery.data?.total ?? 0;
@@ -144,6 +154,7 @@ export function InventoryDispatchesWorkspace() {
       ? toErrorMessage(error)
       : null;
   const commandPending = postDispatch.isPending || cancelDispatch.isPending;
+  const confirmationPending = confirmDispatch.isPending || rejectDispatch.isPending;
   const editingDispatchValues = useMemo(() => (editingDispatch ? dispatchToFormValues(editingDispatch) : undefined), [editingDispatch]);
 
   function openAddForm() {
@@ -198,23 +209,45 @@ export function InventoryDispatchesWorkspace() {
     }
   }
 
+  async function submitConfirmation(action: ConfirmationActionOption, text: string) {
+    if (!confirmationTarget) return;
+    const command = { ref: confirmationTarget.dispatch, party: action.party, text };
+    try {
+      if (action.kind === "confirm") {
+        await confirmDispatch.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.confirmed"));
+      } else {
+        await rejectDispatch.mutateAsync(command);
+        notifySuccess(t("inventory.confirmations.rejected"));
+      }
+      setConfirmationTarget(null);
+      setViewDispatch(null);
+    } catch (mutationError) {
+      notifyError(toErrorMessage(mutationError));
+    }
+  }
+
+  const confirmationLabel = confirmationTarget ? getHolderNameById(confirmationTarget.dispatch.toHolderId, holders) : "";
+
   const columns: DataTableColumn<InventoryDispatch>[] = [
     {
       id: "toHolder",
       label: t("inventory.form.fields.toHolder"),
+      sortable: false,
       cellClassName: "font-medium",
       renderCell: (row) => getHolderNameById(row.toHolderId, holders) || dash,
     },
-    { id: "fromHolder", label: t("inventory.form.fields.fromHolder"), renderCell: (row) => getHolderNameById(row.fromHolderId, holders) || dash },
-    { id: "lines", label: t("inventory.columns.lines"), renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
-    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
+    { id: "fromHolder", label: t("inventory.form.fields.fromHolder"), sortable: false, renderCell: (row) => getHolderNameById(row.fromHolderId, holders) || dash },
+    { id: "lines", label: t("inventory.columns.lines"), sortable: false, renderCell: (row) => summarizeDocumentLines(row.lines, items) || dash },
+    { id: "totalQuantity", label: t("inventory.columns.totalQuantity"), sortable: false, cellClassName: "tabular-nums", renderCell: (row) => sumLineQuantities(row.lines) },
     {
       id: "assignee",
       label: t("inventory.form.fields.assigneeEmployee"),
       defaultVisible: false,
+      sortable: false,
       renderCell: (row) => (row.assigneeEmployeeId ? employeeNames.get(row.assigneeEmployeeId) ?? row.assigneeEmployeeId : dash),
     },
-    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDateTime(row.dispatchedAt) },
+    { id: "date", label: t("inventory.columns.date"), sortField: "dispatchedAt", renderCell: (row) => formatInventoryDateTime(row.dispatchedAt) },
     { id: "status", label: t("inventory.columns.status"), renderCell: (row) => <InventoryDocumentStatusBadge status={row.status} /> },
   ];
 
@@ -340,7 +373,8 @@ export function InventoryDispatchesWorkspace() {
             rowKey={(row) => row.id}
             rowLabel={(row) => getHolderNameById(row.toHolderId, holders)}
             columnLayout={columnVisibility}
-            sortUnavailable
+            sort={sort}
+            onSortChange={onSortChange}
             minWidth={960}
             onRowClick={setViewDispatch}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
@@ -371,11 +405,26 @@ export function InventoryDispatchesWorkspace() {
         holders={holders}
         employeeName={(employeeId) => employeeNames.get(employeeId) ?? employeeId}
         open={Boolean(viewDispatch)}
-        isBusy={commandPending}
+        isBusy={commandPending || confirmationPending}
         onOpenChange={(open) => !open && setViewDispatch(null)}
         onEdit={canUpdate ? openEditForm : undefined}
         onPost={canUpdate ? (dispatch) => setCommandTarget({ command: "post", dispatch }) : undefined}
         onCancelDraft={canUpdate ? (dispatch) => setCommandTarget({ command: "cancel", dispatch }) : undefined}
+        onConfirmationAction={(dispatch, action) => setConfirmationTarget({ dispatch, action })}
+      />
+
+      <InventoryConfirmationDialog
+        action={confirmationTarget?.action ?? null}
+        subject="dispatch"
+        description={confirmationTarget
+          ? t(confirmationTarget.action.kind === "reject"
+            ? "inventory.confirmations.dispatch.reject"
+            : `inventory.confirmations.dispatch.${confirmationTarget.action.party}`, { name: confirmationLabel })
+          : ""}
+        note={confirmationTarget?.action.kind === "confirm" ? t("inventory.confirmations.dispatch.final") : undefined}
+        isPending={confirmationPending}
+        onSubmit={submitConfirmation}
+        onOpenChange={(open) => !open && setConfirmationTarget(null)}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>

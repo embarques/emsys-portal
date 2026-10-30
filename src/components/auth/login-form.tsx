@@ -9,8 +9,10 @@ import { EmsysLogo } from "@/components/brand/emsys-logo";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { useTranslation } from "@/lib/i18n";
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { signIn, isAuthenticated, loading } = useAuth();
   const [email, setEmail] = useState("");
@@ -36,7 +38,7 @@ export function LoginForm() {
       router.replace("/");
     } catch (err: unknown) {
       console.error(err);
-      setError("Invalid email or password.");
+      setError(t("shell.auth.invalidCredentials"));
     } finally {
       setIsLoading(false);
     }
@@ -56,16 +58,16 @@ export function LoginForm() {
           <div className="mx-auto mb-4 flex justify-center">
             <EmsysLogo variant="full" className="mx-auto" priority />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Sign in to EMSYS</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">{t("shell.auth.title")}</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Enter your credentials to access the portal.
+            {t("shell.auth.description")}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-slate-200">
-              Email
+              {t("shell.auth.email")}
             </label>
             <input
               id="email"
@@ -81,7 +83,7 @@ export function LoginForm() {
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-slate-200">
-              Password
+              {t("shell.auth.password")}
             </label>
             <div className="relative">
               <input
@@ -98,7 +100,7 @@ export function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword((value) => !value)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("shell.auth.hidePassword") : t("shell.auth.showPassword")}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -112,11 +114,11 @@ export function LoginForm() {
           ) : null}
 
           <Button type="submit" className="sticky bottom-0 z-10 w-full" disabled={busy}>
-            {busy ? "Signing in..." : "Sign in"}
+            {busy ? t("shell.auth.signingIn") : t("shell.auth.signIn")}
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-slate-500">Secure access powered by Firebase</p>
+        <p className="mt-6 text-center text-xs text-slate-500">{t("shell.auth.poweredBy")}</p>
       </div>
     </div>
   );

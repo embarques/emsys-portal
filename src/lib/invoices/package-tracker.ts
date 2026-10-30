@@ -1,4 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import type { Invoice } from "@/lib/invoices/types";
 
 export type InvoicePackageTrackerEntry = {
@@ -9,7 +10,10 @@ export type InvoicePackageTrackerEntry = {
   success?: boolean;
 };
 
-export function buildInvoicePackageTrackerEntries(invoice: Invoice): InvoicePackageTrackerEntry[] {
+export function buildInvoicePackageTrackerEntries(
+  invoice: Invoice,
+  t: TranslateFn,
+): InvoicePackageTrackerEntry[] {
   const entries: InvoicePackageTrackerEntry[] = [];
 
   for (const item of invoice.lineItems) {
@@ -24,7 +28,10 @@ export function buildInvoicePackageTrackerEntries(invoice: Invoice): InvoicePack
           id: `${barcode.id}-created`,
           timestamp: createdAt,
           performedBy,
-          description: `Label ${barcode.number} created for ${item.itemName}.`,
+          description: t("invoices.view.packageTracker.messages.labelCreated", {
+            number: barcode.number,
+            item: item.itemName,
+          }),
           success: true,
         });
       }
@@ -35,8 +42,11 @@ export function buildInvoicePackageTrackerEntries(invoice: Invoice): InvoicePack
           timestamp: scanDate,
           performedBy,
           description: status
-            ? `Barcode ${barcode.number} scanned — ${status}.`
-            : `Barcode ${barcode.number} scanned.`,
+            ? t("invoices.view.packageTracker.messages.scannedWithStatus", {
+                number: barcode.number,
+                status,
+              })
+            : t("invoices.view.packageTracker.messages.scanned", { number: barcode.number }),
           success: true,
         });
       } else if (!createdAt && status) {
@@ -44,7 +54,10 @@ export function buildInvoicePackageTrackerEntries(invoice: Invoice): InvoicePack
           id: `${barcode.id}-status`,
           timestamp: invoice.updatedAt || invoice.createdAt,
           performedBy,
-          description: `Barcode ${barcode.number} status: ${status}.`,
+          description: t("invoices.view.packageTracker.messages.status", {
+            number: barcode.number,
+            status,
+          }),
           success: true,
         });
       }

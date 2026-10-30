@@ -5,7 +5,6 @@ import { AlertCircle, CheckCircle2, Info, Loader2, Plus, RefreshCw, Wallet } fro
 import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from "react";
 import { useForm } from "react-hook-form";
 
-import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,15 +28,13 @@ import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { type InvoiceDailyIncomeContext } from "@/lib/invoices/invoice-daily-income-context";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
-  isInvoiceEmployeePickupSource,
   mapPaymentLocationToPaidRegion,
   type InvoiceFormValues,
   type InvoicePaymentLocation,
 } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
-import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
-import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
+import { useOpenInvoiceCloseout } from "@/lib/invoices/hooks/use-open-invoice-closeout";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -89,10 +86,12 @@ function PendingPaymentBranchField({
   );
 }
 
-function MobileCreateDailyIncomePage({
+function CloseoutCurrencyForm({
+  canCreate,
   date,
   onCreated,
 }: {
+  canCreate: boolean;
   date: string;
   onCreated: (statement: DailyIncomeStatement) => void | Promise<void>;
 }) {
@@ -129,11 +128,6 @@ function MobileCreateDailyIncomePage({
   const showExchangeRate = selectedStatementBranch?.code.trim().toUpperCase() === "RD";
   const errors = form.formState.errors;
   const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
-  const branchOptions = branches.map((branch) => ({
-    value: String(branch.id),
-    label: `${branch.code} — ${branch.name}`,
-    keywords: [branch.code, branch.name],
-  }));
 
   useEffect(() => {
     const userBranch = currentUserQuery.data?.branch;
@@ -157,6 +151,7 @@ function MobileCreateDailyIncomePage({
   }, [form, showExchangeRate]);
 
   async function createDailyIncome(values: DailyIncomeStatementValues) {
+    if (!canCreate || createStatement.isPending) return;
     try {
       setStatementError(null);
       const created = await createStatement.mutateAsync(showExchangeRate ? values : { ...values, currency: "USD", rate: 1 });
@@ -181,35 +176,6 @@ function MobileCreateDailyIncomePage({
       </div>
 
       <form className="space-y-5" onKeyDown={navigateOnEnter} onSubmit={form.handleSubmit(createDailyIncome)}>
-        <div className="space-y-2" data-invoice-wizard-focus="daily-income">
-          <Label htmlFor="invoice-mobile-statement-branch">
-            {t("invoices.wizard.dailyIncome.dialog.branch")}
-          </Label>
-          <SearchableSelect
-            id="invoice-mobile-statement-branch"
-            disabled
-            value={statementBranchId ? String(statementBranchId) : ""}
-            onValueChange={(next) => {
-              const branch = branches.find((item) => item.id === Number(next));
-              form.setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
-              form.setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
-              form.setValue("branchName", branch?.name ?? "", { shouldValidate: true });
-            }}
-            options={branchOptions}
-            loading={branchesQuery.isLoading}
-            placeholder={t("invoices.wizard.dailyIncome.dialog.selectBranch")}
-            searchPlaceholder={t("invoices.wizard.dailyIncome.dialog.searchBranches")}
-            mobileSheet
-          />
-          {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="invoice-mobile-statement-date">{t("invoices.form.fields.date")}</Label>
-          <Input id="invoice-mobile-statement-date" value={date} readOnly disabled />
-          {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
-        </div>
-
         {showExchangeRate ? (
           <div className="space-y-2">
             <Label htmlFor="invoice-mobile-statement-currency">
@@ -253,6 +219,7 @@ function MobileCreateDailyIncomePage({
           type="submit"
           className="sticky bottom-0 z-10 h-12 w-full rounded-xl text-base font-semibold"
           disabled={
+            !canCreate ||
             createStatement.isPending ||
             currentUserQuery.isLoading ||
             branchesQuery.isLoading
@@ -277,16 +244,17 @@ export function InvoiceDailyIncomeStep({
 }: Props) {
   const { t } = useTranslation();
   const isMobileLayout = useIsMobileViewport();
-  const [dialogOpen, setDialogOpen] = useState(false);
+
   const paymentLocationField = (
     <PendingPaymentBranchField
       value={values.paymentLocation}
       onChange={onPaymentLocationChange}
     />
   );
-  const [statusError, setStatusError] = useState<string | null>(null);
+
   const [localRegistration, setLocalRegistration] = useState<DailyIncomeJournal | null>(null);
   const [localStatement, setLocalStatement] = useState<DailyIncomeStatement | null>(null);
+  const [skipPayment, setSkipPayment] = useState(true);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
   const closeoutCalendar = useCloseoutCalendar(branchId);
@@ -295,9 +263,11 @@ export function InvoiceDailyIncomeStep({
   const registration = registrationQuery.data ?? localRegistration;
   const statementQuery = useCurrentIncomeStatement(branchId);
   const statement = localStatement ?? statementQuery.data ?? null;
-  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
-    enabled: values.pickupSource === "route" && Boolean(values.routeId),
-  });
+  const openCloseout = useOpenInvoiceCloseout(branchId, setLocalStatement);
+  const statusError = openCloseout.error;
+  const branchesQuery = useBranchPicker(200);
+  const currentBranch = branchesQuery.data?.items.find((branch) => branch.id === branchId);
+  const needsCurrency = currentBranch?.code.trim().toUpperCase() === "RD";
 
   useEffect(() => {
     setLocalRegistration((current) => current?.invoice?.number === values.invoiceNumber ? current : null);
@@ -309,27 +279,6 @@ export function InvoiceDailyIncomeStep({
 
   const statementOpen = statement?.status === "OPEN";
   const associatedStatementId = statementOpen && statement ? statement.id : null;
-
-  const pickupAssignmentLabel = useMemo(() => {
-    if (isInvoiceEmployeePickupSource(values.pickupSource)) {
-      const employee = values.pickupEmployeeName.trim() || values.pickupEmployeeId;
-      if (!employee) return null;
-      const branch = values.officeBranchName.trim();
-      return branch ? `${employee} · ${branch}` : employee;
-    }
-
-    if (!values.routeId) return null;
-    const route = (pickupRoutesQuery.data?.items ?? []).find((entry) => entry.id === values.routeId);
-    return route ? formatActiveRouteAssignmentLabel(route, t) : values.routeId;
-  }, [
-    pickupRoutesQuery.data?.items,
-    t,
-    values.officeBranchName,
-    values.pickupEmployeeId,
-    values.pickupEmployeeName,
-    values.pickupSource,
-    values.routeId,
-  ]);
 
   useEffect(() => {
     // New invoices often have no number yet (auto-generate), so the registration
@@ -406,21 +355,37 @@ export function InvoiceDailyIncomeStep({
 
   const paymentForm = statement && statementOpen ? (
     <div className="space-y-3" data-invoice-wizard-focus="daily-income">
-      <p className={cn("leading-relaxed text-muted-foreground", isMobileLayout ? "text-base" : "text-sm")}>
-        {t("invoices.wizard.dailyIncome.unpaidContinueHint", { id: statement.id })}
-      </p>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+        <Label className="flex items-center gap-3">
+          <input
+            id="invoice-skip-payment"
+            type="checkbox"
+            className="size-4"
+            checked={skipPayment}
+            onChange={(event) => setSkipPayment(event.target.checked)}
+          />
+          <span className={cn("font-medium text-foreground", isMobileLayout ? "text-base" : "text-sm")}>
+            {t("invoices.wizard.dailyIncome.skipPayment")}
+          </span>
+        </Label>
+        <p className={cn("mt-2 leading-relaxed text-muted-foreground", isMobileLayout ? "text-base" : "text-sm")}>
+          {t(skipPayment
+            ? "invoices.wizard.dailyIncome.skipPaymentHint"
+            : "invoices.wizard.dailyIncome.unpaidContinueHint")}
+        </p>
+      </div>
       <InvoicePaymentTransactionForm
         statement={statement}
         invoice={values}
         onRegistered={handlePaymentPosted}
         onSkip={skipPaymentAndContinue}
         submitRef={paymentSubmitRef}
+        skipPayment={skipPayment}
       />
     </div>
   ) : null;
 
   async function handleStatementCreated(created?: DailyIncomeStatement) {
-    setStatusError(null);
     if (created) {
       setLocalStatement(created);
     }
@@ -428,7 +393,6 @@ export function InvoiceDailyIncomeStep({
   }
 
   async function refreshStatus() {
-    setStatusError(null);
     await Promise.all([registrationQuery.refetch(), statementQuery.refetch()]);
   }
 
@@ -501,15 +465,6 @@ export function InvoiceDailyIncomeStep({
       );
     }
 
-    if (!statement) {
-      return (
-        <div className="space-y-5">
-          {paymentLocationField}
-          <MobileCreateDailyIncomePage date={currentDate} onCreated={handleStatementCreated} />
-        </div>
-      );
-    }
-
     if (!statementOpen) {
       return (
         <div className="space-y-5">
@@ -524,21 +479,25 @@ export function InvoiceDailyIncomeStep({
               </p>
               {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
             </div>
+            {needsCurrency ? <CloseoutCurrencyForm canCreate={openCloseout.canCreate} date={currentDate} onCreated={handleStatementCreated} /> : (
             <div className="mt-4 flex gap-2">
               <Button
                 type="button"
                 className="h-11 flex-1 rounded-xl"
-                onClick={() => setDialogOpen(true)}
+                onClick={() => void openCloseout.open()}
+                disabled={openCloseout.isPending || !openCloseout.canCreate || !currentBranch}
 
                 data-invoice-wizard-focus="daily-income"
               >
-                {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
+                {t(openCloseout.isPending ? "invoices.wizard.dailyIncome.dialog.creating" : "invoices.wizard.dailyIncome.dialog.createDailyIncome")}
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
                 <RefreshCw className="size-4" />
               </Button>
             </div>
+            )}
           </div>
+
         </div>
       );
     }
@@ -546,38 +505,6 @@ export function InvoiceDailyIncomeStep({
     return (
       <div className="space-y-5">
         {paymentLocationField}
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-foreground">
-                {t("invoices.wizard.dailyIncome.openAssociated")}
-              </p>
-              <p className="mt-2 text-base leading-relaxed text-muted-foreground">
-                {t("invoices.wizard.dailyIncome.openAssociatedHint", { id: statement.id })}
-              </p>
-              <p className="mt-3 text-sm leading-snug text-muted-foreground">
-                {t("invoices.wizard.dailyIncome.incomeStatement", { id: statement.id })}
-                {" · "}
-                {statement.date}
-                {" · "}
-                {statement.branch?.name ||
-                  statement.branch?.code ||
-                  t("invoices.wizard.dailyIncome.dialog.currentBranch")}
-                {pickupAssignmentLabel ? (
-                  <>
-                    {" · "}
-                    {pickupAssignmentLabel}
-                  </>
-                ) : null}
-              </p>
-            </div>
-            <Button type="button" variant="ghost" size="sm" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
-              <RefreshCw className="size-4" />
-              {t("invoices.wizard.dailyIncome.refresh")}
-            </Button>
-          </div>
-        </div>
-
         {paymentForm}
       </div>
     );
@@ -676,42 +603,7 @@ export function InvoiceDailyIncomeStep({
       {!queryError && !registration ? (
         <div className="space-y-4">
           {statementOpen && statement ? (
-            <>
-              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-sm font-semibold">
-                      {t("invoices.wizard.dailyIncome.openAssociated")}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("invoices.wizard.dailyIncome.openAssociatedHint", { id: statement.id })}
-                    </p>
-                    <div className="pt-1 text-xs text-muted-foreground">
-                      {t("invoices.wizard.dailyIncome.incomeStatement", { id: statement.id })}
-                      {" · "}
-                      {statement.date}
-                      {" · "}
-                      {statement.branch?.name ||
-                        statement.branch?.code ||
-                        t("invoices.wizard.dailyIncome.dialog.currentBranch")}
-                      {pickupAssignmentLabel ? (
-                        <>
-                          {" · "}
-                          {pickupAssignmentLabel}
-                        </>
-                      ) : null}
-                    </div>
-                    {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
-                  </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={refreshStatus} aria-label={t("invoices.wizard.dailyIncome.refresh")}>
-                    <RefreshCw className="size-4" />
-                    {t("invoices.wizard.dailyIncome.refresh")}
-                  </Button>
-                </div>
-              </div>
-
-              {paymentForm}
-            </>
+            paymentForm
           ) : (
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <div className="flex items-start gap-4 p-5 sm:p-6">
@@ -730,26 +622,17 @@ export function InvoiceDailyIncomeStep({
                       : "invoices.wizard.dailyIncome.setupHint")}
                   </p>
                   {statusError ? <p role="alert" className="mt-3 text-sm text-destructive">{statusError}</p> : null}
+                  {needsCurrency ? <CloseoutCurrencyForm canCreate={openCloseout.canCreate} date={currentDate} onCreated={handleStatementCreated} /> : (
                   <div className="mt-5 flex flex-wrap items-center gap-2">
-                    {statement?.status === "CLOSED" ? (
-                      <Button
-                        type="button"
-                        onClick={() => setDialogOpen(true)}
-
-                        data-invoice-wizard-focus="daily-income"
-                      >
-                        {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={() => setDialogOpen(true)}
-                        data-invoice-wizard-focus="daily-income"
-                      >
-                        <Plus className="size-4" aria-hidden="true" />
-                        {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      onClick={() => void openCloseout.open()}
+                      disabled={openCloseout.isPending || !openCloseout.canCreate || !currentBranch}
+                      data-invoice-wizard-focus="daily-income"
+                    >
+                      {openCloseout.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" aria-hidden="true" />}
+                      {t(openCloseout.isPending ? "invoices.wizard.dailyIncome.dialog.creating" : "invoices.wizard.dailyIncome.dialog.createDailyIncome")}
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
@@ -760,6 +643,7 @@ export function InvoiceDailyIncomeStep({
                       {t("invoices.wizard.dailyIncome.refresh")}
                     </Button>
                   </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-start gap-2 border-t border-border bg-muted/30 px-5 py-3 sm:px-6">
@@ -773,7 +657,7 @@ export function InvoiceDailyIncomeStep({
         </div>
       ) : null}
 
-      {dialogOpen ? <CloseoutRolloverDialog open onOpenChange={setDialogOpen} onReady={handleStatementCreated} /> : null}
+
     </div>
   );
 }

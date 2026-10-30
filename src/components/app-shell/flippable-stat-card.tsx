@@ -11,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type StatCardDetail = {
@@ -62,6 +63,7 @@ export function FlippableStatCard({
   icon: Icon,
   details,
 }: FlippableStatCardProps) {
+  const { t } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
   const hasDetails = Boolean(details?.length);
 
@@ -91,7 +93,7 @@ export function FlippableStatCard({
             {hasDetails ? (
               <FlipAction
                 icon={Info}
-                label={`View ${label} details`}
+                label={t("shell.statCards.viewDetails", { label })}
                 onClick={() => setShowDetails(true)}
                 tabIndex={showDetails ? -1 : 0}
               />
@@ -104,7 +106,7 @@ export function FlippableStatCard({
             className="absolute inset-0 h-full gap-2 py-4 [backface-visibility:hidden] [transform:rotateY(180deg)]"
           >
             <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-5">
-              <CardTitle className="min-w-0 truncate text-sm font-semibold">{label} details</CardTitle>
+              <CardTitle className="min-w-0 truncate text-sm font-semibold">{t("shell.statCards.detailsTitle", { label })}</CardTitle>
               <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
                 {value}
               </span>
@@ -127,7 +129,7 @@ export function FlippableStatCard({
             </CardContent>
             <FlipAction
               icon={ArrowLeft}
-              label={`Back to ${label} summary`}
+              label={t("shell.statCards.backToSummary", { label })}
               onClick={() => setShowDetails(false)}
               tabIndex={showDetails ? 0 : -1}
             />

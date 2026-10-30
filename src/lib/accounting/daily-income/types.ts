@@ -1,3 +1,4 @@
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { DailyIncomeRefNumberMode } from "@/lib/accounting/daily-income/ref-number";
 
@@ -84,8 +85,38 @@ export type DailyIncomeAssigneeSource = "employee" | "route";
 
 export type InventoryChangeDirection = "received" | "dispatched";
 
+export type InventoryHolderEmployeeRef = { id: number; name: string };
+
+export type InventoryHolderVehicleRef = { id: string; name: string };
+
+/**
+ * Holders jointly accountable for one inventory assignment. Quantities are counted
+ * once for the assignment, never once per holder.
+ */
+export type InventoryHoldersRef = {
+  vehicle: InventoryHolderVehicleRef | null;
+  employees: InventoryHolderEmployeeRef[];
+};
+
+/** Daily route captured on a record for analytics; never a source of accountability. */
+export type DailyRouteAttribution = {
+  id: string;
+  name: string;
+  date?: string;
+  vehicle?: { id: string; name: string } | null;
+  supervisor?: { id: number; name: string } | null;
+  driver?: { id: number; name: string } | null;
+  helpers?: Array<{ id: number; name: string }>;
+};
+
 export type DailyIncomeJournal = ApiTableRecord & {
   id: string;
+  reconciliationStatus?: "OUTSTANDING" | "RECONCILED";
+  reconciledAt?: string | null;
+  reconciledBy?: {id: string | number; name: string} | null;
+  autoReconciled?: boolean;
+  reversedAt?: string | null;
+  reversalOf?: string | null;
   incomeStatementId: number;
   date: string;
   transactionType: JournalTransactionType;
@@ -95,10 +126,13 @@ export type DailyIncomeJournal = ApiTableRecord & {
   description: string;
   currency: string;
   rate: number;
+  /** Financially accountable employee; the responsible supervisor on daily-route journals. */
   employee?: AccountingLookup;
   employeeGroup?: DailyIncomePartyRef;
-  /** Daily vehicle-route when the journal is posted under a route instead of an employee. */
+  /** Daily vehicle-route the journal is attributed to for analytics. */
   route?: DailyIncomePartyRef;
+  /** API snapshot of the daily route at recording time (date, vehicle and crew roles). */
+  dailyRoute?: DailyRouteAttribution;
   account?: AccountingLookup;
   paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
@@ -128,6 +162,7 @@ export type DailyIncomeJournal = ApiTableRecord & {
   inventoryTotal?: number;
   inventorySupplierId?: string;
   inventorySupplierName?: string;
+  inventoryHolders?: InventoryHoldersRef;
   accounts: Array<{
     id: number;
     name: string;
@@ -149,9 +184,13 @@ export type DailyIncomeJournalList = {
 
 export type DailyIncomeJournalListParams = {
   incomeStatementId: number;
+  pending?: boolean;
+  filterRows?: TableFilterRowState[];
+  sort?: string;
   page?: number;
   limit?: number;
   query?: string;
+  /** Advanced filter rows applied to the loaded closeout rows (`DAILY_INCOME_TABLE_FILTER_FIELDS`). */
   employeeId?: number;
 };
 
@@ -245,6 +284,9 @@ export type DailyIncomeJournalValues = {
   routeName?: string;
   routeCrewId?: string;
   routeCrewName?: string;
+  /** Daily-route supervisor accountable for a route financial transaction. */
+  supervisorId?: number;
+  supervisorName?: string;
   accountId?: number;
   accountName?: string;
   accountType?: string;
@@ -271,6 +313,8 @@ export type DailyIncomeJournalValues = {
   checkNumber?: string;
   /** Create only: API clears the outstanding check / Zelle / deposit / card record and applies it to the invoice. */
   autoClear?: boolean;
+  /** Create only: API completes the dispatch handoff and reconciles the full quantity as sold. */
+  autoReconcile?: boolean;
   /** Inventory change recorded with this journal. Posted with the closeout, not as a separate stock write. */
   inventoryDirection?: InventoryChangeDirection;
   inventoryItemId?: string;
@@ -280,6 +324,10 @@ export type DailyIncomeJournalValues = {
   inventoryTotal?: number;
   inventorySupplierId?: string;
   inventorySupplierName?: string;
+  /** Dispatched inventory: a vehicle and/or employees jointly responsible for the assignment. */
+  inventoryHolderVehicleId?: string;
+  inventoryHolderVehicleName?: string;
+  inventoryHolderEmployees?: InventoryHolderEmployeeRef[];
 };
 
 export type {

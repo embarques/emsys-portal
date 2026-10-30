@@ -1,3 +1,4 @@
+import { PendingInventoryWorkspace } from "@/components/inventory/pending-inventory-workspace";
 import { InventoryWorkflowWorkspace } from "@/lib/inventory/workflow/components/inventory-workflow-workspace";
 import { EmployeeTitlesWorkspace } from "@/components/employee-titles/employee-titles-workspace";
 import { EmployeeDepartmentsWorkspace } from "@/components/employee-departments/employee-departments-workspace";
@@ -39,7 +40,7 @@ import { DeliveriesWorkspace } from "@/components/deliveries/deliveries-workspac
 import { UserActivitiesWorkspace } from "@/components/user-activities/user-activities-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
-import { navigation, topNavigationItems } from "@/config/navigation";
+import { accountingClearingNavigationItems, navigation, topNavigationItems } from "@/config/navigation";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 import { findNavigationItemByHref, flattenAllNavigationItems } from "@/lib/navigation/nav-utils";
 import { translate, type Locale } from "@/lib/i18n/catalog";
@@ -59,6 +60,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/inventory/items": InventoryItemsWorkspace,
   "/inventory/receipts": InventoryReceiptsWorkspace,
   "/inventory/dispatches": InventoryDispatchesWorkspace,
+  "/inventory/pending-transactions": PendingInventoryWorkspace,
   "/inventory/suppliers": InventorySuppliersWorkspace,
   "/items": ItemsWorkspace,
   "/containers": ContainersWorkspace,
@@ -97,7 +99,10 @@ export function isWorkspaceRoute(href: string): boolean {
 
 export function resolveWorkspaceNavLabelKey(href: string): string | null {
   const pathname = href.split("?")[0] ?? href;
-  const navItem = findNavigationItemByHref(flattenAllNavigationItems(navigation, topNavigationItems), pathname);
+  const navItem = findNavigationItemByHref(
+    flattenAllNavigationItems(navigation, [...topNavigationItems, ...accountingClearingNavigationItems]),
+    pathname,
+  );
   return navItem?.labelKey ?? null;
 }
 

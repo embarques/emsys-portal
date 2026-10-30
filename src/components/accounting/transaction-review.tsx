@@ -4,8 +4,10 @@ import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
+import { isAutoReconcileEligible } from "@/lib/accounting/daily-income/auto-reconcile";
+import { inventoryHoldersFromValues } from "@/lib/accounting/daily-income/inventory-change";
 import { isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
-import { getTransactionStepLabelKey, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import { getTransactionStepLabelKey, hasPaymentDetailsStep, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { useTranslation } from "@/lib/i18n";
 
 type Props = {
@@ -16,13 +18,21 @@ type Props = {
 export function TransactionReview({ values: v, onEdit }: Props) {
   const { t } = useTranslation();
   const inventory = v.transactionType === "INVENTORY";
+  const registerInvoice = v.transactionType === "INITIAL-PAYMENT";
+  const paymentDetails = hasPaymentDetailsStep(v.transactionType);
   const money = (value: number | undefined) => value == null ? undefined : formatAccountingMoney(value);
+  const dispatched = inventory && v.inventoryDirection === "dispatched";
+  const holders = dispatched ? inventoryHoldersFromValues(v) : null;
+  const holderNames = holders ? [holders.vehicle?.name, ...holders.employees.map((employee) => employee.name)].filter(Boolean).join(", ") : undefined;
   const groups: { step: TransactionFormStep; rows: [string, string | number | undefined][] }[] = [
     {
       step: "assignment", rows: [
-        ["accounting.dailyIncome.form.fields.assignedTo", v.routeName || v.employeeName || v.routeId || v.employeeId],
+        ["accounting.dailyIncome.form.fields.assignedTo", inventory ? undefined : v.routeName || v.employeeName || v.routeId || v.employeeId || t("accounting.dailyIncome.form.creatorAssignee")],
+        ["accounting.dailyIncome.form.fields.responsibleSupervisor", !inventory && v.routeId ? v.supervisorName || v.supervisorId : undefined],
         ["accounting.dailyIncome.form.fields.inventoryDirection", inventory && v.inventoryDirection ? t(`accounting.dailyIncome.form.inventory.${v.inventoryDirection}`) : undefined],
         ["inventory.form.fields.supplier", inventory ? v.inventorySupplierName : undefined],
+        ["accounting.dailyIncome.form.fields.route", dispatched ? v.routeName || v.routeId : undefined],
+        ["accounting.dailyIncome.form.fields.inventoryHolders", holderNames],
       ]
     },
     {
@@ -30,18 +40,21 @@ export function TransactionReview({ values: v, onEdit }: Props) {
         ["accounting.dailyIncome.form.fields.invoice", v.autoGenerateInvoiceNumber ? t("invoices.form.autoNumber.assignedOnSave") : v.invoiceNumber],
         ["accounting.dailyIncome.form.fields.account", v.accountName],
         ["accounting.dailyIncome.form.fields.sourceAccount", v.sourceAccountName],
-        ["accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],
-        ["accounting.dailyIncome.form.fields.amount", inventory ? undefined : money(v.amount)],
-        ["accounting.dailyIncome.form.fields.balance", v.transactionType === "INITIAL-PAYMENT" && v.invoiceCost != null ? money(v.invoiceCost - (v.amount ?? 0)) : undefined],
+        [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.total" : "accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],
+        ["accounting.dailyIncome.form.invoiceSummary.discount", registerInvoice ? money(v.invoiceDiscount ?? 0) : undefined],
+        [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.paid" : "accounting.dailyIncome.form.fields.amount", inventory ? undefined : money(v.amount)],
+        ["accounting.dailyIncome.form.fields.balance", registerInvoice && v.invoiceCost != null ? money(v.invoiceCost - (v.invoiceDiscount ?? 0) - (v.amount ?? 0)) : undefined],
         ["accounting.dailyIncome.form.fields.senderClient", v.includeSender ? v.senderName : undefined],
         ["accounting.dailyIncome.form.fields.receiverClient", v.includeReceiver ? v.receiverName : undefined],
         ["inventory.form.fields.item", inventory ? v.inventoryItemName : undefined],
         ["inventory.form.fields.quantity", inventory ? v.inventoryQuantity : undefined],
         ["accounting.dailyIncome.form.fields.unitPrice", inventory ? money(v.inventoryUnitPrice) : undefined],
         ["accounting.dailyIncome.form.fields.total", inventory ? money(v.inventoryTotal) : undefined],
+        ["accounting.dailyIncome.form.fields.autoReconcile", v.autoReconcile && isAutoReconcileEligible(v) ? t("accounting.dailyIncome.form.fields.autoReconcileReviewValue") : undefined],
+        ["accounting.dailyIncome.form.fields.description", !inventory && !paymentDetails ? v.description : undefined],
       ]
     },
-    ...(!inventory ? [{
+    ...(paymentDetails ? [{
       step: "payment" as const, rows: [
         ["accounting.dailyIncome.form.fields.paymentMethod", v.paymentMethodName],
         ["accounting.dailyIncome.form.fields.bankAccount", requiresBankAccount(v.paymentMethodName) ? v.paymentAccountName : undefined],

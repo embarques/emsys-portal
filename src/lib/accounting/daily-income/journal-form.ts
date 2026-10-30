@@ -37,7 +37,7 @@ function transactionCreatedToastTarget(values: DailyIncomeJournalValues) {
 }
 
 export function transactionCreatedToastMessage(values: DailyIncomeJournalValues, t: TranslateFn) {
-  if (isHeldCheckInvoicePayment(values)) {
+  if (isOutstandingCheckInvoicePayment(values)) {
     return t("accounting.dailyIncome.toasts.checkPaymentHeld", {
       checkNumber: values.checkNumber?.trim() || "—",
       invoiceNumber: values.invoiceNumber?.trim() || "—",
@@ -51,7 +51,7 @@ export function transactionCreatedToastMessage(values: DailyIncomeJournalValues,
 }
 
 export function journalCreatedToastMessage(values: DailyIncomeJournalValues, t: TranslateFn) {
-  if (isHeldCheckInvoicePayment(values)) {
+  if (isOutstandingCheckInvoicePayment(values)) {
     return t("accounting.dailyIncome.toasts.checkPaymentHeld", {
       checkNumber: values.checkNumber?.trim() || "—",
       invoiceNumber: values.invoiceNumber?.trim() || "—",
@@ -65,9 +65,9 @@ export function journalCreatedToastMessage(values: DailyIncomeJournalValues, t: 
   return transactionCreatedToastMessage(values, t);
 }
 
-function isHeldCheckInvoicePayment(values: DailyIncomeJournalValues) {
+function isOutstandingCheckInvoicePayment(values: DailyIncomeJournalValues) {
   return (
-    isCheckPaymentMethod(values.paymentMethodName) &&
+    !values.autoClear && isCheckPaymentMethod(values.paymentMethodName) &&
     (values.transactionType === "PAYMENT" || values.transactionType === "INITIAL-PAYMENT") &&
     (Number(values.amount) || 0) > 0
   );
@@ -125,6 +125,9 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     routeName: row.route?.name,
     routeCrewId: row.route?.route?.id != null ? String(row.route.route.id) : undefined,
     routeCrewName: row.route?.route?.name,
+    // The recorded supervisor stays responsible even if the route crew changes later.
+    supervisorId: assignedToRoute ? lookupId(row.employee?.id) : undefined,
+    supervisorName: assignedToRoute ? row.employee?.name : undefined,
     accountId: lookupId(row.account?.id),
     accountName: row.account?.displayName ?? row.account?.name,
     accountType: accountTypeFromLines(row, row.account?.id, row.account?.type),
@@ -156,6 +159,9 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     inventoryTotal: row.inventoryTotal,
     inventorySupplierId: row.inventorySupplierId,
     inventorySupplierName: row.inventorySupplierName,
+    inventoryHolderVehicleId: row.inventoryHolders?.vehicle?.id,
+    inventoryHolderVehicleName: row.inventoryHolders?.vehicle?.name,
+    inventoryHolderEmployees: row.inventoryHolders?.employees.map((employee) => ({ ...employee })),
   };
 }
 

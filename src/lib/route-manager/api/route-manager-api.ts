@@ -1,3 +1,4 @@
+import { routeCrewMembersSchema } from "@/lib/route-manager/schemas/route-crew.schema";
 import { ROUTE_API_TABLE_FIELDS } from "@/lib/route-manager/table-fields";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
@@ -79,7 +80,8 @@ type ApiRoute = {
   date?: string;
   tripNumber?: number;
   branch?: ApiBranchRef | null;
-  vehicle?: ApiRef | null;
+  /** Legacy crew rows may carry their branch only on a stored vehicle. */
+  vehicle?: Pick<ApiRef, "branch"> | null;
   employees?: ApiEmployeeRef[];
   employeeGroup?: ApiEmployeeGroupRef | null;
   active?: boolean;
@@ -92,7 +94,6 @@ type ApiRoute = {
 /** POST/PUT /routes — `name` and `routeId` are server-generated on create. */
 type ApiRouteWritePayload = {
   routeId?: string;
-  name?: string;
   branch?: ApiBranchDtoPayload;
   employees: { id: number; name: string }[];
   active: boolean;
@@ -112,16 +113,6 @@ function readUserName(user: unknown): string {
     return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
   }
   return "";
-}
-
-function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
-  const ref = raw ?? {};
-  const branch = String(ref.branch ?? "").trim();
-  return {
-    id: String(ref.id ?? "").trim(),
-    name: String(ref.name ?? "").trim(),
-    ...(branch ? { branch } : {}),
-  };
 }
 
 function normalizeCrewRole(raw: unknown): RouteCrewRole {
@@ -177,20 +168,18 @@ export function normalizeApiRoute(raw: unknown): Route | null {
   const id = String(item.id ?? "").trim();
   if (!id) return null;
 
-  const vehicle = normalizeVehicleRef(item.vehicle);
+  const legacyBranchCode = String(item.vehicle?.branch ?? "").trim();
   const branch =
     normalizeBranchRef(item.branch) ??
-    (vehicle.branch ? { id: 0, code: vehicle.branch } : null);
+    (legacyBranchCode ? { id: 0, code: legacyBranchCode } : null);
 
   return {
     ...captureApiTableFields(raw, ROUTE_API_TABLE_FIELDS),
     id,
     routeId: String(item.routeId ?? item.routeAssignmentId ?? "").trim(),
-    name: String(item.name ?? "").trim(),
     date: String(item.date ?? "").trim(),
     tripNumber: Number(item.tripNumber ?? 0),
     branch,
-    vehicle,
     employees: normalizeRouteEmployees(item),
     active: item.active !== false,
     createdAt: String(item.createdAt ?? "").trim(),
@@ -361,10 +350,9 @@ export async function fetchRouteById(routeId: string): Promise<Route> {
 
 function buildRouteWritePayload(
   values: RouteFormValues,
-  mode: "create" | "update",
 ): ApiRouteWritePayload {
-  if (values.employees.length === 0) {
-    throw new Error("Select at least one employee.");
+  if (!routeCrewMembersSchema.safeParse(values.employees).success) {
+    throw new Error("Select at least two crew members.");
   }
 
   const branchCode = values.branch?.code.trim() ?? "";
@@ -388,12 +376,6 @@ function buildRouteWritePayload(
     })),
     active: values.active,
   };
-
-  if (mode === "update") {
-    if (values.name.trim()) {
-      payload.name = values.name.trim();
-    }
-  }
 
   return payload;
 }
@@ -455,7 +437,7 @@ export async function createRoute(
 ): Promise<Route> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.ROUTES,
-    buildRouteWritePayload(values, "create"),
+    buildRouteWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to create route.");
@@ -474,7 +456,7 @@ export async function updateRoute(
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.ROUTES}/${id}`,
-    buildRouteWritePayload(values, "update"),
+    buildRouteWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to update route.");

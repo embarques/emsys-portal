@@ -1,6 +1,7 @@
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { resolvePaymentReferenceForDisplay } from "@/lib/accounting/daily-income/check-payment-reference";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import type { InvoicePayment, InvoicePaymentMethod } from "@/lib/invoices/types";
 
 const PAYMENT_METHOD_ALIASES: Array<{ match: string; method: InvoicePaymentMethod }> = [
@@ -24,6 +25,7 @@ export function mapJournalPaymentMethod(name?: string): InvoicePaymentMethod {
 export function mapJournalToInvoicePayment(
   journal: DailyIncomeJournal,
   invoiceId: string,
+  t: TranslateFn,
 ): InvoicePayment | null {
   if (journal.amount <= 0) return null;
 
@@ -32,7 +34,11 @@ export function mapJournalToInvoicePayment(
     invoiceId,
     description:
       journal.description.trim() ||
-      (journal.transactionType === "INITIAL-PAYMENT" ? "Initial payment" : "Payment"),
+      t(
+        journal.transactionType === "INITIAL-PAYMENT"
+          ? "invoices.view.payments.fallbackDescription.initialPayment"
+          : "invoices.view.payments.fallbackDescription.payment",
+      ),
     amount: journal.amount,
     paymentMethod: mapJournalPaymentMethod(journal.paymentMethod?.name),
     referenceNumber: resolvePaymentReferenceForDisplay({
@@ -47,8 +53,9 @@ export function mapJournalToInvoicePayment(
 export function mapInvoiceJournalsToPayments(
   journals: DailyIncomeJournal[],
   invoiceId: string,
+  t: TranslateFn,
 ): InvoicePayment[] {
   return journals
-    .map((journal) => mapJournalToInvoicePayment(journal, invoiceId))
+    .map((journal) => mapJournalToInvoicePayment(journal, invoiceId, t))
     .filter((payment): payment is InvoicePayment => payment != null);
 }

@@ -385,7 +385,7 @@ export function InvoiceViewSheet({
                     : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
                 }
               >
-                {getInvoicePaidStatusLabel(paidStatus)}
+                {getInvoicePaidStatusLabel(paidStatus, t)}
               </Badge>
             </div>
           }
