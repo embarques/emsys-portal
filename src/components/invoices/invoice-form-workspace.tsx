@@ -1,4 +1,6 @@
 "use client";
+import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
+import { isStaleMutation } from "@/lib/api/mutation-version";
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -448,6 +450,7 @@ export function InvoiceEditWizard({
   const { printInvoice, isPrinting } = usePrintInvoices();
   const updateMutation = useUpdateInvoice();
   const invoiceQuery = useInvoice(invoiceId);
+  const editSnapshot = usePinnedEditSnapshot(invoiceId, invoiceQuery.data);
   const ensureCustomerDetail = useEnsureCustomerDetail();
   const [initialValues, setInitialValues] = useState<InvoiceFormValues | null>(null);
   const [pendingValues, setPendingValues] = useState<InvoiceFormValues | null>(null);
@@ -456,13 +459,13 @@ export function InvoiceEditWizard({
   const [isSyncingBarcodes, setIsSyncingBarcodes] = useState(false);
 
   useEffect(() => {
-    if (!invoiceQuery.data) {
+    if (!editSnapshot) {
       setInitialValues(null);
       return;
     }
 
     let cancelled = false;
-    const base = invoiceToFormValues(invoiceQuery.data);
+    const base = invoiceToFormValues(editSnapshot);
 
     void hydrateInvoiceEditPartyCustomers(base, (customerId) =>
       ensureCustomerDetail(customerId, { staleTime: 0 }),
@@ -478,7 +481,7 @@ export function InvoiceEditWizard({
     return () => {
       cancelled = true;
     };
-  }, [ensureCustomerDetail, invoiceQuery.data]);
+  }, [ensureCustomerDetail, editSnapshot]);
 
   async function handlePrint(
     values: InvoiceFormValues,
@@ -495,7 +498,7 @@ export function InvoiceEditWizard({
     plan: InvoiceBarcodeSyncPlan,
     deletions: InvoiceBarcodeDeletionSelection,
   ): Promise<InvoiceFormSubmitResult> {
-    if (!invoiceQuery.data) {
+    if (!editSnapshot) {
       return { error: "Unable to load this invoice." };
     }
 
@@ -522,7 +525,7 @@ export function InvoiceEditWizard({
         savedInvoiceId: updated.invoiceId,
       };
     } catch (error) {
-      return { error: normalizeApiError(error).message };
+      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeApiError(error).message };
     } finally {
       setIsSyncingBarcodes(false);
       setPendingValues(null);
@@ -533,11 +536,11 @@ export function InvoiceEditWizard({
 
   async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
     try {
-      if (!invoiceQuery.data) {
+      if (!editSnapshot) {
         return { error: "Unable to load this invoice." };
       }
 
-      const saved = invoiceToFormValues(invoiceQuery.data);
+      const saved = invoiceToFormValues(editSnapshot);
       // Payment and discount are posted on create or from Daily Income, not on edit.
       const submitted: InvoiceFormValues = {
         ...values,
@@ -547,10 +550,10 @@ export function InvoiceEditWizard({
 
       if (areInvoiceFormValuesEquivalent(submitted, saved)) {
         notifySuccess(t("common.form.noChanges"));
-        return { error: null, savedInvoiceId: invoiceQuery.data.invoiceId };
+        return { error: null, savedInvoiceId: editSnapshot.invoiceId };
       }
 
-      const plan = planInvoiceBarcodeSync(invoiceQuery.data, submitted);
+      const plan = planInvoiceBarcodeSync(editSnapshot, submitted);
       if (invoiceBarcodeSyncNeedsUserInput(plan)) {
         setPendingValues(submitted);
         setPendingPlan(plan);
@@ -560,7 +563,7 @@ export function InvoiceEditWizard({
 
       return await saveInvoiceWithBarcodeSync(submitted, plan, {});
     } catch (error) {
-      return { error: normalizeApiError(error).message };
+      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeApiError(error).message };
     }
   }
 
@@ -573,7 +576,7 @@ export function InvoiceEditWizard({
     );
   }
 
-  if (invoiceQuery.isError || !invoiceQuery.data) {
+  if (invoiceQuery.isError || !editSnapshot) {
     return (
       <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-sm text-destructive">Unable to load this invoice.</p>
@@ -588,7 +591,7 @@ export function InvoiceEditWizard({
     <>
       <InvoiceWizardShell
         title={t("invoices.workspace.editInvoiceNamed", {
-          number: formatInvoiceTabLabel(invoiceQuery.data, t("invoices.workspace.untitledTab")),
+          number: formatInvoiceTabLabel(editSnapshot, t("invoices.workspace.untitledTab")),
         })}
         description={t("invoices.form.design.editDescription")}
         onCancel={onCancel}
@@ -601,7 +604,7 @@ export function InvoiceEditWizard({
         initialWizardStep={initialWizardStep}
         requestEditLineItemId={
           focusBarcodeId
-            ? findLineItemIdForBarcodeFocus(invoiceQuery.data, focusBarcodeId)
+            ? findLineItemIdForBarcodeFocus(editSnapshot, focusBarcodeId)
             : null
         }
         formNonce={formNonce}

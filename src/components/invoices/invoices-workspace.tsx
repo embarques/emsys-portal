@@ -747,12 +747,9 @@ export function InvoicesWorkspace() {
   async function confirmDelete() {
     if (!deleteTarget) return;
 
-    const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((invoice) => invoice.invoiceId)
-      : [deleteTarget.invoiceId];
-
     try {
-      const result = await deleteInvoicesMutation.mutateAsync(ids);
+      const records = (Array.isArray(deleteTarget) ? deleteTarget : [deleteTarget]).map(invoice => ({id: invoice.invoiceId, version: invoice.version}));
+      const result = await deleteInvoicesMutation.mutateAsync(records);
 
       reportBulkSettled({
         result,

@@ -1,6 +1,187 @@
 {
   "basePath": "/scalar-api/v1",
   "definitions": {
+    "core.AttributionReference": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "core.DailyRouteAttribution": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
+        "date": {
+          "type": "string"
+        },
+        "driver": {
+          "$ref": "#/definitions/core.AttributionReference"
+        },
+        "helpers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.AttributionReference"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "supervisor": {
+          "$ref": "#/definitions/core.AttributionReference"
+        },
+        "vehicle": {
+          "$ref": "#/definitions/core.AttributionReference"
+        }
+      }
+    },
+    "invoice.SenderSignature": {
+      "type": "object",
+      "properties": {
+        "contentType": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "signerName": {
+          "type": "string"
+        }
+      }
+    },
+    "invoice.UpdateInvoiceRequest": {
+      "type": "object",
+      "properties": {
+        "balance": {
+          "type": "number"
+        },
+        "branch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
+        "container": {
+          "$ref": "#/definitions/core.Container"
+        },
+        "cost": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "dailyRoute": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/core.DailyRouteAttribution"
+            }
+          ],
+          "readOnly": true
+        },
+        "dailyRouteId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "employee": {
+          "$ref": "#/definitions/core.User"
+        },
+        "id": {
+          "type": "string"
+        },
+        "invoiceDetails": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/invoice.InvoiceDetail"
+          }
+        },
+        "isArchive": {
+          "type": "boolean"
+        },
+        "isVoid": {
+          "type": "boolean"
+        },
+        "itemCount": {
+          "description": "ItemCount is the sum of positive finite line-item quantities; response-only.",
+          "type": "number",
+          "readOnly": true
+        },
+        "legacySyncedAt": {
+          "description": "Temporary legacy API bridge; remove after legacy invoice sync is retired.",
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "officeBranch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
+        "paidRegion": {
+          "type": "string"
+        },
+        "paidStatus": {
+          "type": "string"
+        },
+        "payment": {
+          "type": "number"
+        },
+        "pickup": {
+          "$ref": "#/definitions/pickup.Pickup"
+        },
+        "pickupEmployee": {
+          "$ref": "#/definitions/core.UserDTO"
+        },
+        "pickupSource": {
+          "description": "route, warehouse, or office assignment source",
+          "type": "string"
+        },
+        "receivedBy": {
+          "$ref": "#/definitions/invoice.ReceivedByRef"
+        },
+        "receiver": {
+          "$ref": "#/definitions/core.CustomerParty"
+        },
+        "registration": {
+          "description": "PENDING: stub from INITIAL-PAYMENT journal; COMPLETED: full invoice",
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/definitions/route.RouteDTO"
+        },
+        "sender": {
+          "$ref": "#/definitions/core.CustomerParty"
+        },
+        "senderSignature": {
+          "$ref": "#/definitions/invoice.SenderSignature"
+        },
+        "surcharge": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "version": {
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
     "auth.TokenResult": {
       "type": "object",
       "properties": {
@@ -522,32 +703,72 @@
     "customer.Customer": {
       "type": "object",
       "properties": {
-        "IDNumber": { "type": "string" },
-        "accountBalance": { "type": "number" },
-        "active": { "type": "boolean" },
+        "IDNumber": {
+          "type": "string"
+        },
+        "accountBalance": {
+          "type": "number"
+        },
+        "active": {
+          "type": "boolean"
+        },
         "addresses": {
           "type": "array",
-          "items": { "$ref": "#/definitions/core.Address" }
+          "items": {
+            "$ref": "#/definitions/core.Address"
+          }
         },
-        "branch": { "$ref": "#/definitions/core.BranchDTO" },
-        "createdAt": { "type": "string" },
-        "createdBy": { "$ref": "#/definitions/core.User" },
+        "branch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "$ref": "#/definitions/core.User"
+        },
         "customerType": {
           "description": "1=sender, 2=receiver",
           "type": "integer",
-          "enum": [1, 2]
+          "enum": [
+            1,
+            2
+          ]
         },
-        "email": { "type": "string" },
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "notes": { "type": "string" },
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
         "phones": {
           "type": "array",
-          "items": { "$ref": "#/definitions/core.Phone" }
+          "items": {
+            "$ref": "#/definitions/core.Phone"
+          }
         },
-        "receivers": { "type": "array", "items": { "type": "string" } },
-        "updatedAt": { "type": "string" },
-        "updatedBy": { "$ref": "#/definitions/core.User" }
+        "receivers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "version": {
+          "type": "string",
+          "readOnly": true
+        }
       }
     },
     "customer.CustomerSearchResult": {
@@ -2077,48 +2298,122 @@
     "invoice.Invoice": {
       "type": "object",
       "properties": {
-        "balance": { "type": "number" },
-        "branch": { "$ref": "#/definitions/core.BranchDTO" },
-        "container": { "$ref": "#/definitions/core.Container" },
-        "cost": { "type": "number" },
-        "createdAt": { "type": "string" },
-        "createdBy": { "$ref": "#/definitions/core.User" },
-        "date": { "type": "string" },
-        "discount": { "type": "number" },
-        "employee": { "$ref": "#/definitions/core.User" },
-        "id": { "type": "string" },
+        "balance": {
+          "type": "number"
+        },
+        "branch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
+        "container": {
+          "$ref": "#/definitions/core.Container"
+        },
+        "cost": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "dailyRoute": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/core.DailyRouteAttribution"
+            }
+          ],
+          "readOnly": true
+        },
+        "dailyRouteId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "employee": {
+          "$ref": "#/definitions/core.User"
+        },
+        "id": {
+          "type": "string"
+        },
         "invoiceDetails": {
           "type": "array",
-          "items": { "$ref": "#/definitions/invoice.InvoiceDetail" }
+          "items": {
+            "$ref": "#/definitions/invoice.InvoiceDetail"
+          }
         },
-        "isArchive": { "type": "boolean" },
-        "isVoid": { "type": "boolean" },
+        "isArchive": {
+          "type": "boolean"
+        },
+        "isVoid": {
+          "type": "boolean"
+        },
+        "itemCount": {
+          "description": "ItemCount is the sum of positive finite line-item quantities; response-only.",
+          "type": "number",
+          "readOnly": true
+        },
         "legacySyncedAt": {
           "description": "Temporary legacy API bridge; remove after legacy invoice sync is retired.",
           "type": "string"
         },
-        "number": { "type": "string" },
-        "officeBranch": { "$ref": "#/definitions/core.BranchDTO" },
-        "paidRegion": { "type": "string" },
-        "paidStatus": { "type": "string" },
-        "payment": { "type": "number" },
-        "pickup": { "$ref": "#/definitions/pickup.Pickup" },
-        "pickupEmployee": { "$ref": "#/definitions/core.UserDTO" },
+        "number": {
+          "type": "string"
+        },
+        "officeBranch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
+        "paidRegion": {
+          "type": "string"
+        },
+        "paidStatus": {
+          "type": "string"
+        },
+        "payment": {
+          "type": "number"
+        },
+        "pickup": {
+          "$ref": "#/definitions/pickup.Pickup"
+        },
+        "pickupEmployee": {
+          "$ref": "#/definitions/core.UserDTO"
+        },
         "pickupSource": {
           "description": "route, warehouse, or office assignment source",
           "type": "string"
         },
-        "receivedBy": { "$ref": "#/definitions/invoice.ReceivedByRef" },
-        "receiver": { "$ref": "#/definitions/core.CustomerParty" },
+        "receivedBy": {
+          "$ref": "#/definitions/invoice.ReceivedByRef"
+        },
+        "receiver": {
+          "$ref": "#/definitions/core.CustomerParty"
+        },
         "registration": {
           "description": "PENDING: stub from INITIAL-PAYMENT journal; COMPLETED: full invoice",
           "type": "string"
         },
-        "route": { "$ref": "#/definitions/route.RouteDTO" },
-        "sender": { "$ref": "#/definitions/core.CustomerParty" },
-        "surcharge": { "type": "number" },
-        "updatedAt": { "type": "string" },
-        "updatedBy": { "$ref": "#/definitions/core.User" }
+        "route": {
+          "$ref": "#/definitions/route.RouteDTO"
+        },
+        "sender": {
+          "$ref": "#/definitions/core.CustomerParty"
+        },
+        "surcharge": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "version": {
+          "type": "string",
+          "readOnly": true
+        }
       }
     },
     "invoice.InvoiceDetail": {
@@ -6539,10 +6834,21 @@
     },
     "/customers/{id}": {
       "get": {
-        "security": [{ "Token": [] }, { "CompanyID": [] }],
-        "description": "Requires customer view permission.",
-        "produces": ["application/json"],
-        "tags": ["customer"],
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires customer view permission.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "customer"
+        ],
         "summary": "Retrieve a customer",
         "parameters": [
           {
@@ -6558,34 +6864,68 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/definitions/customer.Customer" }
+                    "data": {
+                      "$ref": "#/definitions/customer.Customer"
+                    }
                   }
                 }
               ]
+            },
+            "headers": {
+              "ETag": {
+                "type": "string",
+                "description": "Strong revision; send unchanged as If-Match"
+              }
             }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       },
       "put": {
-        "security": [{ "Token": [] }, { "CompanyID": [] }],
-        "description": "Requires customer update permission. Omitted fields remain unchanged. Same legacy binding as create (branch string or object, idNumber alias). customerType: 1=sender, 2=receiver.",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["customer"],
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nRequires customer update permission. Rejects a duplicate name plus any matching normalized phone on create and edit, excluding the edited customer. Omitted fields remain unchanged. Same legacy binding as create (branch string or object, idNumber alias). customerType: 1=sender, 2=receiver.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "customer"
+        ],
         "summary": "Update a customer",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Strongly quoted original record version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Customer ObjectID",
@@ -6598,7 +6938,9 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": { "$ref": "#/definitions/customer.UpdateInput" }
+            "schema": {
+              "$ref": "#/definitions/customer.UpdateInput"
+            }
           }
         ],
         "responses": {
@@ -6606,33 +6948,89 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/definitions/customer.Customer" }
+                    "data": {
+                      "$ref": "#/definitions/customer.Customer"
+                    }
                   }
                 }
               ]
+            },
+            "headers": {
+              "ETag": {
+                "type": "string",
+                "description": "Strong revision; send unchanged as If-Match"
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_VERSION or invalid request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
             }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "schema": {
+              "$ref": "#/definitions/customer.DuplicateCustomerConflictResponse"
+            }
+          },
+          "412": {
+            "description": "STALE_VERSION; preserve draft and review current record",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "428": {
+            "description": "VERSION_REQUIRED",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       },
       "delete": {
-        "security": [{ "Token": [] }, { "CompanyID": [] }],
-        "description": "Requires customer delete permission.",
-        "produces": ["application/json"],
-        "tags": ["customer"],
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Requires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nRequires customer delete permission.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "customer"
+        ],
         "summary": "Delete a customer",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Strongly quoted original record version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Customer ObjectID",
@@ -6644,24 +7042,72 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": { "$ref": "#/definitions/responses.Success" }
+            "schema": {
+              "$ref": "#/definitions/responses.Success"
+            }
+          },
+          "400": {
+            "description": "INVALID_VERSION or invalid request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "404": {
+            "description": "record not found",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "412": {
+            "description": "STALE_VERSION; preserve draft and review current record",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "428": {
+            "description": "VERSION_REQUIRED",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       }
     },
     "/customers/{id}/address/google-verification": {
       "put": {
-        "security": [{ "Token": [] }, { "CompanyID": [] }],
-        "description": "Adds or replaces only Google verification metadata on the primary customer address. verified_at is required when is_verified is true. Requires customer update permission.",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["customer"],
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nAdds or replaces only Google verification metadata on the primary customer address. verified_at is required when is_verified is true. Requires customer update permission.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "customer"
+        ],
         "summary": "Set customer address Google verification",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Strongly quoted original record version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Customer ObjectID",
@@ -6674,7 +7120,9 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": { "$ref": "#/definitions/core.AddressVerification" }
+            "schema": {
+              "$ref": "#/definitions/core.AddressVerification"
+            }
           }
         ],
         "responses": {
@@ -6682,40 +7130,88 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/definitions/customer.Customer" }
+                    "data": {
+                      "$ref": "#/definitions/customer.Customer"
+                    }
                   }
                 }
               ]
+            },
+            "headers": {
+              "ETag": {
+                "type": "string",
+                "description": "Strong revision; send unchanged as If-Match"
+              }
             }
           },
           "400": {
             "description": "Bad Request",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "412": {
+            "description": "STALE_VERSION; preserve draft and review current record",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "428": {
+            "description": "VERSION_REQUIRED",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       }
     },
     "/customers/{id}/address/location": {
       "put": {
-        "security": [{ "Token": [] }, { "CompanyID": [] }],
-        "description": "Adds or replaces only the GeoJSON location on the primary customer address. Coordinates must be [longitude, latitude]. Requires customer update permission.",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["customer"],
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nAdds or replaces only the GeoJSON location on the primary customer address. Coordinates must be [longitude, latitude]. Requires customer update permission.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "customer"
+        ],
         "summary": "Set customer address location",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Strongly quoted original record version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Customer ObjectID",
@@ -6728,7 +7224,9 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": { "$ref": "#/definitions/core.GeoJSONPoint" }
+            "schema": {
+              "$ref": "#/definitions/core.GeoJSONPoint"
+            }
           }
         ],
         "responses": {
@@ -6736,40 +7234,88 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/definitions/customer.Customer" }
+                    "data": {
+                      "$ref": "#/definitions/customer.Customer"
+                    }
                   }
                 }
               ]
+            },
+            "headers": {
+              "ETag": {
+                "type": "string",
+                "description": "Strong revision; send unchanged as If-Match"
+              }
             }
           },
           "400": {
             "description": "Bad Request",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "412": {
+            "description": "STALE_VERSION; preserve draft and review current record",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "428": {
+            "description": "VERSION_REQUIRED",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       }
     },
     "/customers/{id}/phones/primary": {
       "post": {
-        "security": [{ "Token": [] }, { "CompanyID": [] }],
-        "description": "Matches an existing phone by normalized type and number, then atomically clears the previous primary and selects this phone. Requires customer update permission.",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["customer"],
+        "security": [
+          {
+            "Token": []
+          },
+          {
+            "CompanyID": []
+          }
+        ],
+        "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nMatches an existing phone by normalized type and number, then atomically clears the previous primary and selects this phone. Requires customer update permission.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "customer"
+        ],
         "summary": "Set a customer's primary phone",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Strongly quoted original record version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Customer ObjectID",
@@ -6782,7 +7328,9 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": { "$ref": "#/definitions/customer.SetPrimaryPhoneInput" }
+            "schema": {
+              "$ref": "#/definitions/customer.SetPrimaryPhoneInput"
+            }
           }
         ],
         "responses": {
@@ -6790,31 +7338,61 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/definitions/customer.Customer" }
+                    "data": {
+                      "$ref": "#/definitions/customer.Customer"
+                    }
                   }
                 }
               ]
+            },
+            "headers": {
+              "ETag": {
+                "type": "string",
+                "description": "Strong revision; send unchanged as If-Match"
+              }
             }
           },
           "400": {
             "description": "Bad Request",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "409": {
             "description": "Conflict",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "412": {
+            "description": "STALE_VERSION; preserve draft and review current record",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "428": {
+            "description": "VERSION_REQUIRED",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       }
@@ -15737,10 +16315,19 @@
     },
     "/invoices/{id}": {
       "get": {
-        "security": [{ "CompanyID": [], "Token": [] }],
-        "description": "Requires invoice view permission.",
-        "produces": ["application/json"],
-        "tags": ["invoice"],
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires invoice view permission.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "invoice"
+        ],
         "summary": "Retrieve a invoice",
         "parameters": [
           {
@@ -15756,38 +16343,72 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/definitions/invoice.Invoice" }
+                    "data": {
+                      "$ref": "#/definitions/invoice.Invoice"
+                    }
                   }
                 }
               ]
+            },
+            "headers": {
+              "ETag": {
+                "type": "string",
+                "description": "Strong revision; send unchanged as If-Match"
+              }
             }
           },
           "400": {
             "description": "Bad Request",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       },
       "put": {
-        "security": [{ "CompanyID": [], "Token": [] }],
-        "description": "Requires invoice update permission. Merchandise labels are owned by invoice details: increasing labels mints missing barcodes, decreasing labels requires removeBarcodeIds (ObjectID barcodeId values), deleted line items remove their barcodes, and description changes update embed + catalog descriptions.",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["invoice"],
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nRequires invoice update permission. Unassigned invoices preserve label counts without generating barcodes; assigning a container generates missing labels. Merchandise labels are owned by invoice details: increasing labels mints missing barcodes, decreasing labels requires removeBarcodeIds (ObjectID barcodeId values), deleted line items remove their barcodes, and description changes update embed + catalog descriptions.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "invoice"
+        ],
         "summary": "Update a invoice",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Strongly quoted original record version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Invoice ObjectID",
@@ -15800,7 +16421,9 @@
             "name": "body",
             "in": "body",
             "required": true,
-            "schema": { "$ref": "#/definitions/invoice.Invoice" }
+            "schema": {
+              "$ref": "#/definitions/invoice.UpdateInvoiceRequest"
+            }
           }
         ],
         "responses": {
@@ -15808,37 +16431,81 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/definitions/invoice.Invoice" }
+                    "data": {
+                      "$ref": "#/definitions/invoice.Invoice"
+                    }
                   }
                 }
               ]
+            },
+            "headers": {
+              "ETag": {
+                "type": "string",
+                "description": "Strong revision; send unchanged as If-Match"
+              }
             }
           },
           "400": {
             "description": "Bad Request",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "412": {
+            "description": "STALE_VERSION; preserve draft and review current record",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "428": {
+            "description": "VERSION_REQUIRED",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       },
       "delete": {
-        "security": [{ "CompanyID": [], "Token": [] }],
-        "description": "Requires invoice delete permission.",
-        "produces": ["application/json"],
-        "tags": ["invoice"],
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Requires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nRequires invoice delete permission.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "invoice"
+        ],
         "summary": "Delete a invoice",
         "parameters": [
+          {
+            "type": "string",
+            "description": "Strongly quoted original record version",
+            "name": "If-Match",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "Invoice ObjectID",
@@ -15850,19 +16517,39 @@
         "responses": {
           "200": {
             "description": "OK",
-            "schema": { "$ref": "#/definitions/responses.Success" }
+            "schema": {
+              "$ref": "#/definitions/responses.Success"
+            }
           },
           "400": {
             "description": "Bad Request",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "404": {
             "description": "Not Found",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "412": {
+            "description": "STALE_VERSION; preserve draft and review current record",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "428": {
+            "description": "VERSION_REQUIRED",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       }

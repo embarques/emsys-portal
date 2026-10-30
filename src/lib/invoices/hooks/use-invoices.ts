@@ -1,5 +1,6 @@
 "use client";
 
+import type {VersionedRecord} from "@/lib/api/mutation-version";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
@@ -167,7 +168,7 @@ export function useDeleteInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (invoiceId: string) => deleteInvoice(invoiceId),
+    mutationFn: (record: VersionedRecord) => deleteInvoice(record.id, record.version),
     onSuccess: () => invalidateInvoices(queryClient),
   });
 }
@@ -176,7 +177,7 @@ export function useDeleteInvoices() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (invoiceIds: string[]) => deleteInvoices(invoiceIds),
+    mutationFn: (records: VersionedRecord[]) => deleteInvoices(records),
     onSuccess: () => invalidateInvoices(queryClient),
   });
 }

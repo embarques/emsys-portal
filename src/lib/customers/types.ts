@@ -98,6 +98,7 @@ export type CustomerAuditActor = {
 };
 
 export type Customer = ApiTableRecord & {
+  version?: string;
   id: string;
   /** Legacy numeric customer ID from the EMSYS API. */
   oldID: number | null;
@@ -168,6 +169,7 @@ export type CustomerAddressFormValues = {
 };
 
 export type CustomerFormValues = {
+  version?: string;
   id: string;
   oldID: number | null;
   name: string;
@@ -815,6 +817,7 @@ export function normalizeCustomerAddresses(addresses: CustomerCoreAddress[]): Cu
 
 export function customerToFormValues(customer: Customer): CustomerFormValues {
   return normalizeCustomerFormValues({
+    version: customer.version,
     id: customer.id,
     oldID: customer.oldID,
     name: customer.name,
