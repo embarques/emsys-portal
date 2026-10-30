@@ -363,6 +363,8 @@
       "reopenCuadre": "Reabrir Cuadre",
       "paymentSkipped": "Pago omitido — no hay Cuadre abierto para registrar. Cree un Cuadre para registrar el costo con pago de $0, o continúe sin vincular.",
       "unpaidContinueHint": "Ingrese un pago abajo o continúe con un pago de $0.",
+      "skipPayment": "Omitir pago",
+      "skipPaymentHint": "No se registrará ningún pago para esta factura. Desmarque la casilla para ingresar un pago ahora.",
       "zeroPaymentDescription": "Registro inicial de factura (sin pagar)",
       "registeringZeroPayment": "Registrando factura sin pago en Ingresos diarios…",
       "dialog": {

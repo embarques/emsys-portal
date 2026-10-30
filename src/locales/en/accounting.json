@@ -1078,6 +1078,38 @@
       "refresh": "Refresh",
       "singleOpenBlocking": "Another open closeout (#{{id}} on {{date}}) is blocking create. Close it first, then try again.",
       "closeOther": "Close other open closeout"
+    },
+    "createForm": {
+      "title": "Create loan",
+      "description": "Record an employee loan, review its details, and post the journal entry.",
+      "steps": {
+        "employee": "Employee",
+        "details": "Loan details",
+        "review": "Review"
+      },
+      "employeeHint": "Choose the employee who will receive this loan.",
+      "employee": "Employee",
+      "selectEmployee": "Select employee",
+      "searchEmployees": "Search employees",
+      "accounts": "Accounts",
+      "loanAccount": "Loan account",
+      "sourceAccount": "Source asset account",
+      "selectLoanAccount": "Select loan account",
+      "searchLoanAccounts": "Search loan accounts",
+      "selectSourceAccount": "Select source asset account",
+      "searchAssetAccounts": "Search asset accounts",
+      "amountAndDate": "Amount and date",
+      "principal": "Principal amount",
+      "date": "Transaction date",
+      "notes": "Reference and notes",
+      "reference": "Reference number",
+      "optional": "Optional",
+      "notesDescription": "Description",
+      "notesPlaceholder": "Loan reason or notes",
+      "journalSummary": "Journal entry summary",
+      "debit": "Debit · Loan account",
+      "credit": "Credit · Source asset account",
+      "closeoutRequired": "An active Daily Income closeout is required for the selected loan account’s branch."
     }
   },
   "financialActivity": {
@@ -1272,5 +1304,21 @@
       "incomeEmployee": "Choose who receives the income.",
       "creditNotesRequired": "Part of the sale is on credit. Describe who owes it and when it will be collected."
     }
+  },
+  "pendingTransactions": {
+    "description": "Outstanding transactions across all closeouts awaiting reconciliation.",
+    "selectedTitle": "Selected transactions",
+    "clearSelection": "Clear selection",
+    "reconcileSelected": "Reconcile selected",
+    "selectionHelp": "Select up to 200 transactions with the same payment method, across pages. Select all adds matching rows on this page. Totals are shown separately for each currency.",
+    "confirmDescription": "Review the selected transactions and totals. Reconciliation is final and releases the employee’s responsibility. It does not change invoice payments or balances.",
+    "confirm": "Reconcile all selected",
+    "cancel": "Cancel",
+    "reconciling": "Reconciling…",
+    "summaryLoading": "Loading selected totals…",
+    "retry": "Retry",
+    "unknownCurrency": "Unknown currency",
+    "loading": "Loading outstanding transactions…",
+    "empty": "No outstanding transactions match your filters."
   }
 }

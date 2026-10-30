@@ -1,6 +1,6 @@
 # Pending Transactions update — journal reconciliation (backend/API and portal TODOs)
 
-Status: **proposed — backend work required.** This is the single place for every
+Status: **proposed API contract — backend work required; Pending Transactions portal implementation prepared against this contract.** This is the single place for every
 backend/API and portal TODO about the Daily Income and Accounting → Pending
 Transactions tables. Portal pieces that already ship are listed under
 [Portal status](#portal-status).
@@ -227,33 +227,50 @@ e.g. search with `limit: 1` and read `total`.
 
 ## Portal status
 
-Shipped (no backend change needed):
+Implemented locally against this proposed contract (backend deployment is required):
 
-- **Daily Income advanced filters** for every field in the table above except
-  Branch and Reconciliation. They run in the browser over the closeout rows the
-  page already loads (up to 500 per closeout, the existing limit), using the
-  same AND/OR order as the API builder.
-- **Daily Income selected totals:** selecting rows shows Income / Expenses / Net
-  income for the selection (current page), per currency, with the
-  classification above.
+- Pending Transactions uses `POST /v1/journals/search` across all closeouts,
+  always AND-ing `reconciliationStatus eq OUTSTANDING` outside user OR groups.
+- Its columns come from the same component definition as Daily Income.
+- Search and advanced filters run on the server, with 40 rows per page. Date
+  ranges expand to `date gte/lte`; numeric filter values are JSON numbers.
+- Selection spans cached pages, with at most 200 journals of one payment method.
+  The selected list shows date, employee, payment method, account and payment.
+  `POST /v1/journals/summary` supplies selected Income / Expenses / Net per
+  currency; failed/incomplete summaries block reconciliation.
+- `canReconcileJournal` gates the final confirmation and mutation. A stable
+  `requestId` survives retries; duplicate submissions are blocked. Success
+  clears the selection and refreshes pending journal lists and Daily Income
+  journals. Invoice balances are not invalidated by reconciliation.
+- Listing accepts `canListJournal` or, as an explicit legacy fallback,
+  `canViewFinancialActivity`. Backend enforcement remains authoritative.
+- Selected row details reuse the company-scoped TanStack Query page caches;
+  there are no per-row detail requests. Cached inactive pages are retained for
+  30 minutes; if selected details expire, reconciliation is blocked until they
+  are loaded again. Changing company resets selection.
 
-After the API ships:
+Still required on the backend (not present in the supplied `api-docs.json`):
 
-1. Daily Income sends the advanced filters to `POST /v1/journals/search` once
-   the allowlist above is confirmed, and drops the 500-row browser limit.
-2. Pending Transactions stays its own page and switches to
-   `POST /v1/journals/search` with a fixed `reconciliationStatus eq OUTSTANDING`
-   across all closeouts. It reuses the Daily Income table pieces (columns,
-   `DAILY_INCOME_TABLE_FILTER_FIELDS` plus Branch, multi-select and selected
-   totals), adds totals for all matching rows and cross-page selections via
-   `POST /v1/journals/summary`, limits admin row checkboxes to one payment
-   method, and offers admin-only **Reconcile selected** with confirmation and a
-   stable `requestId`. Reconciled rows drop off the list.
-3. The Daily Income auto-approve switch is offered to admins for every
-   transaction type and payment method, gated by `canReconcileJournal`.
-4. The Checks, Zelle, Deposits and Credit card directories become view-only:
-   **Mark cleared** is removed and their status shows the linked journal's
-   `reconciliationStatus`.
+1. Journal reconciliation fields, outstanding status filter and the complete
+   search allowlist above.
+2. `POST /v1/journals/summary` with `{ ids }` and per-currency totals.
+3. Atomic, idempotent `POST /v1/journals/reconcile`, plus the seeded
+   `canReconcileJournal` grant.
+4. Payments applied on create, immutable reconciled journals, and linked
+   payment directory statuses derived from the journal.
+
+Remaining portal follow-ups beyond this table change:
+
+- Daily Income still filters its already-loaded closeout rows locally.
+- Totals for every matching row (without selection) are not requested yet.
+- Sidebar badge and payment directories still use the existing payment
+  directory lifecycle; migrate these together with the backend rollout.
+- Auto-approve availability and payment/balance copy still follow the current
+  live API behavior; update them when the backend payment-on-create rule ships.
+
+Validation uses mocked non-production responses; it does not establish that
+these endpoints are deployed. Do not publish this workflow against an API that
+only implements the legacy financial-activity contract.
 
 ## Open backend decisions
 

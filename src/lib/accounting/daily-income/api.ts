@@ -226,7 +226,7 @@ function normalizeInventoryHolders(value: unknown): InventoryHoldersRef | undefi
   return { vehicle: normalizeVehicleRef(raw.vehicle), employees };
 }
 
-function normalizeJournal(value: unknown): DailyIncomeJournal | null {
+export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const raw = objectValue(value);
   const id = stringValue(firstDefined(raw.id, raw._id));
   if (!id) return null;

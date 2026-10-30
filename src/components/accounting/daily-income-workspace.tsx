@@ -1,6 +1,7 @@
 "use client";
 
-import { readApiUserUsername } from "@/lib/table/api-table-fields";
+import { dailyIncomeTransactionColumns } from "./daily-income-transaction-columns";
+
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronUp, Edit, Loader2, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
@@ -22,7 +23,6 @@ import { TableSelectionToolbar } from "@/components/app-shell/table-selection-to
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
-import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,7 +78,6 @@ import { countCompleteFilterRows, isCompleteFilterRow, type TableFilterRowState 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { DAILY_INCOME_TABLE_FILTER_FIELDS } from "@/lib/accounting/daily-income/filter-fields";
 import { summarizeJournalTotals } from "@/lib/accounting/daily-income/journal-classification";
-import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
@@ -513,19 +512,7 @@ export function DailyIncomeWorkspace() {
     });
   }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading, t]);
 
-  const columns: DataTableColumn<DailyIncomeJournal>[] = useMemo(() => [
-    { id: "date", label: t("accounting.dailyIncome.columns.date"), renderCell: (row) => row.date || t("common.empty.dash") },
-    { id: "invoice", label: t("accounting.dailyIncome.columns.invoice"), renderCell: (row) => row.invoice?.number || t("common.empty.dash") },
-    { id: "reference", label: t("accounting.dailyIncome.columns.reference"), renderCell: (row) => row.refNumber || t("common.empty.dash") },
-    { id: "createdBy", label: t("accounting.dailyIncome.columns.user"), renderCell: (row) => readApiUserUsername(row.apiTableValues?.createdBy) || t("common.empty.dash") },
-    { id: "account", label: t("accounting.dailyIncome.columns.account"), renderCell: (row) => row.account?.displayName || row.account?.name || t("common.empty.dash") },
-    { id: "invoiceCost", label: t("accounting.dailyIncome.columns.cost"), cellClassName: "tabular-nums", renderCell: (row) => row.invoice?.cost == null ? t("common.empty.dash") : formatDailyIncomeMoney(row.invoice.cost, displayCurrency) },
-    { id: "amount", label: t("accounting.dailyIncome.columns.payment"), cellClassName: "font-medium tabular-nums", renderCell: (row) => formatDailyIncomeMoney(row.amount, displayCurrency) },
-    { id: "invoiceBalance", label: t("accounting.dailyIncome.columns.balance"), cellClassName: "tabular-nums", renderCell: (row) => row.invoice?.balance == null ? t("common.empty.dash") : formatDailyIncomeMoney(row.invoice.balance, displayCurrency) },
-    { id: "employee", label: t("accounting.dailyIncome.columns.employee"), renderCell: (row) => getTransactionAssigneeDisplayName(row.employee, row.route, row.employeeGroup) || t("common.empty.dash") },
-    { id: "type", defaultVisible: false, label: t("accounting.dailyIncome.columns.type"), truncateCell: false, renderCell: (row) => <TableTagText>{transactionTypeLabel(row.transactionType, t)}</TableTagText> },
-    { id: "paymentMethod", defaultVisible: false, label: t("accounting.dailyIncome.columns.paymentMethod"), renderCell: (row) => row.paymentMethod?.name ?? t("common.empty.dash") },
-  ], [displayCurrency, t]);
+  const columns = useMemo(() => dailyIncomeTransactionColumns(t, displayCurrency), [displayCurrency, t]);
   const columnLayout = useApiTableColumns("daily-income-v3", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
   function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
     const saveStatement = editingJournal ? statement : transactionStatement;

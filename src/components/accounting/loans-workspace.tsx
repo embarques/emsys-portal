@@ -54,7 +54,7 @@ import {
   loanStatusLabel,
 } from "@/lib/accounting/loans/display";
 import { LOAN_TABLE_FILTER_FIELDS } from "@/lib/accounting/loans/filter-fields";
-import { createLoanSchema, loanPaymentSchema } from "@/lib/accounting/loans/schemas";
+import { loanPaymentSchema } from "@/lib/accounting/loans/schemas";
 import {
   DEFAULT_LOAN_LIST_PARAMS,
   EMPTY_LOAN_SUMMARY,
@@ -74,7 +74,7 @@ import {
   downloadLoanExcelReport,
   openLoanReportUrl,
 } from "@/lib/accounting/loans/print-loan-report";
-import { LoanCloseoutPanel } from "@/components/accounting/loan-closeout-panel";
+import { CreateLoanDialog } from "@/components/accounting/create-loan-dialog";
 import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
@@ -176,217 +176,6 @@ function LoanJournalPreview({
         </div>
       </div>
     </div>
-  );
-}
-
-function CreateLoanDialog({
-  open,
-  onOpenChange,
-  employees,
-  loanAccounts,
-  assetAccounts,
-  onSubmit,
-  pending,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  employees: Array<{ id: number; name: string }>;
-  loanAccounts: ChartAccount[];
-  assetAccounts: ChartAccount[];
-  onSubmit: (values: LoanCreateValues) => Promise<void>;
-  pending: boolean;
-}) {
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-    reset,
-    setValue,
-    watch,
-  } = useForm<LoanCreateValues>({
-    resolver: zodResolver(createLoanSchema),
-    defaultValues: {
-      employeeId: 0,
-      loanAccountId: 0,
-      sourceAccountId: 0,
-      principalAmount: 0,
-      transactionDate: todayInputValue(),
-      referenceNumber: "",
-      description: "",
-    },
-  });
-  const [closeoutReady, setCloseoutReady] = useState(false);
-  const amount = watch("principalAmount") ?? 0;
-  const loanAccountId = watch("loanAccountId");
-  const transactionDate = watch("transactionDate") ?? "";
-  const loanAccountName = watch("loanAccountName") ?? "";
-  const sourceAccountName = watch("sourceAccountName") ?? "";
-  const selectedLoanAccount = loanAccounts.find((account) => account.id === loanAccountId);
-
-  function closeDialog(nextOpen: boolean) {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      setCloseoutReady(false);
-      reset({
-        transactionDate: todayInputValue(),
-        employeeId: 0,
-        loanAccountId: 0,
-        sourceAccountId: 0,
-        principalAmount: 0,
-        referenceNumber: "",
-        description: "",
-      });
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={closeDialog}>
-      <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden p-0 sm:max-w-4xl">
-        <DialogHeader className="shrink-0 border-b px-6 py-4">
-          <DialogTitle>Create loan</DialogTitle>
-          <DialogDescription>
-            Record a new employee loan and post its journal entry.
-          </DialogDescription>
-        </DialogHeader>
-        <form
-          id="create-loan-form"
-          className="grid min-h-0 flex-1 gap-6 overflow-y-auto p-6 lg:grid-cols-[minmax(0,1fr)_320px]"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <RequiredLabel>Employee</RequiredLabel>
-              <SearchableSelect
-                value={watch("employeeId") ? String(watch("employeeId")) : ""}
-                onValueChange={(next) => {
-                  const employee = employees.find((item) => item.id === Number(next));
-                  setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
-                  setValue("employeeName", employee?.name ?? "");
-                }}
-                options={employees.map((employee) => ({
-                  value: String(employee.id),
-                  label: employee.name,
-                  keywords: [employee.name],
-                }))}
-                placeholder="Select employee"
-                searchPlaceholder="Search employees"
-                mobileSheet
-              />
-              {errors.employeeId ? <p className="text-sm text-destructive">{errors.employeeId.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <RequiredLabel>Loan account</RequiredLabel>
-              <SearchableSelect
-                value={watch("loanAccountId") ? String(watch("loanAccountId")) : ""}
-                onValueChange={(next) => {
-                  const account = loanAccounts.find((item) => item.id === Number(next));
-                  setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true });
-                  setValue("loanAccountName", account ? accountLabel(account) : "");
-                  setValue("loanAccountType", account?.type);
-                }}
-                options={loanAccounts.map((account) => ({
-                  value: String(account.id),
-                  label: account.branch?.name
-                    ? `${accountLabel(account)} (${account.branch.name})`
-                    : accountLabel(account),
-                  keywords: [account.name, account.displayName, account.branch?.name ?? ""],
-                }))}
-                placeholder="Select loan account"
-                searchPlaceholder="Search loan accounts"
-                mobileSheet
-              />
-              {errors.loanAccountId ? <p className="text-sm text-destructive">{errors.loanAccountId.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <RequiredLabel>Source asset account</RequiredLabel>
-              <SearchableSelect
-                value={watch("sourceAccountId") ? String(watch("sourceAccountId")) : ""}
-                onValueChange={(next) => {
-                  const account = assetAccounts.find((item) => item.id === Number(next));
-                  setValue("sourceAccountId", account?.id ?? 0, { shouldValidate: true });
-                  setValue("sourceAccountName", account ? accountLabel(account) : "");
-                  setValue("sourceAccountType", account?.type);
-                }}
-                options={assetAccounts.map((account) => ({
-                  value: String(account.id),
-                  label: accountLabel(account),
-                  keywords: [account.name, account.displayName],
-                }))}
-                placeholder="Select source asset account"
-                searchPlaceholder="Search asset accounts"
-                mobileSheet
-              />
-              {errors.sourceAccountId ? <p className="text-sm text-destructive">{errors.sourceAccountId.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="loan-principal">Principal amount</RequiredLabel>
-              <Input
-                id="loan-principal"
-                type="number"
-                min="0.01"
-                step="0.01"
-                {...register("principalAmount", {
-                  setValueAs: (value) => (value === "" ? undefined : Number(value)),
-                })}
-              />
-              {errors.principalAmount ? <p className="text-sm text-destructive">{errors.principalAmount.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="loan-date">Date</RequiredLabel>
-              <DateInput id="loan-date" {...register("transactionDate")} />
-              {errors.transactionDate ? <p className="text-sm text-destructive">{errors.transactionDate.message}</p> : null}
-            </div>
-
-            <LoanCloseoutPanel
-              branchId={selectedLoanAccount?.branch?.id}
-              branchCode={selectedLoanAccount?.branch?.code}
-              branchName={selectedLoanAccount?.branch?.name}
-              date={transactionDate.slice(0, 10)}
-              onDateChange={(next) =>
-                setValue("transactionDate", next, { shouldValidate: true, shouldDirty: true })
-              }
-              onReadyChange={setCloseoutReady}
-            />
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="loan-reference">Reference number</Label>
-              <Input id="loan-reference" placeholder="Optional" {...register("referenceNumber")} />
-              {errors.referenceNumber ? <p className="text-sm text-destructive">{errors.referenceNumber.message}</p> : null}
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="loan-description">Description</Label>
-              <textarea
-                id="loan-description"
-                rows={4}
-                className="flex min-h-24 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-                placeholder="Loan reason or notes"
-                {...register("description")}
-              />
-              {errors.description ? <p className="text-sm text-destructive">{errors.description.message}</p> : null}
-            </div>
-          </div>
-          <LoanJournalPreview
-            debitAccount={loanAccountName}
-            creditAccount={sourceAccountName}
-            amount={amount}
-            transactionLabel="ISSUE"
-          />
-        </form>
-        <DialogFooter className="shrink-0 border-t px-6 py-4">
-          <Button type="button" variant="outline" onClick={() => closeDialog(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" form="create-loan-form" disabled={pending || !closeoutReady}>
-            Create loan
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -1183,6 +972,7 @@ export function LoansWorkspace() {
       setCreateOpen(false);
     } catch (error) {
       notifyError(loanMutationErrorMessage(error));
+      throw error;
     }
   }
 

@@ -363,6 +363,8 @@
       "reopenCuadre": "Reopen Cuadre",
       "paymentSkipped": "Payment skipped — no open Cuadre to register against. Create a Cuadre to record cost with $0 payment, or continue without linking.",
       "unpaidContinueHint": "Enter a payment below, or continue with a $0 payment.",
+      "skipPayment": "Skip payment",
+      "skipPaymentHint": "No payment will be recorded for this invoice. Uncheck to enter a payment now.",
       "zeroPaymentDescription": "Initial invoice registration (unpaid)",
       "registeringZeroPayment": "Registering unpaid invoice in Daily Income…",
       "dialog": {

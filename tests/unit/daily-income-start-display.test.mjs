@@ -26,7 +26,7 @@ function render(canStart=true){
  };
  const loaded={exports:{}};
  new Function("require","module","exports",source)((name)=>{
-  if(!name.startsWith("@/"))return require(name);
+  if(!name.startsWith("@/")&&!name.startsWith("."))return require(name);
   return new Proxy({}, {get:(_,key)=>special[key] ?? (key.startsWith("use")?()=>query:key[0]===key[0].toUpperCase()?()=>null:()=>"")});
  },loaded,loaded.exports);
  return renderToStaticMarkup(React.createElement(loaded.exports.DailyIncomeWorkspace));

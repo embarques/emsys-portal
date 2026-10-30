@@ -1078,6 +1078,38 @@
       "refresh": "Actualizar",
       "singleOpenBlocking": "Otro cuadre abierto (#{{id}} el {{date}}) impide crear uno nuevo. Ciérrelo primero e intente de nuevo.",
       "closeOther": "Cerrar el otro cuadre abierto"
+    },
+    "createForm": {
+      "title": "Crear préstamo",
+      "description": "Registre un préstamo de empleado, revise sus datos y contabilice el asiento.",
+      "steps": {
+        "employee": "Empleado",
+        "details": "Datos del préstamo",
+        "review": "Revisar"
+      },
+      "employeeHint": "Elija el empleado que recibirá este préstamo.",
+      "employee": "Empleado",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados",
+      "accounts": "Cuentas",
+      "loanAccount": "Cuenta de préstamo",
+      "sourceAccount": "Cuenta de activo de origen",
+      "selectLoanAccount": "Seleccionar cuenta de préstamo",
+      "searchLoanAccounts": "Buscar cuentas de préstamo",
+      "selectSourceAccount": "Seleccionar cuenta de activo de origen",
+      "searchAssetAccounts": "Buscar cuentas de activo",
+      "amountAndDate": "Monto y fecha",
+      "principal": "Monto principal",
+      "date": "Fecha de transacción",
+      "notes": "Referencia y notas",
+      "reference": "Número de referencia",
+      "optional": "Opcional",
+      "notesDescription": "Descripción",
+      "notesPlaceholder": "Motivo del préstamo o notas",
+      "journalSummary": "Resumen del asiento contable",
+      "debit": "Débito · Cuenta de préstamo",
+      "credit": "Crédito · Cuenta de activo de origen",
+      "closeoutRequired": "Se requiere un cierre activo de Ingresos diarios para la sucursal de la cuenta de préstamo seleccionada."
     }
   },
   "financialActivity": {
@@ -1272,5 +1304,21 @@
       "incomeEmployee": "Elija quién recibe el ingreso.",
       "creditNotesRequired": "Parte de la venta queda a crédito. Indique quién la debe y cuándo se cobrará."
     }
+  },
+  "pendingTransactions": {
+    "description": "Transacciones pendientes de todos los cierres por conciliar.",
+    "selectedTitle": "Transacciones seleccionadas",
+    "clearSelection": "Limpiar selección",
+    "reconcileSelected": "Conciliar seleccionadas",
+    "selectionHelp": "Seleccione hasta 200 transacciones con el mismo método de pago, entre páginas. Seleccionar todo agrega las filas compatibles de esta página. Los totales se muestran por moneda.",
+    "confirmDescription": "Revise las transacciones seleccionadas y los totales. La conciliación es definitiva y libera la responsabilidad del empleado. No cambia los pagos ni los saldos de las facturas.",
+    "confirm": "Conciliar todas las seleccionadas",
+    "cancel": "Cancelar",
+    "reconciling": "Conciliando…",
+    "summaryLoading": "Cargando totales seleccionados…",
+    "retry": "Reintentar",
+    "unknownCurrency": "Moneda desconocida",
+    "loading": "Cargando transacciones pendientes…",
+    "empty": "No hay transacciones pendientes que coincidan con los filtros."
   }
 }

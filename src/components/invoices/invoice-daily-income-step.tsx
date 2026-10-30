@@ -254,6 +254,7 @@ export function InvoiceDailyIncomeStep({
 
   const [localRegistration, setLocalRegistration] = useState<DailyIncomeJournal | null>(null);
   const [localStatement, setLocalStatement] = useState<DailyIncomeStatement | null>(null);
+  const [skipPayment, setSkipPayment] = useState(true);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
   const closeoutCalendar = useCloseoutCalendar(branchId);
@@ -354,15 +355,32 @@ export function InvoiceDailyIncomeStep({
 
   const paymentForm = statement && statementOpen ? (
     <div className="space-y-3" data-invoice-wizard-focus="daily-income">
-      <p className={cn("leading-relaxed text-muted-foreground", isMobileLayout ? "text-base" : "text-sm")}>
-        {t("invoices.wizard.dailyIncome.unpaidContinueHint")}
-      </p>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+        <Label className="flex items-center gap-3">
+          <input
+            id="invoice-skip-payment"
+            type="checkbox"
+            className="size-4"
+            checked={skipPayment}
+            onChange={(event) => setSkipPayment(event.target.checked)}
+          />
+          <span className={cn("font-medium text-foreground", isMobileLayout ? "text-base" : "text-sm")}>
+            {t("invoices.wizard.dailyIncome.skipPayment")}
+          </span>
+        </Label>
+        <p className={cn("mt-2 leading-relaxed text-muted-foreground", isMobileLayout ? "text-base" : "text-sm")}>
+          {t(skipPayment
+            ? "invoices.wizard.dailyIncome.skipPaymentHint"
+            : "invoices.wizard.dailyIncome.unpaidContinueHint")}
+        </p>
+      </div>
       <InvoicePaymentTransactionForm
         statement={statement}
         invoice={values}
         onRegistered={handlePaymentPosted}
         onSkip={skipPaymentAndContinue}
         submitRef={paymentSubmitRef}
+        skipPayment={skipPayment}
       />
     </div>
   ) : null;

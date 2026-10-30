@@ -45,10 +45,12 @@ type Props = {
   statement: DailyIncomeStatement;
   invoice: InvoiceFormValues;
   onRegistered: (journal: DailyIncomeJournal) => void | Promise<void>;
-  /** Amount is $0: continue without posting a Daily Income payment. */
+  /** Amount is $0 or payment skipped: continue without posting a Daily Income payment. */
   onSkip: () => void;
   /** Lets the wizard Next button post the payment (or skip it when the amount is $0). */
   submitRef: MutableRefObject<(() => Promise<void>) | null>;
+  /** Hide the payment fields and continue without posting a payment. */
+  skipPayment?: boolean;
 };
 
 function buildInitialValues(
@@ -106,7 +108,14 @@ function hasJournalAssignee(values: Pick<DailyIncomeJournalValues, "employeeId" 
   return Boolean(values.employeeId) || Boolean(values.routeId?.trim());
 }
 
-export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered, onSkip, submitRef }: Props) {
+export function InvoicePaymentTransactionForm({
+  statement,
+  invoice,
+  onRegistered,
+  onSkip,
+  submitRef,
+  skipPayment = false,
+}: Props) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const isMobileLayout = useIsMobileViewport();
@@ -406,7 +415,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   async function postPaymentOrSkip() {
     if (submittingRef.current || statement.status !== "OPEN") return;
     const amount = Number(getValues("amount"));
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (skipPayment || !Number.isFinite(amount) || amount <= 0) {
       setSubmitError(null);
       onSkip();
       return;
@@ -436,32 +445,34 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         void postPaymentOrSkip();
       }}
     >
-      <RegisterInvoiceTransactionFields
-        grouped
-        employees={employees}
-        dailyRoutes={dailyRoutes}
-        statementDate={statement.date}
-        statementBranchId={statement.branch?.id}
-        bankAccounts={bankAccounts}
-        paymentMethods={paymentMethods}
-        errors={errors}
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        showEmployee={assigneeVisible}
-        allowDailyRoute={assigneeVisible}
-        showInvoiceNumber={false}
-        showParties={false}
-        invoiceCostReadOnly
-        paymentSectionFirst
-      />
+      {skipPayment ? null : (
+        <RegisterInvoiceTransactionFields
+          grouped
+          employees={employees}
+          dailyRoutes={dailyRoutes}
+          statementDate={statement.date}
+          statementBranchId={statement.branch?.id}
+          bankAccounts={bankAccounts}
+          paymentMethods={paymentMethods}
+          errors={errors}
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          showEmployee={assigneeVisible}
+          allowDailyRoute={assigneeVisible}
+          showInvoiceNumber={false}
+          showParties={false}
+          invoiceCostReadOnly
+          paymentSectionFirst
+        />
+      )}
 
       {createJournal.isPending ? (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {t("invoices.wizard.dailyIncome.dialog.registering")}
         </p>
-      ) : submitError ? (
+      ) : submitError && !skipPayment ? (
         <FormFooterNoticeMessage tone="error" message={submitError} />
       ) : null}
     </form>
