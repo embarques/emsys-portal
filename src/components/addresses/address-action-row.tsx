@@ -10,6 +10,7 @@ import {
   formatCoreAddressLines,
 } from "@/lib/customers/display";
 import type { CustomerCoreAddress } from "@/lib/customers/types";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 
@@ -28,6 +29,7 @@ function buildMapsDirectionsHref(query: string): string {
 }
 
 export function AddressActionRow({ label, address, className }: AddressActionRowProps) {
+  const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const lines = formatCoreAddressLines(address);
   const query = buildCoreAddressMapsQuery(address);
@@ -39,9 +41,9 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
 
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
-      notifySuccess("Address copied");
+      notifySuccess(t("customers.address.copied"));
     } catch {
-      notifyError("Could not copy address");
+      notifyError(t("customers.address.copyFailed"));
     }
   }
 
@@ -69,13 +71,13 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              aria-label={`Copy ${label}`}
+              aria-label={t("customers.address.copyAria", { label })}
               onClick={handleCopy}
             >
               <Copy className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Copy address</TooltipContent>
+          <TooltipContent>{t("customers.address.copyTooltip")}</TooltipContent>
         </Tooltip>
         {query ? (
           <>
@@ -91,13 +93,13 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
                     href={buildMapsSearchHref(query)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Open ${label} in Google Maps`}
+                    aria-label={t("customers.address.openMapsAria", { label })}
                   >
                     <MapPin className="h-4 w-4" />
                   </a>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>View on Google Maps</TooltipContent>
+              <TooltipContent>{t("customers.address.viewOnMaps")}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -111,13 +113,13 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
                     href={buildMapsDirectionsHref(query)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Get directions to ${label}`}
+                    aria-label={t("customers.address.directionsAria", { label })}
                   >
                     <Navigation className="h-4 w-4" />
                   </a>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Get directions</TooltipContent>
+              <TooltipContent>{t("customers.address.directions")}</TooltipContent>
             </Tooltip>
           </>
         ) : null}

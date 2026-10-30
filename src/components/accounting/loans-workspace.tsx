@@ -54,7 +54,7 @@ import {
   loanStatusLabel,
 } from "@/lib/accounting/loans/display";
 import { LOAN_TABLE_FILTER_FIELDS } from "@/lib/accounting/loans/filter-fields";
-import { loanPaymentSchema } from "@/lib/accounting/loans/schemas";
+import { createLoanPaymentSchema } from "@/lib/accounting/loans/schemas";
 import {
   DEFAULT_LOAN_LIST_PARAMS,
   EMPTY_LOAN_SUMMARY,
@@ -82,15 +82,16 @@ import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 const LOANS_TABLE_COLUMN_STORAGE_KEY = "accounting-loans-v1";
 
-function loanMutationErrorMessage(error: unknown): string {
+function loanMutationErrorMessage(error: unknown, t: TranslateFn): string {
   const message = normalizeApiError(error).message;
   if (/open (daily )?income (statement|closeout)/i.test(message)) {
-    return "An open Daily Income closeout is required for this loan account's branch on the selected date. Open or create that closeout below, then try again.";
+    return t("accounting.loans.errors.openCloseoutRequired");
   }
   return message;
 }
@@ -146,31 +147,33 @@ function LoanJournalPreview({
   amount: number;
   transactionLabel: "ISSUE" | "PAYMENT";
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="rounded-lg border bg-muted/20 p-4">
-      <p className="text-sm font-semibold">Summary</p>
+      <p className="text-sm font-semibold">{t("accounting.loans.journalPreview.title")}</p>
       <div className="mt-3 space-y-3 text-sm">
         <div className="flex items-start justify-between gap-4 border-b pb-3">
           <div>
-            <p className="font-semibold">Debit</p>
-            <p className="text-muted-foreground">{debitAccount || "Select account"}</p>
+            <p className="font-semibold">{t("accounting.loans.journalPreview.debit")}</p>
+            <p className="text-muted-foreground">{debitAccount || t("accounting.loans.journalPreview.selectAccount")}</p>
           </div>
           <p className="font-semibold tabular-nums">{formatLoanMoney(amount)}</p>
         </div>
         <div className="flex items-start justify-between gap-4 border-b pb-3">
           <div>
-            <p className="font-semibold">Credit</p>
-            <p className="text-muted-foreground">{creditAccount || "Select account"}</p>
+            <p className="font-semibold">{t("accounting.loans.journalPreview.credit")}</p>
+            <p className="text-muted-foreground">{creditAccount || t("accounting.loans.journalPreview.selectAccount")}</p>
           </div>
           <p className="font-semibold tabular-nums">{formatLoanMoney(amount)}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
-            <p className="font-medium text-muted-foreground">Transaction type</p>
+            <p className="font-medium text-muted-foreground">{t("accounting.loans.journalPreview.transactionType")}</p>
             <p className="mt-1 font-semibold">LOAN</p>
           </div>
           <div>
-            <p className="font-medium text-muted-foreground">Loan transaction</p>
+            <p className="font-medium text-muted-foreground">{t("accounting.loans.journalPreview.loanTransaction")}</p>
             <p className="mt-1 font-semibold">{transactionLabel}</p>
           </div>
         </div>
@@ -198,6 +201,8 @@ function RecordPaymentDialog({
   pending: boolean;
   initialLoan: Loan | null;
 }) {
+  const { t } = useTranslation();
+  const schema = useMemo(() => createLoanPaymentSchema(t), [t]);
   const {
     formState: { errors },
     handleSubmit,
@@ -206,7 +211,7 @@ function RecordPaymentDialog({
     setValue,
     watch,
   } = useForm<LoanPaymentValues>({
-    resolver: zodResolver(loanPaymentSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       allocationMode: initialLoan ? "specific-loan" : "oldest-first",
       loanId: initialLoan?.id,
@@ -234,8 +239,11 @@ function RecordPaymentDialog({
       : employeeLoans[0]?.loanAccount?.displayName ?? employeeLoans[0]?.loanAccount?.name ?? "";
   const allocationPreview =
     allocationMode === "specific-loan" && selectedLoan
-      ? `${formatLoanMoney(Math.min(amount, selectedLoan.balance))} to ${selectedLoan.description || selectedLoan.id}`
-      : buildOldestFirstAllocationPreview(employeeLoans, amount);
+      ? t("accounting.loans.paymentForm.allocationPart", {
+          amount: formatLoanMoney(Math.min(amount, selectedLoan.balance)),
+          loan: selectedLoan.description || selectedLoan.id,
+        })
+      : buildOldestFirstAllocationPreview(employeeLoans, amount, t);
 
   useEffect(() => {
     if (!open) return;
@@ -271,10 +279,8 @@ function RecordPaymentDialog({
     <Dialog open={open} onOpenChange={closeDialog}>
       <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden p-0 sm:max-w-4xl">
         <DialogHeader className="shrink-0 border-b px-6 py-4">
-          <DialogTitle>Record loan payment</DialogTitle>
-          <DialogDescription>
-            Apply a payment to an employee loan and post its journal entry.
-          </DialogDescription>
+          <DialogTitle>{t("accounting.loans.paymentForm.title")}</DialogTitle>
+          <DialogDescription>{t("accounting.loans.paymentForm.description")}</DialogDescription>
         </DialogHeader>
         <form
           id="loan-payment-form"
@@ -283,7 +289,7 @@ function RecordPaymentDialog({
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <RequiredLabel>Employee</RequiredLabel>
+              <RequiredLabel>{t("accounting.loans.paymentForm.employee")}</RequiredLabel>
               <SearchableSelect
                 value={selectedEmployeeId ? String(selectedEmployeeId) : ""}
                 onValueChange={(next) => {
@@ -297,19 +303,19 @@ function RecordPaymentDialog({
                   label: employee.name,
                   keywords: [employee.name],
                 }))}
-                placeholder="Select employee"
-                searchPlaceholder="Search employees"
+                placeholder={t("accounting.loans.paymentForm.selectEmployee")}
+                searchPlaceholder={t("accounting.loans.paymentForm.searchEmployees")}
                 mobileSheet
               />
               {errors.employeeId ? <p className="text-sm text-destructive">{errors.employeeId.message}</p> : null}
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <RequiredLabel>Allocation mode</RequiredLabel>
+              <RequiredLabel>{t("accounting.loans.paymentForm.allocationMode")}</RequiredLabel>
               <div className="grid grid-cols-2 rounded-lg border bg-muted/20 p-1">
                 {[
-                  { value: "oldest-first", label: "Oldest first" },
-                  { value: "specific-loan", label: "Specific loan" },
+                  { value: "oldest-first", label: t("accounting.loans.paymentForm.oldestFirst") },
+                  { value: "specific-loan", label: t("accounting.loans.paymentForm.specificLoan") },
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -334,18 +340,18 @@ function RecordPaymentDialog({
 
             {allocationMode === "specific-loan" ? (
               <div className="space-y-2 sm:col-span-2">
-                <RequiredLabel>Loan</RequiredLabel>
+                <RequiredLabel>{t("accounting.loans.paymentForm.loan")}</RequiredLabel>
                 <SearchableSelect
                   value={selectedLoanId ?? ""}
                   onValueChange={(next) => setValue("loanId", next, { shouldValidate: true })}
                   options={employeeLoans.map((loan) => ({
                     value: loan.id,
                     label: `${loan.employee.name} - ${loan.description || loan.id}`,
-                    description: `Balance ${formatLoanMoney(loan.balance)}`,
+                    description: t("accounting.loans.paymentForm.loanBalance", { amount: formatLoanMoney(loan.balance) }),
                     keywords: [loan.employee.name, loan.description, loan.referenceNumber],
                   }))}
-                  placeholder="Select loan"
-                  searchPlaceholder="Search loans"
+                  placeholder={t("accounting.loans.paymentForm.selectLoan")}
+                  searchPlaceholder={t("accounting.loans.paymentForm.searchLoans")}
                   mobileSheet
                 />
                 {errors.loanId ? <p className="text-sm text-destructive">{errors.loanId.message}</p> : null}
@@ -353,7 +359,7 @@ function RecordPaymentDialog({
             ) : null}
 
             <div className="space-y-2">
-              <RequiredLabel>Payment received account</RequiredLabel>
+              <RequiredLabel>{t("accounting.loans.paymentForm.receivedAccount")}</RequiredLabel>
               <SearchableSelect
                 value={watch("receivedAccountId") ? String(watch("receivedAccountId")) : ""}
                 onValueChange={(next) => {
@@ -367,15 +373,15 @@ function RecordPaymentDialog({
                   label: accountLabel(account),
                   keywords: [account.name, account.displayName],
                 }))}
-                placeholder="Select received account"
-                searchPlaceholder="Search asset accounts"
+                placeholder={t("accounting.loans.paymentForm.selectReceivedAccount")}
+                searchPlaceholder={t("accounting.loans.paymentForm.searchAssetAccounts")}
                 mobileSheet
               />
               {errors.receivedAccountId ? <p className="text-sm text-destructive">{errors.receivedAccountId.message}</p> : null}
             </div>
 
             <div className="space-y-2">
-              <RequiredLabel htmlFor="loan-payment-amount">Payment amount</RequiredLabel>
+              <RequiredLabel htmlFor="loan-payment-amount">{t("accounting.loans.paymentForm.amount")}</RequiredLabel>
               <Input
                 id="loan-payment-amount"
                 type="number"
@@ -390,29 +396,29 @@ function RecordPaymentDialog({
 
             {allocationPreview ? (
               <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-800 sm:col-span-2">
-                Payment allocation: {allocationPreview}
+                {t("accounting.loans.paymentForm.allocation", { allocation: allocationPreview })}
               </div>
             ) : null}
 
             <div className="space-y-2">
-              <RequiredLabel htmlFor="loan-payment-date">Date</RequiredLabel>
+              <RequiredLabel htmlFor="loan-payment-date">{t("accounting.loans.paymentForm.date")}</RequiredLabel>
               <DateInput id="loan-payment-date" {...register("transactionDate")} />
               {errors.transactionDate ? <p className="text-sm text-destructive">{errors.transactionDate.message}</p> : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="loan-payment-reference">Reference number</Label>
-              <Input id="loan-payment-reference" placeholder="Optional" {...register("referenceNumber")} />
+              <Label htmlFor="loan-payment-reference">{t("accounting.loans.paymentForm.reference")}</Label>
+              <Input id="loan-payment-reference" placeholder={t("accounting.loans.paymentForm.optional")} {...register("referenceNumber")} />
               {errors.referenceNumber ? <p className="text-sm text-destructive">{errors.referenceNumber.message}</p> : null}
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="loan-payment-description">Description</Label>
+              <Label htmlFor="loan-payment-description">{t("accounting.loans.paymentForm.notes")}</Label>
               <textarea
                 id="loan-payment-description"
                 rows={4}
                 className="flex min-h-24 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-                placeholder="Payment notes"
+                placeholder={t("accounting.loans.paymentForm.notesPlaceholder")}
                 {...register("description")}
               />
               {errors.description ? <p className="text-sm text-destructive">{errors.description.message}</p> : null}
@@ -427,10 +433,10 @@ function RecordPaymentDialog({
         </form>
         <DialogFooter className="shrink-0 border-t px-6 py-4">
           <Button type="button" variant="outline" onClick={() => closeDialog(false)}>
-            Cancel
+            {t("common.actions.cancel")}
           </Button>
           <Button type="submit" form="loan-payment-form" disabled={pending}>
-            Record payment
+            {t("accounting.loans.paymentForm.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -438,7 +444,7 @@ function RecordPaymentDialog({
   );
 }
 
-function buildOldestFirstAllocationPreview(loans: Loan[], amount: number) {
+function buildOldestFirstAllocationPreview(loans: Loan[], amount: number, t: TranslateFn) {
   if (amount <= 0 || loans.length === 0) return "";
   let remaining = amount;
   const parts: string[] = [];
@@ -446,7 +452,12 @@ function buildOldestFirstAllocationPreview(loans: Loan[], amount: number) {
     if (remaining <= 0) break;
     const applied = Math.min(loan.balance, remaining);
     if (applied > 0) {
-      parts.push(`${formatLoanMoney(applied)} to ${loan.description || loan.id}`);
+      parts.push(
+        t("accounting.loans.paymentForm.allocationPart", {
+          amount: formatLoanMoney(applied),
+          loan: loan.description || loan.id,
+        }),
+      );
       remaining -= applied;
     }
   }
@@ -466,6 +477,7 @@ function LoanMobileCard({
   onRecordPayment: (loan: Loan) => void;
   onViewPayments: (loan: Loan) => void;
 }) {
+  const { t } = useTranslation();
   const hasPayments = loan.paidAmount > 0;
 
   return (
@@ -479,25 +491,25 @@ function LoanMobileCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-base font-semibold">{loan.employee.name}</p>
-            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{loan.description || "Loan"}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{loan.description || t("accounting.loans.fallbackDescription")}</p>
           </div>
-          <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status)}</Badge>
+          <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status, t)}</Badge>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">Balance</p>
+            <p className="text-xs text-muted-foreground">{t("accounting.loans.details.balance")}</p>
             <p className="font-semibold">{formatLoanMoney(loan.balance)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Principal</p>
+            <p className="text-xs text-muted-foreground">{t("accounting.loans.details.principal")}</p>
             <p className="font-semibold">{formatLoanMoney(loan.principalAmount)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Loan account</p>
+            <p className="text-xs text-muted-foreground">{t("accounting.loans.details.loanAccount")}</p>
             <p className="truncate font-medium">{loan.loanAccount?.displayName ?? loan.loanAccount?.name ?? "-"}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Last activity</p>
+            <p className="text-xs text-muted-foreground">{t("accounting.loans.details.lastActivity")}</p>
             <p className="font-medium">{formatLoanDate(loan.lastActivityAt) || "-"}</p>
           </div>
         </div>
@@ -509,7 +521,7 @@ function LoanMobileCard({
             variant="outline"
             size="icon"
             className="h-9 w-9 rounded-lg"
-            aria-label={`View payments for ${loan.employee.name}`}
+            aria-label={t("accounting.loans.payments.viewAria", { name: loan.employee.name })}
             onClick={() => onViewPayments(loan)}
           >
             <ChevronRight className="h-4 w-4" />
@@ -522,7 +534,7 @@ function LoanMobileCard({
           className="h-9 rounded-lg px-3 text-sm"
           onClick={() => onRecordPayment(loan)}
         >
-          Record payment
+          {t("accounting.loans.actions.newLoanPayment")}
         </Button>
       </div>
     </div>
@@ -548,6 +560,8 @@ function LoanPaymentEntries({
   createdByTemplate: (name: string) => string;
   compact?: boolean;
 }) {
+  const { t } = useTranslation();
+
   if (error) {
     return (
       <div
@@ -593,7 +607,7 @@ function LoanPaymentEntries({
                 {formatLoanDate(payment.transactionDate) || "-"}
               </p>
               <p className={cn("mt-1 truncate text-muted-foreground", compact ? "text-xs" : "text-sm")}>
-                {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? "Payment"}
+                {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? t("accounting.loans.transactionTypes.PAYMENT")}
               </p>
             </div>
             <p className={cn("shrink-0", compact ? "text-sm font-semibold" : "font-bold")}>
@@ -647,6 +661,8 @@ function LoanPaymentsMobileView({
     createdBy: (name: string) => string;
   };
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-4 px-4 pb-8">
       <div className="flex items-center gap-3">
@@ -672,7 +688,7 @@ function LoanPaymentsMobileView({
 
       <Button type="button" className="w-full rounded-xl" onClick={() => onRecordPayment(loan)} disabled={loan.status !== "ACTIVE"}>
         <ReceiptText className="h-4 w-4" />
-        Record payment
+        {t("accounting.loans.actions.newLoanPayment")}
       </Button>
 
       <LoanPaymentEntries
@@ -715,6 +731,8 @@ function LoanPaymentsDesktopPanel({
     createdBy: (name: string) => string;
   };
 }) {
+  const { t } = useTranslation();
+
   return (
     <>
       <CardHeader className="gap-3 border-b py-4 pb-3">
@@ -733,7 +751,7 @@ function LoanPaymentsDesktopPanel({
           </div>
           <Button type="button" onClick={() => onRecordPayment(loan)} disabled={loan.status !== "ACTIVE"}>
             <ReceiptText className="h-4 w-4" />
-            Record payment
+            {t("accounting.loans.actions.newLoanPayment")}
           </Button>
         </div>
       </CardHeader>
@@ -854,38 +872,41 @@ export function LoansWorkspace() {
     value: String(account.id),
     label: accountLabel(account),
   }));
-  const listSummary = formatPaginatedListSummary({
-    itemCountOnPage: loans.length,
-    page,
-    pageSize: PAGE_SIZE,
-    total: totalLoans,
-    noun: "loans",
-    isLoading: loansQuery.isFetching,
-  });
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: loans.length,
+      page,
+      pageSize: PAGE_SIZE,
+      total: totalLoans,
+      noun: t("accounting.loans.noun"),
+      isLoading: loansQuery.isFetching,
+    },
+    t,
+  );
   const searchResultHint = hasActiveFilters ? listSummary : undefined;
   const stats = [
     {
-      label: "Outstanding balance",
+      label: t("accounting.loans.stats.outstandingBalance"),
       value: formatLoanMoney(summary.outstandingBalance),
-      description: "Calculated loan balance",
+      description: t("accounting.loans.stats.outstandingBalanceDescription"),
       icon: Banknote,
     },
     {
-      label: "Loaned in range",
+      label: t("accounting.loans.stats.loanedInRange"),
       value: formatLoanMoney(summary.loanedInRange),
-      description: "Principal issued",
+      description: t("accounting.loans.stats.loanedInRangeDescription"),
       icon: CreditCard,
     },
     {
-      label: "Paid in range",
+      label: t("accounting.loans.stats.paidInRange"),
       value: formatLoanMoney(summary.paidInRange),
-      description: "Payments received",
+      description: t("accounting.loans.stats.paidInRangeDescription"),
       icon: ReceiptText,
     },
     {
-      label: "Active loans",
+      label: t("accounting.loans.stats.activeLoans"),
       value: summary.activeLoans.toLocaleString(),
-      description: "Open employee loans",
+      description: t("accounting.loans.stats.activeLoansDescription"),
       icon: FileText,
     },
   ];
@@ -894,60 +915,60 @@ export function LoansWorkspace() {
     () => [
       {
         id: "employee.name",
-        label: "Employee",
+        label: t("accounting.loans.columns.employee"),
         renderCell: (loan) => <span className="font-medium">{loan.employee.name}</span>,
       },
       {
         id: "loanAccount.name",
-        label: "Loan account",
+        label: t("accounting.loans.columns.loanAccount"),
         renderCell: (loan) => loan.loanAccount?.displayName ?? loan.loanAccount?.name ?? "-",
       },
       {
         id: "description",
-        label: "Description",
+        label: t("accounting.loans.columns.description"),
         renderCell: (loan) => loan.description || "-",
       },
       {
         id: "openedAt",
-        label: "Opened",
+        label: t("accounting.loans.columns.opened"),
         renderCell: (loan) => formatLoanDate(loan.openedAt) || "-",
       },
       {
         id: "principalAmount",
-        label: "Principal amount",
+        label: t("accounting.loans.columns.principalAmount"),
         renderCell: (loan) => formatLoanMoney(loan.principalAmount),
       },
       {
         id: "paidAmount",
-        label: "Paid",
+        label: t("accounting.loans.columns.paid"),
         renderCell: (loan) => formatLoanMoney(loan.paidAmount),
       },
       {
         id: "balance",
-        label: "Balance",
+        label: t("accounting.loans.columns.balance"),
         renderCell: (loan) => <span className="font-semibold">{formatLoanMoney(loan.balance)}</span>,
       },
       {
         id: "status",
-        label: "Status",
+        label: t("accounting.loans.columns.status"),
         renderCell: (loan) => (
-          <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status)}</Badge>
+          <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status, t)}</Badge>
         ),
       },
       {
         id: "lastActivityAt",
-        label: "Last activity",
+        label: t("accounting.loans.columns.lastActivity"),
         renderCell: (loan) => formatLoanDate(loan.lastActivityAt) || "-",
       },
       {
         id: "actions",
-        label: "Actions",
+        label: t("accounting.loans.columns.actions"),
         stopRowClick: true,
         renderCell: (loan) => (
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Record payment for ${loan.employee.name}`}
+            aria-label={t("accounting.loans.actions.newLoanPaymentFor", { name: loan.employee.name })}
             onClick={() => openPaymentForLoan(loan)}
           >
             <MoreHorizontal className="h-4 w-4" />
@@ -955,7 +976,7 @@ export function LoansWorkspace() {
         ),
       },
     ],
-    [],
+    [t],
   );
   const columnVisibility = useColumnVisibility(LOANS_TABLE_COLUMN_STORAGE_KEY, tableColumns);
 
@@ -967,11 +988,15 @@ export function LoansWorkspace() {
   async function handleCreateLoan(values: LoanCreateValues) {
     try {
       const loan = await createLoanMutation.mutateAsync(values);
-      notifySuccess(`Loan created${loan?.employee.name ? ` for ${loan.employee.name}` : ""}.`);
+      notifySuccess(
+        loan?.employee.name
+          ? t("accounting.loans.toasts.createdFor", { name: loan.employee.name })
+          : t("accounting.loans.toasts.created"),
+      );
       setPage(1);
       setCreateOpen(false);
     } catch (error) {
-      notifyError(loanMutationErrorMessage(error));
+      notifyError(loanMutationErrorMessage(error, t));
       throw error;
     }
   }
@@ -979,11 +1004,11 @@ export function LoansWorkspace() {
   async function handleRecordPayment(values: LoanPaymentValues) {
     try {
       await recordPaymentMutation.mutateAsync(values);
-      notifySuccess("Loan payment recorded.");
+      notifySuccess(t("accounting.loans.toasts.paymentRecorded"));
       setPaymentOpen(false);
       setPaymentInitialLoan(null);
     } catch (error) {
-      notifyError(loanMutationErrorMessage(error));
+      notifyError(loanMutationErrorMessage(error, t));
     }
   }
 
@@ -1072,17 +1097,17 @@ export function LoansWorkspace() {
     <div>
       <div className="hidden md:block">
         <PageHeader
-          title="Loans"
-          description="Track employee loan balances, payments, and journal activity."
+          title={t("accounting.loans.page.title")}
+          description={t("accounting.loans.page.description")}
           actions={
             <>
               <Button variant="outline" onClick={() => openPaymentForLoan(selectedLoan)}>
                 <ReceiptText className="h-4 w-4" />
-                Record payment
+                {t("accounting.loans.actions.newLoanPayment")}
               </Button>
               <Button onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4" />
-                New loan
+                {t("accounting.loans.actions.newLoan")}
               </Button>
             </>
           }
@@ -1118,7 +1143,7 @@ export function LoansWorkspace() {
                       setFilters((current) => ({ ...current, query }));
                       setPage(1);
                     }}
-                    placeholder="Search employee, loan, reference"
+                    placeholder={t("accounting.loans.table.searchPlaceholder")}
                   />
                 }
                 filterPanel={
@@ -1188,16 +1213,21 @@ export function LoansWorkspace() {
 
             {loansQuery.isError ? (
               <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">
-                {loansQuery.error instanceof Error ? loansQuery.error.message : "Unable to load loans."}
+                {loansQuery.error instanceof Error ? loansQuery.error.message : t("accounting.loans.table.loadError")}
               </div>
             ) : null}
 
             {loansQuery.isPending && loans.length === 0 ? (
               <DirectoryTableLoader
                 icon={Banknote}
-                title="Loading loans"
-                description="Preparing employee loan balances."
-                columns={["Employee", "Loan account", "Balance", "Status"]}
+                title={t("accounting.loans.table.loadingTitle")}
+                description={t("accounting.loans.table.loadingDescription")}
+                columns={[
+                  t("accounting.loans.columns.employee"),
+                  t("accounting.loans.columns.loanAccount"),
+                  t("accounting.loans.columns.balance"),
+                  t("accounting.loans.columns.status"),
+                ]}
               />
             ) : (
               <DataTable
@@ -1223,10 +1253,10 @@ export function LoansWorkspace() {
                 activeRowId={selectedLoan?.id}
                 emptyState={
                   <div className="py-10 text-center">
-                    <p className="text-muted-foreground">No loans match the current filters.</p>
+                    <p className="text-muted-foreground">{t("accounting.loans.table.empty")}</p>
                     <Button className="mt-4" onClick={() => setCreateOpen(true)}>
                       <Plus className="h-4 w-4" />
-                      New loan
+                      {t("accounting.loans.actions.newLoan")}
                     </Button>
                   </div>
                 }
@@ -1238,13 +1268,13 @@ export function LoansWorkspace() {
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
                   <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  {t("common.actions.previous")}
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
+                  {t("common.pagination.pageOf", { current: page, total: totalPages })}
                 </span>
                 <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
-                  Next
+                  {t("common.actions.next")}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -1257,8 +1287,8 @@ export function LoansWorkspace() {
             <CardHeader className="border-b">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-base font-semibold">Selected loan</p>
-                  <p className="text-sm text-muted-foreground">Balance and recent activity</p>
+                  <p className="text-base font-semibold">{t("accounting.loans.details.title")}</p>
+                  <p className="text-sm text-muted-foreground">{t("accounting.loans.details.subtitle")}</p>
                 </div>
                 <Search className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -1268,35 +1298,37 @@ export function LoansWorkspace() {
                 <>
                   <div>
                     <p className="text-lg font-semibold">{selectedLoan.employee.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedLoan.description || "Loan"}</p>
+                    <p className="text-sm text-muted-foreground">{selectedLoan.description || t("accounting.loans.fallbackDescription")}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-xs text-muted-foreground">Principal</p>
+                      <p className="text-xs text-muted-foreground">{t("accounting.loans.details.principal")}</p>
                       <p className="font-semibold">{formatLoanMoney(selectedLoan.principalAmount)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Paid</p>
+                      <p className="text-xs text-muted-foreground">{t("accounting.loans.details.paid")}</p>
                       <p className="font-semibold">{formatLoanMoney(selectedLoan.paidAmount)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Balance</p>
+                      <p className="text-xs text-muted-foreground">{t("accounting.loans.details.balance")}</p>
                       <p className="font-semibold">{formatLoanMoney(selectedLoan.balance)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Status</p>
-                      <Badge className={loanStatusClassName(selectedLoan.status)}>{loanStatusLabel(selectedLoan.status)}</Badge>
+                      <p className="text-xs text-muted-foreground">{t("accounting.loans.details.status")}</p>
+                      <Badge className={loanStatusClassName(selectedLoan.status)}>{loanStatusLabel(selectedLoan.status, t)}</Badge>
                     </div>
                   </div>
                   <Button className="w-full" onClick={() => openPaymentForLoan(selectedLoan)} disabled={selectedLoan.status !== "ACTIVE"}>
                     <ReceiptText className="h-4 w-4" />
-                    Record payment
+                    {t("accounting.loans.actions.newLoanPayment")}
                   </Button>
                   <div className="border-t pt-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{paymentLabels.title}</p>
-                        <p className="text-xs text-muted-foreground">{formatLoanMoney(selectedLoan.paidAmount)} paid</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("accounting.loans.details.paidAmount", { amount: formatLoanMoney(selectedLoan.paidAmount) })}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedLoan.paidAmount > 0 ? (
@@ -1334,7 +1366,7 @@ export function LoansWorkspace() {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Select a loan to view balance details.</p>
+                <p className="text-sm text-muted-foreground">{t("accounting.loans.details.empty")}</p>
               )}
             </CardContent>
           </Card>
@@ -1345,8 +1377,8 @@ export function LoansWorkspace() {
         <div className="rounded-b-3xl bg-primary px-4 pb-6 pt-5 text-primary-foreground">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold tracking-normal">Loans</h1>
-              <p className="mt-1 text-sm text-primary-foreground/80">Employee balances and payments</p>
+              <h1 className="text-3xl font-bold tracking-normal">{t("accounting.loans.page.title")}</h1>
+              <p className="mt-1 text-sm text-primary-foreground/80">{t("accounting.loans.page.mobileSubtitle")}</p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -1358,7 +1390,7 @@ export function LoansWorkspace() {
               >
                 <Printer className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="secondary" onClick={() => setCreateOpen(true)} aria-label="New loan">
+              <Button size="icon" variant="secondary" onClick={() => setCreateOpen(true)} aria-label={t("accounting.loans.actions.newLoan")}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -1384,7 +1416,7 @@ export function LoansWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search employee, loan, reference"
+                placeholder={t("accounting.loans.table.searchPlaceholder")}
                 inputClassName="h-12 rounded-2xl border-border bg-background text-base text-foreground shadow-none"
               />
               <div className="mt-3">
@@ -1423,22 +1455,22 @@ export function LoansWorkspace() {
             <div className="flex items-center justify-between gap-3 px-4">
               <Button variant="outline" className="h-11 rounded-xl" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                {t("common.actions.previous")}
               </Button>
               <span className="text-sm font-medium text-muted-foreground">
-                Page {page} of {totalPages}
+                {t("common.pagination.pageOf", { current: page, total: totalPages })}
               </span>
               <Button variant="outline" className="h-11 rounded-xl" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
-                Next
+                {t("common.actions.next")}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
 
             <div className="space-y-3 px-4 pb-8">
               {loansQuery.isPending && loans.length === 0 ? (
-                <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">Loading loans...</div>
+                <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">{t("accounting.loans.table.loading")}</div>
               ) : loans.length === 0 ? (
-                <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">No loans match the current filters.</div>
+                <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">{t("accounting.loans.table.empty")}</div>
               ) : (
                 loans.map((loan) => (
                   <LoanMobileCard

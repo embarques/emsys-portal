@@ -236,6 +236,7 @@ function DailyIncomeMobileSummary({
   loading: boolean;
   error?: string | null;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (error) {
@@ -243,7 +244,7 @@ function DailyIncomeMobileSummary({
   }
 
   if (loading) {
-    return <p className="rounded-2xl border bg-card px-4 py-5 text-sm text-muted-foreground">Loading summary totals…</p>;
+    return <p className="rounded-2xl border bg-card px-4 py-5 text-sm text-muted-foreground">{t("accounting.dailyIncome.summary.loadingTotals")}</p>;
   }
 
   if (stats.length === 0) return null;

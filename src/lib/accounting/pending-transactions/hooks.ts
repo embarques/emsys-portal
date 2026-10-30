@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { useAccountingQueryEnabled } from "../daily-income/hooks";
+import { useAccountingQueryEnabled } from "@/lib/accounting/daily-income/hooks";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toApiPaymentMethodName } from "../daily-income/types";

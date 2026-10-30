@@ -150,7 +150,7 @@ test("daily income RD exposes exchange rate and focuses it after choosing DOP", 
 test("daily income validation focuses a missing custom branch selector", async () => {
   const page = await fixture(1280, "statement");
   try {
-    await page.getByRole("button", { name: "Clear selection" }).dispatchEvent("pointerdown");
+    await page.getByRole("button", { name: "common.ui.clearSelection" }).dispatchEvent("pointerdown");
     await page.locator('button[type="submit"]').click();
     await page.waitForFunction(() => document.activeElement.id === "statement-branch");
     assert.equal(await page.locator("#statement-branch").getAttribute("aria-invalid"), "true");
@@ -234,7 +234,7 @@ test("closed cmdk input advances instead of swallowing Enter", async () => {
   try {
     await page.locator("#branch").focus();
     await page.keyboard.press("Escape");
-    await page.locator('[aria-label="Clear selection"]').dispatchEvent("pointerdown");
+    await page.locator('[aria-label="common.ui.clearSelection"]').dispatchEvent("pointerdown");
     await page.waitForFunction(() => document.activeElement.id === "branch");
     await page.keyboard.press("Enter");
     await page.waitForFunction(() => document.activeElement.id === "plain");
@@ -245,7 +245,7 @@ test("a closed preselected dropdown keeps its value and advances on one Enter", 
   const page = await fixture();
   try {
     await page.locator("#branch").focus();
-    await page.getByRole("button", { name: "Close options" }).click();
+    await page.getByRole("button", { name: "common.ui.closeOptions" }).click();
     assert.equal(await page.locator("#branch").getAttribute("aria-expanded"), "false");
     await page.locator("#branch").press("Enter");
     await page.waitForFunction(() => document.activeElement.id === "plain");

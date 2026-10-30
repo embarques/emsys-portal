@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios";
 
 import { getConfigurationSnapshot } from "@/lib/configuration/store";
+import { translate } from "@/lib/i18n/catalog";
 
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -62,6 +63,10 @@ type ApiReportDefinition = {
   filters?: unknown;
   outputs?: unknown;
 };
+
+function reportErrorMessage(key: string): string {
+  return translate(getConfigurationSnapshot().language, `reports.apiErrors.${key}`);
+}
 
 function extractReportUrl(data: ReportData): string {
   if (typeof data === "string") return data.trim();
@@ -154,7 +159,7 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
 
   if (response.success === false) {
     throw new Error(
-      response.message?.trim() || response.error?.trim() || "Unable to generate report.",
+      response.message?.trim() || response.error?.trim() || reportErrorMessage("generateFailed"),
     );
   }
 
@@ -167,7 +172,7 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
         response,
       });
     }
-    throw new Error("The report did not return a download URL.");
+    throw new Error(reportErrorMessage("missingDownloadUrl"));
   }
 
   const details = data && typeof data === "object" ? data : null;
@@ -385,7 +390,7 @@ async function fetchInvoiceReportValues(
     return { values: Array.from(numbers), lookupField: "number" };
   }
 
-  throw new Error("No invoices matched the selected report filters.");
+  throw new Error(reportErrorMessage("noInvoicesMatched"));
 }
 
 export async function requestReportGeneration(
@@ -397,17 +402,17 @@ export async function requestReportGeneration(
 
   if (request.reportKey === "payment-receipt") {
     const reference = request.filters.receiptNumber?.trim();
-    if (!reference) throw new Error("Receipt number is required.");
+    if (!reference) throw new Error(reportErrorMessage("receiptNumberRequired"));
     const response = await apiClient.post<PaginatedApiEnvelope<Array<{ id?: string; _id?: string }>>>(
       `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search?${buildApiSearchPaginationQuery({ page: 1, limit: 2, offset: 0 })}`,
       buildStripeStyleSearchBody({ filterGroups: [{ operator: "and", filters: [{ field: "refNumber", operator: "eq", value: reference }] }] }),
     );
     const matches = Array.isArray(response.data) ? response.data : [];
     if (matches.length !== 1 || Number(response.total) > 1) {
-      throw new Error(matches.length === 0 ? "No receipt matched that number." : "Receipt number matches multiple transactions.");
+      throw new Error(reportErrorMessage(matches.length === 0 ? "noReceiptMatched" : "receiptMultipleMatches"));
     }
     const id = stringValue(matches[0].id) || stringValue(matches[0]._id);
-    if (!/^[a-f0-9]{24}$/i.test(id)) throw new Error("The receipt has an invalid transaction identifier.");
+    if (!/^[a-f0-9]{24}$/i.test(id)) throw new Error(reportErrorMessage("receiptInvalidId"));
     const result = await generateReport({ type: "transaction", collection: "journals", values: [id], lookupField: "id", format: "pdf" });
     return { status: "generated", request, result };
   }
@@ -460,7 +465,7 @@ export async function requestReportGeneration(
 function buildCustomsFormReportRequest(request: NormalizedReportRequest): ReportRequest {
   const containerId = request.filters.containerId?.trim();
   if (!containerId) {
-    throw new Error("Container is required for the customs form report.");
+    throw new Error(reportErrorMessage("customsFormContainerRequired"));
   }
 
   return {
@@ -474,7 +479,7 @@ function buildCustomsFormReportRequest(request: NormalizedReportRequest): Report
 function buildCustomsSenderReportRequest(request: NormalizedReportRequest): ReportRequest {
   const containerId = request.filters.containerId?.trim();
   if (!containerId) {
-    throw new Error("Container is required for the customs sender report.");
+    throw new Error(reportErrorMessage("customsSenderContainerRequired"));
   }
 
   return {
@@ -489,7 +494,7 @@ function buildCustomsSenderReportRequest(request: NormalizedReportRequest): Repo
 function buildShipmentRelationReportRequest(request: NormalizedReportRequest): ReportRequest {
   const containerId = request.filters.containerId?.trim();
   if (!containerId) {
-    throw new Error("Container is required for the shipment relation report.");
+    throw new Error(reportErrorMessage("shipmentRelationContainerRequired"));
   }
 
   const filters: NonNullable<ReportRequest["filters"]> = [];
@@ -519,7 +524,7 @@ function buildShipmentRelationReportRequest(request: NormalizedReportRequest): R
 function buildDeliveryReportRequest(request: NormalizedReportRequest): ReportRequest {
   const deliveryId = request.filters.deliveryNumber?.trim();
   if (!deliveryId) {
-    throw new Error("Delivery number is required for the Conduce report.");
+    throw new Error(reportErrorMessage("deliveryNumberRequired"));
   }
 
   const rateText = request.filters.rate?.trim();
@@ -527,7 +532,7 @@ function buildDeliveryReportRequest(request: NormalizedReportRequest): ReportReq
   if (rateText) {
     const parsedRate = Number(rateText);
     if (!Number.isFinite(parsedRate) || parsedRate <= 0) {
-      throw new Error("Rate must be greater than zero.");
+      throw new Error(reportErrorMessage("rateGreaterThanZero"));
     }
     rate = parsedRate;
   }
@@ -553,7 +558,7 @@ async function buildInvoiceReportRequest(request: NormalizedReportRequest): Prom
 
   if (!dateSearchDisabled) {
     if (!start && !end) {
-      throw new Error("Date range is required when date search is enabled.");
+      throw new Error(reportErrorMessage("dateRangeRequiredWhenEnabled"));
     }
 
     if (start) filters.push({ field: "date", operator: "gte", value: start });
@@ -562,7 +567,7 @@ async function buildInvoiceReportRequest(request: NormalizedReportRequest): Prom
 
   const containerId = request.filters.containerId?.trim();
   if (dateSearchDisabled && !containerId) {
-    throw new Error("Container is required when date search is disabled.");
+    throw new Error(reportErrorMessage("containerRequiredWhenDateDisabled"));
   }
   if (containerId) {
     const numericContainerId = Number(containerId);
@@ -628,7 +633,7 @@ function buildInvoiceContainerReportFilters(
   const filters: NonNullable<ReportRequest["filters"]> = [];
   const containerId = request.filters.containerId?.trim();
   if (options.requireContainer && !containerId) {
-    throw new Error("Furgon is required for this report.");
+    throw new Error(reportErrorMessage("furgonRequired"));
   }
   if (containerId) {
     const numericContainerId = Number(containerId);
@@ -671,13 +676,13 @@ function buildInvoiceContainerReportFilters(
 function buildLoanStatementReportRequest(request: NormalizedReportRequest): ReportRequest {
   const employeeId = request.filters.employeeId?.trim();
   if (!employeeId) {
-    throw new Error("Employee is required for the loan statement report.");
+    throw new Error(reportErrorMessage("loanEmployeeRequired"));
   }
 
   const dateFrom = request.filters.dateFrom?.trim().slice(0, 10) ?? "";
   const dateTo = request.filters.dateTo?.trim().slice(0, 10) ?? "";
   if (!dateFrom && !dateTo) {
-    throw new Error("Date range is required for the loan statement report.");
+    throw new Error(reportErrorMessage("loanDateRangeRequired"));
   }
 
   const start = dateFrom || dateTo;

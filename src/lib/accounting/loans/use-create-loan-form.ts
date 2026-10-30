@@ -1,18 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { normalizeApiError } from "@/lib/api/axios";
-import { createLoanSchema } from "./schemas";
+import { useTranslation } from "@/lib/i18n";
+import { createLoanFormSchema } from "./schemas";
 import type { LoanCreateValues } from "./types";
 
 export function useCreateLoanForm(onSubmit: (values: LoanCreateValues) => Promise<void>, pending: boolean) {
+  const { t } = useTranslation();
+  const schema = useMemo(() => createLoanFormSchema(t), [t]);
   const [step, setStep] = useState(1);
   const [closeoutReady, setCloseoutReady] = useState(false);
   const submitting = useRef(false);
   const form = useForm<LoanCreateValues>({
-    resolver: zodResolver(createLoanSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       employeeId: 0, loanAccountId: 0, sourceAccountId: 0, principalAmount: 0,
       transactionDate: new Date().toISOString().slice(0, 10), referenceNumber: "", description: "",

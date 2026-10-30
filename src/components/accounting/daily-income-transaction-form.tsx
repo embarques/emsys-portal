@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionReview } from "@/components/accounting/transaction-review";
 import { getTransactionFieldStep, getTransactionStepFields, hasPaymentDetailsStep, TRANSACTION_FIELD_IDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
@@ -462,11 +463,11 @@ export function DailyIncomeTransactionForm({
     </div>
   );
 
-  function readOnlyInvoiceField(id: string, label: string, value: string) {
+  function readOnlyInvoiceField(id: string, label: string, value: string, inputClassName = "bg-muted/40") {
     return (
       <div className="space-y-2 min-w-0">
         <Label htmlFor={id}>{label}</Label>
-        <Input id={id} readOnly tabIndex={-1} value={value} className="bg-muted/40 tabular-nums" />
+        <Input id={id} readOnly tabIndex={-1} value={value} className={cn("tabular-nums", inputClassName)} />
       </div>
     );
   }
@@ -664,7 +665,7 @@ export function DailyIncomeTransactionForm({
                       {readOnlyInvoiceField("journal-invoice-total", t("accounting.dailyIncome.form.invoiceSummary.total"), selectedInvoice ? formatAccountingMoney(getInvoiceTotal(selectedInvoice)) : "")}
                       {readOnlyInvoiceField("journal-invoice-discount", t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice ? formatAccountingMoney(selectedInvoice.discount) : "")}
                       {readOnlyInvoiceField("journal-invoice-paid", t("accounting.dailyIncome.form.invoiceSummary.paid"), selectedInvoice ? formatAccountingMoney(selectedInvoice.amountPaid) : "")}
-                      {readOnlyInvoiceField("journal-invoice-balance", t("accounting.dailyIncome.form.invoiceSummary.balance"), selectedInvoice ? formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice)) : "")}
+                      {readOnlyInvoiceField("journal-invoice-balance", t("accounting.dailyIncome.form.invoiceSummary.balance"), selectedInvoice ? formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice)) : "", getInvoiceBalanceInputClassName(selectedInvoice ? getInvoiceBalanceAmount(selectedInvoice) : null))}
                     </div>
                     {renderAmountField("accounting.dailyIncome.form.fields.paymentAmount")}
                   </div>
@@ -692,7 +693,7 @@ export function DailyIncomeTransactionForm({
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.balance")}</p>
-                          <p className="font-medium">{formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice))}</p>
+                          <p className={cn("font-medium tabular-nums", getInvoiceBalanceTextClassName(getInvoiceBalanceAmount(selectedInvoice)))}>{formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice))}</p>
                         </div>
                       </div>
                     ) : null}

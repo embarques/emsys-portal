@@ -10,6 +10,7 @@ import {
   buildWhatsAppHref,
   resolvePhoneDisplayValue,
 } from "@/lib/utils/phone";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type PhoneActionRowProps = {
@@ -33,6 +34,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export function PhoneActionRow({ label, number, displayNumber, className }: PhoneActionRowProps) {
+  const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const display = resolvePhoneDisplayValue(number, displayNumber);
   const telHref = buildTelHref(number);
@@ -43,9 +45,9 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
 
     try {
       await navigator.clipboard.writeText(display);
-      notifySuccess("Phone number copied");
+      notifySuccess(t("phones.actions.copied"));
     } catch {
-      notifyError("Could not copy phone number");
+      notifyError(t("phones.actions.copyFailed"));
     }
   }
 
@@ -69,13 +71,13 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              aria-label={`Copy ${label}`}
+              aria-label={t("phones.actions.copyAria", { label })}
               onClick={handleCopy}
             >
               <Copy className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Copy number</TooltipContent>
+          <TooltipContent>{t("phones.actions.copyTooltip")}</TooltipContent>
         </Tooltip>
         {telHref ? (
           <Tooltip>
@@ -86,12 +88,12 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
                 size="icon"
                 className="h-8 w-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
               >
-                <a href={telHref} aria-label={`Call ${label}`}>
+                <a href={telHref} aria-label={t("phones.actions.callAria", { label })}>
                   <Phone className="h-4 w-4" />
                 </a>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Call</TooltipContent>
+            <TooltipContent>{t("phones.actions.call")}</TooltipContent>
           </Tooltip>
         ) : null}
         {whatsAppHref ? (
@@ -107,13 +109,13 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
                   href={whatsAppHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`WhatsApp ${label}`}
+                  aria-label={t("phones.actions.whatsAppAria", { label })}
                 >
                   <WhatsAppIcon />
                 </a>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Message on WhatsApp</TooltipContent>
+            <TooltipContent>{t("phones.actions.whatsApp")}</TooltipContent>
           </Tooltip>
         ) : null}
       </div>

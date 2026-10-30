@@ -1034,6 +1034,125 @@
     }
   },
   "loans": {
+    "actions": {
+      "newLoan": "Nuevo préstamo",
+      "newLoanPayment": "Nuevo pago de préstamo",
+      "newLoanPaymentFor": "Nuevo pago de préstamo para {{name}}"
+    },
+    "page": {
+      "title": "Préstamos",
+      "description": "Dé seguimiento a los saldos, pagos y movimientos contables de los préstamos a empleados.",
+      "mobileSubtitle": "Saldos y pagos de empleados"
+    },
+    "noun": "préstamos",
+    "fallbackDescription": "Préstamo",
+    "status": {
+      "ACTIVE": "Activo",
+      "PAID": "Pagado",
+      "VOID": "Anulado"
+    },
+    "transactionTypes": {
+      "ISSUE": "Préstamo otorgado",
+      "PAYMENT": "Pago"
+    },
+    "stats": {
+      "outstandingBalance": "Saldo pendiente",
+      "outstandingBalanceDescription": "Saldo calculado de préstamos",
+      "loanedInRange": "Prestado en el período",
+      "loanedInRangeDescription": "Principal otorgado",
+      "paidInRange": "Pagado en el período",
+      "paidInRangeDescription": "Pagos recibidos",
+      "activeLoans": "Préstamos activos",
+      "activeLoansDescription": "Préstamos abiertos de empleados"
+    },
+    "columns": {
+      "employee": "Empleado",
+      "loanAccount": "Cuenta de préstamo",
+      "description": "Descripción",
+      "opened": "Apertura",
+      "principalAmount": "Monto principal",
+      "paid": "Pagado",
+      "balance": "Saldo",
+      "status": "Estado",
+      "lastActivity": "Última actividad",
+      "actions": "Acciones"
+    },
+    "table": {
+      "searchPlaceholder": "Buscar empleado, préstamo, referencia",
+      "loadError": "No se pudieron cargar los préstamos.",
+      "loadingTitle": "Cargando préstamos",
+      "loadingDescription": "Preparando los saldos de préstamos de empleados.",
+      "loading": "Cargando préstamos...",
+      "empty": "Ningún préstamo coincide con los filtros actuales."
+    },
+    "details": {
+      "title": "Préstamo seleccionado",
+      "subtitle": "Saldo y actividad reciente",
+      "empty": "Seleccione un préstamo para ver los detalles del saldo.",
+      "principal": "Principal",
+      "paid": "Pagado",
+      "balance": "Saldo",
+      "status": "Estado",
+      "loanAccount": "Cuenta de préstamo",
+      "lastActivity": "Última actividad",
+      "paidAmount": "{{amount}} pagado"
+    },
+    "toasts": {
+      "created": "Préstamo creado.",
+      "createdFor": "Préstamo creado para {{name}}.",
+      "paymentRecorded": "Pago de préstamo registrado."
+    },
+    "errors": {
+      "openCloseoutRequired": "Se requiere un cuadre de ingresos diario abierto para la sucursal de esta cuenta de préstamo en la fecha seleccionada. Abra o cree ese cuadre abajo e intente de nuevo."
+    },
+    "validation": {
+      "employeeRequired": "El empleado es obligatorio.",
+      "loanAccountRequired": "La cuenta de préstamo es obligatoria.",
+      "sourceAccountRequired": "La cuenta de activo de origen es obligatoria.",
+      "principalRequired": "El monto principal es obligatorio.",
+      "principalPositive": "El monto principal debe ser mayor que cero.",
+      "dateRequired": "La fecha es obligatoria.",
+      "referenceTooLong": "El número de referencia es demasiado largo.",
+      "descriptionTooLong": "La descripción es demasiado larga.",
+      "receivedAccountRequired": "La cuenta de recepción del pago es obligatoria.",
+      "paymentAmountRequired": "El monto del pago es obligatorio.",
+      "paymentAmountPositive": "El monto del pago debe ser mayor que cero.",
+      "loanRequired": "Seleccione un préstamo."
+    },
+    "journalPreview": {
+      "title": "Resumen",
+      "debit": "Débito",
+      "credit": "Crédito",
+      "selectAccount": "Seleccionar cuenta",
+      "transactionType": "Tipo de transacción",
+      "loanTransaction": "Transacción de préstamo"
+    },
+    "paymentForm": {
+      "title": "Registrar pago de préstamo",
+      "description": "Aplique un pago a un préstamo de empleado y contabilice su asiento.",
+      "employee": "Empleado",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados",
+      "allocationMode": "Modo de aplicación",
+      "oldestFirst": "Más antiguo primero",
+      "specificLoan": "Préstamo específico",
+      "loan": "Préstamo",
+      "selectLoan": "Seleccionar préstamo",
+      "searchLoans": "Buscar préstamos",
+      "loanBalance": "Saldo {{amount}}",
+      "receivedAccount": "Cuenta de recepción del pago",
+      "selectReceivedAccount": "Seleccionar cuenta de recepción",
+      "searchAssetAccounts": "Buscar cuentas de activo",
+      "amount": "Monto del pago",
+      "allocation": "Aplicación del pago: {{allocation}}",
+      "allocationPart": "{{amount}} a {{loan}}",
+      "date": "Fecha",
+      "reference": "Número de referencia",
+      "optional": "Opcional",
+      "notes": "Descripción",
+      "notesPlaceholder": "Notas del pago",
+      "submit": "Registrar pago"
+    },
     "payments": {
       "title": "Pagos",
       "subtitle": "Todos los pagos de este préstamo",
@@ -1113,6 +1232,11 @@
     }
   },
   "financialActivity": {
+    "validation": {
+      "reasonRequired": "Se requiere un motivo.",
+      "amountPositive": "Ingrese un monto mayor que cero.",
+      "differentEmployees": "Seleccione empleados distintos para enviar y recibir."
+    },
     "loadingDescription": "Cargando la actividad financiera pendiente y los montos pendientes.",
     "title": "Transacciones pendientes",
     "description": "Cobros, custodia de efectivo y pagos pendientes de conciliar de todas las fechas.",

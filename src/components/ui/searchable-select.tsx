@@ -5,6 +5,7 @@ import { Command as CommandPrimitive, defaultFilter } from "cmdk";
 import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 import { focusNextFormField, isAutomaticSelectionFocus, isDesktopFormNavigation } from "@/hooks/use-form-enter-navigation";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import {
@@ -261,13 +262,13 @@ export function SearchableSelect({
   options,
   value,
   onValueChange,
-  placeholder = "Select an option",
+  placeholder: placeholderProp,
   searchPlaceholder,
-  emptyMessage = "No results found.",
+  emptyMessage: emptyMessageProp,
   onSearchChange,
   manualFiltering = false,
   loading = false,
-  loadingMessage = "Searching…",
+  loadingMessage: loadingMessageProp,
   disabled = false,
   searchable = true,
   required = false,
@@ -290,6 +291,10 @@ export function SearchableSelect({
   "aria-labelledby": ariaLabelledBy,
   "aria-invalid": ariaInvalid,
 }: SearchableSelectProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t("common.ui.selectPlaceholder");
+  const emptyMessage = emptyMessageProp ?? t("common.ui.noResults");
+  const loadingMessage = loadingMessageProp ?? t("common.ui.searching");
   const [open, setOpen] = React.useState(defaultOpen);
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -829,7 +834,7 @@ export function SearchableSelect({
                   type="button"
                   tabIndex={-1}
                   disabled={disabled}
-                  aria-label="Clear selection"
+                  aria-label={t("common.ui.clearSelection")}
                   onPointerDown={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -851,7 +856,7 @@ export function SearchableSelect({
                 type="button"
                 tabIndex={-1}
                 disabled={disabled}
-                aria-label={open ? "Close options" : "Open options"}
+                aria-label={open ? t("common.ui.closeOptions") : t("common.ui.openOptions")}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={(event) => {
                   event.stopPropagation();

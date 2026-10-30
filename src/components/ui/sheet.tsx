@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabPortalContainer } from "@/lib/layout/workspace-tab-scope";
 
 function Sheet({
@@ -57,6 +58,7 @@ const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
 >(({ side = "right", className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => {
+  const { t } = useTranslation();
   const portalContainer = useWorkspaceTabPortalContainer();
   const tabScoped = portalContainer != null;
 
@@ -112,7 +114,7 @@ const SheetContent = React.forwardRef<
             variant="ghost"
             size="icon"
             className="absolute right-4 top-4"
-            aria-label="Close menu"
+            aria-label={t("common.ui.closeMenu")}
           >
             <X className="h-4 w-4" />
           </Button>

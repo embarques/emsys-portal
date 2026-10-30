@@ -1,5 +1,6 @@
 {
   "title": "Facturas",
+  "entity": "Factura",
   "registrationStatus": {
     "pending": "Pendiente",
     "completed": "Completado"
@@ -10,15 +11,33 @@
   "stats": {
     "total": {
       "label": "Total de facturas",
-      "description": "Facturas registradas"
+      "description": "Facturas registradas",
+      "details": {
+        "currentPage": "Página actual",
+        "page": "Página",
+        "pageValue": "{{current}} de {{total}}",
+        "pageSize": "Tamaño de página"
+      }
     },
     "outstandingCount": {
       "label": "Facturas pendientes",
-      "description": "Facturas con saldo abierto"
+      "description": "Facturas con saldo abierto",
+      "details": {
+        "openInvoices": "Facturas abiertas",
+        "shareOfTotal": "Porcentaje del total",
+        "statuses": "Estados",
+        "statusesValue": "Abierta / parcial"
+      }
     },
     "outstandingBalance": {
       "label": "Saldo pendiente",
-      "description": "Saldo en todas las facturas"
+      "description": "Saldo en todas las facturas",
+      "details": {
+        "openInvoices": "Facturas abiertas",
+        "averageBalance": "Saldo promedio",
+        "scope": "Alcance",
+        "scopeValue": "Todas las facturas"
+      }
     },
     "new": {
       "label": "Facturas nuevas",
@@ -81,7 +100,37 @@
     "untitledTab": "Factura",
     "invoiceNotFound": "Factura no encontrada.",
     "loadingAppointment": "Cargando cita…",
-    "appointmentLoadError": "No se pudo cargar esta cita."
+    "appointmentLoadError": "No se pudo cargar esta cita.",
+    "loadingInvoice": "Cargando factura…",
+    "invoiceLoadError": "No se pudo cargar esta factura.",
+    "tabTitle": "Factura #{{number}}",
+    "selectInvoice": "Seleccionar factura",
+    "deselectInvoice": "Deseleccionar factura",
+    "selectForManageItems": "Seleccione al menos una factura para administrar sus artículos.",
+    "searchAria": "Buscar factura",
+    "filterAria": "Filtrar facturas",
+    "showing": "Mostrando {{count}} de {{total}} facturas",
+    "refreshing": "Actualizando facturas…",
+    "outstandingReceivables": "Cuentas por cobrar pendientes",
+    "empty": "Ninguna factura coincide con su búsqueda o filtros.",
+    "loader": {
+      "title": "Cargando facturas",
+      "description": "Sincronizando clientes, saldos y estado de pago…",
+      "customer": "Cliente"
+    },
+    "delete": {
+      "titleOne": "¿Eliminar factura?",
+      "titleMany": "¿Eliminar facturas?",
+      "descriptionOne": "Esto eliminará permanentemente la factura {{number}}. {{cannotBeUndone}}",
+      "descriptionMany": "Esto eliminará permanentemente {{count}} facturas seleccionadas. {{cannotBeUndone}}"
+    }
+  },
+  "print": {
+    "lookupRequired": "Ingrese un número de factura o guarde la factura antes de imprimir.",
+    "selectRequired": "Seleccione al menos una factura para imprimir.",
+    "readyFor": "Reporte de la factura #{{number}} listo.",
+    "ready": "Reporte de factura listo.",
+    "readyMany": "Reporte listo para {{count}} factura(s)."
   },
   "assigned": {
     "loading": "Preparando su factura…",
@@ -164,7 +213,19 @@
       "totals": "Totales"
     },
     "preview": {
-      "noEmployeeAssignment": "Sin empleado seleccionado"
+      "noEmployeeAssignment": "Sin empleado seleccionado",
+      "reviewTitle": "Revisar antes de guardar",
+      "reviewHint": "Confirme los detalles de la factura a continuación. Use Atrás para hacer cambios.",
+      "price": "Precio"
+    },
+    "totals": {
+      "total": "Total",
+      "discount": "Descuento",
+      "paid": "Pagado",
+      "balance": "Saldo"
+    },
+    "actions": {
+      "saveInvoice": "Guardar factura"
     },
     "lineItems": {
       "addTitle": "Agregar artículo",
@@ -211,6 +272,8 @@
   "wizard": {
     "navAriaLabel": "Pasos de la factura",
     "goToStep": "Ir a {{label}}",
+    "progress": "Paso {{current}} de {{total}}",
+    "phoneProgress": "{{current}} de {{total}}",
     "stepEyebrow": "Paso {{step}} de {{total}} · {{label}}",
     "steps": {
       "details": "Detalles",
@@ -428,6 +491,16 @@
         "initialRegistrationDescription": "Registro inicial de factura",
         "registering": "Registrando…",
         "registerAndContinue": "Registrar y continuar"
+      },
+      "validation": {
+        "amountNegative": "El monto del pago no puede ser negativo.",
+        "amountExceedsTotal": "El monto del pago no puede superar el total de la factura.",
+        "refNumberTooLong": "El número de referencia es demasiado largo.",
+        "descriptionTooLong": "La descripción es demasiado larga.",
+        "paymentMethodRequired": "El método de pago es obligatorio cuando se ingresa un pago.",
+        "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
+        "checkNumberRequired": "El número de cheque es obligatorio.",
+        "refNumberRequired": "Ingrese un número de referencia o elija generado por el sistema."
       }
     }
   },
@@ -449,6 +522,7 @@
       "hideBarcodesCount_plural": "Ocultar {{count}} códigos de barras"
     },
     "comments": {
+      "entity": "Comentario",
       "title": "Comentarios ({{count}})",
       "empty": "Aún no hay comentarios.",
       "addLabel": "Agregar comentario",
@@ -465,6 +539,10 @@
       "title": "Pagos ({{count}})",
       "description": "Pagos registrados para esta factura. Total pagado: {{totalPaid}}.",
       "empty": "Aún no hay pagos registrados.",
+      "fallbackDescription": {
+        "initialPayment": "Pago inicial",
+        "payment": "Pago"
+      },
       "methods": {
         "cash": "Efectivo",
         "check": "Cheque",
@@ -507,6 +585,12 @@
         "dateTime": "Fecha y hora",
         "createdBy": "Creado por",
         "description": "Descripción"
+      },
+      "messages": {
+        "labelCreated": "Etiqueta {{number}} creada para {{item}}.",
+        "scannedWithStatus": "Código de barras {{number}} escaneado — {{status}}.",
+        "scanned": "Código de barras {{number}} escaneado.",
+        "status": "Estado del código de barras {{number}}: {{status}}."
       }
     },
     "activity": {
@@ -517,6 +601,34 @@
         "dateTime": "Fecha y hora",
         "createdBy": "Creado por",
         "description": "Descripción"
+      },
+      "actions": {
+        "created": "Creada",
+        "updated": "Editada",
+        "payment": "Pago",
+        "discount_change": "Descuento",
+        "comment_added": "Comentario"
+      },
+      "messages": {
+        "created": "Factura {{number}} creada.",
+        "initialPayment": "Pago inicial de {{amount}} registrado.",
+        "discountApplied": "Descuento de {{amount}} aplicado.",
+        "discountUpdated": "Descuento actualizado: {{from}} → {{to}}.",
+        "edited": "Factura editada: {{changes}}.",
+        "editedGeneric": "Factura editada.",
+        "commentAdded": "Comentario agregado: {{preview}}",
+        "paymentRecorded": "Pago de {{amount}} con {{method}} registrado.{{reference}} {{description}} Total pagado: {{totalPaid}}.",
+        "paymentReference": " Ref. {{reference}}.",
+        "paymentOnRecord": "Pago de {{amount}} registrado."
+      },
+      "changes": {
+        "invoiceNumber": "número de factura",
+        "date": "fecha de la factura",
+        "container": "contenedor ({{from}} → {{to}})",
+        "paymentLocation": "pagado en ({{from}} → {{to}})",
+        "sender": "remitente",
+        "receiver": "destinatario",
+        "lineItems": "artículos ({{fromCount}} artículos / {{fromTotal}} → {{toCount}} artículos / {{toTotal}})"
       }
     }
   },

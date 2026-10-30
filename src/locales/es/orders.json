@@ -9,7 +9,10 @@
   "workspace": {
     "actionsColumn": "Acciones",
     "viewOrder": "Ver recogida",
-    "viewOrderFor": "Ver {{name}}"
+    "viewOrderFor": "Ver {{name}}",
+    "phoneLabel": "Teléfono:",
+    "selectOrder": "Seleccionar cita",
+    "deselectOrder": "Deseleccionar cita"
   },
   "pickup": "Recogida",
   "pickupNamed": "Recogida {{id}}",
@@ -266,6 +269,34 @@
     "collapse": "Ocultar historial de citas",
     "current": "Actual",
     "defaultSenderName": "Remitente"
+  },
+  "partyEditor": {
+    "remove": "Quitar",
+    "loadFromDirectory": "Cargar desde el directorio de clientes",
+    "searchClients": "Buscar clientes…",
+    "manualOrPick": "Ingrese los datos manualmente o elija un cliente",
+    "name": "Nombre",
+    "documentId": "Documento de identidad",
+    "email": "Correo electrónico",
+    "phonesTitle": "Números de teléfono",
+    "phonesHint": "Se requiere al menos un teléfono.",
+    "addPhone": "Agregar teléfono",
+    "phoneTitle": "Teléfono {{index}}",
+    "phoneLabel": "Etiqueta",
+    "phoneLabelPlaceholder": "Móvil, oficina...",
+    "phoneNumber": "Número",
+    "addressesTitle": "Direcciones",
+    "addressesHint": "Seleccione qué dirección aplica a esta cita.",
+    "addAddress": "Agregar dirección",
+    "addressTitle": "Dirección {{index}}",
+    "usedForOrder": "Usada para la cita",
+    "streetAddress": "Dirección",
+    "aptSuite": "Apto / Suite",
+    "crossStreet": "Calle transversal",
+    "city": "Ciudad",
+    "state": "Estado",
+    "provinceCountry": "Provincia / País",
+    "zipCode": "Código postal"
   },
   "dialogs": {
     "chooseInvoiceReceiverTitle": "Elegir destinatario",

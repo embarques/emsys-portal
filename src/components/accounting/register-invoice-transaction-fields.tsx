@@ -5,6 +5,7 @@ import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form
 
 import { FieldMessage } from "@/components/forms/field-message";
 import { FormSection } from "@/components/forms/form-shell";
+import { getInvoiceBalanceInputClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
@@ -32,6 +33,7 @@ import {
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 function computeInvoiceBalance(cost: unknown, discount: unknown, amount: unknown) {
@@ -650,7 +652,7 @@ export function RegisterInvoiceTransactionFields({
           readOnly
           tabIndex={-1}
           value={balance == null ? "" : formatMoneyFormDisplayValue(balance)}
-          className="bg-muted/40 tabular-nums"
+          className={cn("tabular-nums", getInvoiceBalanceInputClassName(balance))}
           aria-invalid={balance != null && balance < 0}
         />
         <FieldMessage

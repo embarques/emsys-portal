@@ -1034,6 +1034,125 @@
     }
   },
   "loans": {
+    "actions": {
+      "newLoan": "New loan",
+      "newLoanPayment": "New loan payment",
+      "newLoanPaymentFor": "New loan payment for {{name}}"
+    },
+    "page": {
+      "title": "Loans",
+      "description": "Track employee loan balances, payments, and journal activity.",
+      "mobileSubtitle": "Employee balances and payments"
+    },
+    "noun": "loans",
+    "fallbackDescription": "Loan",
+    "status": {
+      "ACTIVE": "Active",
+      "PAID": "Paid",
+      "VOID": "Void"
+    },
+    "transactionTypes": {
+      "ISSUE": "Loan issued",
+      "PAYMENT": "Payment"
+    },
+    "stats": {
+      "outstandingBalance": "Outstanding balance",
+      "outstandingBalanceDescription": "Calculated loan balance",
+      "loanedInRange": "Loaned in range",
+      "loanedInRangeDescription": "Principal issued",
+      "paidInRange": "Paid in range",
+      "paidInRangeDescription": "Payments received",
+      "activeLoans": "Active loans",
+      "activeLoansDescription": "Open employee loans"
+    },
+    "columns": {
+      "employee": "Employee",
+      "loanAccount": "Loan account",
+      "description": "Description",
+      "opened": "Opened",
+      "principalAmount": "Principal amount",
+      "paid": "Paid",
+      "balance": "Balance",
+      "status": "Status",
+      "lastActivity": "Last activity",
+      "actions": "Actions"
+    },
+    "table": {
+      "searchPlaceholder": "Search employee, loan, reference",
+      "loadError": "Unable to load loans.",
+      "loadingTitle": "Loading loans",
+      "loadingDescription": "Preparing employee loan balances.",
+      "loading": "Loading loans...",
+      "empty": "No loans match the current filters."
+    },
+    "details": {
+      "title": "Selected loan",
+      "subtitle": "Balance and recent activity",
+      "empty": "Select a loan to view balance details.",
+      "principal": "Principal",
+      "paid": "Paid",
+      "balance": "Balance",
+      "status": "Status",
+      "loanAccount": "Loan account",
+      "lastActivity": "Last activity",
+      "paidAmount": "{{amount}} paid"
+    },
+    "toasts": {
+      "created": "Loan created.",
+      "createdFor": "Loan created for {{name}}.",
+      "paymentRecorded": "Loan payment recorded."
+    },
+    "errors": {
+      "openCloseoutRequired": "An open Daily Income closeout is required for this loan account's branch on the selected date. Open or create that closeout below, then try again."
+    },
+    "validation": {
+      "employeeRequired": "Employee is required.",
+      "loanAccountRequired": "Loan account is required.",
+      "sourceAccountRequired": "Source asset account is required.",
+      "principalRequired": "Principal amount is required.",
+      "principalPositive": "Principal amount must be greater than zero.",
+      "dateRequired": "Date is required.",
+      "referenceTooLong": "Reference number is too long.",
+      "descriptionTooLong": "Description is too long.",
+      "receivedAccountRequired": "Payment received account is required.",
+      "paymentAmountRequired": "Payment amount is required.",
+      "paymentAmountPositive": "Payment amount must be greater than zero.",
+      "loanRequired": "Select a loan."
+    },
+    "journalPreview": {
+      "title": "Summary",
+      "debit": "Debit",
+      "credit": "Credit",
+      "selectAccount": "Select account",
+      "transactionType": "Transaction type",
+      "loanTransaction": "Loan transaction"
+    },
+    "paymentForm": {
+      "title": "Record loan payment",
+      "description": "Apply a payment to an employee loan and post its journal entry.",
+      "employee": "Employee",
+      "selectEmployee": "Select employee",
+      "searchEmployees": "Search employees",
+      "allocationMode": "Allocation mode",
+      "oldestFirst": "Oldest first",
+      "specificLoan": "Specific loan",
+      "loan": "Loan",
+      "selectLoan": "Select loan",
+      "searchLoans": "Search loans",
+      "loanBalance": "Balance {{amount}}",
+      "receivedAccount": "Payment received account",
+      "selectReceivedAccount": "Select received account",
+      "searchAssetAccounts": "Search asset accounts",
+      "amount": "Payment amount",
+      "allocation": "Payment allocation: {{allocation}}",
+      "allocationPart": "{{amount}} to {{loan}}",
+      "date": "Date",
+      "reference": "Reference number",
+      "optional": "Optional",
+      "notes": "Description",
+      "notesPlaceholder": "Payment notes",
+      "submit": "Record payment"
+    },
     "payments": {
       "title": "Payments",
       "subtitle": "All payment entries for this loan",
@@ -1113,6 +1232,11 @@
     }
   },
   "financialActivity": {
+    "validation": {
+      "reasonRequired": "A reason is required.",
+      "amountPositive": "Enter an amount greater than zero.",
+      "differentEmployees": "Select different sending and receiving employees."
+    },
     "loadingDescription": "Loading pending financial activity and outstanding amounts.",
     "title": "Pending Transactions",
     "description": "Outstanding collections, cash custody and payment clearing across all dates.",

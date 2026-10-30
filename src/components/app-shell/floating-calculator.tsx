@@ -212,6 +212,10 @@ export function FloatingCalculator() {
     setState((current) => reduceState(current, { type, payload }));
   }
 
+  function localizeDisplay(value: string) {
+    return value === "Error" ? t("shell.calculator.error") : value;
+  }
+
   const stacked =
     memoOpen && memoOpenedAt !== null && openedAt !== null && memoOpenedAt < openedAt;
 
@@ -245,10 +249,10 @@ export function FloatingCalculator() {
 
         <div className={cn(floatingUtilityPanelBodyClassName, "space-y-3")}>
           <div className="shrink-0 rounded-xl border bg-background px-3 py-3 text-right">
-            <p className="truncate font-mono text-3xl font-semibold tracking-tight">{state.display}</p>
+            <p className="truncate font-mono text-3xl font-semibold tracking-tight">{localizeDisplay(state.display)}</p>
             {state.pendingOperator ? (
               <p className="mt-1 truncate text-xs text-muted-foreground">
-                {state.accumulator !== null ? formatResult(state.accumulator) : ""} {state.pendingOperator}
+                {state.accumulator !== null ? localizeDisplay(formatResult(state.accumulator)) : ""} {state.pendingOperator}
               </p>
             ) : null}
           </div>

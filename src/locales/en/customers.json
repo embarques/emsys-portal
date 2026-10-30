@@ -50,6 +50,23 @@
       "other": "Other"
     }
   },
+  "address": {
+    "copied": "Address copied",
+    "copyFailed": "Could not copy address",
+    "copyAria": "Copy {{label}}",
+    "copyTooltip": "Copy address",
+    "openMapsAria": "Open {{label}} in Google Maps",
+    "viewOnMaps": "View on Google Maps",
+    "directionsAria": "Get directions to {{label}}",
+    "directions": "Get directions",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "unverifiedNotice": {
+      "title": "This client's address isn't verified.",
+      "description": "Update it with a Google-suggested address to confirm the location.",
+      "action": "Update address"
+    }
+  },
   "workspace": {
     "actionsColumn": "Actions",
     "viewCustomer": "View customer",

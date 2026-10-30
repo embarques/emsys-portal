@@ -1,5 +1,6 @@
 {
   "title": "Invoices",
+  "entity": "Invoice",
   "registrationStatus": {
     "pending": "Pending",
     "completed": "Completed"
@@ -10,15 +11,33 @@
   "stats": {
     "total": {
       "label": "Total invoices",
-      "description": "Invoices on record"
+      "description": "Invoices on record",
+      "details": {
+        "currentPage": "Current page",
+        "page": "Page",
+        "pageValue": "{{current}} of {{total}}",
+        "pageSize": "Page size"
+      }
     },
     "outstandingCount": {
       "label": "Outstanding invoices",
-      "description": "Invoices with open balance"
+      "description": "Invoices with open balance",
+      "details": {
+        "openInvoices": "Open invoices",
+        "shareOfTotal": "Share of total",
+        "statuses": "Statuses",
+        "statusesValue": "Open / partial"
+      }
     },
     "outstandingBalance": {
       "label": "Outstanding",
-      "description": "Balance across all invoices"
+      "description": "Balance across all invoices",
+      "details": {
+        "openInvoices": "Open invoices",
+        "averageBalance": "Average balance",
+        "scope": "Scope",
+        "scopeValue": "All invoices"
+      }
     },
     "new": {
       "label": "New invoices",
@@ -81,7 +100,37 @@
     "untitledTab": "Invoice",
     "invoiceNotFound": "Invoice not found.",
     "loadingAppointment": "Loading appointment…",
-    "appointmentLoadError": "Unable to load this appointment."
+    "appointmentLoadError": "Unable to load this appointment.",
+    "loadingInvoice": "Loading invoice…",
+    "invoiceLoadError": "Unable to load this invoice.",
+    "tabTitle": "Invoice #{{number}}",
+    "selectInvoice": "Select invoice",
+    "deselectInvoice": "Deselect invoice",
+    "selectForManageItems": "Select at least one invoice to manage items.",
+    "searchAria": "Search invoice",
+    "filterAria": "Filter invoices",
+    "showing": "Showing {{count}} of {{total}} invoices",
+    "refreshing": "Refreshing invoices…",
+    "outstandingReceivables": "Outstanding receivables",
+    "empty": "No invoices match your search or filters.",
+    "loader": {
+      "title": "Loading invoices",
+      "description": "Syncing customers, balances, and payment status…",
+      "customer": "Customer"
+    },
+    "delete": {
+      "titleOne": "Delete invoice?",
+      "titleMany": "Delete invoices?",
+      "descriptionOne": "This will permanently remove invoice {{number}}. {{cannotBeUndone}}",
+      "descriptionMany": "This will permanently remove {{count}} selected invoices. {{cannotBeUndone}}"
+    }
+  },
+  "print": {
+    "lookupRequired": "Enter an invoice number or save the invoice before printing.",
+    "selectRequired": "Select at least one invoice to print.",
+    "readyFor": "Invoice report ready for #{{number}}.",
+    "ready": "Invoice report ready.",
+    "readyMany": "Invoice report ready for {{count}} invoice(s)."
   },
   "assigned": {
     "loading": "Preparing your invoice…",
@@ -164,7 +213,19 @@
       "totals": "Totals"
     },
     "preview": {
-      "noEmployeeAssignment": "No employee selected"
+      "noEmployeeAssignment": "No employee selected",
+      "reviewTitle": "Review before saving",
+      "reviewHint": "Confirm the invoice details below. Use Back to make changes.",
+      "price": "Price"
+    },
+    "totals": {
+      "total": "Total",
+      "discount": "Discount",
+      "paid": "Paid",
+      "balance": "Balance"
+    },
+    "actions": {
+      "saveInvoice": "Save invoice"
     },
     "lineItems": {
       "addTitle": "Add line item",
@@ -211,6 +272,8 @@
   "wizard": {
     "navAriaLabel": "Invoice steps",
     "goToStep": "Go to {{label}}",
+    "progress": "Step {{current}} of {{total}}",
+    "phoneProgress": "{{current}} of {{total}}",
     "stepEyebrow": "Step {{step}} of {{total}} · {{label}}",
     "steps": {
       "details": "Details",
@@ -428,6 +491,16 @@
         "initialRegistrationDescription": "Initial invoice registration",
         "registering": "Registering…",
         "registerAndContinue": "Register & continue"
+      },
+      "validation": {
+        "amountNegative": "Payment amount cannot be negative.",
+        "amountExceedsTotal": "Payment amount cannot exceed the invoice total.",
+        "refNumberTooLong": "Reference number is too long.",
+        "descriptionTooLong": "Description is too long.",
+        "paymentMethodRequired": "Payment method is required when a payment is entered.",
+        "bankAccountRequired": "Select a bank account for this payment method.",
+        "checkNumberRequired": "Check number is required.",
+        "refNumberRequired": "Enter a reference number, or choose system generated."
       }
     }
   },
@@ -449,6 +522,7 @@
       "hideBarcodesCount_plural": "Hide {{count}} barcodes"
     },
     "comments": {
+      "entity": "Comment",
       "title": "Comments ({{count}})",
       "empty": "No comments yet.",
       "addLabel": "Add comment",
@@ -465,6 +539,10 @@
       "title": "Payments ({{count}})",
       "description": "Recorded payments for this invoice. Total paid: {{totalPaid}}.",
       "empty": "No payments recorded yet.",
+      "fallbackDescription": {
+        "initialPayment": "Initial payment",
+        "payment": "Payment"
+      },
       "methods": {
         "cash": "Cash",
         "check": "Check",
@@ -507,6 +585,12 @@
         "dateTime": "Date & time",
         "createdBy": "Created by",
         "description": "Description"
+      },
+      "messages": {
+        "labelCreated": "Label {{number}} created for {{item}}.",
+        "scannedWithStatus": "Barcode {{number}} scanned — {{status}}.",
+        "scanned": "Barcode {{number}} scanned.",
+        "status": "Barcode {{number}} status: {{status}}."
       }
     },
     "activity": {
@@ -517,6 +601,34 @@
         "dateTime": "Date & time",
         "createdBy": "Created by",
         "description": "Description"
+      },
+      "actions": {
+        "created": "Created",
+        "updated": "Edited",
+        "payment": "Payment",
+        "discount_change": "Discount",
+        "comment_added": "Comment"
+      },
+      "messages": {
+        "created": "Invoice {{number}} created.",
+        "initialPayment": "Initial payment of {{amount}} recorded.",
+        "discountApplied": "Discount of {{amount}} applied.",
+        "discountUpdated": "Discount updated: {{from}} → {{to}}.",
+        "edited": "Invoice edited: {{changes}}.",
+        "editedGeneric": "Invoice edited.",
+        "commentAdded": "Comment added: {{preview}}",
+        "paymentRecorded": "Payment of {{amount}} via {{method}} recorded.{{reference}} {{description}} Total paid: {{totalPaid}}.",
+        "paymentReference": " Ref {{reference}}.",
+        "paymentOnRecord": "Payment of {{amount}} on record."
+      },
+      "changes": {
+        "invoiceNumber": "invoice number",
+        "date": "invoice date",
+        "container": "container ({{from}} → {{to}})",
+        "paymentLocation": "paid at ({{from}} → {{to}})",
+        "sender": "sender",
+        "receiver": "receiver",
+        "lineItems": "line items ({{fromCount}} items / {{fromTotal}} → {{toCount}} items / {{toTotal}})"
       }
     }
   },

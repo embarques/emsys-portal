@@ -334,7 +334,9 @@ function MobileInvoiceRow({
           selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
         )}
         onClick={() => onToggleSelected(invoiceId, !selected)}
-        aria-label={selected ? "Deselect invoice" : "Select invoice"}
+        aria-label={
+          selected ? t("invoices.workspace.deselectInvoice") : t("invoices.workspace.selectInvoice")
+        }
       >
         {selected ? <Check className="size-4" /> : null}
       </button>
@@ -411,7 +413,7 @@ function MobileInvoiceRow({
             isClosed ? "text-emerald-600" : "text-rose-600",
           )}
         >
-          {getInvoicePaidStatusLabel(status)}
+          {getInvoicePaidStatusLabel(status, t)}
         </span>
       </button>
     </div>
@@ -451,7 +453,7 @@ export function InvoicesWorkspace() {
 
   function openManageInvoiceItems() {
     if (selectedInvoices.length === 0) {
-      notifyError("Select at least one invoice to manage items.");
+      notifyError(t("invoices.workspace.selectForManageItems"));
       return;
     }
 
@@ -545,7 +547,7 @@ export function InvoicesWorkspace() {
       detailInvoice ?? invoices.find((invoice) => invoice.invoiceId === viewInvoiceId) ?? null;
     if (!base) return null;
 
-    const journalPayments = mapInvoiceJournalsToPayments(invoiceJournals ?? [], base.invoiceId);
+    const journalPayments = mapInvoiceJournalsToPayments(invoiceJournals ?? [], base.invoiceId, t);
 
     if (!viewOverlay && journalPayments.length === 0) return base;
 
@@ -556,11 +558,11 @@ export function InvoicesWorkspace() {
       payments: journalPayments.length > 0 ? journalPayments : base.payments,
       updatedAt: viewOverlay?.updatedAt ?? base.updatedAt,
     };
-  }, [detailInvoice, invoices, invoiceJournals, viewInvoiceId, viewOverlay]);
+  }, [detailInvoice, invoices, invoiceJournals, t, viewInvoiceId, viewOverlay]);
 
   useSyncWorkspaceTabTitle(
-    viewInvoice ? `Invoice #${viewInvoice.invoiceNumber}` : null,
-    "Invoices",
+    viewInvoice ? t("invoices.workspace.tabTitle", { number: viewInvoice.invoiceNumber }) : null,
+    t("invoices.title"),
   );
 
   const kpis = useMemo(() => computeInvoiceKpis(invoices), [invoices]);
@@ -623,6 +625,7 @@ export function InvoicesWorkspace() {
       description,
       comment.createdBy,
       timestamp,
+      t,
     );
 
     setViewOverlay((current) => ({
@@ -632,7 +635,7 @@ export function InvoicesWorkspace() {
       updatedAt: timestamp,
     }));
 
-    notifyAdded("Comment");
+    notifyAdded(t("invoices.view.comments.entity"));
   }
 
   async function printSelectedInvoices() {
@@ -653,7 +656,7 @@ export function InvoicesWorkspace() {
       reportBulkSettled({
         result,
         t,
-        entityLabel: "Invoice",
+        entityLabel: t("invoices.entity"),
         notifyDeleted,
         notifyError,
         onAllFailed: (message) => {
@@ -677,28 +680,36 @@ export function InvoicesWorkspace() {
 
   const stats = [
     {
-      label: "Total invoices",
+      label: t("invoices.stats.total.label"),
       value: isLoading ? "…" : formatInvoiceCount(totalInvoices),
-      description: "Invoices on record",
+      description: t("invoices.stats.total.description"),
       icon: FileText,
       details: [
-        { label: "Current page", value: isLoading ? "…" : invoices.length.toString() },
-        { label: "Page", value: isLoading ? "…" : `${currentPage} of ${totalPages}` },
-        { label: "Page size", value: pageLimit.toString() },
+        {
+          label: t("invoices.stats.total.details.currentPage"),
+          value: isLoading ? "…" : invoices.length.toString(),
+        },
+        {
+          label: t("invoices.stats.total.details.page"),
+          value: isLoading
+            ? "…"
+            : t("invoices.stats.total.details.pageValue", { current: currentPage, total: totalPages }),
+        },
+        { label: t("invoices.stats.total.details.pageSize"), value: pageLimit.toString() },
       ],
     },
     {
-      label: "Outstanding invoices",
+      label: t("invoices.stats.outstandingCount.label"),
       value: invoiceStats.isLoading ? "…" : formatInvoiceCount(invoiceStats.outstanding),
-      description: "Invoices with open balance",
+      description: t("invoices.stats.outstandingCount.description"),
       icon: CircleAlert,
       details: [
         {
-          label: "Open invoices",
+          label: t("invoices.stats.outstandingCount.details.openInvoices"),
           value: invoiceStats.isLoading ? "…" : formatInvoiceCount(invoiceStats.outstanding),
         },
         {
-          label: "Share of total",
+          label: t("invoices.stats.outstandingCount.details.shareOfTotal"),
           value:
             invoiceStats.isLoading || isLoading || totalInvoices === 0
               ? "…"

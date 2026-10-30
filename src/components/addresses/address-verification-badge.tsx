@@ -7,6 +7,7 @@ import {
   isAddressVerified,
   type CustomerCoreAddress,
 } from "@/lib/customers/types";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type AddressVerificationBadgeProps = {
@@ -15,6 +16,7 @@ type AddressVerificationBadgeProps = {
 };
 
 export function AddressVerificationBadge({ address, className }: AddressVerificationBadgeProps) {
+  const { t } = useTranslation();
   if (!coreAddressRequiresVerification(address)) return null;
 
   const verified = isAddressVerified(address);
@@ -30,7 +32,7 @@ export function AddressVerificationBadge({ address, className }: AddressVerifica
       )}
     >
       {verified ? <BadgeCheck className="size-3.5" /> : <ShieldAlert className="size-3.5" />}
-      {verified ? "Verified" : "Unverified"}
+      {verified ? t("customers.address.verified") : t("customers.address.unverified")}
     </span>
   );
 }

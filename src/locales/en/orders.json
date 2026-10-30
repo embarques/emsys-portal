@@ -9,7 +9,10 @@
   "workspace": {
     "actionsColumn": "Actions",
     "viewOrder": "View pickup",
-    "viewOrderFor": "View {{name}}"
+    "viewOrderFor": "View {{name}}",
+    "phoneLabel": "Phone:",
+    "selectOrder": "Select order",
+    "deselectOrder": "Deselect order"
   },
   "pickup": "Pickup",
   "pickupNamed": "Pickup {{id}}",
@@ -266,6 +269,34 @@
     "collapse": "Hide appointment history",
     "current": "Current",
     "defaultSenderName": "Sender"
+  },
+  "partyEditor": {
+    "remove": "Remove",
+    "loadFromDirectory": "Load from client directory",
+    "searchClients": "Search clients…",
+    "manualOrPick": "Enter manually or pick a client",
+    "name": "Name",
+    "documentId": "Document ID",
+    "email": "Email",
+    "phonesTitle": "Phone numbers",
+    "phonesHint": "At least one phone is required.",
+    "addPhone": "Add phone",
+    "phoneTitle": "Phone {{index}}",
+    "phoneLabel": "Label",
+    "phoneLabelPlaceholder": "Mobile, office...",
+    "phoneNumber": "Number",
+    "addressesTitle": "Addresses",
+    "addressesHint": "Select which address applies to this order.",
+    "addAddress": "Add address",
+    "addressTitle": "Address {{index}}",
+    "usedForOrder": "Used for order",
+    "streetAddress": "Street address",
+    "aptSuite": "Apt / Suite",
+    "crossStreet": "Cross street",
+    "city": "City",
+    "state": "State",
+    "provinceCountry": "Province / Country",
+    "zipCode": "Zip code"
   },
   "dialogs": {
     "chooseInvoiceReceiverTitle": "Choose receiver",

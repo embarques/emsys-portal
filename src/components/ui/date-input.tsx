@@ -2,10 +2,12 @@ import * as React from "react";
 import { CalendarDays } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, style, ...props }, forwardedRef) => {
+    const { t } = useTranslation();
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     React.useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement);
@@ -14,7 +16,7 @@ const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input
       <div className="relative w-full min-w-0 max-w-full">
         <button
           type="button"
-          aria-label="Open date picker"
+          aria-label={t("common.ui.openDatePicker")}
           tabIndex={-1}
           className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
           onClick={() => inputRef.current?.showPicker?.()}

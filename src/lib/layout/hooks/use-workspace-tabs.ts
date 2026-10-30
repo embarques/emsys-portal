@@ -7,6 +7,7 @@ import { buildMobileCustomerFormHref } from "@/lib/customers/customer-form-navig
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
 import { useConfigurationStore } from "@/lib/configuration/use-configuration";
+import { translate } from "@/lib/i18n";
 import { buildWorkspaceTabUrl } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import { type WorkspaceTab, type WorkspaceTabForm } from "@/lib/layout/workspace-tab-types";
@@ -100,7 +101,7 @@ export function useWorkspaceTabs() {
       );
 
       if (atLimit) {
-        notifySuccess(`Closed the oldest tab (maximum ${maxTabs} open).`);
+        notifySuccess(translate(language, "shell.tabs.closedOldest", { max: maxTabs }));
       }
 
       const created = store.getState().layoutTabs.tabs.find((tab) => tab.id === tabId);
@@ -234,7 +235,7 @@ export function useWorkspaceTabs() {
       );
 
       if (atLimit) {
-        notifySuccess(`Closed the oldest tab (maximum ${maxTabs} open).`);
+        notifySuccess(translate(language, "shell.tabs.closedOldest", { max: maxTabs }));
       }
 
       const created = store.getState().layoutTabs.tabs.find((tab) => tab.id === tabId);
@@ -242,7 +243,7 @@ export function useWorkspaceTabs() {
         navigateToTab(created);
       }
     },
-    [dispatch, isDesktopTabs, navigateToTab, notifySuccess, router],
+    [dispatch, isDesktopTabs, language, navigateToTab, notifySuccess, router],
   );
 
   const closeFormTabAndReturn = useCallback(

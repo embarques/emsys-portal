@@ -237,7 +237,7 @@ function MobileOrderRow({
             selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
           )}
           onClick={() => onToggleSelected(orderId, !selected)}
-          aria-label={selected ? "Deselect order" : "Select order"}
+          aria-label={selected ? t("orders.workspace.deselectOrder") : t("orders.workspace.selectOrder")}
         >
           {selected ? <Check className="size-4" /> : null}
         </button>
@@ -271,7 +271,7 @@ function MobileOrderRow({
             </Badge>
           </span>
           <span className="mt-2 block break-words text-sm leading-relaxed text-muted-foreground">
-            <span className="font-semibold text-foreground/80">Phone:</span> {senderPhone}
+            <span className="font-semibold text-foreground/80">{t("orders.workspace.phoneLabel")}</span> {senderPhone}
           </span>
           <span className="mt-1 block line-clamp-3 break-words text-sm leading-relaxed text-muted-foreground">
             {senderAddressLine}

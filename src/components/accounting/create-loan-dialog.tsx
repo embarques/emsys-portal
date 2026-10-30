@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useCreateLoanForm } from "@/lib/accounting/loans/use-create-loan-form";
-import { formatLoanDate, formatLoanMoney } from "@/lib/accounting/loans/display";
+import { formatLoanMoney } from "@/lib/accounting/loans/display";
 import type { LoanCreateValues } from "@/lib/accounting/loans/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { useTranslation } from "@/lib/i18n";
@@ -66,7 +66,7 @@ function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSub
         <div className={step === 1 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={User} title={text("steps.employee")} description={text("employeeHint")}>
             <div className="space-y-2">{requiredLabel("loan-employee", text("employee"))}
-              <SearchableSelect id="loan-employee" value={values.employeeId ? String(values.employeeId) : ""}
+              <SearchableSelect id="loan-employee" aria-label={text("employee")} aria-invalid={Boolean(errors.employeeId)} value={values.employeeId ? String(values.employeeId) : ""}
                 onValueChange={next => { const employee = employees.find(item => item.id === Number(next)); setValue("employeeId", employee?.id ?? 0, { shouldValidate: true }); setValue("employeeName", employee?.name ?? ""); }}
                 options={employees.map(employee => ({ value: String(employee.id), label: employee.name }))} placeholder={text("selectEmployee")} searchPlaceholder={text("searchEmployees")} mobileSheet />
               {fieldError("employeeId")}
@@ -77,14 +77,14 @@ function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSub
           <FormSection variant="card" icon={Banknote} title={text("accounts")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">{requiredLabel("loan-account", text("loanAccount"))}
-                <SearchableSelect id="loan-account" value={values.loanAccountId ? String(values.loanAccountId) : ""}
-                  onValueChange={next => { const account = loanAccounts.find(item => item.id === Number(next)); setCloseoutReady(false); setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("loanAccountName", account?.displayName ?? account?.name ?? ""); setValue("loanAccountType", account?.type); }}
+                <SearchableSelect id="loan-account" aria-label={text("loanAccount")} aria-invalid={Boolean(errors.loanAccountId)} value={values.loanAccountId ? String(values.loanAccountId) : ""}
+                  onValueChange={next => { const account = loanAccounts.find(item => item.id === Number(next)); if (account?.id !== values.loanAccountId) setCloseoutReady(false); setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("loanAccountName", account?.displayName ?? account?.name ?? ""); setValue("loanAccountType", account?.type); }}
                   options={loanAccounts.map(account => ({ value: String(account.id), label: `${account.displayName ?? account.name}${account.branch?.name ? ` (${account.branch.name})` : ""}`, keywords: [account.name, account.displayName ?? "", account.branch?.name ?? ""] }))}
                   placeholder={text("selectLoanAccount")} searchPlaceholder={text("searchLoanAccounts")} mobileSheet />
                 {fieldError("loanAccountId")}
               </div>
               <div className="space-y-2">{requiredLabel("loan-source-account", text("sourceAccount"))}
-                <SearchableSelect id="loan-source-account" value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
+                <SearchableSelect id="loan-source-account" aria-label={text("sourceAccount")} aria-invalid={Boolean(errors.sourceAccountId)} value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
                   onValueChange={next => { const account = assetAccounts.find(item => item.id === Number(next)); setValue("sourceAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("sourceAccountName", account?.displayName ?? account?.name ?? ""); setValue("sourceAccountType", account?.type); }}
                   options={assetAccounts.map(account => ({ value: String(account.id), label: account.displayName ?? account.name, keywords: [account.name, account.displayName ?? ""] }))}
                   placeholder={text("selectSourceAccount")} searchPlaceholder={text("searchAssetAccounts")} mobileSheet />
@@ -111,7 +111,7 @@ function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSub
             {review([[text("employee"), values.employeeName]])}
           </FormSection>
           <FormSection variant="card" title={text("steps.details")} action={<Button type="button" variant="ghost" size="sm" onClick={() => state.setStep(2)}>{t("common.actions.edit")}</Button>}>
-            {review([[text("loanAccount"), values.loanAccountName], [text("sourceAccount"), values.sourceAccountName], [text("principal"), formatLoanMoney(values.principalAmount)], [text("date"), formatLoanDate(values.transactionDate)], [text("reference"), values.referenceNumber], [text("notesDescription"), values.description]])}
+            {review([[text("loanAccount"), values.loanAccountName], [text("sourceAccount"), values.sourceAccountName], [text("principal"), formatLoanMoney(values.principalAmount)], [text("date"), values.transactionDate], [text("reference"), values.referenceNumber], [text("notesDescription"), values.description]])}
           </FormSection>
           <FormSection variant="card" icon={Banknote} title={text("journalSummary")}>
             <div className="grid gap-4 sm:grid-cols-2">

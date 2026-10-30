@@ -64,7 +64,7 @@ test("cross-page selection uses one method, summarizes and retries with a stable
   try {
     assert.equal(await page.evaluate(() => window.calls.length), 1);
     await page.getByRole("checkbox", { name: "Select R1", exact: true }).check();
-    await page.getByRole("checkbox", { name: "Select R3", exact: true }).check();
+    await page.getByRole("checkbox", { name: "Select R3", exact: true }).click();
     assert.equal(await page.getByRole("checkbox", { name: "Select R3", exact: true }).isChecked(), false);
     await page.getByRole("button", { name: "Next", exact: true }).click();
     await page.getByRole("checkbox", { name: "Select R2", exact: true }).check();
