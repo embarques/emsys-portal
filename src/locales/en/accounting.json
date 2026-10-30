@@ -198,7 +198,7 @@
   },
   "zellePayments": {
     "title": "Zelle",
-    "description": "Track invoice payments made by Zelle. Outstanding payments do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "Zelle payments",
     "searchPlaceholder": "Search Zelle payments…",
     "empty": "No Zelle payments match your search.",
@@ -251,7 +251,7 @@
   },
   "deposits": {
     "title": "Deposits",
-    "description": "Track invoice payments made by bank deposit. Outstanding deposits do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "deposits",
     "searchPlaceholder": "Search deposits…",
     "empty": "No deposits match your search.",
@@ -304,7 +304,7 @@
   },
   "creditCardPayments": {
     "title": "Credit Cards",
-    "description": "Track invoice payments made by credit card. Outstanding card payments do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "credit card payments",
     "searchPlaceholder": "Search credit card payments…",
     "empty": "No credit card payments match your search.",
@@ -357,7 +357,7 @@
   },
   "checks": {
     "title": "Checks",
-    "description": "Track invoice payments made by check. Outstanding checks do not change the invoice balance until they are marked cleared.",
+    "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "checks",
     "searchPlaceholder": "Search checks…",
     "empty": "No checks match your search.",
@@ -390,7 +390,7 @@
     },
     "form": {
       "createTitle": "Add check",
-      "createDescription": "Record an outstanding check against an invoice. The invoice balance updates when the check is marked cleared.",
+      "createDescription": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
       "editTitle": "Edit check",
       "editDescription": "Update the selected check. Changing a cleared check reverses and re-applies the invoice payment.",
       "sections": {
@@ -670,7 +670,7 @@
       "transactionCreatedWithTarget": "Transaction created: {{type}} - {{target}}.",
       "transactionUpdated": "Transaction updated.",
       "invoiceRegistered": "New invoice #{{invoiceNumber}} created and payment registered.",
-      "checkPaymentHeld": "Check {{checkNumber}} recorded as outstanding. Invoice {{invoiceNumber}} will not show this payment until the check is marked cleared.",
+      "checkPaymentHeld": "Payment recorded and applied. Awaiting accounting reconciliation.",
       "reportReady": "Daily income report ready."
     },
     "errors": {
@@ -777,10 +777,10 @@
         "paymentMethod": "Payment method",
         "bankAccount": "Bank account",
         "checkNumber": "Check number",
-        "checkNumberHint": "Stays outstanding until the check is marked cleared.",
+        "checkNumberHint": "Paper check number. Payment applies when recorded.",
         "autoClear": "Auto-approve (mark as cleared)",
-        "autoClearHint": "Skip the outstanding step: the payment is cleared and applied to the invoice balance as soon as it is saved.",
-        "autoClearReviewValue": "Cleared and applied on save",
+        "autoClearHint": "Approve this transaction immediately. Requires journal reconciliation permission; payments apply regardless.",
+        "autoClearReviewValue": "Reconciled on creation",
         "autoReconcile": "Auto-reconcile (mark as sold)",
         "autoReconcileHint": "Skip the pending step: the handoff is completed and the full quantity is reconciled as sold when you save, so it does not appear in Pending Transactions.",
         "autoReconcileReviewValue": "Reconciled as sold on save",
@@ -1444,5 +1444,118 @@
     "unknownCurrency": "Unknown currency",
     "loading": "Loading outstanding transactions…",
     "empty": "No outstanding transactions match your filters."
+  },
+  "journalReconciliation": {
+    "title": "Pending Transactions",
+    "description": "Outstanding journals across all closeouts. Reconcile after receiving income or approving expenses. Payments already apply to invoices when recorded.",
+    "createdAt": "Created at",
+    "status": "Reconciliation",
+    "OUTSTANDING": "Outstanding",
+    "RECONCILED": "Reconciled",
+    "matchingTotals": "All matching transactions",
+    "selectedTotals": "Selected transactions",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net income",
+    "selectedCount": "Selected:",
+    "totalCount": "Transactions:",
+    "clearSelection": "Clear selection",
+    "reconcileSelected": "Reconcile selected",
+    "sameMethod": "Select up to 200 transactions with the same payment method.",
+    "confirmTitle": "Reconcile selected transactions?",
+    "confirmDescription": "Confirm that income was received or expenses approved. This releases the assignee’s responsibility and is final. Invoice payments and balances stay unchanged.",
+    "pendingAlert": "{{count}} outstanding transactions",
+    "fields": {
+      "invoice": {
+        "number": {
+          "label": "Invoice #",
+          "placeholder": "Invoice #"
+        },
+        "cost": {
+          "label": "Cost",
+          "placeholder": "Cost"
+        },
+        "payment": {
+          "label": "Invoice payment",
+          "placeholder": "Invoice payment"
+        },
+        "balance": {
+          "label": "Balance",
+          "placeholder": "Balance"
+        }
+      },
+      "createdBy": {
+        "name": {
+          "label": "User",
+          "placeholder": "User"
+        }
+      },
+      "accounts": {
+        "name": {
+          "label": "Account",
+          "placeholder": "Account"
+        }
+      },
+      "employee": {
+        "name": {
+          "label": "Employee",
+          "placeholder": "Employee"
+        },
+        "id": {
+          "label": "Employee ID",
+          "placeholder": "Employee ID"
+        }
+      },
+      "paymentReference": {
+        "label": "Check number",
+        "placeholder": "Check number"
+      },
+      "external_reference_number": {
+        "label": "External reference",
+        "placeholder": "External reference"
+      },
+      "refNumber": {
+        "label": "Internal reference",
+        "placeholder": "Internal reference"
+      },
+      "incomeStatement": {
+        "id": {
+          "label": "Closeout",
+          "placeholder": "Closeout"
+        }
+      },
+      "transactionAmount": {
+        "label": "Amount",
+        "placeholder": "Amount"
+      },
+      "date": {
+        "label": "Date",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "dateRange": {
+        "label": "Date range",
+        "placeholder": "YYYY-MM-DD to YYYY-MM-DD"
+      },
+      "transactionType": {
+        "label": "Transaction",
+        "placeholder": "Transaction"
+      },
+      "paymentMethod": {
+        "name": {
+          "label": "Payment method",
+          "placeholder": "Payment method"
+        }
+      },
+      "reconciliationStatus": {
+        "label": "Reconciliation",
+        "placeholder": "Reconciliation"
+      },
+      "branch": {
+        "id": {
+          "label": "Branch ID",
+          "placeholder": "Branch ID"
+        }
+      }
+    }
   }
 }

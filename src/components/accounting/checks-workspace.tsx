@@ -65,10 +65,7 @@ export function ChecksWorkspace() {
   const { hasPermission } = useAuth();
   const feedback = useFeedback();
   const canViewChecks = hasPermission(PERMISSIONS.checksView.name, PERMISSIONS.checksView.resourceType);
-  const canUpdateChecks = hasPermission(
-    PERMISSIONS.checksUpdate.name,
-    PERMISSIONS.checksUpdate.resourceType,
-  );
+  const canUpdateChecks = false;
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CHECK_LIST_PARAMS.sort, () => setPage(1));
   const [query, setQuery] = useState("");

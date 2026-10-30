@@ -245,7 +245,7 @@ const accountingGroup: NavigationGroup = {
   titleKey: "navigation.groups.accounting",
   icon: Calculator,
   items: [
- {labelKey:"navigation.items.pendingFinancialActivity",href:"/accounting/pending-financial-activity",icon:HandCoins,permission:PERMISSIONS.financialActivityView},
+ {labelKey:"navigation.items.pendingFinancialActivity",href:"/accounting/pending-financial-activity",icon:HandCoins,permission:PERMISSIONS.journalsView},
     {
       labelKey: "navigation.items.dailyIncome",
       href: "/accounting/daily-income",

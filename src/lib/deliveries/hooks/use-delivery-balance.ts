@@ -12,12 +12,7 @@ import { fetchChartAccounts } from "@/lib/accounting/chart-accounts/api/chart-ac
 import { createDailyIncomeJournal, fetchAccountingPaymentMethods, fetchCurrentIncomeStatement } from "@/lib/accounting/daily-income/api";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
 import { DuplicatePaymentCancelledError, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
-import { toApiPaymentMethodName, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
-import {
-  fetchInvoicePendingPayments,
-  sumPendingPayments,
-  type PendingPaymentMethod,
-} from "@/lib/deliveries/api/delivery-pending-payments-api";
+import { type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { queryKeys } from "@/lib/query/query-keys";
 import { store } from "@/lib/store/store";
@@ -26,18 +21,6 @@ import { useTranslation } from "@/lib/i18n";
 import type { DeliverTarget, useDeliveryAccess } from "./use-deliver-invoice";
 import { useDeliveryRouteRate } from "./use-delivery-route-rate";
 
-const PENDING_LIST_PERMISSIONS = {
-  CHECK: PERMISSIONS.checksList,
-  ZELLE: PERMISSIONS.zellePaymentsList,
-  DEPOSIT: PERMISSIONS.depositsList,
-  "CREDIT-CARD": PERMISSIONS.creditCardPaymentsList,
-} as const satisfies Record<PendingPaymentMethod, unknown>;
-
-/** Pending payments cover the balance when they are at least the balance, to the cent. */
-function covers(pending: number, balance: number): boolean {
-  return Math.round(pending * 100) >= Math.round(balance * 100);
-}
-
 export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typeof useDeliveryAccess>, active: boolean) {
   const { t } = useTranslation();
   const auth = useAuth();
@@ -45,7 +28,6 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   const has = (permission: { name: string; resourceType: string }) => auth.hasPermission(permission.name, permission.resourceType);
   const [error, setError] = useState<string | null>(null);
   const [recorded, setRecorded] = useState<"cleared" | "pending" | null>(null);
-  const [overrideAccepted, setOverrideAccepted] = useState(false);
   const scope = ["delivery-balance", access.companyId, access.actorId, target.invoiceId];
   const rate = useDeliveryRouteRate(target);
   const invoice = useWorkspaceQuery({
@@ -82,21 +64,6 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     enabled: enabled && has(PERMISSIONS.accountsView),
   });
   const methods = useWorkspaceQuery({ queryKey: [...scope, "methods"], queryFn: fetchAccountingPaymentMethods, enabled });
-  const pendingMethods = (Object.keys(PENDING_LIST_PERMISSIONS) as PendingPaymentMethod[])
-    .filter((method) => has(PENDING_LIST_PERMISSIONS[method]));
-  const pendingKey = (invoiceNumber: string) => [...scope, "pending-payments", invoiceNumber, pendingMethods.join(",")];
-  const fetchPending = (invoiceNumber: string) =>
-    fetchInvoicePendingPayments({ invoiceId: target.invoiceId!, invoiceNumber }, pendingMethods);
-  const invoiceNumber = invoice.data?.invoiceNumber ?? "";
-  const pending = useWorkspaceQuery({
-    queryKey: pendingKey(invoiceNumber),
-    queryFn: () => fetchPending(invoiceNumber),
-    enabled: enabled && balance! > 0 && Boolean(invoiceNumber) && pendingMethods.length > 0,
-    staleTime: 0,
-  });
-  const pendingTotal = sumPendingPayments(pending.data ?? []);
-  const canOverride = canPay && balance != null && balance > 0 && pending.isSuccess && pendingTotal > 0 && covers(pendingTotal, balance);
-  const overridden = overrideAccepted && canOverride;
   const confirmation = useDuplicatePaymentConfirmation(active);
 
 
@@ -122,12 +89,10 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     onSuccess: async (_journal, { values }) => {
       if (store.getState().auth.companyId !== access.companyId) return;
       const clearingSegment = ({ CHECK: "checks", CHEQUE: "checks", ZELLE: "zelle-payments", DEPOSIT: "deposits", "CREDIT-CARD": "credit-card-payments" } as Record<string, string>)[values.paymentMethodName ?? ""];
-      const nonCash = toApiPaymentMethodName(values.paymentMethodName) !== "CASH";
 
-      setRecorded(nonCash && !values.autoClear ? "pending" : "cleared");
+      setRecorded("cleared");
       await Promise.all([
         invoice.refetch(),
-        ...(nonCash && pendingMethods.length > 0 ? [pending.refetch()] : []),
         ...(clearingSegment ? [
           client.invalidateQueries({ queryKey: [...queryKeys.accounting.all, clearingSegment] }),
           client.invalidateQueries({ queryKey: queryKeys.accounting.clearablePaymentsOutstanding(clearingSegment) }),
@@ -154,29 +119,16 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
     }
   }
 
-  /**
-   * Rereads the authoritative balance. Passes at zero, or when the driver accepted
-   * liability and outstanding non-cash payments still cover the balance.
-   */
+  /** Only the authoritative invoice balance can permit delivery. */
   async function verify(): Promise<boolean> {
     const fresh = await invoice.refetch();
-    if (fresh.isError || !fresh.data || fresh.data.balance == null) return false;
-    if (fresh.data.balance === 0) return true;
-    if (!overrideAccepted || !canPay || fresh.data.balance < 0 || pendingMethods.length === 0) return false;
-    try {
-      const number = fresh.data.invoiceNumber;
-      const payments = await client.fetchQuery({ queryKey: pendingKey(number), queryFn: () => fetchPending(number), staleTime: 0 });
-      return covers(sumPendingPayments(payments), fresh.data.balance);
-    } catch {
-      return false;
-    }
+    return !fresh.isError && fresh.data?.balance === 0;
   }
 
   return {
     invoice, canPay, profile, statement, employees, routes, banks, methods, confirmation, pay, error, recorded,
-    rate, pending, pendingTotal, canOverride, overridden,
-    overrideAccepted, setOverrideAccepted,
-    ready: balance === 0 || overridden,
+    rate,
+    ready: balance === 0,
     verify,
     creatingStatement: false,
     busy: confirmation.isSubmitting || mutation.isPending,

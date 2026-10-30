@@ -1,31 +1,21 @@
 "use client";
+import {JournalTransactionsTable} from "@/components/accounting/journal-transactions-table";
 
-import { dailyIncomeTransactionColumns } from "./daily-income-transaction-columns";
 
-
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronUp, Edit, Loader2, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, ChevronUp, Plus, Printer } from "lucide-react";
 
 import { TransactionCloseoutSetup } from "@/components/accounting/transaction-closeout-setup";
 import { useStartTransaction } from "@/lib/accounting/daily-income/use-start-transaction";
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomePrintDialog, type DailyIncomePrintSelection } from "@/components/accounting/daily-income-print-dialog";
 import { DailyIncomeTransactionViewSheet } from "@/components/accounting/daily-income-transaction-view-sheet";
-import { DataTable } from "@/components/app-shell/data-table";
-import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
-import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards, type StatCardItem } from "@/components/app-shell/stat-cards-carousel";
-import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
-import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
-import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
-import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CloseoutDateNavigation } from "@/components/accounting/closeout-date-navigation";
 import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
@@ -38,7 +28,6 @@ import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
   useDailyIncomeJournal,
-  useDailyIncomeJournals,
   useDeleteDailyIncomeJournal,
   useIncomeStatement,
   useCurrentIncomeStatement,
@@ -47,7 +36,6 @@ import {
   useUpdateDailyIncomeJournal,
 
 } from "@/lib/accounting/daily-income/hooks";
-import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
@@ -67,39 +55,9 @@ import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useTranslation } from "@/lib/i18n";
 import { useGenerateReport, useGenerateIncomeReport } from "@/lib/reports/hooks/use-reports";
-import {
-  buildTableSelectionResetKey,
-  useTableSelectionReset,
-} from "@/lib/table/directory-table-state";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
-import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
-import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
-import { countCompleteFilterRows, isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { DAILY_INCOME_TABLE_FILTER_FIELDS } from "@/lib/accounting/daily-income/filter-fields";
-import { summarizeJournalTotals } from "@/lib/accounting/daily-income/journal-classification";
 import { cn } from "@/lib/utils";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
-import { buildPaymentReceiptRequest, canPrintPaymentReceipt } from "@/lib/accounting/daily-income/print-payment-receipt";
-
-function localizeDailyIncomeFilterOption(field: string, option: { value: string; label: string }, t: (key: string) => string) {
-  return field === "transactionType" ? { ...option, label: transactionTypeLabel(option.value, t) } : option;
-}
-
-function transactionTitle(row: DailyIncomeJournal, fallback: string) {
-  return (row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? row.refNumber) || fallback;
-}
-
-function transactionParty(row: DailyIncomeJournal, fallback: string) {
-  return row.invoice?.receiver?.name ?? row.invoice?.sender?.name ?? row.account?.name ?? fallback;
-}
-
-function transactionAmountClassName(row: DailyIncomeJournal) {
-  if (row.amount === 0) return "text-emerald-700";
-  if (row.transactionType === "EXPENSE" || row.transactionType === "DISCOUNT") return "text-rose-600";
-  return "text-emerald-700";
-}
+import { buildPaymentReceiptRequest, } from "@/lib/accounting/daily-income/print-payment-receipt";
 
 function isTotalCashSummaryLabel(label: string) {
   const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
@@ -281,83 +239,6 @@ function DailyIncomeMobileSummary({
   );
 }
 
-function DailyIncomeMobileTransactionRow({
-  row,
-  currency,
-  canModify,
-  onView,
-  onEdit,
-  onDelete,
-  t,
-}: {
-  row: DailyIncomeJournal;
-  currency: string;
-  canModify: boolean;
-  onView: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  t: ReturnType<typeof useTranslation>["t"];
-}) {
-  const title = transactionTitle(row, t("common.empty.dash"));
-  const party = transactionParty(row, t("common.empty.dash"));
-  const employee = getTransactionAssigneeDisplayName(
-    row.employee,
-    row.route,
-    row.employeeGroup,
-  );
-
-  return (
-    <div className="border-b border-border/80 py-4 last:border-b-0">
-      <button
-        type="button"
-        onClick={onView}
-        className="grid w-full grid-cols-[1fr_auto] gap-4 text-left"
-      >
-        <span className="min-w-0">
-          <span className="block truncate text-lg font-bold leading-tight text-foreground">{title}</span>
-          <span className="mt-1 block truncate text-base text-foreground/80">{party}</span>
-          <span className="mt-1 block text-sm text-muted-foreground">{formatAccountingDate(row.date)}</span>
-          <span className="mt-2 flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <span>{transactionTypeLabel(row.transactionType, t)}</span>
-            {row.paymentMethod?.name ? <span>- {row.paymentMethod.name}</span> : null}
-            {employee ? <span>- {employee}</span> : null}
-          </span>
-        </span>
-        <span className="shrink-0 text-right">
-          <span className={cn("block text-xl font-bold tabular-nums", transactionAmountClassName(row))}>
-            {formatDailyIncomeMoney(row.amount, currency)}
-          </span>
-          {row.refNumber ? <span className="mt-1 block text-xs text-muted-foreground">#{row.refNumber}</span> : null}
-        </span>
-      </button>
-      {canModify ? (
-        <div className="mt-3 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={tableSelectionActionStyles.edit}
-            onClick={onEdit}
-          >
-            <Edit className="size-4" />
-            {t("common.actions.edit")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onDelete}
-            className={tableSelectionActionStyles.delete}
-          >
-            <Trash2 className="size-4" />
-            {t("common.actions.delete")}
-          </Button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function DailyIncomeWorkspace() {
   const currentUser = useCurrentUser();
   const { hasPermission } = useAuth();
@@ -367,25 +248,12 @@ export function DailyIncomeWorkspace() {
   const [branchCode, setBranchCode] = useState("");
   const [requestedBranchId, setRequestedBranchId] = useState<number | null>(null);
   const [selectedDate, setDate] = useState("");
-  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
-  const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const filterFields = useLocalizedFilterFields(DAILY_INCOME_TABLE_FILTER_FIELDS, "accounting.dailyIncome.advancedFilters.fields", localizeDailyIncomeFilterOption);
-  const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
-  const debouncedFilterRows = useDebouncedValue(filterRows, 300);
-  const appliedFilterRows = useMemo(
-    () => debouncedFilterRows.filter((row) => isCompleteFilterRow(row, DAILY_INCOME_TABLE_FILTER_FIELDS)),
-    [debouncedFilterRows],
-  );
   const [statementDialog, setStatementDialog] = useState(false);
   const [printDialog, setPrintDialog] = useState(false);
   const [transactionDialog, setTransactionDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<DailyIncomeJournal | null>(null);
   const [viewJournal, setViewJournal] = useState<DailyIncomeJournal | null>(null);
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [openCreateOnLoad, setOpenCreateOnLoad] = useState(false);
 
@@ -423,7 +291,7 @@ export function DailyIncomeWorkspace() {
     setOpenCreateOnLoad(false);
   }, [branchCode, openCreateOnLoad, statement, statementQuery.isLoading]);
   const summaryTotalsQuery = useIncomeStatementSummaryTotals(statement?.id ?? 0);
-  const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: pageLimit, query: deferredQuery, filterRows: appliedFilterRows });
+
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
   const employees = useMemo(
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
@@ -456,37 +324,9 @@ export function DailyIncomeWorkspace() {
   const deleteMutation = useDeleteDailyIncomeJournal();
   const generateIncomeReportMutation = useGenerateIncomeReport();
   const generateReceiptMutation = useGenerateReport();
-  const rows = journalsQuery.data?.items ?? [];
-  const total = journalsQuery.data?.total ?? rows.length;
-  rememberTotal(total);
-  const totalPages = Math.max(1, Math.ceil(total / pageLimit));
-  const displayCurrency = summaryTotalsQuery.data?.currency ?? statement?.currency ?? "USD";
-
-  useTableSelectionReset(
-    buildTableSelectionResetKey(deferredQuery, appliedFilterRows, page, statement?.id),
-    setSelectedIds,
-  );
-  const selectedTotals = summarizeJournalTotals(rows.filter((row) => selectedIds.includes(row.id)));
-
-  const allPageSelected =
-    rows.length > 0 && rows.every((row) => selectedIds.includes(row.id));
-
-  function toggleSelectAll(checked: boolean) {
-    if (checked) {
-      setSelectedIds((current) => Array.from(new Set([...current, ...rows.map((row) => row.id)])));
-      return;
-    }
-    setSelectedIds((current) => current.filter((id) => !rows.some((row) => row.id === id)));
-  }
-
-  function toggleSelect(journalId: string, checked: boolean) {
-    setSelectedIds((current) =>
-      checked ? [...current, journalId] : current.filter((entry) => entry !== journalId),
-    );
-  }
-
-  const selectedJournal = rows.find((row) => selectedIds.includes(row.id));
   const startTransaction = useStartTransaction(selectedBranch, openAddTransactionForm);
+  const displayCurrency = statement?.currency || "USD";
+  const statementOpen = statement?.id === calendar.data?.current?.id && statement?.status === "OPEN" && selectedBranch?.id === currentUser.data?.branch.id;
 
   const stats = useMemo((): StatCardItem[] => {
     const summary = summaryTotalsQuery.data;
@@ -513,8 +353,7 @@ export function DailyIncomeWorkspace() {
     });
   }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading, t]);
 
-  const columns = useMemo(() => dailyIncomeTransactionColumns(t, displayCurrency), [displayCurrency, t]);
-  const columnLayout = useApiTableColumns("daily-income-v3", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
+
   function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
     const saveStatement = editingJournal ? statement : transactionStatement;
     if (!saveStatement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
@@ -602,7 +441,6 @@ export function DailyIncomeWorkspace() {
 
   function openAddTransactionForm(nextStatement: DailyIncomeStatement) {
     setDate("");
-    setPage(1);
     if (isDesktopTabs) {
       openFormTab({
         feature: "daily-income-transactions",
@@ -699,8 +537,7 @@ export function DailyIncomeWorkspace() {
               value={branchCode}
               onValueChange={(next) => {
                 setBranchCode(next);
-                setDate("");
-                setPage(1);
+
               }}
               options={branches.map((branch) => ({
                 value: branch.code,
@@ -714,10 +551,12 @@ export function DailyIncomeWorkspace() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="daily-date-mobile">{t("accounting.dailyIncome.filters.date")}</Label>
-            <CloseoutDateNavigation id="daily-date-mobile" date={date} today={currentDate || serverToday} onCurrent={() => { setDate(""); setPage(1); }} onChange={(next) => { setDate(next); setPage(1); }} />
+            <CloseoutDateNavigation id="daily-date-mobile" date={date} today={serverToday || date} onChange={(next) => { setDate(next);  }} />
           </div>
         </div>
       </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
 
       {statement ? (
         <DailyIncomeMobileSummary
@@ -739,65 +578,7 @@ export function DailyIncomeWorkspace() {
         </div>
       )}
 
-      <div className="grid gap-3">
-        <Button className="h-12 rounded-xl text-base" onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}>
-          <Plus className="size-5" />
-          {t("accounting.dailyIncome.actions.addTransaction")}
-        </Button>
-      </div>
-      {statement ? (
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-bold tracking-normal">{t("accounting.dailyIncome.transactions.title")}</h2>
-              <span className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</span>
-            </div>
-            <TableSearchInput
-              value={query}
-              onChange={(value) => {
-                setQuery(value);
-                setPage(1);
-              }}
-              placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}
-              className="min-w-0"
-              inputClassName="h-12 rounded-2xl border-border bg-background text-base text-foreground shadow-none"
-            />
-          </div>
 
-          <TablePaginationControls
-            layout="mobile"
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={changePageSize}
-            disabled={journalsQuery.isLoading}
-          />
-
-          <div className="rounded-3xl bg-card px-4 shadow-sm">
-            {journalsQuery.isError ? (
-              <div className="py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div>
-            ) : journalsQuery.isLoading ? (
-              <div className="py-8 text-sm text-muted-foreground">{t("accounting.dailyIncome.transactions.loadingTitle")}</div>
-            ) : rows.length === 0 ? (
-              <div className="py-8 text-sm text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</div>
-            ) : (
-              rows.map((row) => (
-                <DailyIncomeMobileTransactionRow
-                  key={row.id}
-                  row={row}
-                  currency={displayCurrency}
-                  canModify={false}
-                  onView={() => setViewJournal(row)}
-                  onEdit={() => openEditTransactionForm(row)}
-                  onDelete={() => openDeleteTransaction(row)}
-                  t={t}
-                />
-              ))
-            )}
-          </div>
-        </div>
-      ) : null}
     </div>
 
     <div className="hidden md:block">
@@ -836,8 +617,7 @@ export function DailyIncomeWorkspace() {
             value={branchCode}
             onValueChange={(next) => {
               setBranchCode(next);
-              setDate("");
-              setPage(1);
+
             }}
             options={branches.map((branch) => ({
               value: branch.code,
@@ -850,7 +630,7 @@ export function DailyIncomeWorkspace() {
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
-          <CloseoutDateNavigation id="daily-date" date={date} today={currentDate || serverToday} onCurrent={() => { setDate(""); setPage(1); }} onChange={(next) => { setDate(next); setPage(1); }} />
+          <CloseoutDateNavigation id="daily-date" date={date} today={serverToday || date} onChange={(next) => { setDate(next);  }} />
         </div>
         <div className="flex w-fit flex-col gap-2">
           <Label>{t("accounting.dailyIncome.filters.status")}</Label>
@@ -874,52 +654,13 @@ export function DailyIncomeWorkspace() {
       </CardContent>
     </Card>
 
-    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
+    <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
 
-    {statement ? <>
-    <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar filtersOpen={filtersOpen} onFiltersOpenChange={setFiltersOpen} activeFilterCount={activeFilterCount} filterPanel={<TableAdvancedFilterPanel presetScope="accounting-daily-income" open={filtersOpen} rows={filterRows} fields={filterFields} resultSummary={formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isFiltered: activeFilterCount > 0 || Boolean(deferredQuery.trim()), isLoading: journalsQuery.isFetching }, t)} onRowsChange={(next) => { setFilterRows(next); setPage(1); }} onClearAll={activeFilterCount > 0 || query.trim() ? () => { setQuery(""); setFilterRows([]); setPage(1); } : undefined} />} columnLayout={columnLayout} searchSummary={buildToolbarSearchSummary({ isFiltered: Boolean(deferredQuery.trim()) || appliedFilterRows.length > 0, query: deferredQuery, isSearchPending: query !== deferredQuery, matched: total, catalogTotal: total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isLoading, catalogLoading: journalsQuery.isLoading }, t)} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")} />} /></CardHeader>
-      {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title={t("accounting.dailyIncome.transactions.loadingTitle")} description={t("accounting.dailyIncome.transactions.loadingDescription")} columns={[t("accounting.dailyIncome.columns.date"), t("accounting.dailyIncome.columns.accountInvoice"), t("accounting.dailyIncome.columns.assignedTo"), t("accounting.dailyIncome.columns.type"), t("accounting.dailyIncome.columns.reference"), t("accounting.dailyIncome.columns.amount")]} /> : <>
-        <TableSelectionToolbar
-          actions={selectedJournal && canPrintPaymentReceipt(selectedJournal) ? (
-            <Button type="button" variant="outline" size="sm" className={tableSelectionActionStyles.print}
-              disabled={selectedIds.length !== 1 || generateReceiptMutation.isPending}
-              onClick={() => { if (selectedIds.length === 1 && selectedJournal) void printReceipt(selectedJournal); }}>
-              {generateReceiptMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-              {t("accounting.dailyIncome.actions.printReceipt")}
-            </Button>
-          ) : null}
-          selectedIds={selectedIds}
-          pageRowIds={rows.map((row) => row.id)}
-          totalCount={total}
-          onSelectedIdsChange={setSelectedIds}
-          onEdit={() => {
-            if (selectedJournal) openEditTransactionForm(selectedJournal);
-          }}
-          onDelete={() => {
-            if (selectedJournal) openDeleteTransaction(selectedJournal);
-          }}
-          canEdit={false}
-          canDelete={false}
-          deleteDisabled={deleteMutation.isPending}
-        />
-        {selectedTotals.length > 0 ? (
-          <div role="status" aria-label={t("accounting.dailyIncome.selectionTotals.label")} className="flex flex-wrap items-center gap-x-6 gap-y-1 border-b px-6 py-3 text-sm">
-            {selectedTotals.map((totals) => (
-              <div key={totals.currency} className="flex flex-wrap items-center gap-x-6 gap-y-1">
-                <span className="font-medium text-muted-foreground">{t("accounting.dailyIncome.selectionTotals.selected", { count: totals.count, currency: totals.currency || displayCurrency })}</span>
-                <span>{t("accounting.dailyIncome.selectionTotals.income")}: <strong className="tabular-nums">{formatDailyIncomeMoney(totals.income, totals.currency || displayCurrency)}</strong></span>
-                <span>{t("accounting.dailyIncome.selectionTotals.expenses")}: <strong className="tabular-nums">{formatDailyIncomeMoney(totals.expenses, totals.currency || displayCurrency)}</strong></span>
-                <span>{t("accounting.dailyIncome.selectionTotals.net")}: <strong className={cn("tabular-nums", totals.net < 0 && "text-destructive")}>{formatDailyIncomeMoney(totals.net, totals.currency || displayCurrency)}</strong></span>
-              </div>
-            ))}
-          </div>
-        ) : null}
-        <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} selectable selectedIds={selectedIds} allPageSelected={allPageSelected} onToggleSelectAll={toggleSelectAll} onToggleSelect={toggleSelect} onRowClick={setViewJournal} onRowDoubleClick={undefined} activeRowId={viewJournal?.id} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />
-      </>}
-      {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><TablePaginationControls page={page} totalPages={totalPages} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={changePageSize} disabled={journalsQuery.isFetching} /></div> : null}
-    </Card>
-    </> : null}
+    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
     </div>
+
+    <div className="flex items-center justify-between gap-3 md:hidden"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
+    {statement ? <JournalTransactionsTable key={`${currentUser.data?.id}:${statement.id}`} incomeStatementId={statement.id} isPrintingReceipt={generateReceiptMutation.isPending} onView={setViewJournal} onPrintReceipt={journal => void printReceipt(journal)} /> : null}
 
     {statementDialog ? <CloseoutRolloverDialog open={statementDialog} onOpenChange={setStatementDialog} onReady={async created=>{setBranchCode(created.branch?.code??branchCode);setDate(created.date);await calendar.refetch();}} /> : null}
     <DailyIncomePrintDialog
@@ -945,6 +686,6 @@ export function DailyIncomeWorkspace() {
       canEdit={false}
       canDelete={false}
     />
-    <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setSelectedIds((current) => current.filter((id) => id !== deleteJournal.id)); setViewJournal((current) => current?.id === deleteJournal.id ? null : current); setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setViewJournal((current) => current?.id === deleteJournal.id ? null : current); setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }

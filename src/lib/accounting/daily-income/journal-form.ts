@@ -37,7 +37,7 @@ function transactionCreatedToastTarget(values: DailyIncomeJournalValues) {
 }
 
 export function transactionCreatedToastMessage(values: DailyIncomeJournalValues, t: TranslateFn) {
-  if (isHeldCheckInvoicePayment(values)) {
+  if (isOutstandingCheckInvoicePayment(values)) {
     return t("accounting.dailyIncome.toasts.checkPaymentHeld", {
       checkNumber: values.checkNumber?.trim() || "—",
       invoiceNumber: values.invoiceNumber?.trim() || "—",
@@ -51,7 +51,7 @@ export function transactionCreatedToastMessage(values: DailyIncomeJournalValues,
 }
 
 export function journalCreatedToastMessage(values: DailyIncomeJournalValues, t: TranslateFn) {
-  if (isHeldCheckInvoicePayment(values)) {
+  if (isOutstandingCheckInvoicePayment(values)) {
     return t("accounting.dailyIncome.toasts.checkPaymentHeld", {
       checkNumber: values.checkNumber?.trim() || "—",
       invoiceNumber: values.invoiceNumber?.trim() || "—",
@@ -65,9 +65,9 @@ export function journalCreatedToastMessage(values: DailyIncomeJournalValues, t: 
   return transactionCreatedToastMessage(values, t);
 }
 
-function isHeldCheckInvoicePayment(values: DailyIncomeJournalValues) {
+function isOutstandingCheckInvoicePayment(values: DailyIncomeJournalValues) {
   return (
-    isCheckPaymentMethod(values.paymentMethodName) &&
+    !values.autoClear && isCheckPaymentMethod(values.paymentMethodName) &&
     (values.transactionType === "PAYMENT" || values.transactionType === "INITIAL-PAYMENT") &&
     (Number(values.amount) || 0) > 0
   );

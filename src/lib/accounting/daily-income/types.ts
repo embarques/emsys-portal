@@ -1,5 +1,5 @@
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
-import type { TableFilterRowState } from "@/lib/table/filter-types";
 import type { DailyIncomeRefNumberMode } from "@/lib/accounting/daily-income/ref-number";
 
 export type { DailyIncomeRefNumberMode };
@@ -111,6 +111,12 @@ export type DailyRouteAttribution = {
 
 export type DailyIncomeJournal = ApiTableRecord & {
   id: string;
+  reconciliationStatus?: "OUTSTANDING" | "RECONCILED";
+  reconciledAt?: string | null;
+  reconciledBy?: {id: string | number; name: string} | null;
+  autoReconciled?: boolean;
+  reversedAt?: string | null;
+  reversalOf?: string | null;
   incomeStatementId: number;
   date: string;
   transactionType: JournalTransactionType;
@@ -178,11 +184,13 @@ export type DailyIncomeJournalList = {
 
 export type DailyIncomeJournalListParams = {
   incomeStatementId: number;
+  pending?: boolean;
+  filterRows?: TableFilterRowState[];
+  sort?: string;
   page?: number;
   limit?: number;
   query?: string;
   /** Advanced filter rows applied to the loaded closeout rows (`DAILY_INCOME_TABLE_FILTER_FIELDS`). */
-  filterRows?: TableFilterRowState[];
   employeeId?: number;
 };
 

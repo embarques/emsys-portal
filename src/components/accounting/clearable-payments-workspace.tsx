@@ -63,10 +63,7 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
   const feedback = useFeedback();
   const i18n = `accounting.${config.i18nKey}`;
   const canView = hasPermission(config.permissions.view.name, config.permissions.view.resourceType);
-  const canUpdate = hasPermission(
-    config.permissions.update.name,
-    config.permissions.update.resourceType,
-  );
+  const canUpdate = false;
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CLEARABLE_PAYMENT_LIST_PARAMS.sort, () =>
     setPage(1),
