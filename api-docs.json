@@ -1,6 +1,237 @@
 {
   "basePath": "/scalar-api/v1",
   "definitions": {
+    "core.CloseoutReference": {
+      "type": "object",
+      "properties": {
+        "businessDate": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "rate": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string"
+        },
+        "timezone": {
+          "type": "string"
+        }
+      }
+    },
+    "core.AttributionReference": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "core.DailyRouteAttribution": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
+        "date": {
+          "type": "string"
+        },
+        "driver": {
+          "$ref": "#/definitions/core.AttributionReference"
+        },
+        "helpers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.AttributionReference"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "supervisor": {
+          "$ref": "#/definitions/core.AttributionReference"
+        },
+        "vehicle": {
+          "$ref": "#/definitions/core.AttributionReference"
+        }
+      }
+    },
+    "core.CloseoutRequiredError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "latestCloseout": {
+          "$ref": "#/definitions/core.CloseoutReference"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "serverTimezone": {
+          "type": "string"
+        },
+        "today": {
+          "type": "string"
+        }
+      }
+    },
+    "journal.SyncPostEntryRequest": {
+      "type": "object",
+      "required": [
+        "entry",
+        "requestId"
+      ],
+      "properties": {
+        "entry": {
+          "$ref": "#/definitions/journal.PostEntryRequest"
+        },
+        "requestId": {
+          "type": "string"
+        }
+      }
+    },
+    "journal.ReversalRequest": {
+      "type": "object",
+      "required": [
+        "reason",
+        "requestId"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        }
+      }
+    },
+    "journal.ReconciliationActor": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "journal.ReconcileResult": {
+      "type": "object",
+      "properties": {
+        "reconciled": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reconciledAt": {
+          "type": "string"
+        }
+      }
+    },
+    "journal.ReconcileRequest": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requestId": {
+          "type": "string"
+        }
+      }
+    },
+    "journal.JournalSummaryRequest": {
+      "type": "object",
+      "properties": {
+        "filters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/query.Filter"
+          }
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "journal.JournalSummary": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "expenses": {
+          "type": "number"
+        },
+        "income": {
+          "type": "number"
+        },
+        "net": {
+          "type": "number"
+        }
+      }
+    },
+    "journal.InventoryHolders": {
+      "type": "object",
+      "properties": {
+        "employees": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/journal.InventoryHolderEmployee"
+          }
+        },
+        "vehicle": {
+          "$ref": "#/definitions/journal.InventoryHolderVehicle"
+        }
+      }
+    },
+    "journal.InventoryHolderVehicle": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "journal.InventoryHolderEmployee": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "auth.TokenResult": {
       "type": "object",
       "properties": {
@@ -2275,93 +2506,207 @@
     "journal.Account": {
       "type": "object",
       "properties": {
-        "credit": { "type": "number" },
-        "debit": { "type": "number" },
-        "id": { "type": "integer" },
-        "name": { "type": "string" },
-        "sourceJournalId": { "type": "integer" },
-        "type": { "type": "string" }
+        "credit": {
+          "type": "number"
+        },
+        "debit": {
+          "type": "number"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "sourceJournalId": {
+          "type": "integer"
+        },
+        "type": {
+          "type": "string"
+        }
       }
     },
     "journal.AccountDTO": {
       "type": "object",
       "properties": {
-        "id": { "type": "integer" },
-        "name": { "type": "string" },
-        "type": { "type": "string" }
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
       }
     },
     "journal.BranchDTO": {
       "type": "object",
       "properties": {
-        "code": { "type": "string" },
-        "id": { "type": "integer" },
-        "name": { "type": "string" }
+        "code": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
       }
     },
     "journal.CustomerDTO": {
       "type": "object",
-      "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "journal.EmployeeDTO": {
       "type": "object",
       "properties": {
-        "id": { "type": "integer" },
-        "name": { "type": "string" }
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
       }
     },
     "journal.IncomeStatementDTO": {
       "type": "object",
-      "properties": { "id": { "type": "integer" } }
+      "properties": {
+        "branch": {
+          "$ref": "#/definitions/journal.BranchDTO"
+        },
+        "id": {
+          "type": "integer"
+        }
+      }
     },
     "journal.IncomeStatementSummary": {
       "type": "object",
       "properties": {
-        "accountReceivables": { "type": "number" },
-        "accountsTransfer": { "type": "number" },
-        "cash": { "type": "number" },
-        "check": { "type": "number" },
-        "creditCards": { "type": "number" },
-        "deposits": { "type": "number" },
-        "discounts": { "type": "number" },
-        "expenses": { "type": "number" },
-        "invoicePayments": { "type": "number" },
-        "invoices": { "type": "number" },
-        "loans": { "type": "number" },
-        "netIncome": { "type": "number" },
-        "otherIncomes": { "type": "number" },
-        "receiptPayments": { "type": "number" },
-        "receipts": { "type": "number" },
-        "totalCash": { "type": "number" },
-        "totalGeneral": { "type": "number" },
-        "totalIncome": { "type": "number" },
-        "zelle": { "type": "number" }
+        "accountReceivables": {
+          "type": "number"
+        },
+        "accountsTransfer": {
+          "type": "number"
+        },
+        "cash": {
+          "type": "number"
+        },
+        "check": {
+          "type": "number"
+        },
+        "creditCards": {
+          "type": "number"
+        },
+        "deposits": {
+          "type": "number"
+        },
+        "discounts": {
+          "type": "number"
+        },
+        "expenses": {
+          "type": "number"
+        },
+        "invoicePayments": {
+          "type": "number"
+        },
+        "invoices": {
+          "type": "number"
+        },
+        "loans": {
+          "type": "number"
+        },
+        "netIncome": {
+          "type": "number"
+        },
+        "otherIncomes": {
+          "type": "number"
+        },
+        "receiptPayments": {
+          "type": "number"
+        },
+        "receipts": {
+          "type": "number"
+        },
+        "totalCash": {
+          "type": "number"
+        },
+        "totalGeneral": {
+          "type": "number"
+        },
+        "totalIncome": {
+          "type": "number"
+        },
+        "zelle": {
+          "type": "number"
+        }
       }
     },
     "journal.InvoiceDTO": {
       "type": "object",
       "properties": {
-        "autoGenerateNumber": { "type": "boolean" },
-        "balance": { "type": "number" },
-        "cost": { "type": "number" },
-        "discount": { "type": "number" },
-        "id": { "type": "string" },
-        "number": { "type": "string" },
-        "payment": { "type": "number" },
-        "surcharge": { "type": "number" }
+        "autoGenerateNumber": {
+          "type": "boolean"
+        },
+        "balance": {
+          "type": "number"
+        },
+        "cost": {
+          "type": "number"
+        },
+        "dailyRoute": {
+          "$ref": "#/definitions/core.DailyRouteAttribution"
+        },
+        "dailyRouteId": {
+          "type": "string"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "payment": {
+          "type": "number"
+        },
+        "surcharge": {
+          "type": "number"
+        }
       }
     },
     "journal.InvoicePartyDTO": {
       "type": "object",
       "properties": {
-        "IDNumber": { "type": "string" },
-        "address": { "$ref": "#/definitions/core.Address" },
-        "email": { "type": "string" },
-        "id": { "type": "string" },
-        "name": { "type": "string" },
+        "IDNumber": {
+          "type": "string"
+        },
+        "address": {
+          "$ref": "#/definitions/core.Address"
+        },
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
         "phones": {
           "type": "array",
-          "items": { "$ref": "#/definitions/core.Phone" }
+          "items": {
+            "$ref": "#/definitions/core.Phone"
+          }
         }
       }
     },
@@ -2370,96 +2715,310 @@
       "properties": {
         "accounts": {
           "type": "array",
-          "items": { "$ref": "#/definitions/journal.Account" }
+          "items": {
+            "$ref": "#/definitions/journal.Account"
+          }
         },
-        "createdAt": { "type": "string" },
-        "createdBy": { "$ref": "#/definitions/core.User" },
-        "currency": { "type": "string" },
-        "customer": { "$ref": "#/definitions/journal.CustomerDTO" },
-        "date": { "type": "string" },
-        "description": { "type": "string" },
-        "duplicatePaymentOverride": { "type": "boolean" },
-        "employee": { "$ref": "#/definitions/journal.EmployeeDTO" },
-        "employeeGroup": { "$ref": "#/definitions/journal.VehicleRouteDTO" },
-        "id": { "type": "string" },
-        "idempotencyKey": { "type": "string" },
+        "autoReconcile": {
+          "type": "boolean"
+        },
+        "autoReconciled": {
+          "type": "boolean",
+          "readOnly": true
+        },
+        "branch": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/journal.BranchDTO"
+            }
+          ],
+          "readOnly": true
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "customer": {
+          "$ref": "#/definitions/journal.CustomerDTO"
+        },
+        "dailyRoute": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/core.DailyRouteAttribution"
+            }
+          ],
+          "readOnly": true
+        },
+        "dailyRouteId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "duplicatePaymentOverride": {
+          "type": "boolean"
+        },
+        "employee": {
+          "$ref": "#/definitions/journal.EmployeeDTO"
+        },
+        "employeeGroup": {
+          "$ref": "#/definitions/journal.VehicleRouteDTO"
+        },
+        "external_reference_number": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "idempotencyKey": {
+          "type": "string"
+        },
         "incomeStatement": {
           "$ref": "#/definitions/journal.IncomeStatementDTO"
         },
-        "invoice": { "$ref": "#/definitions/journal.InvoiceDTO" },
-        "loan": { "$ref": "#/definitions/journal.LoanDTO" },
+        "inventoryDirection": {
+          "type": "string"
+        },
+        "inventoryDispatchId": {
+          "type": "string"
+        },
+        "inventoryHolders": {
+          "$ref": "#/definitions/journal.InventoryHolders"
+        },
+        "inventoryItemId": {
+          "type": "string"
+        },
+        "inventoryQuantity": {
+          "type": "integer"
+        },
+        "inventoryReconciliationId": {
+          "type": "string"
+        },
+        "inventorySupplierId": {
+          "type": "string"
+        },
+        "inventoryTotal": {
+          "type": "number"
+        },
+        "inventoryUnitPrice": {
+          "type": "number"
+        },
+        "inventoryWarehouseHolderId": {
+          "type": "string"
+        },
+        "invoice": {
+          "$ref": "#/definitions/journal.InvoiceDTO"
+        },
+        "loan": {
+          "$ref": "#/definitions/journal.LoanDTO"
+        },
         "loanTransaction": {
           "$ref": "#/definitions/journal.LoanTransactionDTO"
         },
-        "paymentMethod": { "$ref": "#/definitions/journal.PaymentMethod" },
-        "paymentReference": { "type": "string" },
-        "rate": { "type": "number" },
-        "refNumber": { "type": "string" },
-        "route": { "$ref": "#/definitions/journal.RouteDTO" },
-        "sourceBranchId": { "type": "integer" },
-        "sourceBranchName": { "type": "string" },
-        "sourceCreatedBy": { "type": "string" },
-        "sourceCustomerId": { "type": "integer" },
-        "sourceCustomerName": { "type": "string" },
-        "sourceId": { "type": "string" },
-        "sourceIncomeStatementId": { "type": "integer" },
-        "sourceInvoiceId": { "type": "integer" },
-        "sourceInvoiceNumber": { "type": "string" },
-        "sourceJournalIds": { "type": "array", "items": { "type": "integer" } },
-        "sourcePaymentMethodId": { "type": "integer" },
-        "sourcePaymentType": { "type": "string" },
-        "sourceSupervisorId": { "type": "integer" },
-        "sourceSupervisorName": { "type": "string" },
-        "sourceSystem": { "type": "string" },
-        "sourceTransactionNumber": { "type": "string" },
-        "sourceTransactionTypeId": { "type": "integer" },
-        "transactionAmount": { "type": "number" },
-        "transactionBalance": { "type": "number" },
-        "transactionID": { "type": "integer" },
-        "transactionType": { "type": "string" },
-        "updatedAt": { "type": "string" },
-        "updatedBy": { "$ref": "#/definitions/core.User" },
-        "vehicleRoute": { "$ref": "#/definitions/journal.VehicleRouteDTO" }
+        "paymentMethod": {
+          "$ref": "#/definitions/journal.PaymentMethod"
+        },
+        "paymentReference": {
+          "type": "string"
+        },
+        "rate": {
+          "type": "number"
+        },
+        "reconciledAt": {
+          "type": "string",
+          "readOnly": true
+        },
+        "reconciledBy": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/journal.ReconciliationActor"
+            }
+          ],
+          "readOnly": true
+        },
+        "reconciliationStatus": {
+          "type": "string",
+          "enum": [
+            "OUTSTANDING",
+            "RECONCILED"
+          ],
+          "readOnly": true
+        },
+        "refNumber": {
+          "type": "string"
+        },
+        "reversalOf": {
+          "type": "string"
+        },
+        "reversedAt": {
+          "type": "string",
+          "readOnly": true
+        },
+        "reversedTransactionType": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/definitions/journal.RouteDTO"
+        },
+        "sourceBranchId": {
+          "type": "integer"
+        },
+        "sourceBranchName": {
+          "type": "string"
+        },
+        "sourceCreatedBy": {
+          "type": "string"
+        },
+        "sourceCustomerId": {
+          "type": "integer"
+        },
+        "sourceCustomerName": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "sourceIncomeStatementId": {
+          "type": "integer"
+        },
+        "sourceInvoiceId": {
+          "type": "integer"
+        },
+        "sourceInvoiceNumber": {
+          "type": "string"
+        },
+        "sourceJournalIds": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "sourcePaymentMethodId": {
+          "type": "integer"
+        },
+        "sourcePaymentType": {
+          "type": "string"
+        },
+        "sourceSupervisorId": {
+          "type": "integer"
+        },
+        "sourceSupervisorName": {
+          "type": "string"
+        },
+        "sourceSystem": {
+          "type": "string"
+        },
+        "sourceTransactionNumber": {
+          "type": "string"
+        },
+        "sourceTransactionTypeId": {
+          "type": "integer"
+        },
+        "transactionAmount": {
+          "type": "number"
+        },
+        "transactionBalance": {
+          "type": "number"
+        },
+        "transactionID": {
+          "type": "integer"
+        },
+        "transactionType": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "vehicleRoute": {
+          "$ref": "#/definitions/journal.VehicleRouteDTO"
+        }
       }
     },
     "journal.LoanDTO": {
       "type": "object",
       "properties": {
-        "id": { "type": "integer" },
-        "principalAmount": { "type": "number" }
+        "id": {
+          "type": "integer"
+        },
+        "principalAmount": {
+          "type": "number"
+        }
       }
     },
     "journal.LoanTransactionDTO": {
       "type": "object",
       "properties": {
-        "amount": { "type": "number" },
-        "id": { "type": "integer" },
-        "type": { "type": "string" }
+        "amount": {
+          "type": "number"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "type": {
+          "type": "string"
+        }
       }
     },
     "journal.PaymentMethod": {
       "type": "object",
       "properties": {
-        "id": { "type": "integer" },
-        "name": { "type": "string" }
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
       }
     },
     "journal.PostEntryIncomeStatement": {
       "type": "object",
-      "required": ["id"],
-      "properties": { "id": { "type": "integer" } }
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        }
+      }
     },
     "journal.PostEntryInvoice": {
       "type": "object",
       "properties": {
-        "autoGenerateNumber": { "type": "boolean" },
-        "balance": { "type": "number" },
-        "cost": { "type": "number" },
-        "discount": { "type": "number" },
-        "id": { "type": "string" },
-        "number": { "type": "string" },
-        "payment": { "type": "number" },
-        "surcharge": { "type": "number" }
+        "autoGenerateNumber": {
+          "type": "boolean"
+        },
+        "balance": {
+          "type": "number"
+        },
+        "cost": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "payment": {
+          "type": "number"
+        },
+        "surcharge": {
+          "type": "number"
+        }
       }
     },
     "journal.PostEntryRequest": {
@@ -2484,15 +3043,23 @@
           "type": "boolean",
           "default": false
         },
+        "autoReconcile": {
+          "type": "boolean"
+        },
+        "branch": {
+          "$ref": "#/definitions/core.BranchDTO"
+        },
         "checkNumber": {
           "type": "string"
         },
         "currency": {
           "type": "string"
         },
+        "dailyRouteId": {
+          "type": "string"
+        },
         "date": {
-          "type": "string",
-          "description": "Occurrence date; does not select the accounting period."
+          "type": "string"
         },
         "description": {
           "type": "string"
@@ -2516,12 +3083,34 @@
           "type": "string"
         },
         "incomeStatement": {
-          "$ref": "#/definitions/journal.PostEntryIncomeStatement",
-          "description": "Legacy field. Omit for ordinary recording; the server selects the current closeout."
+          "$ref": "#/definitions/journal.PostEntryIncomeStatement"
         },
         "incomeStatementId": {
-          "type": "integer",
-          "description": "Legacy field. Omit for ordinary recording; the server selects the current closeout."
+          "type": "integer"
+        },
+        "inventoryDirection": {
+          "type": "string"
+        },
+        "inventoryHolders": {
+          "$ref": "#/definitions/journal.InventoryHolders"
+        },
+        "inventoryItemId": {
+          "type": "string"
+        },
+        "inventoryQuantity": {
+          "type": "integer"
+        },
+        "inventorySupplierId": {
+          "type": "string"
+        },
+        "inventoryTotal": {
+          "type": "number"
+        },
+        "inventoryUnitPrice": {
+          "type": "number"
+        },
+        "inventoryWarehouseHolderId": {
+          "type": "string"
         },
         "invoice": {
           "$ref": "#/definitions/journal.PostEntryInvoice"
@@ -2577,9 +3166,6 @@
         },
         "vehicleRoute": {
           "$ref": "#/definitions/journal.PostEntryRouteAssignee"
-        },
-        "branch": {
-          "$ref": "#/definitions/journal.BranchDTO"
         }
       }
     },
@@ -2588,79 +3174,276 @@
       "properties": {
         "accounts": {
           "type": "array",
-          "items": { "$ref": "#/definitions/journal.Account" }
+          "items": {
+            "$ref": "#/definitions/journal.Account"
+          }
         },
-        "createdAt": { "type": "string" },
-        "createdBy": { "$ref": "#/definitions/core.User" },
-        "currency": { "type": "string" },
-        "customer": { "$ref": "#/definitions/journal.CustomerDTO" },
-        "date": { "type": "string" },
-        "description": { "type": "string" },
-        "duplicatePaymentOverride": { "type": "boolean" },
-        "employee": { "$ref": "#/definitions/journal.EmployeeDTO" },
-        "employeeGroup": { "$ref": "#/definitions/journal.VehicleRouteDTO" },
-        "id": { "type": "string" },
-        "idempotencyKey": { "type": "string" },
+        "autoReconcile": {
+          "type": "boolean"
+        },
+        "autoReconciled": {
+          "type": "boolean",
+          "readOnly": true
+        },
+        "branch": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/journal.BranchDTO"
+            }
+          ],
+          "readOnly": true
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "customer": {
+          "$ref": "#/definitions/journal.CustomerDTO"
+        },
+        "dailyRoute": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/core.DailyRouteAttribution"
+            }
+          ],
+          "readOnly": true
+        },
+        "dailyRouteId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "duplicatePaymentOverride": {
+          "type": "boolean"
+        },
+        "employee": {
+          "$ref": "#/definitions/journal.EmployeeDTO"
+        },
+        "employeeGroup": {
+          "$ref": "#/definitions/journal.VehicleRouteDTO"
+        },
+        "external_reference_number": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "idempotencyKey": {
+          "type": "string"
+        },
         "incomeStatement": {
           "$ref": "#/definitions/journal.IncomeStatementDTO"
         },
         "incomeStatementSummary": {
           "$ref": "#/definitions/journal.IncomeStatementSummary"
         },
-        "invoice": { "$ref": "#/definitions/journal.InvoiceDTO" },
-        "loan": { "$ref": "#/definitions/journal.LoanDTO" },
+        "inventoryDirection": {
+          "type": "string"
+        },
+        "inventoryDispatchId": {
+          "type": "string"
+        },
+        "inventoryHolders": {
+          "$ref": "#/definitions/journal.InventoryHolders"
+        },
+        "inventoryItemId": {
+          "type": "string"
+        },
+        "inventoryQuantity": {
+          "type": "integer"
+        },
+        "inventoryReconciliationId": {
+          "type": "string"
+        },
+        "inventorySupplierId": {
+          "type": "string"
+        },
+        "inventoryTotal": {
+          "type": "number"
+        },
+        "inventoryUnitPrice": {
+          "type": "number"
+        },
+        "inventoryWarehouseHolderId": {
+          "type": "string"
+        },
+        "invoice": {
+          "$ref": "#/definitions/journal.InvoiceDTO"
+        },
+        "loan": {
+          "$ref": "#/definitions/journal.LoanDTO"
+        },
         "loanTransaction": {
           "$ref": "#/definitions/journal.LoanTransactionDTO"
         },
-        "paymentMethod": { "$ref": "#/definitions/journal.PaymentMethod" },
-        "paymentReference": { "type": "string" },
-        "rate": { "type": "number" },
-        "refNumber": { "type": "string" },
-        "route": { "$ref": "#/definitions/journal.RouteDTO" },
-        "sourceBranchId": { "type": "integer" },
-        "sourceBranchName": { "type": "string" },
-        "sourceCreatedBy": { "type": "string" },
-        "sourceCustomerId": { "type": "integer" },
-        "sourceCustomerName": { "type": "string" },
-        "sourceId": { "type": "string" },
-        "sourceIncomeStatementId": { "type": "integer" },
-        "sourceInvoiceId": { "type": "integer" },
-        "sourceInvoiceNumber": { "type": "string" },
-        "sourceJournalIds": { "type": "array", "items": { "type": "integer" } },
-        "sourcePaymentMethodId": { "type": "integer" },
-        "sourcePaymentType": { "type": "string" },
-        "sourceSupervisorId": { "type": "integer" },
-        "sourceSupervisorName": { "type": "string" },
-        "sourceSystem": { "type": "string" },
-        "sourceTransactionNumber": { "type": "string" },
-        "sourceTransactionTypeId": { "type": "integer" },
-        "transactionAmount": { "type": "number" },
-        "transactionBalance": { "type": "number" },
-        "transactionID": { "type": "integer" },
-        "transactionType": { "type": "string" },
-        "updatedAt": { "type": "string" },
-        "updatedBy": { "$ref": "#/definitions/core.User" },
-        "vehicleRoute": { "$ref": "#/definitions/journal.VehicleRouteDTO" }
+        "paymentMethod": {
+          "$ref": "#/definitions/journal.PaymentMethod"
+        },
+        "paymentReference": {
+          "type": "string"
+        },
+        "rate": {
+          "type": "number"
+        },
+        "reconciledAt": {
+          "type": "string",
+          "readOnly": true
+        },
+        "reconciledBy": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/journal.ReconciliationActor"
+            }
+          ],
+          "readOnly": true
+        },
+        "reconciliationStatus": {
+          "type": "string",
+          "enum": [
+            "OUTSTANDING",
+            "RECONCILED"
+          ],
+          "readOnly": true
+        },
+        "refNumber": {
+          "type": "string"
+        },
+        "reversalOf": {
+          "type": "string"
+        },
+        "reversedAt": {
+          "type": "string",
+          "readOnly": true
+        },
+        "reversedTransactionType": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/definitions/journal.RouteDTO"
+        },
+        "sourceBranchId": {
+          "type": "integer"
+        },
+        "sourceBranchName": {
+          "type": "string"
+        },
+        "sourceCreatedBy": {
+          "type": "string"
+        },
+        "sourceCustomerId": {
+          "type": "integer"
+        },
+        "sourceCustomerName": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "sourceIncomeStatementId": {
+          "type": "integer"
+        },
+        "sourceInvoiceId": {
+          "type": "integer"
+        },
+        "sourceInvoiceNumber": {
+          "type": "string"
+        },
+        "sourceJournalIds": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "sourcePaymentMethodId": {
+          "type": "integer"
+        },
+        "sourcePaymentType": {
+          "type": "string"
+        },
+        "sourceSupervisorId": {
+          "type": "integer"
+        },
+        "sourceSupervisorName": {
+          "type": "string"
+        },
+        "sourceSystem": {
+          "type": "string"
+        },
+        "sourceTransactionNumber": {
+          "type": "string"
+        },
+        "sourceTransactionTypeId": {
+          "type": "integer"
+        },
+        "transactionAmount": {
+          "type": "number"
+        },
+        "transactionBalance": {
+          "type": "number"
+        },
+        "transactionID": {
+          "type": "integer"
+        },
+        "transactionType": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "$ref": "#/definitions/core.User"
+        },
+        "vehicleRoute": {
+          "$ref": "#/definitions/journal.VehicleRouteDTO"
+        }
       }
     },
     "journal.PostEntryRouteAssignee": {
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "route": { "$ref": "#/definitions/journal.PostEntryRouteAssignee" }
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/definitions/journal.PostEntryRouteAssignee"
+        }
       }
     },
     "journal.RouteDTO": {
       "type": "object",
-      "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "journal.VehicleRouteDTO": {
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "route": { "$ref": "#/definitions/journal.RouteDTO" }
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/definitions/journal.RouteDTO"
+        }
       }
     },
     "loan.CreateLoanRequest": {
@@ -3696,6 +4479,442 @@
     }
   },
   "paths": {
+    "/journals/{id}/reverse": {
+      "post": {
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Requires canCreateFinancialAdjustment (financial_adjustment/create), canCreateJournal (journal/create) AND canUpdateFinancialActivity (financial_activity/update). Only OUTSTANDING, not-yet-reversed journals can be corrected. RECONCILED journals return 409 and are final. Full reversal only; no amount parameter. Initial-payment, void, inventory-source, loan-linked and reversal entries require dedicated correction workflows. One adjustment per original journal in the tenant; requestId (8-100 characters) is audit metadata, not the deduplication key. Same original and exact reason returns the existing adjustment with 201 even with another requestId; changed reason returns 409. No TTL is configured. Original period remains immutable.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "journal"
+        ],
+        "summary": "Reverse a posted journal",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Original journal ObjectID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Reason and idempotency request ID",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/journal.ReversalRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/journal.Journal"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          }
+        },
+        "x-examples": {
+          "request": {
+            "reason": "Duplicate collection",
+            "requestId": "reverse-0001"
+          },
+          "response": {
+            "data": {
+              "description": "Reversal: Duplicate collection",
+              "id": "650000000000000000000002",
+              "incomeStatement": {
+                "id": 101
+              },
+              "reversalOf": "650000000000000000000001",
+              "transactionAmount": -40,
+              "transactionType": "REVERSAL"
+            },
+            "duration": 0,
+            "error": "",
+            "message": "Reversing adjustment recorded",
+            "page": 0,
+            "resultsPerPage": 0,
+            "subtotal": 0,
+            "success": true,
+            "total": 0
+          },
+          "status": 201
+        }
+      }
+    },
+    "/journals/sync/assigned/{pickupID}": {
+      "post": {
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Requires journal create, pickup view and assigned or full invoice creation. Validates current assignment and linked customer fields in the financial transaction. Exact UUID/body/pickup retries cannot duplicate the payment or automatic number. Creates the same pending invoice/daily income records as the existing web financial workflow. Does not settle a payment merely because the client stored it offline.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "journal"
+        ],
+        "summary": "Synchronize an assigned pickup initial payment",
+        "parameters": [
+          {
+            "type": "integer",
+            "description": "Assigned pickup ID",
+            "name": "pickupID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Frozen initial payment",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/journal.SyncPostEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/journal.PostEntryResult"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          }
+        }
+      }
+    },
+    "/journals/sync": {
+      "post": {
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Requires journal create permission. Commits a user/tenant UUID receipt with existing journal posting and pending-invoice/financial effects. Retry the same UUID and recognized payload. Changed payload or deleted result returns 409 without posting again. Entry must omit idempotencyKey. Current permissions and existing financial rules still apply. Body limit 3 MiB; receipts are not automatically expired.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "journal"
+        ],
+        "summary": "Post a retry-safe journal entry",
+        "parameters": [
+          {
+            "description": "Immutable journal synchronization request",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/journal.SyncPostEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/journal.PostEntryResult"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
+          }
+        }
+      }
+    },
+    "/journals/summary": {
+      "post": {
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Requires journal view. Supply filters using the journal search allowlist OR 1–200 distinct IDs, never both. MongoDB aggregation, no pagination. Income: INITIAL-PAYMENT, PAYMENT, SALES and INVENTORY dispatched. Expenses: EXPENSE account debits, otherwise EXPENSE or INVENTORY received amount. Other types count but do not contribute income. Net is income minus expenses, never converted.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "journal"
+        ],
+        "summary": "Summarize journals by currency",
+        "parameters": [
+          {
+            "description": "Filters or selected journal IDs",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/journal.JournalSummaryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/journal.JournalSummary"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          }
+        }
+      }
+    },
+    "/journals/reconcile": {
+      "post": {
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Requires explicit canReconcileJournal. Accepts 1–200 distinct journal ObjectIDs with one payment method. All must be Outstanding, not reversed, and in the current company. Atomic accounting approval and audit; never changes invoice payments or balances; UUID requestId is durable and payload-bound. Reconciled is final.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "journal"
+        ],
+        "summary": "Reconcile Outstanding journals",
+        "parameters": [
+          {
+            "description": "UUID and selected journal IDs",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/journal.ReconcileRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/journal.ReconcileResult"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "schema": {
+              "$ref": "#/definitions/responses.Error"
+            }
+          }
+        }
+      }
+    },
     "/audit-events": {
       "get": {
         "security": [{ "CompanyID": [], "Token": [] }],
@@ -16260,10 +17479,8 @@
       "get": {
         "security": [
           {
+            "CompanyID": [],
             "Token": []
-          },
-          {
-            "CompanyID": []
           }
         ],
         "description": "Returns a list of journals for the current company tenant (Stripe-style list endpoint). Optional query filters and pagination apply. For nested AND/OR filters, use Search (`POST /journals/search`).",
@@ -16360,13 +17577,11 @@
       "post": {
         "security": [
           {
+            "CompanyID": [],
             "Token": []
-          },
-          {
-            "CompanyID": []
           }
         ],
-        "description": "Records a balanced double-entry journal. Receipt/refund entries require paymentMethod.name: CASH posts to CASH ON HAND; ZELLE and DEPOSIT require a BANK paymentAccount; CHECK posts to CHECKS TO DEPOSIT unless a BANK paymentAccount is supplied; CREDIT-CARD posts to CARD PROCESSOR RECEIVABLE. PAYMENT and INITIAL-PAYMENT accept account as a backward-compatible Zelle/deposit destination alias. ZELLE, DEPOSIT, CHECK and CREDIT-CARD invoice receipts create outstanding directory records; invoice payment and balance change only when the record is CLEARED. The server selects the current accounting period at recording time using the optional branch. Ordinary clients omit incomeStatement and incomeStatementId. Occurrence date is separate from period membership. INITIAL-PAYMENT without invoice.id creates a PENDING invoice and accepts either employee or vehicleRoute/route/employeeGroup assignees, including zero-amount registrations. Employee and route assignees are mutually exclusive after normalization: employee clears route fields, route clears employee. Response data is PostEntryResult with current statement totals. Optional autoClear (default false) on creation immediately clears CHECK/CHEQUE, ZELLE, DEPOSIT and CREDIT-CARD PAYMENT/INITIAL-PAYMENT receipts, requiring that method's update grant; clearedAt equals datePosted and clearedBy/audit identify the actor. Cash ignores autoClear. Journal PUT rejects this flag; later clearing uses the payment record PUT.",
+        "description": "Records a balanced double-entry journal. Receipt/refund entries require paymentMethod.name: CASH posts to CASH ON HAND; ZELLE and DEPOSIT require a BANK paymentAccount; CHECK posts to CHECKS TO DEPOSIT unless a BANK paymentAccount is supplied; CREDIT-CARD posts to CARD PROCESSOR RECEIVABLE. PAYMENT and INITIAL-PAYMENT accept account as a backward-compatible Zelle/deposit destination alias. ZELLE, DEPOSIT, CHECK and CREDIT-CARD invoice receipts create outstanding directory records; invoice payment and balance change immediately on creation, independently of reconciliation. Server recording time and the authenticated user location select the latest closeout. It must be open and dated today in that location timezone; otherwise returns 409 CLOSEOUT_REQUIRED with reason NONE_EXISTS, STALE_OPEN_CLOSEOUT, or LATEST_CLOSED plus date/timezone metadata. This operation never opens or closes closeouts. When neither an employee nor daily route is selected, employee defaults to the creator linked employee. INITIAL-PAYMENT without invoice.id creates a PENDING invoice and accepts either employee or vehicleRoute/route/employeeGroup assignees, including zero-amount registrations. Employee financial responsibility is independent of route attribution; route-attributed finances belong to the captured supervisor. Response data is PostEntryResult with current statement totals. Optional autoClear (default false) reconciles every valid transaction type/payment method, including cash, and requires explicit canReconcileJournal. Otherwise the journal is OUTSTANDING. ReconciledAt is API approval time, independent of journal date. Journal PUT cannot change reconciliation fields. Later approval uses POST /journals/reconcile; method-directory clearing is retired.",
         "consumes": [
           "application/json"
         ],
@@ -16426,9 +17641,21 @@
             }
           },
           "409": {
-            "description": "Conflict",
+            "description": "Closeout required, duplicate invoice or duplicate payment conflict",
             "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
+              "allOf": [
+                {
+                  "$ref": "#/definitions/responses.Error"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/core.CloseoutRequiredError"
+                    }
+                  }
+                }
+              ]
             }
           }
         }
@@ -16436,11 +17663,22 @@
     },
     "/journals/search": {
       "post": {
-        "security": [{ "Token": [] }, { "CompanyID": [] }],
-        "description": "Advanced search for journals with nested AND/OR filter groups in the request body (Stripe-style search). Returns the same array shape as List all.",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["journal"],
+        "security": [
+          {
+            "CompanyID": [],
+            "Token": []
+          }
+        ],
+        "description": "Accepted filter fields: accounts.name, branch.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyRoute.vehicle.id, date, description, employee.id, employee.name, employeeGroup.id, employeeGroup.name, employeeGroup.route.id, employeeGroup.route.name, external_reference_number, id, idempotencyKey, incomeStatement.id, invoice.balance, invoice.cost, invoice.number, invoice.payment, paymentMethod.name, paymentReference, reconciliationStatus, refNumber, route.id, route.name, transactionAmount, transactionType, updatedAt, updatedBy.id, updatedBy.name, vehicleRoute.id, vehicleRoute.name, vehicleRoute.route.id, vehicleRoute.route.name.\nAdvanced search for journals with nested AND/OR filter groups in the request body (Stripe-style search). Returns the same array shape as List all.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "journal"
+        ],
         "summary": "Search journals",
         "parameters": [
           {
@@ -16468,7 +17706,9 @@
             "description": "Optional filter query (field, operator, filters, pagination, sort)",
             "name": "body",
             "in": "body",
-            "schema": { "$ref": "#/definitions/query.Request" }
+            "schema": {
+              "$ref": "#/definitions/query.Request"
+            }
           }
         ],
         "responses": {
@@ -16476,13 +17716,17 @@
             "description": "OK",
             "schema": {
               "allOf": [
-                { "$ref": "#/definitions/responses.Success" },
+                {
+                  "$ref": "#/definitions/responses.Success"
+                },
                 {
                   "type": "object",
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/definitions/journal.Journal" }
+                      "items": {
+                        "$ref": "#/definitions/journal.Journal"
+                      }
                     }
                   }
                 }
@@ -16491,11 +17735,15 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           },
           "403": {
             "description": "Forbidden",
-            "schema": { "$ref": "#/definitions/responses.APIResponse" }
+            "schema": {
+              "$ref": "#/definitions/responses.APIResponse"
+            }
           }
         }
       }
@@ -16504,10 +17752,8 @@
       "get": {
         "security": [
           {
+            "CompanyID": [],
             "Token": []
-          },
-          {
-            "CompanyID": []
           }
         ],
         "description": "Requires journal view permission.",
@@ -16563,13 +17809,11 @@
       "put": {
         "security": [
           {
+            "CompanyID": [],
             "Token": []
-          },
-          {
-            "CompanyID": []
           }
         ],
-        "description": "Posted journals are immutable and cannot be edited or deleted. Eligible financial corrections create separate auditable reversing entries in the current period, with a dedicated financial-adjustment permission in addition to ordinary journal/reconciliation grants. Invoice-lifecycle, inventory and loan corrections retain their domain workflows.",
+        "description": "Re-posts an existing journal with PostEntryRequest (same ID) using the same payment-account rules as creation. incomeStatement.id must reference an open income statement. INITIAL-PAYMENT and VOID entries are managed through the invoice lifecycle and cannot be updated here. Requires journal update permission.\nPosted journals are immutable. Use the dedicated reversing-adjustment endpoint with financial_adjustment create permission.",
         "consumes": [
           "application/json"
         ],
@@ -16580,6 +17824,7 @@
           "journal"
         ],
         "summary": "Update a journal entry",
+        "deprecated": true,
         "parameters": [
           {
             "type": "string",
@@ -16638,22 +17883,19 @@
           "409": {
             "description": "Conflict",
             "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
+              "$ref": "#/definitions/responses.Error"
             }
           }
-        },
-        "deprecated": true
+        }
       },
       "delete": {
         "security": [
           {
+            "CompanyID": [],
             "Token": []
-          },
-          {
-            "CompanyID": []
           }
         ],
-        "description": "Posted journals are immutable and cannot be edited or deleted. Eligible financial corrections create separate auditable reversing entries in the current period, with a dedicated financial-adjustment permission in addition to ordinary journal/reconciliation grants. Invoice-lifecycle, inventory and loan corrections retain their domain workflows.",
+        "description": "Removes the journal document. Running totals are calculated dynamically, so nothing is recalculated; the only exception is an invoice-payment entry, where the invoice's stored total is updated to remove the deleted entry's effect. Deleting INITIAL-PAYMENT also removes the linked PENDING invoice stub when it has not been completed. VOID entries cannot be deleted here. Requires journal delete permission.\nPosted journals are immutable. Use the dedicated reversing-adjustment endpoint with financial_adjustment create permission.",
         "produces": [
           "application/json"
         ],
@@ -16661,6 +17903,7 @@
           "journal"
         ],
         "summary": "Delete a journal entry",
+        "deprecated": true,
         "parameters": [
           {
             "type": "string",
@@ -16692,11 +17935,10 @@
           "409": {
             "description": "Conflict",
             "schema": {
-              "$ref": "#/definitions/responses.APIResponse"
+              "$ref": "#/definitions/responses.Error"
             }
           }
-        },
-        "deprecated": true
+        }
       }
     },
     "/loans": {

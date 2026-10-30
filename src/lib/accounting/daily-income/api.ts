@@ -9,7 +9,6 @@ import { isAutoClearEligible } from "./auto-clear";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
-import { buildApiListQuery } from "@/lib/api/list-query";
 import {
   buildAdvancedSearchBody,
   buildApiSearchPaginationQuery,
@@ -28,7 +27,6 @@ import {
   type DailyIncomePartyRef,
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
-  type DailyIncomeSummary,
   type IncomeStatementSummaryDetail,
   type IncomeStatementSummaryTotal,
   type IncomeStatementSummaryTotals,
@@ -176,7 +174,7 @@ function normalizeJournalRoute(raw: Record<string, unknown>): DailyIncomePartyRe
   return undefined;
 }
 
-function normalizeJournal(value: unknown): DailyIncomeJournal | null {
+export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const raw = objectValue(value);
   const id = stringValue(firstDefined(raw.id, raw._id));
   if (!id) return null;
@@ -229,6 +227,12 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   return {
     ...captureApiTableFields(value, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS),
     id,
+    reconciliationStatus: raw.reconciliationStatus === "RECONCILED" ? "RECONCILED" : raw.reconciliationStatus === "OUTSTANDING" ? "OUTSTANDING" : undefined,
+    reconciledAt: raw.reconciledAt == null ? null : stringValue(raw.reconciledAt),
+    reconciledBy: normalizePartyRef(raw.reconciledBy) ?? null,
+    autoReconciled: raw.autoReconciled === true,
+    reversedAt: stringValue(raw.reversedAt) || null,
+    reversalOf: stringValue(raw.reversalOf) || null,
     incomeStatementId: numberValue(firstDefined(raw.incomeStatementId, objectValue(raw.incomeStatement).id)),
     date: stringValue(raw.date).slice(0, 10),
     transactionType: (stringValue(firstDefined(raw.transactionType, raw.transType)) || "SALES") as JournalTransactionType,
@@ -300,76 +304,6 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
       : undefined,
     createdAt: stringValue(raw.createdAt) || undefined,
   };
-}
-
-function normalizeSummary(value: unknown): DailyIncomeSummary {
-  const raw = objectValue(value);
-  return {
-    totalGeneral: numberValue(raw.totalGeneral),
-    invoice: numberValue(firstDefined(raw.invoice, raw.invoicePayments, raw.invoices)),
-    accountsReceivable: numberValue(firstDefined(raw.accountsReceivable, raw.accountReceivables)),
-    totalIncome: numberValue(raw.totalIncome),
-    expense: numberValue(firstDefined(raw.expense, raw.expenses)),
-    totalCash: numberValue(raw.totalCash),
-    cash: numberValue(raw.cash),
-    check: numberValue(raw.check),
-    creditCard: numberValue(firstDefined(raw.creditCard, raw.creditCards)),
-    deposit: numberValue(firstDefined(raw.deposit, raw.deposits)),
-    zelle: numberValue(raw.zelle),
-  };
-}
-
-function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary {
-  const summary = { ...EMPTY_DAILY_INCOME_SUMMARY };
-
-  for (const item of items) {
-    if (item.transactionType === "INITIAL-PAYMENT" || item.transactionType === "PAYMENT") {
-      summary.invoice += item.amount;
-    }
-
-    const expenseLines = item.accounts.filter((account) => account.type === "EXPENSE");
-    if (expenseLines.length > 0) {
-      summary.expense += expenseLines.reduce((total, account) => total + account.debit, 0);
-    } else if (
-      item.transactionType === "EXPENSE" ||
-      (item.transactionType === "INVENTORY" && item.inventoryDirection === "received")
-    ) {
-      summary.expense += item.amount;
-    }
-
-    for (const account of item.accounts) {
-      if (account.name === "ACCOUNTS RECEIVABLE") {
-        summary.accountsReceivable += account.debit - account.credit;
-      }
-    }
-
-    const countsAsIncome =
-      ["INITIAL-PAYMENT", "PAYMENT", "SALES"].includes(item.transactionType) ||
-      (item.transactionType === "INVENTORY" && item.inventoryDirection === "dispatched");
-    if (!countsAsIncome) {
-      continue;
-    }
-
-    const paymentMethod = item.paymentMethod?.name.trim().replaceAll("_", "-").toUpperCase();
-    if (paymentMethod === "CASH") summary.cash += item.amount;
-    else if (paymentMethod === "CHECK") summary.check += item.amount;
-    else if (paymentMethod === "DEPOSIT") summary.deposit += item.amount;
-    else if (paymentMethod === "ZELLE") summary.zelle += item.amount;
-    else summary.creditCard += item.amount;
-  }
-
-  summary.totalIncome = summary.cash + summary.check + summary.deposit + summary.zelle + summary.creditCard;
-  summary.totalGeneral = summary.invoice + summary.accountsReceivable;
-  summary.totalCash = summary.cash - summary.expense;
-  return summary;
-}
-
-function queryString(values: Record<string, string | number | undefined>) {
-  const query = new URLSearchParams();
-  Object.entries(values).forEach(([key, value]) => {
-    if (value !== undefined && value !== "") query.set(key, String(value));
-  });
-  return query.toString();
 }
 
 export async function fetchIncomeStatementById(id: number) {
@@ -516,48 +450,14 @@ function parseJournalSearchRows(payload: unknown): unknown[] {
   return [];
 }
 
-export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListParams): Promise<DailyIncomeJournalList> {
-  if (!params.incomeStatementId) {
-    return { items: [], summary: EMPTY_DAILY_INCOME_SUMMARY, page: 1, resultsPerPage: params.limit ?? 20, total: 0 };
+export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListParams, signal?: AbortSignal): Promise<DailyIncomeJournalList> {
+  const { buildJournalSearchBody } = await import("./journal-search");
+  if (!params.incomeStatementId && !params.pending) {
+    return {items: [], summary: EMPTY_DAILY_INCOME_SUMMARY, page: 1, resultsPerPage: params.limit ?? 20, total: 0};
   }
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 20;
-  const summaryFetchLimit = 500;
-
-  const payload = await apiClient.post<ApiEnvelope>(
-    `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`,
-    buildAdvancedSearchBody({
-      page: 1,
-      limit: summaryFetchLimit,
-      sort: { field: "createdAt", direction: "desc" },
-      filters: [{ field: "incomeStatement.id", operator: "eq", value: params.incomeStatementId }],
-    }),
-  );
-
-  const envelope = objectValue(payload);
-  let items = parseJournalSearchRows(payload)
-    .map(normalizeJournal)
-    .filter((item): item is DailyIncomeJournal => item != null);
-
-  const search = params.query?.trim().toLowerCase();
-  if (search) {
-    items = items.filter((item) =>
-      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.route?.name, item.employeeGroup?.name, item.invoice?.number]
-        .some((value) => value?.toLowerCase().includes(search)),
-    );
-  }
-
-  const total = search ? items.length : numberValue(envelope.total, items.length);
-  const offset = (page - 1) * limit;
-  const pageItems = items.slice(offset, offset + limit);
-
-  return {
-    items: pageItems,
-    summary: computeJournalSummary(items),
-    page,
-    resultsPerPage: limit,
-    total,
-  };
+  const payload = await apiClient.post<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`, buildJournalSearchBody(params), {signal});
+  const items = parseJournalSearchRows(payload).map(normalizeJournal).filter((item): item is DailyIncomeJournal => item != null);
+  return {items, summary: EMPTY_DAILY_INCOME_SUMMARY, page: params.page ?? 1, resultsPerPage: params.limit ?? 20, total: numberValue(objectValue(payload).total, items.length)};
 }
 
 const INVOICE_PAYMENT_TRANSACTION_TYPES = new Set(["INITIAL-PAYMENT", "PAYMENT"]);

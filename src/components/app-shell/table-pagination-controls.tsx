@@ -20,6 +20,7 @@ type TablePaginationControlsProps = {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: TablePageSize) => void;
   disabled?: boolean;
+  allowAll?: boolean;
   /** Compact footer controls vs the larger mobile pager. */
   layout?: "footer" | "mobile";
 };
@@ -31,6 +32,7 @@ export function TablePaginationControls({
   onPageChange,
   onPageSizeChange,
   disabled = false,
+  allowAll = true,
   layout = "footer",
 }: TablePaginationControlsProps) {
   const { t } = useTranslation();
@@ -40,7 +42,7 @@ export function TablePaginationControls({
       value: String(size),
       label: String(size),
     })),
-    { value: TABLE_PAGE_SIZE_ALL, label: t("common.pagination.all") },
+    ...(allowAll ? [{ value: TABLE_PAGE_SIZE_ALL, label: t("common.pagination.all") }] : []),
   ];
 
   const pageSizeSelect = (

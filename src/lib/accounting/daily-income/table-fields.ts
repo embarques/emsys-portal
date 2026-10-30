@@ -2,6 +2,10 @@ import type { ApiTableField } from "@/lib/table/api-table-fields";
 
 /** Directory coverage for api-docs.json definitions["journal.Journal"]. */
 export const DAILY_INCOME_JOURNAL_API_TABLE_FIELDS = [
+ {field: "reconciliationStatus"},
+ {field: "reconciledAt", format: "date", defaultVisible: false},
+ {field: "reconciledBy", defaultVisible: false},
+ {field: "autoReconciled", defaultVisible: false},
   { field: "accounts", defaultVisible: false },
   { field: "checkNumber", defaultVisible: false },
   { field: "createdAt", format: "date", defaultVisible: false },

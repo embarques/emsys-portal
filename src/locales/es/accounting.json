@@ -198,7 +198,7 @@
   },
   "zellePayments": {
     "title": "Zelle",
-    "description": "Controle los pagos de facturas hechos con Zelle. Los pagos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "pagos Zelle",
     "searchPlaceholder": "Buscar pagos Zelle…",
     "empty": "Ningún pago Zelle coincide con su búsqueda.",
@@ -251,7 +251,7 @@
   },
   "deposits": {
     "title": "Depósitos",
-    "description": "Controle los pagos de facturas hechos por depósito bancario. Los depósitos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "depósitos",
     "searchPlaceholder": "Buscar depósitos…",
     "empty": "Ningún depósito coincide con su búsqueda.",
@@ -304,7 +304,7 @@
   },
   "creditCardPayments": {
     "title": "Tarjetas de crédito",
-    "description": "Controle los pagos de facturas hechos con tarjeta de crédito. Los pagos pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "pagos con tarjeta",
     "searchPlaceholder": "Buscar pagos con tarjeta…",
     "empty": "Ningún pago con tarjeta coincide con su búsqueda.",
@@ -357,7 +357,7 @@
   },
   "checks": {
     "title": "Cheques",
-    "description": "Controle los pagos de facturas hechos con cheque. Los cheques pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
+    "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "cheques",
     "searchPlaceholder": "Buscar cheques…",
     "empty": "Ningún cheque coincide con su búsqueda.",
@@ -390,7 +390,7 @@
     },
     "form": {
       "createTitle": "Agregar cheque",
-      "createDescription": "Registre un cheque pendiente contra una factura. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
+      "createDescription": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
       "editTitle": "Editar cheque",
       "editDescription": "Actualice el cheque seleccionado. Cambiar un cheque cobrado revierte y vuelve a aplicar el pago de la factura.",
       "sections": {
@@ -660,7 +660,7 @@
       "transactionCreatedWithTarget": "Transacción creada: {{type}} - {{target}}.",
       "transactionUpdated": "Transacción actualizada.",
       "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado.",
-      "checkPaymentHeld": "El cheque {{checkNumber}} quedó pendiente. La factura {{invoiceNumber}} no mostrará este pago hasta que el cheque se marque como cobrado.",
+      "checkPaymentHeld": "Pago registrado y aplicado. Pendiente de conciliación contable.",
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
@@ -765,10 +765,10 @@
         "paymentMethod": "Método de pago",
         "bankAccount": "Cuenta bancaria",
         "checkNumber": "Número de cheque",
-        "checkNumberHint": "Queda pendiente hasta que el cheque se marque como cobrado.",
+        "checkNumberHint": "Número del cheque. El pago se aplica al registrarlo.",
         "autoClear": "Aprobar automáticamente (marcar como cobrado)",
-        "autoClearHint": "Omite el paso de pendiente: el pago se marca como cobrado y se aplica al saldo de la factura al guardarlo.",
-        "autoClearReviewValue": "Cobrado y aplicado al guardar",
+        "autoClearHint": "Aprueba esta transacción de inmediato. Requiere permiso de conciliación; los pagos se aplican de todas formas.",
+        "autoClearReviewValue": "Conciliado al crear",
         "invoice": "Factura",
         "referenceNumber": "Número de referencia interna",
         "referenceNumberModeSystem": "Generado por el sistema",
@@ -1003,5 +1003,118 @@
     "occurrenceDate": "Fecha real de la transacción",
     "refresh": "Actualizar",
     "postedImmutable": "Las transacciones registradas no se pueden editar. Use Actividad financiera pendiente para conciliación y ajustes permitidos."
+  },
+  "journalReconciliation": {
+    "title": "Transacciones pendientes",
+    "description": "Asientos pendientes de todos los cierres. Concilia después de recibir ingresos o aprobar gastos. Los pagos se aplican a las facturas al registrarlos.",
+    "createdAt": "Creado el",
+    "status": "Conciliación",
+    "OUTSTANDING": "Pendiente",
+    "RECONCILED": "Conciliado",
+    "matchingTotals": "Todas las transacciones filtradas",
+    "selectedTotals": "Transacciones seleccionadas",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "net": "Ingreso neto",
+    "selectedCount": "Seleccionadas:",
+    "totalCount": "Transacciones:",
+    "clearSelection": "Quitar selección",
+    "reconcileSelected": "Conciliar selección",
+    "sameMethod": "Selecciona hasta 200 transacciones con el mismo método de pago.",
+    "confirmTitle": "¿Conciliar las transacciones seleccionadas?",
+    "confirmDescription": "Confirma que se recibió el ingreso o se aprobó el gasto. Libera la responsabilidad del encargado y es definitivo. Los pagos y saldos de facturas no cambian.",
+    "pendingAlert": "{{count}} transacciones pendientes",
+    "fields": {
+      "invoice": {
+        "number": {
+          "label": "Factura #",
+          "placeholder": "Factura #"
+        },
+        "cost": {
+          "label": "Costo",
+          "placeholder": "Costo"
+        },
+        "payment": {
+          "label": "Pago de factura",
+          "placeholder": "Pago de factura"
+        },
+        "balance": {
+          "label": "Saldo",
+          "placeholder": "Saldo"
+        }
+      },
+      "createdBy": {
+        "name": {
+          "label": "Usuario",
+          "placeholder": "Usuario"
+        }
+      },
+      "accounts": {
+        "name": {
+          "label": "Cuenta",
+          "placeholder": "Cuenta"
+        }
+      },
+      "employee": {
+        "name": {
+          "label": "Empleado",
+          "placeholder": "Empleado"
+        },
+        "id": {
+          "label": "ID de empleado",
+          "placeholder": "ID de empleado"
+        }
+      },
+      "paymentReference": {
+        "label": "Número de cheque",
+        "placeholder": "Número de cheque"
+      },
+      "external_reference_number": {
+        "label": "Referencia externa",
+        "placeholder": "Referencia externa"
+      },
+      "refNumber": {
+        "label": "Referencia interna",
+        "placeholder": "Referencia interna"
+      },
+      "incomeStatement": {
+        "id": {
+          "label": "Cierre",
+          "placeholder": "Cierre"
+        }
+      },
+      "transactionAmount": {
+        "label": "Monto",
+        "placeholder": "Monto"
+      },
+      "date": {
+        "label": "Fecha",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "dateRange": {
+        "label": "Rango de fechas",
+        "placeholder": "YYYY-MM-DD to YYYY-MM-DD"
+      },
+      "transactionType": {
+        "label": "Transacción",
+        "placeholder": "Transacción"
+      },
+      "paymentMethod": {
+        "name": {
+          "label": "Método de pago",
+          "placeholder": "Método de pago"
+        }
+      },
+      "reconciliationStatus": {
+        "label": "Conciliación",
+        "placeholder": "Conciliación"
+      },
+      "branch": {
+        "id": {
+          "label": "ID de sucursal",
+          "placeholder": "ID de sucursal"
+        }
+      }
+    }
   }
 }

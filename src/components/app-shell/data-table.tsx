@@ -34,6 +34,7 @@ type DataTableProps<T> = {
    */
   minWidth?: number;
   selectable?: boolean;
+  isRowSelectable?: (row: T) => boolean;
   selectedIds?: string[];
   allPageSelected?: boolean;
   onToggleSelectAll?: (checked: boolean) => void;
@@ -69,6 +70,7 @@ function DataTableContent<T>({
   emptyState,
   minWidth = 960,
   selectable = false,
+  isRowSelectable,
   selectedIds = [],
   allPageSelected = false,
   onToggleSelectAll,
@@ -471,6 +473,7 @@ function DataTableContent<T>({
                         <input
                           type="checkbox"
                           aria-label={`Select ${rowLabel?.(row) ?? id}`}
+                          disabled={isRowSelectable ? !isRowSelectable(row) : false}
                           checked={selected}
                           onChange={(event) => onToggleSelect?.(id, event.target.checked)}
                           className="size-4 shrink-0 rounded border-input"

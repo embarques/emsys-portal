@@ -759,6 +759,10 @@ export function DailyIncomeTransactionForm({
             </FormSection>
           </div>
         )}
+        {allowAutoClear && isInventoryChange && (!activeStep || activeStep === "review") ? <PaymentAutoClearField
+          transactionType={type} amount={amount} paymentMethodName={paymentMethodName}
+          checked={Boolean(autoClear)} onCheckedChange={checked => setValue("autoClear", checked, {shouldDirty: true})}
+        /> : null}
       </FormBody>
     </form>
     {pendingCloseoutValues != null ? (
