@@ -37,7 +37,12 @@
       "loadPreviousSearch": "Search previous daily routes…",
       "loadPreviousEmpty": "No previous daily routes to copy.",
       "resetFields": "Reset fields",
+      "loadFrom": "Load from",
+      "previousRoute": "Previous daily route",
+      "assignment": "Assignment",
       "design": {
+        "loadFrom": "Optional: copy a previous daily route or load a route crew to fill in the fields, then confirm the assignment and roles.",
+        "assignment": "Choose the branch first to see its vehicles and crews, then set the date and the vehicle that will operate.",
         "date": "Choose the day this vehicle and crew will operate.",
         "branch": "Choose the branch first to see the available vehicles and crews.",
         "previous": "Start with an existing daily route, then confirm the date and assignments.",

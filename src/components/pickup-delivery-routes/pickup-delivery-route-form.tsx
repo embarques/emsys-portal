@@ -13,6 +13,7 @@ import {
   Route as RouteIcon,
   Users,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
 import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
@@ -23,11 +24,40 @@ import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { SearchableSelectOption } from "@/components/ui/searchable-select";
 import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
 import type { ActiveRouteFormValues } from "@/lib/pickup-delivery-routes/types";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+
+type RouteFormFieldProps = {
+  htmlFor: string;
+  icon: LucideIcon;
+  label: string;
+  required?: boolean;
+  hint?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+};
+
+function RouteFormField({ htmlFor, icon: Icon, label, required = false, hint, action, children }: RouteFormFieldProps) {
+  return (
+    <div className="min-w-0 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={htmlFor} className="gap-1.5">
+          <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          {label}
+          {required ? <span className="text-destructive">*</span> : null}
+        </Label>
+        {action}
+      </div>
+      {children}
+      {hint ? <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
 
 type ActiveRouteFormProps = {
   values: ActiveRouteFormValues;
@@ -143,129 +173,145 @@ export function ActiveRouteForm({
     >
       <FormBody workflow isBusy={isSubmitting}>
         <div className="grid items-start gap-5 @4xl:grid-cols-2">
-          {showPreviousRouteField ? (
-            <FormSection
-              variant="card"
-              className="@4xl:col-span-2"
-              description={t("routes.dailyRoutes.form.design.previous")}
-              icon={History}
-              title={t("routes.dailyRoutes.form.loadPrevious")}
-              action={resetFieldsButton}
-            >
-              <SearchableSelect
-                id="daily-route-previous"
-                aria-label={t("routes.dailyRoutes.form.loadPrevious")}
-                value={previousRouteId}
-                onValueChange={(value) => onPreviousRouteChange?.(value)}
-                placeholder={t("routes.dailyRoutes.form.loadPreviousPlaceholder")}
-                searchPlaceholder={t("routes.dailyRoutes.form.loadPreviousSearch")}
-                loading={previousRoutesLoading}
-                loadingMessage={t("common.loading")}
-                emptyMessage={t("routes.dailyRoutes.form.loadPreviousEmpty")}
-                options={previousRouteOptions}
-              />
-            </FormSection>
-          ) : resetFieldsButton ? (
-            <div className="flex justify-end @4xl:col-span-2">{resetFieldsButton}</div>
-          ) : null}
+          <FormSection
+            variant="card"
+            className="@4xl:col-span-2"
+            description={t("routes.dailyRoutes.form.design.loadFrom")}
+            icon={History}
+            title={t("routes.dailyRoutes.form.loadFrom")}
+            action={resetFieldsButton}
+          >
+            <div className={cn("grid items-start gap-4", showPreviousRouteField && "@2xl:grid-cols-2")}>
+              {showPreviousRouteField ? (
+                <RouteFormField
+                  htmlFor="daily-route-previous"
+                  icon={History}
+                  label={t("routes.dailyRoutes.form.previousRoute")}
+                >
+                  <SearchableSelect
+                    id="daily-route-previous"
+                    aria-label={t("routes.dailyRoutes.form.loadPrevious")}
+                    value={previousRouteId}
+                    onValueChange={(value) => onPreviousRouteChange?.(value)}
+                    placeholder={t("routes.dailyRoutes.form.loadPreviousPlaceholder")}
+                    searchPlaceholder={t("routes.dailyRoutes.form.loadPreviousSearch")}
+                    loading={previousRoutesLoading}
+                    loadingMessage={t("common.loading")}
+                    emptyMessage={t("routes.dailyRoutes.form.loadPreviousEmpty")}
+                    options={previousRouteOptions}
+                  />
+                </RouteFormField>
+              ) : null}
 
-          <FormSection variant="card" description={t("routes.dailyRoutes.form.design.branch")} icon={Building2} title={t("routes.activeRoute.branch")} required>
-            <SearchableSelect
-              id="active-route-branch"
-              aria-label={t("routes.activeRoute.branch")}
-              value={branchCode}
-              onValueChange={onBranchChange}
-              placeholder={t("routes.activeRoute.branchPlaceholder")}
-              searchPlaceholder={t("routes.activeRoute.branchSearch")}
-              loading={branchesLoading}
-              loadingMessage={t("common.loading")}
-              options={branchOptions}
-            />
-          </FormSection>
-
-          <FormSection variant="card" description={t("routes.dailyRoutes.form.design.date")} icon={CalendarRange} title={t("routes.activeRoute.date")} required>
-            <DateInput
-              id="active-route-date"
-              aria-label={t("routes.activeRoute.date")}
-              value={values.date}
-              onChange={(event) => onDateChange(event.target.value)}
-              required
-            />
+              <RouteFormField
+                htmlFor="active-route-route"
+                icon={RouteIcon}
+                label={t("routes.activeRoute.route")}
+                hint={t("routes.dailyRoutes.form.design.crew")}
+                action={
+                  <FieldEntityActions
+                    onAdd={onCreateRouteClick}
+                    onEdit={onEditRouteClick}
+                    hasSelection={Boolean(values.routeRecordId)}
+                    addIcon={Plus}
+                    newLabel={t("routes.activeRoute.createRoute")}
+                  />
+                }
+              >
+                <SearchableSelect
+                  id="active-route-route"
+                  aria-label={t("routes.activeRoute.route")}
+                  value={values.routeRecordId}
+                  onValueChange={onRouteRecordChange}
+                  placeholder={
+                    hasBranch
+                      ? t("routes.activeRoute.routePlaceholder")
+                      : t("routes.activeRoute.selectBranchFirst")
+                  }
+                  searchPlaceholder={t("routes.activeRoute.routeSearch")}
+                  loading={routesLoading}
+                  loadingMessage={t("common.loading")}
+                  emptyMessage={
+                    hasBranch
+                      ? t("routes.activeRoute.routeEmpty")
+                      : t("routes.activeRoute.selectBranchFirst")
+                  }
+                  options={routeOptions}
+                />
+              </RouteFormField>
+            </div>
           </FormSection>
 
           <FormSection
             variant="card"
-            icon={Car}
-            title={t("routes.activeRoute.vehicle")}
-            required
-            action={
-              <FieldEntityActions
-                onAdd={onCreateVehicleClick}
-                onEdit={onEditVehicleClick}
-                hasSelection={Boolean(values.vehicle.id)}
-                addIcon={Plus}
-                newLabel={t("routes.activeRoute.createVehicle")}
-              />
-            }
+            className="@4xl:col-span-2"
+            description={t("routes.dailyRoutes.form.design.assignment")}
+            icon={Building2}
+            title={t("routes.dailyRoutes.form.assignment")}
           >
-            <SearchableSelect
-              id="active-route-vehicle"
-              aria-label={t("routes.activeRoute.vehicle")}
-              value={values.vehicle.id}
-              onValueChange={onVehicleChange}
-              placeholder={
-                hasBranch
-                  ? t("routes.activeRoute.vehiclePlaceholder")
-                  : t("routes.activeRoute.selectBranchFirstVehicle")
-              }
-              searchPlaceholder={t("routes.activeRoute.vehicleSearch")}
-              loading={vehiclesLoading}
-              loadingMessage={t("common.loading")}
-              emptyMessage={
-                hasBranch
-                  ? t("routes.activeRoute.vehicleEmpty")
-                  : t("routes.activeRoute.selectBranchFirstVehicle")
-              }
-              options={vehicleOptions}
-              required
-            />
-          </FormSection>
+            <div className="grid items-start gap-4 @3xl:grid-cols-3">
+              <RouteFormField htmlFor="active-route-branch" icon={Building2} label={t("routes.activeRoute.branch")} required>
+                <SearchableSelect
+                  id="active-route-branch"
+                  aria-label={t("routes.activeRoute.branch")}
+                  value={branchCode}
+                  onValueChange={onBranchChange}
+                  placeholder={t("routes.activeRoute.branchPlaceholder")}
+                  searchPlaceholder={t("routes.activeRoute.branchSearch")}
+                  loading={branchesLoading}
+                  loadingMessage={t("common.loading")}
+                  options={branchOptions}
+                />
+              </RouteFormField>
 
-          <FormSection
-            variant="card"
-            description={t("routes.dailyRoutes.form.design.crew")}
-            icon={RouteIcon}
-            title={t("routes.activeRoute.route")}
-            action={
-              <FieldEntityActions
-                onAdd={onCreateRouteClick}
-                onEdit={onEditRouteClick}
-                hasSelection={Boolean(values.routeRecordId)}
-                addIcon={Plus}
-                newLabel={t("routes.activeRoute.createRoute")}
-              />
-            }
-          >
-            <SearchableSelect
-              id="active-route-route"
-              aria-label={t("routes.activeRoute.route")}
-              value={values.routeRecordId}
-              onValueChange={onRouteRecordChange}
-              placeholder={
-                hasBranch
-                  ? t("routes.activeRoute.routePlaceholder")
-                  : t("routes.activeRoute.selectBranchFirst")
-              }
-              searchPlaceholder={t("routes.activeRoute.routeSearch")}
-              loading={routesLoading}
-              loadingMessage={t("common.loading")}
-              emptyMessage={
-                hasBranch
-                  ? t("routes.activeRoute.routeEmpty")
-                  : t("routes.activeRoute.selectBranchFirst")
-              }
-              options={routeOptions}
-            />
+              <RouteFormField htmlFor="active-route-date" icon={CalendarRange} label={t("routes.activeRoute.date")} required>
+                <DateInput
+                  id="active-route-date"
+                  aria-label={t("routes.activeRoute.date")}
+                  value={values.date}
+                  onChange={(event) => onDateChange(event.target.value)}
+                  required
+                />
+              </RouteFormField>
+
+              <RouteFormField
+                htmlFor="active-route-vehicle"
+                icon={Car}
+                label={t("routes.activeRoute.vehicle")}
+                required
+                action={
+                  <FieldEntityActions
+                    onAdd={onCreateVehicleClick}
+                    onEdit={onEditVehicleClick}
+                    hasSelection={Boolean(values.vehicle.id)}
+                    addIcon={Plus}
+                    newLabel={t("routes.activeRoute.createVehicle")}
+                  />
+                }
+              >
+                <SearchableSelect
+                  id="active-route-vehicle"
+                  aria-label={t("routes.activeRoute.vehicle")}
+                  value={values.vehicle.id}
+                  onValueChange={onVehicleChange}
+                  placeholder={
+                    hasBranch
+                      ? t("routes.activeRoute.vehiclePlaceholder")
+                      : t("routes.activeRoute.selectBranchFirstVehicle")
+                  }
+                  searchPlaceholder={t("routes.activeRoute.vehicleSearch")}
+                  loading={vehiclesLoading}
+                  loadingMessage={t("common.loading")}
+                  emptyMessage={
+                    hasBranch
+                      ? t("routes.activeRoute.vehicleEmpty")
+                      : t("routes.activeRoute.selectBranchFirstVehicle")
+                  }
+                  options={vehicleOptions}
+                  required
+                />
+              </RouteFormField>
+            </div>
           </FormSection>
 
           <FormSection variant="card" className="@4xl:col-span-2" description={t("routes.dailyRoutes.form.design.roles")} icon={Users} title={t("routes.activeRoute.crewRoles")} required>

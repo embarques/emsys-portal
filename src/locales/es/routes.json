@@ -37,7 +37,12 @@
       "loadPreviousSearch": "Buscar rutas diarias anteriores…",
       "loadPreviousEmpty": "No hay rutas diarias anteriores para copiar.",
       "resetFields": "Restablecer campos",
+      "loadFrom": "Cargar desde",
+      "previousRoute": "Ruta diaria anterior",
+      "assignment": "Asignación",
       "design": {
+        "loadFrom": "Opcional: copia una ruta diaria anterior o carga una cuadrilla de ruta para completar los campos y luego confirma la asignación y las funciones.",
+        "assignment": "Elige primero la sucursal para ver sus vehículos y cuadrillas, luego indica la fecha y el vehículo que trabajará.",
         "date": "Elige el día en que trabajarán este vehículo y equipo.",
         "branch": "Elige primero la sucursal para ver los vehículos y equipos disponibles.",
         "previous": "Parte de una ruta diaria existente y confirma la fecha y las asignaciones.",
