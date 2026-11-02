@@ -1,4 +1,5 @@
 import { ACTIVE_ROUTE_API_TABLE_FIELDS } from "@/lib/pickup-delivery-routes/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -297,7 +298,7 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
   const driver = getActiveRouteEmployeesByRole(values, "driver")[0];
   const supervisor = getActiveRouteSupervisor(values);
   if (!driver || !supervisor) {
-    throw new Error("A driver and a supervisor are required.");
+    throw new Error(translateCurrent("routes.errors.driverSupervisorRequired"));
   }
 
   const payload: VehicleRouteWritePayload = {
@@ -610,7 +611,7 @@ export async function fetchActiveRouteById(
 
   const record = normalizeApiVehicleRoute(unwrapRecord(response));
   if (!record) {
-    throw new Error("Route not found.");
+    throw new Error(translateCurrent("routes.errors.notFound"));
   }
 
   return record;
@@ -633,7 +634,7 @@ async function resolveSavedActiveRoute(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to save route.");
+  throw new Error(message?.trim() || translateCurrent("routes.errors.saveFailed"));
 }
 
 export async function createActiveRoute(values: ActiveRouteFormValues): Promise<ActiveRoute> {
@@ -642,7 +643,7 @@ export async function createActiveRoute(values: ActiveRouteFormValues): Promise<
     buildVehicleRouteWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create route.");
+  assertMutationSuccess(response, translateCurrent("routes.errors.createFailed"));
   return resolveSavedActiveRoute(null, values, response);
 }
 
@@ -660,7 +661,7 @@ export async function updateActiveRoute(
     buildVehicleRouteWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to update route.");
+  assertMutationSuccess(response, translateCurrent("routes.errors.updateFailed"));
   return resolveSavedActiveRoute(id, values, response);
 }
 
@@ -686,7 +687,7 @@ export async function deleteActiveRoute(recordId: string, _routeType?: RouteType
     `${API_ENDPOINTS.VEHICLE_ROUTES}/${id}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete route.");
+  assertMutationSuccess(response, translateCurrent("routes.errors.deleteFailed"));
 }
 
 export async function deleteActiveRoutes(

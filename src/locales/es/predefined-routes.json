@@ -1,4 +1,11 @@
 {
+  "errors": {
+    "loadFailed": "No se pudo cargar la ruta predefinida.",
+    "createFailed": "No se pudo crear la ruta predefinida.",
+    "updateFailed": "No se pudo actualizar la ruta predefinida.",
+    "deleteFailed": "No se pudo eliminar la ruta predefinida.",
+    "catalogTooLarge": "El catálogo de rutas predefinidas supera el tamaño de consulta admitido."
+  },
   "title": "Rutas predefinidas",
   "entity": "Ruta predefinida",
   "description": "Grupos de ciudades y códigos postales para filtrar citas.",

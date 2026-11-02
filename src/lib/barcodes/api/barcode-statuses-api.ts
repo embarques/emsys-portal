@@ -7,6 +7,7 @@ import {
   expandBarcodeStatusFilterNode,
 } from "@/lib/barcodes/barcode-status-filter-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
 import type { BarcodeStatusOption } from "@/lib/labels/types";
@@ -41,7 +42,7 @@ export async function fetchBarcodeStatuses(): Promise<BarcodeStatusOption[]> {
     const response = await apiClient.get<ApiSuccessEnvelope<unknown> & { total?: number }>(
       `${API_ENDPOINTS.BARCODE_STATUSES}?page=${page}&offset=${offset}&limit=${limit}`,
     );
-    assertMutationSuccess(response, "Unable to load barcode statuses.");
+    assertMutationSuccess(response, translateCurrent("barcodes.errors.loadStatusesFailed"));
     const items = extractStatusList(response);
     statuses.push(...items);
     offset += items.length;
@@ -60,9 +61,9 @@ export async function createBarcodeStatus(values: BarcodeStatusFormValues): Prom
     API_ENDPOINTS.BARCODE_STATUSES,
     buildPayload(values),
   );
-  assertMutationSuccess(response, "Unable to create barcode status.");
+  assertMutationSuccess(response, translateCurrent("barcodes.errors.createStatusFailed"));
   const status = normalizeStatus(unwrapApiData(response));
-  if (!status) throw new Error("Unable to read the created barcode status.");
+  if (!status) throw new Error(translateCurrent("barcodes.errors.readCreatedStatusFailed"));
   return status;
 }
 
@@ -74,9 +75,9 @@ export async function updateBarcodeStatus(
     `${API_ENDPOINTS.BARCODE_STATUSES}/${id}`,
     buildPayload(values),
   );
-  assertMutationSuccess(response, "Unable to update barcode status.");
+  assertMutationSuccess(response, translateCurrent("barcodes.errors.updateStatusFailed"));
   const status = normalizeStatus(unwrapApiData(response));
-  if (!status) throw new Error("Unable to read the updated barcode status.");
+  if (!status) throw new Error(translateCurrent("barcodes.errors.readUpdatedStatusFailed"));
   return status;
 }
 
@@ -84,7 +85,7 @@ export async function deleteBarcodeStatus(id: number): Promise<void> {
   const response = await apiClient.delete<ApiSuccessEnvelope<unknown>>(
     `${API_ENDPOINTS.BARCODE_STATUSES}/${id}`,
   );
-  assertMutationSuccess(response, "Unable to delete barcode status.");
+  assertMutationSuccess(response, translateCurrent("barcodes.errors.deleteStatusFailed"));
 }
 
 /** One server page for the barcode statuses directory (search + filters applied by the API). */

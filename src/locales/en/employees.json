@@ -1,4 +1,13 @@
 {
+  "errors": {
+    "nameRequired": "Employee name is required.",
+    "departmentRequired": "Department is required.",
+    "titleRequired": "Title is required.",
+    "notFound": "Employee not found.",
+    "createFailed": "Unable to create employee.",
+    "updateFailed": "Unable to update employee.",
+    "deleteFailed": "Unable to delete employee."
+  },
   "entity": "Employee",
   "entityPlural": "employees",
   "title": "Employees",
@@ -95,6 +104,10 @@
     }
   },
   "form": {
+    "validation": {
+      "branchRequired": "Branch is required.",
+      "invalidDate": "Use a valid YYYY-MM-DD date or RFC3339 timestamp."
+    },
     "design": {
       "employee": "Confirm the employee’s name, department, title, and employment details.",
       "branch": "Choose the branch where this employee works.",

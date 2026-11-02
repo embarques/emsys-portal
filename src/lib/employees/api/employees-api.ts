@@ -1,4 +1,5 @@
 import { EMPLOYEE_API_TABLE_FIELDS } from "@/lib/employees/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { normalizeEmployeeDate, resolveEmployeeActiveForEndDate } from "@/lib/employees/utils/employee-date";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -257,12 +258,12 @@ function buildEmployeeWritePayload(
   validateRecordPhones(values.phones, { required: false });
   const phones = buildApiPhonesPayload(values.phones);
 
-  if (!name) throw new Error("Employee name is required.");
-  if (!department) throw new Error("Department is required.");
-  if (!title) throw new Error("Title is required.");
+  if (!name) throw new Error(translateCurrent("employees.errors.nameRequired"));
+  if (!department) throw new Error(translateCurrent("employees.errors.departmentRequired"));
+  if (!title) throw new Error(translateCurrent("employees.errors.titleRequired"));
 
   if (!values.branch.id) {
-    throw new Error("Branch is required.");
+    throw new Error(translateCurrent("employees.form.validation.branchRequired"));
   }
 
   // Always include `active` (never omit). API create defaults omitted active to true,
@@ -393,7 +394,7 @@ async function resolveCreatedEmployee(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create employee.");
+  throw new Error(message?.trim() || translateCurrent("employees.errors.createFailed"));
 }
 
 export async function fetchEmployees(
@@ -444,7 +445,7 @@ export async function fetchEmployeeById(employeeId: string): Promise<Employee> {
 
   const employee = normalizeEmployee(raw);
   if (!employee) {
-    throw new Error("Employee not found.");
+    throw new Error(translateCurrent("employees.errors.notFound"));
   }
 
   return employee;
@@ -456,7 +457,7 @@ export async function createEmployee(values: EmployeeFormValues): Promise<Employ
     buildEmployeeWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create employee.");
+  assertMutationSuccess(response, translateCurrent("employees.errors.createFailed"));
 
   return resolveCreatedEmployee(values, response);
 }
@@ -472,7 +473,7 @@ export async function updateEmployee(
     buildEmployeeWritePayload(values, { id: numericId, existing }),
   );
 
-  assertMutationSuccess(response, "Unable to update employee.");
+  assertMutationSuccess(response, translateCurrent("employees.errors.updateFailed"));
 
   const updatedEmployee = extractEmployeeFromMutationResponse(response.data);
   if (updatedEmployee) {
@@ -488,7 +489,7 @@ export async function deleteEmployee(employeeId: string): Promise<void> {
     `${API_ENDPOINTS.EMPLOYEES}/${numericId}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete employee.");
+  assertMutationSuccess(response, translateCurrent("employees.errors.deleteFailed"));
 }
 
 export async function deleteEmployees(employeeIds: string[]): Promise<BulkSettledResult<string>> {

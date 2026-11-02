@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/lib/i18n";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import type { Item } from "@/lib/items/types";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ export function InvoiceLineItemDescriptionCombobox({
   catalogItems,
   onValueChange,
   onCatalogItemSelect,
-  placeholder = "Type or search catalog items…",
+  placeholder: placeholderProp,
   required,
   className,
   autoFocus = false,
@@ -36,6 +37,8 @@ export function InvoiceLineItemDescriptionCombobox({
   onFocus,
   onEnterCommit,
 }: InvoiceLineItemDescriptionComboboxProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t("invoices.form.lineItems.descriptionPlaceholder");
   const generatedId = useId();
   const listboxId = `${id ?? generatedId}-catalog-suggestions`;
   const containerRef = useRef<HTMLDivElement>(null);

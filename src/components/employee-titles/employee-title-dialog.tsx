@@ -25,7 +25,7 @@ export function EmployeeTitleDialog({ state }: { state: ReturnType<typeof useTit
               <div className="space-y-1">
                 <Label htmlFor="title-name">{t("employeeTitles.name")} <span className="text-destructive">*</span></Label>
                 <Input id="title-name" autoFocus required disabled={state.busy} aria-invalid={!!state.form.formState.errors.name} {...state.form.register("name")} />
-                {state.form.formState.errors.name ? <p role="alert" className="text-sm text-destructive">{state.form.formState.errors.name.message}</p> : null}
+                {state.form.formState.errors.name ? <p role="alert" className="text-sm text-destructive">{t(state.form.formState.errors.name.message ?? "common.validation.required")}</p> : null}
               </div>
               <Label className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 px-3 py-3">
                 <input type="checkbox" disabled={state.busy} {...state.form.register("active")} />

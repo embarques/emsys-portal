@@ -1,4 +1,5 @@
 import { ITEM_API_TABLE_FIELDS } from "@/lib/items/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -214,7 +215,7 @@ async function resolveCreatedItem(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create item.");
+  throw new Error(message?.trim() || translateCurrent("items.errors.createFailed"));
 }
 
 export async function fetchItems(params: ItemListParams = {}): Promise<PaginatedResult<Item>> {
@@ -243,7 +244,7 @@ export async function fetchItemById(itemId: string | number): Promise<Item> {
 
   const item = normalizeItem(raw);
   if (!item) {
-    throw new Error("Item not found.");
+    throw new Error(translateCurrent("items.errors.notFound"));
   }
 
   return item;
@@ -255,7 +256,7 @@ export async function createItem(values: ItemFormValues): Promise<Item> {
     buildItemWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create item.");
+  assertMutationSuccess(response, translateCurrent("items.errors.createFailed"));
 
   return resolveCreatedItem(values, response);
 }
@@ -267,7 +268,7 @@ export async function updateItem(itemId: string | number, values: ItemFormValues
     buildItemWritePayload(values, { itemId: numericId }),
   );
 
-  assertMutationSuccess(response, "Unable to update item.");
+  assertMutationSuccess(response, translateCurrent("items.errors.updateFailed"));
 
   const updatedItem = extractItemFromMutationResponse(response.data);
   if (updatedItem) {
@@ -283,7 +284,7 @@ export async function deleteItem(itemId: string | number): Promise<void> {
     `${API_ENDPOINTS.INVOICE_DESCRIPTIONS}/${numericId}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete item.");
+  assertMutationSuccess(response, translateCurrent("items.errors.deleteFailed"));
 }
 
 export async function deleteItems(

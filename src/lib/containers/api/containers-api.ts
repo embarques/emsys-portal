@@ -1,4 +1,5 @@
 import { CONTAINER_API_TABLE_FIELDS } from "@/lib/containers/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -325,7 +326,7 @@ async function resolveCreatedContainer(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create container.");
+  throw new Error(message?.trim() || translateCurrent("containers.errors.createFailed"));
 }
 
 export async function fetchContainers(params: ContainerListParams = {}): Promise<PaginatedResult<Container>> {
@@ -354,7 +355,7 @@ export async function fetchContainerById(containerId: string | number): Promise<
 
   const container = normalizeContainer(raw);
   if (!container) {
-    throw new Error("Container not found.");
+    throw new Error(translateCurrent("containers.errors.notFound"));
   }
 
   return container;
@@ -366,7 +367,7 @@ export async function createContainer(values: ContainerFormValues): Promise<Cont
     buildContainerWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create container.");
+  assertMutationSuccess(response, translateCurrent("containers.errors.createFailed"));
 
   return resolveCreatedContainer(values, response);
 }
@@ -381,7 +382,7 @@ export async function updateContainer(
     buildContainerWritePayload(values, { containerId: numericId }),
   );
 
-  assertMutationSuccess(response, "Unable to update container.");
+  assertMutationSuccess(response, translateCurrent("containers.errors.updateFailed"));
 
   const updatedContainer = extractContainerFromMutationResponse(response.data);
   if (updatedContainer) {
@@ -397,7 +398,7 @@ export async function deleteContainer(containerId: string | number): Promise<voi
     `${API_ENDPOINTS.CONTAINERS}/${numericId}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete container.");
+  assertMutationSuccess(response, translateCurrent("containers.errors.deleteFailed"));
 }
 
 export async function deleteContainers(

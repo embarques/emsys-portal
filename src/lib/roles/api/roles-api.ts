@@ -1,4 +1,5 @@
 import { ROLE_API_TABLE_FIELDS } from "@/lib/roles/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -248,7 +249,7 @@ export async function fetchRoleById(roleId: string | number): Promise<Role> {
 
   const role = normalizeRole(raw);
   if (!role) {
-    throw new Error("Role not found.");
+    throw new Error(translateCurrent("roles.errors.notFound"));
   }
 
   return role;
@@ -284,10 +285,10 @@ export async function createRole(values: RoleFormValues): Promise<Role> {
     API_ENDPOINTS.ROLES,
     buildRolePayload(values),
   );
-  assertMutationSuccess(response, "Unable to create role.");
+  assertMutationSuccess(response, translateCurrent("roles.errors.createFailed"));
 
   const role = normalizeRole(response.data);
-  if (!role) throw new Error("Unable to read the created role.");
+  if (!role) throw new Error(translateCurrent("roles.errors.readCreatedFailed"));
   return role;
 }
 
@@ -297,10 +298,10 @@ export async function updateRole(roleId: string, values: RoleFormValues): Promis
     `${API_ENDPOINTS.ROLES}/${id}`,
     buildRolePayload(values),
   );
-  assertMutationSuccess(response, "Unable to update role.");
+  assertMutationSuccess(response, translateCurrent("roles.errors.updateFailed"));
 
   const role = normalizeRole(response.data);
-  if (!role) throw new Error("Unable to read the updated role.");
+  if (!role) throw new Error(translateCurrent("roles.errors.readUpdatedFailed"));
   return role;
 }
 
@@ -309,7 +310,7 @@ export async function deleteRole(roleId: string): Promise<void> {
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.ROLES}/${id}`,
   );
-  assertMutationSuccess(response, "Unable to delete role.");
+  assertMutationSuccess(response, translateCurrent("roles.errors.deleteFailed"));
 }
 
 export async function deleteRoles(roleIds: string[]): Promise<BulkSettledResult<string>> {

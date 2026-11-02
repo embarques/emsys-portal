@@ -1,4 +1,11 @@
 {
+  "errors": {
+    "notFound": "Item not found.",
+    "createFailed": "Unable to create item.",
+    "updateFailed": "Unable to update item.",
+    "deleteFailed": "Unable to delete item.",
+    "descriptionRequired": "Description is required."
+  },
   "entity": "Item",
   "entityPlural": "items",
   "title": "Items",

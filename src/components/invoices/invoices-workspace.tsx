@@ -712,23 +712,26 @@ export function InvoicesWorkspace() {
               ? "…"
               : `${Math.round((invoiceStats.outstanding / totalInvoices) * 100)}%`,
         },
-        { label: "Statuses", value: "Open / partial" },
+        {
+          label: t("invoices.stats.outstandingCount.details.statuses"),
+          value: t("invoices.stats.outstandingCount.details.statusesValue"),
+        },
       ],
     },
     {
-      label: "Outstanding",
+      label: t("invoices.stats.outstandingBalance.label"),
       value: invoiceStats.isBalanceLoading
         ? "…"
         : formatInvoiceMoney(invoiceStats.outstandingBalance),
-      description: "Balance across all invoices",
+      description: t("invoices.stats.outstandingBalance.description"),
       icon: Receipt,
       details: [
         {
-          label: "Open invoices",
+          label: t("invoices.stats.outstandingBalance.details.openInvoices"),
           value: invoiceStats.isLoading ? "…" : formatInvoiceCount(invoiceStats.outstanding),
         },
         {
-          label: "Average balance",
+          label: t("invoices.stats.outstandingBalance.details.averageBalance"),
           value:
             invoiceStats.isBalanceLoading || invoiceStats.outstanding === 0
               ? "…"
@@ -736,7 +739,10 @@ export function InvoicesWorkspace() {
                   invoiceStats.outstandingBalance / invoiceStats.outstanding,
                 ),
         },
-        { label: "Scope", value: "All invoices" },
+        {
+          label: t("invoices.stats.outstandingBalance.details.scope"),
+          value: t("invoices.stats.outstandingBalance.details.scopeValue"),
+        },
       ],
     },
   ];
@@ -1019,7 +1025,7 @@ export function InvoicesWorkspace() {
               }}
               className="h-12 w-full rounded-xl border border-border/70 bg-card pl-12 pr-4 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
               placeholder={t("invoices.search.placeholder")}
-              aria-label="Search invoice"
+              aria-label={t("invoices.workspace.searchAria")}
             />
           </div>
           <Button
@@ -1031,7 +1037,7 @@ export function InvoicesWorkspace() {
               mobileFiltersOpen || activeFilterCount > 0 ? "bg-primary/10" : "bg-background",
             )}
             onClick={() => setMobileFiltersOpen((open) => !open)}
-            aria-label="Filter invoices"
+            aria-label={t("invoices.workspace.filterAria")}
           >
             <Filter className="size-5" />
           </Button>
@@ -1039,7 +1045,10 @@ export function InvoicesWorkspace() {
 
         {mobileFiltersOpen ? (
           <TableFilterPanel
-            resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
+            resultSummary={t("invoices.workspace.showing", {
+              count: invoices.length,
+              total: totalInvoices,
+            })}
             className="rounded-xl shadow-sm"
             presets={{
               storageKey: "invoices",
@@ -1075,7 +1084,9 @@ export function InvoicesWorkspace() {
         ) : null}
 
         <div className="flex items-center justify-between gap-4 rounded-xl border border-primary/15 bg-primary/10 px-4 py-4 text-primary shadow-xs">
-          <span className="text-base font-semibold">Outstanding receivables</span>
+          <span className="text-base font-semibold">
+            {t("invoices.workspace.outstandingReceivables")}
+          </span>
           <span className="shrink-0 text-xl font-bold">
             {isLoading ? "…" : formatInvoiceMoney(kpis.outstanding)}
           </span>
@@ -1108,7 +1119,7 @@ export function InvoicesWorkspace() {
                 {documentsButton}
                 <Button variant="outline" size="sm" className={tableSelectionActionStyles.print} onClick={printSelectedInvoices} disabled={isPrinting || !canPrintInvoices}>
                   <Printer className="h-4 w-4" />
-                  {isPrinting ? "Preparing…" : "Print"}
+                  {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
                 </Button>
               </>
             }
@@ -1141,7 +1152,7 @@ export function InvoicesWorkspace() {
             </div>
           ) : invoices.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-              No invoices match your search or filters.
+              {t("invoices.workspace.empty")}
             </p>
           ) : (
             <div className="space-y-2">
@@ -1208,7 +1219,10 @@ export function InvoicesWorkspace() {
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
+                resultSummary={t("invoices.workspace.showing", {
+                  count: invoices.length,
+                  total: totalInvoices,
+                })}
                 presets={{
                   storageKey: "invoices",
                   rows: filters.rows,
@@ -1275,7 +1289,7 @@ export function InvoicesWorkspace() {
                 className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
               >
                 <Printer className="h-4 w-4" />
-                {isPrinting ? "Preparing…" : "Print"}
+                {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
               </Button>
               {documentsButton}
             </>
@@ -1293,9 +1307,15 @@ export function InvoicesWorkspace() {
         ) : isLoading ? (
           <DirectoryTableLoader
             icon={Receipt}
-            title="Loading invoices"
-            description="Syncing customers, balances, and payment status…"
-            columns={["Invoice", "Date", "Customer", "Status", "Balance"]}
+            title={t("invoices.workspace.loader.title")}
+            description={t("invoices.workspace.loader.description")}
+            columns={[
+              t("invoices.columns.invoiceNumber"),
+              t("invoices.columns.date"),
+              t("invoices.workspace.loader.customer"),
+              t("invoices.columns.paidStatus"),
+              t("invoices.columns.balance"),
+            ]}
           />
         ) : (
           <DataTable
@@ -1318,7 +1338,7 @@ export function InvoicesWorkspace() {
             onRowDoubleClick={openEditForm}
             activeRowId={viewInvoiceId ?? undefined}
             emptyState={
-              <p className="text-muted-foreground">No invoices match your search or filters.</p>
+              <p className="text-muted-foreground">{t("invoices.workspace.empty")}</p>
             }
           />
         )}
@@ -1328,8 +1348,11 @@ export function InvoicesWorkspace() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">
                 {isFetching
-                  ? "Refreshing invoices…"
-                  : `Showing ${invoices.length} of ${totalInvoices} invoices`}
+                  ? t("invoices.workspace.refreshing")
+                  : t("invoices.workspace.showing", {
+                      count: invoices.length,
+                      total: totalInvoices,
+                    })}
               </p>
             </div>
             <TablePaginationControls
@@ -1411,17 +1434,25 @@ export function InvoicesWorkspace() {
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
-              Delete invoice{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?
+              {Array.isArray(deleteTarget) && deleteTarget.length > 1
+                ? t("invoices.workspace.delete.titleMany")
+                : t("invoices.workspace.delete.titleOne")}
             </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected invoices. This action cannot be undone.`
-                : `This will permanently remove invoice ${deleteTarget?.invoiceNumber ?? ""}. This action cannot be undone.`}
+                ? t("invoices.workspace.delete.descriptionMany", {
+                    count: deleteTarget.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("invoices.workspace.delete.descriptionOne", {
+                    number: deleteTarget?.invoiceNumber ?? "",
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <ConfirmDeleteButton isPending={isDeleting} onClick={confirmDelete} />
           </DialogFooter>

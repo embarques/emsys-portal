@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "loadFailed": "No se pudieron cargar los departamentos.",
+    "createFailed": "No se pudo crear el departamento.",
+    "updateFailed": "No se pudo actualizar el departamento.",
+    "deleteFailed": "No se pudo eliminar el departamento."
+  },
   "title": "Departamentos de empleados",
   "entity": "Departamento",
   "description": "Administra los departamentos disponibles en los formularios de empleados.",

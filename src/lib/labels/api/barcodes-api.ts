@@ -1,4 +1,5 @@
 import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -262,7 +263,7 @@ function unwrapEnvelope(response: unknown): unknown {
 
 export async function createBarcode(payload: BarcodeWritePayload): Promise<Barcode> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(API_ENDPOINTS.BARCODES, payload);
-  assertMutationSuccess(response, "Unable to create barcode.");
+  assertMutationSuccess(response, translateCurrent("labels.errors.createFailed"));
 
   const created = normalizeBarcode(response.data);
   if (created && created.id > 0) return created;
@@ -292,7 +293,7 @@ export async function updateBarcode(id: number, payload: BarcodeWritePayload): P
     `${API_ENDPOINTS.BARCODES}/${id}`,
     payload,
   );
-  assertMutationSuccess(response, "Unable to update barcode.");
+  assertMutationSuccess(response, translateCurrent("labels.errors.updateFailed"));
 
   return (
     normalizeBarcode(response.data) ?? {
@@ -334,10 +335,10 @@ async function resolveBarcodeWriteTarget(
   }
 
   if (!trimmedNumber) {
-    throw new Error("Barcode number is required to update this label.");
+    throw new Error(translateCurrent("labels.errors.numberRequiredToUpdate"));
   }
 
-  throw new Error("Barcode not found.");
+  throw new Error(translateCurrent("labels.errors.notFound"));
 }
 
 type ResolvedBarcodeUpdate = {
@@ -430,7 +431,7 @@ export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[
   });
 
   if (catalogSettled.failedIds.length > 0 && catalogSettled.succeededIds.length === 0) {
-    throw new Error(catalogSettled.firstErrorMessage ?? "Unable to update barcodes.");
+    throw new Error(catalogSettled.firstErrorMessage ?? translateCurrent("labels.errors.bulkUpdateFailed"));
   }
 
   const catalogResults = catalogSettled.succeededIds
@@ -475,7 +476,7 @@ export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[
 export async function fetchBarcodeByNumber(number: string): Promise<Barcode> {
   const trimmed = number.trim();
   if (!trimmed) {
-    throw new Error("Barcode number is required.");
+    throw new Error(translateCurrent("labels.errors.numberRequired"));
   }
 
   const paginationQuery = buildApiSearchPaginationQuery({
@@ -532,7 +533,7 @@ export async function fetchBarcodeByNumber(number: string): Promise<Barcode> {
   const fromBar = pickExact(Array.isArray(barResponse.data) ? barResponse.data : []);
   if (fromBar) return fromBar;
 
-  throw new Error("Barcode not found.");
+  throw new Error(translateCurrent("labels.errors.notFound"));
 }
 
 /** Resolve numeric delivery ids from barcodes assigned to a vehicle route. */
@@ -571,7 +572,7 @@ export async function fetchDeliveryIdsByRoute(routeId: string): Promise<number[]
 async function resolveBarcodeIdForCatalogWrite(number: string): Promise<number> {
   const trimmedNumber = number.trim();
   if (!trimmedNumber) {
-    throw new Error("Barcode number is required to update this label.");
+    throw new Error(translateCurrent("labels.errors.numberRequiredToUpdate"));
   }
 
   const found = await fetchBarcodeByNumber(trimmedNumber);
@@ -585,7 +586,7 @@ export async function fetchBarcodeById(id: number): Promise<Barcode> {
 
   const barcode = normalizeBarcode(unwrapEnvelope(response));
   if (!barcode) {
-    throw new Error("Barcode not found.");
+    throw new Error(translateCurrent("labels.errors.notFound"));
   }
 
   return barcode;
@@ -668,7 +669,11 @@ async function retrieveExistingBarcode(
     };
   }
 
-  throw new Error(number ? `Barcode not found: ${number}.` : "Barcode not found.");
+  throw new Error(
+    number
+      ? translateCurrent("labels.errors.notFoundNumber", { number })
+      : translateCurrent("labels.errors.notFound"),
+  );
 }
 
 function buildBarcodeNumber(invoiceNumber: string, lineItemId: string, sequence: number): string {
@@ -819,12 +824,12 @@ export async function assignInvoiceItemBarcodesToRoute(
 ): Promise<InvoiceItemBarcodeRoute> {
   const id = routeId.trim();
   if (!id) {
-    throw new Error("A valid route is required.");
+    throw new Error(translateCurrent("labels.errors.routeRequired"));
   }
 
   const ids = coerceUint32Ids(barcodeIds);
   if (ids.length === 0) {
-    throw new Error("The selected invoices have no barcodes with a container to assign.");
+    throw new Error(translateCurrent("labels.errors.noContainerBarcodes"));
   }
 
   const response = await apiClient.put<ApiMutationEnvelope<ApiBarcodeRouteData>>(
@@ -832,7 +837,7 @@ export async function assignInvoiceItemBarcodesToRoute(
     { barcodeIds: ids },
   );
 
-  assertMutationSuccess(response, "Unable to assign invoice item barcodes to route.");
+  assertMutationSuccess(response, translateCurrent("labels.errors.assignInvoiceItemsFailed"));
 
   const data = response.data;
   return {
@@ -939,10 +944,10 @@ export async function assignBarcodesToDailyRoute(
 ): Promise<InvoiceItemBarcodeRoute> {
   const trimmedRouteId = routeId.trim();
   if (!trimmedRouteId) {
-    throw new Error("A valid route is required.");
+    throw new Error(translateCurrent("labels.errors.routeRequired"));
   }
   if (targets.length === 0) {
-    throw new Error("Select at least one barcode to assign.");
+    throw new Error(translateCurrent("labels.errors.selectAtLeastOne"));
   }
 
   const route = {
@@ -974,12 +979,14 @@ export async function assignBarcodesToDailyRoute(
   });
 
   if (checkedTargets.failedIds.length > 0) {
-    throw new Error(checkedTargets.firstErrorMessage ?? "Unable to check selected labels.");
+    throw new Error(checkedTargets.firstErrorMessage ?? translateCurrent("labels.errors.checkFailed"));
   }
 
   if (unresolved.length > 0) {
     throw new Error(
-      `Barcode not found for route assign: ${unresolved.slice(0, 3).join(", ")}${unresolved.length > 3 ? "…" : ""}.`,
+      translateCurrent("labels.errors.notFoundForRoute", {
+        numbers: `${unresolved.slice(0, 3).join(", ")}${unresolved.length > 3 ? "…" : ""}`,
+      }),
     );
   }
 
@@ -1070,7 +1077,13 @@ export async function assignBarcodesToDailyRoute(
     },
   });
   if (settled.failedIds.length > 0) {
-    throw new Error(`${assignedCount} of ${total} labels assigned. ${settled.firstErrorMessage ?? "Unable to assign remaining labels."}`);
+    throw new Error(
+      translateCurrent("labels.errors.partialAssign", {
+        assigned: assignedCount,
+        total,
+        message: settled.firstErrorMessage ?? translateCurrent("labels.errors.assignRemainingFailed"),
+      }),
+    );
   }
 
   return {

@@ -1,4 +1,5 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -188,24 +189,24 @@ export function toFormDate(value: string): string {
 export function toApiDate(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
-    throw new Error("Date is required.");
+    throw new Error(translateCurrent("containers.errors.dateRequired"));
   }
   return trimmed.includes("T") ? trimmed : `${trimmed}T00:00:00Z`;
 }
 
 export function validateContainerFormValues(values: ContainerFormValues): void {
   if (!values.name.trim()) {
-    throw new Error("Container name is required (e.g. 01-26).");
+    throw new Error(translateCurrent("containers.errors.nameRequired"));
   }
 
   if (!values.booking.trim()) {
-    throw new Error("Booking number is required.");
+    throw new Error(translateCurrent("containers.errors.bookingRequired"));
   }
 
   if (values.cost.trim()) {
     const cost = Number(values.cost);
     if (!Number.isFinite(cost) || cost < 0) {
-      throw new Error("Cost must be a valid number greater than or equal to 0.");
+      throw new Error(translateCurrent("containers.form.validation.costInvalid"));
     }
   }
 }

@@ -1,4 +1,23 @@
 {
+  "errors": {
+    "createFailed": "No se pudo crear el código de barras.",
+    "updateFailed": "No se pudo actualizar el código de barras.",
+    "numberRequiredToUpdate": "El número de código de barras es obligatorio para actualizar esta etiqueta.",
+    "notFound": "No se encontró el código de barras.",
+    "notFoundNumber": "No se encontró el código de barras: {{number}}.",
+    "bulkUpdateFailed": "No se pudieron actualizar los códigos de barras.",
+    "numberRequired": "El número de código de barras es obligatorio.",
+    "routeRequired": "Se requiere una ruta válida.",
+    "noContainerBarcodes": "Las facturas seleccionadas no tienen códigos de barras con contenedor para asignar.",
+    "assignInvoiceItemsFailed": "No se pudieron asignar a la ruta los códigos de barras de los artículos de la factura.",
+    "selectAtLeastOne": "Seleccione al menos un código de barras para asignar.",
+    "checkFailed": "No se pudieron verificar las etiquetas seleccionadas.",
+    "notFoundForRoute": "No se encontró el código de barras para asignar a la ruta: {{numbers}}.",
+    "partialAssign": "Se asignaron {{assigned}} de {{total}} etiquetas. {{message}}",
+    "assignRemainingFailed": "No se pudieron asignar las etiquetas restantes.",
+    "selectValidStatus": "Seleccione un estado válido.",
+    "selectValidContainer": "Seleccione un contenedor válido."
+  },
   "title": "Escáner de códigos de barras",
   "pages": {
     "barcodesDescription": "Consulte los códigos de barras de mercancía creados con las facturas (artículos + etiquetas).",

@@ -7,6 +7,7 @@ import { ScrollableTable } from "@/components/app-shell/scrollable-table";
 import { TableCopyableCell } from "@/components/app-shell/table-copyable-cell";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
 import { getPrimarySortSpec, type SortDirection } from "@/lib/api/list-query";
+import { useTranslation } from "@/lib/i18n";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { resolveCopyableText } from "@/lib/table/copyable-cell";
 import { measureTableColumnContentWidth } from "@/lib/table/measure-column-width";
@@ -87,6 +88,7 @@ function DataTableContent<T>({
   onSortChange,
   sortUnavailable = false,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   const { isVisible, getColumnWidth, setColumnWidth, fitColumnWidth, fitColumnWidths, reorderColumns } =
     columnLayout;
 
@@ -310,11 +312,11 @@ function DataTableContent<T>({
               <th
                 style={{ width: selectColumnWidth }}
                 className="py-3 pl-4 pr-2"
-                aria-label={hasSelectCellActions ? "Select and actions" : undefined}
+                aria-label={hasSelectCellActions ? t("tableFields.table.selectAndActions") : undefined}
               >
                 <input
                   type="checkbox"
-                  aria-label="Select all rows on this page"
+                  aria-label={t("tableFields.table.selectAllOnPage")}
                   checked={allPageSelected}
                   onChange={(event) => onToggleSelectAll?.(event.target.checked)}
                   className="size-4 rounded border-input"
@@ -323,7 +325,7 @@ function DataTableContent<T>({
             ) : null}
             {visibleColumns.map((column, columnIndex) => {
               const width = getDisplayColumnWidth(column.id);
-              const headerLabel = formatTableColumnLabel(column.label);
+              const headerLabel = formatTableColumnLabel(column.label, t);
               const tableColumnIndex = columnIndex + (selectable ? 1 : 0);
               const sortField = column.sortable === false ? undefined : column.sortField ?? column.id;
               const canSort = (Boolean(onSortChange) || sortUnavailable) && Boolean(sortField);
@@ -343,7 +345,7 @@ function DataTableContent<T>({
                     dragOverHeaderId === column.id && draggingHeaderId !== column.id && "bg-primary/10",
                     resizingColumnId === column.id && "bg-primary/5"
                   )}
-                  aria-label={`${headerLabel} column. Drag to reorder.`}
+                  aria-label={t("tableFields.table.columnHeaderAria", { column: headerLabel })}
                   onDragStart={(event) => {
                     if ((event.target as HTMLElement).closest('[role="separator"]')) {
                       event.preventDefault();
@@ -376,8 +378,8 @@ function DataTableContent<T>({
                         draggable={false}
                         aria-label={
                           sortUnavailable
-                            ? `Sort by ${headerLabel} (unavailable)`
-                            : `Sort by ${headerLabel}`
+                            ? t("tableFields.table.sortByUnavailable", { column: headerLabel })
+                            : t("tableFields.table.sortBy", { column: headerLabel })
                         }
                         aria-sort={
                           isActiveSort
@@ -419,7 +421,7 @@ function DataTableContent<T>({
                   <div
                     role="separator"
                     aria-orientation="vertical"
-                    aria-label={`Resize ${headerLabel}. Double-click to fit content.`}
+                    aria-label={t("tableFields.table.resizeColumn", { column: headerLabel })}
                     className={cn(
                       "absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize touch-none",
                       "opacity-0 transition-opacity group-hover:opacity-100",
@@ -472,7 +474,7 @@ function DataTableContent<T>({
                       <div className="flex items-center gap-1">
                         <input
                           type="checkbox"
-                          aria-label={`Select ${rowLabel?.(row) ?? id}`}
+                          aria-label={t("tableFields.table.selectRow", { row: rowLabel?.(row) ?? id })}
                           disabled={isRowSelectable ? !isRowSelectable(row) : false}
                           checked={selected}
                           onChange={(event) => onToggleSelect?.(id, event.target.checked)}

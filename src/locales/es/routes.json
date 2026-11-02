@@ -1,4 +1,18 @@
 {
+  "errors": {
+    "notFound": "No se encontró la ruta.",
+    "crewMinimum": "Seleccione al menos dos miembros de la cuadrilla.",
+    "branchNameRequired": "El nombre de la sucursal es obligatorio.",
+    "createFailed": "No se pudo crear la ruta.",
+    "updateFailed": "No se pudo actualizar la ruta.",
+    "deleteFailed": "No se pudo eliminar la ruta.",
+    "saveFailed": "No se pudo guardar la ruta.",
+    "driverSupervisorRequired": "Se requieren un chofer y un supervisor.",
+    "dateRequired": "La fecha es obligatoria.",
+    "containerRequired": "Las rutas de entrega requieren un contenedor.",
+    "pickupNoContainer": "Las rutas de recogida no pueden incluir un contenedor.",
+    "employeesRequired": "Los empleados son obligatorios."
+  },
   "title": "Rutas",
   "noun": "cuadrillas de ruta",
   "pages": {

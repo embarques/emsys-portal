@@ -1,4 +1,5 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -242,17 +243,17 @@ export function areVehicleFormValuesEquivalent(
 
 export function validateVehicleFormValues(values: VehicleFormValues): void {
   if (!values.name.trim()) {
-    throw new Error("Vehicle name is required.");
+    throw new Error(translateCurrent("vehicles.form.validation.nameRequired"));
   }
 
   if (!(values.branch.id > 0)) {
-    throw new Error("Branch is required.");
+    throw new Error(translateCurrent("vehicles.form.validation.branchRequired"));
   }
 
   if (values.year.trim()) {
     const year = Number(values.year);
     if (!Number.isFinite(year) || year < 1900) {
-      throw new Error("Year must be a valid number.");
+      throw new Error(translateCurrent("vehicles.form.validation.yearInvalid"));
     }
   }
 }

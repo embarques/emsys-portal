@@ -1,4 +1,5 @@
 import { USER_API_TABLE_FIELDS } from "@/lib/users/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -231,20 +232,20 @@ export async function fetchUsers(params: UserListParams = {}): Promise<Paginated
 export async function fetchUserById(userId: string | number): Promise<User> {
   const response = await apiClient.get<ApiEnvelope<ApiUser>>(`${API_ENDPOINTS.USERS}/${userId}`);
   const user = normalizeUser(response.data ?? response);
-  if (!user) throw new Error("User not found.");
+  if (!user) throw new Error(translateCurrent("users.errors.notFound"));
   return user;
 }
 
 export async function fetchCurrentUser(): Promise<User> {
   const response = await apiClient.get<ApiEnvelope<ApiUser>>(API_ENDPOINTS.CURRENT_USER);
   const user = normalizeUser(response.data);
-  if (!user) throw new Error("Current tenant user not found.");
+  if (!user) throw new Error(translateCurrent("users.errors.currentUserNotFound"));
   return user;
 }
 
 export async function createUser(values: UserFormValues, uid: string): Promise<User> {
   const response = await apiClient.post<ApiEnvelope<ApiUser>>(API_ENDPOINTS.USERS, writePayload(values, uid));
-  assertMutationSuccess(response, "Unable to create user.");
+  assertMutationSuccess(response, translateCurrent("users.errors.createFailed"));
   const user = normalizeUser(response.data);
   if (user) return user;
   const matches = await fetchUsers({
@@ -252,7 +253,7 @@ export async function createUser(values: UserFormValues, uid: string): Promise<U
     limit: 1,
     search: { field: "email", operator: "eq", value: values.email.trim() },
   });
-  if (!matches.items[0]) throw new Error("User was created but could not be reloaded.");
+  if (!matches.items[0]) throw new Error(translateCurrent("users.errors.createdNotReloaded"));
   return matches.items[0];
 }
 
@@ -261,7 +262,7 @@ export async function updateUser(userId: string | number, values: UserFormValues
     `${API_ENDPOINTS.USERS}/${userId}`,
     writePayload(values),
   );
-  assertMutationSuccess(response, "Unable to update user.");
+  assertMutationSuccess(response, translateCurrent("users.errors.updateFailed"));
   return normalizeUser(response.data) ?? fetchUserById(userId);
 }
 

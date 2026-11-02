@@ -20,7 +20,7 @@ export function useApiTableColumns<T extends ApiTableRecord>(
     label: (field) => {
       const key = `common.apiColumns.${field}`;
       const translated = t(key);
-      return translated === key ? formatTableColumnLabel(field.replaceAll("_", " ")) : translated;
+      return translated === key ? formatTableColumnLabel(field.replaceAll("_", " "), t) : translated;
     },
     date: (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : formatAuditDateTime(value),
     number: (value) => new Intl.NumberFormat(locale, { maximumFractionDigits: 20 }).format(value),

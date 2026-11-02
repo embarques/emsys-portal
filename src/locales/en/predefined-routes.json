@@ -1,4 +1,11 @@
 {
+  "errors": {
+    "loadFailed": "Unable to load predefined route.",
+    "createFailed": "Unable to create predefined route.",
+    "updateFailed": "Unable to update predefined route.",
+    "deleteFailed": "Unable to delete predefined route.",
+    "catalogTooLarge": "Predefined route catalog exceeds the supported lookup size."
+  },
   "title": "Predefined routes",
   "entity": "Predefined route",
   "description": "Named groups of cities and ZIP codes used to filter appointments.",

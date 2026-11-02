@@ -1,4 +1,12 @@
 {
+  "errors": {
+    "notFound": "Role not found.",
+    "createFailed": "Unable to create role.",
+    "updateFailed": "Unable to update role.",
+    "deleteFailed": "Unable to delete role.",
+    "readCreatedFailed": "Unable to read the created role.",
+    "readUpdatedFailed": "Unable to read the updated role."
+  },
   "entity": "Role",
   "entityPlural": "roles",
   "title": "Roles",
@@ -38,6 +46,8 @@
   "table": {
     "permissionsCount": "{{count}} permissions",
     "actionsFor": "Actions for {{name}}",
+    "selectRole": "Select role",
+    "deselectRole": "Deselect role",
     "systemRole": "System"
   },
   "search": {

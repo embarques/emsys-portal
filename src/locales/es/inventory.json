@@ -479,6 +479,32 @@
     "adjustment": "Ajuste"
   },
   "errors": {
+    "api": {
+      "itemNotFound": "No se encontró el artículo de inventario.",
+      "createItemFailed": "No se pudo crear el artículo de inventario.",
+      "updateItemFailed": "No se pudo actualizar el artículo de inventario.",
+      "holderNotFound": "No se encontró el custodio de inventario.",
+      "createHolderFailed": "No se pudo crear el custodio de inventario.",
+      "receiptNotFound": "No se encontró el ingreso de inventario.",
+      "createReceiptFailed": "No se pudo crear el ingreso de inventario.",
+      "updateReceiptFailed": "No se pudo actualizar el ingreso de inventario.",
+      "postReceiptFailed": "No se pudo contabilizar el ingreso de inventario.",
+      "cancelReceiptFailed": "No se pudo cancelar el ingreso de inventario.",
+      "confirmReceiptFailed": "No se pudo confirmar el ingreso de inventario.",
+      "rejectReceiptFailed": "No se pudo rechazar el ingreso de inventario.",
+      "dispatchNotFound": "No se encontró el despacho de inventario.",
+      "createDispatchFailed": "No se pudo crear el despacho de inventario.",
+      "updateDispatchFailed": "No se pudo actualizar el despacho de inventario.",
+      "postDispatchFailed": "No se pudo contabilizar el despacho de inventario.",
+      "cancelDispatchFailed": "No se pudo cancelar el despacho de inventario.",
+      "confirmDispatchFailed": "No se pudo confirmar el despacho de inventario.",
+      "rejectDispatchFailed": "No se pudo rechazar el despacho de inventario.",
+      "createAdjustmentFailed": "No se pudo crear el ajuste de inventario.",
+      "postAdjustmentFailed": "No se pudo contabilizar el ajuste de inventario.",
+      "supplierNotFound": "No se encontró el proveedor de inventario.",
+      "createSupplierFailed": "No se pudo crear el proveedor de inventario.",
+      "updateSupplierFailed": "No se pudo actualizar el proveedor de inventario."
+    },
     "insufficientStock": "Stock insuficiente para una o más líneas.",
     "saveFailed": "No se pudo guardar. Inténtelo de nuevo.",
     "adjustmentsUnavailable": "Los ajustes de inventario aún no están disponibles. Registre un ingreso o un despacho."

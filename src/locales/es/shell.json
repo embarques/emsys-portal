@@ -112,7 +112,8 @@
     "hide": "Ocultar calculadora",
     "title": "Calculadora",
     "close": "Cerrar calculadora",
-    "backspace": "Retroceso"
+    "backspace": "Retroceso",
+    "error": "Error"
   },
   "memoPad": {
     "open": "Abrir bloc de notas",
@@ -131,7 +132,14 @@
     "lines": "líneas",
     "chars": "caracteres",
     "offline": "Sin conexión — cambios no guardados",
-    "savedToAccount": "Guardado en su cuenta"
+    "savedToAccount": "Guardado en su cuenta",
+    "errors": {
+      "nameRequired": "El nombre de la nota es obligatorio.",
+      "notFound": "No se encontró el bloc de notas.",
+      "createFailed": "No se pudo crear el bloc de notas.",
+      "updateFailed": "No se pudo actualizar el bloc de notas.",
+      "deleteFailed": "No se pudo eliminar el bloc de notas."
+    }
   },
   "tabs": {
     "emptyState": "Seleccione una página del menú lateral para abrir una pestaña de trabajo.",
@@ -144,6 +152,56 @@
     "closeAllTabs": "Cerrar todas las pestañas",
     "closeAll": "Cerrar todas",
     "openTabList": "Abrir lista de pestañas",
-    "allTabs": "Todas las pestañas"
+    "allTabs": "Todas las pestañas",
+    "closedOldest": "Se cerró la pestaña más antigua (máximo {{max}} abiertas).",
+    "color": {
+      "set": "Cambiar color",
+      "setPreset": "Usar color de pestaña {{color}}",
+      "custom": "Personalizado",
+      "pickCustom": "Elegir un color personalizado para la pestaña",
+      "reset": "Restablecer color"
+    }
+  },
+  "api": {
+    "unavailable": "API no disponible."
+  },
+  "statCards": {
+    "summaryCards": "Tarjetas de resumen",
+    "position": "{{current}} de {{total}}",
+    "range": "{{start}}–{{end}} de {{total}}",
+    "viewDetails": "Ver detalles de {{label}}",
+    "detailsTitle": "Detalles de {{label}}",
+    "backToSummary": "Volver al resumen de {{label}}"
+  },
+  "accessDenied": {
+    "title": "Acceso denegado",
+    "description": "No tiene permiso para ver esta página."
+  },
+  "auth": {
+    "title": "Inicie sesión en EMSYS",
+    "description": "Ingrese sus credenciales para acceder al portal.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "signIn": "Iniciar sesión",
+    "signingIn": "Iniciando sesión...",
+    "invalidCredentials": "Correo electrónico o contraseña no válidos.",
+    "poweredBy": "Acceso seguro con tecnología de Firebase"
+  },
+  "devAuth": {
+    "title": "Inicio de sesión de desarrollo",
+    "description": "La omisión de autenticación está activada. Inicie sesión con credenciales de la API.",
+    "companyId": "ID de compañía",
+    "name": "Nombre",
+    "optional": "Opcional",
+    "signInFailed": "No se pudo iniciar la sesión de desarrollo.",
+    "footer": "Solo para omisión en desarrollo. Configure NEXT_PUBLIC_BYPASS_AUTH=false para iniciar sesión con Firebase.",
+    "banner": {
+      "title": "Sesión de desarrollo",
+      "expires": "Vence {{date}}",
+      "expired": "Sesión expirada",
+      "clear": "Borrar sesión"
+    }
   }
 }

@@ -10,6 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type RecordViewSheetProps = {
@@ -186,15 +187,20 @@ export function RecordViewSheetActions({
   onEdit,
   onDelete,
   onPrint,
-  editLabel = "Edit",
-  deleteLabel = "Delete",
-  printLabel = "Print",
+  editLabel: editLabelProp,
+  deleteLabel: deleteLabelProp,
+  printLabel: printLabelProp,
   isDisabled = false,
   editDisabled = false,
   deleteDisabled = false,
   printDisabled = false,
   isPrinting = false,
 }: RecordViewSheetActionsProps) {
+  const { t } = useTranslation();
+  const editLabel = editLabelProp ?? t("common.actions.edit");
+  const deleteLabel = deleteLabelProp ?? t("common.actions.delete");
+  const printLabel = printLabelProp ?? t("common.actions.print");
+
   if (!onEdit && !onDelete && !onPrint) return null;
 
   return (

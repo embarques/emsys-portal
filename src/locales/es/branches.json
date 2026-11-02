@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "notFound": "No se encontró la sucursal.",
+    "createFailed": "No se pudo crear la sucursal.",
+    "updateFailed": "No se pudo actualizar la sucursal.",
+    "deleteFailed": "No se pudo eliminar la sucursal."
+  },
   "entity": "Sucursal",
   "entityPlural": "sucursales",
   "title": "Sucursales",
@@ -51,6 +57,10 @@
     }
   },
   "form": {
+    "validation": {
+      "nameRequired": "El nombre de la sucursal es obligatorio.",
+      "nonNegativeWholeNumber": "Use un número entero no negativo."
+    },
     "addTitle": "Agregar sucursal",
     "editTitle": "Editar sucursal",
     "addDescription": "Cree una nueva sucursal.",

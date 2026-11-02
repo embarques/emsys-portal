@@ -184,7 +184,7 @@ export function AddressAutocompleteInput({
           {isLoading && suggestions.length === 0 ? (
             <li className="flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
-              Searching addresses…
+              {t("customers.address.searching")}
             </li>
           ) : null}
           {suggestions.map((suggestion, index) => (

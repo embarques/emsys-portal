@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "notFound": "Branch not found.",
+    "createFailed": "Unable to create branch.",
+    "updateFailed": "Unable to update branch.",
+    "deleteFailed": "Unable to delete branch."
+  },
   "entity": "Branch",
   "entityPlural": "branches",
   "title": "Branches",
@@ -51,6 +57,10 @@
     }
   },
   "form": {
+    "validation": {
+      "nameRequired": "Branch name is required.",
+      "nonNegativeWholeNumber": "Use a non-negative whole number."
+    },
     "addTitle": "Add branch",
     "editTitle": "Edit branch",
     "addDescription": "Create a new branch.",

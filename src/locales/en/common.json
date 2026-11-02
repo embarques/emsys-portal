@@ -24,7 +24,25 @@
     "previous": "Previous",
     "next": "Next",
     "dismissNotification": "Dismiss notification",
-    "actions": "Actions"
+    "actions": "Actions",
+    "print": "Print"
+  },
+  "ui": {
+    "closeMenu": "Close menu",
+    "carousel": "carousel",
+    "slide": "slide",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "openDatePicker": "Open date picker",
+    "selectPlaceholder": "Select an option",
+    "noResults": "No results found.",
+    "searching": "Searching…",
+    "clearSelection": "Clear selection",
+    "openOptions": "Open options",
+    "closeOptions": "Close options"
+  },
+  "validation": {
+    "required": "Required."
   },
   "form": {
     "noChanges": "No changes to save.",
@@ -103,6 +121,7 @@
     "moveColumnUp": "Move {{column}} up",
     "moveColumnDown": "Move {{column}} down",
     "clearSearch": "Clear search",
+    "directoryViews": "Directory views",
     "search": "Search...",
     "field": "Field",
     "condition": "Condition",
@@ -168,7 +187,12 @@
       "sessionExpired": "Your session has expired. Please sign out and sign in again.",
       "forbidden": "You don't have permission to perform this action. Your session may have expired, or your role may not include the required access.",
       "requestFailed": "The request could not be completed.",
-      "requestFailedWithStatus": "The request could not be completed (HTTP {{status}})."
+      "requestFailedWithStatus": "The request could not be completed (HTTP {{status}}).",
+      "temporaryUnavailableShort": "API server is temporarily unavailable (HTTP {{status}}).",
+      "forbiddenGeneric": "This action is forbidden. Your account may lack the required permission, or your session may have expired — try signing out and back in.",
+      "requestFailedShort": "Request failed.",
+      "requestFailedShortWithStatus": "Request failed ({{status}}).",
+      "requestFailedPlain": "Request failed"
     },
     "permissionHint": "Ask an admin to enable the required permission on your role."
   },

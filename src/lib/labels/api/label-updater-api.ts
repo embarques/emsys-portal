@@ -1,6 +1,7 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { fetchBarcodeStatusOptions } from "@/lib/barcodes/api/barcode-status-options-api";
 import {
   findInvoiceBarcodeByNumber,
@@ -64,7 +65,7 @@ function resolveStatusRef(
 ): { id: number; name: string } {
   const option = options.find((entry) => entry.id === statusId);
   if (!option) {
-    throw new Error("Select a valid status.");
+    throw new Error(translateCurrent("labels.errors.selectValidStatus"));
   }
   return { id: option.id, name: option.name };
 }
@@ -212,7 +213,7 @@ function buildBarcodeWritePayload(
   if (options.changeContainer && options.newContainerId) {
     const parsedId = Number(options.newContainerId);
     if (!Number.isFinite(parsedId) || parsedId <= 0) {
-      throw new Error("Select a valid container.");
+      throw new Error(translateCurrent("labels.errors.selectValidContainer"));
     }
 
     const nextName =

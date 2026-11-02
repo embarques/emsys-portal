@@ -1341,7 +1341,7 @@ export function InvoiceForm({
             <div className="space-y-2.5">
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="discount">Discount</Label>
+                <Label htmlFor="discount">{t("invoices.form.totals.discount")}</Label>
                 <Input
                   id="discount"
                   type="number"
@@ -1353,26 +1353,26 @@ export function InvoiceForm({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="amountPaid">Paid</Label>
+                <Label htmlFor="amountPaid">{t("invoices.form.totals.paid")}</Label>
                 <Input id="amountPaid" value={formatInvoiceMoney(amountPaid)} readOnly className="bg-muted/40" />
               </div>
             </div>
 
             <div className="space-y-2 rounded-lg border bg-background p-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Total</span>
+                <span className="text-muted-foreground">{t("invoices.form.totals.total")}</span>
                 <span className="font-medium">{formatInvoiceMoney(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Discount</span>
+                <span className="text-muted-foreground">{t("invoices.form.totals.discount")}</span>
                 <span className="font-medium">−{formatInvoiceMoney(discount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Paid</span>
+                <span className="text-muted-foreground">{t("invoices.form.totals.paid")}</span>
                 <span className="font-medium">−{formatInvoiceMoney(amountPaid)}</span>
               </div>
               <div className="flex justify-between border-t pt-2 text-base font-semibold">
-                <span>Balance</span>
+                <span>{t("invoices.form.totals.balance")}</span>
                 <span>{formatInvoiceMoney(balance)}</span>
               </div>
             </div>

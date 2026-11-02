@@ -18,7 +18,7 @@ before(async () => {
     mode: "development", devtool: false,
     entry: path.resolve("tests/browser/fixtures/users-mobile.tsx"),
     output: { path: directory, filename: "fixture.js" },
-    resolve: { extensions: [".tsx", ".ts", ".js"], alias: { "@/lib/i18n": path.resolve("tests/browser/fixtures/users-i18n.ts"), "@": path.resolve("src") } },
+    resolve: { extensions: [".tsx", ".ts", ".js"], alias: { "@/lib/i18n$": path.resolve("tests/browser/fixtures/users-i18n.ts"), "@": path.resolve("src") } },
     module: { rules: [{ test: /\.tsx?$/, exclude: /node_modules/,
       use: path.resolve("tests/browser/fixtures/typescript-loader.mjs") }] },
   });

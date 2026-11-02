@@ -835,7 +835,10 @@ export function InvoiceFormWizard({
       step === previewStep
         ? t("invoices.wizard.steps.preview")
         : t(stepLabelKey);
-    const phoneStepText = `${currentStepIndex + 1} of ${steps.length}`;
+    const phoneStepText = t("invoices.wizard.phoneProgress", {
+      current: currentStepIndex + 1,
+      total: steps.length,
+    });
     const phoneBackLabel =
       step > 1 ? t("invoices.wizard.actions.back") : t("common.actions.cancel");
     const phonePrimary =

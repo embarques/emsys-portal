@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "loadFailed": "Unable to load titles.",
+    "createFailed": "Unable to create title.",
+    "updateFailed": "Unable to update title.",
+    "deleteFailed": "Unable to delete title."
+  },
   "title": "Employee titles",
   "entity": "Title",
   "description": "Manage the titles available in employee forms.",

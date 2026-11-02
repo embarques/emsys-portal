@@ -51,6 +51,7 @@
     }
   },
   "address": {
+    "searching": "Searching addresses…",
     "copied": "Address copied",
     "copyFailed": "Could not copy address",
     "copyAria": "Copy {{label}}",

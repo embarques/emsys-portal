@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import {
   completeDeliverySchema,
   completeDeliveryResultSchema,
@@ -9,7 +10,7 @@ import {
 type Envelope = { success: boolean; data: unknown; message?: string };
 function unwrap(response: Envelope) {
   if (!response.success)
-    throw new Error(response.message || "Delivery request failed.");
+    throw new Error(response.message || translateCurrent("deliveries.errors.requestFailed"));
   return response.data;
 }
 export async function fetchDeliveryReview(
@@ -26,9 +27,7 @@ export async function fetchDeliveryReview(
     result.invoiceId !== invoiceId ||
     String(result.deliveryId) !== deliveryId
   )
-    throw new Error(
-      "Delivery items do not match the selected invoice and delivery.",
-    );
+    throw new Error(translateCurrent("deliveries.errors.reviewMismatch"));
   return result;
 }
 export async function completeDelivery(
@@ -45,6 +44,6 @@ export async function completeDelivery(
     result.invoiceId !== invoiceId ||
     String(result.deliveryId) !== deliveryId
   )
-    throw new Error("Completion does not match the selected delivery.");
+    throw new Error(translateCurrent("deliveries.errors.completionMismatch"));
   return result;
 }

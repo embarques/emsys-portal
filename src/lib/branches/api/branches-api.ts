@@ -1,4 +1,5 @@
 import { BRANCH_API_TABLE_FIELDS } from "@/lib/branches/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { branchFormSchema } from "@/lib/branches/schemas/branch.schema";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -244,7 +245,7 @@ function buildBranchWritePayload(
 ): ApiBranchWritePayload {
   branchFormSchema.parse(values);
   const name = values.name.trim();
-  if (!name) throw new Error("Branch name is required.");
+  if (!name) throw new Error(translateCurrent("branches.form.validation.nameRequired"));
 
   validateRecordPhones(values.phones, { required: false });
   const phones = buildApiPhonesPayload(values.phones).filter((phone) => phone.number.trim());
@@ -349,7 +350,7 @@ async function resolveCreatedBranch(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create branch.");
+  throw new Error(message?.trim() || translateCurrent("branches.errors.createFailed"));
 }
 
 export async function fetchBranches(params: BranchListParams = {}): Promise<PaginatedResult<Branch>> {
@@ -378,7 +379,7 @@ export async function fetchBranchById(branchId: string | number): Promise<Branch
 
   const branch = normalizeBranch(raw);
   if (!branch) {
-    throw new Error("Branch not found.");
+    throw new Error(translateCurrent("branches.errors.notFound"));
   }
 
   return branch;
@@ -390,7 +391,7 @@ export async function createBranch(values: BranchFormValues): Promise<Branch> {
     buildBranchWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create branch.");
+  assertMutationSuccess(response, translateCurrent("branches.errors.createFailed"));
 
   return resolveCreatedBranch(values, response);
 }
@@ -402,7 +403,7 @@ export async function updateBranch(branchId: string | number, values: BranchForm
     buildBranchWritePayload(values, { branchId: numericId }),
   );
 
-  assertMutationSuccess(response, "Unable to update branch.");
+  assertMutationSuccess(response, translateCurrent("branches.errors.updateFailed"));
 
   const updatedBranch = extractBranchFromMutationResponse(response.data);
   if (updatedBranch) {
@@ -418,7 +419,7 @@ export async function deleteBranch(branchId: string | number): Promise<void> {
     `${API_ENDPOINTS.BRANCHES}/${numericId}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete branch.");
+  assertMutationSuccess(response, translateCurrent("branches.errors.deleteFailed"));
 }
 
 export async function deleteBranches(

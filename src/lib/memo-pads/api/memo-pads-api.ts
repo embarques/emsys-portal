@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import {
@@ -202,7 +203,7 @@ function buildMemoPadWritePayload(
 ): ApiMemoPadWritePayload {
   const name = values.name.trim();
   if (!name) {
-    throw new Error("Memo name is required.");
+    throw new Error(translateCurrent("shell.memoPad.errors.nameRequired"));
   }
 
   const payload: ApiMemoPadWritePayload = {
@@ -252,7 +253,7 @@ async function resolveCreatedMemoPad(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create memo pad.");
+  throw new Error(message?.trim() || translateCurrent("shell.memoPad.errors.createFailed"));
 }
 
 export async function createMemoPad(values: MemoPadFormValues): Promise<MemoPad> {
@@ -261,7 +262,7 @@ export async function createMemoPad(values: MemoPadFormValues): Promise<MemoPad>
     buildMemoPadWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create memo pad.");
+  assertMutationSuccess(response, translateCurrent("shell.memoPad.errors.createFailed"));
 
   return resolveCreatedMemoPad(response);
 }
@@ -275,7 +276,7 @@ export async function updateMemoPad(
     buildMemoPadWritePayload(values, { memoPadId }),
   );
 
-  assertMutationSuccess(response, "Unable to update memo pad.");
+  assertMutationSuccess(response, translateCurrent("shell.memoPad.errors.updateFailed"));
 
   const updatedMemoPad = extractMemoPadFromMutationResponse(response.data);
   if (updatedMemoPad) {
@@ -290,7 +291,7 @@ export async function deleteMemoPad(memoPadId: string): Promise<void> {
     `${API_ENDPOINTS.MEMO_PADS}/${memoPadId}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete memo pad.");
+  assertMutationSuccess(response, translateCurrent("shell.memoPad.errors.deleteFailed"));
 }
 
 export async function deleteMemoPads(memoPadIds: string[]): Promise<BulkSettledResult<string>> {
@@ -310,7 +311,7 @@ export async function fetchMemoPadById(memoPadId: string): Promise<MemoPad> {
 
   const memoPad = normalizeApiMemoPad(raw);
   if (!memoPad) {
-    throw new Error("Memo pad not found.");
+    throw new Error(translateCurrent("shell.memoPad.errors.notFound"));
   }
 
   return memoPad;

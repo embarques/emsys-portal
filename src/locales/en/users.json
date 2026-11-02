@@ -160,6 +160,11 @@
     "unnamed": "This user"
   },
   "errors": {
+    "notFound": "User not found.",
+    "currentUserNotFound": "Current tenant user not found.",
+    "createdNotReloaded": "User was created but could not be reloaded.",
+    "createFailed": "Unable to create user.",
+    "updateFailed": "Unable to update user.",
     "firebasePartialCreate": "The Firebase account was created, but the EMSYS tenant user record was not created. Do not submit this form again with the same email. {{message}}"
   },
   "filters": {

@@ -1,4 +1,5 @@
 import { routeCrewMembersSchema } from "@/lib/route-manager/schemas/route-crew.schema";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { ROUTE_API_TABLE_FIELDS } from "@/lib/route-manager/table-fields";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
@@ -342,7 +343,7 @@ export async function fetchRouteById(routeId: string): Promise<Route> {
 
   const assignment = normalizeApiRoute(raw);
   if (!assignment) {
-    throw new Error("Route not found.");
+    throw new Error(translateCurrent("routes.errors.notFound"));
   }
 
   return assignment;
@@ -352,16 +353,16 @@ function buildRouteWritePayload(
   values: RouteFormValues,
 ): ApiRouteWritePayload {
   if (!routeCrewMembersSchema.safeParse(values.employees).success) {
-    throw new Error("Select at least two crew members.");
+    throw new Error(translateCurrent("routes.errors.crewMinimum"));
   }
 
   const branchCode = values.branch?.code.trim() ?? "";
   const branchName = values.branch?.name?.trim() ?? "";
   if (!values.branch || !(values.branch.id > 0)) {
-    throw new Error("Branch is required.");
+    throw new Error(translateCurrent("routes.form.validation.branchRequired"));
   }
   if (!branchName) {
-    throw new Error("Branch name is required.");
+    throw new Error(translateCurrent("routes.errors.branchNameRequired"));
   }
 
   const payload: ApiRouteWritePayload = {
@@ -429,7 +430,7 @@ async function resolveCreatedRoute(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create route.");
+  throw new Error(message?.trim() || translateCurrent("routes.errors.createFailed"));
 }
 
 export async function createRoute(
@@ -440,7 +441,7 @@ export async function createRoute(
     buildRouteWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create route.");
+  assertMutationSuccess(response, translateCurrent("routes.errors.createFailed"));
 
   return resolveCreatedRoute(values, response);
 }
@@ -459,7 +460,7 @@ export async function updateRoute(
     buildRouteWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to update route.");
+  assertMutationSuccess(response, translateCurrent("routes.errors.updateFailed"));
 
   return extractRouteFromMutationResponse(response.data) ?? fetchRouteById(id);
 }
@@ -474,7 +475,7 @@ export async function deleteRoute(recordId: string): Promise<void> {
     `${API_ENDPOINTS.ROUTES}/${id}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete route.");
+  assertMutationSuccess(response, translateCurrent("routes.errors.deleteFailed"));
 }
 
 export async function deleteRoutes(recordIds: string[]): Promise<BulkSettledResult<string>> {

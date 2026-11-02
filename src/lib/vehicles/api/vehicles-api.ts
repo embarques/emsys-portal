@@ -1,4 +1,5 @@
 import { VEHICLE_API_TABLE_FIELDS } from "@/lib/vehicles/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -290,7 +291,7 @@ async function resolveCreatedVehicle(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create vehicle.");
+  throw new Error(message?.trim() || translateCurrent("vehicles.errors.createFailed"));
 }
 
 export async function fetchVehicles(params: VehicleListParams = {}): Promise<PaginatedResult<Vehicle>> {
@@ -319,7 +320,7 @@ export async function fetchVehicleById(vehicleId: string): Promise<Vehicle> {
 
   const vehicle = normalizeVehicle(raw);
   if (!vehicle) {
-    throw new Error("Vehicle not found.");
+    throw new Error(translateCurrent("vehicles.errors.notFound"));
   }
 
   return vehicle;
@@ -331,7 +332,7 @@ export async function createVehicle(values: VehicleFormValues): Promise<Vehicle>
     buildVehicleWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create vehicle.");
+  assertMutationSuccess(response, translateCurrent("vehicles.errors.createFailed"));
 
   return resolveCreatedVehicle(values, response);
 }
@@ -343,7 +344,7 @@ export async function updateVehicle(vehicleId: string, values: VehicleFormValues
     buildVehicleWritePayload(values, { recordId: id }),
   );
 
-  assertMutationSuccess(response, "Unable to update vehicle.");
+  assertMutationSuccess(response, translateCurrent("vehicles.errors.updateFailed"));
 
   const updatedVehicle = extractVehicleFromMutationResponse(response.data);
   if (updatedVehicle) {
@@ -359,7 +360,7 @@ export async function deleteVehicle(vehicleId: string): Promise<void> {
     `${API_ENDPOINTS.VEHICLES}/${id}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete vehicle.");
+  assertMutationSuccess(response, translateCurrent("vehicles.errors.deleteFailed"));
 }
 
 export async function deleteVehicles(vehicleIds: string[]): Promise<BulkSettledResult<string>> {

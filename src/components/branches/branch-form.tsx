@@ -77,6 +77,9 @@ export function BranchForm({
     updateField("settings", { ...getValues("settings"), [key]: value });
   }
 
+  const validationError =
+    errors.name?.message || (Object.keys(values.settings) as Array<keyof BranchSettings>).map((key) => errors.settings?.[key]?.message).find(Boolean);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting}>
@@ -356,7 +359,7 @@ export function BranchForm({
       </FormBody>
 
       <FormFooter
-        error={externalError || errors.name?.message || (Object.keys(values.settings) as Array<keyof BranchSettings>).map((key) => errors.settings?.[key]?.message).find(Boolean)}
+        error={externalError || (validationError ? t(validationError) : undefined)}
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         onCancel={onCancel}

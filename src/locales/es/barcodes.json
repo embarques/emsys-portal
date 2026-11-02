@@ -1,4 +1,16 @@
 {
+  "errors": {
+    "numberRequired": "El número de código de barras es obligatorio.",
+    "selectValidStatus": "Seleccione un estado válido.",
+    "selectValidContainer": "Seleccione un contenedor válido.",
+    "deleteFailed": "No se pudo eliminar el código de barras.",
+    "loadStatusesFailed": "No se pudieron cargar los estados de código de barras.",
+    "createStatusFailed": "No se pudo crear el estado de código de barras.",
+    "updateStatusFailed": "No se pudo actualizar el estado de código de barras.",
+    "deleteStatusFailed": "No se pudo eliminar el estado de código de barras.",
+    "readCreatedStatusFailed": "No se pudo leer el estado de código de barras creado.",
+    "readUpdatedStatusFailed": "No se pudo leer el estado de código de barras actualizado."
+  },
   "print": {
     "action": "Imprimir",
     "preparing": "Preparando…",

@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "loadFailed": "No se pudieron cargar las políticas de factura.",
+    "createFailed": "No se pudo crear la política de factura.",
+    "updateFailed": "No se pudo actualizar la política de factura.",
+    "deleteFailed": "No se pudo eliminar la política de factura."
+  },
   "title": "Políticas de factura",
   "entity": "Política de factura",
   "description": "Administra el texto de políticas que el cliente acepta y firma al crear una factura.",

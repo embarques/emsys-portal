@@ -1,4 +1,5 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
@@ -293,22 +294,22 @@ export function areActiveRouteFormValuesEquivalent(
 export function assertActiveRouteFormValues(values: ActiveRouteFormValues): void {
   // The API enforces employee-set + vehicle + date uniqueness; see APP_CONTEXT.md.
   if (!values.date.trim()) {
-    throw new Error("Date is required.");
+    throw new Error(translateCurrent("routes.errors.dateRequired"));
   }
   if (!(values.branch.id > 0)) {
-    throw new Error("Branch is required.");
+    throw new Error(translateCurrent("routes.form.validation.branchRequired"));
   }
   if (values.routeType === "delivery" && (!values.container || values.container.id <= 0)) {
-    throw new Error("A container is required for delivery routes.");
+    throw new Error(translateCurrent("routes.errors.containerRequired"));
   }
   if (values.routeType === "pickup" && values.container) {
-    throw new Error("Pickup routes cannot include a container.");
+    throw new Error(translateCurrent("routes.errors.pickupNoContainer"));
   }
   if (values.employees.length === 0) {
-    throw new Error("Employees are required.");
+    throw new Error(translateCurrent("routes.errors.employeesRequired"));
   }
   if (!hasDailyRouteLeadRoles(values.employees)) {
-    throw new Error("A driver and a supervisor are required.");
+    throw new Error(translateCurrent("routes.errors.driverSupervisorRequired"));
   }
 }
 
