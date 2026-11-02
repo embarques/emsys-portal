@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Printer, Tags, Trash2 } from "lucide-react";
 
+import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
+import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceActivitySection } from "@/components/invoices/invoice-activity-section";
 import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barcode-status-section";
@@ -11,10 +13,11 @@ import { InvoicePackageTrackerSection } from "@/components/invoices/invoice-pack
 import { InvoicePaymentsSection } from "@/components/invoices/invoice-payments-section";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getBarcodeStatusBadgeClass } from "@/lib/barcodes/display";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import {
   RecordViewSheet,
-  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -54,6 +57,11 @@ type InvoiceViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   onEdit: (invoice: Invoice) => void;
   onDelete: (invoice: Invoice) => void;
+  onManageItems: (invoice: Invoice) => void;
+  manageItemsDisabled?: boolean;
+  onPrint: (invoice: Invoice) => void;
+  printDisabled?: boolean;
+  isPrinting?: boolean;
   onAddComment: (invoiceId: string, description: string) => void;
 };
 
@@ -344,6 +352,11 @@ export function InvoiceViewSheet({
   onOpenChange,
   onEdit,
   onDelete,
+  onManageItems,
+  manageItemsDisabled = false,
+  onPrint,
+  printDisabled = false,
+  isPrinting = false,
   onAddComment,
 }: InvoiceViewSheetProps) {
   const { t, locale } = useTranslation();
@@ -555,11 +568,58 @@ export function InvoiceViewSheet({
           </RecordViewSheetBody>
         )}
 
-        <RecordViewSheetActions
-          editLabel={t("invoices.workspace.editInvoice")}
-          onEdit={() => onEdit(invoice)}
-          onDelete={() => onDelete(invoice)}
-        />
+        <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => onManageItems(invoice)}
+              disabled={manageItemsDisabled}
+            >
+              <Tags className="h-4 w-4" />
+              {t("invoices.staging.tableAction")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onPrint(invoice)}
+              disabled={isPrinting || printDisabled}
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+            >
+              <Printer className="h-4 w-4" />
+              {isPrinting
+                ? t("invoices.wizard.actions.preparing")
+                : t("invoices.wizard.actions.print")}
+            </Button>
+            <InvoiceDocumentsButton
+              invoice={invoice}
+              selectedCount={1}
+              onOpenMobile={() => setActiveTab("documents")}
+            />
+            <TableSelectionActionDivider />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(invoice)}
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+            >
+              <Pencil className="h-4 w-4" />
+              {t("common.actions.edit")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(invoice)}
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
+            >
+              <Trash2 className="h-4 w-4" />
+              {t("common.actions.delete")}
+            </Button>
+          </div>
+        </div>
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

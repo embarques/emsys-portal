@@ -457,9 +457,13 @@ export function InvoicesWorkspace() {
       return;
     }
 
+    openManageItemsFor(selectedInvoices);
+  }
+
+  function openManageItemsFor(targets: Invoice[]) {
     if (!canViewBarcodes) return;
     openTab(
-      buildInvoiceBarcodesHref(selectedInvoices.map((invoice) => invoice.invoiceNumber)),
+      buildInvoiceBarcodesHref(targets.map((invoice) => invoice.invoiceNumber)),
       undefined,
       { forceNew: true },
     );
@@ -1380,6 +1384,13 @@ export function InvoicesWorkspace() {
         }}
         onEdit={(invoice) => openEditForm(invoice)}
         onDelete={(invoice) => openDeleteInvoice(invoice)}
+        onManageItems={(invoice) => openManageItemsFor([invoice])}
+        manageItemsDisabled={!canViewBarcodes}
+        onPrint={(invoice) => {
+          if (canPrintInvoices && invoice.invoiceId) setPrintInvoiceIds([invoice.invoiceId]);
+        }}
+        printDisabled={!canPrintInvoices}
+        isPrinting={isPrinting}
         onAddComment={addInvoiceComment}
       />
 
