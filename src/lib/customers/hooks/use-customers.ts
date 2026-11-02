@@ -1,5 +1,6 @@
 "use client";
 
+import type {VersionedRecord} from "@/lib/api/mutation-version";
 import { keepPreviousData, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
@@ -221,8 +222,8 @@ export function useUpdateCustomerAddressLocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ customerId, location }: { customerId: string; location: AddressGeoLocation }) =>
-      updateCustomerAddressLocation(customerId, location),
+    mutationFn: ({ customerId, location, version }: { customerId: string; location: AddressGeoLocation; version: string }) =>
+      updateCustomerAddressLocation(customerId, location, version),
     onSuccess: (_data, variables) => {
       invalidateCustomers(queryClient);
       queryClient.invalidateQueries({
@@ -239,10 +240,12 @@ export function useUpdateCustomerAddressGoogleVerification() {
     mutationFn: ({
       customerId,
       verification,
+      version,
     }: {
       customerId: string;
+      version: string;
       verification: AddressVerification;
-    }) => updateCustomerAddressGoogleVerification(customerId, verification),
+    }) => updateCustomerAddressGoogleVerification(customerId, verification, version),
     onSuccess: (_data, variables) => {
       invalidateCustomers(queryClient);
       queryClient.invalidateQueries({
@@ -256,7 +259,7 @@ export function useDeleteCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (customerId: string) => deleteCustomer(customerId),
+    mutationFn: (record: VersionedRecord) => deleteCustomer(record.id, record.version),
     onSuccess: () => invalidateCustomers(queryClient),
   });
 }
@@ -265,7 +268,7 @@ export function useDeleteCustomers() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (customerIds: string[]) => deleteCustomers(customerIds),
+    mutationFn: (records: VersionedRecord[]) => deleteCustomers(records),
     onSuccess: () => invalidateCustomers(queryClient),
   });
 }

@@ -31,7 +31,7 @@ export function PaymentAutoClearField({
 }: Props) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
-  const permission = getAutoClearPermission(paymentMethodName);
+  const permission = getAutoClearPermission();
   const visible =
     isAutoClearEligible({ transactionType, amount, paymentMethodName }) &&
     Boolean(permission && hasPermission(permission.name, permission.resourceType));

@@ -16,4 +16,4 @@ export function useReverseActivity() { const client = useQueryClient(); return u
         requestId: string;
         reason: string;
     }) => reverseActivity(id, requestId, reason), onSuccess: () => Promise.all([client.invalidateQueries({ queryKey: queryKeys.accounting.all }), client.invalidateQueries({ queryKey: ["invoices"] })]) }); }
-export function useClearFinancialPayment() { const client = useQueryClient(); return useMutation({ mutationFn: (row: FinancialActivity) => clearFinancialPayment(row), onSuccess: () => Promise.all([client.invalidateQueries({ queryKey: queryKeys.accounting.all }), client.invalidateQueries({ queryKey: ["invoices"] })]) }); }
+export function useClearFinancialPayment() { const client = useQueryClient(); return useMutation({ mutationFn: (row: FinancialActivity) => clearFinancialPayment(row), onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.accounting.all }) }); }

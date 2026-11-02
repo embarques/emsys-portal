@@ -1,4 +1,6 @@
 "use client";
+import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
+import { isStaleMutation } from "@/lib/api/mutation-version";
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -50,7 +52,7 @@ export function CustomerFormWorkspace({
 
   const [formError, setFormError] = useState<string | null>(null);
 
-  const editingCustomer = isEditing ? (customerQuery.data ?? null) : null;
+  const editingCustomer = usePinnedEditSnapshot(entityId ?? "", isEditing ? customerQuery.data : null);
   const isSaving = createCustomerMutation.isPending || updateCustomerMutation.isPending;
   // When opened from an appointment/invoice New or Edit party action, lock the party type.
   const hasPresetCustomerType = customerType != null;
@@ -90,6 +92,10 @@ export function CustomerFormWorkspace({
       }
       closeFormTabAndReturn(tabId);
     } catch (mutationError) {
+      if (isStaleMutation(mutationError)) {
+        setFormError(t("common.form.staleUpdate"));
+        return;
+      }
       const { status, category } = formatError(mutationError);
       setFormError(
         formatCustomerMutationError(mutationError, t, {

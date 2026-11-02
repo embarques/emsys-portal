@@ -84,7 +84,7 @@ const defaultFilters: CustomerFilterState = {
 
 type CustomerDeleteTarget =
   | { mode: "single"; customer: Customer }
-  | { mode: "bulk"; ids: string[] };
+  | { mode: "bulk"; ids: string[]; versions?: Record<string, string | undefined> };
 
 function formatCustomerAddressPart(customer: Customer, part: "city" | "state" | "zipcode", dash: string) {
   const value = getPrimaryAddress(customer)?.[part]?.trim() ?? "";
@@ -123,6 +123,9 @@ export function CustomersWorkspace() {
 
   function openDeleteTarget(target: CustomerDeleteTarget) {
     setDeleteError(null);
+    if (target.mode === "bulk") {
+      target = {...target, versions: Object.fromEntries(customers.map(customer => [customer.id, customer.version]))};
+    }
     setDeleteTarget(target);
   }
 
@@ -197,7 +200,8 @@ export function CustomersWorkspace() {
     const singleName = deleteTarget.mode === "single" ? deleteTarget.customer.name : undefined;
 
     try {
-      const result = await deleteCustomersMutation.mutateAsync(ids);
+      const records = ids.map(id => ({id, version: deleteTarget.mode === "single" ? deleteTarget.customer.version : deleteTarget.versions?.[id]}));
+      const result = await deleteCustomersMutation.mutateAsync(records);
 
       reportBulkSettled({
         result,

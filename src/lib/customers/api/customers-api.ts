@@ -1,3 +1,4 @@
+import {mutationVersionHeaders, type VersionedRecord} from "@/lib/api/mutation-version";
 import { CUSTOMER_API_TABLE_FIELDS } from "@/lib/customers/table-fields";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -119,6 +120,7 @@ type ApiUser = {
 };
 
 type ApiCustomer = {
+ version?: string;
   id?: string;
   oldID?: number;
   name?: string;
@@ -375,6 +377,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
 
   return {
     ...captureApiTableFields(raw, CUSTOMER_API_TABLE_FIELDS),
+    version: item.version,
     id,
     oldID: readNumericId(item.oldID) ?? null,
     name: String(item.name ?? "").trim(),
@@ -763,7 +766,7 @@ async function applyCustomerAddressMetadataAfterCreate(
 
   if (location) {
     try {
-      result = await updateCustomerAddressLocation(result.id, location);
+      result = await updateCustomerAddressLocation(result.id, location, result.version);
     } catch (error) {
       logApiErrorDev(error, { step: "createCustomer.addressLocation", customerId: result.id });
     }
@@ -771,7 +774,7 @@ async function applyCustomerAddressMetadataAfterCreate(
 
   if (verification) {
     try {
-      result = await updateCustomerAddressGoogleVerification(result.id, verification);
+      result = await updateCustomerAddressGoogleVerification(result.id, verification, result.version);
     } catch (error) {
       logApiErrorDev(error, { step: "createCustomer.addressVerification", customerId: result.id });
     }
@@ -815,6 +818,7 @@ export async function updateCustomer(
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.CUSTOMERS}/${customerId}`,
     buildCustomerWritePayload({ ...syncedValues, branch }, { customerId }),
+    {headers: mutationVersionHeaders(values.version)},
   );
 
   assertMutationSuccess(response, "Unable to update customer.");
@@ -824,9 +828,10 @@ export async function updateCustomer(
   return fetchCustomerById(customerId);
 }
 
-export async function deleteCustomer(customerId: string): Promise<void> {
+export async function deleteCustomer(customerId: string, version?: string): Promise<void> {
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.CUSTOMERS}/${customerId}`,
+    undefined, {headers: mutationVersionHeaders(version)},
   );
 
   assertMutationSuccess(response, "Unable to delete customer.");
@@ -845,9 +850,9 @@ export type DeleteCustomersResult = BulkSettledResult<string> & {
   failedMessage?: string;
 };
 
-export async function deleteCustomers(customerIds: string[]): Promise<DeleteCustomersResult> {
-  const uniqueIds = [...new Set(customerIds.map((id) => id.trim()).filter(Boolean))];
-  const result = await runSettledIdsWithConcurrency(uniqueIds, deleteCustomer, {
+export async function deleteCustomers(records: VersionedRecord[]): Promise<DeleteCustomersResult> {
+  const versions = new Map(records.map(record => [record.id, record.version]));
+  const result = await runSettledIdsWithConcurrency([...versions.keys()], id => deleteCustomer(id, versions.get(id)), {
     treatAsSuccess: (error) => isCustomerAlreadyDeletedError(error),
   });
 
@@ -865,6 +870,7 @@ export async function deleteCustomers(customerIds: string[]): Promise<DeleteCust
 export async function updateCustomerAddressLocation(
   customerId: string,
   location: AddressGeoLocation,
+  version?: string,
 ): Promise<Customer> {
   const payload = buildApiGeoLocationPayload(location);
   if (!payload) {
@@ -874,6 +880,7 @@ export async function updateCustomerAddressLocation(
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.CUSTOMERS}/${customerId}/address/location`,
     payload,
+    {headers: mutationVersionHeaders(version)},
   );
 
   assertMutationSuccess(response, "Unable to update address location.");
@@ -888,6 +895,7 @@ export async function updateCustomerAddressLocation(
 export async function updateCustomerAddressGoogleVerification(
   customerId: string,
   verification: AddressVerification,
+  version?: string,
 ): Promise<Customer> {
   const payload = buildApiAddressVerificationPayload(verification);
   if (!payload) {
@@ -897,6 +905,7 @@ export async function updateCustomerAddressGoogleVerification(
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.CUSTOMERS}/${customerId}/address/google-verification`,
     payload,
+    {headers: mutationVersionHeaders(version)},
   );
 
   assertMutationSuccess(response, "Unable to update address verification.");

@@ -46,7 +46,7 @@ for (const method of ["createInvoice", "updateInvoice"]) {
       const types = loadFeature("src/lib/invoices/types.ts", {});
       const customers = loadFeature("src/lib/customers/types.ts", {});
       const values = {
-        ...types.createEmptyInvoiceForm(), autoGenerateNumber: false, invoiceNumber: "TEST-1", date: "2026-10-22",
+        ...types.createEmptyInvoiceForm(), version: "v1:"+"a".repeat(64), autoGenerateNumber: false, invoiceNumber: "TEST-1", date: "2026-10-22",
         sender: { ...customers.createEmptyCustomerForm(), id: "customer-1", name: "Juan Lopez" },
         lineItems: [{ ...types.createEmptyInvoiceLineItem(), itemName: "Box", quantity: "1", labels: "1", unitPrice: "80", total: "80" }],
       };

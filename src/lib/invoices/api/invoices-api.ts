@@ -1,3 +1,4 @@
+import {mutationVersionHeaders, type VersionedRecord} from "@/lib/api/mutation-version";
 import { customerSignatureSchema, type CustomerSignature } from "@/lib/invoices/schemas/customer-signature.schema";
 import { resolveInvoiceItemCount } from "@/lib/invoices/item-count";
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
@@ -192,6 +193,7 @@ type ApiInvoiceDetail = {
 };
 
 type ApiInvoice = {
+ version?: string;
   itemCount?: number;
   id?: string;
   oldID?: number;
@@ -612,6 +614,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
 
   return {
     ...captureApiTableFields(raw, INVOICE_API_TABLE_FIELDS),
+    version: item.version,
     invoiceId,
     invoiceNumber: String(item.number ?? "").trim(),
     date: toInvoiceDateValue(String(item.date ?? "")),
@@ -1704,6 +1707,7 @@ export async function updateInvoice(
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
     payload,
+    {headers: mutationVersionHeaders(values.version)},
   );
 
   if (process.env.NODE_ENV === "development") {
@@ -1718,18 +1722,19 @@ export async function updateInvoice(
   return resolveSavedInvoice(id, response);
 }
 
-export async function deleteInvoice(invoiceId: string): Promise<void> {
+export async function deleteInvoice(invoiceId: string, version?: string): Promise<void> {
   const id = parseInvoicePathId(invoiceId);
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
+    undefined, {headers: mutationVersionHeaders(version)},
   );
 
   assertMutationSuccess(response, "Unable to delete invoice.");
 }
 
-export async function deleteInvoices(invoiceIds: string[]): Promise<BulkSettledResult<string>> {
-  const uniqueIds = [...new Set(invoiceIds.map((id) => id.trim()).filter(Boolean))];
-  return runSettledIdsWithConcurrency(uniqueIds, deleteInvoice);
+export async function deleteInvoices(records: VersionedRecord[]): Promise<BulkSettledResult<string>> {
+  const versions = new Map(records.map(record => [record.id, record.version]));
+  return runSettledIdsWithConcurrency([...versions.keys()], id => deleteInvoice(id, versions.get(id)));
 }
 
 function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSummary {
