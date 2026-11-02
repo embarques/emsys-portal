@@ -123,7 +123,10 @@ export function InvoiceWizardStepper({ step, layout, onSelectStep, canSelectStep
         return entry ? canSelectStep(entry.id) : false;
       } : undefined}
       ariaLabel={t("invoices.wizard.navAriaLabel")}
-      progressLabel={`Step ${layout.steps.findIndex((entry) => entry.id === step) + 1} of ${layout.steps.length}`}
+      progressLabel={t("invoices.wizard.progress", {
+        current: layout.steps.findIndex((entry) => entry.id === step) + 1,
+        total: layout.steps.length,
+      })}
       goToStepLabel={(label) => t("invoices.wizard.goToStep", { label })}
     />
   );

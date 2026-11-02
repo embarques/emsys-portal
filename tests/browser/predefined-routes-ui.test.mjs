@@ -18,7 +18,7 @@ before(async () => {
     mode: "development", devtool: false,
     entry: path.resolve("tests/browser/fixtures/predefined-routes-ui.tsx"),
     output: { path: directory, filename: "fixture.js" },
-    resolve: { extensions: [".tsx", ".ts", ".js"], alias: { "next/image": path.resolve("tests/browser/fixtures/predefined-routes-image.tsx"), "@/lib/auth/hooks/use-auth": path.resolve("tests/browser/fixtures/documents-auth.ts"), "@/lib/i18n": path.resolve("tests/browser/fixtures/predefined-routes-i18n.ts"), "@/lib/api/client": path.resolve("tests/browser/fixtures/predefined-routes-api.ts"), "@/components/app-shell/feedback-provider": path.resolve("tests/browser/fixtures/feedback.tsx"), "@": path.resolve("src") } },
+    resolve: { extensions: [".tsx", ".ts", ".js"], alias: { "next/image": path.resolve("tests/browser/fixtures/predefined-routes-image.tsx"), "@/lib/auth/hooks/use-auth": path.resolve("tests/browser/fixtures/documents-auth.ts"), "@/lib/i18n$": path.resolve("tests/browser/fixtures/predefined-routes-i18n.ts"), "@/lib/api/client": path.resolve("tests/browser/fixtures/predefined-routes-api.ts"), "@/components/app-shell/feedback-provider": path.resolve("tests/browser/fixtures/feedback.tsx"), "@": path.resolve("src") } },
     module: { rules: [{ test: /\.tsx?$/, exclude: /node_modules/,
       use: path.resolve("tests/browser/fixtures/typescript-loader.mjs") }] },
   });

@@ -1,4 +1,12 @@
 {
+  "errors": {
+    "notFound": "No se encontró el rol.",
+    "createFailed": "No se pudo crear el rol.",
+    "updateFailed": "No se pudo actualizar el rol.",
+    "deleteFailed": "No se pudo eliminar el rol.",
+    "readCreatedFailed": "No se pudo leer el rol creado.",
+    "readUpdatedFailed": "No se pudo leer el rol actualizado."
+  },
   "entity": "Rol",
   "entityPlural": "roles",
   "title": "Roles",
@@ -38,6 +46,8 @@
   "table": {
     "permissionsCount": "{{count}} permisos",
     "actionsFor": "Acciones para {{name}}",
+    "selectRole": "Seleccionar rol",
+    "deselectRole": "Quitar selección del rol",
     "systemRole": "Sistema"
   },
   "search": {

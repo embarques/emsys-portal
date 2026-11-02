@@ -1,4 +1,13 @@
 {
+  "errors": {
+    "notFound": "No se encontró el contenedor.",
+    "createFailed": "No se pudo crear el contenedor.",
+    "updateFailed": "No se pudo actualizar el contenedor.",
+    "deleteFailed": "No se pudo eliminar el contenedor.",
+    "dateRequired": "La fecha es obligatoria.",
+    "nameRequired": "El nombre del contenedor es obligatorio (p. ej., 01-26).",
+    "bookingRequired": "El número de reserva es obligatorio."
+  },
   "entity": "Contenedor",
   "entityPlural": "contenedores",
   "title": "Contenedores",

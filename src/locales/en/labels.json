@@ -1,4 +1,23 @@
 {
+  "errors": {
+    "createFailed": "Unable to create barcode.",
+    "updateFailed": "Unable to update barcode.",
+    "numberRequiredToUpdate": "Barcode number is required to update this label.",
+    "notFound": "Barcode not found.",
+    "notFoundNumber": "Barcode not found: {{number}}.",
+    "bulkUpdateFailed": "Unable to update barcodes.",
+    "numberRequired": "Barcode number is required.",
+    "routeRequired": "A valid route is required.",
+    "noContainerBarcodes": "The selected invoices have no barcodes with a container to assign.",
+    "assignInvoiceItemsFailed": "Unable to assign invoice item barcodes to route.",
+    "selectAtLeastOne": "Select at least one barcode to assign.",
+    "checkFailed": "Unable to check selected labels.",
+    "notFoundForRoute": "Barcode not found for route assign: {{numbers}}.",
+    "partialAssign": "{{assigned}} of {{total}} labels assigned. {{message}}",
+    "assignRemainingFailed": "Unable to assign remaining labels.",
+    "selectValidStatus": "Select a valid status.",
+    "selectValidContainer": "Select a valid container."
+  },
   "title": "Barcode Scanner",
     "pages": {
     "barcodesDescription": "Browse merchandise barcodes created with invoices (line items + labels).",

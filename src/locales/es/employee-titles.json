@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "loadFailed": "No se pudieron cargar los cargos.",
+    "createFailed": "No se pudo crear el cargo.",
+    "updateFailed": "No se pudo actualizar el cargo.",
+    "deleteFailed": "No se pudo eliminar el cargo."
+  },
   "title": "Cargos de empleados",
   "entity": "Cargo",
   "description": "Administra los cargos disponibles en los formularios de empleados.",

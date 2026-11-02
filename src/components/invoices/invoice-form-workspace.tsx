@@ -245,11 +245,12 @@ type InvoiceCreateWizardProps = {
 
 export function InvoiceCreateWizard({
   onCancel,
-  submitLabel = "Save invoice",
+  submitLabel: submitLabelProp,
   inDialog = false,
   appointmentPrefill,
 }: InvoiceCreateWizardProps) {
   const { t } = useTranslation();
+  const submitLabel = submitLabelProp ?? t("invoices.form.actions.saveInvoice");
   const { notifyAdded } = useFeedback();
   const createMutation = useCreateInvoice();
   const ensureCustomerDetail = useEnsureCustomerDetail();
@@ -336,7 +337,7 @@ export function InvoiceCreateWizard({
           registeredInvoiceTotals,
         },
       });
-      notifyAdded("Invoice", created.invoiceNumber || created.invoiceId);
+      notifyAdded(t("invoices.entity"), created.invoiceNumber || created.invoiceId);
       return {
         error: null,
         savedInvoiceId: created.invoiceId,
@@ -432,13 +433,14 @@ function findLineItemIdForBarcodeFocus(invoice: Invoice, focusBarcodeId: string)
 export function InvoiceEditWizard({
   invoiceId,
   onCancel,
-  submitLabel = "Save changes",
+  submitLabel: submitLabelProp,
   initialWizardStep,
   focusBarcodeId,
   formNonce,
   inDialog = false,
 }: InvoiceEditWizardProps) {
   const { t } = useTranslation();
+  const submitLabel = submitLabelProp ?? t("common.actions.saveChanges");
   const { notifyUpdated, notifySuccess, notifyError } = useFeedback();
   const { printInvoice, isPrinting } = usePrintInvoices();
   const updateMutation = useUpdateInvoice();
@@ -491,7 +493,7 @@ export function InvoiceEditWizard({
     deletions: InvoiceBarcodeDeletionSelection,
   ): Promise<InvoiceFormSubmitResult> {
     if (!invoiceQuery.data) {
-      return { error: "Unable to load this invoice." };
+      return { error: t("invoices.workspace.invoiceLoadError") };
     }
 
     setIsSyncingBarcodes(true);
@@ -511,7 +513,7 @@ export function InvoiceEditWizard({
         removeBarcodeIdsByDetail,
       });
 
-      notifyUpdated("Invoice", updated.invoiceNumber || updated.invoiceId);
+      notifyUpdated(t("invoices.entity"), updated.invoiceNumber || updated.invoiceId);
       return {
         error: null,
         savedInvoiceId: updated.invoiceId,
@@ -529,7 +531,7 @@ export function InvoiceEditWizard({
   async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
     try {
       if (!invoiceQuery.data) {
-        return { error: "Unable to load this invoice." };
+        return { error: t("invoices.workspace.invoiceLoadError") };
       }
 
       const saved = invoiceToFormValues(invoiceQuery.data);
@@ -563,7 +565,7 @@ export function InvoiceEditWizard({
     return (
       <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
         <Loader2 className="mr-2 size-4 animate-spin" />
-        Loading invoice…
+        {t("invoices.workspace.loadingInvoice")}
       </div>
     );
   }
@@ -571,9 +573,9 @@ export function InvoiceEditWizard({
   if (invoiceQuery.isError || !invoiceQuery.data) {
     return (
       <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-6 text-center">
-        <p className="text-sm text-destructive">Unable to load this invoice.</p>
+        <p className="text-sm text-destructive">{t("invoices.workspace.invoiceLoadError")}</p>
         <Button variant="outline" onClick={onCancel}>
-          Back to invoices
+          {t("invoices.form.design.backToInvoices")}
         </Button>
       </div>
     );

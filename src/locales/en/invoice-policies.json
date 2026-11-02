@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "loadFailed": "Unable to load invoice policies.",
+    "createFailed": "Unable to create invoice policy.",
+    "updateFailed": "Unable to update invoice policy.",
+    "deleteFailed": "Unable to delete invoice policy."
+  },
   "title": "Invoice policies",
   "entity": "Invoice policy",
   "description": "Manage the policy text customers agree to and sign when creating an invoice.",

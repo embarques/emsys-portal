@@ -23,6 +23,7 @@ function loadFeature(relative, { apiClient = {}, axiosInstance = {} }) {
       if (specifier === "@/lib/api/axios") return { axiosInstance };
       if (specifier.startsWith("@/") || specifier.startsWith(".")) {
         const target = specifier.startsWith("@/") ? path.join(root, "src", specifier.slice(2)) : path.resolve(path.dirname(filename), specifier);
+        if (target.endsWith(".json")) return JSON.parse(fs.readFileSync(target, "utf8"));
         return load(fs.existsSync(`${target}.ts`) ? `${target}.ts` : path.join(target, "index.ts"));
       }
       return require(specifier);

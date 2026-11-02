@@ -245,6 +245,9 @@ export function EmployeeForm({
     }
   }
 
+  const validationError =
+    errors.startDate?.message || errors.endDate?.message || errors.name?.message || errors.department?.message || errors.title?.message || errors.branch?.message;
+
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
@@ -567,7 +570,7 @@ export function EmployeeForm({
       </FormBody>
 
         <FormFooter
-          error={externalError || errors.startDate?.message || errors.endDate?.message || errors.name?.message || errors.department?.message || errors.title?.message || errors.branch?.message}
+          error={externalError || (validationError ? t(validationError) : undefined)}
           submitLabel={submitLabel}
           isSubmitting={isSubmitting}
           onCancel={onCancel}

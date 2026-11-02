@@ -8,8 +8,10 @@ import { ApplicationLoader } from "@/components/app-shell/application-loader";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { permissionForPath } from "@/lib/auth/page-permissions";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 
 export function DashboardGuard({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const {
@@ -48,12 +50,12 @@ export function DashboardGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen items-center justify-center bg-background px-6 text-center">
         <div className="max-w-md space-y-4">
-          <h1 className="text-2xl font-bold tracking-tight">Access denied</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("shell.accessDenied.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            You do not have permission to view this page.
+            {t("shell.accessDenied.description")}
           </p>
           <Button type="button" onClick={() => void handleLogout()}>
-            Log out
+            {t("shell.profileMenu.logOut")}
           </Button>
         </div>
       </div>

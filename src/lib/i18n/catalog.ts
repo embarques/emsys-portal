@@ -33,6 +33,7 @@ import enBranches from "@/locales/en/branches.json";
 import enVehicles from "@/locales/en/vehicles.json";
 import enReports from "@/locales/en/reports.json";
 import enRoles from "@/locales/en/roles.json";
+import enTableFields from "@/locales/en/table-fields.json";
 import enUserActivities from "@/locales/en/user-activities.json";
 import enUsers from "@/locales/en/users.json";
 import esCommon from "@/locales/es/common.json";
@@ -60,6 +61,7 @@ import esUsers from "@/locales/es/users.json";
 import esVehicles from "@/locales/es/vehicles.json";
 import esReports from "@/locales/es/reports.json";
 import esRoles from "@/locales/es/roles.json";
+import esTableFields from "@/locales/es/table-fields.json";
 
 export type Locale = LanguagePreference;
 
@@ -95,6 +97,7 @@ const catalogs: Record<Locale, MessageTree> = {
     branches: enBranches,
     vehicles: enVehicles,
     roles: enRoles,
+    tableFields: enTableFields,
     userActivities: enUserActivities,
     users: enUsers,
   },
@@ -127,6 +130,7 @@ const catalogs: Record<Locale, MessageTree> = {
     branches: esBranches,
     vehicles: esVehicles,
     roles: esRoles,
+    tableFields: esTableFields,
     userActivities: esUserActivities,
     users: esUsers,
   },

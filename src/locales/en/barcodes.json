@@ -1,4 +1,16 @@
 {
+  "errors": {
+    "numberRequired": "Barcode number is required.",
+    "selectValidStatus": "Select a valid status.",
+    "selectValidContainer": "Select a valid container.",
+    "deleteFailed": "Unable to delete barcode.",
+    "loadStatusesFailed": "Unable to load barcode statuses.",
+    "createStatusFailed": "Unable to create barcode status.",
+    "updateStatusFailed": "Unable to update barcode status.",
+    "deleteStatusFailed": "Unable to delete barcode status.",
+    "readCreatedStatusFailed": "Unable to read the created barcode status.",
+    "readUpdatedStatusFailed": "Unable to read the updated barcode status."
+  },
   "print": {
     "action": "Print",
     "preparing": "Preparing…",

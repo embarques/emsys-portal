@@ -1,4 +1,13 @@
 {
+  "errors": {
+    "notFound": "Container not found.",
+    "createFailed": "Unable to create container.",
+    "updateFailed": "Unable to update container.",
+    "deleteFailed": "Unable to delete container.",
+    "dateRequired": "Date is required.",
+    "nameRequired": "Container name is required (e.g. 01-26).",
+    "bookingRequired": "Booking number is required."
+  },
   "entity": "Container",
   "entityPlural": "containers",
   "title": "Containers",

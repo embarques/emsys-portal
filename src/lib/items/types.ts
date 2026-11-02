@@ -1,4 +1,5 @@
 import type { ApiTableRecord } from "@/lib/table/api-table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -112,11 +113,11 @@ export function buildItemListParams(input: {
 
 export function validateItemFormValues(values: ItemFormValues): void {
   if (!values.description.trim()) {
-    throw new Error("Description is required.");
+    throw new Error(translateCurrent("items.errors.descriptionRequired"));
   }
 
   const price = Number(values.price);
   if (!Number.isFinite(price) || price < 0) {
-    throw new Error("Price must be a valid number greater than or equal to 0.");
+    throw new Error(translateCurrent("items.form.validation.priceInvalid"));
   }
 }

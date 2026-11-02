@@ -62,7 +62,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
           <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
             {columns.map((column, index) => {
               const locked = column.hideable === false;
-              const columnLabel = formatTableColumnLabel(column.label);
+              const columnLabel = formatTableColumnLabel(column.label, t);
 
               return (
                 <div

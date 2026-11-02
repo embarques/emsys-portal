@@ -1,4 +1,5 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { FALLBACK_BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -113,11 +114,11 @@ export function areBarcodeFormValuesEquivalent(
 
 export function validateBarcodeFormValues(values: BarcodeFormValues): void {
   if (!values.number.trim()) {
-    throw new Error("Barcode number is required.");
+    throw new Error(translateCurrent("barcodes.errors.numberRequired"));
   }
 
   const statusId = Number(values.statusId);
   if (!Number.isFinite(statusId) || statusId <= 0) {
-    throw new Error("Select a valid status.");
+    throw new Error(translateCurrent("barcodes.errors.selectValidStatus"));
   }
 }

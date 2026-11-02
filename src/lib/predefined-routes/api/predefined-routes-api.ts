@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import { fetchCatalogPage, type CatalogPageParams } from "@/lib/api/fetch-catalog-page";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
 import type { PaginatedResult } from "@/lib/api/types";
@@ -31,26 +32,26 @@ function detailPath(id: number) {
 
 export async function fetchPredefinedRoute(id: number): Promise<PredefinedRoute> {
   const response = await client().get<ApiSuccessEnvelope<unknown>>(detailPath(id));
-  assertMutationSuccess(response, "Unable to load predefined route.");
+  assertMutationSuccess(response, translateCurrent("predefinedRoutes.errors.loadFailed"));
   return predefinedRouteSchema.parse(unwrapApiData(response));
 }
 
 export async function createPredefinedRoute(values: PredefinedRouteFormValues): Promise<PredefinedRoute> {
   const response = await client().post<ApiSuccessEnvelope<unknown>>(endpoint, buildPayload(values));
-  assertMutationSuccess(response, "Unable to create predefined route.");
+  assertMutationSuccess(response, translateCurrent("predefinedRoutes.errors.createFailed"));
   return predefinedRouteSchema.parse(unwrapApiData(response));
 }
 
 export async function updatePredefinedRoute(id: number, values: PredefinedRouteFormValues): Promise<PredefinedRoute> {
   const path = detailPath(id);
   const response = await client().put<ApiSuccessEnvelope<unknown>>(path, buildPayload(values));
-  assertMutationSuccess(response, "Unable to update predefined route.");
+  assertMutationSuccess(response, translateCurrent("predefinedRoutes.errors.updateFailed"));
   return predefinedRouteSchema.parse(unwrapApiData(response));
 }
 
 export async function deletePredefinedRoute(id: number): Promise<void> {
   const response = await client().delete<ApiSuccessEnvelope<unknown>>(detailPath(id));
-  assertMutationSuccess(response, "Unable to delete predefined route.");
+  assertMutationSuccess(response, translateCurrent("predefinedRoutes.errors.deleteFailed"));
 }
 
 /** Every predefined route (all pages), for dropdowns such as the appointments filter. */
@@ -58,7 +59,7 @@ export async function fetchAllPredefinedRoutes(signal?: AbortSignal): Promise<Pr
   const items: PredefinedRoute[] = [];
   for (let page = 1; ; page++) {
     signal?.throwIfAborted();
-    if (page > 100) throw new Error("Predefined route catalog exceeds the supported lookup size.");
+    if (page > 100) throw new Error(translateCurrent("predefinedRoutes.errors.catalogTooLarge"));
     const result = await fetchPredefinedRoutesPage({ page, limit: 200, sort: "name:asc" }, signal);
     signal?.throwIfAborted();
     items.push(...result.items);

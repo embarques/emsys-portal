@@ -76,8 +76,10 @@ function usePreviewLabels(values: InvoiceFormValues) {
 
   const containerLabel = useMemo(() => {
     const container = containers.find((entry) => String(entry.id) === values.containerId);
-    return container ? formatContainerLabel(container) : values.containerId || "—";
-  }, [containers, values.containerId]);
+    return container
+      ? formatContainerLabel(container)
+      : values.containerId || t("common.empty.dash");
+  }, [containers, t, values.containerId]);
 
   const pickupLabel = useMemo(() => {
     if (!values.pickupId) return t("invoices.form.placeholders.noPickupReference");
@@ -166,10 +168,11 @@ function ReviewDetail({ label, children, className = "" }: {
 }
 
 function PreviewField({ label, value }: { label: string; value: string }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium">{value || "—"}</p>
+      <p className="text-sm font-medium">{value || t("common.empty.dash")}</p>
     </div>
   );
 }
@@ -769,67 +772,74 @@ export function InvoiceFormPreviewStep({
       {errorMessage ? (
         <InvoiceWizardNotice tone="error" message={errorMessage} className="rounded-lg border" />
       ) : null}
-      <FormSection icon={Eye} title="Review before saving">
+      <FormSection icon={Eye} title={t("invoices.form.preview.reviewTitle")}>
         <p className="text-sm text-muted-foreground">
-          Confirm the invoice details below. Use Back to make changes.
+          {t("invoices.form.preview.reviewHint")}
         </p>
       </FormSection>
 
-      <FormSection icon={Receipt} title="Invoice details">
+      <FormSection icon={Receipt} title={t("invoices.form.sections.invoiceDetails")}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <PreviewField label="Date" value={values.date} />
-          <PreviewField label="Invoice number" value={values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber} />
+          <PreviewField label={t("invoices.form.fields.date")} value={values.date} />
+          <PreviewField label={t("invoices.form.fields.invoiceNumber")} value={values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber} />
           <PreviewField label={pickupFieldLabel} value={pickupLabel} />
-          <PreviewField label="Container" value={containerLabel} />
+          <PreviewField label={t("invoices.form.fields.container")} value={containerLabel} />
           <PreviewField label={t("invoices.form.fields.paymentLocation")} value={getPaymentLocationLabel(values.paymentLocation)} />
           <PreviewField label={t("invoices.form.fields.pickupSource")} value={pickupSourceLabel} />
           <PreviewField label={pickupAssignmentFieldLabel} value={pickupAssignmentLabel} />
         </div>
       </FormSection>
 
-      <FormSection icon={Users} title="Sender & receiver">
+      <FormSection icon={Users} title={t("invoices.form.sections.senderReceiver")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 rounded-lg border bg-background p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sender</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("invoices.form.fields.sender")}
+            </p>
             {values.sender ? (
               <CustomerContactSummary customer={values.sender} />
             ) : (
-              <p className="text-sm text-muted-foreground">Not selected</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.notSelected")}</p>
             )}
           </div>
           <div className="space-y-2 rounded-lg border bg-background p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Receiver</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("invoices.form.fields.receiver")}
+            </p>
             {values.receiver ? (
               <CustomerContactSummary customer={values.receiver} />
             ) : (
-              <p className="text-sm text-muted-foreground">No receiver</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noReceiver")}</p>
             )}
           </div>
         </div>
       </FormSection>
 
-      <FormSection icon={ClipboardList} title="Description">
+      <FormSection icon={ClipboardList} title={t("invoices.form.sections.description")}>
         {lineItemRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No line items</p>
+          <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
         ) : (
           <div className="overflow-hidden rounded-lg border">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Item</th>
-                  <th className="px-3 py-2 font-medium">Qty</th>
-                  <th className="px-3 py-2 font-medium">Price</th>
-                  <th className="px-3 py-2 font-medium">Total</th>
+                  <th className="px-3 py-2 font-medium">{t("invoices.wizard.review.table.item")}</th>
+                  <th className="px-3 py-2 font-medium">{t("invoices.wizard.review.table.qty")}</th>
+                  <th className="px-3 py-2 font-medium">{t("invoices.form.preview.price")}</th>
+                  <th className="px-3 py-2 font-medium">{t("invoices.form.totals.total")}</th>
                 </tr>
               </thead>
               <tbody>
                 {lineItemRows.map((item) => {
                   const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                  const label = item.itemName.trim() || catalogItem?.description || "Line item";
+                  const label =
+                    item.itemName.trim() ||
+                    catalogItem?.description ||
+                    t("invoices.wizard.summary.lineItem");
                   return (
                     <tr key={item.id} className="border-b last:border-b-0">
                       <td className="px-3 py-2">{label}</td>
-                      <td className="px-3 py-2">{item.quantity || "—"}</td>
+                      <td className="px-3 py-2">{item.quantity || t("common.empty.dash")}</td>
                       <td className="px-3 py-2">{formatInvoiceMoney(Number(item.unitPrice) || 0)}</td>
                       <td className="px-3 py-2 font-medium">{formatInvoiceMoney(resolveLineTotal(item))}</td>
                     </tr>
@@ -841,22 +851,22 @@ export function InvoiceFormPreviewStep({
         )}
       </FormSection>
 
-      <FormSection icon={Wallet} title="Totals">
+      <FormSection icon={Wallet} title={t("invoices.form.sections.totals")}>
         <div className="space-y-2 rounded-lg border bg-background p-4 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Total</span>
+            <span className="text-muted-foreground">{t("invoices.form.totals.total")}</span>
             <span className="font-medium">{formatInvoiceMoney(subtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Discount</span>
+            <span className="text-muted-foreground">{t("invoices.form.totals.discount")}</span>
             <span className="font-medium">−{formatInvoiceMoney(discount)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Paid</span>
+            <span className="text-muted-foreground">{t("invoices.form.totals.paid")}</span>
             <span className="font-medium">−{formatInvoiceMoney(amountPaid)}</span>
           </div>
           <div className="flex justify-between border-t pt-2 text-base font-semibold">
-            <span>Balance</span>
+            <span>{t("invoices.form.totals.balance")}</span>
             <span>{formatInvoiceMoney(balance)}</span>
           </div>
         </div>

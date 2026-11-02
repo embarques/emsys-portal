@@ -1,3 +1,5 @@
+import type { TranslateFn } from "@/lib/feedback/messages";
+
 const EXACT_LABELS: Record<string, string> = {
   uid: "UID",
   vin: "VIN",
@@ -109,6 +111,52 @@ const PARENT_LABELS: Record<string, string> = {
   assignment: "Assignment",
 };
 
+type ColumnLabelResolver = {
+  exact: (key: string) => string | undefined;
+  parent: (key: string) => string | undefined;
+  word: (key: string) => string | undefined;
+  idSuffix: (label: string) => string;
+  nested: (parent: string, child: string) => string;
+};
+
+function readLabel(labels: Record<string, string>, key: string): string | undefined {
+  return Object.hasOwn(labels, key) ? labels[key] : undefined;
+}
+
+const ENGLISH_RESOLVER: ColumnLabelResolver = {
+  exact: (key) => readLabel(EXACT_LABELS, key),
+  parent: (key) => readLabel(PARENT_LABELS, key),
+  word: () => undefined,
+  idSuffix: (label) => `${label} ID`,
+  nested: (parent, child) => `${parent} ${child}`,
+};
+
+/** Lowercase the first letter unless the label starts with an acronym (`ID de…`, `SKU`). */
+export function lowerFirstLetter(label: string): string {
+  const second = label.charAt(1);
+  if (second && second === second.toUpperCase() && second !== second.toLowerCase()) return label;
+  return label.charAt(0).toLowerCase() + label.slice(1);
+}
+
+/** Resolves labels from `tableFields.columns.*`, falling back to the English maps. */
+function createLocalizedResolver(t: TranslateFn): ColumnLabelResolver {
+  function lookup(group: "exact" | "parent" | "words", key: string, english?: Record<string, string>) {
+    if (english && !Object.hasOwn(english, key)) return undefined;
+    const catalogKey = `tableFields.columns.${group}.${key}`;
+    const localized = t(catalogKey);
+    return localized === catalogKey ? english?.[key] : localized;
+  }
+
+  return {
+    exact: (key) => lookup("exact", key, EXACT_LABELS),
+    parent: (key) => lookup("parent", key, PARENT_LABELS),
+    word: (key) => lookup("words", key),
+    idSuffix: (label) => t("tableFields.columns.idSuffix", { label, labelLower: lowerFirstLetter(label) }),
+    nested: (parent, child) =>
+      t("tableFields.columns.nested", { parent, child, parentLower: lowerFirstLetter(parent) }),
+  };
+}
+
 function isPresentableLabel(label: string): boolean {
   if (label.includes(" ")) return true;
   if (/^[A-Z0-9]{2,}$/.test(label)) return true;
@@ -141,33 +189,42 @@ function splitIdentifier(value: string): string {
     .trim();
 }
 
-function formatIdSuffixLabel(prefix: string): string {
-  const normalized = prefix.trim();
-  if (!normalized) return "ID";
-  if (PARENT_LABELS[normalized]) return `${PARENT_LABELS[normalized]} ID`;
-  return `${titleCaseWords(splitIdentifier(normalized))} ID`;
+function formatWord(value: string, resolver: ColumnLabelResolver): string {
+  return resolver.word(value) ?? titleCaseWords(splitIdentifier(value));
 }
 
-function formatSegment(segment: string): string {
-  if (EXACT_LABELS[segment]) return EXACT_LABELS[segment];
+function formatIdSuffixLabel(prefix: string, resolver: ColumnLabelResolver): string {
+  const normalized = prefix.trim();
+  if (!normalized) return "ID";
+  return resolver.idSuffix(resolver.parent(normalized) ?? formatWord(normalized, resolver));
+}
+
+function formatSegment(segment: string, resolver: ColumnLabelResolver): string {
+  const exact = resolver.exact(segment);
+  if (exact) return exact;
 
   if (segment.endsWith("Id") && segment.length > 2) {
-    return formatIdSuffixLabel(segment.slice(0, -2));
+    return formatIdSuffixLabel(segment.slice(0, -2), resolver);
   }
 
   if (segment.endsWith("ID") && segment.length > 2) {
-    return formatIdSuffixLabel(segment.slice(0, -2));
+    return formatIdSuffixLabel(segment.slice(0, -2), resolver);
   }
 
-  return titleCaseWords(splitIdentifier(segment));
+  return formatWord(segment, resolver);
 }
 
-/** Converts API-style column ids/labels into readable table header text. */
-export function formatTableColumnLabel(label: string): string {
+/**
+ * Converts API-style column ids/labels into readable table header text.
+ * Pass `t` to localize known ids via `tableFields.columns.*`; already-readable labels are returned as-is.
+ */
+export function formatTableColumnLabel(label: string, t?: TranslateFn): string {
+  const resolver = t ? createLocalizedResolver(t) : ENGLISH_RESOLVER;
   const trimmed = label.trim();
   if (!trimmed) return trimmed;
   if (isPresentableLabel(trimmed)) return trimmed;
-  if (EXACT_LABELS[trimmed]) return EXACT_LABELS[trimmed];
+  const exact = resolver.exact(trimmed);
+  if (exact) return exact;
 
   if (trimmed.includes(".")) {
     const segments = trimmed.split(".");
@@ -175,28 +232,26 @@ export function formatTableColumnLabel(label: string): string {
     if (segments[segments.length - 1] === "id" && segments.length >= 2) {
       const parentSegments = segments.slice(0, -1);
       const parentLabel =
-        parentSegments.length === 1 && PARENT_LABELS[parentSegments[0]!]
-          ? PARENT_LABELS[parentSegments[0]!]
-          : parentSegments.map((segment) => formatSegment(segment)).join(" ");
-      return `${parentLabel} ID`;
+        (parentSegments.length === 1 ? resolver.parent(parentSegments[0]!) : undefined) ??
+        parentSegments
+          .map((segment) => formatSegment(segment, resolver))
+          .reduce((parent, child) => resolver.nested(parent, child));
+      return resolver.idSuffix(parentLabel);
     }
 
     const formatted = segments.map((segment, index) => {
-      if (index === 0 && segments.length > 1 && PARENT_LABELS[segment]) {
-        return PARENT_LABELS[segment];
-      }
-      return formatSegment(segment);
+      const parent = index === 0 && segments.length > 1 ? resolver.parent(segment) : undefined;
+      return parent ?? formatSegment(segment, resolver);
     });
 
-    if (segments.length === 2 && PARENT_LABELS[segments[0]!]) {
-      const child = formatSegment(segments[1]!);
-      const childLower = child.toLowerCase();
-      const parentLower = PARENT_LABELS[segments[0]!]!.toLowerCase();
-      if (childLower.startsWith(parentLower)) return child;
+    const twoSegmentParent = segments.length === 2 ? resolver.parent(segments[0]!) : undefined;
+    if (twoSegmentParent) {
+      const child = formatSegment(segments[1]!, resolver);
+      if (child.toLowerCase().startsWith(twoSegmentParent.toLowerCase())) return child;
     }
 
-    return formatted.join(" ");
+    return formatted.reduce((parent, child) => resolver.nested(parent, child));
   }
 
-  return formatSegment(trimmed);
+  return formatSegment(trimmed, resolver);
 }

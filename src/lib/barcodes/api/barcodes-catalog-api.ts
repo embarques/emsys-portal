@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import {
@@ -102,7 +103,7 @@ function resolveStatusRef(
   const parsedId = Number(statusId);
   const option = options.find((entry) => entry.id === parsedId);
   if (!option) {
-    throw new Error("Select a valid status.");
+    throw new Error(translateCurrent("barcodes.errors.selectValidStatus"));
   }
   return { id: option.id, name: option.name };
 }
@@ -116,7 +117,7 @@ function resolveContainerRef(
 
   const parsedId = Number(trimmed);
   if (!Number.isFinite(parsedId) || parsedId <= 0) {
-    throw new Error("Select a valid container.");
+    throw new Error(translateCurrent("barcodes.errors.selectValidContainer"));
   }
 
   const container = containers.find((entry) => entry.id === parsedId);
@@ -254,7 +255,7 @@ export async function deleteBarcode(barcodeId: string | number): Promise<void> {
     `${API_ENDPOINTS.BARCODES}/${numericId}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete barcode.");
+  assertMutationSuccess(response, translateCurrent("barcodes.errors.deleteFailed"));
 }
 
 export async function deleteBarcodes(

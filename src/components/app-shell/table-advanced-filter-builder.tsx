@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/table/filter-builder";
 import { getFilterOperatorLabels, getTableFilterJoinOptions } from "@/lib/table/filter-labels";
 import { useTableAdvancedFilterPanel } from "@/lib/table/hooks/use-table-advanced-filter-panel";
+import { localizeTableFilterFields } from "@/lib/table/translate-field-label";
 import { cn } from "@/lib/utils";
 
 type TableAdvancedFilterBuilderProps = {
@@ -44,6 +46,7 @@ export function TableAdvancedFilterBuilder({
   const { t } = useTranslation();
   const filterOperatorLabels = getFilterOperatorLabels(t);
   const filterJoinOptions = getTableFilterJoinOptions(t);
+  const displayFields = useMemo(() => localizeTableFilterFields(fields, t), [fields, t]);
 
   useTableAdvancedFilterPanel({
     rows,
@@ -54,7 +57,12 @@ export function TableAdvancedFilterBuilder({
 
   if (fields.length === 0) return null;
 
-  const filterLogicPreview = formatTableFilterRowsLogic(rows, fields, dynamicOptions);
+  const filterLogicPreview = formatTableFilterRowsLogic(rows, displayFields, dynamicOptions, {
+    operators: filterOperatorLabels,
+    inRange: t("common.table.inRange"),
+    and: t("common.filterOperators.and"),
+    or: t("common.filterOperators.or"),
+  });
 
   function updateRow(rowId: string, patch: Partial<TableFilterRowState>) {
     onChange(updateTableFilterRow(rows, rowId, patch, fields));
@@ -70,7 +78,8 @@ export function TableAdvancedFilterBuilder({
       </p>
 
       {rows.map((row, index) => {
-        const definition = row.field ? resolveFilterFieldDefinition(fields, row.field) : undefined;
+        const definition = row.field ? resolveFilterFieldDefinition(displayFields, row.field) : undefined;
+        const ariaIndex = { index: index + 1 };
         const operators = definition?.operators ?? [];
         const valueOptions = resolveFilterRowOptions(definition, dynamicOptions);
         const usesRange = definition?.valueType === "range";
@@ -86,7 +95,7 @@ export function TableAdvancedFilterBuilder({
               </span>
             ) : (
               <TableFilterSelect
-                aria-label={`Filter join ${index + 1}`}
+                aria-label={t("tableFields.filter.joinAria", ariaIndex)}
                 className="w-24 shrink-0 flex-none text-xs font-semibold uppercase tracking-wide"
                 searchable={false}
                 value={row.join}
@@ -98,13 +107,13 @@ export function TableAdvancedFilterBuilder({
             )}
 
             <TableFilterSelect
-              aria-label={`Filter field ${index + 1}`}
+              aria-label={t("tableFields.filter.fieldAria", ariaIndex)}
               className="w-full shrink-0 flex-none"
               fitToOptions
               value={row.field}
               placeholder={t("common.table.field")}
               mutedWhenEmpty
-              options={fields.map((field) => ({ value: field.field, label: field.label }))}
+              options={displayFields.map((field) => ({ value: field.field, label: field.label }))}
               onChange={(value) => updateRow(row.id, { field: value })}
             />
 
@@ -114,7 +123,7 @@ export function TableAdvancedFilterBuilder({
               </span>
             ) : (
               <TableFilterSelect
-                aria-label={`Filter condition ${index + 1}`}
+                aria-label={t("tableFields.filter.conditionAria", ariaIndex)}
                 className="w-full shrink-0 flex-none"
                 fitToOptions
                 value={row.operator}
@@ -131,7 +140,7 @@ export function TableAdvancedFilterBuilder({
 
             {usesSelect ? (
               <TableFilterSelect
-                aria-label={`Filter value ${index + 1}`}
+                aria-label={t("tableFields.filter.valueAria", ariaIndex)}
                 className="min-w-0 flex-1"
                 value={row.value}
                 placeholder={t("common.table.value")}
@@ -142,7 +151,7 @@ export function TableAdvancedFilterBuilder({
               />
             ) : (
               <Input
-                aria-label={`Filter value ${index + 1}`}
+                aria-label={t("tableFields.filter.valueAria", ariaIndex)}
                 className="h-9 min-w-[12rem] flex-1 shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
                 value={row.value}
                 disabled={!canPickValue}
@@ -156,7 +165,7 @@ export function TableAdvancedFilterBuilder({
               variant="ghost"
               size="icon"
               className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-              aria-label={`Remove filter ${index + 1}`}
+              aria-label={t("tableFields.filter.removeAria", ariaIndex)}
               onClick={() => onChange(removeTableFilterRow(rows, row.id))}
             >
               <X className="h-4 w-4" />

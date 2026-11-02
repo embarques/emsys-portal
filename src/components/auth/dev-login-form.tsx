@@ -8,8 +8,10 @@ import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { readDevEnvDefaults } from "@/lib/auth/utils/dev-auth";
+import { useTranslation } from "@/lib/i18n";
 
 export function DevLoginForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { signInWithDevSession, loading, isAuthenticated } = useAuth();
   const envDefaults = readDevEnvDefaults();
@@ -44,7 +46,7 @@ export function DevLoginForm() {
       router.replace("/");
     } catch (err: unknown) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Dev sign-in failed.");
+      setError(err instanceof Error ? err.message : t("shell.devAuth.signInFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -64,16 +66,16 @@ export function DevLoginForm() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400">
             <Wrench className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Dev session login</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">{t("shell.devAuth.title")}</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Auth bypass is enabled. Sign in with API credentials.
+            {t("shell.devAuth.description")}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="dev-company-id" className="text-sm font-medium text-slate-200">
-              Company ID
+              {t("shell.devAuth.companyId")}
             </label>
             <input
               id="dev-company-id"
@@ -90,7 +92,7 @@ export function DevLoginForm() {
 
           <div className="space-y-2">
             <label htmlFor="dev-email" className="text-sm font-medium text-slate-200">
-              Email
+              {t("shell.auth.email")}
             </label>
             <input
               id="dev-email"
@@ -106,7 +108,7 @@ export function DevLoginForm() {
 
           <div className="space-y-2">
             <label htmlFor="dev-name" className="text-sm font-medium text-slate-200">
-              Name
+              {t("shell.devAuth.name")}
             </label>
             <input
               id="dev-name"
@@ -114,14 +116,14 @@ export function DevLoginForm() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none ring-primary/30 transition focus:ring-2"
-              placeholder="Optional"
+              placeholder={t("shell.devAuth.optional")}
               disabled={busy}
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="dev-password" className="text-sm font-medium text-slate-200">
-              Password
+              {t("shell.auth.password")}
             </label>
             <div className="relative">
               <input
@@ -138,7 +140,7 @@ export function DevLoginForm() {
                 type="button"
                 onClick={() => setShowPassword((value) => !value)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("shell.auth.hidePassword") : t("shell.auth.showPassword")}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -152,12 +154,12 @@ export function DevLoginForm() {
           ) : null}
 
           <Button type="submit" className="sticky bottom-0 z-10 w-full" disabled={busy}>
-            {busy ? "Signing in..." : "Sign in"}
+            {busy ? t("shell.auth.signingIn") : t("shell.auth.signIn")}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-xs text-amber-300/80">
-          Development bypass only. Set NEXT_PUBLIC_BYPASS_AUTH=false for Firebase login.
+          {t("shell.devAuth.footer")}
         </p>
       </div>
     </div>

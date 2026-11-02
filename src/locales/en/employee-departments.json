@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "loadFailed": "Unable to load departments.",
+    "createFailed": "Unable to create department.",
+    "updateFailed": "Unable to update department.",
+    "deleteFailed": "Unable to delete department."
+  },
   "title": "Employee departments",
   "entity": "Department",
   "description": "Manage the departments available in employee forms.",

@@ -22,7 +22,7 @@ before(async () => {
         "@/lib/layout/hooks/use-workspace-tabs": path.resolve(
           "tests/browser/fixtures/documents-navigation.ts",
         ),
-        "@/lib/i18n": path.resolve("tests/browser/fixtures/documents-i18n.ts"),
+        "@/lib/i18n$": path.resolve("tests/browser/fixtures/documents-i18n.ts"),
         "@/lib/auth/hooks/use-auth": path.resolve(
           "tests/browser/fixtures/documents-auth.ts",
         ),

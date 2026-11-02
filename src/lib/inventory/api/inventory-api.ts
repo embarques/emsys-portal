@@ -1,5 +1,7 @@
 import type { AxiosRequestConfig } from "axios";
 
+import { translateCurrent } from "@/lib/i18n/translate-current";
+
 import { INVENTORY_DISPATCH_API_TABLE_FIELDS } from "@/lib/inventory/dispatches/table-fields";
 import { INVENTORY_RECEIPT_API_TABLE_FIELDS } from "@/lib/inventory/receipts/table-fields";
 import { INVENTORY_SUPPLIER_API_TABLE_FIELDS } from "@/lib/inventory/suppliers/table-fields";
@@ -157,7 +159,7 @@ function parseInventoryPathId(id: string): string {
 /** Swagger requires `If-Match` with the current entity version on PATCH, post and cancel. */
 export function inventoryIfMatchHeaders(version: number | null): Record<string, string> {
   if (version == null || !Number.isSafeInteger(version) || version < 0) {
-    throw new Error("Reload this record to get its current version, then try again.");
+    throw new Error(translateCurrent("inventory.operations.errors.versionRequired"));
   }
   return { "If-Match": String(version) };
 }
@@ -614,7 +616,7 @@ export function fetchInventoryItems(params: InventoryListParams = {}): Promise<P
 }
 
 export function fetchInventoryItemById(itemId: string): Promise<InventoryItem> {
-  return fetchById(API_ENDPOINTS.INVENTORY_ITEMS, itemId, normalizeInventoryItem, "Inventory item not found.");
+  return fetchById(API_ENDPOINTS.INVENTORY_ITEMS, itemId, normalizeInventoryItem, translateCurrent("inventory.errors.api.itemNotFound"));
 }
 
 export async function createInventoryItem(values: InventoryFormValues): Promise<InventoryItem> {
@@ -623,7 +625,7 @@ export async function createInventoryItem(values: InventoryFormValues): Promise<
     { ...requirePayload(buildInventoryItemPayload(values)), isActive: true },
     normalizeInventoryItem,
     fetchInventoryItemById,
-    "Unable to create inventory item.",
+    translateCurrent("inventory.errors.api.createItemFailed"),
   );
 }
 
@@ -638,7 +640,7 @@ export async function updateInventoryItem(
     { ...requirePayload(buildInventoryItemPayload(values)), isActive: item.isActive },
     normalizeInventoryItem,
     fetchInventoryItemById,
-    "Unable to update inventory item.",
+    translateCurrent("inventory.errors.api.updateItemFailed"),
   );
 }
 
@@ -652,7 +654,7 @@ export function setInventoryItemsActive(
     items,
     isActive,
     (item) => requirePayload(buildInventoryItemPayload(inventoryItemToFormValues(item))),
-    "Unable to update inventory item.",
+    translateCurrent("inventory.errors.api.updateItemFailed"),
   );
 }
 
@@ -691,7 +693,7 @@ export function fetchInventoryHolders(params: InventoryListParams = {}): Promise
 }
 
 export function fetchInventoryHolderById(holderId: string): Promise<InventoryHolder> {
-  return fetchById(API_ENDPOINTS.INVENTORY_HOLDERS, holderId, normalizeInventoryHolder, "Inventory holder not found.");
+  return fetchById(API_ENDPOINTS.INVENTORY_HOLDERS, holderId, normalizeInventoryHolder, translateCurrent("inventory.errors.api.holderNotFound"));
 }
 
 export async function createInventoryHolder(values: InventoryHolderFormValues): Promise<InventoryHolder> {
@@ -700,7 +702,7 @@ export async function createInventoryHolder(values: InventoryHolderFormValues): 
     requirePayload(buildInventoryHolderPayload(values)),
     normalizeInventoryHolder,
     fetchInventoryHolderById,
-    "Unable to create inventory holder.",
+    translateCurrent("inventory.errors.api.createHolderFailed"),
   );
 }
 
@@ -727,7 +729,7 @@ export function fetchInventoryReceipts(params: InventoryListParams = {}): Promis
 }
 
 export function fetchInventoryReceiptById(receiptId: string): Promise<InventoryReceipt> {
-  return fetchById(API_ENDPOINTS.INVENTORY_RECEIPTS, receiptId, normalizeInventoryReceipt, "Inventory receipt not found.");
+  return fetchById(API_ENDPOINTS.INVENTORY_RECEIPTS, receiptId, normalizeInventoryReceipt, translateCurrent("inventory.errors.api.receiptNotFound"));
 }
 
 /** Creates a DRAFT receipt; stock changes only when it is posted. */
@@ -737,7 +739,7 @@ export async function createInventoryReceipt(values: ReceiptFormValues): Promise
     requirePayload(buildInventoryReceiptPayload(values)),
     normalizeInventoryReceipt,
     fetchInventoryReceiptById,
-    "Unable to create inventory receipt.",
+    translateCurrent("inventory.errors.api.createReceiptFailed"),
   );
 }
 
@@ -748,24 +750,24 @@ export async function updateInventoryReceipt(receipt: InventoryVersionedRef, val
     requirePayload(buildInventoryReceiptPayload(values)),
     normalizeInventoryReceipt,
     fetchInventoryReceiptById,
-    "Unable to update inventory receipt.",
+    translateCurrent("inventory.errors.api.updateReceiptFailed"),
   );
 }
 
 export function postInventoryReceipt(receipt: InventoryVersionedRef): Promise<void> {
-  return runDocumentCommand(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", "post", receipt, "Unable to post inventory receipt.");
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", "post", receipt, translateCurrent("inventory.errors.api.postReceiptFailed"));
 }
 
 export function cancelInventoryReceipt(receipt: InventoryVersionedRef): Promise<void> {
-  return runDocumentCommand(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", "cancel", receipt, "Unable to cancel inventory receipt.");
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", "cancel", receipt, translateCurrent("inventory.errors.api.cancelReceiptFailed"));
 }
 
 export function confirmInventoryReceipt({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
-  return confirmDocument(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", ref, party, text, "Unable to confirm inventory receipt.");
+  return confirmDocument(API_ENDPOINTS.INVENTORY_RECEIPTS, "receipt", ref, party, text, translateCurrent("inventory.errors.api.confirmReceiptFailed"));
 }
 
 export function rejectInventoryReceipt({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
-  return rejectDocument(API_ENDPOINTS.INVENTORY_RECEIPTS, ref, party, text, "Unable to reject inventory receipt.");
+  return rejectDocument(API_ENDPOINTS.INVENTORY_RECEIPTS, ref, party, text, translateCurrent("inventory.errors.api.rejectReceiptFailed"));
 }
 
 /* ------------------------------------------------------------ Dispatches */
@@ -788,7 +790,7 @@ export function fetchInventoryDispatchById(dispatchId: string): Promise<Inventor
     API_ENDPOINTS.INVENTORY_DISPATCHES,
     dispatchId,
     normalizeInventoryDispatch,
-    "Inventory dispatch not found.",
+    translateCurrent("inventory.errors.api.dispatchNotFound"),
   );
 }
 
@@ -799,7 +801,7 @@ export async function createInventoryDispatch(values: DispatchFormValues): Promi
     requirePayload(buildInventoryDispatchPayload(values)),
     normalizeInventoryDispatch,
     fetchInventoryDispatchById,
-    "Unable to create inventory dispatch.",
+    translateCurrent("inventory.errors.api.createDispatchFailed"),
   );
 }
 
@@ -813,24 +815,24 @@ export async function updateInventoryDispatch(
     requirePayload(buildInventoryDispatchPayload(values)),
     normalizeInventoryDispatch,
     fetchInventoryDispatchById,
-    "Unable to update inventory dispatch.",
+    translateCurrent("inventory.errors.api.updateDispatchFailed"),
   );
 }
 
 export function postInventoryDispatch(dispatch: InventoryVersionedRef): Promise<void> {
-  return runDocumentCommand(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", "post", dispatch, "Unable to post inventory dispatch.");
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", "post", dispatch, translateCurrent("inventory.errors.api.postDispatchFailed"));
 }
 
 export function cancelInventoryDispatch(dispatch: InventoryVersionedRef): Promise<void> {
-  return runDocumentCommand(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", "cancel", dispatch, "Unable to cancel inventory dispatch.");
+  return runDocumentCommand(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", "cancel", dispatch, translateCurrent("inventory.errors.api.cancelDispatchFailed"));
 }
 
 export function confirmInventoryDispatch({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
-  return confirmDocument(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", ref, party, text, "Unable to confirm inventory dispatch.");
+  return confirmDocument(API_ENDPOINTS.INVENTORY_DISPATCHES, "dispatch", ref, party, text, translateCurrent("inventory.errors.api.confirmDispatchFailed"));
 }
 
 export function rejectInventoryDispatch({ ref, party, text }: InventoryConfirmationCommand): Promise<void> {
-  return rejectDocument(API_ENDPOINTS.INVENTORY_DISPATCHES, ref, party, text, "Unable to reject inventory dispatch.");
+  return rejectDocument(API_ENDPOINTS.INVENTORY_DISPATCHES, ref, party, text, translateCurrent("inventory.errors.api.rejectDispatchFailed"));
 }
 
 /* ----------------------------------------------------------- Adjustments */
@@ -844,10 +846,10 @@ export async function createAndPostInventoryAdjustment(values: AdjustmentFormVal
     API_ENDPOINTS.INVENTORY_ADJUSTMENTS,
     requirePayload(buildInventoryAdjustmentPayload(values)),
   );
-  assertMutationSuccess(response, "Unable to create stock adjustment.");
+  assertMutationSuccess(response, translateCurrent("inventory.errors.api.createAdjustmentFailed"));
   const created = asRecord(response.data);
   const id = readStringId(created?.id) ?? extractCreatedId(response);
-  if (!id) throw new Error("Unable to create stock adjustment.");
+  if (!id) throw new Error(translateCurrent("inventory.errors.api.createAdjustmentFailed"));
   let version = readVersion(created?.version);
   if (version == null) {
     const fresh = asRecord(unwrapRecord(await apiClient.get<unknown>(`${API_ENDPOINTS.INVENTORY_ADJUSTMENTS}/${parseInventoryPathId(id)}`)));
@@ -858,7 +860,7 @@ export async function createAndPostInventoryAdjustment(values: AdjustmentFormVal
     "adjustment",
     "post",
     { id, version },
-    "Unable to post stock adjustment.",
+    translateCurrent("inventory.errors.api.postAdjustmentFailed"),
   );
 }
 
@@ -882,7 +884,7 @@ export function fetchInventorySupplierById(supplierId: string): Promise<Inventor
     API_ENDPOINTS.INVENTORY_SUPPLIERS,
     supplierId,
     normalizeInventorySupplier,
-    "Inventory supplier not found.",
+    translateCurrent("inventory.errors.api.supplierNotFound"),
   );
 }
 
@@ -892,7 +894,7 @@ export async function createInventorySupplier(values: SupplierFormValues): Promi
     { ...requirePayload(buildInventorySupplierPayload(values)), isActive: true },
     normalizeInventorySupplier,
     fetchInventorySupplierById,
-    "Unable to create inventory supplier.",
+    translateCurrent("inventory.errors.api.createSupplierFailed"),
   );
 }
 
@@ -907,7 +909,7 @@ export async function updateInventorySupplier(
     { ...requirePayload(buildInventorySupplierPayload(values)), isActive: supplier.isActive },
     normalizeInventorySupplier,
     fetchInventorySupplierById,
-    "Unable to update inventory supplier.",
+    translateCurrent("inventory.errors.api.updateSupplierFailed"),
   );
 }
 
@@ -921,6 +923,6 @@ export function setInventorySuppliersActive(
     suppliers,
     isActive,
     (supplier) => requirePayload(buildInventorySupplierPayload(supplierToFormValues(supplier))),
-    "Unable to update inventory supplier.",
+    translateCurrent("inventory.errors.api.updateSupplierFailed"),
   );
 }

@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 import { fetchCatalogPage, type CatalogPageParams } from "@/lib/api/fetch-catalog-page";
 import { NAMED_CATALOG_BAR_OR_SEARCH_FIELDS, NAMED_CATALOG_TABLE_FILTER_FIELDS, expandNamedCatalogFilterNode } from "@/lib/table/named-catalog-filter-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
@@ -15,7 +16,7 @@ function detailPath(id: number) {
 }
 export async function fetchEmployeeTitles(page = 1, limit = 40): Promise<PaginatedResult<EmployeeTitle>> {
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(`${endpoint}?page=${page}&limit=${limit}&sort=name:asc`);
-  assertMutationSuccess(response, "Unable to load titles.");
+  assertMutationSuccess(response, translateCurrent("employeeTitles.errors.loadFailed"));
   const items = titleSchema.array().parse(response.data ?? []);
   return { items, page: response.page ?? page, resultsPerPage: response.resultsPerPage ?? items.length, total: response.total ?? items.length };
 }
@@ -33,17 +34,17 @@ export async function fetchEmployeeTitle(id: number): Promise<EmployeeTitle> {
 }
 export async function createEmployeeTitle(values: EmployeeTitleFormValues): Promise<EmployeeTitle> {
   const response = await apiClient.post<ApiSuccessEnvelope<unknown>>(endpoint, titleFormSchema.parse(values));
-  assertMutationSuccess(response, "Unable to create title.");
+  assertMutationSuccess(response, translateCurrent("employeeTitles.errors.createFailed"));
   return titleSchema.parse(unwrapApiData(response));
 }
 export async function updateEmployeeTitle(id: number, values: EmployeeTitleFormValues): Promise<EmployeeTitle> {
   const response = await apiClient.put<ApiSuccessEnvelope<unknown>>(detailPath(id), titleFormSchema.parse(values));
-  assertMutationSuccess(response, "Unable to update title.");
+  assertMutationSuccess(response, translateCurrent("employeeTitles.errors.updateFailed"));
   return titleSchema.parse(unwrapApiData(response));
 }
 export async function deleteEmployeeTitle(id: number): Promise<void> {
   const response = await apiClient.delete<ApiSuccessEnvelope<unknown>>(detailPath(id));
-  assertMutationSuccess(response, "Unable to delete title.");
+  assertMutationSuccess(response, translateCurrent("employeeTitles.errors.deleteFailed"));
 }
 
 /** One server page for the directory table (search + filters applied by the API). */

@@ -479,6 +479,32 @@
     "adjustment": "Adjustment"
   },
   "errors": {
+    "api": {
+      "itemNotFound": "Inventory item not found.",
+      "createItemFailed": "Unable to create inventory item.",
+      "updateItemFailed": "Unable to update inventory item.",
+      "holderNotFound": "Inventory holder not found.",
+      "createHolderFailed": "Unable to create inventory holder.",
+      "receiptNotFound": "Inventory receipt not found.",
+      "createReceiptFailed": "Unable to create inventory receipt.",
+      "updateReceiptFailed": "Unable to update inventory receipt.",
+      "postReceiptFailed": "Unable to post inventory receipt.",
+      "cancelReceiptFailed": "Unable to cancel inventory receipt.",
+      "confirmReceiptFailed": "Unable to confirm inventory receipt.",
+      "rejectReceiptFailed": "Unable to reject inventory receipt.",
+      "dispatchNotFound": "Inventory dispatch not found.",
+      "createDispatchFailed": "Unable to create inventory dispatch.",
+      "updateDispatchFailed": "Unable to update inventory dispatch.",
+      "postDispatchFailed": "Unable to post inventory dispatch.",
+      "cancelDispatchFailed": "Unable to cancel inventory dispatch.",
+      "confirmDispatchFailed": "Unable to confirm inventory dispatch.",
+      "rejectDispatchFailed": "Unable to reject inventory dispatch.",
+      "createAdjustmentFailed": "Unable to create stock adjustment.",
+      "postAdjustmentFailed": "Unable to post stock adjustment.",
+      "supplierNotFound": "Inventory supplier not found.",
+      "createSupplierFailed": "Unable to create inventory supplier.",
+      "updateSupplierFailed": "Unable to update inventory supplier."
+    },
     "insufficientStock": "Insufficient stock for one or more line items.",
     "saveFailed": "Could not save. Please try again.",
     "adjustmentsUnavailable": "Stock adjustments are not available yet. Record a receipt or dispatch instead."

@@ -1,4 +1,9 @@
 {
+  "errors": {
+    "requestFailed": "La solicitud de entrega falló.",
+    "reviewMismatch": "Los artículos de la entrega no coinciden con la factura y la entrega seleccionadas.",
+    "completionMismatch": "La confirmación no coincide con la entrega seleccionada."
+  },
   "title": "Entregas",
   "description": "Todos los códigos de entrega pendientes, ordenados por ciudad de forma predeterminada.",
   "searchPlaceholder": "Buscar código, factura, artículo, destinatario, provincia o contenedor…",

@@ -62,21 +62,38 @@ export function resolveDefaultFilterOperator(definition: TableFilterFieldDefinit
   return definition.operators[0] ?? "eq";
 }
 
+/** Display copy for the query-logic preview; defaults to English. */
+export type TableFilterLogicLabels = {
+  operators: Record<TableFilterOperator, string>;
+  inRange: string;
+  and: string;
+  or: string;
+};
+
+const DEFAULT_FILTER_LOGIC_LABELS: TableFilterLogicLabels = {
+  operators: FILTER_OPERATOR_LABELS,
+  inRange: "in range",
+  and: "AND",
+  or: "OR",
+};
+
 export function resolveFilterOperatorLabel(
   definition: TableFilterFieldDefinition | undefined,
   operator: string,
+  labels: TableFilterLogicLabels = DEFAULT_FILTER_LOGIC_LABELS,
 ): string {
   if (!definition) return operator;
-  if (definition.valueType === "range") return "in range";
+  if (definition.valueType === "range") return labels.inRange.toLowerCase();
 
   const operatorKey = operator as TableFilterOperator;
-  return (FILTER_OPERATOR_LABELS[operatorKey] ?? operator).toLowerCase();
+  return (labels.operators[operatorKey] ?? operator).toLowerCase();
 }
 
 export function formatTableFilterRowsLogic(
   rows: TableFilterRowState[],
   fields: TableFilterFieldDefinition[],
   dynamicOptions: Record<string, TableFilterFieldOption[]> = {},
+  labels: TableFilterLogicLabels = DEFAULT_FILTER_LOGIC_LABELS,
 ): string | null {
   const parts: string[] = [];
 
@@ -85,7 +102,7 @@ export function formatTableFilterRowsLogic(
 
     const definition = resolveFilterFieldDefinition(fields, row.field);
     const fieldLabel = definition?.label ?? row.field;
-    const operatorLabel = resolveFilterOperatorLabel(definition, row.operator);
+    const operatorLabel = resolveFilterOperatorLabel(definition, row.operator, labels);
 
     let valueLabel = row.value;
     const valueOptions = resolveFilterRowOptions(definition, dynamicOptions);
@@ -101,7 +118,7 @@ export function formatTableFilterRowsLogic(
       return;
     }
 
-    parts.push(`${row.join === "or" ? "OR" : "AND"} ${clause}`);
+    parts.push(`${row.join === "or" ? labels.or : labels.and} ${clause}`);
   });
 
   return parts.length > 0 ? parts.join(" ") : null;

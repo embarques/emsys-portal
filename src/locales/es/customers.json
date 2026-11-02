@@ -51,6 +51,7 @@
     }
   },
   "address": {
+    "searching": "Buscando direcciones…",
     "copied": "Dirección copiada",
     "copyFailed": "No se pudo copiar la dirección",
     "copyAria": "Copiar {{label}}",

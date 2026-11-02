@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const titleFormSchema = z.object({
-  name: z.string().trim().min(1, "Required."),
+  name: z.string().trim().min(1, "common.validation.required"),
   active: z.boolean(),
 });
 export const titleSchema = titleFormSchema.extend({

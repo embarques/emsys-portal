@@ -1,4 +1,13 @@
 {
+  "errors": {
+    "nameRequired": "El nombre del empleado es obligatorio.",
+    "departmentRequired": "El departamento es obligatorio.",
+    "titleRequired": "El cargo es obligatorio.",
+    "notFound": "No se encontró el empleado.",
+    "createFailed": "No se pudo crear el empleado.",
+    "updateFailed": "No se pudo actualizar el empleado.",
+    "deleteFailed": "No se pudo eliminar el empleado."
+  },
   "entity": "Empleado",
   "entityPlural": "empleados",
   "title": "Empleados",
@@ -95,6 +104,10 @@
     }
   },
   "form": {
+    "validation": {
+      "branchRequired": "La sucursal es obligatoria.",
+      "invalidDate": "Use una fecha válida en formato AAAA-MM-DD o una marca de tiempo RFC3339."
+    },
     "design": {
       "employee": "Confirma el nombre, departamento, cargo y datos laborales del empleado.",
       "branch": "Elige la sucursal donde trabaja este empleado.",

@@ -20,8 +20,8 @@ export function SidebarBrand({ compact = false, className, priority = false }: S
     return (
       <WorkspaceNavLink
         href="/"
-        label="Dashboard"
-        aria-label="Dashboard"
+        label={t("navigation.items.dashboard")}
+        aria-label={t("navigation.items.dashboard")}
         className={cn("flex items-center justify-center leading-none", className)}
       >
         <EmsysLogo variant="mark" priority={priority} />
@@ -32,8 +32,8 @@ export function SidebarBrand({ compact = false, className, priority = false }: S
   return (
     <WorkspaceNavLink
       href="/"
-      label="Dashboard"
-      aria-label="Dashboard"
+      label={t("navigation.items.dashboard")}
+      aria-label={t("navigation.items.dashboard")}
       className={cn("flex min-w-0 items-center gap-3 leading-none", className)}
     >
       <EmsysLogo variant="mark" priority={priority} className="shrink-0" />

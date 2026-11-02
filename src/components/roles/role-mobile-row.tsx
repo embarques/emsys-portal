@@ -49,7 +49,7 @@ export function RoleMobileRow({
             selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
           )}
           onClick={() => onToggleSelected(role.roleId, !selected)}
-          aria-label={selected ? "Deselect role" : "Select role"}
+          aria-label={selected ? t("roles.table.deselectRole") : t("roles.table.selectRole")}
         >
           {selected ? <Check className="size-4" /> : null}
         </button>

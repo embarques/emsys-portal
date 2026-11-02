@@ -4,13 +4,13 @@ import { normalizeEmployeeDate } from "@/lib/employees/utils/employee-date";
 
 export const employeeFormSchema = z.custom<EmployeeFormValues>().superRefine((values, context) => {
   for (const field of ["name", "department", "title"] as const) {
-    if (!values[field].trim()) context.addIssue({ code: "custom", path: [field], message: "Required." });
+    if (!values[field].trim()) context.addIssue({ code: "custom", path: [field], message: "common.validation.required" });
   }
   if (!Number.isInteger(values.branch.id) || values.branch.id <= 0) {
-    context.addIssue({ code: "custom", path: ["branch"], message: "Branch is required." });
+    context.addIssue({ code: "custom", path: ["branch"], message: "employees.form.validation.branchRequired" });
   }
   for (const field of ["startDate", "endDate"] as const) {
     try { normalizeEmployeeDate(values[field]); }
-    catch { context.addIssue({ code: "custom", path: [field], message: "Use a valid YYYY-MM-DD date or RFC3339 timestamp." }); }
+    catch { context.addIssue({ code: "custom", path: [field], message: "employees.form.validation.invalidDate" }); }
   }
 });

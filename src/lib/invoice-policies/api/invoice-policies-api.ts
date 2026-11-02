@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 import { fetchCatalogPage, type CatalogPageParams } from "@/lib/api/fetch-catalog-page";
 import { INVOICE_POLICY_BAR_OR_SEARCH_FIELDS, INVOICE_POLICY_TABLE_FILTER_FIELDS, expandInvoicePolicyFilterNode } from "@/lib/invoice-policies/filter-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
@@ -25,7 +26,7 @@ export async function fetchInvoicePolicies(
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${endpoint}?page=${page}&limit=${limit}&sort=sortOrder:asc,title:asc`,
   );
-  assertMutationSuccess(response, "Unable to load invoice policies.");
+  assertMutationSuccess(response, translateCurrent("invoicePolicies.errors.loadFailed"));
   const items = invoicePolicySchema.array().parse(response.data ?? []);
   return {
     items,
@@ -46,7 +47,7 @@ export async function fetchAllInvoicePolicies(): Promise<InvoicePolicy[]> {
 
 export async function fetchActiveInvoicePolicies(): Promise<InvoicePolicy[]> {
   const response = await apiClient.get<ApiSuccessEnvelope<unknown>>(`${endpoint}/active`);
-  assertMutationSuccess(response, "Unable to load invoice policies.");
+  assertMutationSuccess(response, translateCurrent("invoicePolicies.errors.loadFailed"));
   const list = response.data === null ? [] : unwrapApiData(response);
   return invoicePolicySchema
     .array()
@@ -65,7 +66,7 @@ export async function createInvoicePolicy(values: InvoicePolicyFormValues): Prom
     endpoint,
     invoicePolicyFormSchema.parse(values),
   );
-  assertMutationSuccess(response, "Unable to create invoice policy.");
+  assertMutationSuccess(response, translateCurrent("invoicePolicies.errors.createFailed"));
   return invoicePolicySchema.parse(unwrapApiData(response));
 }
 
@@ -77,13 +78,13 @@ export async function updateInvoicePolicy(
     detailPath(id),
     invoicePolicyFormSchema.parse(values),
   );
-  assertMutationSuccess(response, "Unable to update invoice policy.");
+  assertMutationSuccess(response, translateCurrent("invoicePolicies.errors.updateFailed"));
   return invoicePolicySchema.parse(unwrapApiData(response));
 }
 
 export async function deleteInvoicePolicy(id: number): Promise<void> {
   const response = await apiClient.delete<ApiSuccessEnvelope<unknown>>(detailPath(id));
-  assertMutationSuccess(response, "Unable to delete invoice policy.");
+  assertMutationSuccess(response, translateCurrent("invoicePolicies.errors.deleteFailed"));
 }
 
 /** One server page for the directory table (search + filters applied by the API). */

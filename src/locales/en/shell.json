@@ -112,7 +112,8 @@
     "hide": "Hide calculator",
     "title": "Calculator",
     "close": "Close calculator",
-    "backspace": "Backspace"
+    "backspace": "Backspace",
+    "error": "Error"
   },
   "memoPad": {
     "open": "Open memo pad",
@@ -131,7 +132,14 @@
     "lines": "lines",
     "chars": "chars",
     "offline": "Offline — changes not saved",
-    "savedToAccount": "Saved to your account"
+    "savedToAccount": "Saved to your account",
+    "errors": {
+      "nameRequired": "Memo name is required.",
+      "notFound": "Memo pad not found.",
+      "createFailed": "Unable to create memo pad.",
+      "updateFailed": "Unable to update memo pad.",
+      "deleteFailed": "Unable to delete memo pad."
+    }
   },
   "tabs": {
     "emptyState": "Select a page from the sidebar to open a workspace tab.",
@@ -144,6 +152,56 @@
     "closeAllTabs": "Close all tabs",
     "closeAll": "Close all",
     "openTabList": "Open tab list",
-    "allTabs": "All tabs"
+    "allTabs": "All tabs",
+    "closedOldest": "Closed the oldest tab (maximum {{max}} open).",
+    "color": {
+      "set": "Set color",
+      "setPreset": "Set tab color {{color}}",
+      "custom": "Custom",
+      "pickCustom": "Pick a custom tab color",
+      "reset": "Reset color"
+    }
+  },
+  "api": {
+    "unavailable": "API unavailable."
+  },
+  "statCards": {
+    "summaryCards": "Summary cards",
+    "position": "{{current}} of {{total}}",
+    "range": "{{start}}–{{end}} of {{total}}",
+    "viewDetails": "View {{label}} details",
+    "detailsTitle": "{{label}} details",
+    "backToSummary": "Back to {{label}} summary"
+  },
+  "accessDenied": {
+    "title": "Access denied",
+    "description": "You do not have permission to view this page."
+  },
+  "auth": {
+    "title": "Sign in to EMSYS",
+    "description": "Enter your credentials to access the portal.",
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "invalidCredentials": "Invalid email or password.",
+    "poweredBy": "Secure access powered by Firebase"
+  },
+  "devAuth": {
+    "title": "Dev session login",
+    "description": "Auth bypass is enabled. Sign in with API credentials.",
+    "companyId": "Company ID",
+    "name": "Name",
+    "optional": "Optional",
+    "signInFailed": "Dev sign-in failed.",
+    "footer": "Development bypass only. Set NEXT_PUBLIC_BYPASS_AUTH=false for Firebase login.",
+    "banner": {
+      "title": "Dev session",
+      "expires": "Expires {{date}}",
+      "expired": "Session expired",
+      "clear": "Clear session"
+    }
   }
 }

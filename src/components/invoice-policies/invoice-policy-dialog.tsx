@@ -65,7 +65,7 @@ export function InvoicePolicyDialog({
                 />
                 {state.form.formState.errors.title ? (
                   <p role="alert" className="text-sm text-destructive">
-                    {state.form.formState.errors.title.message}
+                    {t(state.form.formState.errors.title.message ?? "common.validation.required")}
                   </p>
                 ) : null}
               </div>
@@ -86,7 +86,7 @@ export function InvoicePolicyDialog({
                 />
                 {state.form.formState.errors.body ? (
                   <p role="alert" className="text-sm text-destructive">
-                    {state.form.formState.errors.body.message}
+                    {t(state.form.formState.errors.body.message ?? "common.validation.required")}
                   </p>
                 ) : null}
               </div>

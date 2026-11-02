@@ -1,7 +1,6 @@
 import axios, { type AxiosError } from "axios";
 
-export const API_UNREACHABLE_MESSAGE =
-  "Unable to connect to the API. The server may be down or unreachable. Please try again later.";
+import { translateCurrent as localizedMessage } from "@/lib/i18n/translate-current";
 
 export const TEMPORARY_UNAVAILABLE_STATUSES = [502, 503, 521, 524] as const;
 
@@ -70,7 +69,7 @@ function readApiErrorPayload(error: AxiosError<{ message?: string; error?: strin
     (apiMessage && apiMessage !== "Invalid request" ? apiMessage : null) ||
     apiMessage ||
     error.message ||
-    "Request failed";
+    localizedMessage("common.errors.api.requestFailedPlain");
 
   return { status, rawMessage: String(rawMessage) };
 }
@@ -82,7 +81,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
 
     if (isTemporaryUnavailableStatus(status)) {
       return {
-        message: `API server is temporarily unavailable (HTTP ${status}).`,
+        message: localizedMessage("common.errors.api.temporaryUnavailableShort", { status }),
         status,
         category: "temporary_unavailable",
         isConnectivityFailure: true,
@@ -91,7 +90,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
 
     if (isAxiosNetworkFailure(axiosError)) {
       return {
-        message: API_UNREACHABLE_MESSAGE,
+        message: localizedMessage("common.errors.api.unreachable"),
         status: undefined,
         category: "unreachable",
         isConnectivityFailure: true,
@@ -100,7 +99,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
 
     if (status === 401) {
       return {
-        message: "Your session has expired. Please sign out and sign in again.",
+        message: localizedMessage("common.errors.api.sessionExpired"),
         status,
         category: "auth",
         isConnectivityFailure: false,
@@ -119,8 +118,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
       }
 
       return {
-        message:
-          "This action is forbidden. Your account may lack the required permission, or your session may have expired — try signing out and back in.",
+        message: localizedMessage("common.errors.api.forbiddenGeneric"),
         status,
         category: "forbidden",
         isConnectivityFailure: false,
@@ -129,7 +127,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
 
     if (looksLikeOpaqueNetworkMessage(rawMessage) && axiosError.response == null) {
       return {
-        message: API_UNREACHABLE_MESSAGE,
+        message: localizedMessage("common.errors.api.unreachable"),
         status: undefined,
         category: "unreachable",
         isConnectivityFailure: true,
@@ -138,7 +136,9 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
 
     if (isGenericAxiosStatusMessage(rawMessage)) {
       return {
-        message: status ? `Request failed (${status}).` : "Request failed.",
+        message: status
+          ? localizedMessage("common.errors.api.requestFailedShortWithStatus", { status })
+          : localizedMessage("common.errors.api.requestFailedShort"),
         status,
         category: status && status >= 500 ? "server" : status && status >= 400 ? "client" : "unknown",
         isConnectivityFailure: false,
@@ -155,7 +155,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
 
   if (error instanceof TypeError && looksLikeOpaqueNetworkMessage(error.message)) {
     return {
-      message: API_UNREACHABLE_MESSAGE,
+      message: localizedMessage("common.errors.api.unreachable"),
       category: "unreachable",
       isConnectivityFailure: true,
     };
@@ -164,7 +164,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
   if (error instanceof Error) {
     if (looksLikeOpaqueNetworkMessage(error.message)) {
       return {
-        message: API_UNREACHABLE_MESSAGE,
+        message: localizedMessage("common.errors.api.unreachable"),
         category: "unreachable",
         isConnectivityFailure: true,
       };
@@ -178,7 +178,7 @@ export function classifyApiError(error: unknown): ClassifiedApiError {
   }
 
   return {
-    message: "Request failed",
+    message: localizedMessage("common.errors.api.requestFailedPlain"),
     category: "unknown",
     isConnectivityFailure: false,
   };

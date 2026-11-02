@@ -1,4 +1,11 @@
 {
+  "errors": {
+    "notFound": "No se encontró el artículo.",
+    "createFailed": "No se pudo crear el artículo.",
+    "updateFailed": "No se pudo actualizar el artículo.",
+    "deleteFailed": "No se pudo eliminar el artículo.",
+    "descriptionRequired": "La descripción es obligatoria."
+  },
   "entity": "Artículo",
   "entityPlural": "artículos",
   "title": "Artículos",

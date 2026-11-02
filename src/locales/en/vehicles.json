@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "notFound": "Vehicle not found.",
+    "createFailed": "Unable to create vehicle.",
+    "updateFailed": "Unable to update vehicle.",
+    "deleteFailed": "Unable to delete vehicle."
+  },
   "entity": "Vehicle",
   "entityPlural": "vehicles",
   "title": "Vehicles",

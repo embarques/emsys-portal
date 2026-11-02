@@ -160,6 +160,11 @@
     "unnamed": "Este usuario"
   },
   "errors": {
+    "notFound": "No se encontró el usuario.",
+    "currentUserNotFound": "No se encontró el usuario actual de la compañía.",
+    "createdNotReloaded": "El usuario se creó, pero no se pudo volver a cargar.",
+    "createFailed": "No se pudo crear el usuario.",
+    "updateFailed": "No se pudo actualizar el usuario.",
     "firebasePartialCreate": "Se creó la cuenta de Firebase, pero no se creó el registro de usuario en EMSYS. No envíe este formulario nuevamente con el mismo correo electrónico. {{message}}"
   },
   "filters": {

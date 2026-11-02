@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type TableDirectoryTab<T extends string> = {
@@ -19,9 +20,11 @@ export function TableDirectoryTabs<T extends string>({
   tabs,
   value,
   onValueChange,
-  "aria-label": ariaLabel = "Directory views",
+  "aria-label": ariaLabelProp,
   className,
 }: TableDirectoryTabsProps<T>) {
+  const { t } = useTranslation();
+  const ariaLabel = ariaLabelProp ?? t("common.table.directoryViews");
   return (
     <div role="tablist" aria-label={ariaLabel} className={cn("flex gap-1", className)}>
       {tabs.map((tab) => {

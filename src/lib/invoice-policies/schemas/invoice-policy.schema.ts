@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const invoicePolicyFormSchema = z.object({
-  title: z.string().trim().min(1, "Required."),
-  body: z.string().trim().min(1, "Required."),
+  title: z.string().trim().min(1, "common.validation.required"),
+  body: z.string().trim().min(1, "common.validation.required"),
   sortOrder: z.number().int(),
   active: z.boolean(),
 });

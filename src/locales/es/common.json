@@ -24,7 +24,25 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "dismissNotification": "Descartar notificación",
-    "actions": "Acciones"
+    "actions": "Acciones",
+    "print": "Imprimir"
+  },
+  "ui": {
+    "closeMenu": "Cerrar menú",
+    "carousel": "carrusel",
+    "slide": "diapositiva",
+    "previousSlide": "Diapositiva anterior",
+    "nextSlide": "Diapositiva siguiente",
+    "openDatePicker": "Abrir selector de fecha",
+    "selectPlaceholder": "Seleccione una opción",
+    "noResults": "No se encontraron resultados.",
+    "searching": "Buscando…",
+    "clearSelection": "Borrar selección",
+    "openOptions": "Abrir opciones",
+    "closeOptions": "Cerrar opciones"
+  },
+  "validation": {
+    "required": "Obligatorio."
   },
   "form": {
     "noChanges": "No hay cambios para guardar.",
@@ -102,6 +120,7 @@
     "moveColumnUp": "Mover {{column}} arriba",
     "moveColumnDown": "Mover {{column}} abajo",
     "clearSearch": "Limpiar búsqueda",
+    "directoryViews": "Vistas del directorio",
     "search": "Buscar...",
     "field": "Campo",
     "condition": "Condición",
@@ -167,7 +186,12 @@
       "sessionExpired": "Su sesión ha expirado. Cierre sesión e inicie sesión nuevamente.",
       "forbidden": "No tiene permiso para realizar esta acción. Su sesión puede haber expirado o su rol puede no incluir el acceso requerido.",
       "requestFailed": "No se pudo completar la solicitud.",
-      "requestFailedWithStatus": "No se pudo completar la solicitud (HTTP {{status}})."
+      "requestFailedWithStatus": "No se pudo completar la solicitud (HTTP {{status}}).",
+      "temporaryUnavailableShort": "El servidor de la API no está disponible temporalmente (HTTP {{status}}).",
+      "forbiddenGeneric": "Esta acción no está permitida. Es posible que su cuenta no tenga el permiso requerido o que su sesión haya expirado; intente cerrar sesión y volver a iniciarla.",
+      "requestFailedShort": "La solicitud falló.",
+      "requestFailedShortWithStatus": "La solicitud falló ({{status}}).",
+      "requestFailedPlain": "La solicitud falló"
     },
     "permissionHint": "Pida a un administrador que habilite el permiso requerido en su rol."
   },

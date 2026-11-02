@@ -1,4 +1,9 @@
 {
+  "errors": {
+    "requestFailed": "Delivery request failed.",
+    "reviewMismatch": "Delivery items do not match the selected invoice and delivery.",
+    "completionMismatch": "Completion does not match the selected delivery."
+  },
   "title": "Deliveries",
   "description": "All pending delivery barcodes, ordered by city by default.",
   "searchPlaceholder": "Search barcode, invoice, item, receiver, province, or container…",
