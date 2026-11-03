@@ -1,4 +1,7 @@
 "use client";
+import { LoanEntryDialog } from "@/components/accounting/loan-entry-dialog";
+import { useLoanEntry } from "@/lib/accounting/loans/use-loan-entry";
+import { useInventoryPaymentEntry } from "@/lib/accounting/daily-income/use-inventory-payment-entry";
 import {JournalTransactionsTable} from "@/components/accounting/journal-transactions-table";
 
 
@@ -240,6 +243,8 @@ function DailyIncomeMobileSummary({
 }
 
 export function DailyIncomeWorkspace() {
+  const openInventoryPayment = useInventoryPaymentEntry();
+  const loanEntry = useLoanEntry();
   const currentUser = useCurrentUser();
   const { hasPermission } = useAuth();
   const { t } = useTranslation();
@@ -556,8 +561,6 @@ export function DailyIncomeWorkspace() {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
-
       {statement ? (
         <DailyIncomeMobileSummary
           stats={stats}
@@ -629,10 +632,6 @@ export function DailyIncomeWorkspace() {
           />
         </div>
         <div className="flex w-fit flex-col gap-2">
-          <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
-          <CloseoutDateNavigation id="daily-date" date={date} today={serverToday || date} onChange={(next) => { setDate(next);  }} />
-        </div>
-        <div className="flex w-fit flex-col gap-2">
           <Label>{t("accounting.dailyIncome.filters.status")}</Label>
           <Badge
             className={
@@ -644,17 +643,23 @@ export function DailyIncomeWorkspace() {
             }
           >
             {statement
-              ? t("accounting.dailyIncome.status.badge", {
-                  status: statement.status === "OPEN" ? t("accounting.dailyIncome.status.open") : t("accounting.dailyIncome.status.closed"),
-                  id: String(statement.id).padStart(5, "0"),
-                })
+              ? [
+                  t("accounting.dailyIncome.status.badge", {
+                    status: statement.status === "OPEN" ? t("accounting.dailyIncome.status.open") : t("accounting.dailyIncome.status.closed"),
+                    id: String(statement.id).padStart(5, "0"),
+                  }),
+                  statement.date.slice(0, 10),
+                  statement.timezone ?? calendar.data?.serverTimezone,
+                ].filter(Boolean).join(" · ")
               : t("accounting.dailyIncome.filters.noCloseout")}
           </Badge>
         </div>
+        <div className="ml-auto flex w-fit flex-col gap-2">
+          <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
+          <CloseoutDateNavigation id="daily-date" date={date} today={serverToday || date} onChange={(next) => { setDate(next);  }} />
+        </div>
       </CardContent>
     </Card>
-
-    <div className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span>{calendar.data?.serverTimezone}</span>{[calendar.data?.previous,calendar.data?.current].filter((item):item is DailyIncomeStatement=>Boolean(item)).map(item=><Button key={item.id} variant="outline" disabled={date===item.date} onClick={()=>{setDate(item.date);}}>#{item.id} · {item.date} · {item.timezone}</Button>)}</div>
 
     <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
     </div>
@@ -671,7 +676,8 @@ export function DailyIncomeWorkspace() {
       isPending={generateIncomeReportMutation.isPending}
       onConfirm={handlePrintReport}
     />
-    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
+    <LoanEntryDialog entry={loanEntry} employees={employees} accounts={accountsQuery.data?.items ?? []} />
+    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" onRegisterLoan={loanEntry.openCreate} onRegisterLoanPayment={loanEntry.openPayment} onRegisterInventoryPayment={openInventoryPayment ? () => { setTransactionDialog(false); openInventoryPayment(); } : undefined} appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
     <DailyIncomeTransactionViewSheet
       journal={viewJournal}
       currency={displayCurrency}

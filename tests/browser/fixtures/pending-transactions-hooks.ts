@@ -2,6 +2,7 @@ export function useAuth() {
   return { companyId: "company-a", hasPermission: (name: string) => name !== "canReconcileJournal" || !window.readOnly };
 }
 export function useAccountingQueryEnabled() { return true; }
+export function useChartAccounts() { return { data: { items: [{ id: 1, name: "SALES", displayName: "Sales income", type: "REVENUE" }] } }; }
 export function normalizeApiError(error: Error) { return { message: error.message }; }
 const journals = [
   { id: "j1", date: "2026-10-30", transactionType: "PAYMENT", transactionAmount: 100, refNumber: "R1", currency: "USD", employee: { id: 1, name: "Ana" }, paymentMethod: { name: "CASH" }, accounts: [{ id: 1, name: "Sales", type: "INCOME", debit: 0, credit: 100 }] },

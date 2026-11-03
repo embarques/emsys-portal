@@ -68,7 +68,9 @@
         "notSubAccount": "Not a sub-account"
       },
       "hints": {
-        "typeChange": "Changing the type can affect how this account is used in reports."
+        "typeChange": "Changing the type can affect how this account is used in reports.",
+        "bankParent": "Bank accounts sit under the general Bank account. Choose another bank as the parent to create a sub-bank account.",
+        "cashParent": "To create a cash account, choose Cash on hand (or another cash account) as the parent."
       },
       "validation": {
         "displayNameRequired": "Account name is required."
@@ -626,7 +628,9 @@
       "reference": "Internal reference #",
       "paymentMethod": "Payment method",
       "amount": "Amount",
-      "actions": "Actions"
+      "actions": "Actions",
+      "accountType": "Account type",
+      "accountName": "Account name"
     },
     "statement": {
       "createTitle": "Create daily income",
@@ -700,7 +704,14 @@
       "typeSelector": {
         "title": "Choose a transaction type",
         "description": "Select the type of transaction you want to record.",
-        "ariaLabel": "Transaction type"
+        "ariaLabel": "Transaction type",
+        "groups": {
+          "invoices": "Invoices",
+          "incomeExpenses": "Income & expenses",
+          "inventory": "Inventory",
+          "loans": "Loans",
+          "transfers": "Account transfers"
+        }
       },
       "workflow": {
         "assignment": "Assignment",
@@ -712,15 +723,15 @@
     },
     "transactionTypes": {
       "initialPayment": {
-        "label": "Register invoice",
+        "label": "Register new invoice",
         "shortLabel": "Invoice",
-        "description": "Record a customer",
+        "description": "Register a new invoice and its initial payment",
         "sectionTitle": "Invoice information"
       },
       "payment": {
-        "label": "Register payment",
+        "label": "Register invoice payment",
         "shortLabel": "Payment",
-        "description": "Record a payment for an existing or new invoice",
+        "description": "Record a payment for an existing invoice",
         "sectionTitle": "Payment information"
       },
       "expense": {
@@ -736,19 +747,19 @@
         "sectionTitle": "Income information"
       },
       "inventory": {
-        "label": "Register inventory change",
+        "label": "Register new inventory",
         "shortLabel": "Inventory",
-        "description": "Record supplies received or dispatched",
+        "description": "Record inventory received or dispatched",
         "sectionTitle": "Inventory change"
       },
       "discount": {
-        "label": "Apply discount",
+        "label": "Apply invoice discount",
         "shortLabel": "Discount",
         "description": "Apply a discount",
         "sectionTitle": "Discount information"
       },
       "surcharge": {
-        "label": "Apply surcharge",
+        "label": "Apply invoice surcharge",
         "shortLabel": "Surcharge",
         "description": "Apply a surcharge",
         "sectionTitle": "Surcharge information"
@@ -764,18 +775,34 @@
         "shortLabel": "Loan",
         "description": "Record a loan transaction",
         "sectionTitle": "Loan information"
+      },
+      "inventoryPayment": {
+        "label": "Register inventory payment",
+        "shortLabel": "Inventory payment",
+        "description": "Choose a dispatch to reconcile inventory and record its payments",
+        "sectionTitle": "Inventory payment"
+      },
+      "loanIssue": {
+        "label": "Register new loan",
+        "description": "Issue a new employee loan"
+      },
+      "loanPayment": {
+        "label": "Register loan payment",
+        "description": "Record a payment toward an employee’s loans"
       }
     },
     "form": {
-      "creatorAssigneeHint": "Leave the assignee empty to use your linked employee.",
+      "creatorAssigneeHint": "If left empty, you will be responsible for reconciling this transaction.",
       "creatorAssignee": "Creator’s linked employee",
       "fields": {
         "assignedTo": "Assigned to",
-        "branch": "Branch",
         "employee": "Employee",
         "route": "Daily route",
         "paymentMethod": "Payment method",
         "bankAccount": "Bank account",
+        "cashAccount": "Cash account",
+        "expenseBankAccount": "Paid from bank account",
+        "expenseCashAccount": "Paid from cash account",
         "checkNumber": "Check number",
         "checkNumberHint": "Paper check number. Payment applies when recorded.",
         "autoClear": "Auto-approve (mark as cleared)",
@@ -801,9 +828,7 @@
         "skipSender": "Skip sender client",
         "senderClient": "Sender client",
         "skipReceiver": "Skip receiver client",
-        "invoiceMode": "Payment for",
-        "invoiceModeExisting": "Existing invoice",
-        "invoiceModeNew": "New invoice",
+        "partySkipped": "Skipped",
         "receiverClient": "Receiver client",
         "inventoryDirection": "Received or dispatched",
         "unitPrice": "Unit price",
@@ -832,8 +857,6 @@
       },
       "placeholders": {
         "selectAssigneeSource": "Select employee or daily route",
-        "selectBranch": "Select branch",
-        "searchBranches": "Search branches…",
         "selectReferenceNumberMode": "Choose how to assign the internal reference",
         "selectEmployee": "Select employee",
         "searchEmployees": "Search employees…",
@@ -843,6 +866,8 @@
         "searchPaymentMethods": "Search payment methods…",
         "selectBankAccount": "Select bank account",
         "searchBankAccounts": "Search bank accounts…",
+        "selectCashAccount": "Select cash account",
+        "searchCashAccounts": "Search cash accounts…",
         "selectAccount": "Select account",
         "searchAccounts": "Search accounts…",
         "selectSourceAccount": "Select source account",
@@ -876,8 +901,10 @@
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 if nothing was paid yet.",
+        "partiesOptional": "Optional. Leave both skipped and press Next to go to review.",
         "expenseAccount": "The expense category this spending belongs to.",
         "sourceAccount": "Where the funds are coming from.",
+        "cashAccount": "Where the cash is kept. Defaults to Cash on hand.",
         "paymentMethodOptionalZero": "Recorded as Cash while the amount is $0.00.",
         "costFromLineItems": "From the invoice line items.",
         "routeSupervisorAccountability": "The daily route is kept for reporting. The supervisor is responsible for reconciling this transaction.",
@@ -1120,12 +1147,7 @@
       "loanRequired": "Select a loan."
     },
     "journalPreview": {
-      "title": "Summary",
-      "debit": "Debit",
-      "credit": "Credit",
-      "selectAccount": "Select account",
-      "transactionType": "Transaction type",
-      "loanTransaction": "Loan transaction"
+      "selectAccount": "Select account"
     },
     "paymentForm": {
       "title": "Record loan payment",
@@ -1139,19 +1161,44 @@
       "loan": "Loan",
       "selectLoan": "Select loan",
       "searchLoans": "Search loans",
-      "loanBalance": "Balance {{amount}}",
       "receivedAccount": "Payment received account",
       "selectReceivedAccount": "Select received account",
       "searchAssetAccounts": "Search asset accounts",
       "amount": "Payment amount",
-      "allocation": "Payment allocation: {{allocation}}",
-      "allocationPart": "{{amount}} to {{loan}}",
       "date": "Date",
       "reference": "Reference number",
       "optional": "Optional",
       "notes": "Description",
       "notesPlaceholder": "Payment notes",
-      "submit": "Record payment"
+      "submit": "Record payment",
+      "oldestFirstHint": "The payment is applied to the employee's oldest active loan first, then to the next one.",
+      "specificLoanHint": "The full payment is applied to the loan you choose.",
+      "loanOptionDescription": "Opened {{opened}} · Balance {{balance}}",
+      "journalDebit": "Debit · Payment received account",
+      "journalCredit": "Credit · Loan account",
+      "sections": {
+        "employee": "Employee and allocation",
+        "balances": "Loan balances",
+        "payment": "Payment details",
+        "notes": "Reference and notes",
+        "journal": "Journal entry summary"
+      },
+      "balances": {
+        "originalAmount": "Original loan amount",
+        "paidSoFar": "Paid so far",
+        "currentBalance": "Current balance",
+        "thisPayment": "This payment",
+        "balanceAfter": "Balance after payment",
+        "loan": "Loan (oldest first)",
+        "opened": "Opened {{date}}",
+        "totalsHint": "Totals across {{count}} active loan(s). The payment is applied in the order below.",
+        "selectEmployee": "Select an employee to see their active loans.",
+        "selectLoan": "Select a loan to see its balance.",
+        "loading": "Loading active loans…",
+        "loadError": "Unable to load this employee's active loans.",
+        "empty": "This employee has no active loans.",
+        "overpayment": "The payment exceeds the current balance by {{amount}}."
+      }
     },
     "payments": {
       "title": "Payments",
@@ -1452,7 +1499,6 @@
     "status": "Reconciliation",
     "OUTSTANDING": "Outstanding",
     "RECONCILED": "Reconciled",
-    "matchingTotals": "All matching transactions",
     "selectedTotals": "Selected transactions",
     "income": "Income",
     "expenses": "Expenses",

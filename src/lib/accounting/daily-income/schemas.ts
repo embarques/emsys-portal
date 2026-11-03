@@ -4,7 +4,7 @@ import {
   isCheckPaymentMethod,
   requiresBankAccount,
 } from "@/lib/accounting/daily-income/types";
-import { isFixedCashTransactionType } from "@/lib/accounting/daily-income/transaction-workflow";
+import { isExpensePaidByMethod, isFixedCashTransactionType } from "@/lib/accounting/daily-income/transaction-workflow";
 
 export type DailyIncomeStatementSchemaMessages = {
   dateRequired: string;
@@ -126,7 +126,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       inventoryHolderEmployees: z.array(z.object({ id: z.number(), name: z.string() })).optional(),
     })
     .superRefine((values, context) => {
-      if (values.refNumberMode === "custom" && !values.refNumber.trim()) {
+      if (values.refNumberMode === "custom" && !values.refNumber.trim() && !isFixedCashTransactionType(values.transactionType)) {
         context.addIssue({
           code: "custom",
           path: ["refNumber"],
@@ -205,6 +205,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       const paymentDetailsRequired = (values.amount ?? 0) > 0 && !isFixedCashTransactionType(values.transactionType);
+      const expensePaidByMethod = isExpensePaidByMethod(values.transactionType);
 
       if (
         paymentDetailsRequired &&
@@ -219,7 +220,17 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (
+        expensePaidByMethod &&
+        requiresBankAccount(values.paymentMethodName) &&
+        values.sourceAccountId &&
+        values.sourceAccountType !== "BANK"
+      ) {
+        context.addIssue({ code: "custom", path: ["sourceAccountId"], message: messages.bankAccountRequired });
+      }
+
+      if (
         paymentDetailsRequired &&
+        !expensePaidByMethod &&
         requiresBankAccount(values.paymentMethodName) &&
         (!values.paymentAccountId || values.paymentAccountType !== "BANK")
       ) {
@@ -292,7 +303,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       if (invoiceRelated && !values.invoiceId) {
         context.addIssue({ code: "custom", path: ["invoiceId"], message: messages.invoiceRequired });
       }
-      if ((values.transactionType === "DISCOUNT" || values.transactionType === "SALES") && !values.paymentMethodId) {
+      if ((values.transactionType === "SALES" || expensePaidByMethod) && !values.paymentMethodId) {
         context.addIssue({
           code: "custom",
           path: ["paymentMethodId"],

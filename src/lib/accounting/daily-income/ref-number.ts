@@ -23,3 +23,21 @@ export function resolveJournalRefNumberForWrite(values: {
   const trimmed = values.refNumber?.trim() ?? "";
   return trimmed || undefined;
 }
+
+/**
+ * Value to send when creating a journal. A new Invoice (`INITIAL-PAYMENT`) in
+ * system mode uses its invoice number; auto-numbered invoices omit it so the
+ * API can apply the same default once the number is assigned.
+ */
+export function resolveJournalRefNumberForCreate(values: {
+  transactionType?: string;
+  refNumberMode?: DailyIncomeRefNumberMode;
+  refNumber?: string | null;
+  invoiceNumber?: string;
+  autoGenerateInvoiceNumber?: boolean;
+}): string | undefined {
+  const explicit = resolveJournalRefNumberForWrite(values);
+  if (explicit || resolveDailyIncomeRefNumberMode(values) === "custom") return explicit;
+  if (values.transactionType !== "INITIAL-PAYMENT" || values.autoGenerateInvoiceNumber) return undefined;
+  return values.invoiceNumber?.trim() || undefined;
+}

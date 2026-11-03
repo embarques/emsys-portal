@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
   Banknote,
@@ -15,8 +14,7 @@ import {
   ReceiptText,
   Search,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useMemo, useState } from "react";
 
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -31,21 +29,9 @@ import { TableSelectionToolbar } from "@/components/app-shell/table-selection-to
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
-import { DateInput } from "@/components/ui/date-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useCreateLoan, useLoans, useLoanTransactions, useRecordLoanPayment } from "@/lib/accounting/loans/hooks";
 import {
@@ -54,7 +40,6 @@ import {
   loanStatusLabel,
 } from "@/lib/accounting/loans/display";
 import { LOAN_TABLE_FILTER_FIELDS } from "@/lib/accounting/loans/filter-fields";
-import { createLoanPaymentSchema } from "@/lib/accounting/loans/schemas";
 import {
   DEFAULT_LOAN_LIST_PARAMS,
   EMPTY_LOAN_SUMMARY,
@@ -64,7 +49,6 @@ import {
   type LoanTransaction,
 } from "@/lib/accounting/loans/types";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
-import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { createApiListTextSearch } from "@/lib/api/search-query";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
@@ -75,6 +59,7 @@ import {
   openLoanReportUrl,
 } from "@/lib/accounting/loans/print-loan-report";
 import { CreateLoanDialog } from "@/components/accounting/create-loan-dialog";
+import { RecordLoanPaymentDialog } from "@/components/accounting/record-loan-payment-dialog";
 import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
@@ -106,10 +91,6 @@ const defaultFilters: LoanFilterState = {
   rows: [],
 };
 
-function todayInputValue() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function loanStatusClassName(status: Loan["status"]) {
   switch (status) {
     case "ACTIVE":
@@ -123,345 +104,8 @@ function loanStatusClassName(status: Loan["status"]) {
   }
 }
 
-function RequiredLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
-  return (
-    <Label htmlFor={htmlFor}>
-      {children}
-      <span className="text-destructive"> *</span>
-    </Label>
-  );
-}
-
 function accountLabel(account: { displayName?: string; name: string }) {
   return account.displayName ?? account.name;
-}
-
-function LoanJournalPreview({
-  debitAccount,
-  creditAccount,
-  amount,
-  transactionLabel,
-}: {
-  debitAccount: string;
-  creditAccount: string;
-  amount: number;
-  transactionLabel: "ISSUE" | "PAYMENT";
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="rounded-lg border bg-muted/20 p-4">
-      <p className="text-sm font-semibold">{t("accounting.loans.journalPreview.title")}</p>
-      <div className="mt-3 space-y-3 text-sm">
-        <div className="flex items-start justify-between gap-4 border-b pb-3">
-          <div>
-            <p className="font-semibold">{t("accounting.loans.journalPreview.debit")}</p>
-            <p className="text-muted-foreground">{debitAccount || t("accounting.loans.journalPreview.selectAccount")}</p>
-          </div>
-          <p className="font-semibold tabular-nums">{formatLoanMoney(amount)}</p>
-        </div>
-        <div className="flex items-start justify-between gap-4 border-b pb-3">
-          <div>
-            <p className="font-semibold">{t("accounting.loans.journalPreview.credit")}</p>
-            <p className="text-muted-foreground">{creditAccount || t("accounting.loans.journalPreview.selectAccount")}</p>
-          </div>
-          <p className="font-semibold tabular-nums">{formatLoanMoney(amount)}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div>
-            <p className="font-medium text-muted-foreground">{t("accounting.loans.journalPreview.transactionType")}</p>
-            <p className="mt-1 font-semibold">LOAN</p>
-          </div>
-          <div>
-            <p className="font-medium text-muted-foreground">{t("accounting.loans.journalPreview.loanTransaction")}</p>
-            <p className="mt-1 font-semibold">{transactionLabel}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RecordPaymentDialog({
-  open,
-  onOpenChange,
-  employees,
-  loans,
-  assetAccounts,
-  onSubmit,
-  pending,
-  initialLoan,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  employees: Array<{ id: number; name: string }>;
-  loans: Loan[];
-  assetAccounts: ChartAccount[];
-  onSubmit: (values: LoanPaymentValues) => Promise<void>;
-  pending: boolean;
-  initialLoan: Loan | null;
-}) {
-  const { t } = useTranslation();
-  const schema = useMemo(() => createLoanPaymentSchema(t), [t]);
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-    reset,
-    setValue,
-    watch,
-  } = useForm<LoanPaymentValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      allocationMode: initialLoan ? "specific-loan" : "oldest-first",
-      loanId: initialLoan?.id,
-      employeeId: initialLoan?.employee.id ?? 0,
-      employeeName: initialLoan?.employee.name,
-      receivedAccountId: 0,
-      amount: 0,
-      transactionDate: todayInputValue(),
-      referenceNumber: "",
-      description: "",
-    },
-  });
-  const allocationMode = watch("allocationMode");
-  const selectedEmployeeId = watch("employeeId");
-  const selectedLoanId = watch("loanId");
-  const amount = watch("amount") ?? 0;
-  const receivedAccountName = watch("receivedAccountName") ?? "";
-  const employeeLoans = loans.filter(
-    (loan) => loan.status === "ACTIVE" && (!selectedEmployeeId || loan.employee.id === selectedEmployeeId),
-  );
-  const selectedLoan = selectedLoanId ? loans.find((loan) => loan.id === selectedLoanId) : undefined;
-  const creditAccountName =
-    allocationMode === "specific-loan"
-      ? selectedLoan?.loanAccount?.displayName ?? selectedLoan?.loanAccount?.name ?? ""
-      : employeeLoans[0]?.loanAccount?.displayName ?? employeeLoans[0]?.loanAccount?.name ?? "";
-  const allocationPreview =
-    allocationMode === "specific-loan" && selectedLoan
-      ? t("accounting.loans.paymentForm.allocationPart", {
-          amount: formatLoanMoney(Math.min(amount, selectedLoan.balance)),
-          loan: selectedLoan.description || selectedLoan.id,
-        })
-      : buildOldestFirstAllocationPreview(employeeLoans, amount, t);
-
-  useEffect(() => {
-    if (!open) return;
-    reset({
-      allocationMode: initialLoan ? "specific-loan" : "oldest-first",
-      loanId: initialLoan?.id,
-      employeeId: initialLoan?.employee.id ?? 0,
-      employeeName: initialLoan?.employee.name,
-      receivedAccountId: 0,
-      amount: 0,
-      transactionDate: todayInputValue(),
-      referenceNumber: "",
-      description: "",
-    });
-  }, [initialLoan, open, reset]);
-
-  function closeDialog(nextOpen: boolean) {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
-      reset({
-        allocationMode: "oldest-first",
-        employeeId: 0,
-        receivedAccountId: 0,
-        amount: 0,
-        transactionDate: todayInputValue(),
-        referenceNumber: "",
-        description: "",
-      });
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={closeDialog}>
-      <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden p-0 sm:max-w-4xl">
-        <DialogHeader className="shrink-0 border-b px-6 py-4">
-          <DialogTitle>{t("accounting.loans.paymentForm.title")}</DialogTitle>
-          <DialogDescription>{t("accounting.loans.paymentForm.description")}</DialogDescription>
-        </DialogHeader>
-        <form
-          id="loan-payment-form"
-          className="grid min-h-0 flex-1 gap-6 overflow-y-auto p-6 lg:grid-cols-[minmax(0,1fr)_320px]"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <RequiredLabel>{t("accounting.loans.paymentForm.employee")}</RequiredLabel>
-              <SearchableSelect
-                value={selectedEmployeeId ? String(selectedEmployeeId) : ""}
-                onValueChange={(next) => {
-                  const employee = employees.find((item) => item.id === Number(next));
-                  setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
-                  setValue("employeeName", employee?.name ?? "");
-                  setValue("loanId", undefined, { shouldValidate: true });
-                }}
-                options={employees.map((employee) => ({
-                  value: String(employee.id),
-                  label: employee.name,
-                  keywords: [employee.name],
-                }))}
-                placeholder={t("accounting.loans.paymentForm.selectEmployee")}
-                searchPlaceholder={t("accounting.loans.paymentForm.searchEmployees")}
-                mobileSheet
-              />
-              {errors.employeeId ? <p className="text-sm text-destructive">{errors.employeeId.message}</p> : null}
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <RequiredLabel>{t("accounting.loans.paymentForm.allocationMode")}</RequiredLabel>
-              <div className="grid grid-cols-2 rounded-lg border bg-muted/20 p-1">
-                {[
-                  { value: "oldest-first", label: t("accounting.loans.paymentForm.oldestFirst") },
-                  { value: "specific-loan", label: t("accounting.loans.paymentForm.specificLoan") },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={cn(
-                      "h-9 rounded-md text-sm font-medium",
-                      allocationMode === option.value
-                        ? "bg-background text-primary shadow-xs"
-                        : "text-muted-foreground",
-                    )}
-                    onClick={() =>
-                      setValue("allocationMode", option.value as LoanPaymentValues["allocationMode"], {
-                        shouldValidate: true,
-                      })
-                    }
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {allocationMode === "specific-loan" ? (
-              <div className="space-y-2 sm:col-span-2">
-                <RequiredLabel>{t("accounting.loans.paymentForm.loan")}</RequiredLabel>
-                <SearchableSelect
-                  value={selectedLoanId ?? ""}
-                  onValueChange={(next) => setValue("loanId", next, { shouldValidate: true })}
-                  options={employeeLoans.map((loan) => ({
-                    value: loan.id,
-                    label: `${loan.employee.name} - ${loan.description || loan.id}`,
-                    description: t("accounting.loans.paymentForm.loanBalance", { amount: formatLoanMoney(loan.balance) }),
-                    keywords: [loan.employee.name, loan.description, loan.referenceNumber],
-                  }))}
-                  placeholder={t("accounting.loans.paymentForm.selectLoan")}
-                  searchPlaceholder={t("accounting.loans.paymentForm.searchLoans")}
-                  mobileSheet
-                />
-                {errors.loanId ? <p className="text-sm text-destructive">{errors.loanId.message}</p> : null}
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <RequiredLabel>{t("accounting.loans.paymentForm.receivedAccount")}</RequiredLabel>
-              <SearchableSelect
-                value={watch("receivedAccountId") ? String(watch("receivedAccountId")) : ""}
-                onValueChange={(next) => {
-                  const account = assetAccounts.find((item) => item.id === Number(next));
-                  setValue("receivedAccountId", account?.id ?? 0, { shouldValidate: true });
-                  setValue("receivedAccountName", account ? accountLabel(account) : "");
-                  setValue("receivedAccountType", account?.type);
-                }}
-                options={assetAccounts.map((account) => ({
-                  value: String(account.id),
-                  label: accountLabel(account),
-                  keywords: [account.name, account.displayName],
-                }))}
-                placeholder={t("accounting.loans.paymentForm.selectReceivedAccount")}
-                searchPlaceholder={t("accounting.loans.paymentForm.searchAssetAccounts")}
-                mobileSheet
-              />
-              {errors.receivedAccountId ? <p className="text-sm text-destructive">{errors.receivedAccountId.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="loan-payment-amount">{t("accounting.loans.paymentForm.amount")}</RequiredLabel>
-              <Input
-                id="loan-payment-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                {...register("amount", {
-                  setValueAs: (value) => (value === "" ? undefined : Number(value)),
-                })}
-              />
-              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
-            </div>
-
-            {allocationPreview ? (
-              <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-800 sm:col-span-2">
-                {t("accounting.loans.paymentForm.allocation", { allocation: allocationPreview })}
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="loan-payment-date">{t("accounting.loans.paymentForm.date")}</RequiredLabel>
-              <DateInput id="loan-payment-date" {...register("transactionDate")} />
-              {errors.transactionDate ? <p className="text-sm text-destructive">{errors.transactionDate.message}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="loan-payment-reference">{t("accounting.loans.paymentForm.reference")}</Label>
-              <Input id="loan-payment-reference" placeholder={t("accounting.loans.paymentForm.optional")} {...register("referenceNumber")} />
-              {errors.referenceNumber ? <p className="text-sm text-destructive">{errors.referenceNumber.message}</p> : null}
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="loan-payment-description">{t("accounting.loans.paymentForm.notes")}</Label>
-              <textarea
-                id="loan-payment-description"
-                rows={4}
-                className="flex min-h-24 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-                placeholder={t("accounting.loans.paymentForm.notesPlaceholder")}
-                {...register("description")}
-              />
-              {errors.description ? <p className="text-sm text-destructive">{errors.description.message}</p> : null}
-            </div>
-          </div>
-          <LoanJournalPreview
-            debitAccount={receivedAccountName}
-            creditAccount={creditAccountName}
-            amount={amount}
-            transactionLabel="PAYMENT"
-          />
-        </form>
-        <DialogFooter className="shrink-0 border-t px-6 py-4">
-          <Button type="button" variant="outline" onClick={() => closeDialog(false)}>
-            {t("common.actions.cancel")}
-          </Button>
-          <Button type="submit" form="loan-payment-form" disabled={pending}>
-            {t("accounting.loans.paymentForm.submit")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function buildOldestFirstAllocationPreview(loans: Loan[], amount: number, t: TranslateFn) {
-  if (amount <= 0 || loans.length === 0) return "";
-  let remaining = amount;
-  const parts: string[] = [];
-  for (const loan of [...loans].sort((left, right) => left.openedAt.localeCompare(right.openedAt))) {
-    if (remaining <= 0) break;
-    const applied = Math.min(loan.balance, remaining);
-    if (applied > 0) {
-      parts.push(
-        t("accounting.loans.paymentForm.allocationPart", {
-          amount: formatLoanMoney(applied),
-          loan: loan.description || loan.id,
-        }),
-      );
-      remaining -= applied;
-    }
-  }
-  return parts.join(", ");
 }
 
 function LoanMobileCard({
@@ -1009,6 +653,7 @@ export function LoansWorkspace() {
       setPaymentInitialLoan(null);
     } catch (error) {
       notifyError(loanMutationErrorMessage(error, t));
+      throw error;
     }
   }
 
@@ -1497,7 +1142,7 @@ export function LoansWorkspace() {
         pending={createLoanMutation.isPending}
         onSubmit={handleCreateLoan}
       />
-      <RecordPaymentDialog
+      <RecordLoanPaymentDialog
         open={paymentOpen}
         onOpenChange={(open) => {
           setPaymentOpen(open);

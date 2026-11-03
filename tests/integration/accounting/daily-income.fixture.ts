@@ -223,7 +223,6 @@ type RegisterInvoiceTransactionOptions = {
   amount: string;
   cost?: string;
   invoiceNumber?: string;
-  refNumber?: string;
   description?: string;
 };
 
@@ -254,11 +253,6 @@ export async function fillRegisterInvoiceTransactionForm(
   await expect(dialog.locator("#journal-invoice-number")).toHaveValue(invoiceNumber);
   await expect(dialog.locator("#journal-invoice-cost")).not.toHaveValue("");
   await expect(dialog.locator("#journal-payment")).not.toHaveValue("");
-
-  if (options.refNumber) {
-    await selectSearchableOption(page, dialog.locator("#journal-reference-mode"), "Enter your own");
-    await dialog.locator("#journal-reference").fill(options.refNumber);
-  }
 
   if (options.description) {
     await dialog.locator("#journal-description").fill(options.description);
@@ -359,14 +353,14 @@ export type DailyIncomeTransactionSpec = {
 export const DAILY_INCOME_TRANSACTION_SPECS: DailyIncomeTransactionSpec[] = [
   {
     slug: "register-invoice",
-    label: "Register invoice",
+    label: "Register new invoice",
     sectionTitle: "Invoice information",
     needsRegisterInvoice: true,
     needsPaymentMethod: true,
   },
   {
     slug: "register-payment",
-    label: "Register payment",
+    label: "Register invoice payment",
     sectionTitle: "Payment information",
     needsInvoice: true,
     needsPaymentMethod: true,
@@ -387,14 +381,13 @@ export const DAILY_INCOME_TRANSACTION_SPECS: DailyIncomeTransactionSpec[] = [
   },
   {
     slug: "apply-discount",
-    label: "Apply discount",
+    label: "Apply invoice discount",
     sectionTitle: "Discount information",
     needsInvoice: true,
-    needsPaymentMethod: true,
   },
   {
     slug: "apply-surcharge",
-    label: "Apply surcharge",
+    label: "Apply invoice surcharge",
     sectionTitle: "Surcharge information",
     needsInvoice: true,
   },
@@ -513,7 +506,6 @@ export async function fillTransactionForm(
       amount,
       cost: options.cost ?? amount,
       invoiceNumber: options.invoiceNumber,
-      refNumber: options.refNumber,
       description: options.description,
     });
     return;
@@ -567,7 +559,7 @@ export async function fillTransactionForm(
   }
 
   if (options.refNumber) {
-    await selectSearchableOption(page, dialog.locator("#journal-reference-mode"), "Enter your own");
+    await dialog.locator("#journal-reference-mode-custom").click();
     await dialog.locator("#journal-reference").fill(options.refNumber);
   }
 
@@ -590,7 +582,6 @@ export async function saveJournalTransaction(
       amount: options.amount ?? "1.00",
       cost: options.cost ?? options.amount ?? "1.00",
       invoiceNumber: options.invoiceNumber,
-      refNumber: options.refNumber,
       description: options.description,
       maxAttempts: options.maxInvoiceAttempts,
     });

@@ -20,6 +20,16 @@ export function isAutomaticSelectionFocus(element: HTMLElement | null): boolean 
   return element !== null && automaticSelectionFocus.has(element);
 }
 
+/** Focus a field without opening its combobox list; typing or arrow keys open it. */
+export function focusWithoutOpeningCombobox(element: HTMLElement) {
+  automaticSelectionFocus.add(element);
+  try {
+    element.focus();
+  } finally {
+    automaticSelectionFocus.delete(element);
+  }
+}
+
 function isVisible(element: HTMLElement) {
   return Boolean(
     element.offsetWidth ||

@@ -16,11 +16,13 @@ import {useTranslation} from "@/lib/i18n";
 import {normalizeApiError} from "@/lib/api/axios";
 import {useTablePageSize} from "@/lib/table/hooks/use-table-page-size";
 import {countCompleteFilterRows, type TableFilterRowState} from "@/lib/table/filter-builder";
-import {DAILY_INCOME_TABLE_FILTER_FIELDS, PENDING_JOURNAL_TABLE_FILTER_FIELDS, buildJournalSearchBody} from "@/lib/accounting/daily-income/journal-search";
+import {DAILY_INCOME_TABLE_FILTER_FIELDS, PENDING_JOURNAL_TABLE_FILTER_FIELDS} from "@/lib/accounting/daily-income/journal-search";
 import {DAILY_INCOME_JOURNAL_API_TABLE_FIELDS} from "@/lib/accounting/daily-income/table-fields";
 import {useJournalRows, useJournalSummary, useReconcileJournals, type JournalCurrencySummary} from "@/lib/accounting/daily-income/reconciliation";
 import type {DailyIncomeJournal} from "@/lib/accounting/daily-income/types";
 import {canPrintPaymentReceipt} from "@/lib/accounting/daily-income/print-payment-receipt";
+import {buildChartAccountsById} from "@/lib/accounting/daily-income/journal-account";
+import {useChartAccounts} from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import {journalTableColumns} from "./journal-table-columns";
 
 export function JournalTransactionsTable(props: {incomeStatementId?: number; pending?: boolean; isPrintingReceipt?: boolean; onView?: (row: DailyIncomeJournal) => void; onPrintReceipt?: (row: DailyIncomeJournal) => void}) {
@@ -46,11 +48,12 @@ function JournalTable({incomeStatementId = 0, pending = false, isPrintingReceipt
   const total = rowsQuery.data?.total ?? 0;
   const ids = Object.keys(selected);
   const canReconcile = pending && hasPermission("canReconcileJournal", "journal");
-  const matching = useJournalSummary({filters: buildJournalSearchBody(params).filters});
   const selectedTotals = useJournalSummary({ids}, ids.length > 0);
   const reconcile = useReconcileJournals();
   const fields = useLocalizedFilterFields(pending ? PENDING_JOURNAL_TABLE_FILTER_FIELDS : DAILY_INCOME_TABLE_FILTER_FIELDS, "accounting.journalReconciliation.fields");
-  const columns = useMemo(() => journalTableColumns(t).map(column => ({...column, sortable: column.id === "date" || column.id === "createdAt"})), [t]);
+  const chartAccountsQuery = useChartAccounts({page: 1, limit: 500}, hasPermission("canViewChartAccount", "chart_account"));
+  const chartAccountsById = useMemo(() => buildChartAccountsById(chartAccountsQuery.data?.items ?? []), [chartAccountsQuery.data]);
+  const columns = useMemo(() => journalTableColumns(t, chartAccountsById).map(column => ({...column, sortable: column.id === "date" || column.id === "createdAt"})), [t, chartAccountsById]);
   const layout = useApiTableColumns("journal-transactions-v1", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
   const method = ids.length ? selected[ids[0]].paymentMethod?.name ?? "" : undefined;
   const canSelect = (row: DailyIncomeJournal) => ids.includes(row.id) || (ids.length < 200 && (!canReconcile || (row.reconciliationStatus === "OUTSTANDING" && !row.reversedAt && !row.reversalOf && (method === undefined || method === (row.paymentMethod?.name ?? "")))));
@@ -90,7 +93,6 @@ function JournalTable({incomeStatementId = 0, pending = false, isPrintingReceipt
       filterPanel={<TableAdvancedFilterPanel presetScope={pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}
       search={<TableSearchInput value={query} onChange={value => {setQuery(value); setPage(1); setSelected({}); setCommand(null);}} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}/>}
     />
-    {matching.isError ? <p role="alert">{normalizeApiError(matching.error).message}</p> : <JournalTotals label={text("matchingTotals")} totals={matching.data} loading={matching.isFetching}/>}
     {ids.length > 0 ? <div className="space-y-3 rounded-lg border p-3">
       <p>{text("selectedCount")} {ids.length} / 200</p>
       {selectedTotals.isError ? <p role="alert">{normalizeApiError(selectedTotals.error).message}</p> : <JournalTotals label={text("selectedTotals")} totals={selectedTotals.data} loading={selectedTotals.isFetching}/>}
@@ -119,5 +121,5 @@ function JournalTable({incomeStatementId = 0, pending = false, isPrintingReceipt
 }
 function JournalTotals({label, totals, loading}: {label: string; totals?: JournalCurrencySummary[]; loading: boolean}) {
   const {t} = useTranslation();
-  return <div aria-busy={loading}><p className="font-medium">{label}</p>{loading ? <span role="status">{t("accounting.dailyIncome.transactions.loadingTitle")}</span> : totals?.map(row => <p key={row.currency} className="tabular-nums">{row.currency || "—"} · {t("accounting.journalReconciliation.income")} {row.income.toFixed(2)} · {t("accounting.journalReconciliation.expenses")} {row.expenses.toFixed(2)} · {t("accounting.journalReconciliation.net")} {row.net.toFixed(2)} · {row.count}</p>)}</div>;
+  return <div aria-busy={loading}><p className="font-medium">{label}</p>{loading ? <span role="status">{t("accounting.dailyIncome.transactions.loadingTitle")}</span> : totals?.map(row => <p key={row.currency} className="tabular-nums">{row.currency || "—"} · <span className="text-emerald-700 dark:text-emerald-400">{t("accounting.journalReconciliation.income")} {row.income.toFixed(2)}</span> · <span className="text-rose-600 dark:text-rose-400">{t("accounting.journalReconciliation.expenses")} {row.expenses.toFixed(2)}</span> · {t("accounting.journalReconciliation.net")} {row.net.toFixed(2)}</p>)}</div>;
 }

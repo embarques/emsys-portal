@@ -1,6 +1,6 @@
 "use client";
 
-import type { InputHTMLAttributes } from "react";
+import { useEffect, useRef, type InputHTMLAttributes } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,8 +65,18 @@ export function InvoiceNumberModeFields({
     },
   ];
 
+  const inputRef = useRef<HTMLInputElement>(null);
+  const focusInputOnCustomRef = useRef(false);
+
+  useEffect(() => {
+    if (mode !== "custom" || !focusInputOnCustomRef.current) return;
+    focusInputOnCustomRef.current = false;
+    inputRef.current?.focus();
+  }, [mode]);
+
   function changeMode(next: string) {
     if (modeLocked) return;
+    focusInputOnCustomRef.current = next === "custom";
     onModeChange(next !== "custom");
     if (next !== "custom") {
       onInvoiceNumberChange("");
@@ -118,6 +128,7 @@ export function InvoiceNumberModeFields({
         <div className="space-y-2">
           <RequiredLabel htmlFor={id}>{t("invoices.form.autoNumber.customLabel")}</RequiredLabel>
           <Input
+            ref={inputRef}
             id={id}
             value={invoiceNumber}
             onChange={(event) => onInvoiceNumberChange(event.target.value)}

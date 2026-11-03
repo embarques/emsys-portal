@@ -44,13 +44,11 @@ test.describe("Daily income register invoice", () => {
 
         const dialog = await openRegisterInvoiceTransactionWizard(page, main);
         const invoiceNumber = `PW-INV-${branchCode}-${Date.now()}`;
-        const refNumber = `PW-${branchCode}-${Date.now()}`;
 
         const response = await saveRegisterInvoiceTransaction(page, dialog, {
           invoiceNumber,
           amount: "10.00",
           cost: "15.00",
-          refNumber,
           description: `Playwright register invoice integration test (${branchCode})`,
         });
 
@@ -61,7 +59,7 @@ test.describe("Daily income register invoice", () => {
           expect(response.ok(), `Create transaction failed with HTTP ${response.status()}`).toBe(true);
           await expectRegisterInvoiceSuccessToast(page, invoiceNumber);
           await expectRegisterInvoiceWizardReadyForNextEntry(page, dialog);
-          await expect(main.getByText(refNumber)).toBeVisible({ timeout: 15_000 });
+          await expect(main.getByText(invoiceNumber).first()).toBeVisible({ timeout: 15_000 });
           await expect(main.getByText("Invoice", { exact: true }).first()).toBeVisible();
           console.log(
             `[playwright:daily-income] Register invoice #${invoiceNumber} succeeded on branch ${branchCode}.`,

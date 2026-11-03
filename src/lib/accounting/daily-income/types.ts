@@ -212,6 +212,8 @@ export function toApiPaymentMethodName(name?: string | null): string {
   const normalized = normalizePaymentMethodName(name);
   if (normalized === "CHEQUE") return "CHECK";
   if (normalized === "CREDITCARD") return "CREDIT-CARD";
+  if (normalized === "DEBITCARD") return "DEBIT-CARD";
+  if (normalized === "WIRE-TRANSFER") return "WIRE";
   return normalized;
 }
 
@@ -260,10 +262,10 @@ export function isCheckPaymentMethod(name?: string | null): boolean {
   return normalized === "CHECK" || normalized === "CHEQUE";
 }
 
-/** Deposit, Zelle, check, and credit card require selecting the destination bank account. */
+/** Every non-cash method moves money through a bank account. */
 export function requiresBankAccount(name?: string | null): boolean {
   const normalizedName = toApiPaymentMethodName(name);
-  return ["DEPOSIT", "ZELLE", "CHECK", "CREDIT-CARD"].includes(normalizedName);
+  return ["DEPOSIT", "ZELLE", "CHECK", "CREDIT-CARD", "DEBIT-CARD", "WIRE"].includes(normalizedName);
 }
 
 export type DailyIncomeJournalValues = {

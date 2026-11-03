@@ -20,6 +20,12 @@ test("deposit and Zelle keep bank selection while cash and empty methods do not"
   }
 });
 
+test("debit card and wire require a bank account", () => {
+  for (const name of ["DEBIT-CARD", "debit card", "DebitCard", "WIRE", "wire transfer"]) {
+    assert.equal(requiresBankAccount(name), true);
+  }
+});
+
 test("credit card requires a bank account across supported method spellings", () => {
   for (const name of ["CREDIT-CARD", "credit card", "CREDIT_CARD", "CreditCard"]) {
     assert.equal(requiresBankAccount(name), true);

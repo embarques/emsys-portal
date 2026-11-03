@@ -21,6 +21,30 @@ export function useLoans(params: LoanListParams) {
   });
 }
 
+const EMPLOYEE_ACTIVE_LOANS_LIMIT = 100;
+
+function employeeActiveLoansParams(employeeId: number): LoanListParams {
+  return {
+    page: 1,
+    limit: EMPLOYEE_ACTIVE_LOANS_LIMIT,
+    sort: "openedAt:asc",
+    filterRows: [
+      { id: "employee.id", join: "and", field: "employee.id", operator: "eq", value: String(employeeId) },
+      { id: "status", join: "and", field: "status", operator: "eq", value: "ACTIVE" },
+    ],
+  };
+}
+
+/** Active loans for one employee, oldest first (the order payments are allocated in). */
+export function useEmployeeActiveLoans(employeeId: number, enabled = true) {
+  const params = employeeActiveLoansParams(employeeId);
+  return useWorkspaceQuery({
+    queryKey: queryKeys.accounting.loans(params),
+    queryFn: () => fetchLoans(params),
+    enabled: enabled && employeeId > 0,
+  });
+}
+
 export function useLoan(id: string | null, enabled = true) {
   return useWorkspaceQuery({
     queryKey: queryKeys.accounting.loan(id ?? ""),

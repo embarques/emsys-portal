@@ -1,16 +1,20 @@
 "use client";
 
+import { useId } from "react";
 import { Check, ChevronRight } from "lucide-react";
 
-import { buildTransactionTypeOptions, type TransactionTypeOption } from "@/lib/accounting/daily-income/transaction-type-config";
+import { buildTransactionEntryGroups, type TransactionEntryOption, type TransactionEntryCategory } from "@/lib/accounting/daily-income/transaction-type-config";
 import type { JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Props = {
   value: JournalTransactionType | null;
-  onChange: (type: JournalTransactionType) => void;
+  onChange: (type: TransactionEntryCategory) => void;
   appearance?: "default" | "phone";
+  inventoryPaymentEnabled?: boolean;
+  loanIssueEnabled?: boolean;
+  loanPaymentEnabled?: boolean;
 };
 
 function TypeCard({
@@ -18,110 +22,71 @@ function TypeCard({
   selected,
   onSelect,
   appearance,
+  disabled,
 }: {
-  option: TransactionTypeOption;
+  option: TransactionEntryOption;
   selected: boolean;
   onSelect: () => void;
   appearance: "default" | "phone";
+  disabled?: boolean;
 }) {
   const Icon = option.icon;
-
-  if (appearance === "phone") {
-    return (
-      <button
-        type="button"
-        role="radio"
-        aria-checked={selected}
-        onClick={onSelect}
-        className={cn(
-          "flex min-h-24 w-full items-center gap-4 rounded-2xl border bg-card px-4 py-4 text-left shadow-sm transition-colors",
-          "hover:border-primary/50 hover:bg-accent/30",
-          selected ? "border-primary ring-2 ring-primary/15" : "border-border",
-        )}
-      >
-        <span
-          className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-2xl",
-            option.iconBackgroundClassName,
-          )}
-        >
-          <Icon className={cn("size-5", option.iconClassName)} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-base font-semibold text-foreground">{option.label}</span>
-          <span className="mt-1 block text-sm text-muted-foreground">{option.description}</span>
-        </span>
-        <span className="shrink-0 text-muted-foreground">
-          {selected ? (
-            <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Check className="size-4" />
-            </span>
-          ) : (
-            <ChevronRight className="size-5" />
-          )}
-        </span>
-      </button>
-    );
-  }
 
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      disabled={disabled}
       onClick={onSelect}
       className={cn(
-        "relative flex flex-col items-start gap-3 rounded-xl border bg-card p-4 text-left transition-colors",
-        "hover:border-primary/50 hover:bg-accent/30",
+        "flex w-full min-w-0 items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors",
+        "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 enabled:hover:border-primary/50 enabled:hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
+        appearance === "phone" && "min-h-16",
         selected ? "border-primary ring-1 ring-primary/20" : "border-border",
       )}
     >
-      {selected ? (
-        <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Check className="size-3" />
-        </span>
-      ) : null}
-      <span
-        className={cn(
-          "flex size-10 items-center justify-center rounded-lg",
-          option.iconBackgroundClassName,
-        )}
-      >
-        <Icon className={cn("size-5", option.iconClassName)} />
+      <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", option.iconBackgroundClassName)}>
+        <Icon className={cn("size-4", option.iconClassName)} aria-hidden="true" />
       </span>
-      <span className="space-y-1">
+      <span className="min-w-0 flex-1 space-y-0.5">
         <span className="block text-sm font-semibold">{option.label}</span>
         <span className="block text-xs text-muted-foreground">{option.description}</span>
       </span>
+      {selected ? <Check className="size-4 shrink-0 text-primary" aria-hidden="true" /> : appearance === "phone" ? <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
     </button>
   );
 }
 
-export function TransactionTypeSelector({ value, onChange, appearance = "default" }: Props) {
+export function TransactionTypeSelector({ value, onChange, appearance = "default", inventoryPaymentEnabled = true, loanIssueEnabled = true, loanPaymentEnabled = true }: Props) {
   const { t } = useTranslation();
-  const options = buildTransactionTypeOptions(t);
+  const groupId = useId();
+  const groups = buildTransactionEntryGroups(t);
+  const disabled = (category: TransactionEntryCategory) =>
+    (category === "INVENTORY-PAYMENT" && !inventoryPaymentEnabled) ||
+    (category === "LOAN-ISSUE" && !loanIssueEnabled) ||
+    (category === "LOAN-PAYMENT" && !loanPaymentEnabled);
 
   return (
-    <div className={cn("space-y-4", appearance === "phone" && "space-y-3")}>
+    <div className="space-y-3">
       <div className={appearance === "phone" ? "sr-only" : undefined}>
         <h3 className="text-base font-semibold">{t("accounting.dailyIncome.wizard.typeSelector.title")}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("accounting.dailyIncome.wizard.typeSelector.description")}
-        </p>
       </div>
       <div
         role="radiogroup"
         aria-label={t("accounting.dailyIncome.wizard.typeSelector.ariaLabel")}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        className="space-y-3"
       >
-        {options.map((option) => (
-          <TypeCard
-            key={option.value}
-            option={option}
-            selected={value === option.value}
-            onSelect={() => onChange(option.value)}
-            appearance={appearance}
-          />
+        {groups.map((group) => (
+          <div key={group.id} role="group" aria-labelledby={`${groupId}-${group.id}`} className="space-y-2 rounded-xl border border-border bg-muted/20 p-3">
+            <h4 id={`${groupId}-${group.id}`} className="text-xs font-semibold text-muted-foreground">{group.label}</h4>
+            <div className={cn("grid grid-cols-1 gap-2", appearance !== "phone" && "sm:grid-cols-2")}>
+              {group.options.map((option) => (
+                <TypeCard key={option.value} option={option} selected={value === option.value}
+                  onSelect={() => onChange(option.value)} appearance={appearance} disabled={disabled(option.value)} />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     </div>

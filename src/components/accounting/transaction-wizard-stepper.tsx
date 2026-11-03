@@ -15,38 +15,40 @@ type Props = {
 
 export function TransactionWizardStepper({ step, labels, disabled, allowedSteps, onSelectStep, appearance = "default" }: Props) {
   const { t } = useTranslation();
-  if (appearance === "phone") {
-    return (
-      <div className="space-y-2">
-        <p className="text-sm font-medium" aria-live="polite">
-          {t("accounting.dailyIncome.wizard.stepCount", { current: step, total: labels.length })} · {labels[step - 1]}
-        </p>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-          <div className="h-full bg-primary transition-[width]" style={{ width: `${step / labels.length * 100}%` }} />
-        </div>
+  const compactProgress = (
+    <div className={cn("space-y-2", appearance !== "phone" && "md:hidden")}>
+      <p className="text-sm font-medium" aria-live="polite">
+        {t("accounting.dailyIncome.wizard.stepCount", { current: step, total: labels.length })} · {labels[step - 1]}
+      </p>
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-primary transition-[width]" style={{ width: `${step / labels.length * 100}%` }} />
       </div>
-    );
-  }
+    </div>
+  );
+  if (appearance === "phone") return compactProgress;
   return (
-    <nav aria-label={t("accounting.dailyIncome.wizard.description")}>
-      <ol className="grid gap-2" style={{ gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))` }}>
-        {labels.map((label, index) => (
-          <li key={label} className="flex justify-center">
-            <button
-              type="button"
-              disabled={disabled || index + 1 >= step || (allowedSteps !== undefined && !allowedSteps.includes(index + 1))}
-              onClick={() => onSelectStep(index + 1)}
-              aria-current={index + 1 === step ? "step" : undefined}
-              className="group flex flex-col items-center gap-2 rounded-lg text-center text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default"
-            >
-              <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold", index + 1 === step ? "border-2 border-primary bg-card text-primary" : index + 1 < step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                {index + 1 < step ? <Check className="size-3.5" /> : index + 1}
-              </span>
-              <span className={cn("max-w-28 font-medium leading-tight", index + 1 > step && "text-muted-foreground")}>{label}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
-    </nav>
+    <>
+      {compactProgress}
+      <nav className="hidden md:block" aria-label={t("accounting.dailyIncome.wizard.description")}>
+        <ol className="flex items-center gap-2">
+          {labels.map((label, index) => (
+            <li key={label} className="flex min-w-0 flex-1 items-center gap-2 after:h-px after:min-w-2 after:flex-1 after:bg-border last:flex-none last:after:hidden">
+              <button
+                type="button"
+                disabled={disabled || index + 1 >= step || (allowedSteps !== undefined && !allowedSteps.includes(index + 1))}
+                onClick={() => onSelectStep(index + 1)}
+                aria-current={index + 1 === step ? "step" : undefined}
+                className="group flex min-h-9 items-center gap-2 rounded-md text-left text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default"
+              >
+                <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold", index + 1 === step ? "border border-primary bg-card text-primary" : index + 1 < step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                  {index + 1 < step ? <Check className="size-3.5" /> : index + 1}
+                </span>
+                <span className={cn("font-medium leading-tight", index + 1 > step && "text-muted-foreground")}>{label}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </>
   );
 }
