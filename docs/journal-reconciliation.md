@@ -23,6 +23,8 @@ The source contract is [journal-reconciliation.md in EMSYS API](https://github.c
 
 Deploy the matching API change before enabling these clients. Refresh tenant indexes, the admin-only journal reconciliation permission seed and permission caches.
 
+Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)): the API change is deployed, but `canReconcileJournal` is not seeded in company `64d5c0b0d1eab2aaf30b1819`, so reconcile and auto-approve are unavailable to every role, and existing journals have no stored reconciliation status.
+
 Historical financial migration is deliberately **not automatic**. The existing bounded, dry-run-first status backfill classifies reconciliation and preserves invoicePaymentApplied evidence. Approval never changes invoices, including old unpaid deferred receipts. Review and resolve those receipts through a separately approved monetary adjustment before client cutover. Do not run old clearing writers during classification/cutover.
 
 Reconciled journals are final. Only eligible Outstanding journals may use the existing audited reversal workflow. Inventory dispatch custody reconciliation remains separate.

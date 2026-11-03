@@ -12,6 +12,10 @@ requests with explicit partial successes. Creation and payment append requests d
 not receive blanket parent headers. Existing numeric document/inventory versions
 retain their current contracts.
 
+Verified live November 3, 2026 ([backend-api-gaps.md](backend-api-gaps.md)):
+invoice and customer reads return `v1:` versions, and PUT without If-Match
+returns 428 `VERSION_REQUIRED`.
+
 Deploy with the companion API change and update alternate clients before enabling
 mandatory preconditions. Already-open unversioned forms must reopen; never refresh
 a token immediately before save. No automatic stale-save retries are added.
