@@ -25,6 +25,7 @@ before(async () => {
       "@/lib/api/client$": hooks,
       "@/lib/api/axios$": hooks,
       "@/lib/accounting/daily-income/hooks$": hooks,
+      "@/lib/accounting/chart-accounts/hooks/use-chart-accounts$": hooks,
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/print-signatures-i18n.ts"),
       "@": path.resolve("src"),
     } },

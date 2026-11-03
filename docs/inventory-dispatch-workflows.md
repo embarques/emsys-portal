@@ -550,6 +550,23 @@ Rules:
 
 ## Backend / API TODOs
 
+Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
+receipt and dispatch `confirm`/`reject`, `POST /inventory/pending-dispatches/search`,
+reconciliation history/submit and reconciliation `confirm`/`reject` (which
+require `If-Match`) are routed. Dispatches and receipts return `confirmations`,
+`allowedActions` and `rejection`; dispatches also return
+`pendingReconciliationCount` and `salesRecordedAtDispatch`. Reconciliation
+submit enforces `canReconcileInventoryDispatch`. Write tests (mock data): a
+posted receipt moves to `PENDING_CONFIRMATION` with `submittedAt`/`submittedBy`
+and no stock change; confirm/reject return `403 inventory permission denied`
+for Administrador; INVENTORY `autoReconcile` returns `403
+AUTO_RECONCILE_FORBIDDEN`. Still open: none of `canConfirmInventoryWarehouse`,
+`canConfirmInventoryCustodian` or `canReconcileInventoryDispatch` is seeded; a
+Daily Income *received* INVENTORY journal creates no ledger receipt or stock;
+a *dispatched* INVENTORY journal with valid holders returns `500`. Workflow
+effects after confirmation stay unverified until the grants exist, so the
+boxes stay unchecked.
+
 - [ ] Add `PENDING_CONFIRMATION` to the receipt and dispatch status enums. Make
       PATCH and cancel reject it.
 - [ ] Add `submittedAt`, `submittedBy`, `confirmations`, `rejection` and

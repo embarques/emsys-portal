@@ -28,6 +28,7 @@ import {
 } from "@/lib/accounting/daily-income/inventory-change";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
+import type { TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import type {
   DailyIncomeJournalValues,
   InventoryChangeDirection,
@@ -59,7 +60,7 @@ import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 type EntityDialog = "supplier" | "employee" | "route" | null;
 
 type Props = {
-  activeStep?: "assignment" | "amounts" | "payment" | "review";
+  activeStep?: TransactionFormStep;
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
   statementBranchId?: number | null;

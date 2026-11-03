@@ -37,9 +37,10 @@ test.describe("Daily income transaction types", () => {
         throw error;
       }
 
-      const refNumber = `PW-${branchCode}-${Date.now()}`;
       const invoiceNumber =
         spec.slug === "register-invoice" ? `PW-INV-${branchCode}-${Date.now()}` : undefined;
+      // New invoices have no internal reference field; the API uses the invoice number.
+      const refNumber = invoiceNumber ?? `PW-${branchCode}-${Date.now()}`;
 
       let response;
       try {
@@ -47,7 +48,7 @@ test.describe("Daily income transaction types", () => {
           amount: spec.slug === "register-invoice" ? "10.00" : "1.00",
           cost: spec.slug === "register-invoice" ? "15.00" : undefined,
           invoiceNumber,
-          refNumber,
+          refNumber: invoiceNumber ? undefined : refNumber,
           description: `Playwright ${spec.slug} integration test (${branchCode})`,
           testInfo,
         });
@@ -73,7 +74,7 @@ test.describe("Daily income transaction types", () => {
       } else {
         await expect(page.getByText("Transaction created.")).toBeVisible({ timeout: 15_000 });
       }
-      await expect(main.getByText(refNumber)).toBeVisible({ timeout: 15_000 });
+      await expect(main.getByText(refNumber).first()).toBeVisible({ timeout: 15_000 });
 
       console.log(`[playwright:daily-income] ${spec.slug} succeeded on branch ${branchCode}.`);
     });

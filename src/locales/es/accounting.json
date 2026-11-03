@@ -68,7 +68,9 @@
         "notSubAccount": "No es subcuenta"
       },
       "hints": {
-        "typeChange": "Cambiar el tipo puede afectar cómo se usa esta cuenta en los informes."
+        "typeChange": "Cambiar el tipo puede afectar cómo se usa esta cuenta en los informes.",
+        "bankParent": "Las cuentas bancarias van bajo la cuenta general Banco. Elige otro banco como cuenta principal para crear una subcuenta bancaria.",
+        "cashParent": "Para crear una cuenta de efectivo, elige Efectivo en caja (u otra cuenta de efectivo) como cuenta principal."
       },
       "validation": {
         "displayNameRequired": "El nombre de la cuenta es obligatorio."
@@ -626,7 +628,9 @@
       "reference": "Referencia interna #",
       "paymentMethod": "Método de pago",
       "amount": "Monto",
-      "actions": "Acciones"
+      "actions": "Acciones",
+      "accountType": "Tipo de cuenta",
+      "accountName": "Nombre de cuenta"
     },
     "statement": {
       "createTitle": "Crear ingresos diarios",
@@ -700,7 +704,14 @@
       "typeSelector": {
         "title": "Elija un tipo de transacción",
         "description": "Seleccione el tipo de transacción que desea registrar.",
-        "ariaLabel": "Tipo de transacción"
+        "ariaLabel": "Tipo de transacción",
+        "groups": {
+          "invoices": "Facturas",
+          "incomeExpenses": "Ingresos y gastos",
+          "inventory": "Inventario",
+          "loans": "Préstamos",
+          "transfers": "Transferencias entre cuentas"
+        }
       },
       "workflow": {
         "assignment": "Asignación",
@@ -712,15 +723,15 @@
     },
     "transactionTypes": {
       "initialPayment": {
-        "label": "Registrar factura",
+        "label": "Registrar nueva factura",
         "shortLabel": "Factura",
-        "description": "Registrar un cliente",
+        "description": "Registrar una nueva factura y su pago inicial",
         "sectionTitle": "Información de la factura"
       },
       "payment": {
-        "label": "Registrar pago",
+        "label": "Registrar pago de factura",
         "shortLabel": "Pago",
-        "description": "Registrar un pago de una factura existente o nueva",
+        "description": "Registrar un pago de una factura existente",
         "sectionTitle": "Información del pago"
       },
       "expense": {
@@ -736,19 +747,19 @@
         "sectionTitle": "Información del ingreso"
       },
       "inventory": {
-        "label": "Registrar cambio de inventario",
+        "label": "Registrar nuevo inventario",
         "shortLabel": "Inventario",
-        "description": "Registrar insumos recibidos o despachados",
+        "description": "Registrar inventario recibido o despachado",
         "sectionTitle": "Cambio de inventario"
       },
       "discount": {
-        "label": "Aplicar descuento",
+        "label": "Aplicar descuento a factura",
         "shortLabel": "Descuento",
         "description": "Aplicar un descuento",
         "sectionTitle": "Información del descuento"
       },
       "surcharge": {
-        "label": "Aplicar recargo",
+        "label": "Aplicar recargo a factura",
         "shortLabel": "Recargo",
         "description": "Aplicar un recargo",
         "sectionTitle": "Información del recargo"
@@ -764,18 +775,34 @@
         "shortLabel": "Préstamo",
         "description": "Registrar una transacción de préstamo",
         "sectionTitle": "Información del préstamo"
+      },
+      "inventoryPayment": {
+        "label": "Registrar pago de inventario",
+        "shortLabel": "Pago de inventario",
+        "description": "Seleccionar un despacho para conciliar el inventario y registrar sus pagos",
+        "sectionTitle": "Pago de inventario"
+      },
+      "loanIssue": {
+        "label": "Registrar nuevo préstamo",
+        "description": "Registrar un nuevo préstamo a un empleado"
+      },
+      "loanPayment": {
+        "label": "Registrar pago de préstamo",
+        "description": "Registrar un pago de los préstamos de un empleado"
       }
     },
     "form": {
-      "creatorAssigneeHint": "Deje el responsable vacío para usar su empleado vinculado.",
+      "creatorAssigneeHint": "Si lo deja vacío, usted será responsable de cuadrar esta transacción.",
       "creatorAssignee": "Empleado vinculado al creador",
       "fields": {
         "assignedTo": "Asignado a",
-        "branch": "Sucursal",
         "employee": "Empleado",
         "route": "Ruta diaria",
         "paymentMethod": "Método de pago",
         "bankAccount": "Cuenta bancaria",
+        "cashAccount": "Cuenta de efectivo",
+        "expenseBankAccount": "Pagado desde la cuenta bancaria",
+        "expenseCashAccount": "Pagado desde la cuenta de efectivo",
         "checkNumber": "Número de cheque",
         "checkNumberHint": "Número del cheque. El pago se aplica al registrarlo.",
         "autoClear": "Aprobar automáticamente (marcar como cobrado)",
@@ -801,9 +828,7 @@
         "skipSender": "Omitir cliente remitente",
         "senderClient": "Cliente remitente",
         "skipReceiver": "Omitir cliente destinatario",
-        "invoiceMode": "Pago para",
-        "invoiceModeExisting": "Factura existente",
-        "invoiceModeNew": "Factura nueva",
+        "partySkipped": "Omitido",
         "receiverClient": "Cliente destinatario",
         "inventoryDirection": "Recibido o despachado",
         "unitPrice": "Precio unitario",
@@ -832,8 +857,6 @@
       },
       "placeholders": {
         "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
-        "selectBranch": "Seleccionar sucursal",
-        "searchBranches": "Buscar sucursales…",
         "selectReferenceNumberMode": "Elige cómo asignar la referencia interna",
         "selectEmployee": "Seleccionar empleado",
         "searchEmployees": "Buscar empleados…",
@@ -843,6 +866,8 @@
         "searchPaymentMethods": "Buscar métodos de pago…",
         "selectBankAccount": "Seleccionar cuenta bancaria",
         "searchBankAccounts": "Buscar cuentas bancarias…",
+        "selectCashAccount": "Seleccionar cuenta de efectivo",
+        "searchCashAccounts": "Buscar cuentas de efectivo…",
         "selectAccount": "Seleccionar cuenta",
         "searchAccounts": "Buscar cuentas…",
         "selectSourceAccount": "Seleccionar cuenta origen",
@@ -876,8 +901,10 @@
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 si aún no se ha pagado.",
+        "partiesOptional": "Opcional. Deje ambos omitidos y presione Siguiente para ir a la revisión.",
         "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
         "sourceAccount": "De dónde provienen los fondos.",
+        "cashAccount": "Dónde se guarda el efectivo. Por defecto, Efectivo en caja.",
         "paymentMethodOptionalZero": "Se registra como efectivo mientras el monto sea $0.00.",
         "costFromLineItems": "Tomado de los renglones de la factura.",
         "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. El supervisor es responsable de cuadrar esta transacción.",
@@ -1120,12 +1147,7 @@
       "loanRequired": "Seleccione un préstamo."
     },
     "journalPreview": {
-      "title": "Resumen",
-      "debit": "Débito",
-      "credit": "Crédito",
-      "selectAccount": "Seleccionar cuenta",
-      "transactionType": "Tipo de transacción",
-      "loanTransaction": "Transacción de préstamo"
+      "selectAccount": "Seleccionar cuenta"
     },
     "paymentForm": {
       "title": "Registrar pago de préstamo",
@@ -1139,19 +1161,44 @@
       "loan": "Préstamo",
       "selectLoan": "Seleccionar préstamo",
       "searchLoans": "Buscar préstamos",
-      "loanBalance": "Saldo {{amount}}",
       "receivedAccount": "Cuenta de recepción del pago",
       "selectReceivedAccount": "Seleccionar cuenta de recepción",
       "searchAssetAccounts": "Buscar cuentas de activo",
       "amount": "Monto del pago",
-      "allocation": "Aplicación del pago: {{allocation}}",
-      "allocationPart": "{{amount}} a {{loan}}",
       "date": "Fecha",
       "reference": "Número de referencia",
       "optional": "Opcional",
       "notes": "Descripción",
       "notesPlaceholder": "Notas del pago",
-      "submit": "Registrar pago"
+      "submit": "Registrar pago",
+      "oldestFirstHint": "El pago se aplica primero al préstamo activo más antiguo del empleado y luego al siguiente.",
+      "specificLoanHint": "El pago completo se aplica al préstamo que seleccione.",
+      "loanOptionDescription": "Abierto {{opened}} · Saldo {{balance}}",
+      "journalDebit": "Débito · Cuenta de recepción del pago",
+      "journalCredit": "Crédito · Cuenta de préstamo",
+      "sections": {
+        "employee": "Empleado y aplicación",
+        "balances": "Saldos de préstamos",
+        "payment": "Detalles del pago",
+        "notes": "Referencia y notas",
+        "journal": "Resumen del asiento contable"
+      },
+      "balances": {
+        "originalAmount": "Monto original del préstamo",
+        "paidSoFar": "Pagado hasta ahora",
+        "currentBalance": "Saldo actual",
+        "thisPayment": "Este pago",
+        "balanceAfter": "Saldo después del pago",
+        "loan": "Préstamo (más antiguo primero)",
+        "opened": "Abierto {{date}}",
+        "totalsHint": "Totales de {{count}} préstamo(s) activo(s). El pago se aplica en el orden siguiente.",
+        "selectEmployee": "Seleccione un empleado para ver sus préstamos activos.",
+        "selectLoan": "Seleccione un préstamo para ver su saldo.",
+        "loading": "Cargando préstamos activos…",
+        "loadError": "No se pudieron cargar los préstamos activos de este empleado.",
+        "empty": "Este empleado no tiene préstamos activos.",
+        "overpayment": "El pago excede el saldo actual por {{amount}}."
+      }
     },
     "payments": {
       "title": "Pagos",
@@ -1452,7 +1499,6 @@
     "status": "Conciliación",
     "OUTSTANDING": "Pendiente",
     "RECONCILED": "Conciliado",
-    "matchingTotals": "Todas las transacciones filtradas",
     "selectedTotals": "Transacciones seleccionadas",
     "income": "Ingresos",
     "expenses": "Gastos",

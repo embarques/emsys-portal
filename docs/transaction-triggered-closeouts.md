@@ -15,7 +15,13 @@
 # Transaction-triggered closeouts
 
 Status: requested contract; backend implementation and portal integration are
-pending. The local API documentation still describes the older create/open/close
+pending. Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
+`GET /income-statements/current?branchId=` returns the open closeout with its
+IANA `timezone`; manual `POST /income-statements/{id}/close` and `/open` return
+`409 closeout lifecycle is server-managed`; journal creates ignore the payload
+`branch` and use the user's location. `409 CLOSEOUT_REQUIRED` is unverified and
+absent from the published Swagger; trigger it with the first transaction of a
+new day or a user located in a branch without a closeout. The local API documentation still describes the older create/open/close
 operations. Do not infer a new endpoint or response envelope from this document.
 
 ## Transaction operation

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Loader2, Save } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
+import type { TransactionEntryCategory } from "@/lib/accounting/daily-income/transaction-type-config";
 import { TransactionTypeSelector } from "@/components/accounting/transaction-type-selector";
 import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,9 @@ import { getTransactionStepLabelKey, getTransactionFormSteps, type TransactionFo
 import { cn } from "@/lib/utils";
 
 type SharedProps = {
+  onRegisterInventoryPayment?: () => void;
+  onRegisterLoan?: () => void;
+  onRegisterLoanPayment?: () => void;
   onEntryActiveChange?: (active: boolean) => void;
   /** When set, the parent renders the selected type summary instead of the form body. */
   onSelectedTypeChange?: (type: JournalTransactionType | null) => void;
@@ -207,17 +211,25 @@ export function AddTransactionWizard(props: Props) {
         setDetailValues(continueTransactionValues(continueType, values, props.paymentMethods));
         setFormSessionKey((key) => key + 1);
         setFocusSecondFieldSignal((signal) => signal + 1);
-        setStep(selectedType === "INVENTORY" ? 2 : 3);
+        setStep(selectedType === "INVENTORY" || selectedType === "INITIAL-PAYMENT" ? 2 : 3);
       }
     } catch {
       // Parent surfaces API/validation errors via props.error.
     }
   }
 
-  function handleTypeChange(type: JournalTransactionType) {
+  function handleTypeChange(type: TransactionEntryCategory) {
+    if (type === "LOAN-ISSUE") { props.onRegisterLoan?.(); return; }
+    if (type === "LOAN-PAYMENT") { props.onRegisterLoanPayment?.(); return; }
+    if (type === "INVENTORY-PAYMENT") {
+      props.onRegisterInventoryPayment?.();
+      return;
+    }
     if (type !== selectedType) {
+      // Capture the current form before changing its key and mounting another form.
+      const nextValues = clearTypeSpecificFields(currentValuesRef.current ?? detailValues, type, props.paymentMethods);
+      setDetailValues(nextValues);
       setSelectedType(type);
-      setDetailValues((current) => clearTypeSpecificFields(currentValuesRef.current ?? current, type, props.paymentMethods));
     }
     setStep(2);
   }
@@ -262,7 +274,7 @@ export function AddTransactionWizard(props: Props) {
       ) : presentation === "dialog" ? (
         <DialogHeader
           className={cn(
-            "shrink-0 space-y-4 border-b border-border px-6 py-4 pr-12",
+            "shrink-0 space-y-2 border-b border-border px-6 py-3 pr-12",
           )}
         >
           <div>
@@ -272,15 +284,15 @@ export function AddTransactionWizard(props: Props) {
           <TransactionWizardStepper step={isEdit ? step - 1 : step} labels={isEdit ? stepLabels.slice(1) : stepLabels} disabled={isSubmitting} onSelectStep={(target) => setStep(isEdit ? target + 1 : target)} appearance={appearance} />
         </DialogHeader>
       ) : (
-        <div className="shrink-0 border-b border-border px-5 py-4">
+        <div className="shrink-0 border-b border-border px-5 py-2">
           <TransactionWizardStepper step={isEdit ? step - 1 : step} labels={isEdit ? stepLabels.slice(1) : stepLabels} disabled={isSubmitting} onSelectStep={(target) => setStep(isEdit ? target + 1 : target)} appearance={appearance} />
         </div>
       )}
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {step === 1 ? (
-          <div className={cn("flex-1 overflow-y-auto px-6 py-5", isPhone && "overflow-x-hidden px-4 py-4")}>
-            <TransactionTypeSelector value={selectedType} onChange={handleTypeChange} appearance={appearance} />
+          <div className={cn("flex-1 overflow-y-auto px-5 py-3", isPhone && "overflow-x-hidden px-4 py-4")}>
+            <TransactionTypeSelector value={selectedType} onChange={handleTypeChange} appearance={appearance} inventoryPaymentEnabled={Boolean(props.onRegisterInventoryPayment)} loanIssueEnabled={Boolean(props.onRegisterLoan)} loanPaymentEnabled={Boolean(props.onRegisterLoanPayment)} />
           </div>
         ) : null}
 
@@ -318,7 +330,7 @@ export function AddTransactionWizard(props: Props) {
               appearance={appearance}
               focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
               allowAutoClear={!isEdit}
-              invoiceMode={selectedType === "PAYMENT" || selectedType === "INITIAL-PAYMENT" ? (isEdit ? "locked" : "selectable") : undefined}
+              showInvoiceDetails={selectedType === "PAYMENT"}
               onValuesChange={rememberFormValues}
               onStepErrorChange={setStepError}
               onSubmit={handleFormSubmit}
@@ -330,7 +342,7 @@ export function AddTransactionWizard(props: Props) {
       <div
         className={cn(
           "shrink-0 border-t border-border bg-card",
-          presentation === "dialog" ? "px-6 py-4" : "px-5 py-4",
+          presentation === "dialog" ? "px-6 py-3" : "px-5 py-3",
           isPhone && "pb-[calc(env(safe-area-inset-bottom)+1rem)] px-4 py-4",
         )}
       >
@@ -341,7 +353,7 @@ export function AddTransactionWizard(props: Props) {
             </Button>
           </div>
         ) : (
-          <div className={cn("flex items-center justify-between gap-3", isPhone && "flex-col items-stretch")}>
+          <div className={cn("flex flex-wrap items-center justify-between gap-3", isPhone && "flex-col items-stretch")}>
             <div className="flex min-w-0 flex-1 items-center">
               {(!isEdit || step > 2) ? (
                 <Button type="button" variant="outline" onClick={handleBack} disabled={isSubmitting} className={cn(isPhone && "hidden")}>

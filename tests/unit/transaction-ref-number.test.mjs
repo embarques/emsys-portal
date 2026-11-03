@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   resolveDailyIncomeRefNumberMode,
+  resolveJournalRefNumberForCreate,
   resolveJournalRefNumberForWrite,
 } from "../../src/lib/accounting/daily-income/ref-number.ts";
 
@@ -20,4 +21,13 @@ test("resolveJournalRefNumberForWrite omits system and returns custom trim", () 
   assert.equal(resolveJournalRefNumberForWrite({ refNumber: "" }), undefined);
   assert.equal(resolveJournalRefNumberForWrite({ refNumberMode: "custom", refNumber: "  A-1  " }), "A-1");
   assert.equal(resolveJournalRefNumberForWrite({ refNumberMode: "custom", refNumber: "   " }), undefined);
+});
+
+test("resolveJournalRefNumberForCreate defaults new invoices to the invoice number", () => {
+  const invoice = { transactionType: "INITIAL-PAYMENT", refNumberMode: "system", refNumber: "", invoiceNumber: " INV-42 " };
+  assert.equal(resolveJournalRefNumberForCreate(invoice), "INV-42");
+  assert.equal(resolveJournalRefNumberForCreate({ ...invoice, refNumberMode: "custom", refNumber: "REF-9" }), "REF-9");
+  assert.equal(resolveJournalRefNumberForCreate({ ...invoice, refNumberMode: "custom", refNumber: " " }), undefined);
+  assert.equal(resolveJournalRefNumberForCreate({ ...invoice, autoGenerateInvoiceNumber: true }), undefined);
+  assert.equal(resolveJournalRefNumberForCreate({ ...invoice, transactionType: "PAYMENT" }), undefined);
 });

@@ -8,7 +8,9 @@ import { useForm } from "react-hook-form";
 import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionReview } from "@/components/accounting/transaction-review";
-import { getTransactionFieldStep, getTransactionStepFields, hasPaymentDetailsStep, TRANSACTION_FIELD_IDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import { getTransactionFieldStep, getTransactionStepFields, hasPaymentDetailsStep, isExpensePaidByMethod, TRANSACTION_FIELD_IDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import { applyMoneyAccount, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listSelectableBankAccounts, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
+import { PaymentAccountSelect } from "@/components/accounting/payment-account-select";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { RegisterInventoryChangeFields } from "@/components/accounting/register-inventory-change-fields";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
@@ -19,8 +21,7 @@ import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { SegmentedControl } from "@/components/ui/segmented-control";
-import { getNavigableFormFields, isDesktopFormNavigation, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { focusWithoutOpeningCombobox, getNavigableFormFields, isDesktopFormNavigation, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { finalizeInventoryChangeJournal } from "@/lib/accounting/daily-income/inventory-change";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
@@ -63,15 +64,20 @@ type Props = {
   focusSecondFieldSignal?: number;
   /** Offer the auto-clear switch (create only). */
   allowAutoClear?: boolean;
-  /** Register payment: choose an existing invoice or register a new one ("locked" shows the choice read-only). */
-  invoiceMode?: "selectable" | "locked";
+  /** Register payment: show the selected invoice's parties and totals as read-only fields. */
+  showInvoiceDetails?: boolean;
   /** When set, the parent shows step validation messages (e.g. in its footer) instead of the form body. */
   onStepErrorChange?: (message: string | null) => void;
   onSubmit: (values: DailyIncomeJournalValues) => void | Promise<void>;
 };
 
-function isInvoicePaymentType(type: JournalTransactionType | undefined) {
-  return type === "PAYMENT" || type === "INITIAL-PAYMENT";
+/** Payment invoices are found by typing, so autofocus must not pop the list open. */
+function focusTransactionField(field: HTMLElement, type: JournalTransactionType) {
+  if (type === "PAYMENT" && field.id === TRANSACTION_FIELD_IDS.invoiceId) {
+    focusWithoutOpeningCombobox(field);
+    return;
+  }
+  field.focus();
 }
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -112,16 +118,13 @@ export function DailyIncomeTransactionForm({
   appearance = "default",
   focusSecondFieldSignal,
   allowAutoClear = false,
-  invoiceMode,
+  showInvoiceDetails = false,
   onStepErrorChange,
   onSubmit,
   onValuesChange,
 }: Props) {
   const { t } = useTranslation();
-  const initialTransactionType =
-    invoiceMode && isInvoicePaymentType(transactionType) && isInvoicePaymentType(initialValues.transactionType)
-      ? initialValues.transactionType
-      : transactionType;
+  const initialTransactionType = transactionType;
   const formRef = useRef<HTMLFormElement>(null);
   const [pendingCloseoutValues, setPendingCloseoutValues] = useState<DailyIncomeJournalValues | null>(null);
   const [stepError, setStepError] = useState<string | null>(null);
@@ -167,7 +170,6 @@ export function DailyIncomeTransactionForm({
 
   const {
     formState: { errors },
-    clearErrors,
     handleSubmit,
     trigger,
     getFieldState,
@@ -203,7 +205,7 @@ export function DailyIncomeTransactionForm({
     const timer = window.setTimeout(() => {
       const field = document.getElementById(fieldId);
       if (!field) return;
-      field.focus();
+      focusTransactionField(field, initialTransactionType);
       if (field instanceof HTMLInputElement) {
         field.select();
       }
@@ -211,8 +213,26 @@ export function DailyIncomeTransactionForm({
     return () => window.clearTimeout(timer);
   }, [focusSecondFieldSignal, initialTransactionType]);
 
+  // Opening the assignee dropdown on arrival hides the Employee / Daily route choice.
+  const skipStepAutofocus = activeStep === "assignment" && initialTransactionType !== "INVENTORY";
+
+  const activeStepRef = useRef(activeStep);
+  const advancingStepRef = useRef<TransactionFormStep | null>(null);
+  useEffect(() => {
+    activeStepRef.current = activeStep;
+    advancingStepRef.current = null;
+  }, [activeStep]);
+
+  // Selecting the assignee completes the Assignment step, so it advances without pressing Next.
+  const continueAfterAssignee = !quickEntry && activeStep === "assignment" && onContinue
+    ? () => window.setTimeout(() => {
+      if (activeStepRef.current === "assignment") formRef.current?.requestSubmit();
+    }, 0)
+    : undefined;
+
   useEffect(() => {
     setStepError(null);
+    if (skipStepAutofocus) return;
     const timer = window.setTimeout(() => {
       const form = formRef.current;
       const field = activeStep === "review"
@@ -220,11 +240,11 @@ export function DailyIncomeTransactionForm({
           element instanceof HTMLButtonElement && element.type === "submit" && !element.disabled && element.getClientRects().length > 0,
         )
         : form && getNavigableFormFields(form)[0];
-      field?.focus();
+      if (field) focusTransactionField(field, initialTransactionType);
 
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [activeStep]);
+  }, [activeStep, initialTransactionType, skipStepAutofocus]);
 
   useEffect(() => {
     if (!invalidField || !isDesktopFormNavigation()) return;
@@ -257,8 +277,10 @@ export function DailyIncomeTransactionForm({
   const accountName = watch("accountName");
   const paymentAccountId = watch("paymentAccountId");
   const paymentAccountName = watch("paymentAccountName");
+  const paymentAccountType = watch("paymentAccountType");
   const sourceAccountId = watch("sourceAccountId");
   const sourceAccountName = watch("sourceAccountName");
+  const sourceAccountType = watch("sourceAccountType");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const refNumberMode = watch("refNumberMode");
@@ -298,22 +320,16 @@ export function DailyIncomeTransactionForm({
       ),
     [sourceAccountId, sourceAccountName, sourceAccountSelectAccounts],
   );
-  const bankAccountOptions = useMemo(
-    () =>
-      withPinnedSelectOption(
-        [
-          { value: "", label: t("accounting.dailyIncome.form.placeholders.selectBankAccount") },
-          ...bankAccounts.map((account) => ({
-            value: String(account.id),
-            label: account.displayName,
-            keywords: [account.displayName],
-          })),
-        ],
-        paymentAccountId,
-        paymentAccountName,
-      ),
-    [bankAccounts, paymentAccountId, paymentAccountName, t],
-  );
+  const expensePaidByMethod = isExpensePaidByMethod(type);
+  const moneyAccountTarget = expensePaidByMethod ? "sourceAccount" : "paymentAccount";
+  const moneyAccountId = expensePaidByMethod ? sourceAccountId : paymentAccountId;
+  const moneyAccountName = expensePaidByMethod ? sourceAccountName : paymentAccountName;
+  const cashAccounts = useMemo(() => listCashAccounts(accounts), [accounts]);
+  const showCashAccount =
+    cashAccounts.length > 0 &&
+    isCashPaymentMethod(paymentMethodName) &&
+    (expensePaidByMethod || isCashAccountSelectable(type, true));
+  const selectableBankAccounts = useMemo(() => listSelectableBankAccounts(bankAccounts), [bankAccounts]);
   const paymentMethodOptions = useMemo(
     () =>
       withPinnedSelectOption(
@@ -365,48 +381,11 @@ export function DailyIncomeTransactionForm({
   const isRegisterInvoice = type === "INITIAL-PAYMENT";
   const isInventoryChange = type === "INVENTORY";
   const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
-  const needsPaymentMethod = needsExistingInvoice || isRegisterInvoice || type === "SALES";
+  const needsPaymentMethod = needsExistingInvoice || isRegisterInvoice || type === "SALES" || expensePaidByMethod;
   const showPaymentDetails = hasPaymentDetailsStep(type);
-  const needsSourceAccount = type === "TRANSFER" || type === "EXPENSE" || type === "LOAN";
-  const showInvoiceMode = Boolean(invoiceMode) && isInvoicePaymentType(type);
-  const showExistingInvoiceDetails = showInvoiceMode && type === "PAYMENT";
-
-  function changeInvoiceMode(next: string) {
-    const nextType: JournalTransactionType = next === "new" ? "INITIAL-PAYMENT" : "PAYMENT";
-    if (invoiceMode !== "selectable" || nextType === type) return;
-    setValue("transactionType", nextType);
-    setValue("autoGenerateInvoiceNumber", nextType === "INITIAL-PAYMENT" ? true : undefined);
-    setValue("invoiceId", undefined);
-    setValue("invoiceNumber", "");
-    setValue("invoiceBalance", undefined);
-    setValue("invoiceCost", undefined);
-    setValue("invoiceDiscount", undefined);
-    setValue("includeSender", false);
-    setValue("senderId", undefined);
-    setValue("senderName", "");
-    setValue("includeReceiver", false);
-    setValue("receiverId", undefined);
-    setValue("receiverName", "");
-    clearErrors();
-    setStepError(null);
-  }
-
-  const invoiceModeField = showInvoiceMode ? (
-    <div className="space-y-2 min-w-0">
-      <Label id="journal-invoice-mode-label">{t("accounting.dailyIncome.form.fields.invoiceMode")}</Label>
-      <SegmentedControl
-        id="journal-invoice-mode"
-        aria-labelledby="journal-invoice-mode-label"
-        value={type === "INITIAL-PAYMENT" ? "new" : "existing"}
-        disabled={invoiceMode === "locked"}
-        onValueChange={changeInvoiceMode}
-        options={[
-          { value: "existing", label: t("accounting.dailyIncome.form.fields.invoiceModeExisting") },
-          { value: "new", label: t("accounting.dailyIncome.form.fields.invoiceModeNew") },
-        ]}
-      />
-    </div>
-  ) : null;
+  const needsSourceAccount = (type === "TRANSFER" || type === "EXPENSE" || type === "LOAN") && !expensePaidByMethod;
+  const showExistingInvoiceDetails = showInvoiceDetails && type === "PAYMENT";
+  const showInvoiceParties = type === "DISCOUNT" || type === "SURCHARGE";
 
   const invoiceSelectControls = (
     <>
@@ -496,7 +475,7 @@ export function DailyIncomeTransactionForm({
   }, [needsPaymentMethod, paymentMethodId, paymentMethodName, paymentMethods, setValue, showPaymentDetails]);
 
   useEffect(() => {
-    if (type !== "EXPENSE" || expenseSourceAccounts.length === 0) return;
+    if (type !== "EXPENSE" || expensePaidByMethod || expenseSourceAccounts.length === 0) return;
     if (sourceAccountDefaultCleared) return;
     if (sourceAccountId) return;
 
@@ -504,7 +483,17 @@ export function DailyIncomeTransactionForm({
     setValue("sourceAccountId", account.id, { shouldValidate: true });
     setValue("sourceAccountName", account.displayName);
     setValue("sourceAccountType", account.type);
-  }, [expenseSourceAccounts, setValue, sourceAccountDefaultCleared, sourceAccountId, type]);
+  }, [expensePaidByMethod, expenseSourceAccounts, setValue, sourceAccountDefaultCleared, sourceAccountId, type]);
+
+  useEffect(() => {
+    if (!showPaymentDetails || moneyAccountId) return;
+    const account = needsBankAccount
+      ? resolveDefaultBankAccount(bankAccounts)
+      : showCashAccount
+        ? findDefaultCashAccount(cashAccounts)
+        : undefined;
+    if (account) applyMoneyAccount(setValue, moneyAccountTarget, account);
+  }, [bankAccounts, cashAccounts, moneyAccountId, moneyAccountTarget, needsBankAccount, setValue, showCashAccount, showPaymentDetails]);
 
   async function submitEntry(values: DailyIncomeJournalValues) {
     try {
@@ -551,15 +540,20 @@ export function DailyIncomeTransactionForm({
       id={formId}
       ref={formRef}
       noValidate
+      data-form-autofocus={skipStepAutofocus ? "off" : undefined}
       onSubmit={async (event) => {
         event.preventDefault();
         if (!quickEntry && activeStep && activeStep !== "review") {
+          // An auto-advance and an Enter/Next submit can overlap; only one may leave the step.
+          if (advancingStepRef.current === activeStep) return;
+          advancingStepRef.current = activeStep;
           const fields = getTransactionStepFields(activeStep, type);
           const valid = await trigger(fields, { shouldFocus: true });
           if (valid) {
             setStepError(null);
             onContinue?.();
           } else {
+            advancingStepRef.current = null;
             setInvalidField(fields.find((field) => getFieldState(field).error) ?? null);
             const firstError = fields.map((field) => getFieldState(field).error).find(Boolean);
             setStepError(firstError?.message ?? null);
@@ -594,7 +588,6 @@ export function DailyIncomeTransactionForm({
             grouped
             manualInvoiceTotals
             showDescription
-            invoiceModeField={invoiceModeField}
             quickEntry={quickEntry}
             activeStep={activeStep}
             employees={employees}
@@ -603,12 +596,15 @@ export function DailyIncomeTransactionForm({
             statementBranchId={statementBranchId}
             allowDailyRoute
             allowAutoClear={allowAutoClear}
+            accounts={accounts}
             bankAccounts={bankAccounts}
             paymentMethods={paymentMethods}
             errors={errors}
             register={register}
             setValue={setValue}
             watch={watch}
+            trigger={trigger}
+            onAssigneeComplete={continueAfterAssignee}
           />
         ) : isInventoryChange ? (
           <RegisterInventoryChangeFields
@@ -642,6 +638,7 @@ export function DailyIncomeTransactionForm({
                     error={errors.employeeId?.message ?? errors.routeId?.message}
                     supervisorError={errors.supervisorId?.message}
                     setValue={setValue}
+                    onAssigneeComplete={continueAfterAssignee}
                   />
                 </div>
 
@@ -651,7 +648,6 @@ export function DailyIncomeTransactionForm({
               <>
                 <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
                   <div className="space-y-4">
-                    {invoiceModeField}
                     <div className="space-y-2 min-w-0">{invoiceSelectControls}</div>
                     <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                       {readOnlyInvoiceField("journal-invoice-sender", t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice?.sender?.name ?? "")}
@@ -679,6 +675,18 @@ export function DailyIncomeTransactionForm({
                     {invoiceSelectControls}
                     {selectedInvoice ? (
                       <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-border bg-card px-3 py-2 text-sm sm:grid-cols-4">
+                        {showInvoiceParties ? (
+                          <>
+                            <div className="col-span-2 min-w-0">
+                              <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.senderClient")}</p>
+                              <p className="truncate font-medium">{selectedInvoice.sender?.name || "—"}</p>
+                            </div>
+                            <div className="col-span-2 min-w-0">
+                              <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.receiverClient")}</p>
+                              <p className="truncate font-medium">{getInvoicePrimaryReceiver(selectedInvoice)?.name || "—"}</p>
+                            </div>
+                          </>
+                        ) : null}
                         <div>
                           <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.total")}</p>
                           <p className="font-medium">{formatAccountingMoney(getInvoiceTotal(selectedInvoice))}</p>
@@ -769,7 +777,10 @@ export function DailyIncomeTransactionForm({
                       const method = paymentMethods.find((item) => item.id === Number(next));
                       setValue("paymentMethodId", method?.id, { shouldValidate: true });
                       setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true });
-                      if (!requiresBankAccount(method?.name)) {
+                      const nextNeedsBank = requiresBankAccount(method?.name);
+                      if (expensePaidByMethod) {
+                        if (shouldClearMoneyAccount(nextNeedsBank, sourceAccountType)) applyMoneyAccount(setValue, "sourceAccount", undefined);
+                      } else if (!nextNeedsBank || paymentAccountType !== "BANK") {
                         setValue("paymentAccountId", undefined, { shouldValidate: true });
                         setValue("paymentAccountName", undefined, { shouldValidate: true });
                         setValue("paymentAccountType", undefined, { shouldValidate: true });
@@ -790,30 +801,34 @@ export function DailyIncomeTransactionForm({
                 </div>
 
                 {needsBankAccount ? (
-                  <div className="space-y-2 min-w-0 sm:col-start-1">
-                    <RequiredLabel htmlFor="journal-bank-account">{t("accounting.dailyIncome.form.fields.bankAccount")}</RequiredLabel>
-                    <SearchableSelect
-                      id="journal-bank-account"
-                      value={paymentAccountId != null ? String(paymentAccountId) : ""}
-                      onValueChange={(next) => {
-                        if (!next) {
-                          setValue("paymentAccountId", undefined, { shouldValidate: true });
-                          setValue("paymentAccountName", undefined, { shouldValidate: true });
-                          setValue("paymentAccountType", undefined, { shouldValidate: true });
-                          return;
-                        }
-                        const account = bankAccounts.find((item) => item.id === Number(next));
-                        setValue("paymentAccountId", account?.id, { shouldValidate: true });
-                        setValue("paymentAccountName", account?.displayName ?? "", { shouldValidate: true });
-                        setValue("paymentAccountType", account?.type ?? "BANK", { shouldValidate: true });
-                      }}
-                      placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
-                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
-                      mobileSheet
-                      options={bankAccountOptions}
-                    />
-                    <FieldMessage error={errors.paymentAccountId?.message} />
-                  </div>
+                  <PaymentAccountSelect
+                    id={expensePaidByMethod ? "journal-source" : "journal-bank-account"}
+                    kind="bank"
+                    className="space-y-2 min-w-0 sm:col-start-1"
+                    accounts={selectableBankAccounts}
+                    pathSource={bankAccounts}
+                    value={moneyAccountId}
+                    valueName={moneyAccountName}
+                    label={expensePaidByMethod ? t("accounting.dailyIncome.form.fields.expenseBankAccount") : undefined}
+                    required
+                    error={expensePaidByMethod ? errors.sourceAccountId?.message : errors.paymentAccountId?.message}
+                    onChange={(account) => applyMoneyAccount(setValue, moneyAccountTarget, account)}
+                  />
+                ) : showCashAccount ? (
+                  <PaymentAccountSelect
+                    id={expensePaidByMethod ? "journal-source" : "journal-cash-account"}
+                    kind="cash"
+                    className="space-y-2 min-w-0 sm:col-start-1"
+                    accounts={cashAccounts}
+                    pathSource={accounts}
+                    value={moneyAccountId}
+                    valueName={moneyAccountName}
+                    label={expensePaidByMethod ? t("accounting.dailyIncome.form.fields.expenseCashAccount") : undefined}
+                    required={expensePaidByMethod}
+                    error={expensePaidByMethod ? errors.sourceAccountId?.message : undefined}
+                    hint={expensePaidByMethod ? null : t("accounting.dailyIncome.form.hints.cashAccount")}
+                    onChange={(account) => applyMoneyAccount(setValue, moneyAccountTarget, account)}
+                  />
                 ) : null}
 
                 {isCheck ? (

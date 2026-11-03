@@ -3,6 +3,12 @@
 Portal-side contract for the pending API update. The portal already sends and
 reads these fields; deploy it together with the API change.
 
+Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
+route journals return the supervisor in `employee` and the `dailyRoute`
+snapshot (vehicle, supervisor, driver, helpers). `inventoryHolders` is
+unverified: a dispatched INVENTORY journal without holders is rejected with
+`422 INVALID_INVENTORY_REGISTRATION`, but with valid holders it returns `500`.
+
 ## Core rule
 
 | Concept | Purpose | Wire fields |

@@ -37,6 +37,8 @@ The API resolves the route from the same tenant and generates `(sender.address.c
 
 ## Rollout and verification
 
+Verified live November 3, 2026 ([backend-api-gaps.md](backend-api-gaps.md)): catalog endpoint, the four permissions, the pickup `predefinedRoute.id` filter and removal of `/legacy-routes`. The routes are not yet in the published Swagger.
+
 Deploy the API before the portal and run the normal tenant permission/index reconciliation. Seed permission IDs 190–193 are retained under the new names, preserving existing role references. Refresh the session permission cache after seeding. The new catalog uses `predefined_routes`; the former `/legacy-routes` API and browser mock were removed. Existing `legacy_routes` documents are not automatically copied or deleted; any tenant with real records there requires an explicit reviewed migration. Sample browser-only rows are not production data and are not seeded.
 
 Verification includes real form/create interactions and loader layout at mobile/desktop widths, unit contract tests, full portal production build, backend tests and Swagger/Scalar parity, and an isolated MongoDB integration fixture. The database fixture has 1,000 pickups and three mixed city/ZIP matches across two pages, verifies same-ID company isolation, and fails after deleting the route. A sample local run executed 20 filtered count/page calls in 46 ms (fixture evidence, not a production latency guarantee). Compared with the former client expansion, the portal now makes one pickup request instead of a route-detail request followed by a pickup request per filtered page.

@@ -1,6 +1,15 @@
 # Pending Transactions update — journal reconciliation (backend/API and portal TODOs)
 
-Status: **proposed API contract — backend work required; Pending Transactions portal implementation prepared against this contract.** This is the single place for every
+Status (verified live November 3, 2026 — see [backend-api-gaps.md](backend-api-gaps.md)):
+**mostly deployed.** Journal reconciliation fields, the full search filter
+allowlist, `POST /v1/journals/summary`, `POST /v1/journals/reconcile` (enforcing
+`canReconcileJournal`) and `/journals/{id}/reverse` are live. Still open:
+seeding `canReconcileJournal` and `canListJournal`, backfilling
+`reconciliationStatus` on existing journals, and documenting these routes in
+Swagger. Payment-on-create is live: a Zelle payment reduced the invoice balance
+on create while Outstanding, and reversing it restored the balance.
+
+This is the single place for every
 backend/API and portal TODO about the Daily Income and Accounting → Pending
 Transactions tables. Portal pieces that already ship are listed under
 [Portal status](#portal-status).
@@ -249,15 +258,19 @@ Implemented locally against this proposed contract (backend deployment is requir
   30 minutes; if selected details expire, reconciliation is blocked until they
   are loaded again. Changing company resets selection.
 
-Still required on the backend (not present in the supplied `api-docs.json`):
+Backend status, checked live on November 3, 2026 (the published Swagger and
+`api-docs.json` still omit these routes):
 
 1. Journal reconciliation fields, outstanding status filter and the complete
-   search allowlist above.
-2. `POST /v1/journals/summary` with `{ ids }` and per-currency totals.
-3. Atomic, idempotent `POST /v1/journals/reconcile`, plus the seeded
-   `canReconcileJournal` grant.
-4. Payments applied on create, immutable reconciled journals, and linked
-   payment directory statuses derived from the journal.
+   search allowlist above — **live**. Existing journals are not backfilled
+   (3 of 24,110 `PAYMENT` journals have a stored status).
+2. `POST /v1/journals/summary` with per-currency totals — **live**.
+3. `POST /v1/journals/reconcile` — **live and enforcing** `canReconcileJournal`,
+   but the grant is **not seeded**, so nobody can reconcile yet.
+4. Payments applied on create — **live** (Zelle, Outstanding); reversing an
+   Outstanding payment restores the invoice — **live**. The linked Zelle record
+   was created `OUTSTANDING`. Immutability of reconciled journals is
+   unverified until the grant is seeded.
 
 Remaining portal follow-ups beyond this table change:
 

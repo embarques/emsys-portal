@@ -1,6 +1,11 @@
 # Invoice policies — backend TODO
 
-Portal work for Admin CRUD + create-wizard agreement/signature is ready. The API still needs the following.
+Portal work for Admin CRUD + create-wizard agreement/signature is ready.
+
+**Done (verified live November 3, 2026):** all five `invoice_policy`
+permissions are seeded, and `/invoice-policies` (list, search, detail, CRUD)
+and `/invoice-policies/active` are deployed and in Swagger. Kept for reference;
+see [backend-api-gaps.md](backend-api-gaps.md).
 
 ## Model
 

@@ -23,6 +23,12 @@ On save, `POST /invoices` uses the resolved branch, container and `receivedBy` d
 
 ## API needs
 
+Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
+`canCreateAssignedInvoice` is **not seeded**; `POST /employees/search` already
+accepts `user.id`. Read grants and server-side validation cannot be tested
+until the permission is seeded and assigned to a test user who lacks
+`canViewInvoice`.
+
 - Seed `canCreateAssignedInvoice` (`resourceType: "invoice"`) and accept it on `POST /invoices`.
 - Allow `user.id` as a filter field on `POST /employees/search`.
 - Grant these reads to roles holding the permission: `GET /users/current`, employee search, vehicle-route search, container list, pickup view (appointments), item catalog, active invoice policies, and the Daily Income (Cuadre) payment registration used by the create wizard.

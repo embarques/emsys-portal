@@ -1,6 +1,6 @@
 import { buildTodayCloseoutPayload, type TransactionBranch, type CloseoutSetupValues } from "./start-transaction";
 import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
-import { resolveJournalRefNumberForWrite } from "@/lib/accounting/daily-income/ref-number";
+import { resolveJournalRefNumberForCreate, resolveJournalRefNumberForWrite } from "@/lib/accounting/daily-income/ref-number";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import {
   buildJournalCheckPaymentWire,
@@ -10,7 +10,8 @@ import { isAutoClearEligible } from "./auto-clear";
 import { isAutoReconcileEligible } from "./auto-reconcile";
 import { inventoryHoldersFromValues } from "./inventory-change";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
-import { isFixedCashTransactionType } from "./transaction-workflow";
+import { isExpensePaidByMethod, isFixedCashTransactionType } from "./transaction-workflow";
+import { isCashAccountSelectable, isPaymentAccountsEnabled } from "./payment-accounts";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/lib/api/search-query";
 import {
   EMPTY_DAILY_INCOME_SUMMARY,
+  isCashPaymentMethod,
   isCheckPaymentMethod,
   requiresBankAccount,
   toApiPaymentMethodName,
@@ -611,9 +613,21 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType) || inventoryReceived;
   const amount = Number(values.amount) || 0;
   const paymentMethod = resolveJournalPaymentMethod(values);
-  const bankAccountRequired = amount > 0 && requiresBankAccount(paymentMethod?.name ?? values.paymentMethodName);
+  const methodName = paymentMethod?.name ?? values.paymentMethodName;
+  const bankAccountRequired = amount > 0 && requiresBankAccount(methodName);
+  // Paid-by-method expenses carry their cash/bank account in sourceAccount.
+  const expensePaidByMethod = isExpensePaidByMethod(values.transactionType);
+  const bankAccountSelected = bankAccountRequired && !expensePaidByMethod;
+  const cashAccountSelected =
+    amount > 0 &&
+    isCashAccountSelectable(values.transactionType, isCashPaymentMethod(methodName)) &&
+    Boolean(values.paymentAccountId) &&
+    values.paymentAccountType === "ASSET";
 
-  if (bankAccountRequired && (!values.paymentAccountId || values.paymentAccountType !== "BANK")) {
+  if (bankAccountSelected && (!values.paymentAccountId || values.paymentAccountType !== "BANK")) {
+    throw new Error("Select a bank account for this payment method.");
+  }
+  if (bankAccountRequired && expensePaidByMethod && values.sourceAccountType !== "BANK") {
     throw new Error("Select a bank account for this payment method.");
   }
 
@@ -673,7 +687,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,
-    paymentAccount: bankAccountRequired && values.paymentAccountId
+    paymentAccount: (bankAccountSelected || cashAccountSelected) && values.paymentAccountId
       ? { id: values.paymentAccountId, name: values.paymentAccountName, type: values.paymentAccountType }
       : undefined,
     sourceAccount: sourceAccountRelated && values.sourceAccountId
@@ -729,11 +743,29 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   };
 }
 
+function createJournalPayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
+  const writeValues: DailyIncomeJournalValues = isFixedCashTransactionType(values.transactionType)
+    ? { ...values, refNumberMode: "system" }
+    : values;
+  const refNumber = resolveJournalRefNumberForCreate(writeValues);
+  return { ...journalPayload(statement, writeValues, options), ...(refNumber ? { refNumber } : {}) };
+}
+
 export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
   const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, {
-    ...journalPayload(statement, values, options),
+    ...createJournalPayload(statement, values, options),
     ...(values.autoClear && isAutoClearEligible(values) ? { autoClear: true } : {}),
     ...(values.autoReconcile && isAutoReconcileEligible(values) ? { autoReconcile: true } : {}),
+  });
+  assertMutation(payload, "Unable to create transaction.");
+  return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
+}
+
+/** Retry-safe create: replaying the same `requestId` and payload never posts twice. */
+export async function createDailyIncomeJournalSync(requestId: string, statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
+  const payload = await apiClient.post<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_JOURNAL}/sync`, {
+    requestId,
+    entry: createJournalPayload(statement, values, options),
   });
   assertMutation(payload, "Unable to create transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
@@ -767,6 +799,7 @@ export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[
     { id: 3, name: "CHECK" },
     { id: 4, name: "ZELLE" },
     { id: 5, name: "CREDIT-CARD" },
+    ...(isPaymentAccountsEnabled() ? [{ id: 6, name: "DEBIT-CARD" }, { id: 7, name: "WIRE" }] : []),
   ];
 }
 

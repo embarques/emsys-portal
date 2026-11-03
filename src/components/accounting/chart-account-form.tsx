@@ -15,6 +15,7 @@ import type {
   ChartAccountType,
   ChartAccountValues,
 } from "@/lib/accounting/chart-accounts/types";
+import { buildPaymentAccountOptions, findDefaultBankAccount } from "@/lib/accounting/daily-income/payment-accounts";
 import type { Branch } from "@/lib/branches/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -90,23 +91,35 @@ export function ChartAccountForm({
     [branches, t],
   );
 
+  const type = watch("type");
+  const branchId = watch("branchId");
+  const parentAccountId = watch("parentAccountId");
+
   const accountOptions = useMemo(
     () => [
       {
         value: "",
         label: t("accounting.chartOfAccounts.form.options.notSubAccount"),
       },
-      ...accounts.map((account) => ({
-        value: String(account.id),
-        label: account.displayName,
-      })),
+      ...(type === "BANK"
+        ? buildPaymentAccountOptions(accounts.filter((account) => account.type === "BANK"))
+        : accounts.map((account) => ({
+          value: String(account.id),
+          label: account.displayName,
+        }))),
     ],
-    [accounts, t],
+    [accounts, t, type],
   );
 
-  const type = watch("type");
-  const branchId = watch("branchId");
-  const parentAccountId = watch("parentAccountId");
+  // New bank accounts fall under the general bank account unless another bank is chosen.
+  useEffect(() => {
+    if (isEditing || type !== "BANK") return;
+    const parent = parentAccountId ? accounts.find((account) => account.id === parentAccountId) : undefined;
+    if (parent?.type === "BANK") return;
+    const general = findDefaultBankAccount(accounts);
+    setValue("parentAccountId", general?.id);
+    setValue("parentAccountName", general?.displayName ?? "");
+  }, [accounts, isEditing, parentAccountId, setValue, type]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-full min-w-0 space-y-5 max-md:[&_label]:text-base">
@@ -191,6 +204,11 @@ export function ChartAccountForm({
           className="min-h-12 max-w-full min-w-0 text-base sm:min-h-10 sm:text-sm"
           mobileSheet
         />
+        {type === "BANK" || type === "ASSET" ? (
+          <p className="text-xs text-muted-foreground">
+            {t(`accounting.chartOfAccounts.form.hints.${type === "BANK" ? "bankParent" : "cashParent"}`)}
+          </p>
+        ) : null}
       </div>
 
       <div className="min-w-0 space-y-2">

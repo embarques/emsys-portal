@@ -77,6 +77,12 @@ Payment posting uses the existing `/journals` contract, explicit duplicate-payme
 
 **Uncleared-payment override:** for an outstanding balance, the portal lists OUTSTANDING records for the invoice from `POST /v1/checks/search`, `/zelle-payments/search`, `/deposits/search` and `/credit-card-payments/search` (`status eq OUTSTANDING` and `invoice.number eq …`, one request per directory the user may list). When their total covers the balance, users with the payment permissions above may tick an acknowledgment that they are liable for the payment if it does not clear, then continue. Immediately before completion the portal rereads the balance and the outstanding records; if they no longer cover the balance it returns to the balance step without calling completion. Without list access to a directory, its payments are not counted.
 
+Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
+assigned barcode rows return `invoice.balance`, `sender { name, phones }` and
+`route.rate`, and the completion route is deployed. Server-side zero-balance
+enforcement is **not implemented**: completing delivery 10464 for invoice
+488970 with a $70 balance returned `200 Delivery completed` (mock data).
+
 **Backend work still required:** enforce the zero-balance invariant in the same transaction as delivery completion, with the invoice financial version participating in the write/conflict check. Return a conflict without changing barcodes or saving a new signature when the balance is nonzero or unavailable. To support the override server-side, accept an explicit acknowledgment on completion (e.g. `unclearedPaymentOverride: true`) that is valid only when outstanding clearing records for the invoice cover the balance, and record the acknowledging user/time in the receipt and activity log. The portal does not send this field yet, so the acknowledgment is not persisted. Preserve idempotent replay of an already committed receipt. The frontend preflight alone cannot prevent a concurrent balance change or direct API calls. No server-side enforcement was changed here.
 
 ## Delivery row exchange rate

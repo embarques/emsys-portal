@@ -6,8 +6,9 @@ import { formatAccountingMoney } from "@/lib/accounting/display";
 import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
 import { isAutoReconcileEligible } from "@/lib/accounting/daily-income/auto-reconcile";
 import { inventoryHoldersFromValues } from "@/lib/accounting/daily-income/inventory-change";
-import { isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
-import { getTransactionStepLabelKey, hasPaymentDetailsStep, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import { isCashPaymentMethod, isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { isCashAccountSelectable } from "@/lib/accounting/daily-income/payment-accounts";
+import { getTransactionStepLabelKey, hasPartiesStep, hasPaymentDetailsStep, isExpensePaidByMethod, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { useTranslation } from "@/lib/i18n";
 
 type Props = {
@@ -20,11 +21,23 @@ export function TransactionReview({ values: v, onEdit }: Props) {
   const inventory = v.transactionType === "INVENTORY";
   const registerInvoice = v.transactionType === "INITIAL-PAYMENT";
   const paymentDetails = hasPaymentDetailsStep(v.transactionType);
+  const expensePaidByMethod = isExpensePaidByMethod(v.transactionType);
   const money = (value: number | undefined) => value == null ? undefined : formatAccountingMoney(value);
   const dispatched = inventory && v.inventoryDirection === "dispatched";
   const holders = dispatched ? inventoryHoldersFromValues(v) : null;
   const holderNames = holders ? [holders.vehicle?.name, ...holders.employees.map((employee) => employee.name)].filter(Boolean).join(", ") : undefined;
-  const groups: { step: TransactionFormStep; rows: [string, string | number | undefined][] }[] = [
+  const invoiceDetailRows: [string, string | undefined][] = [
+    ["accounting.dailyIncome.form.fields.invoice", v.autoGenerateInvoiceNumber ? t("invoices.form.autoNumber.assignedOnSave") : v.invoiceNumber],
+    ["accounting.dailyIncome.form.fields.senderClient", v.includeSender ? v.senderName : undefined],
+    ["accounting.dailyIncome.form.fields.receiverClient", v.includeReceiver ? v.receiverName : undefined],
+  ];
+  const amountRows: [string, string | undefined][] = [
+    [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.total" : "accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],
+    ["accounting.dailyIncome.form.invoiceSummary.discount", registerInvoice ? money(v.invoiceDiscount ?? 0) : undefined],
+    [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.paid" : "accounting.dailyIncome.form.fields.amount", inventory ? undefined : money(v.amount)],
+    ["accounting.dailyIncome.form.fields.balance", registerInvoice && v.invoiceCost != null ? money(v.invoiceCost - (v.invoiceDiscount ?? 0) - (v.amount ?? 0)) : undefined],
+  ];
+  const groups: { step: TransactionFormStep; rows: [string, string | number | undefined][]; invoiceSummary?: { invoice: [string, string | undefined]; payment: [string, string | undefined][] } }[] = [
     {
       step: "assignment", rows: [
         ["accounting.dailyIncome.form.fields.assignedTo", inventory ? undefined : v.routeName || v.employeeName || v.routeId || v.employeeId || t("accounting.dailyIncome.form.creatorAssignee")],
@@ -36,16 +49,13 @@ export function TransactionReview({ values: v, onEdit }: Props) {
       ]
     },
     {
-      step: "amounts", rows: [
-        ["accounting.dailyIncome.form.fields.invoice", v.autoGenerateInvoiceNumber ? t("invoices.form.autoNumber.assignedOnSave") : v.invoiceNumber],
+      step: "amounts",
+      invoiceSummary: registerInvoice ? { invoice: invoiceDetailRows[0], payment: amountRows } : undefined,
+      rows: [
+        ...(registerInvoice ? [] : [invoiceDetailRows[0]]),
         ["accounting.dailyIncome.form.fields.account", v.accountName],
-        ["accounting.dailyIncome.form.fields.sourceAccount", v.sourceAccountName],
-        [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.total" : "accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],
-        ["accounting.dailyIncome.form.invoiceSummary.discount", registerInvoice ? money(v.invoiceDiscount ?? 0) : undefined],
-        [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.paid" : "accounting.dailyIncome.form.fields.amount", inventory ? undefined : money(v.amount)],
-        ["accounting.dailyIncome.form.fields.balance", registerInvoice && v.invoiceCost != null ? money(v.invoiceCost - (v.invoiceDiscount ?? 0) - (v.amount ?? 0)) : undefined],
-        ["accounting.dailyIncome.form.fields.senderClient", v.includeSender ? v.senderName : undefined],
-        ["accounting.dailyIncome.form.fields.receiverClient", v.includeReceiver ? v.receiverName : undefined],
+        ["accounting.dailyIncome.form.fields.sourceAccount", expensePaidByMethod ? undefined : v.sourceAccountName],
+        ...(registerInvoice ? [] : [...amountRows, ...invoiceDetailRows.slice(1)]),
         ["inventory.form.fields.item", inventory ? v.inventoryItemName : undefined],
         ["inventory.form.fields.quantity", inventory ? v.inventoryQuantity : undefined],
         ["accounting.dailyIncome.form.fields.unitPrice", inventory ? money(v.inventoryUnitPrice) : undefined],
@@ -58,29 +68,58 @@ export function TransactionReview({ values: v, onEdit }: Props) {
       step: "payment" as const, rows: [
         ["accounting.dailyIncome.form.fields.paymentMethod", v.paymentMethodName],
         ["accounting.dailyIncome.form.fields.bankAccount", requiresBankAccount(v.paymentMethodName) ? v.paymentAccountName : undefined],
+        ["accounting.dailyIncome.form.fields.cashAccount", isCashAccountSelectable(v.transactionType, isCashPaymentMethod(v.paymentMethodName)) ? v.paymentAccountName : undefined],
+        ["accounting.dailyIncome.form.fields.sourceAccount", expensePaidByMethod ? v.sourceAccountName : undefined],
         ["accounting.dailyIncome.form.fields.checkNumber", isCheckPaymentMethod(v.paymentMethodName) ? v.checkNumber : undefined],
         ["accounting.dailyIncome.form.fields.externalReferenceNumber", isCheckPaymentMethod(v.paymentMethodName) ? undefined : v.externalReferenceNumber],
         ["accounting.dailyIncome.form.fields.autoClear", v.autoClear && isAutoClearEligible(v) ? t("accounting.dailyIncome.form.fields.autoClearReviewValue") : undefined],
-        ["accounting.dailyIncome.form.fields.referenceNumber", v.refNumberMode === "custom" ? v.refNumber : t("accounting.dailyIncome.form.fields.referenceNumberModeSystem")],
+        ["accounting.dailyIncome.form.fields.referenceNumber", registerInvoice ? undefined : v.refNumberMode === "custom" ? v.refNumber : t("accounting.dailyIncome.form.fields.referenceNumberModeSystem")],
         ["accounting.dailyIncome.form.fields.description", v.description],
+      ] as [string, string | undefined][]
+    }] : []),
+    ...(hasPartiesStep(v.transactionType) ? [{
+      step: "parties" as const, rows: [
+        ["accounting.dailyIncome.form.fields.senderClient", v.includeSender ? v.senderName : t("accounting.dailyIncome.form.fields.partySkipped")],
+        ["accounting.dailyIncome.form.fields.receiverClient", v.includeReceiver ? v.receiverName : t("accounting.dailyIncome.form.fields.partySkipped")],
       ] as [string, string | undefined][]
     }] : []),
   ];
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.wizard.workflow.reviewHint")}</p>
-      {groups.map(({ step, rows }) => (
-        <FormSection key={step} variant="card" title={t(getTransactionStepLabelKey(step, v.transactionType))} action={onEdit ? <Button type="button" size="sm" variant="ghost" onClick={() => onEdit(step)}>{t("common.actions.edit")}</Button> : undefined}>
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.filter(([, value]) => value !== undefined && value !== "").map(([label, value]) => (
-              <div key={label} className="min-w-0">
-                <dt className="text-xs text-muted-foreground">{t(label)}</dt>
-                <dd className="mt-1 break-words whitespace-pre-wrap text-sm font-medium">{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </FormSection>
-      ))}
+      {groups.map(({ step, rows, invoiceSummary }) => {
+        const visibleRows = rows.filter(([, value]) => value !== undefined && value !== "");
+        return (
+          <FormSection key={step} variant="card" title={t(getTransactionStepLabelKey(step, v.transactionType))} action={onEdit ? <Button type="button" size="sm" variant="ghost" onClick={() => onEdit(step)}>{t("common.actions.edit")}</Button> : undefined}>
+            <div className="space-y-4">
+              {invoiceSummary ? (
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <dl>
+                    <ReviewField label={t(invoiceSummary.invoice[0])} value={invoiceSummary.invoice[1] || t("common.empty.dash")} />
+                  </dl>
+                  <dl className="grid grid-cols-2 gap-4 sm:col-span-2">
+                    {invoiceSummary.payment.map(([label, value]) => <ReviewField key={label} label={t(label)} value={value || t("common.empty.dash")} />)}
+                  </dl>
+                </div>
+              ) : null}
+              {visibleRows.length > 0 ? (
+                <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {visibleRows.map(([label, value]) => <ReviewField key={label} label={t(label)} value={value} />)}
+                </dl>
+              ) : null}
+            </div>
+          </FormSection>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReviewField({ label, value }: { label: string; value: string | number | undefined }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-1 break-words whitespace-pre-wrap text-sm font-medium">{value}</dd>
     </div>
   );
 }

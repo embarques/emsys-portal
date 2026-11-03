@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Route, UserPlus } from "lucide-react";
 
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
@@ -14,13 +14,12 @@ import {
   dailyRoutesForStatement,
   employeesForAssigneeBranch,
   getTransactionAssigneeSelectValue,
-  resolveAssigneeBranchId,
   resolveDailyIncomeAssigneeSource,
   resolveDailyRouteSupervisor,
 } from "@/lib/accounting/daily-income/assignee";
+import { isDesktopFormNavigation } from "@/hooks/use-form-enter-navigation";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeAssigneeSource } from "@/lib/accounting/daily-income/types";
-import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { Employee } from "@/lib/employees/types";
 import { useTranslation } from "@/lib/i18n";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
@@ -32,7 +31,7 @@ type Props = {
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
-  /** Prefer this branch when seeding the filter (Daily Income statement branch). */
+  /** Closeout branch; employee and route options are limited to it. */
   statementBranchId?: number | null;
   employeeId?: number;
   employeeName?: string;
@@ -50,6 +49,8 @@ type Props = {
   onEditEmployee?: () => void;
   onAddRoute?: () => void;
   onEditRoute?: () => void;
+  /** Called when a choice completes the assignment (employee, or route with its supervisor). */
+  onAssigneeComplete?: () => void;
 };
 
 type TransactionAssigneeFormValues = {
@@ -117,39 +118,17 @@ export function TransactionAssigneeSelect({
   onEditEmployee,
   onAddRoute,
   onEditRoute,
+  onAssigneeComplete,
 }: Props) {
   const { t } = useTranslation();
-  const branchesQuery = useBranchPicker();
-  const branches = branchesQuery.data?.items ?? [];
 
-  const selectedEmployee = useMemo(
-    () => (employeeId != null ? employees.find((item) => item.id === employeeId) : undefined),
-    [employeeId, employees],
-  );
   const selectedRoute = useMemo(
     () => (routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined),
     [dailyRoutes, routeId],
   );
 
-  const seededBranchId = resolveAssigneeBranchId({
-    statementBranchId,
-    employee: selectedEmployee,
-    route: selectedRoute,
-  });
-
-  const [branchId, setBranchId] = useState<number | undefined>(seededBranchId);
-
-  useEffect(() => {
-    const next = resolveAssigneeBranchId({
-      statementBranchId,
-      employee: selectedEmployee,
-      route: selectedRoute,
-    });
-    setBranchId((current) => {
-      if (current != null && current > 0) return current;
-      return next;
-    });
-  }, [statementBranchId, selectedEmployee, selectedRoute]);
+  // The closeout belongs to one branch, so assignees are always scoped to it.
+  const branchId = statementBranchId != null && statementBranchId > 0 ? statementBranchId : undefined;
 
   const source = allowDailyRoute
     ? resolveDailyIncomeAssigneeSource({ assigneeSource, employeeId, routeId })
@@ -208,46 +187,35 @@ export function TransactionAssigneeSelect({
     if (supervisor) setSupervisor(setValue, supervisor);
   }, [selectedRoute, setValue, source, supervisorId]);
 
-  const branchOptions = useMemo(
-    () =>
-      branches.map((branch) => ({
-        value: String(branch.id),
-        label: [branch.name, branch.code].filter(Boolean).join(" · ") || String(branch.id),
-        keywords: [branch.name, branch.code],
-      })),
-    [branches],
-  );
-
   const employeeValue = getTransactionAssigneeSelectValue(employeeId);
   const sourceOptions: { value: DailyIncomeAssigneeSource; label: string }[] = [
     { value: "employee", label: t("accounting.dailyIncome.form.fields.employee") },
     { value: "route", label: t("accounting.dailyIncome.form.fields.route") },
   ];
 
+  const pendingSourceFocusRef = useRef<DailyIncomeAssigneeSource | null>(null);
+  useEffect(() => {
+    if (pendingSourceFocusRef.current !== source) return;
+    pendingSourceFocusRef.current = null;
+    if (!isDesktopFormNavigation()) return;
+    // A newly mounted select swaps its control once the viewport resolves; focus the settled one.
+    const frame = window.requestAnimationFrame(() => {
+      const field = document.getElementById(source === "route" ? "journal-route" : id);
+      if (!field || field.matches(":disabled") || field.getAttribute("aria-disabled") === "true") return;
+      field.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [id, source]);
+
   function handleSourceChange(next: string) {
     const sourceValue = next === "route" ? "route" : "employee";
+    pendingSourceFocusRef.current = sourceValue;
     setValue("assigneeSource", sourceValue, { shouldValidate: true });
     if (sourceValue === "route") {
       clearEmployee(setValue);
       return;
     }
     clearRoute(setValue);
-  }
-
-  function handleBranchChange(next: string) {
-    const parsed = Number(next);
-    const nextId = Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-    setBranchId(nextId);
-    // Clear entity when it no longer belongs to the chosen branch.
-    if (source === "route") {
-      if (selectedRoute && nextId != null && selectedRoute.branch?.id !== nextId) {
-        clearRoute(setValue);
-      }
-      return;
-    }
-    if (selectedEmployee && nextId != null && selectedEmployee.branch?.id !== nextId) {
-      clearEmployee(setValue);
-    }
   }
 
   function handleEmployeeChange(next: string) {
@@ -263,9 +231,7 @@ export function TransactionAssigneeSelect({
     setValue("employeeGroupId", undefined, { shouldValidate: true });
     setValue("employeeGroupName", "");
     clearRoute(setValue);
-    if (employee?.branch?.id) {
-      setBranchId(employee.branch.id);
-    }
+    if (employee) onAssigneeComplete?.();
   }
 
   function handleRouteChange(next: string) {
@@ -282,11 +248,10 @@ export function TransactionAssigneeSelect({
     setValue("routeName", route?.name.trim() || employeeNames || next);
     setValue("routeCrewId", undefined, { shouldValidate: true });
     setValue("routeCrewName", "");
-    setSupervisor(setValue, resolveDailyRouteSupervisor(route));
+    const supervisor = resolveDailyRouteSupervisor(route);
+    setSupervisor(setValue, supervisor);
     clearEmployee(setValue);
-    if (route?.branch?.id) {
-      setBranchId(route.branch.id);
-    }
+    if (supervisor) onAssigneeComplete?.();
   }
 
   function handleSupervisorChange(next: string) {
@@ -297,26 +262,11 @@ export function TransactionAssigneeSelect({
     }
     const option = supervisorOptions.find((item) => item.value === next);
     setSupervisor(setValue, { id, name: option?.label ?? "" });
+    if (routeId) onAssigneeComplete?.();
   }
 
   return (
     <div className={singleColumn ? "flex flex-col gap-4" : "grid gap-4 sm:grid-cols-2"}>
-      <div className="space-y-2">
-        <Label htmlFor={`${id}-branch`}>
-          {t("accounting.dailyIncome.form.fields.branch")}
-        </Label>
-        <SearchableSelect
-          id={`${id}-branch`}
-          value={branchId != null ? String(branchId) : ""}
-          onValueChange={handleBranchChange}
-          placeholder={t("accounting.dailyIncome.form.placeholders.selectBranch")}
-          searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBranches")}
-          mobileSheet
-          loading={branchesQuery.isLoading}
-          options={branchOptions}
-        />
-      </div>
-
       {allowDailyRoute ? (
         <div className="space-y-2">
           <Label id={`${id}-source-label`}>

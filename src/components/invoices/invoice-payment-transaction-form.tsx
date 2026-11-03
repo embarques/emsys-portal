@@ -12,6 +12,7 @@ import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
+import { isPaymentAccountsEnabled } from "@/lib/accounting/daily-income/payment-accounts";
 import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
@@ -125,6 +126,7 @@ export function InvoicePaymentTransactionForm({
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc", active: true });
   const paymentMethodsQuery = useAccountingPaymentMethods(true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
+  const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, isPaymentAccountsEnabled());
   const createJournal = useCreateDailyIncomeJournal();
   const employees = useMemo(
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
@@ -132,6 +134,7 @@ export function InvoicePaymentTransactionForm({
   );
   const paymentMethods = paymentMethodsQuery.data ?? EMPTY_PAYMENT_METHODS;
   const bankAccounts = bankAccountsQuery.data?.items ?? EMPTY_BANK_ACCOUNTS;
+  const accounts = accountsQuery.data?.items ?? EMPTY_BANK_ACCOUNTS;
   const step1AssigneeSeed = useMemo(
     () => buildInvoiceDailyIncomeAssigneeDefaults(invoice),
     [invoice],
@@ -452,6 +455,7 @@ export function InvoicePaymentTransactionForm({
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}
           statementBranchId={statement.branch?.id}
+          accounts={accounts}
           bankAccounts={bankAccounts}
           paymentMethods={paymentMethods}
           errors={errors}
