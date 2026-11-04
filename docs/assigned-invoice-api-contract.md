@@ -4,9 +4,9 @@ Field staff create invoices from an appointment without the full invoice wizard.
 
 ## Portal
 
-Who gets the assigned flow: users with `canCreateAssignedInvoice` (resource `invoice`) and **without** `canViewInvoice`. Users with `canViewInvoice` keep the full wizard, including when they start from an appointment.
+Who gets the assigned flow: users with `canCreateAssignedInvoice` (resource `invoice`) and **without** `canCreateInvoice`. Users with `canCreateInvoice` keep the full wizard, including when they start from an appointment.
 
-Entry point: Appointments → select one appointment (or open View appointment) → **Create invoice**. The desktop form tab lives under `/appointments`, because these users cannot open `/invoices`.
+Entry point: Appointments → select one appointment (or open View appointment) → **Create invoice**. The desktop form tab lives under `/appointments` for the assigned flow and for anyone without `canViewInvoice`, so it never depends on opening `/invoices`.
 
 On open the portal resolves, for the signed-in user:
 
@@ -27,9 +27,9 @@ Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
 `canCreateAssignedInvoice` is **not seeded**; `POST /employees/search` already
 accepts `user.id`. Read grants and server-side validation cannot be tested
 until the permission is seeded and assigned to a test user who lacks
-`canViewInvoice`.
+`canCreateInvoice`.
 
-- Seed `canCreateAssignedInvoice` (`resourceType: "invoice"`) and accept it on `POST /invoices`.
+- Seed `canCreateAssignedInvoice` (`resourceType: "invoice"`) and accept it on `POST /invoices` for callers without `canCreateInvoice`.
 - Allow `user.id` as a filter field on `POST /employees/search`.
 - Grant these reads to roles holding the permission: `GET /users/current`, employee search, vehicle-route search, container list, pickup view (appointments), item catalog, active invoice policies, and the Daily Income (Cuadre) payment registration used by the create wizard.
 - Recommended: for callers holding only `canCreateAssignedInvoice`, the API should verify that `pickup`, `container`, `receivedBy` and the sender/receiver match the appointment and the caller's assignment, because the portal restriction is UI-only.

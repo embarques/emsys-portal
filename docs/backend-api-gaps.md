@@ -75,6 +75,13 @@ Ordered by what blocks shipped portal features first.
    `/inventory/pending-dispatches/search`,
    `/inventory/dispatches/{id}/reconciliations`. Do not treat a route's
    absence from `api-docs.json` as proof it is not deployed.
+8. **Define `canGenerateOwnInvoicePool`** (`invoice_pool`, "generate a reserved
+   pool for yourself"). The portal does not use it yet. Document the request
+   it authorizes (e.g. `POST /invoices/reserved/actions` `generate` with the
+   caller's own linked employee, without `canGenerateInvoicePool`), whether
+   the caller can then list their own numbers without `canViewInvoicePool`, and
+   reject any other `employeeId` for callers holding only this grant. Update
+   the emsys-api `docs/contracts/reserved-invoice-pools.md` contract and seed it.
 
 ## Live API defects observed
 

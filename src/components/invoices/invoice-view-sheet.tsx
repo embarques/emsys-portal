@@ -57,6 +57,8 @@ type InvoiceViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   onEdit: (invoice: Invoice) => void;
   onDelete: (invoice: Invoice) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
   onManageItems: (invoice: Invoice) => void;
   manageItemsDisabled?: boolean;
   onPrint: (invoice: Invoice) => void;
@@ -352,6 +354,8 @@ export function InvoiceViewSheet({
   onOpenChange,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
   onManageItems,
   manageItemsDisabled = false,
   onPrint,
@@ -597,27 +601,31 @@ export function InvoiceViewSheet({
               selectedCount={1}
               onOpenMobile={() => setActiveTab("documents")}
             />
-            <TableSelectionActionDivider />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(invoice)}
-              className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-            >
-              <Pencil className="h-4 w-4" />
-              {t("common.actions.edit")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(invoice)}
-              className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-            >
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
+            {canEdit || canDelete ? <TableSelectionActionDivider /> : null}
+            {canEdit ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(invoice)}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+              >
+                <Pencil className="h-4 w-4" />
+                {t("common.actions.edit")}
+              </Button>
+            ) : null}
+            {canDelete ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(invoice)}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
+              >
+                <Trash2 className="h-4 w-4" />
+                {t("common.actions.delete")}
+              </Button>
+            ) : null}
           </div>
         </div>
       </RecordViewSheetContent>

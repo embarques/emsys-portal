@@ -50,7 +50,7 @@ const QUICK_ACTION_DEFINITIONS: QuickActionDefinition[] = [
     id: "createInvoice",
     labelKey: "shell.search.createInvoice",
     icon: FilePlus2,
-    permission: PERMISSIONS.invoicesView,
+    permission: PERMISSIONS.invoicesCreate,
   },
   {
     id: "addTransaction",

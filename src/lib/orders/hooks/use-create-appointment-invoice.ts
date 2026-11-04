@@ -16,7 +16,7 @@ import { getUniqueOrderReceivers, type Order } from "@/lib/orders/types";
 export function useCreateAppointmentInvoice() {
   const { t } = useTranslation();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
-  const { canCreateFromAppointment: canCreateInvoice, isAssignedOnly } = useInvoiceCreateAccess();
+  const { canCreateFromAppointment: canCreateInvoice, isAssignedOnly, canOpenInvoices } = useInvoiceCreateAccess();
   const [receiverChoiceOrder, setReceiverChoiceOrder] = useState<Order | null>(null);
   const [dialogPrefill, setDialogPrefill] = useState<InvoiceAppointmentPrefill | null>(null);
 
@@ -29,8 +29,8 @@ export function useCreateAppointmentInvoice() {
     if (isDesktopTabs) {
       openFormTab({
         feature: "invoices",
-        // Assigned-only users cannot open /invoices; keep their form under Appointments.
-        baseHref: isAssignedOnly ? "/appointments" : "/invoices",
+        // Users without /invoices access (and the assigned flow) keep the form under Appointments.
+        baseHref: isAssignedOnly || !canOpenInvoices ? "/appointments" : "/invoices",
         mode: "add",
         label: t("orders.actions.createInvoiceTab", { id: formatOrderId(order) }),
         invoicePrefill: prefill,

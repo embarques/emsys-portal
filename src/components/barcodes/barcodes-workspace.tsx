@@ -83,6 +83,8 @@ import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
 import { getBarcodeStatusLabel } from "@/lib/labels/display";
 import { FALLBACK_BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -106,9 +108,12 @@ export function BarcodesWorkspace() {
   const barcodeFilterFields = useBarcodeFilterFields();
   const { notifyUpdated, notifyError } = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+  const { hasPermission } = useAuth();
+  // Barcodes are owned by invoice line items; editing them opens the invoice editor.
+  const canUpdateInvoices = hasPermission(PERMISSIONS.invoicesUpdate.name, PERMISSIONS.invoicesUpdate.resourceType);
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const { data: containersData } = useContainerPicker(200);
-  const containers = containersData?.items ?? [];
+  const containers = useMemo(() => containersData?.items ?? [], [containersData?.items]);
   const updateBarcodesMutation = useUpdateBarcodes();
   const { canPrint, isPrinting, printBarcodes } = usePrintBarcodes();
 
@@ -605,6 +610,8 @@ export function BarcodesWorkspace() {
           onView={() => setViewBarcode(selectedBarcodes[0] ?? null)}
           onEdit={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
           onDelete={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
+          canEdit={canUpdateInvoices}
+          canDelete={canUpdateInvoices}
           editDisabled={!selectedInvoiceTarget || isUpdating}
           deleteDisabled={!selectedInvoiceTarget || isUpdating}
           actions={
@@ -625,7 +632,7 @@ export function BarcodesWorkspace() {
                 size="sm"
                 variant="outline"
                 className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
-                disabled={!selectedInvoiceTarget || isUpdating}
+                disabled={!canUpdateInvoices || !selectedInvoiceTarget || isUpdating}
                 onClick={() => openSelectedInvoice()}
               >
                 <FileText className="h-4 w-4" />

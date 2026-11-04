@@ -26,7 +26,10 @@ export const PERMISSIONS = {
   invoicePoolView: { name: "canViewInvoicePool", resourceType: "invoice_pool" },
   invoicesPrint: { name: "canPrintInvoice", resourceType: "invoice" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
+  invoicesCreate: { name: "canCreateInvoice", resourceType: "invoice" },
   invoicesUpdate: { name: "canUpdateInvoice", resourceType: "invoice" },
+  /** Deleting invoices and their documents; the API still enforces business rules. */
+  invoicesDelete: { name: "canDeleteInvoice", resourceType: "invoice" },
   /** Create an invoice from an appointment with date, container and received-by auto-filled. */
   invoicesCreateAssigned: { name: "canCreateAssignedInvoice", resourceType: "invoice" },
   invoicesSyncLegacy: { name: "canSyncLegacyInvoices", resourceType: "invoice" },

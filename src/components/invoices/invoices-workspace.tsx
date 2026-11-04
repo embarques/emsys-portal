@@ -521,6 +521,9 @@ export function InvoicesWorkspace() {
   const [printInvoiceIds, setPrintInvoiceIds] = useState<string[]>([]);
   const isPrinting = printInvoiceIds.length > 0;
   const canPrintInvoices = hasPermission(PERMISSIONS.invoicesPrint.name, PERMISSIONS.invoicesPrint.resourceType);
+  const canCreateInvoices = hasPermission(PERMISSIONS.invoicesCreate.name, PERMISSIONS.invoicesCreate.resourceType);
+  const canUpdateInvoices = hasPermission(PERMISSIONS.invoicesUpdate.name, PERMISSIONS.invoicesUpdate.resourceType);
+  const canDeleteInvoices = hasPermission(PERMISSIONS.invoicesDelete.name, PERMISSIONS.invoicesDelete.resourceType);
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
   const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const viewedInvoiceNumber =
@@ -1007,12 +1010,14 @@ export function InvoicesWorkspace() {
           title={t("invoices.title")}
           description={t("invoices.pages.description")}
           actions={
-            <div className="flex items-center gap-2">
-              <Button onClick={openAddForm} disabled={isSaving}>
-                <Plus className="h-4 w-4" />
-                {t("invoices.workspace.addInvoice")}
-              </Button>
-            </div>
+            canCreateInvoices ? (
+              <div className="flex items-center gap-2">
+                <Button onClick={openAddForm} disabled={isSaving}>
+                  <Plus className="h-4 w-4" />
+                  {t("invoices.workspace.addInvoice")}
+                </Button>
+              </div>
+            ) : undefined
           }
         />
       </div>
@@ -1117,6 +1122,8 @@ export function InvoicesWorkspace() {
             onView={() => { if (selectedInvoices[0]) openView(selectedInvoices[0]); }}
             onEdit={() => { if (selectedInvoices[0]) openEditForm(selectedInvoices[0]); }}
             onDelete={() => setDeleteTarget(selectedInvoices)}
+            canEdit={canUpdateInvoices}
+            canDelete={canDeleteInvoices}
             deleteDisabled={isDeleting}
             actions={
               <>
@@ -1278,6 +1285,8 @@ export function InvoicesWorkspace() {
           onDelete={() =>
             setDeleteTarget(invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)))
           }
+          canEdit={canUpdateInvoices}
+          canDelete={canDeleteInvoices}
           deleteDisabled={isDeleting}
           actions={
             <>
@@ -1339,7 +1348,7 @@ export function InvoicesWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={openView}
-            onRowDoubleClick={openEditForm}
+            onRowDoubleClick={canUpdateInvoices ? openEditForm : undefined}
             activeRowId={viewInvoiceId ?? undefined}
             emptyState={
               <p className="text-muted-foreground">{t("invoices.workspace.empty")}</p>
@@ -1384,6 +1393,8 @@ export function InvoicesWorkspace() {
         }}
         onEdit={(invoice) => openEditForm(invoice)}
         onDelete={(invoice) => openDeleteInvoice(invoice)}
+        canEdit={canUpdateInvoices}
+        canDelete={canDeleteInvoices}
         onManageItems={(invoice) => openManageItemsFor([invoice])}
         manageItemsDisabled={!canViewBarcodes}
         onPrint={(invoice) => {
