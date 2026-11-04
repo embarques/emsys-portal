@@ -7,14 +7,14 @@ function loadFeature(file) {
   const source = ts.transpileModule(fs.readFileSync(new URL(`../../src/lib/orders/${file}.ts`, import.meta.url), "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true },
   }).outputText;
-  const module = { exports: {} };
+  const loadedModule = { exports: {} };
   const require = (name) => {
     if (name.endsWith("orders.json")) return JSON.parse(fs.readFileSync(new URL(`../../src/${name.slice(2)}`, import.meta.url), "utf8"));
     if (name === "./types") return types;
     return {};
   };
-  new Function("require", "module", "exports", source)(require, module, module.exports);
-  return module.exports;
+  new Function("require", "module", "exports", source)(require, loadedModule, loadedModule.exports);
+  return loadedModule.exports;
 }
 const types = loadFeature("types");
 const display = loadFeature("display");

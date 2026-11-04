@@ -65,7 +65,7 @@ async function fixture(width = 1280, kind = "select", settings = {}) {
   if (kind === "wizard") { await page.getByTestId("transaction-wizard").waitFor(); return page; }
   await page.locator("form").waitFor();
   const first = { comments: "#comment-purpose-0", statement: "#statement-branch", transaction: "#transaction", customer: "#sender", address: "#address" }[kind] ?? "#branch";
-  if (settings.quickEntry === "true") await page.getByRole("group", { name: "orders.comments.columns.purpose" }).first().waitFor();
+  if (kind === "comments" && settings.quickEntry === "true") await page.getByRole("group", { name: "orders.comments.columns.purpose" }).first().waitFor();
   else await page.locator(first).waitFor();
   return page;
 }
@@ -319,10 +319,12 @@ test("quick invoice entry advances from cost to amount before saving", async () 
   const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT", quickEntry: "true" });
   try {
     assert.equal(await page.locator("#journal-payment").isVisible(), true);
-    await page.locator("#journal-auto-invoice-number").uncheck();
+    await page.locator("#journal-invoice-number-mode-custom").click();
     await page.locator("#journal-invoice-number").fill("80424");
     await page.locator("#journal-invoice-cost").fill("200");
     await page.locator("#journal-invoice-cost").press("Enter");
+    await page.waitForFunction(() => document.activeElement.id === "journal-invoice-discount");
+    await page.keyboard.press("Enter");
     await page.waitForFunction(() => document.activeElement.id === "journal-amount");
     assert.equal(await page.locator("#submitted").textContent(), "0");
     await page.locator("#journal-amount").fill("150");
@@ -583,7 +585,8 @@ for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "EXPENSE", "SALES",
           await page.waitForFunction(() => document.activeElement?.id === "save");
           await page.keyboard.press("Enter");
         }
-        const next = step === "assignment" ? "amounts" : step === "amounts" && hasPaymentStep ? "payment" : "review";
+        const next = step === "assignment" ? "amounts" : step === "amounts" && hasPaymentStep ? "payment"
+          : step === "payment" && transactionType === "INITIAL-PAYMENT" ? "parties" : "review";
         await page.waitForFunction(next => document.getElementById("step").textContent === next, next);
         assert.equal(await page.locator("#submitted").textContent(), "0");
       } finally { await page.close(); }
@@ -713,4 +716,36 @@ test("transaction categories share headings and open existing payment flows", as
       assert.equal(await denied.getByRole("radio", { name: new RegExp(`transactionTypes\.${key}\.label`) }).isDisabled(), true);
     }
   } finally { await denied.close(); }
+});
+
+for (const width of [1280, 390]) {
+  test(`select triggers identify their rendered listboxes at ${width}px`, async () => {
+    const page = await fixture(width);
+    try {
+      for (const id of ["branch", "plain"]) {
+        await page.locator(`#${id}`).click();
+        await page.getByRole("listbox").waitFor();
+        assert.equal(await page.locator(`#${id}`).evaluate((trigger) => {
+          const list = document.getElementById(trigger.getAttribute("aria-controls"));
+          return list?.getAttribute("role");
+        }), "listbox");
+        await page.keyboard.press("Escape");
+      }
+    } finally { await page.close(); }
+  });
+}
+
+test("payment-method refetch preserves the transaction step and typed draft", async () => {
+  const page = await fixture(1280, "wizard");
+  try {
+    await page.getByRole("radio").first().click();
+    await page.locator("#journal-employee").click();
+    await page.getByRole("option", { name: /Maria/ }).click();
+    await page.locator("#journal-employee").waitFor({ state: "hidden" });
+    await page.locator("#journal-invoice-cost").fill("123.45");
+    await page.getByRole("button", { name: "Refresh payment methods", exact: true }).click();
+    assert.match(await page.locator("#journal-invoice-cost").inputValue(), /123\.45/);
+    assert.equal(await page.locator("#journal-employee").isVisible(), false);
+    assert.equal(await page.locator("#submitted").textContent(), "0");
+  } finally { await page.close(); }
 });

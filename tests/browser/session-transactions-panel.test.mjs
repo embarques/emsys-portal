@@ -20,8 +20,8 @@ const translate = (key, params = {}) => {
 const cache = new Map();
 function load(filename) {
  if (cache.has(filename)) return cache.get(filename);
- const module = { exports: {} };
- cache.set(filename, module.exports);
+ const loadedModule = { exports: {} };
+ cache.set(filename, loadedModule.exports);
  const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
  function localRequire(name) {
   if (name === "@/lib/i18n") return { useTranslation: () => ({ t: translate }) };
@@ -33,8 +33,8 @@ function load(filename) {
   }
   return require(name);
  }
- new Function("require", "module", "exports", source)(localRequire, module, module.exports);
- return module.exports;
+ new Function("require", "module", "exports", source)(localRequire, loadedModule, loadedModule.exports);
+ return loadedModule.exports;
 }
 const { SessionTransactionsLayout } = load(path.resolve("src/components/accounting/session-transactions-panel.tsx"));
 const entries = Array.from({ length: 30 }, (_, index) => ({ journal: { id: String(index), transactionType: "INITIAL-PAYMENT", amount: 150, invoice: { number: String(80423 - index), cost: 200, balance: 50 }, paymentMethod: { name: "CASH" } }, values: {}, statementId: 32676, savedAt: index }));
@@ -66,7 +66,7 @@ test("desktop list scrolls independently while totals remain visible; panel is h
     const grid = el.parentElement.parentElement;
     return grid.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom;
   });
-  assert.equal(bottomSpace, 128);
+  assert.equal(bottomSpace, 0);
   await page.locator("#wizard").evaluate(el => { el.style.height = "650px"; });
   assert.equal((await panel.boundingBox()).height, 650);
   await page.locator("#wizard").evaluate(el => { el.style.height = "560px"; });

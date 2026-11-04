@@ -4,9 +4,9 @@ import fs from "node:fs";
 import ts from "typescript";
 
 const output = ts.transpileModule(fs.readFileSync("src/lib/accounting/daily-income/session-transactions.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-const module = { exports: {} };
-new Function("exports", output)(module.exports);
-const { sessionTransactionDetails, sessionTransactionTotals } = module.exports;
+const loadedModule = { exports: {} };
+new Function("exports", output)(loadedModule.exports);
+const { sessionTransactionDetails, sessionTransactionTotals } = loadedModule.exports;
 const entry = (type, amount, extra = {}, values = {}) => ({ journal: { id: "1", transactionType: type, amount, ...extra }, values: { transactionType: type, ...values }, statementId: 1, savedAt: 1 });
 
 test("invoice summary uses saved amounts, preserves zero balance, and falls back for omitted invoice fields", () => {
@@ -34,7 +34,7 @@ test("invoice totals include zero-payment registrations; other types stay separa
 });
 
 test("Total combines collections and outflows without adding invoice cost or unpaid balance", () => {
- const { sessionTransactionsNetTotal } = module.exports;
+ const { sessionTransactionsNetTotal } = loadedModule.exports;
  assert.equal(sessionTransactionsNetTotal([entry("INITIAL-PAYMENT", 1210, {}, { invoiceCost: 1210 }), entry("EXPENSE", 125), entry("EXPENSE", 10)]), 1075);
  assert.equal(sessionTransactionsNetTotal([entry("INITIAL-PAYMENT", 0, {}, { invoiceCost: 200 })]), 0);
  assert.equal(sessionTransactionsNetTotal([entry("PAYMENT", 100), entry("DISCOUNT", 10), entry("TRANSFER", 20), entry("LOAN", 5)]), 65);

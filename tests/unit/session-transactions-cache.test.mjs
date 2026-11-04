@@ -7,12 +7,12 @@ import { QueryClient, QueryClientProvider, useMutationState } from "@tanstack/re
 import ts from "typescript";
 
 const output = ts.transpileModule(fs.readFileSync("src/lib/accounting/daily-income/hooks.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-const module = { exports: {} };
+const loadedModule = { exports: {} };
 new Function("require", "exports", output)((name) => {
  if (name === "@tanstack/react-query") return { useMutationState };
  if (name === "@/lib/auth/hooks/use-auth") return { useAuth: () => ({ companyId: "company-a", user: { uid: "user-a" } }) };
  return {};
-}, module.exports);
+}, loadedModule.exports);
 
 test("session panel includes only successful entries for this user, company and closeout", async () => {
  const client = new QueryClient();
@@ -30,7 +30,7 @@ test("session panel includes only successful entries for this user, company and 
  await save("company-a", "user-a", 1, "new-wizard", false, "wizard-b");
  let result;
  let sessionId;
- function Probe() { result = module.exports.useSessionDailyIncomeTransactions(1, sessionId); return null; }
+ function Probe() { result = loadedModule.exports.useSessionDailyIncomeTransactions(1, sessionId); return null; }
  renderToStaticMarkup(React.createElement(QueryClientProvider, { client }, React.createElement(Probe)));
  assert.deepEqual(result.map(entry => entry.journal.id), ["saved"]);
  sessionId = "wizard-b";

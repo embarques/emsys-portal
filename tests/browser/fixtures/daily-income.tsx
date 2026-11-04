@@ -29,7 +29,7 @@ export function DailyIncomeFixture({ transaction = false }: { transaction?: bool
   const [defaults] = useState<DailyIncomeJournalValues>(() => ({
     transactionType: (document.documentElement.dataset.transactionType ?? "EXPENSE") as JournalTransactionType,
     amount: document.documentElement.dataset.transactionType === "INITIAL-PAYMENT" ? 0 : 25, refNumber: "", description: "", employeeId: 1, employeeName: "Maria",
-    ...(document.documentElement.dataset.ready === "true" ? { invoiceId: "test-invoice", invoiceNumber: "80430", invoiceCost: 100, invoiceBalance: 100, inventoryDirection: "dispatched" as const, inventoryItemId: "test-item", inventoryItemName: "Tape", inventoryQuantity: 1, inventoryUnitPrice: 25, inventoryTotal: 25 } : {}),
+    ...(document.documentElement.dataset.ready === "true" ? { invoiceId: "test-invoice", invoiceNumber: "80430", invoiceCost: 100, invoiceBalance: 100, inventoryDirection: "dispatched" as const, inventoryHolderEmployees: [{ id: 1, name: "Maria" }], inventoryItemId: "test-item", inventoryItemName: "Tape", inventoryQuantity: 1, inventoryUnitPrice: 25, inventoryTotal: 25 } : {}),
     accountId: 2, accountName: "Expenses", sourceAccountId: 1, sourceAccountName: "Cash",
     paymentMethodId: 1, paymentMethodName: "CASH",
   }));
@@ -63,14 +63,16 @@ const wizardInvoices = [{
 }] as unknown as Invoice[];
 
 export function DailyIncomeWizardFixture() {
+  const [wizardPaymentMethods, setWizardPaymentMethods] = useState(paymentMethods);
   const [submitted, setSubmitted] = useState(0);
   const [inventoryPaymentOpen, setInventoryPaymentOpen] = useState(false);
   const [loanEntry, setLoanEntry] = useState("");
   return <QueryClientProvider client={client}>
     <AddTransactionWizard open presentation="tab" mode="add" onRegisterLoan={document.documentElement.dataset.loanAccess === "false" ? undefined : () => setLoanEntry("issue")} onRegisterLoanPayment={document.documentElement.dataset.loanAccess === "false" ? undefined : () => setLoanEntry("payment")} onRegisterInventoryPayment={document.documentElement.dataset.inventoryAccess === "false" ? undefined : () => setInventoryPaymentOpen(true)} employees={[{ ...createEmptyEmployeeForm(), id: 1, name: "Maria", department: "Office", title: "Clerk", active: true, branch: branches[0] } as Employee]}
-      statementBranchId={1} accounts={accounts} bankAccounts={[accounts[3]]} invoices={wizardInvoices} paymentMethods={paymentMethods} isSubmitting={false}
+      statementBranchId={1} accounts={accounts} bankAccounts={[accounts[3]]} invoices={wizardInvoices} paymentMethods={wizardPaymentMethods} isSubmitting={false}
       onSubmit={async () => { setSubmitted(n => n + 1); }} onCancel={() => {}} />
     <output id="submitted">{submitted}</output>
+    <button type="button" onClick={() => setWizardPaymentMethods((methods) => methods.map((method) => ({ ...method })))}>Refresh payment methods</button>
     <output id="loan-entry">{loanEntry}</output>
     <output id="inventory-payment-open">{String(inventoryPaymentOpen)}</output>
   </QueryClientProvider>;
