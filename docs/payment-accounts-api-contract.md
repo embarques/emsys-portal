@@ -17,12 +17,12 @@ bank `sourceAccount`), item 6 missing (the duplicate 409 has only the
 
 ## Business rules
 
-| Transaction | Method | Money moves |
-| --- | --- | --- |
-| Income (new invoice, invoice payment, register income) | Cash | Into a **cash account** the user picks; defaults to the default cash account |
-| Income | Any other method | Into a **bank account** |
-| Expense | Cash | Out of the **cash account** the user picks |
-| Expense | Any other method | Out of the **bank account** the user picks |
+| Transaction                                            | Method           | Money moves                                                                  |
+| ------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------- |
+| Income (new invoice, invoice payment, register income) | Cash             | Into a **cash account** the user picks; defaults to the default cash account |
+| Income                                                 | Any other method | Into a **bank account**                                                      |
+| Expense                                                | Cash             | Out of the **cash account** the user picks                                   |
+| Expense                                                | Any other method | Out of the **bank account** the user picks                                   |
 
 - New invoice transactions keep the employee/daily-route assignee, and their
   internal reference defaults to the invoice number (see section 5).
@@ -124,12 +124,12 @@ reversals, and summary/report roll-ups.
 
 ## Portal behavior today
 
-| Feature | Flag off (default) | Flag on |
-| --- | --- | --- |
-| Bank account picker | User-defined banks with `Parent › Child` labels; auto-selected when only one exists | Same |
-| BANK parent in Chart of Accounts | Defaults to the general bank account; BANK parents only | Same |
-| Cash account on cash income | Not shown; API posts to CASH ON HAND | Picker, defaults to CASH ON HAND |
-| Debit card / Wire | Not offered | Offered; require a bank account |
-| Expense | Fixed Cash; source chosen from ASSET accounts | Payment step: method, then cash or bank source account |
+| Feature                          | Flag off (default)                                                                  | Flag on                                                |
+| -------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Bank account picker              | User-defined banks with `Parent › Child` labels; auto-selected when only one exists | Same                                                   |
+| BANK parent in Chart of Accounts | Defaults to the general bank account; BANK parents only                             | Same                                                   |
+| Cash account on cash income      | Not shown; API posts to CASH ON HAND                                                | Picker, defaults to CASH ON HAND                       |
+| Debit card / Wire                | Not offered                                                                         | Offered; require a bank account                        |
+| Expense                          | Fixed Cash; source chosen from ASSET accounts                                       | Payment step: method, then cash or bank source account |
 
 Not yet covered: the journal filter dropdowns don't list Debit card / Wire.

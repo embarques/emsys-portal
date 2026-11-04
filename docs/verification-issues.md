@@ -1,80 +1,165 @@
 # Verification issues and follow-up
 
-Recorded November 3, 2026, from the validation session on
+Updated November 4, 2026, following the ESLint fixes on
+`feat/eslint-report-fixes`. Earlier entries were recorded November 3 from the validation session on
 `feat/batch-transaction-entry`. Batch entry was later removed in favor of the
 optimized single-transaction workflow; batch-only results are omitted. This records observed results, not a fresh run
 against every subsequent working-tree change. No production API mutations were
 performed. Root causes remain unverified unless explicitly stated below.
 
-## Open: browser keyboard regressions
+**Current status (November 4, 2026, uncommitted working tree):**
 
-The following command (run with the since-removed batch test included) had
-**5 failures**:
-
-```sh
-node --test tests/browser/closeout-recovery.test.mjs tests/browser/form-enter-navigation.test.mjs tests/browser/searchable-select-enter.test.mjs
-```
-
-All five failures were in
-[`tests/browser/searchable-select-enter.test.mjs`](../tests/browser/searchable-select-enter.test.mjs).
-The closeout-recovery and standalone form-navigation tests passed.
-A comparison against a clean baseline was not performed, so regression origin
-is unconfirmed.
-
-| Test | Observed error | What to verify |
-| --- | --- | --- |
-| `daily income check payment focuses the newly mounted bank and check fields` | `page.waitForFunction: Timeout 5000ms exceeded`; expected focus on `journal-check-number`. | Trace focus through Check selection, bank selection and attempted save; confirm required-field focus reaches the check-number input. |
-| `quick invoice entry advances from cost to amount before saving` | Fixture setup timed out waiting for `getByRole('group', { name: 'orders.comments.columns.purpose' }).first()` to become visible. | Check the fixture's readiness selector for quick invoice entry before evaluating cost-to-amount navigation. The navigation assertion was not reached. |
-| `Enter saves INVENTORY from review` | Fixture setup timed out waiting for `form`; browser also reported `TypeError: ...useEmployees is not a function` in `RouteEmployeeSelect`. | Verify the mocked employee-hooks module exports the hook required by the inventory form, then verify Enter saves from review. |
-| `Enter completes INVENTORY assignment and moves to the next step` | Same missing `useEmployees` export and `form` setup timeout. | Repair/verify the fixture dependency, then check assignment-to-next-step behavior. |
-| `Enter completes INVENTORY amounts and moves to the next step` | Same missing `useEmployees` export and `form` setup timeout. | Repair/verify the fixture dependency, then check amounts-to-next-step behavior. |
-
-Focused reproduction:
-
-```sh
-node --test --test-name-pattern='daily income check payment|quick invoice entry|INVENTORY' tests/browser/searchable-select-enter.test.mjs
-```
-
-Close when these tests pass and any fixture repair is distinguished from an
-application behavior fix. Do not weaken form validation to satisfy the tests.
-
-## Open: repository-wide lint errors
-
-`npm run lint` reported **631 errors and 9,509 warnings** in this checkout.
-Of the errors, **627 came from generated `.next-playwright` files**. Verify the
-lint include/ignore configuration for generated output; do not edit generated
-bundles to fix lint.
-
-The other four errors were `@next/next/no-assign-module-variable`:
-
-| File | Reported line |
+| Check | Result |
 | --- | --- |
-| [`tests/browser/session-transactions-panel.test.mjs`](../tests/browser/session-transactions-panel.test.mjs) | 23 |
-| [`tests/unit/order-comment-language.test.mjs`](../tests/unit/order-comment-language.test.mjs) | 10 |
-| [`tests/unit/session-transactions-cache.test.mjs`](../tests/unit/session-transactions-cache.test.mjs) | 10 |
-| [`tests/unit/session-transactions.test.mjs`](../tests/unit/session-transactions.test.mjs) | 7 |
+| `npx tsc --noEmit` | Pass |
+| `npm run test:unit` | 432/432 pass |
+| `npm run test:keyboard` | 73/73 pass |
+| `npm run lint` | 0 errors, 94 warnings (was 631 errors, 9,509 warnings) |
+| `npx eslint src` | 0 errors, 87 warnings (was 165) |
+| All browser tests (`tests/browser/*.test.mjs`, one file at a time) | 20 failures in 6 files, all pre-existing; see below |
 
-Verify renaming the local `module` variables and their references without
-changing the test loaders' behavior. Re-run the affected tests and lint after
-any fix. Line numbers refer to the observed checkout and may move.
+## Open: pre-existing browser test failures (November 4, 2026)
 
-To isolate the four test errors:
+A full browser run found failures outside the keyboard suite. The same tests
+fail on a clean checkout of the last commit (`dcb24318`), so today's changes did
+not cause them (the clean checkout had one extra `appointment-form` failure).
+`invoice-form.test.mjs` failed only when all files ran in parallel; run alone
+it passes 11/11. Run files one at a time; parallel runs hit 5s timeouts.
+
+| File | Failing | First observed error | What to verify |
+| --- | --- | --- | --- |
+| `appointment-form.test.mjs` | 1/4 | Waits for button `Edit purpose 1: Pickup` containing `Box × 3`. | See [pickup-comment browser fixture failure](#open-pickup-comment-browser-fixture-failure-november-4-2026). |
+| `deliver-dialog.test.mjs` | 9/32 | Payment and Cuadre tests time out waiting for `#journal-amount`. | How the delivery balance-review payment form now mounts (step order or field id). |
+| `invoice-documents.test.mjs` | 3/7 | `input[type="file"]` matches 2 elements (strict mode); wizard auto-complete assertions fail. | Which component now renders a second file input; then the auto-complete assertions. |
+| `journal-reconciliation.test.mjs` | 1/1 | Checkbox `Select TXN-A1` never appears (30s timeout). | Row selection label in the journal transactions table. |
+| `pending-inventory.test.mjs` | 4/4 | `Truck 3` text never appears. | Holder/vehicle display in the pending dispatch list and its fixture data. |
+| `pending-transactions.test.mjs` | 2/2 | Cross-page selection assertion; `$100.00` missing from `Selected transactions`. | Selection summary rendering and fixture totals. |
+
+Close each row by distinguishing a stale test/fixture from an application
+regression. Do not weaken permissions or validation to make them pass.
 
 ```sh
-npx eslint tests/browser/session-transactions-panel.test.mjs tests/unit/order-comment-language.test.mjs tests/unit/session-transactions-cache.test.mjs tests/unit/session-transactions.test.mjs
+PLAYWRIGHT_BROWSERS_PATH="$HOME/Library/Caches/ms-playwright" node --test tests/browser/deliver-dialog.test.mjs
 ```
 
-## Open: non-fatal warnings
+## Invoice permission alignment (November 4, 2026)
 
-- A source-focused lint run (`npx eslint src`) completed with **0 errors and
-  165 warnings** (counted while batch entry still existed). Review the individual
-  warnings before deciding which require fixes; the source warning inventory was
-  not resolved in this task.
-- Unit tests emitted Node's `MODULE_TYPELESS_PACKAGE_JSON` warning while loading
-  TypeScript modules. Tests passed. Verify the test-loader/module configuration
-  before changing the application's package module type.
-- Full lint emitted `ESLintEnvWarning` about `/* eslint-env */` in generated
-  `.next-playwright` output. Recheck after addressing generated-file lint scope.
+The portal now gates invoice actions on the dedicated grants: Add invoice and
+the quick action on `canCreateInvoice`; Edit (directory, view sheet,
+double-click, and Barcode Manager's invoice-edit shortcuts) on
+`canUpdateInvoice`; Delete on `canDeleteInvoice`. `canCreateAssignedInvoice`
+alone gets the assigned flow. `canGenerateOwnInvoicePool` is not used yet and is
+tracked in [`backend-api-gaps.md`](backend-api-gaps.md).
+
+Verified: `tests/unit/invoice-permissions.test.mjs`, TypeScript and lint.
+Still verify with real roles in an authenticated non-production environment:
+a role with `canViewInvoice` but not `canCreateInvoice` sees no create entry
+points, and a `canCreateAssignedInvoice`-only user gets the assigned flow.
+
+## Resolved: browser keyboard regressions (November 4, 2026)
+
+The five failures in
+[`tests/browser/searchable-select-enter.test.mjs`](../tests/browser/searchable-select-enter.test.mjs)
+were test fixtures that had fallen behind the forms. No application code or
+form validation changed. `npm run test:keyboard` now passes 73/73.
+
+| Test | Cause | Fix (test-only) |
+| --- | --- | --- |
+| `daily income check payment focuses the newly mounted bank and check fields` | Passed on re-run; no change needed. | — |
+| `quick invoice entry advances from cost to amount before saving` | The comments-editor readiness wait ran for every `quickEntry` fixture; the test still used the removed auto-number checkbox; a discount field now sits between cost and amount. | Readiness wait scoped to `kind === "comments"`; selects `#journal-invoice-number-mode-custom`; Enter goes cost → discount → amount. |
+| `Enter saves INVENTORY from review` | Mocked employee hooks lacked `useEmployees`/`useEmployeeSearch` (`RouteEmployeeSelect` crashed); ready data had no holder, which dispatched inventory now requires. | Added both hooks to `fixtures/inventory-hooks.ts`; ready data includes `inventoryHolderEmployees`. |
+| `Enter completes INVENTORY assignment and moves to the next step` | Same as above. | Same. |
+| `Enter completes INVENTORY amounts and moves to the next step` | Same missing hooks. | Same. |
+
+The full suite also exposed `Enter completes INITIAL-PAYMENT payment and moves
+to the next step` (already failing before this fix): new invoices now have a
+Customers (`parties`) step after Payment, so the test expects `parties`.
+
+Run locally with the installed Playwright browsers:
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH="$HOME/Library/Caches/ms-playwright" npm run test:keyboard
+```
+
+## Resolved: repository-wide lint errors (November 4, 2026)
+
+The earlier full lint run reported **631 errors and 9,509 warnings**, including
+627 errors from generated `.next-playwright` bundles. That configured Playwright
+build directory is now excluded in [`eslint.config.mjs`](../eslint.config.mjs).
+Generated bundles were not edited.
+
+The other four errors were `@next/next/no-assign-module-variable` in the test
+loaders of `tests/browser/session-transactions-panel.test.mjs`,
+`tests/unit/order-comment-language.test.mjs`,
+`tests/unit/session-transactions-cache.test.mjs` and
+`tests/unit/session-transactions.test.mjs`. Their local `module` variables were
+renamed to `loadedModule`; the `"module"` parameter passed to transpiled code is
+unchanged. Focused lint and their tests passed.
+
+Re-running those checks exposed a stale session-panel assertion: it expected
+128px below the panel, but the October 16 layout change removed `xl:pb-32` on
+purpose. The test now expects the panel flush with the grid (0px).
+
+Latest full `npm run lint`: **0 errors, 94 warnings**. Source warnings decreased
+from **161 before this fix to 87**; the earlier 165-warning count included the
+retired batch-entry code. No source dependency-array, unused-variable, or missing
+combobox-attribute warnings remain. The fixes and retained warnings are recorded
+in [`reports/eslint-fixes.md`](../reports/eslint-fixes.md); current source snapshots
+are [`eslint-src.txt`](../reports/eslint-src.txt) and
+[`eslint-src.json`](../reports/eslint-src.json).
+
+## Open: retained non-fatal warnings
+
+- **87 source ESLint warnings** remain intentionally in scope for later review:
+  70 `set-state-in-effect`, six `incompatible-library`, four
+  `preserve-manual-memoization`, two `immutability`, two `static-components`,
+  and one each of `purity`, `refs`, and `role-supports-aria-props`.
+  Rule severity was not lowered to remove these warnings.
+- The other **seven full-lint warnings** are in `next.config.js`, three probe
+  scripts, and `tests/browser/fixtures/users-mobile.tsx`. See the
+  [report index](../reports/README.md) for the breakdown.
+- Unit tests still emit Node's `MODULE_TYPELESS_PACKAGE_JSON` warning when loading
+  TypeScript. All 432 tests passed. Verify loader/module configuration before
+  changing the application's package module type.
+- The generated-output `ESLintEnvWarning` did not recur in the completed full lint
+  run after `.next-playwright` was excluded.
+
+## Open: pickup-comment browser fixture failure (November 4, 2026)
+
+`take/pickup items ask only for quantity and Enter saves; the Other item asks only
+for a comment` in
+[`appointment-form.test.mjs`](../tests/browser/appointment-form.test.mjs)
+times out at line 115 while waiting for `Box × 3` inside the
+`Edit purpose 1: Pickup` button. It fails in the working tree and in a temporary
+copy using the original source for the affected forms, selects, and comment
+editor. This establishes that the failure predates the ESLint fixes; its root
+cause remains unverified. Do not treat it as a passing fixture or a confirmed
+live API issue.
+
+Reproduce with the installed Playwright browser:
+
+```sh
+node --test --test-name-pattern='take/pickup items' tests/browser/appointment-form.test.mjs
+```
+
+The combined fixture run exercised 91 cases across Enter navigation, searchable
+selects, appointment forms, and invoice forms. It initially passed 87 and failed
+four. Focused reruns passed the appointment layout and invoice-total Enter cases
+after the production CSS build completed; the new refetch assertion was corrected
+to allow the existing currency formatting on blur. Across those runs, **90
+distinct cases passed and this one remains failing**; this is not a claim that a
+single 91-case run passed.
+
+New passing regressions verify that desktop/mobile select triggers reference the
+actual cmdk listbox ID and that payment-method refetches preserve the transaction
+wizard's step and typed amount. The source fixes retain immediate comment-handler
+ref updates and the wizard's intentional reset boundaries.
+
+Validation for the ESLint fixes also passed `npx tsc --noEmit`, `npm run build`,
+`npm run test:unit` (**432/432**), and `git diff --check`. These are local checks;
+no commit, push, deployment, live API mutation, or Firebase-authenticated
+integration validation was performed. Full commands and scope are in the
+[report index](../reports/README.md).
 
 ## Verify: reconciliation results are not shown per transaction
 
@@ -113,6 +198,11 @@ success does not verify live authentication, permissions or API integration.
 - Sandboxed Next.js build failed while creating a process/binding a local port
   (`Operation not permitted`). The production build passed outside the sandbox.
 - Production build and `git diff --check` passed at handoff.
+- Browser tests run from the agent shell failed with `browserType.launch:
+  Executable doesn't exist` because `PLAYWRIGHT_BROWSERS_PATH` pointed at an
+  empty sandbox cache. Prefix runs with
+  `PLAYWRIGHT_BROWSERS_PATH="$HOME/Library/Caches/ms-playwright"` to use the
+  installed browsers.
 
 Verification status must be updated when an issue is reproduced, fixed or ruled
 out; passing checks above do not close the open items automatically.
@@ -141,7 +231,8 @@ This is resolved; it is not an outstanding employee-data-loss report.
 TypeScript and production build passed during this change. Focused lint reported
 zero errors and five warnings in the existing wizard effect/dependency code.
 The earlier five browser failures listed above were not re-run or closed by this
-focused category validation. Live inventory permissions/navigation still need
+focused category validation (they were closed November 4; see
+[browser keyboard regressions](#resolved-browser-keyboard-regressions-november-4-2026)). Live inventory permissions/navigation still need
 Firebase-authenticated integration verification; the local test uses a callback
 fixture and does not post reconciliation payments.
 
