@@ -27,7 +27,9 @@ export async function fetchCurrentUserPreferences(): Promise<UserPreference> {
 export async function updateCurrentUserPreferences(values: UserPreferenceValues): Promise<UserPreference> {
   const response = await apiClient.put<Envelope<UserPreference>>(API_ENDPOINTS.CURRENT_USER_PREFERENCES, values);
   assertMutationSuccess(response, "Unable to save preferences.");
-  if (response.data?.invoicePoolThreshold !== values.invoicePoolThreshold) {
+  // Older pool APIs use the fixed default threshold; keep ordinary preference saves compatible.
+  const confirmedThreshold = response.data?.invoicePoolThreshold ?? DEFAULT_USER_PREFERENCES.invoicePoolThreshold;
+  if (confirmedThreshold !== values.invoicePoolThreshold) {
     throw new Error(translateCurrent("settings.invoicePool.saveError"));
   }
   return normalize(response.data);

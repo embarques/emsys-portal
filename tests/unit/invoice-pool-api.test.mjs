@@ -75,3 +75,10 @@ test("an older API cannot falsely confirm a new warning threshold", async () => 
   await assert.rejects(() => api.updateCurrentUserPreferences({...types.DEFAULT_USER_PREFERENCES,invoicePoolThreshold:25}), /could not confirm/);
  }
 });
+
+test("ordinary language and theme saves remain compatible with the older fixed-threshold API", async () => {
+ const types = loadFeature("src/lib/configuration/types.ts",{});
+ const api = loadFeature("src/lib/configuration/api.ts",{put:async()=>({success:true,data:{language:"es",theme:"dark",maxWorkspaceTabs:20}})});
+ const saved = await api.updateCurrentUserPreferences({...types.DEFAULT_USER_PREFERENCES,language:"es",theme:"dark"});
+ assert.equal(saved.language,"es"); assert.equal(saved.theme,"dark"); assert.equal(saved.invoicePoolThreshold,10);
+});
