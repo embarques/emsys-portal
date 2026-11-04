@@ -1,3 +1,4 @@
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -26,5 +27,8 @@ export async function fetchCurrentUserPreferences(): Promise<UserPreference> {
 export async function updateCurrentUserPreferences(values: UserPreferenceValues): Promise<UserPreference> {
   const response = await apiClient.put<Envelope<UserPreference>>(API_ENDPOINTS.CURRENT_USER_PREFERENCES, values);
   assertMutationSuccess(response, "Unable to save preferences.");
+  if (response.data?.invoicePoolThreshold !== values.invoicePoolThreshold) {
+    throw new Error(translateCurrent("settings.invoicePool.saveError"));
+  }
   return normalize(response.data);
 }
