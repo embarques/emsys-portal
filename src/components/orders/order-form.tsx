@@ -97,7 +97,6 @@ function PartyFieldActions({
 export function OrderForm({
   initialValues,
   isEditing = false,
-  updatedAt,
   submitLabel,
   isSubmitting: isSubmittingProp = false,
   onSubmit,

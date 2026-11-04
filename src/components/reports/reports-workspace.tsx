@@ -239,7 +239,7 @@ export function ReportsWorkspace() {
   const [filterValuesByReport, setFilterValuesByReport] = useState<Record<string, ReportFilterValues>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const reports = reportsQuery.data ?? [];
+  const reports = useMemo(() => reportsQuery.data ?? [], [reportsQuery.data]);
   const categories = useMemo(() => {
     const unique = Array.from(
       new Set(reports.map((report) => reportDisplayType(report)).filter(Boolean)),
@@ -1144,7 +1144,7 @@ function EmployeeFilter({
   valueKey: string;
 }) {
   const employees = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
-  const items = employees.data?.items ?? [];
+  const items = useMemo(() => employees.data?.items ?? [], [employees.data?.items]);
   const options = useMemo<SearchableSelectOption[]>(() => [
     { value: "", label: allLabel },
     ...items.map((employee) => ({
@@ -1168,7 +1168,7 @@ function EmployeeFilter({
 function VehicleFilter({ context }: { context: FilterContext }) {
   const { t } = useTranslation();
   const vehicles = useVehiclePicker(200, { enabled: true });
-  const items = vehicles.data?.items ?? [];
+  const items = useMemo(() => vehicles.data?.items ?? [], [vehicles.data?.items]);
   const options = useMemo<SearchableSelectOption[]>(() => [
     { value: "", label: t("reports.workspace.options.allVehicles") },
     ...items.map((vehicle) => ({

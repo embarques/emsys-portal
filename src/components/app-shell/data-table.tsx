@@ -221,6 +221,8 @@ function DataTableContent<T>({
       cancelAnimationFrame(frame);
       cancelAnimationFrame(innerFrame);
     };
+    // Refit only when table inputs change; the per-render helper would retrigger every pass.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey]);
 
   // Measure the scroll container so short tables can stretch to the card width
@@ -336,6 +338,15 @@ function DataTableContent<T>({
                 <th
                   key={column.id}
                   draggable
+                  aria-sort={
+                    canSort
+                      ? isActiveSort
+                        ? activeSort?.direction === "desc"
+                          ? "descending"
+                          : "ascending"
+                        : "none"
+                      : undefined
+                  }
                   style={{ width }}
                   className={cn(
                     "group relative cursor-grab select-none px-2 py-3 text-left active:cursor-grabbing",
@@ -380,13 +391,6 @@ function DataTableContent<T>({
                           sortUnavailable
                             ? t("tableFields.table.sortByUnavailable", { column: headerLabel })
                             : t("tableFields.table.sortBy", { column: headerLabel })
-                        }
-                        aria-sort={
-                          isActiveSort
-                            ? activeSort?.direction === "desc"
-                              ? "descending"
-                              : "ascending"
-                            : "none"
                         }
                         onClick={(event) => {
                           event.stopPropagation();

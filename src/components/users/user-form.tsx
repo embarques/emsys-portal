@@ -93,7 +93,7 @@ export function UserForm({
 
   useEffect(() => reset(initialValues ?? createEmptyUserForm()), [initialValues, reset]);
 
-  const branches = branchesQuery.data?.items ?? [];
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const roles = useMemo(
     () => (rolesQuery.data?.items ?? []).filter((role) => role.active),
     [rolesQuery.data?.items],

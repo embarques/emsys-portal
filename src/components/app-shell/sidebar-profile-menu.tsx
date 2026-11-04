@@ -65,6 +65,55 @@ function resolveProfileIdentity(
   return { displayName, email, showEmail };
 }
 
+function ProfileAvatar({ initials, size = "default" }: {
+  initials: string;
+  size?: "default" | "compact";
+}) {
+  return (
+    <Avatar
+      className={cn(
+        "shrink-0 border border-primary/15 bg-primary/10",
+        size === "compact" ? "h-10 w-10" : "h-9 w-9",
+      )}
+    >
+      <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
+        {initials}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
+function ProfileMeta({
+  profileName,
+  profileEmail,
+  triggerSubtitle,
+  emphasized = false,
+  variant = "summary",
+}: {
+  profileName: string;
+  profileEmail: string | null;
+  triggerSubtitle: string | null;
+  emphasized?: boolean;
+  variant?: "summary" | "details";
+}) {
+  const nameClassName = emphasized
+    ? "truncate text-sm font-semibold leading-tight"
+    : "truncate text-sm font-medium leading-tight text-foreground";
+  const subtitle = variant === "summary" ? triggerSubtitle : null;
+
+  return (
+    <div className="min-w-0 flex-1">
+      <p className={nameClassName}>{profileName}</p>
+      {subtitle ? (
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>
+      ) : null}
+      {variant === "details" && profileEmail ? (
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{profileEmail}</p>
+      ) : null}
+    </div>
+  );
+}
+
 type SidebarProfileMenuProps = {
   compact?: boolean;
   onNavigate?: () => void;
@@ -94,46 +143,6 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
   const profileRole = roleLoading ? t("common.loading") : role?.trim() || null;
   const initials = getProfileInitials(rawProfileName ?? profileName, profileEmail);
   const triggerSubtitle = profileRole ?? (showEmail ? profileEmail : null);
-
-  function ProfileAvatar({ size = "default" }: { size?: "default" | "compact" }) {
-    return (
-      <Avatar
-        className={cn(
-          "shrink-0 border border-primary/15 bg-primary/10",
-          size === "compact" ? "h-10 w-10" : "h-9 w-9",
-        )}
-      >
-        <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
-    );
-  }
-
-  function ProfileMeta({
-    emphasized = false,
-    variant = "summary",
-  }: {
-    emphasized?: boolean;
-    variant?: "summary" | "details";
-  }) {
-    const nameClassName = emphasized
-      ? "truncate text-sm font-semibold leading-tight"
-      : "truncate text-sm font-medium leading-tight text-foreground";
-    const subtitle = variant === "summary" ? triggerSubtitle : null;
-
-    return (
-      <div className="min-w-0 flex-1">
-        <p className={nameClassName}>{profileName}</p>
-        {subtitle ? (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>
-        ) : null}
-        {variant === "details" && profileEmail ? (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{profileEmail}</p>
-        ) : null}
-      </div>
-    );
-  }
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -179,11 +188,16 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
             ),
       )}
     >
-      <ProfileAvatar size={compact ? "compact" : "default"} />
+      <ProfileAvatar initials={initials} size={compact ? "compact" : "default"} />
       {!compact ? (
         <>
           <div className="min-w-0 flex-1">
-            <ProfileMeta variant="summary" />
+            <ProfileMeta
+              profileName={profileName}
+              profileEmail={profileEmail}
+              triggerSubtitle={triggerSubtitle}
+              variant="summary"
+            />
           </div>
           <ChevronUp
             className={cn(
@@ -222,8 +236,14 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
         >
           <div className="border-b px-3 py-3">
             <div className="flex items-start gap-3">
-              <ProfileAvatar />
-              <ProfileMeta emphasized variant="details" />
+              <ProfileAvatar initials={initials} />
+              <ProfileMeta
+                profileName={profileName}
+                profileEmail={profileEmail}
+                triggerSubtitle={triggerSubtitle}
+                emphasized
+                variant="details"
+              />
               {profileRole ? (
                 <span className="inline-flex shrink-0 max-w-[45%] truncate rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                   {profileRole}

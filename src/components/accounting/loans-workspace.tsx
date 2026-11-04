@@ -466,7 +466,7 @@ export function LoansWorkspace() {
   const createLoanMutation = useCreateLoan();
   const recordPaymentMutation = useRecordLoanPayment();
   const generateLoanReportMutation = useGenerateLoanReport();
-  const loans = loansQuery.data?.items ?? [];
+  const loans = useMemo(() => loansQuery.data?.items ?? [], [loansQuery.data?.items]);
   const summary = loansQuery.data?.summary ?? EMPTY_LOAN_SUMMARY;
   const totalLoans = loansQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalLoans / PAGE_SIZE));

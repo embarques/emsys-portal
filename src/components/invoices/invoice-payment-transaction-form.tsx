@@ -192,7 +192,9 @@ export function InvoicePaymentTransactionForm({
   );
   const invoiceDiscount = Number(invoice.discount) || 0;
   const invoiceRef = useRef(invoice);
-  invoiceRef.current = invoice;
+  useEffect(() => {
+    invoiceRef.current = invoice;
+  }, [invoice]);
 
   const initialValues = useMemo(
     () =>
@@ -219,9 +221,13 @@ export function InvoicePaymentTransactionForm({
   // Full reset only when the Cuadre statement changes — never wipe payment fields when
   // routes/payment methods finish loading or when translation identity changes.
   const paymentMethodsRef = useRef(paymentMethods);
-  paymentMethodsRef.current = paymentMethods;
+  useEffect(() => {
+    paymentMethodsRef.current = paymentMethods;
+  }, [paymentMethods]);
   const routeNameByIdRef = useRef(routeNameById);
-  routeNameByIdRef.current = routeNameById;
+  useEffect(() => {
+    routeNameByIdRef.current = routeNameById;
+  }, [routeNameById]);
 
   useEffect(() => {
     reset(

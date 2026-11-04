@@ -33,9 +33,9 @@ export function LabelUpdaterWorkspace() {
   const { toErrorMessage } = useUserError();
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const { data: containersData } = useContainerPicker();
-  const containers = containersData?.items ?? [];
+  const containers = useMemo(() => containersData?.items ?? [], [containersData?.items]);
   const { data: routesData } = useActiveRoutePicker("delivery", 200);
-  const routes = routesData?.items ?? [];
+  const routes = useMemo(() => routesData?.items ?? [], [routesData?.items]);
   const applyScanMutation = useApplyBarcodeScan();
   const applyBulkMutation = useApplyBarcodeScanBulk();
   const barcodeInputRef = useRef<HTMLInputElement>(null);

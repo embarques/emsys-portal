@@ -5,7 +5,6 @@ import {
   Car,
   Fuel,
   Plus,
-  Trash2,
 } from "lucide-react";
 
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
@@ -91,7 +90,7 @@ export function VehiclesWorkspace() {
   const vehicleLabels = useVehicleLabels();
   const vehicleFilterFields = useVehicleFilterFields();
   const branchesQuery = useBranchPicker(200);
-  const branches = branchesQuery.data?.items ?? [];
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<VehicleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);

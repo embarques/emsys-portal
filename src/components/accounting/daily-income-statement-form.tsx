@@ -93,7 +93,6 @@ export function DailyIncomeStatementForm({
         "min-w-0 space-y-5 max-md:[&_button]:h-12 max-md:[&_button]:rounded-xl max-md:[&_input]:h-12 max-md:[&_input]:rounded-xl max-md:[&_input]:text-base max-md:[&_label]:text-base",
         disabled && "opacity-60",
       )}
-      aria-disabled={disabled || undefined}
     >
       <fieldset disabled={fieldsDisabled} className="min-w-0 space-y-4 border-0 p-0">
         <div className="grid min-w-0 gap-4 sm:grid-cols-2">

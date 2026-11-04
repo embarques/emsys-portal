@@ -198,7 +198,6 @@ function getCustomerPrimaryPhone(customer: Customer | null | undefined, fallback
 
 function MobileOrderRow({
   order,
-  routeLabel,
   onView,
   onEdit,
   onDelete,
@@ -209,7 +208,6 @@ function MobileOrderRow({
   onToggleSelected,
 }: {
   order: Order;
-  routeLabel: string;
   onView: (order: Order) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
@@ -345,7 +343,6 @@ export function OrdersWorkspace() {
     [editingOrder],
   );
   const [deleteTarget, setDeleteTarget] = useState<Order | Order[] | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [clearRouteOpen, setClearRouteOpen] = useState(false);
   const [completionConfirm, setCompletionConfirm] = useState<boolean | null>(null);
@@ -448,7 +445,7 @@ export function OrdersWorkspace() {
     if (context.openFilters) {
       setFiltersOpen(true);
     }
-  }, [listActive, tabScope?.tabId]);
+  }, [listActive, setPage, tabScope?.tabId]);
 
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
@@ -521,7 +518,6 @@ export function OrdersWorkspace() {
     }
     setEditingOrder(null);
     setFormMode("add");
-    setFormError(null);
   }
 
   function openEditForm(order: Order) {
@@ -539,7 +535,6 @@ export function OrdersWorkspace() {
     setEditingOrder(order);
     setFormMode("edit");
     setViewOrder(null);
-    setFormError(null);
   }
 
   function openViewOrder(order: Order) {
@@ -552,8 +547,6 @@ export function OrdersWorkspace() {
   }
 
   async function saveOrder(values: OrderFormValues) {
-    setFormError(null);
-
     try {
       if (formMode === "edit" && editingOrder) {
         if (areOrderFormValuesEquivalent(values, orderToFormValues(editingOrder))) {
@@ -579,7 +572,7 @@ export function OrdersWorkspace() {
       return { error: null };
     } catch (mutationError) {
       const message = normalizeApiError(mutationError).message;
-      setFormError(message);
+      notifyError(message);
       return { error: message };
     }
   }
@@ -601,7 +594,7 @@ export function OrdersWorkspace() {
         notifyDeleted,
         notifyError,
         onAllFailed: (message) => {
-          setFormError(message);
+          notifyError(message);
         },
         onDone: () => {
           setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
@@ -610,7 +603,7 @@ export function OrdersWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      notifyError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
     }
   }
@@ -1250,7 +1243,6 @@ export function OrdersWorkspace() {
               <MobileOrderRow
                 key={getOrderRecordId(order)}
                 order={order}
-                routeLabel={formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t)}
                 onView={openViewOrder}
                 onEdit={openEditForm}
                 onDelete={setDeleteTarget}
@@ -1581,7 +1573,6 @@ export function OrdersWorkspace() {
         onOpenChange={(open) => {
           if (!open) {
             setFormMode(null);
-            setFormError(null);
           }
         }}
       >
@@ -1596,7 +1587,6 @@ export function OrdersWorkspace() {
                 className="font-semibold text-primary-foreground sm:hidden"
                 onClick={() => {
                   setFormMode(null);
-                  setFormError(null);
                 }}
               >
                 {t("common.actions.cancel")}
@@ -1618,10 +1608,8 @@ export function OrdersWorkspace() {
             submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("orders.actions.add")}
             isSubmitting={isSaving}
             onSubmit={saveOrder}
-            onFormErrorChange={setFormError}
             onCancel={() => {
               setFormMode(null);
-              setFormError(null);
             }}
           />
         </DialogContent>

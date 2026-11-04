@@ -69,9 +69,9 @@ function usePreviewLabels(values: InvoiceFormValues) {
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200);
   const { data: itemsData } = useItemPicker();
 
-  const containers = containersData?.items ?? [];
-  const orders = ordersQuery.data?.items ?? [];
-  const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
+  const containers = useMemo(() => containersData?.items ?? [], [containersData?.items]);
+  const orders = useMemo(() => ordersQuery.data?.items ?? [], [ordersQuery.data?.items]);
+  const pickupRoutes = useMemo(() => pickupRoutesQuery.data?.items ?? [], [pickupRoutesQuery.data?.items]);
   const catalogItems = itemsData?.items ?? [];
 
   const containerLabel = useMemo(() => {

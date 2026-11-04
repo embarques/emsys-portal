@@ -164,10 +164,11 @@ export function AddTransactionWizard(props: Props) {
     ...detailSteps.map((entry) => t(getTransactionStepLabelKey(entry, selectedType))),
   ];
   const stepLabel = stepLabels[step - 1];
+  const { onEntryActiveChange, onSelectedTypeChange, open } = props;
+  const editInitialValues = isEdit ? props.initialValues : null;
   useEffect(() => {
-    props.onEntryActiveChange?.(props.open && step >= 2);
-  }, [props.onEntryActiveChange, props.open, step]);
-  const { onSelectedTypeChange, open } = props;
+    onEntryActiveChange?.(open && step >= 2);
+  }, [onEntryActiveChange, open, step]);
   useEffect(() => {
     onSelectedTypeChange?.(open && step >= 2 ? selectedType : null);
   }, [onSelectedTypeChange, open, selectedType, step]);
@@ -179,12 +180,12 @@ export function AddTransactionWizard(props: Props) {
     : t("accounting.dailyIncome.wizard.addTitle");
 
   useEffect(() => {
-    if (!props.open) return;
+    if (!open) return;
 
-    if (isEdit) {
+    if (editInitialValues) {
       setStep(2);
-      setSelectedType(props.initialValues.transactionType);
-      setDetailValues(props.initialValues);
+      setSelectedType(editInitialValues.transactionType);
+      setDetailValues(editInitialValues);
       return;
     }
 
@@ -193,7 +194,9 @@ export function AddTransactionWizard(props: Props) {
     setDetailValues(emptyTransaction("INITIAL-PAYMENT", props.paymentMethods));
     setFormSessionKey(0);
     setFocusSecondFieldSignal(0);
-  }, [props.open, isEdit, isEdit ? props.initialValues : null]);
+    // Reset only on opening or changing the edited entry; lookup refetches must preserve the draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, editInitialValues]);
 
   useEffect(() => {
     if (!props.open || isEdit) return;

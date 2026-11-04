@@ -5,7 +5,6 @@ import {
   KeyRound,
   Plus,
   Shield,
-  Trash2,
 } from "lucide-react";
 
 import { RoleForm } from "@/components/roles/role-form";

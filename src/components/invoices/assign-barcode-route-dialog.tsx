@@ -60,7 +60,7 @@ export function AssignBarcodeRouteDialog({
   });
   const assignBarcodesMutation = useAssignBarcodesToRoute();
 
-  const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
+  const dailyRoutes = useMemo(() => dailyRoutesQuery.data?.items ?? [], [dailyRoutesQuery.data?.items]);
   const routeOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(dailyRoutes, t),
     [dailyRoutes, t],

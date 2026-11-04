@@ -252,7 +252,7 @@ export function RegisterInvoiceTransactionFields({
   const debouncedReceiverQuery = useDebouncedValue(receiverQuery, 300).trim();
 
   const customersQuery = useCustomerPicker(200);
-  const customers = customersQuery.data?.items ?? [];
+  const customers = useMemo(() => customersQuery.data?.items ?? [], [customersQuery.data?.items]);
 
   const senderCustomers = useMemo(
     () => customers.filter((customer) => customer.active && isCustomerSenderType(customer.customerType)),

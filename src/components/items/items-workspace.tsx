@@ -5,7 +5,6 @@ import {
   DollarSign,
   Plus,
   Tag,
-  Trash2,
 } from "lucide-react";
 
 import { ItemForm } from "@/components/items/item-form";

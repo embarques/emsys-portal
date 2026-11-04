@@ -448,6 +448,8 @@ export function CustomerForm({
     setPendingAddressFocusIndex(next.pendingAddressFocusIndex);
     setPendingPhoneFocusIndex(next.pendingPhoneFocusIndex);
     setFormError(null);
+    // Reset only for a new entity/version so parent rerenders preserve typed input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialValues?.id, initialValues?.updatedAt]);
 
   useEffect(() => {

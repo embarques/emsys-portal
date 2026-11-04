@@ -35,7 +35,7 @@ export function BarcodeForm({
 }: BarcodeFormProps) {
   const { t } = useTranslation();
   const containersQuery = useContainerPicker(200);
-  const containers = containersQuery.data?.items ?? [];
+  const containers = useMemo(() => containersQuery.data?.items ?? [], [containersQuery.data?.items]);
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const [values, setValues] = useState<BarcodeFormValues>(initialValues ?? createEmptyBarcodeForm());
   const [validationError, setValidationError] = useState<string | null>(null);

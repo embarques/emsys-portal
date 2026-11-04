@@ -46,7 +46,9 @@ export function useApplyCustomerOnTabReturn(
   const queryClient = useQueryClient();
   const pendingRef = useRef<PendingPartyReturn[]>([]);
   const applyRef = useRef(apply);
-  applyRef.current = apply;
+  useEffect(() => {
+    applyRef.current = apply;
+  }, [apply]);
 
   const markPendingPartyEdit = useCallback((side: PartySide, customerId: string, previousCustomer?: Customer, contextKey?: string) => {
     pendingRef.current = [

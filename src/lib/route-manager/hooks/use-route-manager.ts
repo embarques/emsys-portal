@@ -13,7 +13,6 @@ import {
   fetchRoutesByDate,
   updateRoute,
 } from "@/lib/route-manager/api/route-manager-api";
-import { hasListTextSearch } from "@/lib/api/search-query";
 import { isRouteListFiltered } from "@/lib/route-manager/branch-filter";
 import {
   DEFAULT_ROUTE_LIST_PARAMS,

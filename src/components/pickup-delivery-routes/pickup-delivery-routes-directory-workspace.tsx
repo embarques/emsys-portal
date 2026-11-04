@@ -353,7 +353,6 @@ export function ActiveRoutesDirectoryWorkspace({
     dash,
     showRecordIdColumn,
     t,
-    variant.id,
     variant.showContainerField,
     variant.showRouteTypeField,
   ]);

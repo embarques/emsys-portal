@@ -263,7 +263,8 @@ export function DailyIncomeWorkspace() {
   const [openCreateOnLoad, setOpenCreateOnLoad] = useState(false);
 
   const branchesQuery = useBranchPicker(200);
-  const branches = branchesQuery.data?.items ?? [];
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
+  const userBranchCode = branches.find((branch) => branch.id === currentUser.data?.branch.id)?.code;
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedDate = params.get("date")?.slice(0, 10);
@@ -275,9 +276,9 @@ export function DailyIncomeWorkspace() {
   useEffect(() => {
     if (branchCode || (!requestedBranchId && currentUser.isLoading)) return;
     const requestedBranch = branches.find((branch) => branch.id === requestedBranchId);
-    const nextBranchCode = requestedBranch?.code ?? branches.find(branch=>branch.id===currentUser.data?.branch.id)?.code ?? branches[0]?.code;
+    const nextBranchCode = requestedBranch?.code ?? userBranchCode ?? branches[0]?.code;
     if (nextBranchCode) setBranchCode(nextBranchCode);
-  }, [branchCode, branches, requestedBranchId,branches.find(branch=>branch.id===currentUser.data?.branch.id)?.code,currentUser.isLoading]);
+  }, [branchCode, branches, requestedBranchId, userBranchCode, currentUser.isLoading]);
   const selectedBranch = branches.find((branch) => branch.code === branchCode);
   const calendar = useCloseoutCalendar(selectedBranch?.id ?? 0);
   const serverToday = calendar.data?.today ?? "";
@@ -331,7 +332,6 @@ export function DailyIncomeWorkspace() {
   const generateReceiptMutation = useGenerateReport();
   const startTransaction = useStartTransaction(selectedBranch, openAddTransactionForm);
   const displayCurrency = statement?.currency || "USD";
-  const statementOpen = statement?.id === calendar.data?.current?.id && statement?.status === "OPEN" && selectedBranch?.id === currentUser.data?.branch.id;
 
   const stats = useMemo((): StatCardItem[] => {
     const summary = summaryTotalsQuery.data;

@@ -96,7 +96,7 @@ export function ActiveRouteSection({
   const { notifySuccess } = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const containersQuery = useContainerPicker(200);
-  const containers = containersQuery.data?.items ?? [];
+  const containers = useMemo(() => containersQuery.data?.items ?? [], [containersQuery.data?.items]);
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? EMPTY_BRANCHES;
   const currentUserQuery = useCurrentUser();
@@ -129,7 +129,7 @@ export function ActiveRouteSection({
     branchCode: branchCode.trim() || undefined,
     enabled: Boolean(branchCode.trim()),
   });
-  const vehicles = vehiclesQuery.data?.items ?? [];
+  const vehicles = useMemo(() => vehiclesQuery.data?.items ?? [], [vehiclesQuery.data?.items]);
   const previousRoutesQuery = useDailyRoutePicker(200, { enabled: !isEditing });
 
   useEffect(() => {
@@ -244,7 +244,7 @@ export function ActiveRouteSection({
   const selectBranchCode =
     findBranchByCodeOrId(branches, values.branch)?.code || values.branch.code;
 
-  const previousRoutes = previousRoutesQuery.data?.items ?? [];
+  const previousRoutes = useMemo(() => previousRoutesQuery.data?.items ?? [], [previousRoutesQuery.data?.items]);
   const previousRouteOptions = useMemo(
     () =>
       [...previousRoutes]

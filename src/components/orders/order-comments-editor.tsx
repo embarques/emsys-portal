@@ -68,7 +68,9 @@ export function OrderCommentsEditor({ comments, onChange, quickEntry = false, li
   const advancingRef = useRef(false);
   const draftRef = useRef<OrderCommentFormValues | null>(draft);
   const commentsRef = useRef(comments);
-  commentsRef.current = comments;
+  useEffect(() => {
+    commentsRef.current = comments;
+  }, [comments]);
 
   const resolvedActiveIndex = activeIndex !== null && activeIndex < comments.length ? activeIndex : null;
 

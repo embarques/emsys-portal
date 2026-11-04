@@ -41,6 +41,8 @@ function PhotoPreview({ photo }: { photo: DeliveryPhoto }) {
     };
   }, [photo.file]);
   return url ? (
+    // Thumbnails use local object URLs that next/image cannot optimize.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={url}
       alt={photo.file.name}

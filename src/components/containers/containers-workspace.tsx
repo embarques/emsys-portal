@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Container, Plus, Trash2 } from "lucide-react";
+import { Container, Plus } from "lucide-react";
 
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";

@@ -57,9 +57,12 @@ export function CheckForm({
     { ...DEFAULT_INVOICE_LIST_PARAMS, limit: 20 },
     { enabled: !debouncedInvoiceQuery },
   );
-  const invoiceResults = debouncedInvoiceQuery
-    ? (invoiceSearch.data?.items ?? [])
-    : (recentInvoices.data?.items ?? []);
+  const invoiceResults = useMemo(
+    () => debouncedInvoiceQuery
+      ? (invoiceSearch.data?.items ?? [])
+      : (recentInvoices.data?.items ?? []),
+    [debouncedInvoiceQuery, invoiceSearch.data?.items, recentInvoices.data?.items],
+  );
   const invoiceOptions = useMemo(
     () =>
       withPinnedSelectOption(

@@ -295,7 +295,7 @@ export function InvoiceForm({
 
   const { data: itemsData } = useItemPicker();
   const containers = containersData?.items ?? [];
-  const defaultOrders = ordersQuery.data?.items ?? [];
+  const defaultOrders = useMemo(() => ordersQuery.data?.items ?? [], [ordersQuery.data?.items]);
   const catalogItems = itemsData?.items ?? [];
 
   const [values, setValues] = useState<InvoiceFormValues>(
@@ -327,7 +327,7 @@ export function InvoiceForm({
     [pickupRoutesQuery.data?.items],
   );
   const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
-  const branches = branchesData?.items ?? [];
+  const branches = useMemo(() => branchesData?.items ?? [], [branchesData?.items]);
   const branchesById = useMemo(
     () => new Map(branches.map((branch) => [branch.id, branch])),
     [branches],
@@ -448,7 +448,7 @@ export function InvoiceForm({
   );
   const selectedPickupQuery = useOrder(values.pickupId || null, Boolean(values.pickupId));
 
-  const pickupSearchResults = pickupSearch.data?.items ?? [];
+  const pickupSearchResults = useMemo(() => pickupSearch.data?.items ?? [], [pickupSearch.data?.items]);
 
   const pickupSelectOptions = useMemo(() => {
     const source = debouncedPickupQuery ? pickupSearchResults : defaultOrders;

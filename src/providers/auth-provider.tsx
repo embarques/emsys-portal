@@ -96,6 +96,8 @@ async function resolveFirebaseUserProfile(user: User): Promise<FirebaseUserDocum
   }
 }
 
+const EMPTY_PERMISSIONS: Permission[] = [];
+
 const EMPTY_PROFILE: FirebaseUserDocument = {
   companyId: null,
   email: null,
@@ -128,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     !profileLoading && Boolean(idToken) && Boolean(companyId),
   );
 
-  const permissions = permissionsQuery.data?.permissions ?? [];
+  const permissions = permissionsQuery.data?.permissions ?? EMPTY_PERMISSIONS;
   const apiRole = permissionsQuery.data?.role ?? null;
   const role = apiRole?.name ?? null;
   const roleId = apiRole?.id ?? null;

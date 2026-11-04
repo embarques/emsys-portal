@@ -653,6 +653,7 @@ export function CustomerPartySelect({
             id={id}
             disabled={disabled}
             role="combobox"
+            aria-controls={open ? listboxId : undefined}
             aria-expanded={open}
             onClick={() => handleOpenChange(true)}
             className={cn(

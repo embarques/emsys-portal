@@ -295,6 +295,7 @@ export function SearchableSelect({
   const placeholder = placeholderProp ?? t("common.ui.selectPlaceholder");
   const emptyMessage = emptyMessageProp ?? t("common.ui.noResults");
   const loadingMessage = loadingMessageProp ?? t("common.ui.searching");
+  const [listboxId, setListboxId] = React.useState<string>();
   const [open, setOpen] = React.useState(defaultOpen);
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -305,6 +306,11 @@ export function SearchableSelect({
   const skipCloseAutoFocusRef = React.useRef(false);
   const selectionEditedRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
+  // cmdk owns the list ID; share its actual ID with the button triggers.
+  const listRef = React.useCallback((node: HTMLDivElement | null) => {
+    scrollIsolationRef(node);
+    setListboxId(node?.id);
+  }, [scrollIsolationRef]);
   const isMobile = useIsMobileViewport();
   const [viewportResolved, setViewportResolved] = React.useState(false);
 
@@ -595,6 +601,7 @@ export function SearchableSelect({
             type="button"
             id={id}
             role="combobox"
+            aria-controls={open ? listboxId : undefined}
             aria-invalid={ariaInvalid}
             aria-expanded={open}
             aria-label={ariaLabel}
@@ -652,7 +659,7 @@ export function SearchableSelect({
                   </div>
                 </div>
               ) : null}
-              <CommandList ref={scrollIsolationRef} className="max-h-none flex-1 overflow-y-auto p-0">
+              <CommandList ref={listRef} className="max-h-none flex-1 overflow-y-auto p-0">
                 {loading ? (
                   <MobileSelectLoading message={loadingMessage} />
                 ) : (
@@ -683,6 +690,7 @@ export function SearchableSelect({
               type="button"
               id={id}
               role="combobox"
+              aria-controls={open ? listboxId : undefined}
               aria-invalid={ariaInvalid}
               aria-expanded={open}
               aria-label={ariaLabel}
@@ -723,7 +731,7 @@ export function SearchableSelect({
               }}
               loop
             >
-              <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">
+              <CommandList ref={listRef} className="max-h-60 p-0">
                 <CommandEmpty className="px-4 py-3 text-sm">{emptyMessage}</CommandEmpty>
                 {optionItems}
               </CommandList>

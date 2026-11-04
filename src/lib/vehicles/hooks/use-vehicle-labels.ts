@@ -7,7 +7,7 @@ import { useTranslation } from "@/lib/i18n";
 export function useVehicleLabels() {
   const { t } = useTranslation();
   const branchesQuery = useBranchPicker(200);
-  const branches = branchesQuery.data?.items ?? [];
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
 
   return useMemo(
     () => ({

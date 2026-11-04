@@ -5,6 +5,7 @@ const config = [
   {
     ignores: [
       ".next/**",
+      ".next-playwright/**",
       "out/**",
       "build/**",
       "node_modules/**",
@@ -20,6 +21,7 @@ const config = [
     // opinionated and flag many pre-existing patterns. Surface them as warnings
     // (actionable signal) rather than hard errors that fail the lint/CI.
     rules: {
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/preserve-manual-memoization": "warn",
       "react-hooks/immutability": "warn",

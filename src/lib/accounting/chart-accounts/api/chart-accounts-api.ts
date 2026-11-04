@@ -9,7 +9,6 @@ import {
   buildApiFilterNodeFromTableRows,
   buildStripeStyleSearchBody,
   createOrTextSearchFilterGroup,
-  hasListTextSearch,
   isApiSearchFilter,
   type ApiSearchFilterGroup,
   type ApiSearchFilterNode,

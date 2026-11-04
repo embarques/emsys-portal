@@ -147,8 +147,9 @@ export function AssignRouteCrewDialog({
   const assignBarcodesMutation = useAssignBarcodesToRoute();
 
   const branches = branchesQuery.data?.items ?? EMPTY_BRANCHES;
-  const containers = containersQuery.data?.items ?? [];
+  const containers = useMemo(() => containersQuery.data?.items ?? [], [containersQuery.data?.items]);
 
+  const defaultContainerId = defaultContainer?.id;
   const selectedCrewId = selectedCrew?.id ?? "";
   const existingRouteId = existingRouteQuery.data?.id ?? "";
   const existingEmployees = existingRouteQuery.data?.employees;
@@ -164,9 +165,9 @@ export function AssignRouteCrewDialog({
     }
     setDate(defaultDate?.trim().slice(0, 10) || todayDateInputValue());
     setContainerId(
-      defaultContainer && defaultContainer.id > 0 ? String(defaultContainer.id) : "",
+      defaultContainerId && defaultContainerId > 0 ? String(defaultContainerId) : "",
     );
-  }, [open, defaultDate, defaultContainer?.id]);
+  }, [open, defaultDate, defaultContainerId]);
 
   useEffect(() => {
     if (!open || isDelivery) return;

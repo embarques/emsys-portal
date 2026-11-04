@@ -26,8 +26,6 @@ type ItemFormProps = {
 
 export function ItemForm({
   initialValues,
-  isEditing = false,
-  updatedAt,
   submitLabel,
   externalError = null,
   isSubmitting = false,
