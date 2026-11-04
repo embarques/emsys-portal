@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const invoicePoolFormSchema = z.object({
   count: z.number().int().min(1).max(100),
-  employeeId: z.number().int().min(0).max(65535),
+  userId: z.number().int().min(0).max(65535),
 });
 export type InvoicePoolForm = z.infer<typeof invoicePoolFormSchema>;
 
@@ -10,7 +10,7 @@ export const reservedInvoiceSchema = z.object({
   id: z.string().regex(/^[a-f0-9]{24}$/i),
   number: z.string().min(1),
   claimed: z.boolean().default(false),
-  allocation: z.object({ employeeId: z.number().int().nonnegative(), token: z.string().min(1) }),
+  allocation: z.object({ userId: z.number().int().nonnegative(), token: z.string().min(1) }),
 });
 export type ReservedInvoice = z.infer<typeof reservedInvoiceSchema>;
 export const invoicePoolPageSchema = z.object({
@@ -19,5 +19,5 @@ export const invoicePoolPageSchema = z.object({
 });
 export type InvoicePoolAction = {
   requestId: string; action: "generate" | "assign" | "return";
-  count?: number; employeeId?: number; items?: { id: string; token: string }[];
+  count?: number; userId?: number; items?: { id: string; token: string }[];
 };

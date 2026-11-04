@@ -34,16 +34,16 @@ function loadFeature(relative, apiClient) {
 }
 
 
-const item={id:"68f800000000000000000001",number:"INV-100",claimed:false,allocation:{employeeId:0,token:"version"}};
+const item={id:"68f800000000000000000001",number:"INV-100",claimed:false,allocation:{userId:0,token:"version"}};
 test("pool list preserves company pool zero, pagination and cancellation",async()=>{
  const calls=[];const controller=new AbortController();
  const api=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{get:async(...args)=>{calls.push(args);return {success:true,data:{items:[item],remaining:1,lowThreshold:10}}}});
  const page=await api.fetchInvoicePool(0,"cursor",controller.signal);
  assert.equal(page.items[0].number,"INV-100");assert.equal(calls[0][0],"/invoices/reserved");
- assert.deepEqual(calls[0][1].params,{employeeId:0,after:"cursor",limit:50});assert.equal(calls[0][1].signal,controller.signal);
+ assert.deepEqual(calls[0][1].params,{userId:0,after:"cursor",limit:50});assert.equal(calls[0][1].signal,controller.signal);
 });
 test("mutation preserves operation identity and rejects unsuccessful envelopes",async()=>{
- const request={requestId:"stable",action:"generate",count:50,employeeId:0};let sent;
+ const request={requestId:"stable",action:"generate",count:50,userId:0};let sent;
  const api=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{post:async(url,body)=>{sent={url,body};return {success:true,data:[item]}}});
  await api.manageInvoicePool(request);assert.equal(sent.body,request);assert.equal(sent.url,"/invoices/reserved/actions");
  const denied=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{post:async()=>({success:false,message:"Forbidden"})});
