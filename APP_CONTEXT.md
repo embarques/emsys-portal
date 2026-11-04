@@ -100,7 +100,7 @@ Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is t
 ### Reserved invoice numbers
 
 Invoices → Reserved manages backend-generated numbers for offline mobile creation.
-Unused numbers may be in the company pool, assigned to an employee, or claimed
+Unused numbers may be in the company pool, assigned to a user, or claimed
 by a mobile installation. Downloaded numbers must be returned from that device
 before reassignment. They are excluded from customer invoice lists and financial
 totals. See the API contract `docs/contracts/reserved-invoice-pools.md` in emsys-api.

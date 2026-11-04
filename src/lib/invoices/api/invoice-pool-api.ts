@@ -4,8 +4,8 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { invoicePoolPageSchema, reservedInvoiceSchema, type InvoicePoolAction } from "@/lib/invoices/schemas/invoice-pool.schema";
 
-export async function fetchInvoicePool(employeeId: number | undefined, after: string | undefined, signal: AbortSignal) {
-  const response = await apiClient.get<{ success: boolean; data: unknown }>(API_ENDPOINTS.INVOICE_POOL, { params: { employeeId, after, limit: 50 }, signal });
+export async function fetchInvoicePool(userId: number | undefined, after: string | undefined, signal: AbortSignal) {
+  const response = await apiClient.get<{ success: boolean; data: unknown }>(API_ENDPOINTS.INVOICE_POOL, { params: { userId, after, limit: 50 }, signal });
   assertMutationSuccess(response, "Unable to load reserved invoices");
   return invoicePoolPageSchema.parse(response.data);
 }
