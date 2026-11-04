@@ -105,3 +105,28 @@ test("only unused unclaimed assignments can be returned",async()=>{
   assert.deepEqual(writes[0].items,[{id:"68f800000000000000000002",token:"assigned-v1"}]);
  }finally{await page.close();}
 });
+
+test("employee selection is separate from generation and contains only employees", async () => {
+ const page = await fixture();
+ try {
+  await page.getByRole("heading", {name:"Reserved invoices"}).waitFor();
+  await page.locator("#pool-employee").click();
+  await page.getByRole("option", {name:"Ada Driver",exact:true}).click();
+  await page.getByRole("checkbox", {name:"Select INV-100",exact:true}).check();
+  await page.getByRole("button", {name:"Assign selected",exact:true}).click();
+  await page.getByText("Invoice pool updated.",{exact:true}).waitFor();
+  const assigned = await page.evaluate(() => window.poolWrites[0]);
+  assert.equal(assigned.action,"assign"); assert.equal(assigned.employeeId,12);
+  await page.getByRole("button", {name:"Generate numbers",exact:true}).click();
+  await page.waitForFunction(() => window.poolWrites.length === 2);
+  const generated = await page.evaluate(() => window.poolWrites[1]);
+  assert.equal(generated.action,"generate"); assert.equal(generated.employeeId,0);
+ } finally { await page.close(); }
+});
+
+test("Reserved navigation labels resolve in both supported languages", async () => {
+ for (const [locale,label] of [["en","Reserved"],["es","Reservadas"]]) {
+  const catalog = JSON.parse(await readFile(`src/locales/${locale}/navigation.json`,"utf8"));
+  assert.equal(catalog.items.reservedInvoices,label);
+ }
+});

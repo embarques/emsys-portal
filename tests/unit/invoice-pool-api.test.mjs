@@ -53,3 +53,17 @@ test("malformed success cannot acknowledge an uncertain mutation",async()=>{
  const api=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{post:async()=>({success:true,data:[{...item,number:""}]})});
  await assert.rejects(()=>api.manageInvoicePool({requestId:"stable",action:"generate",count:1}));
 });
+
+test("user threshold preserves zero, defaults older responses, validates bounds and is saved with preferences", async () => {
+ const types = loadFeature("src/lib/configuration/types.ts",{});
+ for (const value of [0,10,10000]) assert.equal(types.normalizeInvoicePoolThreshold(value),value);
+ for (const value of [undefined,null,-1,10001,1.5]) assert.equal(types.normalizeInvoicePoolThreshold(value),10);
+ const {createUserPreferenceSchema} = loadFeature("src/lib/configuration/schema.ts",{});
+ const schema = createUserPreferenceSchema(key=>key);
+ assert.equal(schema.safeParse({...types.DEFAULT_USER_PREFERENCES,invoicePoolThreshold:0}).success,true);
+ assert.equal(schema.safeParse({...types.DEFAULT_USER_PREFERENCES,invoicePoolThreshold:1.5}).success,false);
+ let sent;
+ const api = loadFeature("src/lib/configuration/api.ts",{put:async(url,body)=>{sent={url,body};return {success:true,data:{...body,id:3,user:{id:3}}};}});
+ const saved = await api.updateCurrentUserPreferences({...types.DEFAULT_USER_PREFERENCES,invoicePoolThreshold:0});
+ assert.equal(sent.url,"/users/me/preferences");assert.equal(sent.body.invoicePoolThreshold,0);assert.equal(saved.invoicePoolThreshold,0);
+});

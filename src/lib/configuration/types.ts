@@ -11,11 +11,12 @@ export type UserPreference = {
   language: LanguagePreference;
   theme: ThemePreference;
   maxWorkspaceTabs: number;
+  invoicePoolThreshold: number;
   createdAt: string;
   updatedAt: string;
 };
 
-export type UserPreferenceValues = Pick<UserPreference, "language" | "theme" | "maxWorkspaceTabs">;
+export type UserPreferenceValues = Pick<UserPreference, "language" | "theme" | "maxWorkspaceTabs" | "invoicePoolThreshold">;
 
 export const CONFIGURATION_LANGUAGES = [
   { value: "en", labelKey: "shell.language.en" },
@@ -29,6 +30,7 @@ export const CONFIGURATION_THEMES = [
 ] as const;
 
 export const DEFAULT_USER_PREFERENCES: UserPreferenceValues = {
+  invoicePoolThreshold: 10,
   language: "en",
   theme: "system",
   maxWorkspaceTabs: DEFAULT_MAX_WORKSPACE_TABS,
@@ -38,4 +40,8 @@ export function normalizeMaxWorkspaceTabs(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number.parseInt(String(value ?? ""), 10);
   if (!Number.isFinite(parsed)) return DEFAULT_MAX_WORKSPACE_TABS;
   return Math.min(MAX_MAX_WORKSPACE_TABS, Math.max(MIN_MAX_WORKSPACE_TABS, Math.round(parsed)));
+}
+
+export function normalizeInvoicePoolThreshold(value: unknown): number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 10000 ? value : 10;
 }

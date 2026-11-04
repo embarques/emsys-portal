@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
-import { DEFAULT_USER_PREFERENCES, normalizeMaxWorkspaceTabs, type UserPreference, type UserPreferenceValues } from "./types";
+import { DEFAULT_USER_PREFERENCES, normalizeMaxWorkspaceTabs, normalizeInvoicePoolThreshold, type UserPreference, type UserPreferenceValues } from "./types";
 
 type Envelope<T> = { success?: boolean; message?: string; data?: T };
 
@@ -11,6 +11,7 @@ function normalize(raw: Partial<UserPreference> | undefined): UserPreference {
     user: { id: Number(raw?.user?.id ?? 0) },
     language: raw?.language === "es" ? "es" : "en",
     theme: raw?.theme === "light" || raw?.theme === "dark" ? raw.theme : "system",
+    invoicePoolThreshold: normalizeInvoicePoolThreshold(raw?.invoicePoolThreshold),
     maxWorkspaceTabs: normalizeMaxWorkspaceTabs(raw?.maxWorkspaceTabs),
     createdAt: raw?.createdAt ?? "",
     updatedAt: raw?.updatedAt ?? "",

@@ -64,5 +64,11 @@
     "label": "Policy URL",
     "hint": "Use a public HTTPS page. Leave blank to clear the link. This setting applies to the selected company.",
     "invalid": "Enter a valid HTTPS URL without a username or password (maximum 2,048 characters)."
+  },
+  "invoicePool": {
+    "title": "Offline invoice pool",
+    "description": "The mobile app shows the available invoice count in red when it reaches this number or lower.",
+    "threshold": "Low invoice warning threshold",
+    "invalid": "Enter a whole number from 0 to 10000."
   }
 }

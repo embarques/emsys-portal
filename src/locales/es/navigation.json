@@ -64,6 +64,7 @@
     "employeeTitles": "Cargos de empleados",
     "invoicePolicies": "Políticas de factura",
     "pendingInventoryTransactions": "Transacciones pendientes",
-    "pendingFinancialActivity": "Transacciones pendientes"
+    "pendingFinancialActivity": "Transacciones pendientes",
+    "reservedInvoices": "Reservadas"
   }
 }
