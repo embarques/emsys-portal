@@ -7,6 +7,7 @@
   "submenus": {
     "pickups": "Recogidas",
     "orders": "Citas",
+    "reservedInvoices": "Reservadas",
     "invoices": "Facturas",
     "routes": "Rutas",
     "routeManager": "Rutas",

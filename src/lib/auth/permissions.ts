@@ -23,6 +23,7 @@ export const PERMISSIONS = {
   vehicleRoutesView: { name: "canViewVehicleRoute", resourceType: "vehicle_route" },
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },
   dispatchView: { name: "canViewPickup", resourceType: "pickup" },
+  invoicePoolView: { name: "canViewInvoicePool", resourceType: "invoice_pool" },
   invoicesPrint: { name: "canPrintInvoice", resourceType: "invoice" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
   invoicesUpdate: { name: "canUpdateInvoice", resourceType: "invoice" },

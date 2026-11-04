@@ -97,6 +97,15 @@ Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is t
 
 **Backfill legacy invoices:** if `employee` is a `core.User` and there is no daily route, copy it onto `receivedBy`. After backfill, stop treating `employee` as Received by. The portal already reads `receivedBy` first and falls back to legacy `employee` / `route` until this ships.
 
+### Reserved invoice numbers
+
+Invoices → Reserved manages backend-generated numbers for offline mobile creation.
+Unused numbers may be in the company pool, assigned to an employee, or claimed
+by a mobile installation. Downloaded numbers must be returned from that device
+before reassignment. They are excluded from customer invoice lists and financial
+totals. See the API contract `docs/contracts/reserved-invoice-pools.md` in emsys-api.
+Pool view, generation and assignment have separate explicit permissions.
+
 ### Barcodes
 
 Barcodes identify and track **individual pieces of merchandise on an invoice**.

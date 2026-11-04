@@ -1,4 +1,5 @@
 import {
+  FileText,
   Banknote,
   Barcode,
   Tags,
@@ -307,7 +308,8 @@ export const navigationSections: NavigationSection[] = [
   {
     id: "daily",
     groups: [
-      ...[appointmentsItem, invoicesItem].map(navigationItemToGroup),
+      navigationItemToGroup(appointmentsItem),
+      {titleKey:invoicesItem.labelKey,icon:invoicesItem.icon,items:[invoicesItem,{labelKey:"navigation.items.reservedInvoices",href:"/invoices/reserved",icon:FileText,permission:PERMISSIONS.invoicePoolView}]},
       accountingGroup,
       ...[routesItem, barcodesItem].map(navigationItemToGroup),
     ],

@@ -1,3 +1,4 @@
+import { ReservedInvoicesWorkspace } from "@/components/invoices/reserved-invoices-workspace";
 import { PendingInventoryWorkspace } from "@/components/inventory/pending-inventory-workspace";
 import { InventoryWorkflowWorkspace } from "@/lib/inventory/workflow/components/inventory-workflow-workspace";
 import { EmployeeTitlesWorkspace } from "@/components/employee-titles/employee-titles-workspace";
@@ -53,6 +54,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/appointments": OrdersWorkspace,
   "/appointments/map": OrdersMapWorkspace,
   "/invoices": InvoicesWorkspace,
+  "/invoices/reserved": ReservedInvoicesWorkspace,
   "/invoice-policies": InvoicePoliciesWorkspace,
   "/barcodes": BarcodesWorkspace,
   "/barcode-statuses": BarcodeStatusesWorkspace,
