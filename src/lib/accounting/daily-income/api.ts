@@ -274,10 +274,22 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
       : !route
         ? employeeGroupRaw
         : undefined;
+  const allowedActions = objectValue(raw.allowedActions);
   return {
     ...captureApiTableFields(value, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS),
     id,
     reconciliationStatus: raw.reconciliationStatus === "RECONCILED" ? "RECONCILED" : raw.reconciliationStatus === "OUTSTANDING" ? "OUTSTANDING" : undefined,
+    clearanceStatus: raw.clearanceStatus === "CLEARED" || raw.clearanceStatus === "OUTSTANDING" || raw.clearanceStatus === "NOT_REQUIRED" ? raw.clearanceStatus : undefined,
+    clearedAt: stringValue(raw.clearedAt) || null,
+    clearedBy: normalizePartyRef(raw.clearedBy) ?? null,
+    allowedActions: raw.allowedActions && typeof raw.allowedActions === "object" ? {
+      edit: typeof allowedActions.edit === "boolean" ? allowedActions.edit : undefined,
+      void: typeof allowedActions.void === "boolean" ? allowedActions.void : undefined,
+      reverse: typeof allowedActions.reverse === "boolean" ? allowedActions.reverse : undefined,
+      correct: typeof allowedActions.correct === "boolean" ? allowedActions.correct : undefined,
+      clear: allowedActions.clear === true,
+    } : undefined,
+    restrictionReason: stringValue(raw.restrictionReason) || undefined,
     reconciledAt: raw.reconciledAt == null ? null : stringValue(raw.reconciledAt),
     reconciledBy: normalizePartyRef(raw.reconciledBy) ?? null,
     autoReconciled: raw.autoReconciled === true,
@@ -504,7 +516,7 @@ function parseJournalSearchRows(payload: unknown): unknown[] {
 
 export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListParams, signal?: AbortSignal): Promise<DailyIncomeJournalList> {
   const { buildJournalSearchBody } = await import("./journal-search");
-  if (!params.incomeStatementId && !params.pending) {
+  if (!params.incomeStatementId && !params.pending && !params.pendingClearance) {
     return {items: [], summary: EMPTY_DAILY_INCOME_SUMMARY, page: 1, resultsPerPage: params.limit ?? 20, total: 0};
   }
   const payload = await apiClient.post<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`, buildJournalSearchBody(params), {signal});

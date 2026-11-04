@@ -57,6 +57,8 @@ export const API_ENDPOINTS = {
   ACCOUNTING_INCOME_STATEMENTS: "/income-statements",
   ACCOUNTING_INCOME_STATEMENT: "/income-statements",
   ACCOUNTING_JOURNALS: "/journals",
+  /** Proposed independent settlement command; see docs/transaction-reconciliation-clearance.md. */
+  ACCOUNTING_JOURNAL_CLEARANCE: "/journals/clear",
   ACCOUNTING_JOURNAL: "/journals",
   ACCOUNTING_LOANS: "/loans",
   ACCOUNTING_LOAN: "/loans",

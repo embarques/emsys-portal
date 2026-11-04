@@ -292,7 +292,23 @@ It includes:
 
 The goal is to maintain a centralized financial history of the company's operations.
 
-### Daily Income
+### Today's Transactions (Daily Income)
+
+Accounting now presents **Pending Reconciliation** (existing
+`/accounting/pending-financial-activity` route) and **Pending Clearance**
+(`/accounting/pending-clearance`) separately. Reconciliation verifies money
+custody/documents; clearance verifies financial settlement. Both span all
+closeouts and remain actionable after closeout closure; neither changes the
+other status or historical financial amounts. A transaction can appear in both.
+The proposed backend fields, clearance command, permission and remaining
+financial-correction work are documented in
+`docs/transaction-reconciliation-clearance.md`; this supersedes older statements
+in this document that conflate clearing and reconciliation.
+
+The sidebar, workspace heading, and navigation tabs display **Today's Transactions**
+(**Transacciones de hoy** in Spanish). The existing `/accounting/daily-income`
+route, Daily Income API contracts, and current/historical closeout behavior remain
+unchanged.
 
 Closeouts use the server clock and configured location timezone. Transactions
 require the latest closeout to be open and dated today; 409 CLOSEOUT_REQUIRED
@@ -580,7 +596,7 @@ be migrated before switching clients.
 
 Scheduled midnight closeouts are retired. The portal no longer exposes automation settings or requests the automation endpoint; closeouts are created explicitly with the server date and branch timezone, either when Add transaction finds no open current closeout or during Daily Income recovery (`CLOSEOUT_REQUIRED`). Only RD (codes RD/DR/DO) asks for currency and exchange rate; other branches use USD/rate 1. See `docs/transaction-triggered-closeouts.md`. Removing portal settings does not disable an already deployed API cron job.
 
-New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Posted transactions cannot be edited/deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
+New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Transactions in the **current open closeout** can be edited by users with `canUpdateJournal` while they are Outstanding and not reversed; invoice registrations, inventory changes and loans keep their own workflows (`docs/closeout-transaction-edits.md`). Transactions in historical closeouts, reconciled transactions and reversals cannot be edited, and posted transactions cannot be deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
 
 **Accounting → Pending Transactions** (`/accounting/pending-financial-activity`) is a **separate page** that aggregates every **Outstanding** transaction from **all closeouts**. *Outstanding* means **not yet cleared/reconciled by an admin** — not an unpaid invoice balance. Once reconciled, a transaction leaves Pending Transactions and remains in its closeout in Daily Income. The page has the **same table functionality as Daily Income**: columns, advanced filters, multi-select and selected Income / Expenses / Net income. Reconciliation is just a field on the journal (transaction). **Only admins reconcile** — the admin's OK that the money was received or the expense is approved. Admins can skip this step by turning on **Auto-approve (mark as cleared)** when adding the transaction in Daily Income; anything created without it (or by a non-admin) arrives Outstanding and waits here. Admins filter however they want (payment method, user, employee, dates, …), select rows of one payment method, check the selected totals, and reconcile them together. Reconciling never changes the transaction's date, closeout, amount, employee or daily route. **Reconciled is final:** a reconciled transaction cannot be reversed and never returns to Outstanding. Generic reversals (Outstanding transactions only) additionally require journal-create permission; invoice payments are applied/reversed transactionally.
 

@@ -117,10 +117,11 @@ export function useTopbarNavigation(): TranslatedNavigationItem[] {
 
 /**
  * Sidebar sections keep usage-band order.
- * Groups and items within each section keep `navigation.ts` order.
+ * Groups within each section, and items/submenus within each group, are sorted
+ * alphabetically by translated label for the active locale.
  */
 export function useNavigationSections(): TranslatedNavigationSection[] {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const { hasPermission } = useAuth();
 
   return useMemo(
@@ -132,12 +133,13 @@ export function useNavigationSections(): TranslatedNavigationSection[] {
             .map((group) => ({
               ...group,
               title: t(group.titleKey),
-              items: translateNavItems(group.items, t, hasPermission),
+              items: translateAndSortNavItems(group.items, t, hasPermission, locale),
             }))
-            .filter((group) => group.items.length > 0),
+            .filter((group) => group.items.length > 0)
+            .sort((a, b) => a.title.localeCompare(b.title, locale, { sensitivity: "base" })),
         }))
         .filter((section) => section.groups.length > 0),
-    [hasPermission, t],
+    [hasPermission, locale, t],
   );
 }
 

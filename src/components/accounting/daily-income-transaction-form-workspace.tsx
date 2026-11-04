@@ -25,6 +25,9 @@ import {
   useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalEditBlockReason } from "@/lib/accounting/daily-income/journal-editability";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import type { DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
@@ -37,14 +40,6 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 import { useTranslation } from "@/lib/i18n";
 
 export function DailyIncomeTransactionFormWorkspace(props: WorkspaceFormHostProps) {
-  const { t } = useTranslation();
-  const { closeFormTabAndReturn } = useWorkspaceTabs();
-  if (props.mode === "edit") {
-    return <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
-      <p className="p-5">{t("accounting.financialActivity.postedImmutable")}</p>
-      <Button variant="outline" onClick={() => closeFormTabAndReturn(props.tabId)}>{t("common.actions.close")}</Button>
-    </FormTabShell>;
-  }
   return <DailyIncomeTransactionEntry {...props} />;
 }
 
@@ -57,6 +52,8 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const [entryActive, setEntryActive] = useState(false);
   const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(null);
   const { notifySuccess } = useFeedback();
+  const { hasPermission } = useAuth();
+  const canUpdateJournals = hasPermission(PERMISSIONS.journalsUpdate.name, PERMISSIONS.journalsUpdate.resourceType);
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
   const [formError, setFormError] = useState<string | null>(null);
@@ -162,9 +159,9 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
     );
   }
 
-  if (!isEditing && (statementQuery.isLoading || currentStatementQuery.isLoading)) {
+  if (statementQuery.isLoading || currentStatementQuery.isLoading) {
     return (
-      <FormTabShell title={t("accounting.dailyIncome.wizard.addTitle")}>
+      <FormTabShell title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {t("accounting.dailyIncome.loading.closeout")}
@@ -181,6 +178,22 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       <FormTabShell title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
+          <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
+            {t("common.actions.close")}
+          </Button>
+        </div>
+      </FormTabShell>
+    );
+  }
+
+  const editBlock = isEditing && editingJournal
+    ? canUpdateJournals ? journalEditBlockReason(editingJournal, statement) : "permission"
+    : null;
+  if (editBlock) {
+    return (
+      <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
+          <p className="text-sm text-muted-foreground">{t(`accounting.dailyIncome.editBlocked.${editBlock}`)}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
             {t("common.actions.close")}
           </Button>

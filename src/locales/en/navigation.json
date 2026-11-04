@@ -44,7 +44,7 @@
     "deliveryRoutes": "Delivery routes",
     "routes": "Routes",
     "vehicles": "Vehicles",
-    "dailyIncome": "Daily Income",
+    "dailyIncome": "Today's Transactions",
     "loans": "Loans",
     "checks": "Checks",
     "zelle": "Zelle",
@@ -64,7 +64,8 @@
     "employeeTitles": "Employee titles",
     "invoicePolicies": "Invoice policies",
     "pendingInventoryTransactions": "Pending Transactions",
-    "pendingFinancialActivity": "Pending Transactions",
+    "pendingFinancialActivity": "Pending Reconciliation",
+    "pendingClearance": "Pending Clearance",
     "reservedInvoices": "Reserved"
   }
 }

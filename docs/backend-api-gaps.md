@@ -27,6 +27,7 @@ Delivery, closeout and inventory write checks below were run manually.
 | [delivery-completion-api-contract.md](delivery-completion-api-contract.md) | Zero-balance enforcement on completion | **Open — not enforced** |
 | [inventory-dispatch-workflows.md](inventory-dispatch-workflows.md) | Two-party confirmation and dispatch reconciliation | **Partly live** — permissions not seeded; Daily Income inventory gaps |
 | [assigned-invoice-api-contract.md](assigned-invoice-api-contract.md) | `canCreateAssignedInvoice` | **Open** — permission not seeded |
+| [closeout-transaction-edits.md](closeout-transaction-edits.md) | Editing journals in the current open closeout (`PUT /journals/{id}`) | **Unverified** — documented; needs a `--writes` run |
 | [transaction-triggered-closeouts.md](transaction-triggered-closeouts.md) | `CLOSEOUT_REQUIRED` and backend-directed rollover | **Partly verified** |
 | [daily-route-accountability.md](daily-route-accountability.md) | Supervisor + daily route snapshot; inventory holders | **Live** for journals; inventory holders blocked by a 500 |
 | [invoice-policies-api-todo.md](invoice-policies-api-todo.md) | Invoice policy CRUD | **Done** |

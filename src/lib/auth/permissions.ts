@@ -4,6 +4,7 @@ import type { Permission } from "@/lib/auth/types/permission";
 export const PERMISSIONS = {
  journalsView: {name:"canViewJournal", resourceType:"journal"},
  journalsReconcile: {name:"canReconcileJournal", resourceType:"journal"},
+ journalsClear: {name:"canClearJournal", resourceType:"journal"},
  financialActivityView:{name:"canViewFinancialActivity",resourceType:"financial_activity"},
   predefinedRoutesView: { name: "canViewPredefinedRoute", resourceType: "predefined_route" },
   predefinedRoutesCreate: { name: "canCreatePredefinedRoute", resourceType: "predefined_route" },
@@ -79,6 +80,8 @@ export const PERMISSIONS = {
   /** Parent inventory route — list stock until a dedicated inventory permission exists. */
   inventoryView: { name: "canListInventoryStock", resourceType: "inventory_stock" },
   journalsCreate: { name: "canCreateJournal", resourceType: "journal" },
+  /** `PUT /journals/{id}`; only journals in the current open closeout. */
+  journalsUpdate: { name: "canUpdateJournal", resourceType: "journal" },
   incomeView: { name: "canViewIncomeStatement", resourceType: "income_statement" },
   /** Open a Cuadre (daily income statement). */
   incomeStatementsCreate: { name: "canCreateIncomeStatement", resourceType: "income_statement" },

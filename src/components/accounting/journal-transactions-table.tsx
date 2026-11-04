@@ -1,12 +1,15 @@
 "use client";
 
-import {useDeferredValue, useMemo, useState} from "react";
+import {useDeferredValue, useMemo, useState, type ReactNode} from "react";
+import {CheckCircle2, Printer} from "lucide-react";
 import {DataTable} from "@/components/app-shell/data-table";
 import {useApiTableColumns} from "@/components/app-shell/use-api-table-columns";
 import {TableDirectoryToolbar} from "@/components/app-shell/table-directory-toolbar";
 import {TableAdvancedFilterPanel} from "@/components/app-shell/table-advanced-filter-panel";
 import {TableSearchInput} from "@/components/app-shell/table-search-input";
 import {TablePaginationControls} from "@/components/app-shell/table-pagination-controls";
+import {TableSelectionBar} from "@/components/app-shell/table-selection-bar";
+import {Card, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from "@/components/ui/dialog";
 import {useLocalizedFilterFields} from "@/lib/table/hooks/use-localized-filter-fields";
@@ -18,21 +21,38 @@ import {useTablePageSize} from "@/lib/table/hooks/use-table-page-size";
 import {countCompleteFilterRows, type TableFilterRowState} from "@/lib/table/filter-builder";
 import {DAILY_INCOME_TABLE_FILTER_FIELDS, PENDING_JOURNAL_TABLE_FILTER_FIELDS} from "@/lib/accounting/daily-income/journal-search";
 import {DAILY_INCOME_JOURNAL_API_TABLE_FIELDS} from "@/lib/accounting/daily-income/table-fields";
-import {useJournalRows, useJournalSummary, useReconcileJournals, type JournalCurrencySummary} from "@/lib/accounting/daily-income/reconciliation";
+import {useJournalRows, useJournalSummary, useReconcileJournals, useClearJournals, type JournalCurrencySummary} from "@/lib/accounting/daily-income/reconciliation";
+import {isJournalQueueActionable} from "@/lib/accounting/daily-income/journal-queue";
 import type {DailyIncomeJournal} from "@/lib/accounting/daily-income/types";
 import {canPrintPaymentReceipt} from "@/lib/accounting/daily-income/print-payment-receipt";
 import {buildChartAccountsById} from "@/lib/accounting/daily-income/journal-account";
 import {useChartAccounts} from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import {journalTableColumns} from "./journal-table-columns";
+import {buildToolbarSearchSummary, formatPaginatedListSummary} from "@/lib/table/list-summary";
 
-export function JournalTransactionsTable(props: {incomeStatementId?: number; pending?: boolean; isPrintingReceipt?: boolean; onView?: (row: DailyIncomeJournal) => void; onPrintReceipt?: (row: DailyIncomeJournal) => void}) {
+type JournalTransactionsTableProps = {
+  incomeStatementId?: number;
+  pending?: boolean;
+  clearance?: boolean;
+  headerActions?: ReactNode;
+  isPrintingReceipt?: boolean;
+  onView?: (row: DailyIncomeJournal) => void;
+  onEdit?: (row: DailyIncomeJournal) => void;
+  canEditRow?: (row: DailyIncomeJournal) => boolean;
+  onPrintReceipt?: (row: DailyIncomeJournal) => void;
+};
+
+export function JournalTransactionsTable(props: JournalTransactionsTableProps) {
   const {companyId} = useAuth();
-  return <JournalTable key={companyId} {...props}/>;
+  return <JournalTable key={`${companyId}:${props.clearance ? "clearance" : props.pending ? "reconciliation" : "closeout"}`} {...props}/>;
 }
-function JournalTable({incomeStatementId = 0, pending = false, isPrintingReceipt = false, onView, onPrintReceipt}: {incomeStatementId?: number; pending?: boolean; isPrintingReceipt?: boolean; onView?: (row: DailyIncomeJournal) => void; onPrintReceipt?: (row: DailyIncomeJournal) => void}) {
+function JournalTable({incomeStatementId = 0, pending = false, clearance = false, headerActions, isPrintingReceipt = false, onView, onEdit, canEditRow, onPrintReceipt}: JournalTransactionsTableProps) {
   const {t} = useTranslation();
   const {hasPermission} = useAuth();
-  const text = (key: string) => t(`accounting.journalReconciliation.${key}`);
+  const text = (key: string) => t(`accounting.${clearance ? "journalClearance" : "journalReconciliation"}.${key}`);
+  const queue = clearance ? "clearance" : "reconciliation";
+  const isQueue = pending || clearance;
+  const actionLabel = text(clearance ? "clearSelected" : "reconcileSelected");
   const {page, setPage, pageSize, pageLimit, changePageSize} = useTablePageSize();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -42,23 +62,30 @@ function JournalTable({incomeStatementId = 0, pending = false, isPrintingReceipt
   const [selected, setSelected] = useState<Record<string, DailyIncomeJournal>>({});
   const [command, setCommand] = useState<{ids: string[]; requestId: string} | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const params = {incomeStatementId, pending, page, limit: pageLimit, query: deferredQuery, filterRows, sort};
+  const params = {incomeStatementId, pending: pending && !clearance, pendingClearance: clearance, page, limit: pageLimit, query: deferredQuery, filterRows, sort};
   const rowsQuery = useJournalRows(params);
   const rows = rowsQuery.data?.items ?? [];
   const total = rowsQuery.data?.total ?? 0;
   const ids = Object.keys(selected);
-  const canReconcile = pending && hasPermission("canReconcileJournal", "journal");
+  const canProcess = isQueue && hasPermission(clearance ? "canClearJournal" : "canReconcileJournal", "journal");
   const selectedTotals = useJournalSummary({ids}, ids.length > 0);
-  const reconcile = useReconcileJournals();
-  const fields = useLocalizedFilterFields(pending ? PENDING_JOURNAL_TABLE_FILTER_FIELDS : DAILY_INCOME_TABLE_FILTER_FIELDS, "accounting.journalReconciliation.fields");
+  const reconciliationMutation = useReconcileJournals();
+  const clearanceMutation = useClearJournals();
+  const processMutation = clearance ? clearanceMutation : reconciliationMutation;
+  const fields = useLocalizedFilterFields(isQueue ? PENDING_JOURNAL_TABLE_FILTER_FIELDS : DAILY_INCOME_TABLE_FILTER_FIELDS, "accounting.journalReconciliation.fields");
+  const activeFilterCount = countCompleteFilterRows(filterRows, fields);
+  const hasActiveSearch = Boolean(query.trim()) || activeFilterCount > 0;
+  const noun = t("accounting.dailyIncome.noun");
+  const listSummary = formatPaginatedListSummary({itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun, isFiltered: hasActiveSearch, isLoading: rowsQuery.isFetching}, t);
+  const searchSummary = buildToolbarSearchSummary({isFiltered: hasActiveSearch, query, isSearchPending: query.trim() !== deferredQuery.trim(), matched: total, noun, isLoading: rowsQuery.isFetching && rows.length === 0}, t);
   const chartAccountsQuery = useChartAccounts({page: 1, limit: 500}, hasPermission("canViewChartAccount", "chart_account"));
   const chartAccountsById = useMemo(() => buildChartAccountsById(chartAccountsQuery.data?.items ?? []), [chartAccountsQuery.data]);
   const columns = useMemo(() => journalTableColumns(t, chartAccountsById).map(column => ({...column, sortable: column.id === "date" || column.id === "createdAt"})), [t, chartAccountsById]);
   const layout = useApiTableColumns("journal-transactions-v1", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
   const method = ids.length ? selected[ids[0]].paymentMethod?.name ?? "" : undefined;
-  const canSelect = (row: DailyIncomeJournal) => ids.includes(row.id) || (ids.length < 200 && (!canReconcile || (row.reconciliationStatus === "OUTSTANDING" && !row.reversedAt && !row.reversalOf && (method === undefined || method === (row.paymentMethod?.name ?? "")))));
+  const canSelect = (row: DailyIncomeJournal) => ids.includes(row.id) || (ids.length < 200 && (!canProcess || (isJournalQueueActionable(row, queue) && (method === undefined || method === (row.paymentMethod?.name ?? "")))));
   function toggle(id: string, checked: boolean) {
-    if (reconcile.isPending) return;
+    if (processMutation.isPending) return;
     const row = rows.find(item => item.id === id);
     if (checked && (!row || !canSelect(row))) return;
     setCommand(null);
@@ -69,57 +96,83 @@ function JournalTable({incomeStatementId = 0, pending = false, isPrintingReceipt
     });
   }
   function resetFilters(next: TableFilterRowState[]) {
-    if (reconcile.isPending) return;
+    if (processMutation.isPending) return;
     setFilterRows(next); setPage(1); setSelected({}); setCommand(null);
   }
   function togglePage(checked: boolean) {
-    if (reconcile.isPending) return;
+    if (processMutation.isPending) return;
     setCommand(null);
     setSelected(current => {
       const next = {...current};
-      const selectedMethod = method ?? (canReconcile ? rows.find(row => row.reconciliationStatus === "OUTSTANDING" && !row.reversedAt && !row.reversalOf)?.paymentMethod?.name ?? "" : undefined);
+      const selectedMethod = method ?? (canProcess ? rows.find(row => isJournalQueueActionable(row, queue))?.paymentMethod?.name ?? "" : undefined);
       for (const row of rows) {
         if (!checked) delete next[row.id];
-        else if (Object.keys(next).length < 200 && (!canReconcile || (row.reconciliationStatus === "OUTSTANDING" && !row.reversedAt && !row.reversalOf && (row.paymentMethod?.name ?? "") === selectedMethod))) next[row.id] = row;
+        else if (Object.keys(next).length < 200 && (!canProcess || (isJournalQueueActionable(row, queue) && (row.paymentMethod?.name ?? "") === selectedMethod))) next[row.id] = row;
       }
       return next;
     });
   }
-  const ready = !rowsQuery.isFetching && !selectedTotals.isFetching && selectedTotals.isSuccess && ids.length > 0;
-  return <section className="space-y-4 rounded-xl border bg-card p-4">
+  const ready = canProcess && !rowsQuery.isFetching && !selectedTotals.isFetching && selectedTotals.isSuccess && ids.length > 0 && ids.every(id => isJournalQueueActionable(selected[id], queue));
+  return <Card className="gap-0 py-0">
+    <CardHeader className="gap-3 border-b py-4 pb-3">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <CardTitle>{isQueue ? text("title") : t("accounting.dailyIncome.transactions.title")}</CardTitle>
+      {headerActions}
+    </div>
     <TableDirectoryToolbar columnLayout={layout}
       filtersOpen={filtersOpen} onFiltersOpenChange={setFiltersOpen}
-      activeFilterCount={countCompleteFilterRows(filterRows, fields)}
-      filterPanel={<TableAdvancedFilterPanel presetScope={pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}
+      activeFilterCount={activeFilterCount} searchSummary={searchSummary}
+      filterPanel={<TableAdvancedFilterPanel presetScope={clearance ? "pending-clearance" : pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} resultSummary={listSummary} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}
       search={<TableSearchInput value={query} onChange={value => {setQuery(value); setPage(1); setSelected({}); setCommand(null);}} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}/>}
     />
-    {ids.length > 0 ? <div className="space-y-3 rounded-lg border p-3">
-      <p>{text("selectedCount")} {ids.length} / 200</p>
-      {selectedTotals.isError ? <p role="alert">{normalizeApiError(selectedTotals.error).message}</p> : <JournalTotals label={text("selectedTotals")} totals={selectedTotals.data} loading={selectedTotals.isFetching}/>}
-      <Button variant="outline" disabled={reconcile.isPending} onClick={() => {setSelected({}); setCommand(null);}}>{text("clearSelection")}</Button>
-      {canReconcile ? <Button disabled={!ready || reconcile.isPending} onClick={() => {setCommand(current => current ?? {ids: [...ids], requestId: createRandomId()}); setConfirmOpen(true);}}>{text("reconcileSelected")}</Button> : null}
-      {ids.length === 1 && onPrintReceipt && canPrintPaymentReceipt(selected[ids[0]]) ? <Button variant="outline" disabled={isPrintingReceipt} onClick={() => onPrintReceipt(selected[ids[0]])}>{t("accounting.dailyIncome.actions.printReceipt")}</Button> : null}
+    </CardHeader>
+    <TableSelectionBar
+      selectedCount={ids.length} totalCount={total}
+      onClear={() => {if (!processMutation.isPending) {setSelected({}); setCommand(null);}}}
+      onView={onView ? () => onView(selected[ids[0]]) : undefined}
+      viewDisabled={processMutation.isPending} canDelete={false}
+      onEdit={onEdit ? () => onEdit(selected[ids[0]]) : undefined}
+      canEdit={Boolean(onEdit && canEditRow)}
+      editDisabled={processMutation.isPending || ids.length !== 1 || !canEditRow?.(selected[ids[0]])}
+      actions={<>
+        {canProcess ? <Button size="sm" disabled={!ready || processMutation.isPending} onClick={() => {setCommand(current => current ?? {ids: [...ids], requestId: createRandomId()}); setConfirmOpen(true);}}><CheckCircle2 className="size-4" aria-hidden="true"/>{actionLabel}</Button> : null}
+        {ids.length === 1 && onPrintReceipt && canPrintPaymentReceipt(selected[ids[0]]) ? <Button size="sm" variant="outline" disabled={isPrintingReceipt} onClick={() => onPrintReceipt(selected[ids[0]])}><Printer className="size-4" aria-hidden="true"/>{t("accounting.dailyIncome.actions.printReceipt")}</Button> : null}
+      </>}
+    />
+    {ids.length > 0 ? <div className="border-b bg-muted/20 px-6 py-3">
+      {selectedTotals.isError ? <p role="alert" className="text-sm text-destructive">{normalizeApiError(selectedTotals.error).message}</p> : <JournalTotals label={text("selectedTotals")} totals={selectedTotals.data} loading={selectedTotals.isFetching}/>}
     </div> : null}
-    {canReconcile ? <p className="text-sm text-muted-foreground">{text("sameMethod")}</p> : null}
-    {rowsQuery.isError ? <p role="alert" className="text-destructive">{normalizeApiError(rowsQuery.error).message}</p> : <DataTable
+    {canProcess ? <p className="border-b px-6 py-3 text-sm text-muted-foreground">{text("sameMethod")}</p> : null}
+    {rowsQuery.isError ? <p role="alert" className="px-6 py-3 text-sm text-destructive">{normalizeApiError(rowsQuery.error).message}</p> : <DataTable
       columns={layout.columns} columnLayout={layout} rows={rows} rowKey={row => row.id} rowLabel={row => row.refNumber || row.id}
       page={page} isPageDataPending={rowsQuery.isFetching} selectable selectedIds={ids}
-      isRowSelectable={row => !reconcile.isPending && canSelect(row)}
+      isRowSelectable={row => !processMutation.isPending && canSelect(row)}
       allPageSelected={rows.length > 0 && rows.every(row => ids.includes(row.id))}
       onToggleSelect={toggle} onToggleSelectAll={togglePage} onRowClick={onView}
       sort={sort} onSortChange={(field, direction) => {setSort(`${field}:${direction}`); setPage(1);}}
       emptyState={<p role="status">{rowsQuery.isLoading ? t("accounting.dailyIncome.transactions.loadingTitle") : t("accounting.dailyIncome.transactions.empty")}</p>}
     />}
-    <div className="flex flex-wrap items-center justify-between gap-3"><span>{text("totalCount")} {total}</span><TablePaginationControls allowAll={false} page={page} totalPages={Math.max(1, Math.ceil(total / pageLimit))} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={changePageSize} disabled={rowsQuery.isFetching || reconcile.isPending}/></div>
-    <Dialog open={confirmOpen} onOpenChange={open => {if (!reconcile.isPending) setConfirmOpen(open);}}><DialogContent><DialogHeader><DialogTitle>{text("confirmTitle")}</DialogTitle><DialogDescription>{text("confirmDescription")}</DialogDescription></DialogHeader>
+    <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{listSummary}</p><TablePaginationControls allowAll={false} page={page} totalPages={Math.max(1, Math.ceil(total / pageLimit))} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={changePageSize} disabled={rowsQuery.isFetching || processMutation.isPending}/></div>
+    <Dialog open={confirmOpen} onOpenChange={open => {if (!processMutation.isPending) setConfirmOpen(open);}}><DialogContent><DialogHeader><DialogTitle>{text("confirmTitle")}</DialogTitle><DialogDescription>{text("confirmDescription")}</DialogDescription></DialogHeader>
       <p>{text("selectedCount")} {command?.ids.length}</p>
       <JournalTotals label={text("selectedTotals")} totals={selectedTotals.data} loading={selectedTotals.isFetching}/>
-      {reconcile.isError ? <p role="alert" className="text-destructive">{normalizeApiError(reconcile.error).message}</p> : null}
-      <DialogFooter><Button variant="outline" disabled={reconcile.isPending} onClick={() => setConfirmOpen(false)}>{t("common.actions.cancel")}</Button><Button disabled={!ready || reconcile.isPending || !command} onClick={() => {if (!command) return; reconcile.mutate(command, {onSuccess: () => {setSelected({}); setCommand(null); setConfirmOpen(false); setPage(1);}});}}>{text("reconcileSelected")}</Button></DialogFooter>
+      {processMutation.isError ? <p role="alert" className="text-destructive">{normalizeApiError(processMutation.error).message}</p> : null}
+      <DialogFooter><Button variant="outline" disabled={processMutation.isPending} onClick={() => setConfirmOpen(false)}>{t("common.actions.cancel")}</Button><Button disabled={!ready || processMutation.isPending || !command} onClick={() => {if (!command) return; processMutation.mutate(command, {onSuccess: () => {setSelected({}); setCommand(null); setConfirmOpen(false); setPage(1);}});}}>{actionLabel}</Button></DialogFooter>
     </DialogContent></Dialog>
-  </section>;
+  </Card>;
 }
 function JournalTotals({label, totals, loading}: {label: string; totals?: JournalCurrencySummary[]; loading: boolean}) {
-  const {t} = useTranslation();
-  return <div aria-busy={loading}><p className="font-medium">{label}</p>{loading ? <span role="status">{t("accounting.dailyIncome.transactions.loadingTitle")}</span> : totals?.map(row => <p key={row.currency} className="tabular-nums">{row.currency || "—"} · <span className="text-emerald-700 dark:text-emerald-400">{t("accounting.journalReconciliation.income")} {row.income.toFixed(2)}</span> · <span className="text-rose-600 dark:text-rose-400">{t("accounting.journalReconciliation.expenses")} {row.expenses.toFixed(2)}</span> · {t("accounting.journalReconciliation.net")} {row.net.toFixed(2)}</p>)}</div>;
+  const {t, locale} = useTranslation();
+  const number = (value: number) => value.toLocaleString(locale, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  return <div aria-busy={loading} className="space-y-2 text-sm">
+    <p className="font-medium">{label}</p>
+    {loading ? <span role="status" className="text-muted-foreground">{t("accounting.dailyIncome.transactions.loadingTitle")}</span> : totals?.map(row => <div key={row.currency} className="flex flex-wrap items-center gap-x-6 gap-y-2">
+      <span className="text-xs font-semibold text-muted-foreground">{row.currency || "—"}</span>
+      <dl className="flex flex-wrap gap-x-6 gap-y-2">
+        <div className="flex items-baseline gap-2"><dt className="text-muted-foreground">{t("accounting.journalReconciliation.income")}</dt><dd className="font-medium tabular-nums text-emerald-700 dark:text-emerald-400">{number(row.income)}</dd></div>
+        <div className="flex items-baseline gap-2"><dt className="text-muted-foreground">{t("accounting.journalReconciliation.expenses")}</dt><dd className="font-medium tabular-nums text-rose-600 dark:text-rose-400">{number(row.expenses)}</dd></div>
+        <div className="flex items-baseline gap-2"><dt className="text-muted-foreground">{t("accounting.journalReconciliation.net")}</dt><dd className="font-semibold tabular-nums">{number(row.net)}</dd></div>
+      </dl>
+    </div>)}
+  </div>;
 }

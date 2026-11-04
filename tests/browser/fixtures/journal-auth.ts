@@ -1,5 +1,5 @@
 export function useAuth() {
- return {companyId: "test-company", hasPermission: (name: string) => name === "canViewJournal" || (name === "canReconcileJournal" && !(window as unknown as {readOnly:boolean}).readOnly)};
+ return {companyId: "test-company", hasPermission: (name: string) => name === "canViewJournal" || (name === "canReconcileJournal" && !(window as unknown as {readOnly:boolean}).readOnly) || (name === "canClearJournal" && !(window as unknown as {readOnly:boolean;denyClear:boolean}).readOnly && !(window as unknown as {denyClear:boolean}).denyClear)};
 }
 export function useAccountingQueryEnabled() {return true;}
 

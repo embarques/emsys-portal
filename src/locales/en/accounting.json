@@ -1,4 +1,20 @@
 {
+  "pendingTasksAlert": "{{count}} pending accounting tasks",
+  "journalClearance": {
+    "title": "Pending Clearance",
+    "description": "Transactions awaiting financial settlement or verification through their payment channel, across all closeouts. Clearance is independent of reconciliation and does not reopen a closed period.",
+    "status": "Clearance",
+    "NOT_REQUIRED": "Not required",
+    "OUTSTANDING": "Pending",
+    "CLEARED": "Cleared",
+    "selectedTotals": "Selected transactions",
+    "selectedCount": "Selected:",
+    "clearSelected": "Mark cleared",
+    "sameMethod": "Select up to 200 eligible transactions with the same payment method. Only transactions the API authorizes for clearance can be cleared.",
+    "confirmTitle": "Mark selected transactions as cleared?",
+    "confirmDescription": "Confirm that these payments have settled or been verified through their financial channel. This records settlement only; reconciliation history, invoice balances and closeout amounts stay unchanged. It does not issue a bank refund or reversal.",
+    "pendingAlert": "{{count}} transactions pending clearance"
+  },
   "pages": {
     "description": "Maintain a centralized financial history of payments, transactions, income, and expenses."
   },
@@ -534,7 +550,7 @@
       "next": "Next",
       "confirm": "Close closeout #{{id}} for {{date}}? Transactions will be locked until this closeout is reopened."
     },
-    "title": "Daily Income",
+    "title": "Today's Transactions",
     "description": "Review daily closeouts and their transactions by location. Add a transaction to start today’s closeout when needed.",
     "noun": "transactions",
     "transactionNoun": "transaction",
@@ -602,7 +618,7 @@
       "noPayment": "No payment"
     },
     "transactions": {
-      "title": "Transactions",
+      "title": "Today's Transactions",
       "searchPlaceholder": "Search transactions…",
       "empty": "No transactions match this closeout.",
       "loadingTitle": "Loading transactions",
@@ -681,6 +697,15 @@
       "noCloseoutLoaded": "No closeout loaded.",
       "transactionNotFound": "This transaction could not be found.",
       "closeoutNotFound": "This daily closeout could not be found."
+    },
+    "editBlocked": {
+      "permission": "You do not have permission to edit transactions.",
+      "closeout": "Only transactions in the current open closeout can be edited.",
+      "type": "This transaction type cannot be edited here. Invoice registrations, inventory changes and loans are managed from their own workflows.",
+      "reconciled": "Reconciled transactions cannot be edited.",
+      "cleared": "Cleared transactions cannot be edited.",
+      "restricted": "The API has restricted editing for this transaction.",
+      "reversed": "Reversed transactions and reversals cannot be edited."
     },
     "tabs": {
       "editType": "Edit {{type}}",
@@ -805,8 +830,8 @@
         "expenseCashAccount": "Paid from cash account",
         "checkNumber": "Check number",
         "checkNumberHint": "Paper check number. Payment applies when recorded.",
-        "autoClear": "Auto-approve (mark as cleared)",
-        "autoClearHint": "Approve this transaction immediately. Requires journal reconciliation permission; payments apply regardless.",
+        "autoClear": "Auto-reconcile",
+        "autoClearHint": "Reconcile this transaction when saved. Requires reconciliation permission and does not mark the payment as financially cleared.",
         "autoClearReviewValue": "Reconciled on creation",
         "autoReconcile": "Auto-reconcile (mark as sold)",
         "autoReconcileHint": "Skip the pending step: the handoff is completed and the full quantity is reconciled as sold when you save, so it does not appear in Pending Transactions.",
@@ -1493,8 +1518,8 @@
     "empty": "No outstanding transactions match your filters."
   },
   "journalReconciliation": {
-    "title": "Pending Transactions",
-    "description": "Outstanding journals across all closeouts. Reconcile after receiving income or approving expenses. Payments already apply to invoices when recorded.",
+    "title": "Pending Reconciliation",
+    "description": "Transactions awaiting verification of money or supporting documents across all closeouts. Reconciliation records accountability; clearance separately records financial settlement.",
     "createdAt": "Created at",
     "status": "Reconciliation",
     "OUTSTANDING": "Outstanding",
@@ -1509,9 +1534,10 @@
     "reconcileSelected": "Reconcile selected",
     "sameMethod": "Select up to 200 transactions with the same payment method.",
     "confirmTitle": "Reconcile selected transactions?",
-    "confirmDescription": "Confirm that income was received or expenses approved. This releases the assignee’s responsibility and is final. Invoice payments and balances stay unchanged.",
-    "pendingAlert": "{{count}} outstanding transactions",
+    "confirmDescription": "Confirm that money or supporting documents have been accounted for. This releases the assignee’s responsibility and retains the reconciliation history. Clearance status, invoice balances and closeout amounts stay unchanged.",
+    "pendingAlert": "{{count}} transactions pending reconciliation",
     "fields": {
+      "clearanceStatus": {"label": "Clearance", "placeholder": "Clearance"},
       "invoice": {
         "number": {
           "label": "Invoice #",

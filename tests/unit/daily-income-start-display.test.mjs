@@ -15,6 +15,7 @@ function render(canStart=true){
   useTranslation:()=>({t:(key)=>key}),
   useStartTransaction:()=>({canStart,isPending:false,setupOpen:false,error:null,start:()=>{}}),
   useAuth:()=>({hasPermission:()=>false}),
+  PERMISSIONS:new Proxy({}, {get:(_,key)=>({name:String(key),resourceType:String(key)})}),
   useFeedback:()=>({}),
   useWorkspaceTabs:()=>({isDesktopTabs:true}),
   useTablePageSize:()=>({page:1,pageSize:20,pageLimit:20,rememberTotal:()=>{}}),

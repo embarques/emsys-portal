@@ -27,10 +27,27 @@ test("invoice totals include zero-payment registrations; other types stay separa
  entry("INITIAL-PAYMENT", 0, {}, { invoiceCost: 120 }),
  entry("EXPENSE", 25), entry("TRANSFER", 100), entry("DISCOUNT", 10),
  ]);
- assert.deepEqual(totals[0], { type: "INITIAL-PAYMENT", count: 3, cost: 405, amount: 235, balance: 170 });
+ assert.deepEqual(totals[0], { type: "INITIAL-PAYMENT", count: 3, cost: 405, discount: 0, amount: 235, balance: 170 });
  assert.equal(totals.find(x => x.type === "EXPENSE").amount, 25);
  assert.equal(totals.find(x => x.type === "TRANSFER").amount, 100);
  assert.deepEqual(sessionTransactionTotals([]), []);
+});
+
+test("invoice discounts use saved values, preserve explicit zero, and reduce fallback balances", () => {
+ const saved = entry("INITIAL-PAYMENT", 80, { invoice: { cost: 100, discount: 20, balance: 0 } }, { invoiceDiscount: 30 });
+ const missing = entry("INITIAL-PAYMENT", 40, {}, { invoiceCost: 100, invoiceDiscount: 10 });
+ const zero = entry("INITIAL-PAYMENT", 80, { invoice: { cost: 100, discount: 0 } }, { invoiceDiscount: 20 });
+ assert.equal(sessionTransactionDetails(saved).discount, 20);
+ assert.equal(sessionTransactionDetails(saved).balance, 0);
+ assert.equal(sessionTransactionDetails(missing).discount, 10);
+ assert.equal(sessionTransactionDetails(missing).balance, 50);
+ assert.equal(sessionTransactionDetails(zero).discount, 0);
+ assert.equal(sessionTransactionDetails(zero).balance, 20);
+ assert.deepEqual(sessionTransactionTotals([saved, missing, zero])[0], {
+  type: "INITIAL-PAYMENT", count: 3, cost: 300, discount: 30, amount: 200, balance: 70,
+ });
+ const fractional = entry("INITIAL-PAYMENT", 0.1, {}, { invoiceCost: 0.3, invoiceDiscount: 0.2 });
+ assert.equal(sessionTransactionDetails(fractional).balance, 0);
 });
 
 test("Total combines collections and outflows without adding invoice cost or unpaid balance", () => {

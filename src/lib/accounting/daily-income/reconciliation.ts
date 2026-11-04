@@ -7,7 +7,7 @@ import { fetchDailyIncomeJournals } from "./api";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { DailyIncomeJournalListParams } from "./types";
 
-import {fetchJournalSummary, reconcileJournals, type JournalSummaryInput} from "./reconciliation-api";
+import {clearJournals, fetchJournalSummary, reconcileJournals, type JournalSummaryInput} from "./reconciliation-api";
 export type {JournalCurrencySummary} from "./reconciliation-api";
 export function useJournalRows(params: DailyIncomeJournalListParams) {
   const {companyId, hasPermission} = useAuth();
@@ -30,4 +30,17 @@ export function useReconcileJournals() {
   const client = useQueryClient();
   return useMutation({mutationFn: reconcileJournals, retry: false,
     onSuccess: () => client.invalidateQueries({queryKey: queryKeys.accounting.all})});
+}
+
+export function useClearJournals() {
+  const client = useQueryClient();
+  const {companyId} = useAuth();
+  return useMutation({mutationFn: clearJournals, retry: false,
+    onSuccess: (_result, command) => client.invalidateQueries({predicate: query =>
+      query.queryKey[0] === "accounting" &&
+      ((["journals", "journal-summary", "outstanding-journal-count"].includes(String(query.queryKey[1])) &&
+        query.queryKey.includes(companyId)) ||
+       (query.queryKey[1] === "journal" && command.ids.includes(String(query.queryKey[2])))),
+    }),
+  });
 }

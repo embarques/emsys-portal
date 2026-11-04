@@ -36,6 +36,61 @@ test("pending search is server paginated, all dates, with immutable Outstanding 
  assert.deepEqual(body.pagination,{page:3,limit:50,offset:100});
  assert.deepEqual(leaves(body.filters),[{field:"reconciliationStatus",operator:"eq",value:"OUTSTANDING"}]);
 });
+
+test("clearance scope is independent of reconciliation and cannot be bypassed with user OR filters", () => {
+ const {buildJournalSearchBody} = loader()("src/lib/accounting/daily-income/journal-search.ts");
+ const body=buildJournalSearchBody({pendingClearance:true,page:2,limit:50,filterRows:[
+  {id:"1",join:"or",field:"clearanceStatus",operator:"eq",value:"CLEARED"},
+  {id:"2",join:"or",field:"reconciliationStatus",operator:"eq",value:"RECONCILED"},
+ ]});
+ assert.equal(body.operator,"and");
+ const paths=[];
+ function findScope(nodes,path) {
+  for (const node of nodes) {
+   if ("filters" in node) findScope(node.filters,[...path,node.operator]);
+   else if(node.field==="clearanceStatus"&&node.value==="OUTSTANDING") paths.push(path);
+  }
+ }
+ findScope(body.filters,[body.operator]);
+ assert.equal(paths.length,1);
+ assert.ok(paths[0].every(operator=>operator==="and"));
+ assert.ok(!leaves(body.filters).some(f=>f.field==="incomeStatement.id"));
+ assert.deepEqual(body.pagination,{page:2,limit:50,offset:50});
+});
+
+test("clearance action requires explicit server eligibility independently of reconciliation", () => {
+ const {isJournalQueueActionable} = loader()("src/lib/accounting/daily-income/journal-queue.ts");
+ const row={clearanceStatus:"OUTSTANDING",reconciliationStatus:"RECONCILED",allowedActions:{clear:true}};
+ assert.equal(isJournalQueueActionable(row,"clearance"),true);
+ assert.equal(isJournalQueueActionable(row,"reconciliation"),false);
+ assert.equal(isJournalQueueActionable({...row,allowedActions:undefined},"clearance"),false);
+ assert.equal(isJournalQueueActionable({...row,allowedActions:{clear:false}},"clearance"),false);
+ assert.equal(isJournalQueueActionable({...row,clearanceStatus:"CLEARED"},"clearance"),false);
+ assert.equal(isJournalQueueActionable({...row,clearanceStatus:"NOT_REQUIRED"},"clearance"),false);
+ assert.equal(isJournalQueueActionable({...row,reversedAt:"2026-11-04"},"clearance"),false);
+ assert.equal(isJournalQueueActionable({...row,reconciliationStatus:"OUTSTANDING",clearanceStatus:"CLEARED"},"reconciliation"),true);
+});
+
+test("clearance fields and explicit false action grants survive journal normalization", async () => {
+ const api=loader({post:async()=>({total:1,data:[{id:"id",transactionType:"PAYMENT",transactionAmount:80,clearanceStatus:"CLEARED",clearedAt:"2026-11-04T18:00:00Z",clearedBy:{id:1,name:"Admin"},allowedActions:{edit:false,clear:false},reconciliationStatus:"OUTSTANDING"}]})})("src/lib/accounting/daily-income/api.ts");
+ const {items:[row]}=await api.fetchDailyIncomeJournals({pendingClearance:true,page:1,limit:50});
+ assert.equal(row.clearanceStatus,"CLEARED");
+ assert.equal(row.reconciliationStatus,"OUTSTANDING");
+ assert.equal(row.allowedActions.edit,false);
+ assert.equal(row.allowedActions.clear,false);
+ assert.equal(row.clearedBy.name,"Admin");
+});
+
+test("clearance command and badge use their own endpoint and filter with a stable request ID", async () => {
+ const calls=[];
+ const api=loader({post:async(url,body)=>{calls.push([url,body]);return{data:[],total:3};}})("src/lib/accounting/daily-income/reconciliation-api.ts");
+ const command={requestId:"stable-clearance-request",ids:["j1"]};
+ await api.clearJournals(command); await api.clearJournals(command);
+ assert.equal(await api.fetchOutstandingJournalCount(undefined,"clearance"),3);
+ assert.deepEqual(calls.slice(0,2),[["/journals/clear",command],["/journals/clear",command]]);
+ assert.deepEqual(calls[2][1].filters,[{field:"clearanceStatus",operator:"eq",value:"OUTSTANDING"}]);
+ assert.equal(calls[2][1].pagination.limit,1);
+});
 test("daily filters preserve closeout, leading-zero check numbers and numeric coercion", () => {
  const {buildJournalSearchBody} = loader()("src/lib/accounting/daily-income/journal-search.ts");
  const body=buildJournalSearchBody({incomeStatementId:42,page:2,limit:50,filterRows:[

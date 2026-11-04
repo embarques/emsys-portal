@@ -55,7 +55,10 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-/** Sidebar frequency bands — order is intentional (not alphabetical). */
+/**
+ * Sidebar frequency bands — band order is intentional. Groups and items inside a
+ * band are sorted alphabetically by translated label in `useNavigationSections`.
+ */
 export type NavigationSection = {
   id: string;
   groups: NavigationGroup[];
@@ -247,6 +250,7 @@ const accountingGroup: NavigationGroup = {
   icon: Calculator,
   items: [
  {labelKey:"navigation.items.pendingFinancialActivity",href:"/accounting/pending-financial-activity",icon:HandCoins,permission:PERMISSIONS.journalsView},
+    {labelKey: "navigation.items.pendingClearance", href: "/accounting/pending-clearance", icon: Landmark, permission: PERMISSIONS.journalsView},
     {
       labelKey: "navigation.items.dailyIncome",
       href: "/accounting/daily-income",
@@ -300,7 +304,7 @@ export const accountingClearingNavigationItems: NavigationItem[] = [
 ];
 
 /**
- * Sidebar sections in usage order.
+ * Sidebar sections in usage order (contents are sorted alphabetically at render).
  * Dashboard stays in `topNavigationItems` above these bands.
  * Analytics is omitted — Dashboard already covers those insights.
  */

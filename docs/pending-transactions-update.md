@@ -1,5 +1,12 @@
 # Pending Transactions update — journal reconciliation (backend/API and portal TODOs)
 
+**November 4, 2026 design update:** the requested workflow now separates
+**Pending Reconciliation** from **Pending Clearance**. The proposed independent
+status, command and permission contract is in
+[transaction-reconciliation-clearance.md](transaction-reconciliation-clearance.md).
+That document supersedes the combined reconciliation/clearance semantics below;
+these older deployment notes do not verify the new clearance contract.
+
 Status (verified live November 3, 2026 — see [backend-api-gaps.md](backend-api-gaps.md)):
 **mostly deployed.** Journal reconciliation fields, the full search filter
 allowlist, `POST /v1/journals/summary`, `POST /v1/journals/reconcile` (enforcing

@@ -72,3 +72,16 @@ test("each reconciliation grant is independent of the other", async () => {
   assert.equal(granted(PERMISSIONS.journalsReconcile), true);
   assert.equal(granted(PERMISSIONS.inventoryDispatchesReconcile), false);
 });
+
+test("journal clearance requires its own grant, without reconciliation or payment update fallbacks", async () => {
+  const {PERMISSIONS, granted} = await grantsFor([
+    {name: "canReconcileJournal", resourceType: "journal"},
+    {name: "canUpdateJournal", resourceType: "journal"},
+    {name: "canUpdateCheck", resourceType: "check"},
+  ]);
+  assert.deepEqual(PERMISSIONS.journalsClear, {name: "canClearJournal", resourceType: "journal"});
+  assert.equal(granted(PERMISSIONS.journalsClear), false);
+  const clearance = await grantsFor([{name: "canClearJournal", resourceType: "journal"}]);
+  assert.equal(clearance.granted(clearance.PERMISSIONS.journalsClear), true);
+  assert.equal(clearance.granted(clearance.PERMISSIONS.journalsReconcile), false);
+});

@@ -20,9 +20,10 @@ export function SessionTransactionsPanel({ entries, currency, onClose }: { entri
     const keys: Record<string, string> = { CASH: "cash", CHECK: "check", CHEQUE: "check", "CREDIT-CARD": "credit_card", ZELLE: "zelle" };
     return keys[method] ? t(`invoices.view.payments.methods.${keys[method]}`) : method || "—";
   }
-  function amounts(cost: number, amount: number, balance: number, invoice: boolean) {
-    return <dl className={`grid gap-2 ${invoice ? "grid-cols-3" : "grid-cols-1"}`}>
+  function amounts(cost: number, amount: number, balance: number, invoice: boolean, discount = 0) {
+    return <dl className={`grid gap-2 ${invoice ? discount > 0 ? "grid-cols-2" : "grid-cols-3" : "grid-cols-1"}`}>
       {invoice && <div><dt className="text-xs text-muted-foreground">{field("cost")}</dt><dd className="mt-1 break-words text-sm font-medium tabular-nums">{money(cost)}</dd></div>}
+      {invoice && discount > 0 && <div><dt className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.discount")}</dt><dd className="mt-1 break-words text-sm font-medium tabular-nums">{money(discount)}</dd></div>}
       <div><dt className="text-xs text-muted-foreground">{t(`${prefix}.${invoice ? "payment" : "amount"}`)}</dt><dd className="mt-1 break-words text-sm font-medium tabular-nums">{money(amount)}</dd></div>
       {invoice && <div><dt className="text-xs text-muted-foreground">{field("balance")}</dt><dd className="mt-1 break-words text-sm font-medium tabular-nums">{money(balance)}</dd></div>}
     </dl>;
@@ -39,14 +40,14 @@ export function SessionTransactionsPanel({ entries, currency, onClose }: { entri
             <div className="min-w-0"><p className="text-xs text-muted-foreground">{transactionTypeLabel(d.type, t)}</p><h3 className="mt-0.5 break-words text-sm font-semibold">{invoiceRelated ? `#${d.invoice}` : d.type === "INVENTORY" ? d.item : d.account || d.reference || "—"}</h3></div>
             {!invoice && <div className="text-right"><p className="text-xs text-muted-foreground">{t(`${prefix}.amount`)}</p><p className="mt-0.5 text-sm font-semibold tabular-nums">{money(d.amount)}</p></div>}
           </div>
-          {invoice && amounts(d.cost, d.amount, d.balance, true)}
+          {invoice && amounts(d.cost, d.amount, d.balance, true, d.discount)}
           {d.type === "INVENTORY" ? <p className="break-words text-xs text-muted-foreground">{d.direction ? t(`accounting.dailyIncome.form.inventory.${d.direction}`) : ""} · {t("inventory.form.fields.quantity")}: {d.quantity ?? "—"}{d.supplier ? ` · ${d.supplier}` : ""}</p> : !["DISCOUNT", "SURCHARGE"].includes(d.type) && <p className="break-words text-xs text-muted-foreground">{field("paymentMethod")}: {methodLabel(d.method, d.amount)}</p>}
           {d.type === "TRANSFER" && d.sourceAccount && <p className="break-words text-xs text-muted-foreground">{field("sourceAccount")}: {d.sourceAccount}</p>}
           {!invoiceRelated && d.description && <p className="break-words text-xs text-muted-foreground">{d.description}</p>}
         </article>;
       })}
     </div>
-    <footer aria-live="polite" className="shrink-0 space-y-3 border-t bg-card p-4"><div className="flex items-baseline justify-between gap-3"><h3 className="text-sm font-semibold">{t(`${prefix}.total`)}</h3><span className="text-lg font-semibold tabular-nums">{money(sessionTransactionsNetTotal(entries))}</span></div>{totals.length ? totals.map((total) => <div key={total.type} className="space-y-2">{total.type === "INITIAL-PAYMENT" ? <><p className="text-xs text-muted-foreground">{transactionTypeLabel(total.type, t)} · {total.count}</p>{amounts(total.cost, total.amount, total.balance, true)}</> : <div className="flex items-baseline justify-between gap-2 text-xs"><span className="text-muted-foreground">{transactionTypeLabel(total.type, t)} · {total.count}</span><span className="font-medium tabular-nums">{money(total.amount)}</span></div>}</div>) : <p className="text-sm tabular-nums">{money(0)}</p>}</footer>
+    <footer aria-live="polite" className="shrink-0 space-y-3 border-t bg-card p-4"><div className="flex items-baseline justify-between gap-3"><h3 className="text-sm font-semibold">{t(`${prefix}.total`)}</h3><span className="text-lg font-semibold tabular-nums">{money(sessionTransactionsNetTotal(entries))}</span></div>{totals.length ? totals.map((total) => <div key={total.type} className="space-y-2">{total.type === "INITIAL-PAYMENT" ? <><p className="text-xs text-muted-foreground">{transactionTypeLabel(total.type, t)} · {total.count}</p>{amounts(total.cost, total.amount, total.balance, true, total.discount)}</> : <div className="flex items-baseline justify-between gap-2 text-xs"><span className="text-muted-foreground">{transactionTypeLabel(total.type, t)} · {total.count}</span><span className="font-medium tabular-nums">{money(total.amount)}</span></div>}</div>) : <p className="text-sm tabular-nums">{money(0)}</p>}</footer>
   </aside>;
 }
 

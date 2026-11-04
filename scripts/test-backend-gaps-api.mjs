@@ -282,6 +282,21 @@ function seedRecord(doc, item, names) {
   record(doc, "409 CLOSEOUT_REQUIRED on journal create", "UNVERIFIED", "requires a journal create against a stale/closed closeout");
 }
 
+// --- Closeout transaction edits ----------------------------------------------
+{
+  const doc = "closeout-transaction-edits.md";
+  const grant = catalog.find((permission) => permission.name === "canUpdateJournal")
+    ?? catalog.find((permission) => permission.resourceType === "journal" && permission.update === true);
+  record(doc, "canUpdateJournal in the permission catalog", grant ? "DONE" : "MISSING",
+    grant ? `${grant.name ?? "journal update flag"} (${grant.resourceType})` : "not in GET /permissions");
+  const put = await routeExists("PUT", `/journals/${ZERO_OBJECT_ID}`, {});
+  record(doc, "PUT /journals/{id} route", put.exists ? "DONE" : "MISSING",
+    `unknown id with empty body HTTP ${put.res.status} ${message(put.res).slice(0, 100)}`);
+  if (!opts.writes) record(doc, "Edit an Outstanding journal in the current open closeout", "UNVERIFIED", "requires a journal create + update; rerun with --writes");
+  record(doc, "Edits rejected for closed closeouts, reconciled and reversed journals", "UNVERIFIED",
+    "needs a disposable journal in each state; do not probe real historical journals");
+}
+
 // --- Inventory dispatch workflows --------------------------------------------
 {
   const doc = "inventory-dispatch-workflows.md";
@@ -460,6 +475,31 @@ if (opts.writes) {
         `repeat HTTP ${second.res.status}; code=${code ?? "none"}; message="${second.res.json?.message ?? ""}"`);
       await cleanup(first.journal);
       await cleanup(second.journal);
+    }
+
+    {
+      const doc = "closeout-transaction-edits.md";
+      const before = await invoiceTotals();
+      const { res, journal } = await post("edit-original", { ...cash, amount: 1.04, allowDuplicatePayment: true });
+      if (!journal) {
+        record(doc, "Edit an Outstanding journal in the current open closeout", "UNVERIFIED", `probe create HTTP ${res.status} ${message(res).slice(0, 100)}`);
+      } else {
+        const edit = await request("PUT", `/journals/${journal.id}`, {
+          id: journal.id, branch: { id: branchId }, currency: closeout.currency ?? "USD", rate: closeout.rate ?? 1,
+          incomeStatement: { id: closeout.id }, incomeStatementId: closeout.id,
+          description: `${tag} edited`, ...cash, amount: 1.06, allowDuplicatePayment: true,
+        });
+        const saved = (await request("GET", `/journals/${journal.id}`)).json?.data ?? {};
+        const after = await invoiceTotals();
+        const amountSaved = Math.abs(Number(saved.amount) - 1.06) < 0.001 && String(saved.description ?? "").includes("edited");
+        const invoiceAdjusted = Math.abs(after.balance - (before.balance - 1.06)) < 0.001;
+        record(doc, "Edit an Outstanding journal in the current open closeout",
+          edit.status >= 300 ? "MISSING" : amountSaved && invoiceAdjusted ? "DONE" : "PARTIAL",
+          `PUT HTTP ${edit.status} ${edit.status >= 300 ? message(edit).slice(0, 100) : ""}; amount ${saved.amount}; same closeout=${Number(saved.incomeStatementId ?? saved.incomeStatement?.id) === Number(closeout.id)}; invoice balance ${before.balance} → ${after.balance} (expected ${(before.balance - 1.06).toFixed(2)})`);
+        await cleanup(journal);
+        const restored = await invoiceTotals();
+        if (Math.abs(restored.balance - before.balance) >= 0.001) console.log(`  [CLEANUP] invoice ${invoice.id} balance ${restored.balance}, expected ${before.balance}`);
+      }
     }
   }
 }

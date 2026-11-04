@@ -44,7 +44,7 @@
     "deliveryRoutes": "Rutas de entrega",
     "routes": "Rutas",
     "vehicles": "Vehículos",
-    "dailyIncome": "Ingresos diarios",
+    "dailyIncome": "Transacciones de hoy",
     "loans": "Préstamos",
     "checks": "Cheques",
     "zelle": "Zelle",
@@ -64,7 +64,8 @@
     "employeeTitles": "Cargos de empleados",
     "invoicePolicies": "Políticas de factura",
     "pendingInventoryTransactions": "Transacciones pendientes",
-    "pendingFinancialActivity": "Transacciones pendientes",
+    "pendingFinancialActivity": "Conciliación pendiente",
+    "pendingClearance": "Liquidación pendiente",
     "reservedInvoices": "Reservadas"
   }
 }

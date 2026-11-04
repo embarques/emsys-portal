@@ -97,3 +97,26 @@ test("each transaction type renders its relevant summary without invoice client 
  assert.ok(markup.includes("Banco de origen"));
  assert.ok(!markup.includes("NO MOSTRAR CLIENTE"));
 });
+
+test("discounted invoice shows discount in the saved entry and totals without overflowing the panel", async () => {
+ const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+ try {
+  const discounted = [{ ...entries[0], journal: {
+   ...entries[0].journal, amount: 80,
+   invoice: { number: "INV-26-001475", cost: 100, discount: 20, balance: 0 },
+   accounts: [
+    { name: "CASH ON HAND", type: "ASSET", debit: 80, credit: 0 },
+    { name: "SALES DISCOUNTS", type: "EXPENSE", debit: 20, credit: 0 },
+   ],
+  } }];
+  const markup = renderToStaticMarkup(React.createElement(SessionTransactionsLayout, { entries: discounted, currency: "USD" }, React.createElement("div", { style: { height: "560px" } }, "Wizard")));
+  await page.setContent(`<style>${css}</style>${markup}`);
+  const panel = page.getByRole("complementary", { name: "Mis transacciones" });
+  for (const summary of [panel.locator("article dl"), panel.locator("footer dl")]) {
+   assert.deepEqual(await summary.locator("dt").allTextContents(), ["Costo", "Descuento", "Pago", "Saldo"]);
+   assert.deepEqual(await summary.locator("dd").allTextContents(), ["$100.00", "$20.00", "$80.00", "$0.00"]);
+   assert.equal(await summary.evaluate(el => el.scrollWidth <= el.clientWidth), true);
+  }
+  assert.ok((await panel.locator("footer").innerText()).includes("$60.00"));
+ } finally { await page.close(); }
+});

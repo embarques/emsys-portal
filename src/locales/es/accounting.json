@@ -1,4 +1,20 @@
 {
+  "pendingTasksAlert": "{{count}} tareas contables pendientes",
+  "journalClearance": {
+    "title": "Liquidación pendiente",
+    "description": "Transacciones pendientes de liquidación o verificación por su canal de pago, de todos los cierres. La liquidación es independiente de la conciliación y no reabre períodos cerrados.",
+    "status": "Liquidación",
+    "NOT_REQUIRED": "No requerida",
+    "OUTSTANDING": "Pendiente",
+    "CLEARED": "Liquidado",
+    "selectedTotals": "Transacciones seleccionadas",
+    "selectedCount": "Seleccionadas:",
+    "clearSelected": "Marcar como liquidado",
+    "sameMethod": "Seleccione hasta 200 transacciones autorizadas con el mismo método de pago. Solo se pueden liquidar las transacciones autorizadas por la API.",
+    "confirmTitle": "¿Marcar las transacciones seleccionadas como liquidadas?",
+    "confirmDescription": "Confirme que estos pagos se han liquidado o verificado por su canal financiero. Solo registra la liquidación; no cambia el historial de conciliación, los saldos de facturas ni los importes del cierre. No emite un reembolso ni una reversión bancaria.",
+    "pendingAlert": "{{count}} transacciones pendientes de liquidación"
+  },
   "pages": {
     "description": "Mantenga un historial financiero centralizado de pagos, transacciones, ingresos y gastos."
   },
@@ -534,7 +550,7 @@
       "next": "Siguiente",
       "confirm": "¿Cerrar el cierre #{{id}} del {{date}}? Las transacciones quedarán bloqueadas hasta que se vuelva a abrir."
     },
-    "title": "Ingresos diarios",
+    "title": "Transacciones de hoy",
     "description": "Consulte los cuadres diarios y sus transacciones por ubicación. Agregue una transacción para iniciar el cuadre de hoy cuando sea necesario.",
     "noun": "transacciones",
     "transactionNoun": "transacción",
@@ -602,7 +618,7 @@
       "noPayment": "Sin pago"
     },
     "transactions": {
-      "title": "Transacciones",
+      "title": "Transacciones de hoy",
       "searchPlaceholder": "Buscar transacciones…",
       "empty": "Ninguna transacción coincide con este cierre.",
       "loadingTitle": "Cargando transacciones",
@@ -681,6 +697,15 @@
       "noCloseoutLoaded": "No hay cierre cargado.",
       "transactionNotFound": "No se encontró esta transacción.",
       "closeoutNotFound": "No se encontró este cierre diario."
+    },
+    "editBlocked": {
+      "permission": "No tiene permiso para editar transacciones.",
+      "closeout": "Solo se pueden editar las transacciones del cierre abierto actual.",
+      "type": "Este tipo de transacción no se puede editar aquí. Los registros de facturas, cambios de inventario y préstamos se gestionan desde sus propios flujos.",
+      "reconciled": "Las transacciones conciliadas no se pueden editar.",
+      "cleared": "Las transacciones liquidadas no se pueden editar.",
+      "restricted": "La API ha restringido la edición de esta transacción.",
+      "reversed": "Las transacciones revertidas y sus reversiones no se pueden editar."
     },
     "tabs": {
       "editType": "Editar {{type}}",
@@ -805,8 +830,8 @@
         "expenseCashAccount": "Pagado desde la cuenta de efectivo",
         "checkNumber": "Número de cheque",
         "checkNumberHint": "Número del cheque. El pago se aplica al registrarlo.",
-        "autoClear": "Aprobar automáticamente (marcar como cobrado)",
-        "autoClearHint": "Aprueba esta transacción de inmediato. Requiere permiso de conciliación; los pagos se aplican de todas formas.",
+        "autoClear": "Conciliar automáticamente",
+        "autoClearHint": "Concilia esta transacción al guardar. Requiere permiso de conciliación y no marca el pago como liquidado por su canal financiero.",
         "autoClearReviewValue": "Conciliado al crear",
         "autoReconcile": "Conciliar automáticamente (marcar como vendido)",
         "autoReconcileHint": "Omite el paso de pendiente: al guardar se completa la entrega y toda la cantidad se concilia como vendida, por lo que no aparece en Transacciones pendientes.",
@@ -1493,8 +1518,8 @@
     "empty": "No hay transacciones pendientes que coincidan con los filtros."
   },
   "journalReconciliation": {
-    "title": "Transacciones pendientes",
-    "description": "Asientos pendientes de todos los cierres. Concilia después de recibir ingresos o aprobar gastos. Los pagos se aplican a las facturas al registrarlos.",
+    "title": "Conciliación pendiente",
+    "description": "Transacciones pendientes de verificación de dinero o documentos, de todos los cierres. La conciliación registra la responsabilidad; la liquidación registra por separado el pago efectivamente liquidado.",
     "createdAt": "Creado el",
     "status": "Conciliación",
     "OUTSTANDING": "Pendiente",
@@ -1509,9 +1534,10 @@
     "reconcileSelected": "Conciliar selección",
     "sameMethod": "Selecciona hasta 200 transacciones con el mismo método de pago.",
     "confirmTitle": "¿Conciliar las transacciones seleccionadas?",
-    "confirmDescription": "Confirma que se recibió el ingreso o se aprobó el gasto. Libera la responsabilidad del encargado y es definitivo. Los pagos y saldos de facturas no cambian.",
-    "pendingAlert": "{{count}} transacciones pendientes",
+    "confirmDescription": "Confirme que se ha verificado el dinero o la documentación. Libera la responsabilidad del encargado y conserva el historial de conciliación. No cambia la liquidación, los saldos de facturas ni los importes del cierre.",
+    "pendingAlert": "{{count}} transacciones pendientes de conciliación",
     "fields": {
+      "clearanceStatus": {"label": "Liquidación", "placeholder": "Liquidación"},
       "invoice": {
         "number": {
           "label": "Factura #",

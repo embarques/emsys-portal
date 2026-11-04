@@ -18,7 +18,7 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards, type StatCardItem } from "@/components/app-shell/stat-cards-carousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CloseoutDateNavigation } from "@/components/accounting/closeout-date-navigation";
 import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
@@ -40,6 +40,8 @@ import {
 
 } from "@/lib/accounting/daily-income/hooks";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalEditBlockReason } from "@/lib/accounting/daily-income/journal-editability";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatement } from "@/lib/accounting/daily-income/types";
@@ -332,6 +334,9 @@ export function DailyIncomeWorkspace() {
   const generateReceiptMutation = useGenerateReport();
   const startTransaction = useStartTransaction(selectedBranch, openAddTransactionForm);
   const displayCurrency = statement?.currency || "USD";
+  const canUpdateJournals = hasPermission(PERMISSIONS.journalsUpdate.name, PERMISSIONS.journalsUpdate.resourceType);
+  const canEditJournal = (journal: DailyIncomeJournal) =>
+    canUpdateJournals && journalEditBlockReason(journal, transactionStatement) === null;
 
   const stats = useMemo((): StatCardItem[] => {
     const summary = summaryTotalsQuery.data;
@@ -360,7 +365,7 @@ export function DailyIncomeWorkspace() {
 
 
   function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
-    const saveStatement = editingJournal ? statement : transactionStatement;
+    const saveStatement = transactionStatement;
     if (!saveStatement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
     if (
@@ -661,11 +666,10 @@ export function DailyIncomeWorkspace() {
       </CardContent>
     </Card>
 
-    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
     </div>
 
-    <div className="flex items-center justify-between gap-3 md:hidden"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
-    {statement ? <JournalTransactionsTable key={`${currentUser.data?.id}:${statement.id}`} incomeStatementId={statement.id} isPrintingReceipt={generateReceiptMutation.isPending} onView={setViewJournal} onPrintReceipt={journal => void printReceipt(journal)} /> : null}
+    {!statement ? <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button></div> : null}
+    {statement ? <JournalTransactionsTable key={`${currentUser.data?.id}:${statement.id}`} incomeStatementId={statement.id} headerActions={<Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button>} isPrintingReceipt={generateReceiptMutation.isPending} onView={setViewJournal} onEdit={openEditTransactionForm} canEditRow={canEditJournal} onPrintReceipt={journal => void printReceipt(journal)} /> : null}
 
     {statementDialog ? <CloseoutRolloverDialog open={statementDialog} onOpenChange={setStatementDialog} onReady={async created=>{setBranchCode(created.branch?.code??branchCode);setDate(created.date);await calendar.refetch();}} /> : null}
     <DailyIncomePrintDialog
@@ -689,7 +693,7 @@ export function DailyIncomeWorkspace() {
       onDelete={openDeleteTransaction}
       onPrintReceipt={(journal) => void printReceipt(journal)}
       isPrintingReceipt={generateReceiptMutation.isPending}
-      canEdit={false}
+      canEdit={viewJournal ? canEditJournal(viewJournal) : false}
       canDelete={false}
     />
     <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setViewJournal((current) => current?.id === deleteJournal.id ? null : current); setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>

@@ -12,11 +12,13 @@ export function sessionTransactionDetails({ journal, values }: SessionTransactio
   const type = journal.transactionType || values.transactionType;
   const amount = journal.amount;
   const cost = journal.invoice?.cost ?? values.invoiceCost ?? 0;
+  const discount = journal.invoice?.discount ?? values.invoiceDiscount ?? 0;
   return {
     type,
     amount,
     cost,
-    balance: journal.invoice?.balance ?? (type === "INITIAL-PAYMENT" ? cost - amount : values.invoiceBalance ?? 0),
+    discount,
+    balance: journal.invoice?.balance ?? (type === "INITIAL-PAYMENT" ? (Math.round(cost * 100) - Math.round(discount * 100) - Math.round(amount * 100)) / 100 : values.invoiceBalance ?? 0),
     invoice: journal.invoice?.number || values.invoiceNumber || "—",
     method: journal.paymentMethod?.name || values.paymentMethodName || "",
     account: journal.account?.name || values.accountName || "",
@@ -31,14 +33,15 @@ export function sessionTransactionDetails({ journal, values }: SessionTransactio
 }
 
 export function sessionTransactionTotals(entries: SessionTransaction[]) {
-  const totals = new Map<JournalTransactionType, { type: JournalTransactionType; count: number; cost: number; amount: number; balance: number }>();
+  const totals = new Map<JournalTransactionType, { type: JournalTransactionType; count: number; cost: number; discount: number; amount: number; balance: number }>();
   for (const entry of entries) {
     const detail = sessionTransactionDetails(entry);
-    const total = totals.get(detail.type) ?? { type: detail.type, count: 0, cost: 0, amount: 0, balance: 0 };
+    const total = totals.get(detail.type) ?? { type: detail.type, count: 0, cost: 0, discount: 0, amount: 0, balance: 0 };
     total.count++;
     total.amount += detail.amount;
     if (detail.type === "INITIAL-PAYMENT") {
       total.cost += detail.cost;
+      total.discount = (Math.round(total.discount * 100) + Math.round(detail.discount * 100)) / 100;
       total.balance += detail.balance;
     }
     totals.set(detail.type, total);
