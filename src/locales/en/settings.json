@@ -69,6 +69,7 @@
     "title": "Offline invoice pool",
     "description": "The mobile app shows the available invoice count in red when it reaches this number or lower.",
     "threshold": "Low invoice warning threshold",
-    "invalid": "Enter a whole number from 0 to 10000."
+    "invalid": "Enter a whole number from 0 to 10000.",
+    "saveError": "The server could not confirm your invoice warning threshold. Refresh and try again."
   }
 }

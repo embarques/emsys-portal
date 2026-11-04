@@ -67,3 +67,11 @@ test("user threshold preserves zero, defaults older responses, validates bounds 
  const saved = await api.updateCurrentUserPreferences({...types.DEFAULT_USER_PREFERENCES,invoicePoolThreshold:0});
  assert.equal(sent.url,"/users/me/preferences");assert.equal(sent.body.invoicePoolThreshold,0);assert.equal(saved.invoicePoolThreshold,0);
 });
+
+test("an older API cannot falsely confirm a new warning threshold", async () => {
+ const types = loadFeature("src/lib/configuration/types.ts",{});
+ for (const data of [{language:"es",theme:"dark",maxWorkspaceTabs:20},{...types.DEFAULT_USER_PREFERENCES,invoicePoolThreshold:10}]) {
+  const api = loadFeature("src/lib/configuration/api.ts",{put:async()=>({success:true,data})});
+  await assert.rejects(() => api.updateCurrentUserPreferences({...types.DEFAULT_USER_PREFERENCES,invoicePoolThreshold:25}), /could not confirm/);
+ }
+});
