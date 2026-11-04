@@ -30,7 +30,9 @@
     "available": "Available",
     "empty": "No reserved invoices in this pool.",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "generationNotice": "Generated numbers are added to the unassigned company pool. Select numbers below, then choose an employee to assign them.",
+    "unassigned": "Unassigned"
   },
   "title": "Invoices",
   "entity": "Invoice",

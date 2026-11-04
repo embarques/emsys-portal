@@ -30,7 +30,9 @@
     "available": "Disponible",
     "empty": "No hay facturas reservadas en este grupo.",
     "previous": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "generationNotice": "Los números generados se agregan a la reserva de la empresa sin asignar. Seleccione los números abajo y luego elija un empleado para asignarlos.",
+    "unassigned": "Sin asignar"
   },
   "title": "Facturas",
   "entity": "Factura",

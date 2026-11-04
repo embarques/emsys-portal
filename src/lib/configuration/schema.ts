@@ -10,6 +10,7 @@ export function createUserPreferenceSchema(t: TranslateFn) {
   });
 
   return z.object({
+    invoicePoolThreshold: z.number().int().min(0).max(10000),
     language: z.enum(["en", "es"]),
     theme: z.enum(["system", "light", "dark"]),
     maxWorkspaceTabs: z

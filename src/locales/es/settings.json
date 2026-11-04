@@ -64,5 +64,11 @@
     "label": "URL de las políticas",
     "hint": "Use una página pública HTTPS. Deje el campo vacío para borrar el enlace. Este cambio aplica a la empresa seleccionada.",
     "invalid": "Ingrese una URL HTTPS válida sin usuario ni contraseña (máximo 2,048 caracteres)."
+  },
+  "invoicePool": {
+    "title": "Reserva de facturas sin conexión",
+    "description": "La aplicación móvil muestra la cantidad de facturas disponibles en rojo cuando alcanza este número o uno menor.",
+    "threshold": "Umbral de aviso de facturas disponibles",
+    "invalid": "Introduzca un número entero del 0 al 10000."
   }
 }

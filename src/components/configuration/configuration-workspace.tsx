@@ -52,6 +52,7 @@ export function ConfigurationWorkspace() {
     try {
       const current = preferencesQuery.data
         ? {
+            invoicePoolThreshold: preferencesQuery.data.invoicePoolThreshold,
             language: preferencesQuery.data.language,
             theme: preferencesQuery.data.theme,
             maxWorkspaceTabs: preferencesQuery.data.maxWorkspaceTabs,
@@ -184,6 +185,22 @@ export function ConfigurationWorkspace() {
                 {t("settings.tabs.hint", { min: MIN_MAX_WORKSPACE_TABS, max: MAX_MAX_WORKSPACE_TABS })}
               </p>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.invoicePool.title")}</CardTitle>
+            <CardDescription>{t("settings.invoicePool.description")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Label htmlFor="invoice-pool-threshold">{t("settings.invoicePool.threshold")}</Label>
+            <Controller control={control} name="invoicePoolThreshold" render={({ field }) => (
+              <Input id="invoice-pool-threshold" type="number" min={0} max={10000} step={1} value={field.value}
+                onChange={event => field.onChange(event.target.value === "" ? NaN : Number(event.target.value))}
+                aria-invalid={Boolean(errors.invoicePoolThreshold)} />
+            )} />
+            {errors.invoicePoolThreshold && <p role="alert" className="text-sm text-destructive">{t("settings.invoicePool.invalid")}</p>}
           </CardContent>
         </Card>
 

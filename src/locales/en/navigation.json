@@ -64,6 +64,7 @@
     "employeeTitles": "Employee titles",
     "invoicePolicies": "Invoice policies",
     "pendingInventoryTransactions": "Pending Transactions",
-    "pendingFinancialActivity": "Pending Transactions"
+    "pendingFinancialActivity": "Pending Transactions",
+    "reservedInvoices": "Reserved"
   }
 }
