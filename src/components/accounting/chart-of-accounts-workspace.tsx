@@ -93,7 +93,8 @@ const ACCOUNT_TYPES: ChartAccountType[] = [
 
 function accountValues(account: ChartAccount): ChartAccountValues {
   return {
-    displayName: account.displayName,
+    code:account.code,
+ displayName: account.displayName,
     type: account.type,
     description: account.description,
     branchId: account.branch?.id,
@@ -183,7 +184,8 @@ function MobileChartAccountRow({
           type="button"
           variant="outline"
           className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
-          onClick={() => onEdit(account)}
+          disabled={account.systemAccount}
+ onClick={() => onEdit(account)}
         >
           <Edit className="size-4" />
           {t("common.actions.edit")}
@@ -423,6 +425,7 @@ export function ChartOfAccountsWorkspace() {
   }
 
   function openEditDialog(account: ChartAccount) {
+ if(account.systemAccount)return;
     setEditing(account);
     setFormError(null);
     setDialogOpen(true);
@@ -626,7 +629,8 @@ export function ChartOfAccountsWorkspace() {
                   if (!selectedAccount) return;
                   setDeleteTarget(selectedAccount);
                 }}
-                deleteDisabled={deleteDisabled}
+                editDisabled={Boolean(selectedAccount?.systemAccount)}
+ deleteDisabled={deleteDisabled}
               />
               <DataTable
                 columns={columnLayout.columns}

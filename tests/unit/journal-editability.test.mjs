@@ -9,7 +9,7 @@ new Function("exports", output)(loadedModule.exports);
 const { journalEditBlockReason } = loadedModule.exports;
 
 const current = { id: 32676, date: "2026-11-04", status: "OPEN", currency: "USD", rate: 1 };
-const journal = (overrides = {}) => ({ id: "j1", incomeStatementId: 32676, transactionType: "EXPENSE", reconciliationStatus: "OUTSTANDING", ...overrides });
+const journal = (overrides = {}) => ({ id: "j1", incomeStatementId: 32676, transactionType: "EXPENSE", reconciliationStatus: "OUTSTANDING", version: 1, allowedActions: {edit:true}, ...overrides });
 
 test("outstanding journals in the current open closeout are editable", () => {
   for (const transactionType of ["PAYMENT", "EXPENSE", "SALES", "DISCOUNT", "SURCHARGE", "TRANSFER"]) {
@@ -41,3 +41,8 @@ test("cleared transactions and explicit backend edit restrictions block direct e
  assert.equal(journalEditBlockReason(journal({allowedActions:{edit:false}}),current),"restricted");
  assert.equal(journalEditBlockReason(journal({clearanceStatus:"OUTSTANDING",allowedActions:{edit:true}}),current),null);
 });
+
+ test("missing eligibility or version fails closed", () => {
+ assert.equal(journalEditBlockReason(journal({allowedActions:undefined}),current),"restricted");
+ assert.equal(journalEditBlockReason(journal({version:undefined}),current),"restricted");
+ });

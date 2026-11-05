@@ -49,6 +49,8 @@ type ApiAccountRef = {
 };
 
 type ApiChartAccount = {
+ code?: string; templateLayer?: number; templateVersion?: string; classification?: string; subType?: string; codeRange?: string; customizationPolicy?: string; nonPosting?: boolean;
+
   id?: number;
   name?: string;
   displayName?: string;
@@ -81,7 +83,7 @@ const CHART_ACCOUNT_SEARCH_FIELDS = [
   "parentAccount.name",
 ] as const;
 
-const CHART_ACCOUNT_TYPES = new Set<ChartAccountType>([
+const CHART_ACCOUNT_TYPES = new Set<ChartAccountType>(["LIABILITY","EQUITY","CONTRA-REVENUE",
   "ASSET",
   "EXPENSE",
   "REVENUE",
@@ -139,6 +141,7 @@ function normalizeChartAccount(raw: unknown): ChartAccount | null {
     displayName: displayName || name || String(id),
     type: normalizeChartAccountType(item.type),
     description: String(item.description ?? "").trim(),
+ code:item.code,templateLayer:item.templateLayer,templateVersion:item.templateVersion,classification:item.classification,subType:item.subType,codeRange:item.codeRange,customizationPolicy:item.customizationPolicy,nonPosting:item.nonPosting===true,
     branch: normalizeAccountRef(item.branch),
     parentAccount: normalizeAccountRef(item.parentAccount),
     systemAccount: item.systemAccount === true,
@@ -243,7 +246,8 @@ function assertChartAccountMutation(payload: unknown, fallback: string) {
 
 function accountPayload(values: ChartAccountValues) {
   return {
-    name: values.displayName.trim(),
+    code:values.code?.trim() || undefined,
+ name: values.displayName.trim(),
     displayName: values.displayName.trim(),
     type: values.type,
     description: values.description.trim(),
@@ -314,4 +318,12 @@ export async function updateChartAccount(
 export async function deleteChartAccount(id: number): Promise<void> {
   const response = await apiClient.delete<ApiMutationEnvelope>(`${API_ENDPOINTS.CHART_ACCOUNTS}/${id}`);
   assertChartAccountMutation(response, "Unable to delete account.");
+}
+
+/** The immutable parent set is bounded; never depend on a page of company leaves. */
+export async function fetchMasterChartParents(signal?:AbortSignal):Promise<ChartAccount[]> {
+ const response=await apiClient.post<PaginatedApiEnvelope<unknown[]>>(`${API_ENDPOINTS.CHART_ACCOUNTS}/search`,{
+  filters:[{field:"templateLayer",operator:"eq",value:3}],pagination:{page:1,limit:50},sort:[{field:"id",direction:"asc"}]
+ },{signal});
+ return normalizePaginatedChartAccounts(response).items;
 }

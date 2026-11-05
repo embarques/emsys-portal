@@ -378,7 +378,7 @@ export function DailyIncomeWorkspace() {
       return Promise.resolve();
     }
     return (editingJournal
-      ? updateJournal.mutateAsync({ id: editingJournal.id, statement: saveStatement, values, options })
+      ? updateJournal.mutateAsync({ id: editingJournal.id, statement: saveStatement, values, options:{...options,expectedVersion:journalForForm?.version} })
       : createJournal.mutateAsync({ statement: saveStatement, values, options })
     )
       .then(async (journal) => {

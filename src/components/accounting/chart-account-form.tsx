@@ -15,14 +15,16 @@ import type {
   ChartAccountType,
   ChartAccountValues,
 } from "@/lib/accounting/chart-accounts/types";
-import { buildPaymentAccountOptions, findDefaultBankAccount } from "@/lib/accounting/daily-income/payment-accounts";
+
 import type { Branch } from "@/lib/branches/types";
+import {useMasterChartParents} from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
+import {normalizeApiError} from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
 
 const textareaClassName =
   "flex w-full max-w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
-const ACCOUNT_TYPES: ChartAccountType[] = [
+const ACCOUNT_TYPES: ChartAccountType[] = ["LIABILITY","EQUITY","CONTRA-REVENUE",
   "ASSET",
   "EXPENSE",
   "REVENUE",
@@ -91,35 +93,26 @@ export function ChartAccountForm({
     [branches, t],
   );
 
+  const parentsQuery=useMasterChartParents();
+  const masterParents=useMemo(()=>parentsQuery.data ?? accounts.filter(account=>account.templateLayer===3),[parentsQuery.data,accounts]);
   const type = watch("type");
   const branchId = watch("branchId");
   const parentAccountId = watch("parentAccountId");
 
-  const accountOptions = useMemo(
-    () => [
-      {
-        value: "",
-        label: t("accounting.chartOfAccounts.form.options.notSubAccount"),
-      },
-      ...(type === "BANK"
-        ? buildPaymentAccountOptions(accounts.filter((account) => account.type === "BANK"))
-        : accounts.map((account) => ({
-          value: String(account.id),
-          label: account.displayName,
-        }))),
-    ],
-    [accounts, t, type],
-  );
-
-  // New bank accounts fall under the general bank account unless another bank is chosen.
+  const accountOptions = useMemo(() => [
+    {value:"",label:t("accounting.chartOfAccounts.form.options.notSubAccount")},
+    ...(new Set(["INCOME", "EXPENSE", "REVENUE", "CONTRA-REVENUE"]).has(type)
+      ? accounts.filter(account => account.type === type && !account.nonPosting)
+      : masterParents.filter(account => account.templateLayer === 3 && account.customizationPolicy === "PERMITTED" &&
+      (type !== "BANK" || account.codeRange === "1100-1199"))).map(account => ({value:String(account.id),label:`${account.displayName} (${account.codeRange ?? ""})`}))
+  ],[masterParents,accounts,t,type]);
   useEffect(() => {
-    if (isEditing || type !== "BANK") return;
-    const parent = parentAccountId ? accounts.find((account) => account.id === parentAccountId) : undefined;
-    if (parent?.type === "BANK") return;
-    const general = findDefaultBankAccount(accounts);
-    setValue("parentAccountId", general?.id);
-    setValue("parentAccountName", general?.displayName ?? "");
-  }, [accounts, isEditing, parentAccountId, setValue, type]);
+    if(isEditing || type !== "BANK") return;
+    const parent = masterParents.find(account => account.id === parentAccountId);
+    if(parent?.templateLayer === 3 && parent.codeRange === "1100-1199") return;
+    const general = masterParents.find(account => account.templateLayer === 3 && account.codeRange === "1100-1199");
+    setValue("parentAccountId",general?.id);setValue("parentAccountName",general?.name);
+  },[masterParents,isEditing,parentAccountId,setValue,type]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-full min-w-0 space-y-5 max-md:[&_label]:text-base">
@@ -184,6 +177,7 @@ export function ChartAccountForm({
         />
       </div>
 
+      {parentsQuery.isError ? <p role="alert" className="text-sm text-destructive">{normalizeApiError(parentsQuery.error).message}</p>:null}
       <div className="min-w-0 space-y-2">
         <Label htmlFor="parent-account">
           {t("accounting.chartOfAccounts.form.fields.parent")}
@@ -192,7 +186,7 @@ export function ChartAccountForm({
           id="parent-account"
           value={parentAccountId != null ? String(parentAccountId) : ""}
           onValueChange={(next) => {
-            const account = accounts.find((item) => item.id === Number(next));
+            const account = masterParents.find((item) => item.id === Number(next));
             setValue("parentAccountId", account?.id);
             setValue("parentAccountName", account?.displayName ?? "");
           }}
@@ -211,6 +205,7 @@ export function ChartAccountForm({
         ) : null}
       </div>
 
+      <div className="space-y-2"><Label htmlFor="account-code">{t("accounting.chartOfAccounts.form.fields.code")}</Label><Input id="account-code" inputMode="numeric" maxLength={4} {...register("code")} aria-invalid={Boolean(errors.code)}/>{errors.code ? <p role="alert">{errors.code.message}</p> : null}</div>
       <div className="min-w-0 space-y-2">
         <Label htmlFor="account-description">
           {t("accounting.chartOfAccounts.form.fields.description")}

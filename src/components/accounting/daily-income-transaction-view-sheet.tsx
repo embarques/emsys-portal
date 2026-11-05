@@ -1,5 +1,6 @@
 "use client";
 
+import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -217,6 +218,7 @@ export function DailyIncomeTransactionViewSheet({
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
+        <JournalLifecycleActions key={`${resolved.id}:${resolved.version}`} journal={resolved}/>
         <RecordViewSheetActions
           editLabel={t("common.actions.edit")}
           deleteLabel={t("common.actions.delete")}

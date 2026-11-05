@@ -291,7 +291,7 @@ export function DailyIncomeTransactionForm({
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
   const expenseAccounts = useMemo(() => accounts.filter((account) => account.type === "EXPENSE"), [accounts]);
   const revenueAccounts = useMemo(() => accounts.filter(isUserRevenueAccount), [accounts]);
-  const expenseSourceAccounts = useMemo(() => accounts.filter((account) => account.type === "ASSET"), [accounts]);
+  const expenseSourceAccounts = useMemo(() => accounts.filter((account) => !account.nonPosting && account.type === "ASSET"), [accounts]);
   const accountSelectAccounts = type === "EXPENSE" ? expenseAccounts : type === "SALES" ? revenueAccounts : accounts;
   const sourceAccountSelectAccounts = type === "EXPENSE" ? expenseSourceAccounts : accounts;
   const accountOptions = useMemo(

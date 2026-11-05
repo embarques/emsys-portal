@@ -278,12 +278,16 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   return {
     ...captureApiTableFields(value, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS),
     id,
-    reconciliationStatus: raw.reconciliationStatus === "RECONCILED" ? "RECONCILED" : raw.reconciliationStatus === "OUTSTANDING" ? "OUTSTANDING" : undefined,
+    version:typeof raw.version==="number" ? raw.version : undefined,
+ transactionStatus:raw.transactionStatus==="ACTIVE"||raw.transactionStatus==="VOIDED"||raw.transactionStatus==="REVERSED"?raw.transactionStatus:undefined,
+ voidedAt:stringValue(raw.voidedAt)||null,
+ reconciliationStatus: raw.reconciliationStatus === "RECONCILED" ? "RECONCILED" : raw.reconciliationStatus === "OUTSTANDING" ? "OUTSTANDING" : undefined,
     clearanceStatus: raw.clearanceStatus === "CLEARED" || raw.clearanceStatus === "OUTSTANDING" || raw.clearanceStatus === "NOT_REQUIRED" ? raw.clearanceStatus : undefined,
     clearedAt: stringValue(raw.clearedAt) || null,
     clearedBy: normalizePartyRef(raw.clearedBy) ?? null,
     allowedActions: raw.allowedActions && typeof raw.allowedActions === "object" ? {
-      edit: typeof allowedActions.edit === "boolean" ? allowedActions.edit : undefined,
+      note:typeof allowedActions.note === "boolean" ? allowedActions.note : undefined,
+ edit: typeof allowedActions.edit === "boolean" ? allowedActions.edit : undefined,
       void: typeof allowedActions.void === "boolean" ? allowedActions.void : undefined,
       reverse: typeof allowedActions.reverse === "boolean" ? allowedActions.reverse : undefined,
       correct: typeof allowedActions.correct === "boolean" ? allowedActions.correct : undefined,
@@ -786,7 +790,7 @@ export async function createDailyIncomeJournalSync(requestId: string, statement:
 export async function updateDailyIncomeJournal(id: string, statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
   const payload = await apiClient.put<ApiEnvelope>(
     `${API_ENDPOINTS.ACCOUNTING_JOURNAL}/${encodeURIComponent(id)}`,
-    { id, ...journalPayload(statement, values, options) },
+    { id, expectedVersion: options?.expectedVersion, ...journalPayload(statement, values, options) },
   );
   assertMutation(payload, "Unable to update transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));

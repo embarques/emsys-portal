@@ -66,6 +66,7 @@
     "pendingInventoryTransactions": "Transacciones pendientes",
     "pendingFinancialActivity": "Conciliación pendiente",
     "pendingClearance": "Liquidación pendiente",
-    "reservedInvoices": "Reservadas"
+    "reservedInvoices": "Reservadas",
+    "changeRequests": "Solicitudes de cambio"
   }
 }

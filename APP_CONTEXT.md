@@ -651,3 +651,15 @@ time with `CLOSEOUT_REQUIRED` (for example after midnight) is handled separately
 the closeout rollover dialog; this action does not automatically retry a journal
 mutation or reopen a closed period. Backend creation must enforce the
 reported server-date/timezone, stale-period closure, and concurrency invariants.
+
+### Financial controls alignment (2026-11-04)
+
+`docs/financial-controls.md` supersedes the historical accounting descriptions
+above that combine reconciliation and clearance or forbid controlled corrections
+of reconciled transactions. Reconciliation records internal verification; bank
+clearance records settlement and applies deferred invoice receipts. Backend
+`allowedActions` and version checks govern direct edits, voids, notes and
+reversals. Daily-route operators request protected changes through
+`/change-requests`; authorized reviewers may approve their own requests. Explicit
+closeout opening remains in place, and neither later verification nor settlement
+reopens a historical period.

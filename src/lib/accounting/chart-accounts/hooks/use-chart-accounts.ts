@@ -6,6 +6,7 @@ import {
   createChartAccount,
   deleteChartAccount,
   fetchChartAccounts,
+ fetchMasterChartParents,
   updateChartAccount,
 } from "@/lib/accounting/chart-accounts/api/chart-accounts-api";
 import type {
@@ -66,4 +67,9 @@ export function useDeleteChartAccount() {
     mutationFn: (id: number) => deleteChartAccount(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
   });
+}
+
+export function useMasterChartParents(){
+ const {companyId,user,email,roleId}=useAuth();const enabled=useChartAccountsQueryEnabled();
+ return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"master-chart-parents",companyId,user?.uid??email,roleId],queryFn:({signal})=>fetchMasterChartParents(signal),enabled});
 }

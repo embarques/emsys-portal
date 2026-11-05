@@ -110,13 +110,14 @@ export type DailyRouteAttribution = {
 };
 
 export type DailyIncomeJournal = ApiTableRecord & {
+ version?: number; transactionStatus?: "ACTIVE"|"VOIDED"|"REVERSED";voidedAt?:string|null;
   id: string;
   reconciliationStatus?: "OUTSTANDING" | "RECONCILED";
   /** Independent settlement status; NOT_REQUIRED applies to non-clearable transactions. */
   clearanceStatus?: "NOT_REQUIRED" | "OUTSTANDING" | "CLEARED";
   clearedAt?: string | null;
   clearedBy?: {id: string | number; name: string} | null;
-  allowedActions?: {edit?: boolean; void?: boolean; reverse?: boolean; correct?: boolean; clear?: boolean};
+  allowedActions?: {edit?: boolean; void?: boolean; reverse?: boolean; correct?: boolean; clear?: boolean; note?:boolean};
   restrictionReason?: string;
   reconciledAt?: string | null;
   reconciledBy?: {id: string | number; name: string} | null;
