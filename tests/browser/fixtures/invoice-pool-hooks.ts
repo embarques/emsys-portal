@@ -1,4 +1,4 @@
-declare global { interface Window { poolDenied?: boolean; poolUsersDenied?: boolean; poolUsersError?: boolean; poolReads?: number; poolWrites?: unknown[]; poolLoseAck?: boolean; } }
+declare global { interface Window { poolDenied?: boolean; poolUsersDenied?: boolean; poolUsersError?: boolean; poolQueries?: Array<{q?:string;after?:string;userId?:number}>; poolReads?: number; poolWrites?: unknown[]; poolLoseAck?: boolean; } }
 import translations from "../../../src/locales/en/invoices.json";
 export function useAuth() { return {companyId:"company-a",user:{uid:"user-a"},loading:false,roleLoading:false,hasPermission:(permission: string)=>!window.poolDenied && !(window.poolUsersDenied && permission === "canViewUser")}; }
 export function useAppSelector(selector: (state: {auth:{companyId:string;idToken:string}})=>unknown) { return selector({auth:{companyId:"company-a",idToken:"fixture"}}); }
@@ -15,6 +15,11 @@ const rows=[
  {id:"68f800000000000000000003",number:"INV-102",claimed:true,allocation:{userId:3,token:"claimed-v1"}},
 ];
 export const apiClient={
- get:async()=>{window.poolReads=(window.poolReads??0)+1;return {success:true,data:{items:rows,remaining:3,lowThreshold:10}};},
+ get:async(_url:string, options:{params:{q?:string;after?:string;userId?:number}})=>{
+ window.poolReads=(window.poolReads??0)+1;window.poolQueries??=[];window.poolQueries.push(options.params);
+ const params=options.params;
+ const filtered=rows.filter(row=>(params.userId===undefined||row.allocation.userId===params.userId)&&(!params.q||row.number.toLowerCase().includes(params.q.toLowerCase())));
+ return {success:true,data:{items:filtered,remaining:filtered.length,lowThreshold:10}};
+ },
  post:async(url:string,request:unknown)=>{window.poolWrites??=[];window.poolWrites.push(request);if(window.poolLoseAck&&window.poolWrites.length===1)throw Error("Connection lost");return {success:true,data:rows};},
 };

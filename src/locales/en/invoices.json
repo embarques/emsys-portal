@@ -1,5 +1,8 @@
 {
   "pool": {
+    "search": "Search reserved numbers",
+    "searchPlaceholder": "Type an invoice number…",
+    "selectAll": "Select all selectable numbers on this page",
     "title": "Reserved invoices",
     "description": "Generate invoice numbers for offline mobile use and assign them to users.",
     "loading": "Loading reserved invoices…",

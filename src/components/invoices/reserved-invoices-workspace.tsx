@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { Controller } from "react-hook-form";
 import { RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -28,7 +29,7 @@ function ReservedInvoicePoolPanel() {
   if (!model.canView) return <p role="alert">{text("denied")}</p>;
   return <div className="space-y-6">
     <PageHeader title={text("title")} description={text("description")} actions={
-      <Button variant="outline" onClick={() => void model.query.refetch()} disabled={model.query.isFetching || busy}>
+      <Button variant="outline" onClick={() => void model.query.refetch()} disabled={model.query.isFetching || model.searchPending || busy}>
         <RefreshCw className="mr-2 size-4" />{text("refresh")}
       </Button>
     } />
@@ -45,6 +46,10 @@ function ReservedInvoicePoolPanel() {
       {model.pending && !busy && <div className="flex flex-wrap items-center gap-3" role="status"><p>{text("pending")}</p><Button onClick={model.retry}>{text("retry")}</Button></div>}
       {model.mutation.isSuccess && !model.pending && <p role="status">{text("saved")}</p>}
     </CardContent></Card>
+    <div className="max-w-xl space-y-2">
+      <Label htmlFor="pool-search">{text("search")}</Label>
+      <Input id="pool-search" type="search" value={model.numberSearch} maxLength={100} placeholder={text("searchPlaceholder")} disabled={busy || model.pending} onChange={event => model.setNumberSearch(event.target.value)} />
+    </div>
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-2"><Label htmlFor="pool-filter">{text("show")}</Label><select id="pool-filter" className="h-10 rounded-md border bg-background px-3" value={model.filter} onChange={event => model.setFilter(event.target.value)} disabled={busy}>
         <option value="all">{text("all")}</option><option value="0">{text("companyPool")}</option>
@@ -61,19 +66,24 @@ function ReservedInvoicePoolPanel() {
         {!model.canViewUsers && <p role="alert" className="text-sm text-destructive">{text("usersDenied")}</p>}
         {model.users.isError && <p role="alert" className="text-sm text-destructive">{normalizeApiError(model.users.error).message}</p>}
       </div>
-      <Button variant="outline" disabled={busy || model.pending || !model.canAssign || !model.canAssignSelection || userId === 0} onClick={() => model.act("assign")}>{text("assign")}</Button>
-      <Button variant="outline" disabled={busy || model.pending || !model.canAssign || !model.canReturnSelection} onClick={() => model.act("return")}>{text("return")}</Button>
+
     </div>
     <p className="text-sm text-muted-foreground">{text("downloadNotice")}</p>
-    {model.query.isError ? <p role="alert">{normalizeApiError(model.query.error).message}</p> : model.query.isLoading ? <p role="status">{text("loading")}</p> :
+    {model.selected.length > 0 && <fieldset disabled={model.selectionLocked}>
+      <TableSelectionToolbar selectedIds={model.selected.map(item => item.id)} pageRowIds={model.selectable.map(item => item.id)} totalCount={model.query.data?.remaining} onSelectedIdsChange={model.setSelectedIds} hideStandardActions actions={<>
+      <Button variant="outline" disabled={model.selectionLocked || !model.canAssign || !model.canAssignSelection || userId === 0} onClick={() => model.act("assign")}>{text("assign")}</Button>
+      <Button variant="outline" disabled={model.selectionLocked || !model.canAssign || !model.canReturnSelection} onClick={() => model.act("return")}>{text("return")}</Button>
+      </>} />
+    </fieldset>}
+    {model.query.isError ? <p role="alert">{normalizeApiError(model.query.error).message}</p> : model.query.isLoading || model.searchPending || model.query.isPlaceholderData ? <p role="status">{text("loading")}</p> :
       <div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-sm"><thead className="bg-muted"><tr>
-        <th className="p-3"><span className="sr-only">{text("select")}</span></th><th className="p-3">{text("number")}</th><th className="p-3">{text("user")}</th><th className="p-3">{text("status")}</th>
+        <th className="p-3"><input type="checkbox" aria-label={text("selectAll")} ref={element => { if (element) element.indeterminate = model.selected.length > 0 && model.selected.length < model.selectable.length; }} disabled={model.selectionLocked || model.selectable.length === 0} checked={model.selectable.length > 0 && model.selected.length === model.selectable.length} onChange={event => model.setSelectedIds(event.target.checked ? model.selectable.map(item => item.id) : [])} /></th><th className="p-3">{text("number")}</th><th className="p-3">{text("user")}</th><th className="p-3">{text("status")}</th>
       </tr></thead><tbody>{model.query.data?.items.map(item => <tr key={item.id} className="border-t">
-        <td className="p-3"><input type="checkbox" aria-label={`${text("select")} ${item.number}`} disabled={busy || model.pending || item.claimed} checked={model.selected.some(selected => selected.id === item.id)} onChange={() => model.toggle(item)} /></td>
+        <td className="p-3"><input type="checkbox" aria-label={`${text("select")} ${item.number}`} disabled={model.selectionLocked || item.claimed} checked={model.selected.some(selected => selected.id === item.id)} onChange={() => model.toggle(item)} /></td>
         <td className="p-3 font-mono">{item.number}</td><td className="p-3">{item.allocation.userId ? (model.users.data?.items.find(user => user.id === item.allocation.userId)?.name ?? item.allocation.userId) : text("unassigned")}</td>
         <td className="p-3">{item.claimed ? text("downloaded") : item.allocation.userId ? text("assigned") : text("available")}</td>
       </tr>)}{model.query.data?.items.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">{text("empty")}</td></tr>}</tbody></table></div>}
-    <div className="flex justify-end gap-2"><Button variant="outline" disabled={!model.hasPrevious || model.query.isFetching || busy} onClick={model.previous}>{text("previous")}</Button>
-      <Button variant="outline" disabled={!model.query.data?.nextCursor || model.query.isFetching || busy} onClick={model.next}>{text("next")}</Button></div>
+    <div className="flex justify-end gap-2"><Button variant="outline" disabled={!model.hasPrevious || model.query.isFetching || model.searchPending || busy} onClick={model.previous}>{text("previous")}</Button>
+      <Button variant="outline" disabled={!model.query.data?.nextCursor || model.query.isFetching || model.searchPending || busy} onClick={model.next}>{text("next")}</Button></div>
   </div>;
 }

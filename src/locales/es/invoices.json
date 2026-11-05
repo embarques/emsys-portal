@@ -1,5 +1,8 @@
 {
   "pool": {
+    "search": "Buscar números reservados",
+    "searchPlaceholder": "Escribe un número de factura…",
+    "selectAll": "Seleccionar todos los números disponibles de esta página",
     "title": "Facturas reservadas",
     "description": "Genere números de factura para uso móvil sin conexión y asígnelos a usuarios.",
     "loading": "Cargando facturas reservadas…",
