@@ -142,3 +142,43 @@ test("Reserved navigation labels resolve in both supported languages", async () 
    await page.getByRole("alert").filter({hasText:"User lookup unavailable"}).waitFor({timeout:15000});
   }finally{await page.close();}
  });
+
+test("reserved numbers filter as typed and clear stale selection",async()=>{
+ const page=await fixture();try{
+ await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).check();
+ await page.getByRole("toolbar").waitFor();
+ await page.getByLabel("Search reserved numbers",{exact:true}).pressSequentially("101",{delay:30});
+ await page.waitForFunction(()=>window.poolQueries?.at(-1)?.q==="101");
+ await page.getByText("INV-101",{exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>window.poolQueries.filter(query=>query.q).length),1);
+ assert.equal(await page.getByText("INV-100",{exact:true}).count(),0);
+ assert.equal(await page.getByRole("toolbar").count(),0);
+ assert.equal(await page.getByRole("checkbox",{name:"Select INV-101",exact:true}).isChecked(),false);
+ await page.getByLabel("Search reserved numbers",{exact:true}).fill("missing");
+ await page.getByText("No reserved invoices in this pool.",{exact:true}).waitFor();
+ assert.equal(await page.getByRole("checkbox",{name:"Select all selectable numbers on this page",exact:true}).isDisabled(),true);
+ await page.getByLabel("Search reserved numbers",{exact:true}).fill("");
+ await page.getByText("INV-100",{exact:true}).waitFor();
+ }finally{await page.close();}
+});
+
+test("select all and unselect use invoice selection controls and skip downloaded rows",async()=>{
+ const page=await fixture();try{
+ const all=page.getByRole("checkbox",{name:"Select all selectable numbers on this page",exact:true});
+ await all.check();
+ assert.equal(await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).isChecked(),true);
+ assert.equal(await page.getByRole("checkbox",{name:"Select INV-101",exact:true}).isChecked(),true);
+ assert.equal(await page.getByRole("checkbox",{name:"Select INV-102",exact:true}).isChecked(),false);
+ await page.getByRole("button",{name:"common.table.clearSelection",exact:true}).click();
+ assert.equal(await all.isChecked(),false);
+ await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).check();
+ assert.equal(await all.evaluate(element=>element.indeterminate),true);
+ await page.getByRole("button",{name:"common.table.selectAllOthers",exact:true}).click();
+ assert.equal(await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).isChecked(),false);
+ assert.equal(await page.getByRole("checkbox",{name:"Select INV-101",exact:true}).isChecked(),true);
+ await all.check();
+ assert.equal(await all.isChecked(),true);
+ await all.uncheck();
+ assert.equal(await page.getByRole("toolbar").count(),0);
+ }finally{await page.close();}
+});

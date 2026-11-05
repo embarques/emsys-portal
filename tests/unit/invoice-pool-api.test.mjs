@@ -40,7 +40,7 @@ test("pool list preserves company pool zero, pagination and cancellation",async(
  const api=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{get:async(...args)=>{calls.push(args);return {success:true,data:{items:[item],remaining:1,lowThreshold:10}}}});
  const page=await api.fetchInvoicePool(0,"cursor",controller.signal);
  assert.equal(page.items[0].number,"INV-100");assert.equal(calls[0][0],"/invoices/reserved");
- assert.deepEqual(calls[0][1].params,{userId:0,after:"cursor",limit:50});assert.equal(calls[0][1].signal,controller.signal);
+ assert.deepEqual(calls[0][1].params,{userId:0,after:"cursor",limit:50,q:undefined});assert.equal(calls[0][1].signal,controller.signal);
 });
 test("mutation preserves operation identity and rejects unsuccessful envelopes",async()=>{
  const request={requestId:"stable",action:"generate",count:50,userId:0};let sent;
@@ -81,4 +81,12 @@ test("ordinary language and theme saves remain compatible with the older fixed-t
  const api = loadFeature("src/lib/configuration/api.ts",{put:async()=>({success:true,data:{language:"es",theme:"dark",maxWorkspaceTabs:20}})});
  const saved = await api.updateCurrentUserPreferences({...types.DEFAULT_USER_PREFERENCES,language:"es",theme:"dark"});
  assert.equal(saved.language,"es"); assert.equal(saved.theme,"dark"); assert.equal(saved.invoicePoolThreshold,10);
+});
+
+test("pool number search is sent server-side and preserves cancellation",async()=>{
+ let options;
+ const api=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{get:async(url,value)=>{options=value;return {success:true,data:{items:[],remaining:0,lowThreshold:10}}}});
+ const controller=new AbortController();
+ await api.fetchInvoicePool(0,undefined,controller.signal,"  INV-001  ");
+ assert.equal(options.params.q,"INV-001");assert.equal(options.params.userId,0);assert.equal(options.signal,controller.signal);
 });

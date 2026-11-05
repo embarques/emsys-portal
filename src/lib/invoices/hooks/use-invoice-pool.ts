@@ -1,5 +1,6 @@
 "use client";
 
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useDeferredValue, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +23,9 @@ export function useInvoicePool() {
   const canViewUsers = hasPermission("canViewUser", "user");
   const canAssign = hasPermission("canAssignInvoicePool", "invoice_pool");
   const ready = !loading && !roleLoading && !!companyId && !!transport.idToken && transport.companyId === companyId;
+  const [numberSearch, setNumberSearch] = useState("");
+  const numberQuery = useDebouncedValue(numberSearch.trim(), 300);
+  const searchPending = numberSearch.trim() !== numberQuery;
   const [filter, setFilter] = useState("all");
   const [cursors, setCursors] = useState<(string | undefined)[]>([undefined]);
   const [selection, setSelection] = useState<ReservedInvoice[]>([]);
@@ -36,9 +40,9 @@ export function useInvoicePool() {
     try{return {key,action:JSON.parse(stored)};}catch{return null;}
   });
   const form = useForm<InvoicePoolForm>({ resolver: zodResolver(invoicePoolFormSchema), defaultValues: { count: 50, userId: 0 } });
-  const queryKey = ["invoice-pool", companyId, actor, filter, cursors.at(-1)];
-  const query = useWorkspaceQuery({ queryKey, enabled: ready && canView,
-    queryFn: ({ signal }) => fetchInvoicePool(filter === "all" ? undefined : Number(filter), cursors.at(-1), signal), retry: false });
+  const queryKey = ["invoice-pool", companyId, actor, filter, numberQuery, cursors.at(-1)];
+  const query = useWorkspaceQuery({ queryKey, enabled: ready && canView && !searchPending,
+    queryFn: ({ signal }) => fetchInvoicePool(filter === "all" ? undefined : Number(filter), cursors.at(-1), signal, numberQuery), retry: false });
   const users = useWorkspaceQuery({ queryKey: ["invoice-pool-users",companyId,actor,search],
     enabled:ready && canView && canViewUsers,
     queryFn:()=>fetchUsers({page:1,limit:40,active:true,search:search ? {field:"name",operator:"contains",value:search}:undefined}) });
@@ -61,15 +65,20 @@ export function useInvoicePool() {
       await queryClient.invalidateQueries({ queryKey: ["invoice-pool", companyId] });
     },
   });
-  const selected = selection.filter(item => query.data?.items.some(row => row.id === item.id));
+  const selected = (query.data?.items ?? []).filter(item => !item.claimed && selection.some(row => row.id === item.id));
+  const selectionLocked = mutation.isPending || pending?.key === key || query.isFetching || searchPending || query.isPlaceholderData;
+  const selectable = (query.data?.items ?? []).filter(item => !item.claimed);
+  const setSelectedIds = (ids: string[]) => { if (!selectionLocked) setSelection(selectable.filter(item => ids.includes(item.id))); };
   const act = (action: "generate" | "assign" | "return", values = form.getValues()) => {
-    if (!ready || (action === "generate" ? !canGenerate : !canAssign)) return;
+    if (!ready || (action !== "generate" && selectionLocked) || (action === "generate" ? !canGenerate : !canAssign)) return;
     mutation.mutate(action === "generate" ? { action, count: values.count, userId: values.userId }
       : { action, ...(action === "assign" ? { userId: values.userId } : {}), items: selected.map(item => ({ id: item.id, token: item.allocation.token })) });
   };
-  return { form, query, mutation, canView, canViewUsers, canGenerate, canAssign, ready, filter,
+  return { numberSearch, searchPending, selectionLocked, selectable, setSelectedIds,
+    setNumberSearch: (value: string) => { setNumberSearch(value); setCursors([undefined]); setSelection([]); },
+    form, query, mutation, canView, canViewUsers, canGenerate, canAssign, ready, filter,
     setFilter: (value: string) => { setFilter(value); setCursors([undefined]); setSelection([]); },
-    selected, toggle: (item: ReservedInvoice) => setSelection(current => current.some(row => row.id === item.id) ? current.filter(row => row.id !== item.id) : [...current, item]),
+    selected, toggle: (item: ReservedInvoice) => { if (selectionLocked || item.claimed) return; setSelection(current => current.some(row => row.id === item.id) ? current.filter(row => row.id !== item.id) : [...current, item]); },
     next: () => { if (query.data?.nextCursor) { setCursors([...cursors, query.data.nextCursor]); setSelection([]); } },
     previous: () => { setCursors(cursors.slice(0, -1)); setSelection([]); }, hasPrevious: cursors.length > 1,
     userSearch, setUserSearch, users, act, retry: () => { if(pending?.key===key) mutation.mutate(pending.action); }, pending: pending?.key === key,
