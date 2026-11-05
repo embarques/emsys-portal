@@ -3,6 +3,7 @@ import type { Permission } from "@/lib/auth/types/permission";
 
 /** Maps portal routes to EMSYS API permissions (adapted from emsys-portal_v2). */
 export const PAGE_PERMISSIONS: Record<string, Permission> = {
+ "/change-requests":{name:"canViewChangeRequest",resourceType:"change_request"},
   "/": PERMISSIONS.dashboardView,
   "/customers": PERMISSIONS.clientsView,
   "/appointments": PERMISSIONS.pickupsView,

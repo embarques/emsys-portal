@@ -22,6 +22,7 @@ import {countCompleteFilterRows, type TableFilterRowState} from "@/lib/table/fil
 import {DAILY_INCOME_TABLE_FILTER_FIELDS, PENDING_JOURNAL_TABLE_FILTER_FIELDS} from "@/lib/accounting/daily-income/journal-search";
 import {DAILY_INCOME_JOURNAL_API_TABLE_FIELDS} from "@/lib/accounting/daily-income/table-fields";
 import {useJournalRows, useJournalSummary, useReconcileJournals, useClearJournals, type JournalCurrencySummary} from "@/lib/accounting/daily-income/reconciliation";
+import {atomicBatchOutcome} from "@/lib/accounting/daily-income/batch-outcome";
 import {isJournalQueueActionable} from "@/lib/accounting/daily-income/journal-queue";
 import type {DailyIncomeJournal} from "@/lib/accounting/daily-income/types";
 import {canPrintPaymentReceipt} from "@/lib/accounting/daily-income/print-payment-receipt";
@@ -43,8 +44,8 @@ type JournalTransactionsTableProps = {
 };
 
 export function JournalTransactionsTable(props: JournalTransactionsTableProps) {
-  const {companyId} = useAuth();
-  return <JournalTable key={`${companyId}:${props.clearance ? "clearance" : props.pending ? "reconciliation" : "closeout"}`} {...props}/>;
+  const {companyId,user,email,roleId} = useAuth();
+  return <JournalTable key={`${companyId}:${user?.uid??email}:${roleId}:${props.clearance ? "clearance" : props.pending ? "reconciliation" : "closeout"}`} {...props}/>;
 }
 function JournalTable({incomeStatementId = 0, pending = false, clearance = false, headerActions, isPrintingReceipt = false, onView, onEdit, canEditRow, onPrintReceipt}: JournalTransactionsTableProps) {
   const {t} = useTranslation();
@@ -62,6 +63,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const [selected, setSelected] = useState<Record<string, DailyIncomeJournal>>({});
   const [command, setCommand] = useState<{ids: string[]; requestId: string} | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [outcome, setOutcome] = useState<ReturnType<typeof atomicBatchOutcome> | null>(null);
   const params = {incomeStatementId, pending: pending && !clearance, pendingClearance: clearance, page, limit: pageLimit, query: deferredQuery, filterRows, sort};
   const rowsQuery = useJournalRows(params);
   const rows = rowsQuery.data?.items ?? [];
@@ -88,7 +90,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
     if (processMutation.isPending) return;
     const row = rows.find(item => item.id === id);
     if (checked && (!row || !canSelect(row))) return;
-    setCommand(null);
+    setCommand(null); setOutcome(null);
     setSelected(current => {
       const next = {...current};
       if (checked && row) next[id] = row; else delete next[id];
@@ -97,11 +99,11 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   }
   function resetFilters(next: TableFilterRowState[]) {
     if (processMutation.isPending) return;
-    setFilterRows(next); setPage(1); setSelected({}); setCommand(null);
+    setFilterRows(next); setPage(1); setSelected({}); setCommand(null); setOutcome(null);
   }
   function togglePage(checked: boolean) {
     if (processMutation.isPending) return;
-    setCommand(null);
+    setCommand(null); setOutcome(null);
     setSelected(current => {
       const next = {...current};
       const selectedMethod = method ?? (canProcess ? rows.find(row => isJournalQueueActionable(row, queue))?.paymentMethod?.name ?? "" : undefined);
@@ -123,12 +125,12 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       filtersOpen={filtersOpen} onFiltersOpenChange={setFiltersOpen}
       activeFilterCount={activeFilterCount} searchSummary={searchSummary}
       filterPanel={<TableAdvancedFilterPanel presetScope={clearance ? "pending-clearance" : pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} resultSummary={listSummary} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}
-      search={<TableSearchInput value={query} onChange={value => {setQuery(value); setPage(1); setSelected({}); setCommand(null);}} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}/>}
+      search={<TableSearchInput value={query} onChange={value => {setQuery(value); setPage(1); setSelected({}); setCommand(null); setOutcome(null);}} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}/>}
     />
     </CardHeader>
     <TableSelectionBar
       selectedCount={ids.length} totalCount={total}
-      onClear={() => {if (!processMutation.isPending) {setSelected({}); setCommand(null);}}}
+      onClear={() => {if (!processMutation.isPending) {setSelected({}); setCommand(null); setOutcome(null);}}}
       onView={onView ? () => onView(selected[ids[0]]) : undefined}
       viewDisabled={processMutation.isPending} canDelete={false}
       onEdit={onEdit ? () => onEdit(selected[ids[0]]) : undefined}
@@ -157,7 +159,21 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       <p>{text("selectedCount")} {command?.ids.length}</p>
       <JournalTotals label={text("selectedTotals")} totals={selectedTotals.data} loading={selectedTotals.isFetching}/>
       {processMutation.isError ? <p role="alert" className="text-destructive">{normalizeApiError(processMutation.error).message}</p> : null}
-      <DialogFooter><Button variant="outline" disabled={processMutation.isPending} onClick={() => setConfirmOpen(false)}>{t("common.actions.cancel")}</Button><Button disabled={!ready || processMutation.isPending || !command} onClick={() => {if (!command) return; processMutation.mutate(command, {onSuccess: () => {setSelected({}); setCommand(null); setConfirmOpen(false); setPage(1);}});}}>{actionLabel}</Button></DialogFooter>
+      {outcome ? <div role="status" className="max-h-64 space-y-2 overflow-y-auto text-sm">
+        <p>{text(outcome.complete ? "batchComplete" : "batchUnconfirmed")}</p>
+        {outcome.confirmed.map(id => <p key={id}>{id} — {text("confirmed")}</p>)}
+        {outcome.unconfirmed.map(id => <p key={id}>{id} — {text("unconfirmed")}</p>)}
+      </div> : null}
+      <DialogFooter><Button variant="outline" disabled={processMutation.isPending} onClick={() => setConfirmOpen(false)}>{t("common.actions.cancel")}</Button><Button disabled={(!ready && !outcome) || outcome?.complete === true || processMutation.isPending || !command} onClick={() => {if (!command) return; processMutation.mutate(command, {onSuccess: (response) => {
+ const data=response?.data;
+ const acknowledged = data && (clearance ? ("cleared" in data ? data.cleared : undefined) : ("reconciled" in data ? data.reconciled : undefined));
+ const result = atomicBatchOutcome(command.ids,[...(outcome?.confirmed??[]),...(Array.isArray(acknowledged)?acknowledged:[])]);
+ setOutcome(result);
+ setSelected(current => Object.fromEntries(Object.entries(current).filter(([id]) => !result.confirmed.includes(id))));
+ setPage(1);
+ // Keep the exact original command for an uncertain-response retry. Its UUID
+ // must never be reused with only the omitted IDs or another payload.
+ }});}}>{actionLabel}</Button></DialogFooter>
     </DialogContent></Dialog>
   </Card>;
 }

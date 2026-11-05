@@ -13,7 +13,11 @@
     "sameMethod": "Select up to 200 eligible transactions with the same payment method. Only transactions the API authorizes for clearance can be cleared.",
     "confirmTitle": "Mark selected transactions as cleared?",
     "confirmDescription": "Confirm that these payments have settled or been verified through their financial channel. This records settlement only; reconciliation history, invoice balances and closeout amounts stay unchanged. It does not issue a bank refund or reversal.",
-    "pendingAlert": "{{count}} transactions pending clearance"
+    "pendingAlert": "{{count}} transactions pending clearance",
+    "batchComplete": "All selected transactions are confirmed.",
+    "batchUnconfirmed": "Some results are unconfirmed. Retry the original batch to retrieve its result; no omitted transaction is labeled as failed.",
+    "confirmed": "Confirmed",
+    "unconfirmed": "Not confirmed"
   },
   "pages": {
     "description": "Maintain a centralized financial history of payments, transactions, income, and expenses."
@@ -46,7 +50,10 @@
       "EXPENSE": "Expense",
       "REVENUE": "Revenue",
       "BANK": "Bank",
-      "LOAN": "Loan"
+      "LOAN": "Loan",
+      "LIABILITY": "Liability",
+      "EQUITY": "Equity",
+      "CONTRA-REVENUE": "Contra revenue"
     },
     "values": {
       "allBranches": "All",
@@ -70,7 +77,8 @@
         "type": "Account type",
         "branch": "Branch",
         "parent": "Parent account",
-        "description": "Description"
+        "description": "Description",
+        "code": "Account code (4 digits)"
       },
       "placeholders": {
         "type": "Select account type",
@@ -1537,7 +1545,10 @@
     "confirmDescription": "Confirm that money or supporting documents have been accounted for. This releases the assignee’s responsibility and retains the reconciliation history. Clearance status, invoice balances and closeout amounts stay unchanged.",
     "pendingAlert": "{{count}} transactions pending reconciliation",
     "fields": {
-      "clearanceStatus": {"label": "Clearance", "placeholder": "Clearance"},
+      "clearanceStatus": {
+        "label": "Clearance",
+        "placeholder": "Clearance"
+      },
       "invoice": {
         "number": {
           "label": "Invoice #",
@@ -1628,6 +1639,58 @@
           "placeholder": "Branch ID"
         }
       }
-    }
+    },
+    "batchComplete": "All selected transactions are confirmed.",
+    "batchUnconfirmed": "Some results are unconfirmed. Retry the original batch to retrieve its result; no omitted transaction is labeled as failed.",
+    "confirmed": "Confirmed",
+    "unconfirmed": "Not confirmed"
+  },
+  "changeRequests": {
+    "title": "Change requests",
+    "description": "Request a reviewed update or cancellation for a daily-route record. Originals stay unchanged until approval.",
+    "resource": "Record type",
+    "record": "Record ID",
+    "verify": "Verify access and current version",
+    "verified": "Record verified. The server will check it again before applying this request.",
+    "action": "Requested action",
+    "update": "Update",
+    "void": "Void or correct",
+    "reason": "Reason for this change",
+    "descriptionField": "Description",
+    "purpose": "Appointment purpose",
+    "notes": "Notes",
+    "receiverName": "Receiver name",
+    "amount": "Correct amount (optional)",
+    "submit": "Submit for approval",
+    "submitted": "Request submitted. The original record is unchanged.",
+    "pickup": "Appointment",
+    "invoice": "Invoice",
+    "journal": "Transaction",
+    "labels": "Barcode",
+    "inventory": "Inventory dispatch",
+    "pending": "Pending review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "review": "Review request",
+    "reviewDescription": "Approval rechecks permissions, route access, current version and business rules. Financial corrections create new entries where history is restricted. Authorized reviewers may approve their own requests.",
+    "reviewReason": "Review reason (required for rejection)",
+    "approve": "Approve and apply",
+    "reject": "Reject",
+    "previous": "Previous",
+    "next": "Next",
+    "before": "Before",
+    "after": "After"
+  },
+  "journalLifecycle": {
+    "void": "Void",
+    "reverse": "Reverse",
+    "correct": "Correct with review",
+    "note": "Edit note",
+    "request": "Request a change",
+    "warning": "This creates an audited offsetting entry. It does not refund a bank payment or undo the original reconciliation or clearance evidence.",
+    "noteDescription": "Only the description changes. Financial amounts and verification history remain unchanged.",
+    "reason": "Reason",
+    "description": "Description",
+    "confirm": "Confirm"
   }
 }

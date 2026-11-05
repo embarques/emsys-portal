@@ -249,6 +249,7 @@ const accountingGroup: NavigationGroup = {
   titleKey: "navigation.groups.accounting",
   icon: Calculator,
   items: [
+ {labelKey:"navigation.items.changeRequests",href:"/change-requests",icon:ClipboardList,permission:{name:"canViewChangeRequest",resourceType:"change_request"}},
  {labelKey:"navigation.items.pendingFinancialActivity",href:"/accounting/pending-financial-activity",icon:HandCoins,permission:PERMISSIONS.journalsView},
     {labelKey: "navigation.items.pendingClearance", href: "/accounting/pending-clearance", icon: Landmark, permission: PERMISSIONS.journalsView},
     {

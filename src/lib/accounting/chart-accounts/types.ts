@@ -3,7 +3,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
-export type ChartAccountType = "ASSET" | "EXPENSE" | "REVENUE" | "BANK" | "LOAN";
+export type ChartAccountType = "ASSET" | "EXPENSE" | "REVENUE" | "BANK" | "LOAN" | "LIABILITY" | "EQUITY" | "CONTRA-REVENUE";
 
 export type ChartAccountRef = {
   id: number;
@@ -13,6 +13,8 @@ export type ChartAccountRef = {
 };
 
 export type ChartAccount = ApiTableRecord & {
+ code?: string; templateLayer?: number; templateVersion?: string; classification?: string; subType?: string; codeRange?: string; customizationPolicy?: string; nonPosting?: boolean;
+
   id: number;
   name: string;
   displayName: string;
@@ -30,6 +32,7 @@ export type ChartAccount = ApiTableRecord & {
 };
 
 export type ChartAccountValues = {
+ code?: string;
   displayName: string;
   type: ChartAccountType;
   description: string;

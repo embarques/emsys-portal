@@ -293,6 +293,12 @@ export function permissionIsGranted(
   if (grantedKeys.has("*:*")) return true;
 
   const requiredKey = permissionKey(required);
+  const scoped = grantedKeys.has("daily_route_work:canoperatedailyroute") && !grantedKeys.has("daily_route_work:canmanagedailyrouterecords");
+  if(scoped && ["pickup","invoice","journal","labels","inventory_dispatch"].includes(required.resourceType.toLowerCase())) {
+    if(/^can(update|delete|void|reconcile|clear|annotate)/i.test(required.name)) return false;
+    if(/^can(view|list|create)/i.test(required.name)) return true;
+  }
+  if(requiredKey === "change_request:canviewchangerequest" && (grantedKeys.has("change_request:cancreatechangerequest") || grantedKeys.has("change_request:canapprovechangerequest"))) return true;
   if (grantedKeys.has(requiredKey)) return true;
 
   const aliases = PERMISSION_GRANT_ALIASES[requiredKey];

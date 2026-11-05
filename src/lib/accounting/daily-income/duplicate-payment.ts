@@ -2,7 +2,7 @@ import { isAxiosError } from "axios";
 
 import type { DailyIncomeJournalValues } from "./types";
 
-export type JournalWriteOptions = { allowDuplicatePayment?: boolean };
+export type JournalWriteOptions = { allowDuplicatePayment?: boolean; expectedVersion?: number };
 
 export type SubmitJournal = (
   values: DailyIncomeJournalValues,

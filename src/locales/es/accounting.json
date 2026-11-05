@@ -13,7 +13,11 @@
     "sameMethod": "Seleccione hasta 200 transacciones autorizadas con el mismo método de pago. Solo se pueden liquidar las transacciones autorizadas por la API.",
     "confirmTitle": "¿Marcar las transacciones seleccionadas como liquidadas?",
     "confirmDescription": "Confirme que estos pagos se han liquidado o verificado por su canal financiero. Solo registra la liquidación; no cambia el historial de conciliación, los saldos de facturas ni los importes del cierre. No emite un reembolso ni una reversión bancaria.",
-    "pendingAlert": "{{count}} transacciones pendientes de liquidación"
+    "pendingAlert": "{{count}} transacciones pendientes de liquidación",
+    "batchComplete": "Todas las transacciones seleccionadas están confirmadas.",
+    "batchUnconfirmed": "Hay resultados sin confirmar. Reintenta el lote original para recuperar el resultado. Una transacción omitida no se considera fallida.",
+    "confirmed": "Confirmada",
+    "unconfirmed": "Sin confirmar"
   },
   "pages": {
     "description": "Mantenga un historial financiero centralizado de pagos, transacciones, ingresos y gastos."
@@ -46,7 +50,10 @@
       "EXPENSE": "Gasto",
       "REVENUE": "Ingreso",
       "BANK": "Banco",
-      "LOAN": "Préstamo"
+      "LOAN": "Préstamo",
+      "LIABILITY": "Pasivo",
+      "EQUITY": "Patrimonio",
+      "CONTRA-REVENUE": "Contra ingreso"
     },
     "values": {
       "allBranches": "Todas",
@@ -70,7 +77,8 @@
         "type": "Tipo de cuenta",
         "branch": "Sucursal",
         "parent": "Cuenta padre",
-        "description": "Descripción"
+        "description": "Descripción",
+        "code": "Código de cuenta (4 dígitos)"
       },
       "placeholders": {
         "type": "Seleccione el tipo de cuenta",
@@ -1537,7 +1545,10 @@
     "confirmDescription": "Confirme que se ha verificado el dinero o la documentación. Libera la responsabilidad del encargado y conserva el historial de conciliación. No cambia la liquidación, los saldos de facturas ni los importes del cierre.",
     "pendingAlert": "{{count}} transacciones pendientes de conciliación",
     "fields": {
-      "clearanceStatus": {"label": "Liquidación", "placeholder": "Liquidación"},
+      "clearanceStatus": {
+        "label": "Liquidación",
+        "placeholder": "Liquidación"
+      },
       "invoice": {
         "number": {
           "label": "Factura #",
@@ -1628,6 +1639,58 @@
           "placeholder": "ID de sucursal"
         }
       }
-    }
+    },
+    "batchComplete": "Todas las transacciones seleccionadas están confirmadas.",
+    "batchUnconfirmed": "Hay resultados sin confirmar. Reintenta el lote original para recuperar el resultado. Una transacción omitida no se considera fallida.",
+    "confirmed": "Confirmada",
+    "unconfirmed": "Sin confirmar"
+  },
+  "changeRequests": {
+    "title": "Solicitudes de cambio",
+    "description": "Solicita un cambio o una anulación revisada para un registro de ruta diaria. El original no cambia hasta su aprobación.",
+    "resource": "Tipo de registro",
+    "record": "ID del registro",
+    "verify": "Verificar acceso y versión actual",
+    "verified": "Registro verificado. El servidor lo revisará nuevamente antes de aplicar la solicitud.",
+    "action": "Acción solicitada",
+    "update": "Actualizar",
+    "void": "Anular o corregir",
+    "reason": "Motivo del cambio",
+    "descriptionField": "Descripción",
+    "purpose": "Propósito de la cita",
+    "notes": "Notas",
+    "receiverName": "Nombre del destinatario",
+    "amount": "Monto correcto (opcional)",
+    "submit": "Enviar para aprobación",
+    "submitted": "Solicitud enviada. El registro original no ha cambiado.",
+    "pickup": "Cita",
+    "invoice": "Factura",
+    "journal": "Transacción",
+    "labels": "Código de barras",
+    "inventory": "Despacho de inventario",
+    "pending": "Pendiente de revisión",
+    "approved": "Aprobada",
+    "rejected": "Rechazada",
+    "review": "Revisar solicitud",
+    "reviewDescription": "La aprobación vuelve a verificar permisos, ruta, versión y reglas del negocio. Las correcciones financieras crean nuevos asientos cuando el historial está restringido. Los revisores autorizados pueden aprobar sus propias solicitudes.",
+    "reviewReason": "Motivo de revisión (obligatorio para rechazar)",
+    "approve": "Aprobar y aplicar",
+    "reject": "Rechazar",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "before": "Antes",
+    "after": "Después"
+  },
+  "journalLifecycle": {
+    "void": "Anular",
+    "reverse": "Revertir",
+    "correct": "Corregir con revisión",
+    "note": "Editar nota",
+    "request": "Solicitar cambio",
+    "warning": "Se creará un asiento compensatorio auditado. No reembolsa pagos bancarios ni elimina la conciliación o liquidación original.",
+    "noteDescription": "Solo cambia la descripción. Los montos y el historial de verificación se conservan.",
+    "reason": "Motivo",
+    "description": "Descripción",
+    "confirm": "Confirmar"
   }
 }

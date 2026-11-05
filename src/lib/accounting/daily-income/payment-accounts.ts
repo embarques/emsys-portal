@@ -3,7 +3,7 @@ import type { UseFormSetValue } from "react-hook-form";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 
-type AccountNode = Pick<ChartAccount, "id" | "name" | "displayName" | "type" | "systemAccount" | "parentAccount">;
+type AccountNode = Pick<ChartAccount, "id" | "name" | "displayName" | "type" | "systemAccount" | "parentAccount" | "nonPosting">;
 
 const DEFAULT_CASH_ACCOUNT_NAME = "CASH ON HAND";
 const DEFAULT_BANK_ACCOUNT_NAME = "BANK";
@@ -115,6 +115,7 @@ export function shouldClearMoneyAccount(nextMethodNeedsBank: boolean, currentAcc
 export function buildPaymentAccountOptions(accounts: readonly AccountNode[], pathSource: readonly AccountNode[] = accounts) {
   const byId = new Map(pathSource.map((account) => [account.id, account]));
   return accounts
+    .filter(account => !account.nonPosting)
     .map((account) => {
       const label = accountPathLabel(account, byId);
       return { value: String(account.id), label, keywords: [account.displayName, account.name, label].filter(Boolean) };

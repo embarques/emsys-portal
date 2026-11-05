@@ -85,3 +85,32 @@ test("journal clearance requires its own grant, without reconciliation or paymen
   assert.equal(clearance.granted(clearance.PERMISSIONS.journalsClear), true);
   assert.equal(clearance.granted(clearance.PERMISSIONS.journalsReconcile), false);
 });
+
+test("daily-route operators create/read but request protected changes even with legacy update grants", async () => {
+ const {granted}=await grantsFor([
+  {name:"canOperateDailyRoute",resourceType:"daily_route_work"},
+  {name:"canUpdateJournal",resourceType:"journal"},
+  {name:"canReconcileJournal",resourceType:"journal"},
+  {name:"canClearJournal",resourceType:"journal"},
+  {name:"canCreateChangeRequest",resourceType:"change_request"},
+ ]);
+ for(const [resource,name] of [["pickup","Pickup"],["invoice","Invoice"],["journal","Journal"],["labels","Labels"],["inventory_dispatch","InventoryDispatch"]]) {
+  assert.equal(granted({name:`canCreate${name}`,resourceType:resource}),true);
+  assert.equal(granted({name:`canView${name}`,resourceType:resource}),true);
+  assert.equal(granted({name:`canUpdate${name}`,resourceType:resource}),false);
+  assert.equal(granted({name:`canDelete${name}`,resourceType:resource}),false);
+ }
+ assert.equal(granted({name:"canReconcileJournal",resourceType:"journal"}),false);
+ assert.equal(granted({name:"canClearJournal",resourceType:"journal"}),false);
+ assert.equal(granted({name:"canViewChangeRequest",resourceType:"change_request"}),true);
+});
+
+test("explicit route-management grant restores normal action permissions", async () => {
+ const {PERMISSIONS,granted}=await grantsFor([
+  {name:"canOperateDailyRoute",resourceType:"daily_route_work"},
+  {name:"canManageDailyRouteRecords",resourceType:"daily_route_work"},
+  {name:"canUpdateJournal",resourceType:"journal"},
+ ]);
+ assert.equal(granted(PERMISSIONS.journalsUpdate),true);
+ assert.equal(granted(PERMISSIONS.journalsClear),false);
+});

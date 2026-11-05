@@ -18,8 +18,8 @@ export function journalEditBlockReason(
   }
   if (NON_EDITABLE_TYPES.has(journal.transactionType)) return "type";
   if (journal.clearanceStatus === "CLEARED") return "cleared";
-  if (journal.allowedActions?.edit === false) return "restricted";
+  if (journal.allowedActions?.edit !== true || !journal.version || journal.version < 1) return "restricted";
   if (journal.reconciliationStatus === "RECONCILED") return "reconciled";
-  if (journal.reversedAt || journal.reversalOf) return "reversed";
+  if (journal.reversedAt || journal.reversalOf || journal.voidedAt) return "reversed";
   return null;
 }

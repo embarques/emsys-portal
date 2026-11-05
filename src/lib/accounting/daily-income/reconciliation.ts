@@ -10,19 +10,19 @@ import type { DailyIncomeJournalListParams } from "./types";
 import {clearJournals, fetchJournalSummary, reconcileJournals, type JournalSummaryInput} from "./reconciliation-api";
 export type {JournalCurrencySummary} from "./reconciliation-api";
 export function useJournalRows(params: DailyIncomeJournalListParams) {
-  const {companyId, hasPermission} = useAuth();
+  const {companyId, user, email, roleId, hasPermission} = useAuth();
   const enabled = useAccountingQueryEnabled() && hasPermission("canViewJournal", "journal");
   return useWorkspaceQuery({
-    queryKey: [...queryKeys.accounting.journals(params), companyId],
+    queryKey: [...queryKeys.accounting.journals(params), companyId,user?.uid??email,roleId],
     queryFn: ({signal}) => fetchDailyIncomeJournals(params, signal),
     enabled,
   });
 }
 export function useJournalSummary(input: JournalSummaryInput, active = true) {
-  const {companyId, hasPermission} = useAuth();
+  const {companyId, user, email, roleId, hasPermission} = useAuth();
   const enabled = useAccountingQueryEnabled(active) && hasPermission("canViewJournal", "journal");
   return useWorkspaceQuery({
-    queryKey: [...queryKeys.accounting.all, "journal-summary", companyId, input],
+    queryKey: [...queryKeys.accounting.all, "journal-summary", companyId, user?.uid??email,roleId,input],
     queryFn: ({signal}) => fetchJournalSummary(input, signal), enabled,
   });
 }

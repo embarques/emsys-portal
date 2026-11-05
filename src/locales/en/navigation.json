@@ -66,6 +66,7 @@
     "pendingInventoryTransactions": "Pending Transactions",
     "pendingFinancialActivity": "Pending Reconciliation",
     "pendingClearance": "Pending Clearance",
-    "reservedInvoices": "Reserved"
+    "reservedInvoices": "Reserved",
+    "changeRequests": "Change requests"
   }
 }
