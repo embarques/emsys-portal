@@ -243,6 +243,22 @@
       "barrel": "Barril",
       "tape": "Cinta",
       "other": "Otro"
+    },
+    "pendingInvoices": {
+      "title": "Facturas pendientes",
+      "description": "Seleccione las facturas que cubre este pago. Sus números y balances se agregan al comentario.",
+      "descriptionWithSender": "Seleccione las facturas que pagará {{name}}. Sus números y balances se agregan al comentario.",
+      "loading": "Cargando facturas pendientes…",
+      "error": "No se pudieron cargar las facturas pendientes.",
+      "empty": "Este remitente no tiene facturas pendientes.",
+      "selectAll": "Seleccionar todas",
+      "balance": "Balance",
+      "invoiceNumber": "Factura #{{number}}",
+      "selectedSummary": "{{count}} seleccionadas · {{total}}",
+      "addToComment": "Agregar al comentario",
+      "commentSingle": "Factura #{{number}} · Balance {{balance}}",
+      "commentItem": "#{{number}} ({{balance}})",
+      "commentMultiple": "Facturas {{invoices}} · Balance total {{total}}"
     }
   },
   "view": {
