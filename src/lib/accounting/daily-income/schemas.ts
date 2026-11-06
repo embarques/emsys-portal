@@ -5,6 +5,7 @@ import {
   requiresBankAccount,
 } from "@/lib/accounting/daily-income/types";
 import { isExpensePaidByMethod, isFixedCashTransactionType } from "@/lib/accounting/daily-income/transaction-workflow";
+import { getBalanceAfterDiscount, getDiscountableBalance, type OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
 
 export type DailyIncomeStatementSchemaMessages = {
   dateRequired: string;
@@ -23,6 +24,7 @@ export type DailyIncomeJournalSchemaMessages = {
   costPositive: string;
   discountNonNegative: string;
   discountExceedsTotal: string;
+  discountExceedsBalance: string;
   checkNumberRequired: string;
   bankAccountRequired: string;
   employeeRequired: string;
@@ -54,7 +56,14 @@ export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementS
   });
 }
 
-export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchemaMessages) {
+export type DailyIncomeJournalSchemaOptions = {
+  originalDiscount?: OriginalInvoiceAdjustment;
+};
+
+export function createDailyIncomeJournalSchema(
+  messages: DailyIncomeJournalSchemaMessages,
+  options: DailyIncomeJournalSchemaOptions = {},
+) {
   return z
     .object({
       transactionType: z.enum([
@@ -303,6 +312,12 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       if (invoiceRelated && !values.invoiceId) {
         context.addIssue({ code: "custom", path: ["invoiceId"], message: messages.invoiceRequired });
       }
+      if (values.transactionType === "DISCOUNT" && values.amount != null) {
+        const discountable = getDiscountableBalance(values.invoiceBalance, values.invoiceId, options.originalDiscount);
+        if (discountable != null && getBalanceAfterDiscount(discountable, values.amount) < 0) {
+          context.addIssue({ code: "custom", path: ["amount"], message: messages.discountExceedsBalance });
+        }
+      }
       if ((values.transactionType === "SALES" || expensePaidByMethod) && !values.paymentMethodId) {
         context.addIssue({
           code: "custom",
@@ -344,6 +359,7 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   costPositive: "Cost must be greater than zero.",
   discountNonNegative: "Discount cannot be negative.",
   discountExceedsTotal: "Discount cannot exceed the total.",
+  discountExceedsBalance: "Discount cannot exceed the invoice balance.",
   checkNumberRequired: "Check number is required.",
   bankAccountRequired: "Select a bank account for this payment method.",
   employeeRequired: "Select an employee or a daily route.",

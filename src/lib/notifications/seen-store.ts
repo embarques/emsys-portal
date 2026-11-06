@@ -34,11 +34,3 @@ export function markNotificationsSeen(ids: string[]) {
 export function notificationActivityId(activityId: string) {
   return `activity:${activityId}`;
 }
-
-export function notificationCheckId(checkId: string) {
-  return `check:${checkId}`;
-}
-
-export function notificationClearablePaymentId(methodSegment: string, paymentId: string) {
-  return `${methodSegment}:${paymentId}`;
-}

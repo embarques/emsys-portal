@@ -243,6 +243,22 @@
       "barrel": "Barrel",
       "tape": "Tape",
       "other": "Other"
+    },
+    "pendingInvoices": {
+      "title": "Pending invoices",
+      "description": "Select the invoices this payment covers. Their numbers and balances are added to the comment.",
+      "descriptionWithSender": "Select the invoices {{name}} will pay. Their numbers and balances are added to the comment.",
+      "loading": "Loading pending invoices…",
+      "error": "Pending invoices could not be loaded.",
+      "empty": "This sender has no pending invoices.",
+      "selectAll": "Select all",
+      "balance": "Balance",
+      "invoiceNumber": "Invoice #{{number}}",
+      "selectedSummary": "{{count}} selected · {{total}}",
+      "addToComment": "Add to comment",
+      "commentSingle": "Invoice #{{number}} · Balance {{balance}}",
+      "commentItem": "#{{number}} ({{balance}})",
+      "commentMultiple": "Invoices {{invoices}} · Total balance {{total}}"
     }
   },
   "view": {

@@ -953,6 +953,25 @@
         "sender": "Remitente: {{name}}",
         "receiver": "Destinatario: {{name}}"
       },
+      "adjustmentPresets": {
+        "label": {
+          "DISCOUNT": "Descuento rápido (% del total)",
+          "SURCHARGE": "Recargo rápido (% del total)"
+        },
+        "percent": "{{percent}}%",
+        "customPercent": "Otro %",
+        "customPercentLabel": "Porcentaje del total",
+        "customPercentPlaceholder": "0",
+        "percentOfTotal": "{{percent}}% del total = {{amount}}",
+        "customAmount": "Otro monto $",
+        "exceedsBalance": "Supera el saldo de la factura",
+        "selectInvoiceFirst": "Seleccione una factura para usar los montos rápidos.",
+        "noBalance": "Esta factura no tiene saldo para descontar.",
+        "balanceAfter": {
+          "DISCOUNT": "Saldo después del descuento: {{amount}}",
+          "SURCHARGE": "Saldo después del recargo: {{amount}}"
+        }
+      },
       "validation": {
         "dateRequired": "La fecha es obligatoria.",
         "branchRequired": "La sucursal es obligatoria.",
@@ -968,6 +987,7 @@
         "costFromLineItemsRequired": "Agregue renglones con precio a la factura antes de registrar un pago.",
         "discountNonNegative": "El descuento no puede ser negativo.",
         "discountExceedsTotal": "El descuento no puede ser mayor que el total.",
+        "discountExceedsBalance": "El descuento no puede ser mayor que el saldo de la factura.",
         "checkNumberRequired": "El número de cheque es obligatorio.",
         "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
         "employeeRequired": "Seleccione un empleado o una ruta diaria.",

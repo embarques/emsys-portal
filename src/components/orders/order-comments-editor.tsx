@@ -4,9 +4,13 @@ import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
 import { Banknote, Check, ClipboardList, MessageSquare, PackageOpen, Pencil, Plus, Trash2, Truck, type LucideIcon } from "lucide-react";
 
 import { wizardInputFieldProps } from "@/components/invoices/invoice-wizard-styles";
+import { PaymentPendingInvoicesDialog } from "@/components/orders/payment-pending-invoices-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useSenderPendingInvoices } from "@/lib/invoices/hooks/use-sender-pending-invoices";
+import { appendCommentText, formatPendingInvoicesComment } from "@/lib/invoices/sender-pending-invoices";
+import type { Invoice } from "@/lib/invoices/types";
 import {
   ORDER_COMMENT_ITEM_TYPES,
   ORDER_COMMENT_PURPOSES,
@@ -54,10 +58,23 @@ type OrderCommentsEditorProps = {
   onChange: (comments: OrderCommentFormValues[]) => void;
   /** Quick entry only: extra classes for the scrollable list of added comments. */
   listClassName?: string;
+  /** Quick entry only: selected sender, used to offer their pending invoices on Payment. */
+  senderId?: string;
+  senderName?: string;
 };
 
-export function OrderCommentsEditor({ comments, onChange, quickEntry = false, listClassName }: OrderCommentsEditorProps) {
+export function OrderCommentsEditor({
+  comments,
+  onChange,
+  quickEntry = false,
+  listClassName,
+  senderId,
+  senderName,
+}: OrderCommentsEditorProps) {
   const { t, locale } = useTranslation();
+  const pendingInvoicesQuery = useSenderPendingInvoices(senderId, { enabled: quickEntry });
+  const [paymentDialogIndex, setPaymentDialogIndex] = useState<number | null>(null);
+  const paymentFocusIndexRef = useRef<number | null>(null);
   const [editing, setEditing] = useState<EditingCell>(null);
   const [mobileEditingIndex, setMobileEditingIndex] = useState<number | null>(null);
   // Quick entry: the comment shown in the editor card; null means the new draft.
@@ -360,6 +377,36 @@ export function OrderCommentsEditor({ comments, onChange, quickEntry = false, li
     updateComment(index, patch);
   }
 
+  // Payment offers the sender's pending invoices on every press, whether or not it is already selected.
+  function selectQuickPurpose(index: number, purpose: string, selected: boolean) {
+    if (!selected) changePurpose(index, purpose);
+    if (purpose !== "PAYMENT" || !senderId?.trim() || !pendingInvoicesQuery.canViewInvoices) return;
+    if (pendingInvoicesQuery.isSuccess && pendingInvoicesQuery.data.length === 0) return;
+    paymentFocusIndexRef.current = index;
+    setPaymentDialogIndex(index);
+  }
+
+  function appendPendingInvoices(selected: Invoice[]) {
+    const index = paymentDialogIndex;
+    setPaymentDialogIndex(null);
+    if (index === null) return;
+    const comment = rows[index];
+    if (!comment || comment.purpose !== "PAYMENT") return;
+    updateComment(index, {
+      description: appendCommentText(comment.description, formatPendingInvoicesComment(selected, t)),
+    });
+  }
+
+  function focusPaymentNote(event: Event) {
+    const index = paymentFocusIndexRef.current;
+    paymentFocusIndexRef.current = null;
+    const input = index === null ? null : (document.getElementById(`quick-comment-note-${index}`) as HTMLInputElement | null);
+    if (!input) return;
+    event.preventDefault();
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+
   function changeItem(index: number, value: string) {
     advancingRef.current = true;
     const comment = commentAt(index);
@@ -496,7 +543,7 @@ export function OrderCommentsEditor({ comments, onChange, quickEntry = false, li
                   <Button key={purpose.value} type="button" variant="outline"
                     className={cn("relative h-auto min-h-16 flex-col gap-1.5 whitespace-normal rounded-lg px-2 py-2.5 text-center text-xs font-medium @sm:text-sm", selected && "border-primary bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary")}
                     disabled={purpose.disabled} aria-pressed={selected}
-                    onClick={() => { if (!selected) changePurpose(currentIndex, purpose.value); }}>
+                    onClick={() => selectQuickPurpose(currentIndex, purpose.value, selected)}>
                     {selected ? <Check className="absolute right-1.5 top-1.5 size-3.5" aria-hidden /> : null}
                     <Icon className="size-4" aria-hidden />
                     {purpose.label}
@@ -580,6 +627,16 @@ export function OrderCommentsEditor({ comments, onChange, quickEntry = false, li
             );
           })}
         </div>
+        <PaymentPendingInvoicesDialog
+          open={paymentDialogIndex !== null}
+          onOpenChange={(open) => { if (!open) setPaymentDialogIndex(null); }}
+          senderName={senderName}
+          invoices={pendingInvoicesQuery.data ?? []}
+          isLoading={pendingInvoicesQuery.isLoading}
+          isError={pendingInvoicesQuery.isError}
+          onSave={appendPendingInvoices}
+          onCloseAutoFocus={focusPaymentNote}
+        />
       </section>
     );
   }

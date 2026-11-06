@@ -1,15 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  Bell,
-  CreditCard,
-  Landmark,
-  ScrollText,
-  Smartphone,
-  type LucideIcon,
-} from "lucide-react";
+import { AlertTriangle, Bell } from "lucide-react";
 
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import { Button } from "@/components/ui/button";
@@ -21,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { ClearablePaymentMethodId } from "@/lib/accounting/clearable-payments/configs";
 import { useTranslation } from "@/lib/i18n";
 import {
   getSeenNotificationIds,
@@ -32,12 +23,6 @@ import {
   type NotificationItem,
 } from "@/lib/notifications/hooks/use-topbar-notifications";
 import { cn } from "@/lib/utils";
-
-const PAYMENT_METHOD_ICONS: Record<ClearablePaymentMethodId, LucideIcon> = {
-  zelle: Smartphone,
-  deposit: Landmark,
-  creditCard: CreditCard,
-};
 
 function formatNotificationWhen(value: string, locale: string) {
   const date = new Date(value);
@@ -50,36 +35,14 @@ function formatNotificationWhen(value: string, locale: string) {
   }).format(date);
 }
 
-function notificationTitle(item: NotificationItem, t: (key: string, values?: Record<string, string>) => string) {
-  if (item.kind === "rare-activity") {
-    return item.activity.description.trim() || t("shell.notifications.rareActivityFallback");
-  }
-  if (item.kind === "outstanding-payment") {
-    const reference = item.payment.paymentReference.trim();
-    const key = `shell.notifications.outstandingPayments.${item.config.i18nKey}`;
-    return reference ? t(`${key}.title`, { reference }) : t(`${key}.fallback`);
-  }
-  return t("shell.notifications.outstandingCheckTitle", {
-    number: item.check.checkNumber.trim() || item.check.id,
-  });
+function notificationTitle(item: NotificationItem, t: (key: string) => string) {
+  return item.activity.description.trim() || t("shell.notifications.rareActivityFallback");
 }
 
-function notificationDetail(item: NotificationItem, t: (key: string, values?: Record<string, string>) => string) {
-  if (item.kind === "rare-activity") {
-    const user = item.activity.user.name.trim();
-    const origin = item.activity.origin.trim();
-    return [user, origin].filter(Boolean).join(" · ") || t("shell.notifications.rareActivity");
-  }
-  if (item.kind === "outstanding-payment") {
-    const invoice = item.payment.invoice.number.trim();
-    return invoice
-      ? t("shell.notifications.outstandingCheckInvoice", { invoice })
-      : t(`shell.notifications.outstandingPayments.${item.config.i18nKey}.fallback`);
-  }
-  const invoice = item.check.invoice.number.trim();
-  return invoice
-    ? t("shell.notifications.outstandingCheckInvoice", { invoice })
-    : t("shell.notifications.outstandingCheck");
+function notificationDetail(item: NotificationItem, t: (key: string) => string) {
+  const user = item.activity.user.name.trim();
+  const origin = item.activity.origin.trim();
+  return [user, origin].filter(Boolean).join(" · ") || t("shell.notifications.rareActivity");
 }
 
 export function NotificationsMenu() {
@@ -130,7 +93,7 @@ export function NotificationsMenu() {
           {t("shell.notifications.title")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="m-0" />
-        <div className="max-h-80 overflow-y-auto p-1">
+        <div className="max-h-80 space-y-1 overflow-y-auto p-1">
           {isLoading ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">
               {t("shell.notifications.loading")}
@@ -141,18 +104,14 @@ export function NotificationsMenu() {
             </p>
           ) : (
             items.map((item) => {
-              const Icon =
-                item.kind === "rare-activity"
-                  ? AlertTriangle
-                  : item.kind === "outstanding-payment"
-                    ? PAYMENT_METHOD_ICONS[item.config.id]
-                    : ScrollText;
               const unseen = !seenIds.has(item.id);
+              const title = notificationTitle(item, t);
+              const detail = notificationDetail(item, t);
               return (
                 <WorkspaceNavLink
                   key={item.id}
                   href={item.href}
-                  label={notificationTitle(item, t)}
+                  label={title}
                   onClick={() => setOpen(false)}
                   className={cn(
                     "flex items-start gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
@@ -160,20 +119,18 @@ export function NotificationsMenu() {
                     unseen && "bg-primary/5",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                      item.kind === "rare-activity"
-                        ? "bg-destructive/10 text-destructive"
-                        : "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium leading-snug">{notificationTitle(item, t)}</p>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                      {notificationDetail(item, t)}
+                    <p
+                      className="line-clamp-2 font-medium leading-snug [overflow-wrap:anywhere]"
+                      title={title}
+                    >
+                      {title}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground" title={detail}>
+                      {detail}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {formatNotificationWhen(item.createdAt, locale)}

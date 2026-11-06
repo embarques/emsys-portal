@@ -533,6 +533,8 @@ export function OrderForm({
                 comments={values.comments}
                 onChange={(comments) => updateField("comments", comments)}
                 listClassName="max-h-[28rem] @3xl:max-h-none @3xl:min-h-40 @3xl:flex-1"
+                senderId={values.sender?.id || values.senderId}
+                senderName={values.sender?.name}
               />
             </FormSection>
           </div>

@@ -164,6 +164,7 @@ export function InvoicePaymentTransactionForm({
         costPositive: t("accounting.dailyIncome.form.validation.costPositive"),
         discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
         discountExceedsTotal: t("accounting.dailyIncome.form.validation.discountExceedsTotal"),
+        discountExceedsBalance: t("accounting.dailyIncome.form.validation.discountExceedsBalance"),
         checkNumberRequired: t("accounting.dailyIncome.form.validation.checkNumberRequired"),
         bankAccountRequired: t("accounting.dailyIncome.form.validation.bankAccountRequired"),
         employeeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),
