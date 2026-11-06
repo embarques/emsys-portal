@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { InvoiceAdjustmentPresetButtons } from "@/components/accounting/invoice-adjustment-preset-buttons";
 import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionReview } from "@/components/accounting/transaction-review";
@@ -27,6 +28,14 @@ import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
+import {
+  getBalanceAfterDiscount,
+  getBalanceAfterSurcharge,
+  getDiscountableBalance,
+  getSurchargeBaseBalance,
+  type InvoiceAdjustmentKind,
+  type OriginalInvoiceAdjustment,
+} from "@/lib/accounting/daily-income/invoice-adjustment-presets";
 import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { queryKeys } from "@/lib/query/query-keys";
@@ -66,6 +75,10 @@ type Props = {
   allowAutoClear?: boolean;
   /** Register payment: show the selected invoice's parties and totals as read-only fields. */
   showInvoiceDetails?: boolean;
+  /** Edit only: the saved discount, which the discount cap adds back to the invoice balance. */
+  originalDiscount?: OriginalInvoiceAdjustment;
+  /** Edit only: the saved surcharge, which is taken back out of the balance before recalculating. */
+  originalSurcharge?: OriginalInvoiceAdjustment;
   /** When set, the parent shows step validation messages (e.g. in its footer) instead of the form body. */
   onStepErrorChange?: (message: string | null) => void;
   onSubmit: (values: DailyIncomeJournalValues) => void | Promise<void>;
@@ -119,6 +132,8 @@ export function DailyIncomeTransactionForm({
   focusSecondFieldSignal,
   allowAutoClear = false,
   showInvoiceDetails = false,
+  originalDiscount,
+  originalSurcharge,
   onStepErrorChange,
   onSubmit,
   onValuesChange,
@@ -146,6 +161,7 @@ export function DailyIncomeTransactionForm({
         costPositive: t("accounting.dailyIncome.form.validation.costPositive"),
         discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
         discountExceedsTotal: t("accounting.dailyIncome.form.validation.discountExceedsTotal"),
+        discountExceedsBalance: t("accounting.dailyIncome.form.validation.discountExceedsBalance"),
         checkNumberRequired: t("accounting.dailyIncome.form.validation.checkNumberRequired"),
         bankAccountRequired: t("accounting.dailyIncome.form.validation.bankAccountRequired"),
         employeeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),
@@ -164,8 +180,8 @@ export function DailyIncomeTransactionForm({
         supplierRequired: t("accounting.dailyIncome.form.validation.supplierRequired"),
         supervisorRequired: t("accounting.dailyIncome.form.validation.supervisorRequired"),
         inventoryHoldersRequired: t("accounting.dailyIncome.form.validation.inventoryHoldersRequired"),
-      }),
-    [t],
+      }, { originalDiscount }),
+    [originalDiscount, t],
   );
 
   const {
@@ -285,6 +301,7 @@ export function DailyIncomeTransactionForm({
   const paymentMethodName = watch("paymentMethodName");
   const refNumberMode = watch("refNumberMode");
   const amount = watch("amount");
+  const invoiceBalance = watch("invoiceBalance");
   const autoClear = watch("autoClear");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
@@ -428,7 +445,57 @@ export function DailyIncomeTransactionForm({
       </div>
     );
   }
-  const amountField = renderAmountField();
+
+  function renderInvoiceAdjustmentAmountField(kind: InvoiceAdjustmentKind) {
+    const isDiscount = kind === "DISCOUNT";
+    const baseBalance = isDiscount
+      ? getDiscountableBalance(invoiceBalance, invoiceId, originalDiscount)
+      : getSurchargeBaseBalance(invoiceBalance, invoiceId, originalSurcharge);
+    const invoiceTotal = selectedInvoice ? getInvoiceTotal(selectedInvoice) : undefined;
+    const balanceAfter = baseBalance == null
+      ? null
+      : isDiscount
+        ? getBalanceAfterDiscount(baseBalance, amount)
+        : getBalanceAfterSurcharge(baseBalance, amount);
+    const hint = baseBalance == null
+      ? t("accounting.dailyIncome.form.adjustmentPresets.selectInvoiceFirst")
+      : isDiscount && baseBalance <= 0
+        ? t("accounting.dailyIncome.form.adjustmentPresets.noBalance")
+        : t(`accounting.dailyIncome.form.adjustmentPresets.balanceAfter.${kind}`, { amount: formatAccountingMoney(balanceAfter ?? 0) });
+    const error = errors.amount?.message
+      ?? (isDiscount && balanceAfter != null && balanceAfter < 0 ? t("accounting.dailyIncome.form.validation.discountExceedsBalance") : undefined);
+    const maxAmount = isDiscount ? baseBalance : undefined;
+    return (
+      <div className="space-y-2">
+        <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
+        <Input
+          id="journal-amount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          max={maxAmount != null && maxAmount > 0 ? maxAmount : undefined}
+          placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+          aria-invalid={Boolean(error)}
+          {...register("amount", { setValueAs: moneyFormSetValueAs })}
+        />
+        <FieldMessage error={error} hint={hint} />
+        <InvoiceAdjustmentPresetButtons
+          key={kind}
+          kind={kind}
+          total={invoiceTotal}
+          maxAmount={maxAmount}
+          amount={amount}
+          onSelectAmount={(next) => setValue("amount", next, { shouldDirty: true, shouldValidate: true })}
+          onCustomAmount={() => {
+            const input = formRef.current?.querySelector<HTMLInputElement>("#journal-amount");
+            input?.focus();
+            input?.select();
+          }}
+        />
+      </div>
+    );
+  }
+  const amountField = type === "DISCOUNT" || type === "SURCHARGE" ? renderInvoiceAdjustmentAmountField(type) : renderAmountField();
   const descriptionField = (
     <div className="space-y-2 sm:col-span-2">
       <Label htmlFor="journal-description">{t("accounting.dailyIncome.form.fields.description")}</Label>

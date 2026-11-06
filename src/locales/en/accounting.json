@@ -953,6 +953,25 @@
         "sender": "Sender: {{name}}",
         "receiver": "Receiver: {{name}}"
       },
+      "adjustmentPresets": {
+        "label": {
+          "DISCOUNT": "Quick discount (% of total)",
+          "SURCHARGE": "Quick surcharge (% of total)"
+        },
+        "percent": "{{percent}}%",
+        "customPercent": "Custom %",
+        "customPercentLabel": "Percent of total",
+        "customPercentPlaceholder": "0",
+        "percentOfTotal": "{{percent}}% of total = {{amount}}",
+        "customAmount": "Custom $",
+        "exceedsBalance": "More than the invoice balance",
+        "selectInvoiceFirst": "Select an invoice to use quick amounts.",
+        "noBalance": "This invoice has no balance to discount.",
+        "balanceAfter": {
+          "DISCOUNT": "Balance after discount: {{amount}}",
+          "SURCHARGE": "Balance after surcharge: {{amount}}"
+        }
+      },
       "validation": {
         "dateRequired": "Date is required.",
         "branchRequired": "Branch is required.",
@@ -968,6 +987,7 @@
         "costFromLineItemsRequired": "Add priced line items to the invoice before posting a payment.",
         "discountNonNegative": "Discount cannot be negative.",
         "discountExceedsTotal": "Discount cannot exceed the total.",
+        "discountExceedsBalance": "Discount cannot exceed the invoice balance.",
         "checkNumberRequired": "Check number is required.",
         "bankAccountRequired": "Select a bank account for this payment method.",
         "employeeRequired": "Select an employee or a daily route.",

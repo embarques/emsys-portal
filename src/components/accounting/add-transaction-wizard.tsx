@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Loader2, Save } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
 import type { TransactionEntryCategory } from "@/lib/accounting/daily-income/transaction-type-config";
@@ -9,6 +9,7 @@ import { TransactionTypeSelector } from "@/components/accounting/transaction-typ
 import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
 import type { SubmitJournal } from "@/lib/accounting/daily-income/duplicate-payment";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
 import { findCashPaymentMethod, isCheckPaymentMethod, withDefaultCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
@@ -166,6 +167,20 @@ export function AddTransactionWizard(props: Props) {
   const stepLabel = stepLabels[step - 1];
   const { onEntryActiveChange, onSelectedTypeChange, open } = props;
   const editInitialValues = isEdit ? props.initialValues : null;
+  const originalAdjustmentType = editInitialValues?.transactionType;
+  const originalAdjustmentInvoiceId = editInitialValues?.invoiceId;
+  const originalAdjustmentAmount = editInitialValues?.amount;
+  const originalAdjustment = useMemo<OriginalInvoiceAdjustment | undefined>(
+    () =>
+      (originalAdjustmentType === "DISCOUNT" || originalAdjustmentType === "SURCHARGE") &&
+      originalAdjustmentInvoiceId &&
+      originalAdjustmentAmount != null
+        ? { invoiceId: originalAdjustmentInvoiceId, amount: originalAdjustmentAmount }
+        : undefined,
+    [originalAdjustmentAmount, originalAdjustmentInvoiceId, originalAdjustmentType],
+  );
+  const originalDiscount = originalAdjustmentType === "DISCOUNT" ? originalAdjustment : undefined;
+  const originalSurcharge = originalAdjustmentType === "SURCHARGE" ? originalAdjustment : undefined;
   useEffect(() => {
     onEntryActiveChange?.(open && step >= 2);
   }, [onEntryActiveChange, open, step]);
@@ -333,6 +348,8 @@ export function AddTransactionWizard(props: Props) {
               appearance={appearance}
               focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
               allowAutoClear={!isEdit}
+              originalDiscount={originalDiscount}
+              originalSurcharge={originalSurcharge}
               showInvoiceDetails={selectedType === "PAYMENT"}
               onValuesChange={rememberFormValues}
               onStepErrorChange={setStepError}
