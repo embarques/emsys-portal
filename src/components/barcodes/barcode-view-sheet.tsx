@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestChangeButton } from "@/components/change-requests/request-change-button";
+
 import { Info, ScanBarcode } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -111,6 +113,7 @@ export function BarcodeViewSheet({ barcode, open, onOpenChange }: BarcodeViewShe
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
+        <RequestChangeButton resourceType="labels" resourceId={String(barcode.barcodeId || barcode.id)} inSheet />
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

@@ -1,4 +1,5 @@
 export const API_ENDPOINTS = {
+  CHANGE_REQUESTS: "/change-requests",
   INVOICE_POOL: "/invoices/reserved",
   INVOICE_POOL_ACTIONS: "/invoices/reserved/actions",
   VERSION: "/version",

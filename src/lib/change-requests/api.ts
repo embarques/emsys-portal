@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 export type ChangeResource = "pickup" | "invoice" | "journal" | "labels" | "inventory";
 export type ChangeRequest = {
     id: string;
@@ -8,6 +9,7 @@ export type ChangeRequest = {
     reason: string;
     status: "PENDING" | "APPROVED" | "REJECTED";
     createdAt: string;
+    reviewedAt?: string;
     reviewReason?: string;
     originalValues?: Record<string, unknown>;
     proposedChanges?: Record<string, unknown>;
@@ -42,17 +44,18 @@ export type NewChange = {
 export async function fetchChanges(page: number, signal?: AbortSignal) { return apiClient.get<{
     data: ChangeRequest[];
     total: number;
-}>(`/change-requests?page=${page}&limit=25&sort=createdAt:desc`, { signal }); }
+}>(`${API_ENDPOINTS.CHANGE_REQUESTS}?page=${page}&limit=25&sort=createdAt:desc`, { signal }); }
 export async function fetchChangeTarget(resourceType: ChangeResource, resourceId: string, signal?: AbortSignal) { return apiClient.get<{
     data: TargetContext;
-}>(`/change-requests/target?${new URLSearchParams({ resourceType, resourceId })}`, { signal }); }
+}>(`${API_ENDPOINTS.CHANGE_REQUESTS}/target?${new URLSearchParams({ resourceType, resourceId })}`, { signal }); }
 export async function createChange(input: NewChange) { return apiClient.post<{
     data: ChangeRequest;
-}>("/change-requests", input); }
+}>(API_ENDPOINTS.CHANGE_REQUESTS, input); }
 export async function reviewChange(input: {
     id: string;
     approve: boolean;
     reason: string;
+    resourceType: ChangeResource;
 }) { return apiClient.post<{
     data: ChangeRequest;
-}>(`/change-requests/${encodeURIComponent(input.id)}/${input.approve ? "approve" : "reject"}`, { reason: input.reason }); }
+}>(`${API_ENDPOINTS.CHANGE_REQUESTS}/${encodeURIComponent(input.id)}/${input.approve ? "approve" : "reject"}`, { reason: input.reason }); }

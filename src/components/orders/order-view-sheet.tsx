@@ -1,5 +1,8 @@
 "use client";
 
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { RequestChangeButton } from "@/components/change-requests/request-change-button";
+
 import { Info, MapPin, Phone as PhoneIcon, Receipt } from "lucide-react";
 
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
@@ -106,6 +109,7 @@ export function OrderViewSheet({
   onCreateInvoice,
 }: OrderViewSheetProps) {
   const { t, locale } = useTranslation();
+  const { hasPermission } = useAuth();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
 
   if (!order) return null;
@@ -224,11 +228,12 @@ export function OrderViewSheet({
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
+        <RequestChangeButton resourceType="pickup" resourceId={String(order.id)} inSheet />
 
         <RecordViewSheetActions
           editLabel={t("orders.actions.editPickup")}
-          onEdit={() => onEdit(order)}
-          onDelete={() => onDelete(order)}
+          onEdit={hasPermission("canUpdatePickup", "pickup") ? () => onEdit(order) : undefined}
+          onDelete={hasPermission("canDeletePickup", "pickup") ? () => onDelete(order) : undefined}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

@@ -21,6 +21,19 @@ backend/API and portal TODO about the Daily Income and Accounting → Pending
 Transactions tables. Portal pieces that already ship are listed under
 [Portal status](#portal-status).
 
+**Read-only recheck November 5, 2026:** the seeding, backfill and Swagger TODOs
+above remain open for company `64d5c0b0d1eab2aaf30b1819`. Neither
+`canReconcileJournal` nor `canListJournal` appears in the complete 203-entry
+permission catalog or current Administrador permissions. PAYMENT search counts
+24,116 journals, but only 3 match `reconciliationStatus = OUTSTANDING` and 0
+match `RECONCILED`. The published Swagger still omits `/journals/reconcile`,
+`/journals/summary`, `/journals/{id}/reverse` and the journal reconciliation
+fields. The authorized mutation follow-up reconfirmed that journal create with
+`autoClear: true` returns `403` without `canReconcileJournal`, creating nothing.
+Other journal types' backfill coverage and payment-application write behavior
+were not rechecked. Evidence:
+[backend-api-gaps.md](backend-api-gaps.md#targeted-recheck--november-5-2026).
+
 ## Business model
 
 - **Daily Income** shows every journal (transaction) of **one closeout**

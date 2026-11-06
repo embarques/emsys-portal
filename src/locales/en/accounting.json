@@ -1646,6 +1646,10 @@
     "unconfirmed": "Not confirmed"
   },
   "changeRequests": {
+    "invalid": "Enter the required fields, a reason of at most 1,000 characters, and a valid positive amount when provided.",
+    "notAllowed": "The server has not permitted this request for the selected record and action.",
+    "loading": "Loading change requests…",
+    "empty": "No change requests found.",
     "title": "Change requests",
     "description": "Request a reviewed update or cancellation for a daily-route record. Originals stay unchanged until approval.",
     "resource": "Record type",

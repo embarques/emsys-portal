@@ -93,6 +93,7 @@ test("daily-route operators create/read but request protected changes even with 
   {name:"canReconcileJournal",resourceType:"journal"},
   {name:"canClearJournal",resourceType:"journal"},
   {name:"canCreateChangeRequest",resourceType:"change_request"},
+  {name:"canApproveChangeRequest",resourceType:"change_request"},
  ]);
  for(const [resource,name] of [["pickup","Pickup"],["invoice","Invoice"],["journal","Journal"],["labels","Labels"],["inventory_dispatch","InventoryDispatch"]]) {
   assert.equal(granted({name:`canCreate${name}`,resourceType:resource}),true);
@@ -103,6 +104,7 @@ test("daily-route operators create/read but request protected changes even with 
  assert.equal(granted({name:"canReconcileJournal",resourceType:"journal"}),false);
  assert.equal(granted({name:"canClearJournal",resourceType:"journal"}),false);
  assert.equal(granted({name:"canViewChangeRequest",resourceType:"change_request"}),true);
+ assert.equal(granted({name:"canApproveChangeRequest",resourceType:"change_request"}),false);
 });
 
 test("explicit route-management grant restores normal action permissions", async () => {
@@ -110,7 +112,9 @@ test("explicit route-management grant restores normal action permissions", async
   {name:"canOperateDailyRoute",resourceType:"daily_route_work"},
   {name:"canManageDailyRouteRecords",resourceType:"daily_route_work"},
   {name:"canUpdateJournal",resourceType:"journal"},
+  {name:"canApproveChangeRequest",resourceType:"change_request"},
  ]);
  assert.equal(granted(PERMISSIONS.journalsUpdate),true);
  assert.equal(granted(PERMISSIONS.journalsClear),false);
+ assert.equal(granted({name:"canApproveChangeRequest",resourceType:"change_request"}),true);
 });

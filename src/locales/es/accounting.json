@@ -1646,6 +1646,10 @@
     "unconfirmed": "Sin confirmar"
   },
   "changeRequests": {
+    "invalid": "Completa los campos obligatorios, un motivo de hasta 1,000 caracteres y un monto positivo válido si lo indicas.",
+    "notAllowed": "El servidor no ha permitido esta solicitud para el registro y la acción seleccionados.",
+    "loading": "Cargando solicitudes de cambio…",
+    "empty": "No se encontraron solicitudes de cambio.",
     "title": "Solicitudes de cambio",
     "description": "Solicita un cambio o una anulación revisada para un registro de ruta diaria. El original no cambia hasta su aprobación.",
     "resource": "Tipo de registro",

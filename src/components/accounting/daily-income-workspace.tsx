@@ -19,7 +19,7 @@ import { StatCards, type StatCardItem } from "@/components/app-shell/stat-cards-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CloseoutDateNavigation } from "@/components/accounting/closeout-date-navigation";
 import { CloseoutRolloverDialog } from "@/components/accounting/closeout-rollover-dialog";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -31,7 +31,6 @@ import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
   useDailyIncomeJournal,
-  useDeleteDailyIncomeJournal,
   useIncomeStatement,
   useCurrentIncomeStatement,
   useIncomeStatementSummaryTotals,
@@ -260,7 +259,6 @@ export function DailyIncomeWorkspace() {
   const [transactionDialog, setTransactionDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<DailyIncomeJournal | null>(null);
   const [viewJournal, setViewJournal] = useState<DailyIncomeJournal | null>(null);
-  const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [openCreateOnLoad, setOpenCreateOnLoad] = useState(false);
 
@@ -329,7 +327,6 @@ export function DailyIncomeWorkspace() {
 
   const createJournal = useCreateDailyIncomeJournal();
   const updateJournal = useUpdateDailyIncomeJournal();
-  const deleteMutation = useDeleteDailyIncomeJournal();
   const generateIncomeReportMutation = useGenerateIncomeReport();
   const generateReceiptMutation = useGenerateReport();
   const startTransaction = useStartTransaction(selectedBranch, openAddTransactionForm);
@@ -481,11 +478,6 @@ export function DailyIncomeWorkspace() {
     setEditingJournal(row);
     setFormError(null);
     setTransactionDialog(true);
-  }
-
-  function openDeleteTransaction(row: DailyIncomeJournal) {
-    setViewJournal(null);
-    setDeleteJournal(row);
   }
 
   return <div className="overflow-x-hidden">
@@ -690,12 +682,9 @@ export function DailyIncomeWorkspace() {
         if (!open) setViewJournal(null);
       }}
       onEdit={openEditTransactionForm}
-      onDelete={openDeleteTransaction}
       onPrintReceipt={(journal) => void printReceipt(journal)}
       isPrintingReceipt={generateReceiptMutation.isPending}
       canEdit={viewJournal ? canEditJournal(viewJournal) : false}
-      canDelete={false}
     />
-    <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setViewJournal((current) => current?.id === deleteJournal.id ? null : current); setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }
