@@ -663,3 +663,17 @@ reversals. Daily-route operators request protected changes through
 `/change-requests`; authorized reviewers may approve their own requests. Explicit
 closeout opening remains in place, and neither later verification nor settlement
 reopens a historical period.
+
+### Daily-route permission and approval readiness (2026-11-05)
+
+“Street Team” refers to employees assigned to a dated daily route. Request actions
+must be authorized by the API for that record; frontend role names and route
+filters do not enforce ownership. The portal's prepared shared workflow now has
+entry points from the five resource detail views, validated target/version/action
+checks, stable retries, and no journal hard-delete client. Its editor currently
+covers limited fields and inventory dispatches only.
+
+Live mock-company checks found the change-request routes and expected workflow
+grants unavailable. Approval, assignment isolation, atomic corrections and audit
+invariants are not certified. Deployment evidence, the reproducible suite and
+backend acceptance matrix are in `docs/daily-route-permissions-approval-audit.md`.

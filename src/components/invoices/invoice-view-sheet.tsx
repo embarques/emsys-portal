@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestChangeButton } from "@/components/change-requests/request-change-button";
+
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Pencil, Printer, Tags, Trash2 } from "lucide-react";
 
@@ -601,6 +603,7 @@ export function InvoiceViewSheet({
               selectedCount={1}
               onOpenMobile={() => setActiveTab("documents")}
             />
+            <RequestChangeButton resourceType="invoice" resourceId={invoice.invoiceId} />
             {canEdit || canDelete ? <TableSelectionActionDivider /> : null}
             {canEdit ? (
               <Button

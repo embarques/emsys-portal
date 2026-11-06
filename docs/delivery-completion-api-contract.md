@@ -71,19 +71,126 @@ footer's submitted `idNumber` identifies the signer; it is not an invoice ID.
 
 ## Zero-balance requirement (portal implementation; API enforcement required)
 
-Completion requires an authoritative invoice balance of exactly zero, or an accepted uncleared-payment override (below). The portal reads the invoice detail with an explicit finite `balance` (null/invalid values fail closed; an omitted `balance` counts as zero only when the invoice's `cost` is present and `cost − discount − payment` is also zero, otherwise it fails closed), refreshes before leaving the balance step, and rechecks immediately before calling completion. The balance is shown in USD and in DOP at the daily route `rate`. Nonzero balances show the existing PAYMENT transaction form for users with `canViewDelivery`, `canCreateIncomeStatement` (Cuadre create) and `canCreateJournal`, using today's open Cuadre for the collecting user's branch. When no Cuadre exists for today, the same users can open one in place (`POST /v1/income-statements`, branch id from the user profile, currency USD, rate = the route rate); without a route rate they are sent to Daily Income. A closed Cuadre is never reopened from the wizard. A driver may collect payment or refresh after another user collects it. Negative credit balances require accounting resolution; they are not treated as zero. Payment is separate from delivery and remains recorded if delivery is cancelled or fails.
+### Current portal audit — November 5, 2026
 
-Payment posting uses the existing `/journals` contract, explicit duplicate-payment confirmation, and permission-gated auto-clear controls. Cash applies immediately; pending checks/Zelle/deposits/card receipts do not reduce the balance until cleared. The portal rereads balance after posting rather than subtracting locally.
+The earlier quoted TODO mixes current behavior with an older payment/override
+workflow. Source review of the current checkout and the existing balance tests
+establish the following; no portal runtime code was changed by this audit.
 
-**Uncleared-payment override:** for an outstanding balance, the portal lists OUTSTANDING records for the invoice from `POST /v1/checks/search`, `/zelle-payments/search`, `/deposits/search` and `/credit-card-payments/search` (`status eq OUTSTANDING` and `invoice.number eq …`, one request per directory the user may list). When their total covers the balance, users with the payment permissions above may tick an acknowledgment that they are liable for the payment if it does not clear, then continue. Immediately before completion the portal rereads the balance and the outstanding records; if they no longer cover the balance it returns to the balance step without calling completion. Without list access to a directory, its payments are not counted.
+| Requirement | Current implementation / evidence |
+| --- | --- |
+| Authoritative zero balance | `fetchInvoiceById(..., true)` rejects null, blank, invalid or non-finite balances. An omitted balance is accepted only when cost is present and cost minus discount minus payment is zero. `verify()` requires exactly zero; negative balances stay blocked. |
+| Refresh gates | `use-delivery-wizard.ts` calls `balance.verify()` before leaving the balance step and immediately before a new completion request. An uncertain completion retries the identical receipt payload instead of performing a new preflight. |
+| USD / DOP display | The balance step uses the daily route rate for DOP; a missing rate is displayed as unavailable rather than fabricated. |
+| Payment permissions | The hook currently requires delivery completion access (`canUpdateDelivery`, `canViewInvoice`, `canUpdateInvoice`), delivery list access (`canViewDelivery`), `canViewIncomeStatement` and `canCreateJournal`. It does **not** use `canCreateIncomeStatement` as the gate for paying into an already-open Cuadre. The creation dialog separately requires that grant. |
+| Current Cuadre | Payment uses the collecting user's branch and current open Cuadre. A closed Cuadre is not reopened. When absent, the balance step offers `CloseoutRolloverDialog`; the dialog locks the branch, initializes USD and rate **1**, and uses the closeout calendar. It is not initialized from the delivery route rate, so the old route-rate setup requirement is not implemented as written. |
+| Payment and cancellation | The PAYMENT mutation is separate from completion, with duplicate-payment confirmation and permission-gated auto-clear controls. It rereads the invoice after posting; there is no delivery-cancellation reversal of the payment. This is source evidence, not a fresh browser cancellation test. |
+| Uncleared override | The current balance hook permits only zero. The completion schema has no override acknowledgment field, and the wizard does not query the pending-payment helper or submit such an acknowledgment. The older liability-checkbox flow is **not currently implemented**. |
+
+Validation: `node --test tests/unit/delivery-balance.test.mjs` passed **17/17**
+on November 5. Cases cover explicit/string zero, positive and negative balances,
+missing/null/blank/invalid values, omitted-balance zero calculations and foreign
+invoice responses. These tests validate portal balance reads, not backend atomic
+completion or browser end-to-end behavior.
+
+### Payment timing correction
+
+The old statement that pending checks/Zelle/deposits/card receipts cannot reduce
+invoice balance until cleared is stale. The verified journal contract applies
+payments on create independently of reconciliation/clearance. November 5 ZELLE
+and DEPOSIT control payments returned `clearanceStatus: OUTSTANDING` while
+reducing the invoice balance on create; reversal restored it. See
+[payment-accounts-api-contract.md](payment-accounts-api-contract.md#debit-card--wire-live-verification--november-5-2026)
+and [pending-transactions-update.md](pending-transactions-update.md).
+The delivery wizard trusts the freshly read API balance; it must not subtract
+amounts locally or assume an outstanding directory record is an additional
+unapplied payment.
+
+### Uncleared-payment override — requested, not implemented
+
+The older requested flow allowed a liability acknowledgment when outstanding
+Check/Zelle/Deposit/card records covered the balance, with a fresh recheck before
+completion. This needs a defined API contract and server audit evidence before
+it can be marked implemented. The unused `delivery-pending-payments-api.ts`
+helper alone does not establish that the wizard supports it. Because the current
+API already applies those payments on creation, the outstanding-record coverage
+rule also needs reconciliation with the authoritative balance semantics; do not
+count already-applied payments twice.
 
 Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
 assigned barcode rows return `invoice.balance`, `sender { name, phones }` and
-`route.rate`, and the completion route is deployed. Server-side zero-balance
-enforcement is **not implemented**: completing delivery 10464 for invoice
-488970 with a $70 balance returned `200 Delivery completed` (mock data).
+`route.rate`, and the completion route is deployed. The historical probe
+completed delivery 10464 for invoice 488970 with a $70 balance (`200 Delivery
+completed`, mock data). **Superseded by the approved November 5 recheck below,
+which returned the balance-gate `409`.**
 
-**Backend work still required:** enforce the zero-balance invariant in the same transaction as delivery completion, with the invoice financial version participating in the write/conflict check. Return a conflict without changing barcodes or saving a new signature when the balance is nonzero or unavailable. To support the override server-side, accept an explicit acknowledgment on completion (e.g. `unclearedPaymentOverride: true`) that is valid only when outstanding clearing records for the invoice cover the balance, and record the acknowledging user/time in the receipt and activity log. The portal does not send this field yet, so the acknowledgment is not persisted. Preserve idempotent replay of an already committed receipt. The frontend preflight alone cannot prevent a concurrent balance change or direct API calls. No server-side enforcement was changed here.
+**Backend acceptance criteria still requiring broader verification:** the nonzero-balance guard is confirmed below, but verify that the invariant participates in the same transaction and invoice financial version/conflict check as completion. Verify unavailable/negative balances, zero-balance success, concurrent financial changes and absence of newly saved signatures on rejection. To support the override server-side, accept an explicit acknowledgment on completion (e.g. `unclearedPaymentOverride: true`) that is valid only when outstanding clearing records for the invoice cover the balance, and record the acknowledging user/time in the receipt and activity log. The portal does not send this field yet, so the acknowledgment is not persisted. Preserve idempotent replay of an already committed receipt. The frontend preflight alone cannot prevent a concurrent balance change or direct API calls. No server-side enforcement was changed here.
+
+### Backend recheck limits and fixture cleanup — November 5, 2026
+
+**Initial recheck limitation (subsequently resolved for the approved pair below):**
+automatic approval review rejected a new mutation probe against existing
+pending deliveries because their specific mock status was not established and
+completion can irreversibly change operational status. No completion request
+from that rejected probe was sent. The user subsequently confirmed the specific
+previously tested delivery 10464 / invoice 488970 as disposable mock data and
+authorized marking one remaining piece delivered if allowed.
+
+A safer alternative created only new invoices and a new delivery. The API
+assigned delivery **10469**, name `1-67-26` (it replaced the supplied probe name).
+The first attempt stopped on this identity mismatch. After confirming its
+creation response, a follow-up verified the newly created invoice identities
+and attempted to read only their generated numeric barcode IDs **14** and **15**.
+Both catalog GETs returned `404`, so the fixture could not be assigned/reviewed
+for a valid completion probe. No barcode status or delivery completion was
+mutated. Do not interpret this fixture failure as a balance-gate result.
+
+The following new invoices were deleted, with subsequent GETs returning `404`:
+
+| Probe invoice | Deleted invoice ID |
+| --- | --- |
+| `ZZ_ISOLATED_DELIVERY_PROBE_20261105_1793899954137_POSITIVE` | `6aecbdb587c1d88ee1a3d755` |
+| `ZZ_ISOLATED_DELIVERY_PROBE_20261105_1793900023283_POSITIVE` | `6aecbdf887c1d88ee1a3d75c` |
+| `ZZ_ISOLATED_DELIVERY_PROBE_20261105_1793900023283_ZERO` | `6aecbdf987c1d88ee1a3d763` |
+
+Delivery 10469 was also deleted and GET-verified as `404`. Container **1400**
+was used as a reference; its barcode/delivery sequences were consumed by fixture
+creation and were not rolled back. Inline sender/receiver records and audit
+history, if retained by the API, were not separately deleted; their names carry
+the probe prefixes above. No payment journals were posted by this delivery audit.
+
+### Approved completion probe — November 5, 2026
+
+**Positive nonzero-balance enforcement now verified.** After the user's explicit
+approval of delivery **10464** / invoice **488970**, exact-number search resolved
+the correct invoice ObjectID as **`6a34c213a08ce327600be3ec`**. The previously
+quoted ID `6a323358a08ce327600a5ef1` actually belongs to invoice **480406**;
+that invoice was read for identity checking and was not mutated.
+
+Invoice 488970's authoritative balance was **$70**. Review confirmed delivery
+10464 and three remaining pending pieces. A valid completion request selected
+one piece, **ET042260427**, using `legacyBarcodeIds: [765315]` (its canonical
+barcode ID is all zero), the active policy IDs, an agreed acknowledgment and a
+valid synthetic MOCK signature. No uncleared-payment override was sent.
+
+The API returned **`409`**:
+
+> delivery requires an exactly zero invoice balance and no uncleared payments;
+> collect or clear payment, or resolve credit with accounting
+
+The invoice balance stayed **$70**, version and `updatedAt` remained unchanged,
+and review still returned all three pending pieces (ET042260427–ET042260429).
+No completion succeeded, so no delivery change required reversal. The probe tag
+is `ZZ_DELIVERY_BALANCE_PROBE_20261105_1793900716906`. An earlier attempt's
+invalid tiny PNG returned validation `400`; that was a fixture error, not
+balance-enforcement evidence, and was corrected before this result.
+
+This supersedes the November 3 "not enforced" status for positive balances.
+Keep **zero-balance success, zero with uncleared receipts, negative/unavailable
+persisted balances, concurrency, failed-command receipt auditing and accepted
+override semantics** open/unverified. The error message says uncleared payments
+also block completion; it alone does not prove those paths were exercised.
+
 
 ## Delivery row exchange rate
 

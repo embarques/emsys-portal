@@ -35,6 +35,7 @@
     "test:api:loans": "node scripts/test-loans-api.mjs",
     "test:api:reports": "node scripts/test-reports-api.mjs",
     "test:api:backend-gaps": "node scripts/test-backend-gaps-api.mjs",
+    "test:api:daily-route-approvals": "node scripts/test-daily-route-approvals-api.mjs",
     "pretest:integration": "playwright install chromium",
     "clean:playwright": "node scripts/clean-playwright-artifacts.mjs",
     "clean:playwright:ui": "node scripts/clean-playwright-artifacts.mjs --fresh-auth",

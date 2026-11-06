@@ -9,7 +9,6 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
   createDailyIncomeJournal,
   createIncomeStatement,
-  deleteDailyIncomeJournal,
   fetchAccountingPaymentMethods,
   fetchDailyIncomeJournal,
   fetchDailyIncomeJournals,
@@ -172,14 +171,6 @@ export function useUpdateDailyIncomeJournal() {
     mutationFn: ({ id, statement, values, options }: { id: string; statement: DailyIncomeStatement; values: DailyIncomeJournalValues; options?: JournalWriteOptions }) =>
       updateDailyIncomeJournal(id, statement, values, options),
     retry: false,
-    onSuccess: () => invalidateDailyIncome(queryClient),
-  });
-}
-
-export function useDeleteDailyIncomeJournal() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteDailyIncomeJournal(id),
     onSuccess: () => invalidateDailyIncome(queryClient),
   });
 }

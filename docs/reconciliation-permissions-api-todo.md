@@ -1,14 +1,27 @@
 # Reconciliation permissions — backend TODO
 
-The portal already checks two permissions, but neither is in the permission seed or the permissions endpoints yet.
+The portal already checks two permissions, but neither is in the checked company's live permission catalog or current-user permissions yet. Backend seed source was not available for review.
 
-## Live status (November 3, 2026)
+## Read-only recheck (November 5, 2026)
 
-Verified with `npm run test:api:backend-gaps` (see [backend-api-gaps.md](backend-api-gaps.md)).
+Both grants remain absent from the complete 203-entry `GET /v1/permissions`
+catalog, `GET /v1/users/permissions` for Administrador, and all five roles in
+company `64d5c0b0d1eab2aaf30b1819`. `canListJournal` is also absent. The
+published Swagger still omits both reconcile routes. **Seeding/migration
+remains open for this company.** An authorized mock-data mutation follow-up
+also reverified all four enforcement checks below on November 5: both reconcile
+commands and journal `autoClear` / inventory `autoReconcile` returned `403`.
+Neither journal-create request created a journal. See
+[backend-api-gaps.md](backend-api-gaps.md).
+
+## Live status (rechecked November 5, 2026)
+
+Originally verified with `npm run test:api:backend-gaps`; rechecked with focused
+GET/search and command probes (see [backend-api-gaps.md](backend-api-gaps.md)).
 
 - [x] `POST /v1/journals/reconcile` returns `403 Missing permission: canReconcileJournal`.
 - [x] `POST /v1/inventory/dispatches/{id}/reconciliations` returns `403 Missing permission: canReconcileInventoryDispatch`.
-- [ ] Neither permission is in `GET /v1/permissions` (199 entries) or in `GET /v1/users/permissions` for Administrador.
+- [ ] Neither permission is in `GET /v1/permissions` (203 entries) or in `GET /v1/users/permissions` for Administrador.
 - [ ] No role holds either grant; the existing-company migration has not run for company `64d5c0b0d1eab2aaf30b1819`.
 - [x] Journal create with `autoClear` returns `403 canReconcileJournal is required to auto-reconcile` and creates nothing.
 - [x] Dispatched INVENTORY journal with `autoReconcile` returns `403 AUTO_RECONCILE_FORBIDDEN`.

@@ -294,6 +294,7 @@ export function permissionIsGranted(
 
   const requiredKey = permissionKey(required);
   const scoped = grantedKeys.has("daily_route_work:canoperatedailyroute") && !grantedKeys.has("daily_route_work:canmanagedailyrouterecords");
+  if (scoped && requiredKey === "change_request:canapprovechangerequest") return false;
   if(scoped && ["pickup","invoice","journal","labels","inventory_dispatch"].includes(required.resourceType.toLowerCase())) {
     if(/^can(update|delete|void|reconcile|clear|annotate)/i.test(required.name)) return false;
     if(/^can(view|list|create)/i.test(required.name)) return true;

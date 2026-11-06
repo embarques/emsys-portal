@@ -1,5 +1,11 @@
 # Financial controls and daily-route approvals
 
+**Deployment verification (November 5, 2026):** the prepared workflow below is
+not deployed end to end. Live mock-company probes found change-request routes
+missing and the required grants absent. See
+[daily-route-permissions-approval-audit.md](daily-route-permissions-approval-audit.md)
+for evidence and remaining acceptance tests.
+
 The coordinated API contract is `emsys-api/docs/contracts/financial-controls.md`.
 Deploy the API contract before this Portal change, then apply reviewed tenant
 permission/index/COA migrations. No production migration is part of this PR.

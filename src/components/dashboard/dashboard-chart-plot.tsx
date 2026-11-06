@@ -13,6 +13,36 @@ const donutColors = [
   "text-rose-900 dark:text-rose-600",
 ];
 
+const lineLabelMinGap = 11;
+const lineLabelMaxY = 189;
+
+// Per category, the topmost point labels above and the bottommost below; remaining collisions are pushed apart.
+function placeLineLabels(series: DashboardChartSeries[], categoryCount: number, y: (value: number) => number) {
+  const placements = series.map(() => new Array<number>(categoryCount).fill(0));
+  for (let index = 0; index < categoryCount; index += 1) {
+    const points = series
+      .map((item, seriesIndex) => ({ seriesIndex, pointY: y(item.values[index] ?? 0) }))
+      .sort((a, b) => a.pointY - b.pointY);
+    const labels = points
+      .map((point, order) => ({
+        seriesIndex: point.seriesIndex,
+        labelY:
+          order > 0 && order === points.length - 1
+            ? Math.min(point.pointY + 17, lineLabelMaxY)
+            : point.pointY - 12,
+      }))
+      .sort((a, b) => a.labelY - b.labelY);
+    labels.forEach((label, order) => {
+      const previous = labels[order - 1];
+      if (previous && label.labelY - previous.labelY < lineLabelMinGap) {
+        label.labelY = previous.labelY + lineLabelMinGap;
+      }
+      placements[label.seriesIndex][index] = label.labelY;
+    });
+  }
+  return placements;
+}
+
 type DashboardChartPlotProps = {
   variant: Exclude<DashboardChartVariant, "bar">;
   label: string;
@@ -25,6 +55,8 @@ export function DashboardChartPlot({ variant, label, categories, series }: Dashb
   const baseline = 174;
   const x = (index: number) => 40 + (index / Math.max(categories.length - 1, 1)) * 480;
   const y = (value: number) => baseline - (value / maxValue) * 136;
+  const isMultiSeries = series.length > 1;
+  const labelYs = variant === "line" || variant === "area" ? placeLineLabels(series, categories.length, y) : [];
 
   return (
     <figure aria-label={label} className="min-w-0">
@@ -124,18 +156,34 @@ export function DashboardChartPlot({ variant, label, categories, series }: Dashb
                   ) : null}
                   <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
                   {categories.map((category, index) => (
-                    <g key={category}>
-                      <circle cx={x(index)} cy={y(item.values[index] ?? 0)} r="4" fill="currentColor" className="stroke-card" strokeWidth="2">
-                        <title>{`${category} · ${item.label}: ${(item.values[index] ?? 0).toLocaleString()}`}</title>
-                      </circle>
-                      <text x={x(index)} y={y(item.values[index] ?? 0) - 12} textAnchor="middle" className="fill-muted-foreground text-[10px] tabular-nums">
-                        {(item.values[index] ?? 0).toLocaleString()}
-                      </text>
-                    </g>
+                    <circle key={category} cx={x(index)} cy={y(item.values[index] ?? 0)} r="4" fill="currentColor" className="stroke-card" strokeWidth="2">
+                      <title>{`${category} · ${item.label}: ${(item.values[index] ?? 0).toLocaleString()}`}</title>
+                    </circle>
                   ))}
                 </g>
               );
             })}
+            {series.map((item, seriesIndex) => (
+              <g key={item.key} className={isMultiSeries ? item.colorClassName : undefined}>
+                {categories.map((category, index) => (
+                  <text
+                    key={category}
+                    x={x(index)}
+                    y={labelYs[seriesIndex][index]}
+                    textAnchor="middle"
+                    paintOrder="stroke"
+                    strokeWidth="3"
+                    strokeLinejoin="round"
+                    className={cn(
+                      "stroke-card text-[10px] tabular-nums",
+                      isMultiSeries ? "fill-current font-medium" : "fill-muted-foreground",
+                    )}
+                  >
+                    {(item.values[index] ?? 0).toLocaleString()}
+                  </text>
+                ))}
+              </g>
+            ))}
             {categories.map((category, index) => (
               <text key={category} x={x(index)} y="201" textAnchor="middle" className="fill-muted-foreground text-[11px]">{category}</text>
             ))}

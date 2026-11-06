@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestChangeButton } from "@/components/change-requests/request-change-button";
+
 import {
   RecordViewSheet,
   RecordViewSheetBody,
@@ -119,6 +121,7 @@ export function InventoryDispatchViewSheet({
             </p>
           ) : null}
         </RecordViewSheetBody>
+        <RequestChangeButton resourceType="inventory" resourceId={dispatch.id} inSheet />
         <InventoryRecordActions
           disabled={isBusy}
           onPost={isDraft && onPost ? () => onPost(dispatch) : undefined}

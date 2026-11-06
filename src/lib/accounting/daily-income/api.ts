@@ -796,11 +796,6 @@ export async function updateDailyIncomeJournal(id: string, statement: DailyIncom
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
 }
 
-export async function deleteDailyIncomeJournal(id: string) {
-  const payload = await apiClient.delete<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_JOURNAL}/${encodeURIComponent(id)}`);
-  assertMutation(payload, "Unable to delete transaction.");
-}
-
 export {
   createChartAccount,
   deleteChartAccount,

@@ -26,7 +26,9 @@ export function JournalLifecycleActions({ journal }: {
         description: string;
     }>({ defaultValues: { reason: "", description: journal.description } });
     const actions = journal.allowedActions;
-    if (!actions || !journal.version)
+    const isRouteOperator = hasPermission("canOperateDailyRoute", "daily_route_work") &&
+        !hasPermission("canManageDailyRouteRecords", "daily_route_work");
+    if (!actions || !journal.version || isRouteOperator)
         return null;
     function open(next: Action) { setAction(next); setRequestId(createRandomId()); form.reset({ reason: "", description: journal.description }); mutation.reset(); }
     const submit = form.handleSubmit(values => { if (!action || !journal.version)
@@ -36,7 +38,6 @@ export function JournalLifecycleActions({ journal }: {
  {actions.reverse ? <Button variant="outline" onClick={() => open("reverse")}>{text("reverse")}</Button> : null}
  {actions.correct && hasPermission("canCreateChangeRequest", "change_request") ? <Button variant="outline" asChild><Link href={`/change-requests?${new URLSearchParams({ resourceType: "journal", resourceId: journal.id, action: "UPDATE" })}`}>{text("correct")}</Link></Button> : null}
  {actions.note ? <Button variant="outline" onClick={() => open("note")}>{text("note")}</Button> : null}
- {hasPermission("canCreateChangeRequest", "change_request") ? <Button variant="outline" asChild><Link href={`/change-requests?${new URLSearchParams({ resourceType: "journal", resourceId: journal.id })}`}>{text("request")}</Link></Button> : null}
  {journal.restrictionReason ? <p className="w-full text-sm text-muted-foreground">{journal.restrictionReason}</p> : null}
  </div><Dialog open={Boolean(action)} onOpenChange={open => { if (!open && !mutation.isPending)
         setAction(null); }}><DialogContent><DialogHeader><DialogTitle>{text(action ?? "note")}</DialogTitle><DialogDescription>{text(action === "note" ? "noteDescription" : "warning")}</DialogDescription></DialogHeader><form onSubmit={submit} className="space-y-4" onChange={() => { if (!mutation.isPending)

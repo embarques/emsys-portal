@@ -14,15 +14,53 @@
 
 # Transaction-triggered closeouts
 
-Status: requested contract; backend implementation and portal integration are
-pending. Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
-`GET /income-statements/current?branchId=` returns the open closeout with its
-IANA `timezone`; manual `POST /income-statements/{id}/close` and `/open` return
-`409 closeout lifecycle is server-managed`; journal creates ignore the payload
-`branch` and use the user's location. `409 CLOSEOUT_REQUIRED` is unverified and
-absent from the published Swagger; trigger it with the first transaction of a
-new day or a user located in a branch without a closeout. The local API documentation still describes the older create/open/close
-operations. Do not infer a new endpoint or response envelope from this document.
+Status: **partly verified live November 5, 2026**. Current-closeout lookup,
+calendar context, retired manual lifecycle guards and server-selected journal
+location are deployed. The transaction-time `409 CLOSEOUT_REQUIRED` envelope,
+rollover ordering/concurrency and the published documentation remain open.
+Do not infer additional endpoints or a live error envelope from the requested
+behavior below.
+
+## Live verification — November 5, 2026
+
+Focused GET and authorized mock-journal mutation probes used company
+`64d5c0b0d1eab2aaf30b1819`, user 73, whose profile location is branch 1.
+
+| Check | Observed result |
+| --- | --- |
+| `GET /income-statements/current?branchId=1` | `200`, open closeout **32691**, `businessDate: 2026-11-05`, IANA `timezone: America/New_York`, USD/rate 1. Period boundaries are `2026-11-05T05:00:00Z` through `2026-11-06T05:00:00Z`. |
+| `GET /income-statements/context?branchId=1` | `200`, `data` contains `today`, `serverTimezone`, `serverTime`, `current`, `previous`, `latest`. Today's current/latest is 32691; previous is closed 32690. This route is observed live and consumed by `fetchCloseoutCalendar`, not inferred from a proposal. |
+| Branch 2 read-only lookups | `/current?branchId=2` returns `200`, `data: null`. `/context?branchId=2` returns `current: null`, closed latest/previous **32650**, and `requiredReason: LATEST_CLOSED`. Its returned `serverTimezone` was `America/New_York`; no independent branch-timezone configuration validation was performed. |
+| `POST /income-statements/2147483647/close` and `/open` | Both return `409 closeout lifecycle is server-managed; open today’s closeout with currency and exchange rate when required`. A nonexistent numeric ID exercises the retirement guard without risking an existing period. No live closeout was opened or closed. |
+| Journal with branch omitted | One-cent CASH SALES posts to closeout **32691**; GET resolves branch 1. |
+| Journal with `branch: { id: 2 }` | Same result: closeout **32691**, branch 1. The caller's profile location remains authoritative even though branch 2 lacks today's closeout. |
+| Published Swagger | HTTP `200`, 242 paths. `/income-statements/current` and `/income-statements/context` are absent; the spec contains no `CLOSEOUT_REQUIRED`. Old `/income-statements/{id}/open` and `/close` remain documented, and POST create still has the generic older create description. |
+
+**`409 CLOSEOUT_REQUIRED` remains unverified.** Branch 2's `requiredReason`
+is a calendar response, not evidence of that write-conflict status/code/envelope.
+The available user is located in branch 1, which already has today's open
+closeout. Overriding the journal's branch cannot exercise branch 2's condition.
+A valid follow-up needs a separately authorized user actually located in a
+branch without a current closeout, or the first transaction across a real
+server-timezone date boundary. No user location, clock, existing closeout or
+branch configuration was changed to manufacture the condition.
+
+Portal source currently consumes the context route and opens rollover recovery
+only for an Axios HTTP 409 with `response.data.data.code === CLOSEOUT_REQUIRED`.
+That shape is a **local integration assumption**, not a verified live error.
+`node --test tests/unit/closeout-calendar.test.mjs` passed **3/3**: creation
+omits the client date/branch in the standard create path, nullable calendar
+metadata is preserved, and unrelated conflicts do not trigger recovery. These
+mocked tests do not prove server concurrency or the real conflict envelope.
+
+Cleanup: both one-cent SALES probes were reversed successfully. Labeled
+originals/reversals remain under `ZZ_CLOSEOUT_PROBE_20261105_1793900225189`.
+Current lookup after the probes still returned the same open closeout 32691.
+No new closeout was created.
+
+The remaining sections describe requested lifecycle behavior and acceptance
+criteria unless explicitly verified above. The historical design notes at the
+top are not evidence that transaction-time closure or retry semantics are live.
 
 ## Transaction operation
 

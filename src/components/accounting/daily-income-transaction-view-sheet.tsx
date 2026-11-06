@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestChangeButton } from "@/components/change-requests/request-change-button";
+
 import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,11 +31,9 @@ type DailyIncomeTransactionViewSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (journal: DailyIncomeJournal) => void;
-  onDelete: (journal: DailyIncomeJournal) => void;
   onPrintReceipt?: (journal: DailyIncomeJournal) => void;
   isPrintingReceipt?: boolean;
   canEdit?: boolean;
-  canDelete?: boolean;
 };
 
 function journalTitle(row: DailyIncomeJournal, fallback: string) {
@@ -76,11 +76,9 @@ export function DailyIncomeTransactionViewSheet({
   open,
   onOpenChange,
   onEdit,
-  onDelete,
   onPrintReceipt,
   isPrintingReceipt = false,
   canEdit = true,
-  canDelete = true,
 }: DailyIncomeTransactionViewSheetProps) {
   const { t } = useTranslation();
   const detailQuery = useDailyIncomeJournal(open && journal ? journal.id : null);
@@ -217,14 +215,13 @@ export function DailyIncomeTransactionViewSheet({
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
+        <RequestChangeButton resourceType="journal" resourceId={resolved.id} inSheet />
 
         <JournalLifecycleActions key={`${resolved.id}:${resolved.version}`} journal={resolved}/>
         <RecordViewSheetActions
           editLabel={t("common.actions.edit")}
-          deleteLabel={t("common.actions.delete")}
           printLabel={t("accounting.dailyIncome.actions.printReceipt")}
           onEdit={canEdit ? () => onEdit(resolved) : undefined}
-          onDelete={canDelete ? () => onDelete(resolved) : undefined}
           onPrint={onPrintReceipt && canPrintPaymentReceipt(resolved) ? () => onPrintReceipt(resolved) : undefined}
           printDisabled={!/^[a-f0-9]{24}$/i.test(resolved.id)}
           isPrinting={isPrintingReceipt}
