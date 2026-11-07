@@ -99,7 +99,7 @@ import { mapInvoiceJournalsToPayments } from "@/lib/invoices/invoice-journals";
 import {
   buildInvoiceListParams,
   createInvoiceComment,
-  DEFAULT_INVOICE_DIRECTORY_SORT,
+  DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceRecordId,
   getInvoicePrimaryReceiver,
   type Invoice,
@@ -438,7 +438,7 @@ export function InvoicesWorkspace() {
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
-  const { sort, onSortChange } = useTableSort(DEFAULT_INVOICE_DIRECTORY_SORT, () => setPage(1));
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVOICE_LIST_PARAMS.sort, () => setPage(1));
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
   const [viewDocuments, setViewDocuments] = useState(false);
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
