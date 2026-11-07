@@ -10,7 +10,7 @@
     "isActive": "Activar numeración automática",
     "unlock": "Desbloquear sufijo y rango",
     "lock": "Bloquear sufijo y rango",
-    "permissionRequired": "Se requiere permiso para desbloquear la numeración de facturas"
+    "permissionRequired": "Se requiere permiso para desbloquear el rango de facturas"
   },
   "title": "Configuración",
   "pages": {

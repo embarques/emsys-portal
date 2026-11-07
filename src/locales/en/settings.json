@@ -10,7 +10,7 @@
     "isActive": "Enable automatic numbering",
     "unlock": "Unlock suffix and range",
     "lock": "Lock suffix and range",
-    "permissionRequired": "Unlock invoice numbering permission required"
+    "permissionRequired": "Unlock invoice range permission required"
   },
   "title": "Settings",
   "pages": {

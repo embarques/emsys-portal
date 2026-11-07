@@ -23,7 +23,7 @@ export function CompanyInvoiceNumberingSettings() {
       key={companyId}
       companyId={companyId}
       canEdit={canEdit}
-      canUnlock={canEdit && hasPermission("canUnlockInvoiceNumbering", "invoice_numbering")}
+      canUnlock={canEdit && hasPermission("canUnlockInvoiceRange", "invoice_numbering")}
     />
   );
 }
