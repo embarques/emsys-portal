@@ -16,6 +16,7 @@ import { VEHICLE_TABLE_FILTER_FIELDS } from "@/lib/vehicles/filter-fields";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   DEFAULT_VEHICLE_LIST_PARAMS,
+  type Vehicle,
   type VehicleFormValues,
   type VehicleListParams,
   type VehiclePortalBranch,
@@ -92,14 +93,22 @@ export function useVehicleBranchCount(branch: VehiclePortalBranch) {
   };
 }
 
-export function useVehicleKpis() {
+const NO_VEHICLES: Vehicle[] = [];
+
+export const VEHICLE_FLEET_SNAPSHOT_LIMIT = 200;
+
+/** Fleet snapshot shared by the KPI cards and compliance alerts. */
+export function useVehicleKpis(options: { enabled?: boolean } = {}) {
   const query = useWorkspaceQuery({
     queryKey: queryKeys.vehicles.stats("kpis"),
-    queryFn: () => fetchVehicles({ ...DEFAULT_VEHICLE_LIST_PARAMS, limit: 200 }),
+    queryFn: () => fetchVehicles({ ...DEFAULT_VEHICLE_LIST_PARAMS, limit: VEHICLE_FLEET_SNAPSHOT_LIMIT }),
+    enabled: options.enabled ?? true,
   });
 
   return {
-    items: query.data?.items ?? [],
+    items: query.data?.items ?? NO_VEHICLES,
+    total: query.data?.total ?? 0,
+    updatedAt: query.dataUpdatedAt,
     isLoading: query.isLoading,
     isError: query.isError,
   };

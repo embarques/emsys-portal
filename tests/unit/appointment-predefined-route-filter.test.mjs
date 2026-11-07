@@ -92,6 +92,41 @@ test("All routes omits the route condition and preserves other filters", async (
  assert.ok(leaves(pickupSearchBody(calls)).some(leaf=>leaf.field==="sender.address.city"));
 });
 
+test("route appointments search only pickups with an assigned route, even without other filters", async () => {
+ const {calls,client}=createRecordingClient();
+ await createLoader(client)(ordersApi).fetchOrders({ page: 1, limit: 50, assignedRouteOnly: true });
+ assert.equal(calls.length,1);
+ assert.deepEqual(pickupSearchBody(calls).filters,[{field:"route.id",operator:"gt",value:""}]);
+});
+
+test("assigned-route scope is ANDed with search and filter rows", async () => {
+ const {calls,client}=createRecordingClient();
+ await createLoader(client)(ordersApi).fetchOrders({ assignedRouteOnly: true, filterRows: [row("sender.address.city","eq","Miami"),row("sender.address.zipcode","eq","02119","or")] });
+ const body=pickupSearchBody(calls);
+ assert.equal(body.operator,"and");
+ assert.ok(leaves(body).some(leaf=>leaf.field==="route.id" && leaf.operator==="gt" && leaf.value===""));
+ assert.ok(leaves(body).some(leaf=>leaf.field==="sender.address.city"));
+});
+
+test("route appointments bar search covers every text column; regular appointments keep their fields", async () => {
+ const route=createRecordingClient();
+ await createLoader(route.client)(ordersApi).fetchOrders({ assignedRouteOnly: true, search: { value: "santiago" } });
+ const routeFields=leaves(pickupSearchBody(route.calls)).map(leaf=>leaf.field);
+ for (const field of ["route.name","employee.name","sector.name","branch.code","createdBy.name","updatedBy.name","purpose","sender.name"]) assert.ok(routeFields.includes(field), field);
+ const regular=createRecordingClient();
+ await createLoader(regular.client)(ordersApi).fetchOrders({ search: { value: "santiago" } });
+ const regularFields=leaves(pickupSearchBody(regular.calls)).map(leaf=>leaf.field);
+ assert.ok(!regularFields.includes("route.name"));
+ assert.ok(!regularFields.includes("employee.name"));
+});
+
+test("regular appointments keep the unfiltered GET without a route scope", async () => {
+ const {calls,client}=createRecordingClient();
+ await createLoader(client)(ordersApi).fetchOrders({ page: 1, limit: 50 });
+ assert.equal(calls[0][0],"get");
+ assert.match(calls[0][1],/^\/pickups\?/);
+});
+
 test("invalid route ID fails without issuing an API request", async () => {
  const {calls,client}=createRecordingClient();
  await assert.rejects(createLoader(client)(ordersApi).fetchOrders({filterRows:[row("predefinedRoute.id","eq","abc")]}),/invalid predefined route/i);

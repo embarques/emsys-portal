@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { InvoiceNumberModeFields } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
+import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useCustomerPicker, useCustomerSearch } from "@/lib/customers/hooks/use-customers";
@@ -477,7 +478,6 @@ export function RegisterInvoiceTransactionFields({
             autoGenerate={automaticNumber}
             invoiceNumber={watch("invoiceNumber") ?? ""}
             canUseManualNumber={canUseManualNumber}
-            variant="segmented"
             onModeChange={(nextAutoGenerate) => {
               setValue("autoGenerateInvoiceNumber", nextAutoGenerate, { shouldValidate: true, shouldDirty: true });
               if (nextAutoGenerate) {
@@ -681,42 +681,32 @@ export function RegisterInvoiceTransactionFields({
       {showParties ? (
         <div className="space-y-3 min-w-0 sm:col-span-2">
           <div className="grid min-w-0 grid-cols-2 gap-4">
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                id="journal-skip-sender"
-                type="checkbox"
-                className="size-4 rounded border border-input"
-                checked={!includeSender}
-                onChange={(event) => {
-                  const skip = event.target.checked;
-                  setValue("includeSender", !skip, { shouldValidate: true });
-                  if (skip) {
-                    setValue("senderId", undefined, { shouldValidate: true });
-                    setValue("senderName", "");
-                    setSenderQuery("");
-                  }
-                }}
-              />
-              {t("accounting.dailyIncome.form.fields.skipSender")}
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                id="journal-skip-receiver"
-                type="checkbox"
-                className="size-4 rounded border border-input"
-                checked={!includeReceiver}
-                onChange={(event) => {
-                  const skip = event.target.checked;
-                  setValue("includeReceiver", !skip, { shouldValidate: true });
-                  if (skip) {
-                    setValue("receiverId", undefined, { shouldValidate: true });
-                    setValue("receiverName", "");
-                    setReceiverQuery("");
-                  }
-                }}
-              />
-              {t("accounting.dailyIncome.form.fields.skipReceiver")}
-            </label>
+            <SwitchField
+              id="journal-skip-sender"
+              label={t("accounting.dailyIncome.form.fields.skipSender")}
+              checked={!includeSender}
+              onCheckedChange={(skip) => {
+                setValue("includeSender", !skip, { shouldValidate: true });
+                if (skip) {
+                  setValue("senderId", undefined, { shouldValidate: true });
+                  setValue("senderName", "");
+                  setSenderQuery("");
+                }
+              }}
+            />
+            <SwitchField
+              id="journal-skip-receiver"
+              label={t("accounting.dailyIncome.form.fields.skipReceiver")}
+              checked={!includeReceiver}
+              onCheckedChange={(skip) => {
+                setValue("includeReceiver", !skip, { shouldValidate: true });
+                if (skip) {
+                  setValue("receiverId", undefined, { shouldValidate: true });
+                  setValue("receiverName", "");
+                  setReceiverQuery("");
+                }
+              }}
+            />
           </div>
           {includeSender || includeReceiver ? (
             <div className={grouped ? "grid min-w-0 gap-4 sm:grid-cols-2" : "space-y-3"}>

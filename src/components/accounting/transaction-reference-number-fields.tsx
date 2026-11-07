@@ -6,7 +6,7 @@ import type { UseFormRegisterReturn } from "react-hook-form";
 import { FieldMessage } from "@/components/forms/field-message";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import { SwitchField } from "@/components/ui/switch-field";
 import { submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
 import {
   resolveDailyIncomeRefNumberMode,
@@ -46,16 +46,6 @@ export function TransactionReferenceNumberFields({
 }: Props) {
   const { t } = useTranslation();
   const resolvedMode = resolveDailyIncomeRefNumberMode({ refNumberMode: mode });
-  const modeOptions: { value: DailyIncomeRefNumberMode; label: string }[] = [
-    {
-      value: "system",
-      label: t("accounting.dailyIncome.form.fields.referenceNumberModeSystem"),
-    },
-    {
-      value: "custom",
-      label: t("accounting.dailyIncome.form.fields.referenceNumberModeCustom"),
-    },
-  ];
   const { ref: registerRef, ...refNumberInputProps } = refNumberRegister;
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -74,20 +64,14 @@ export function TransactionReferenceNumberFields({
 
   return (
     <div className={cn("grid gap-4 sm:col-span-2", resolvedMode === "custom" && "sm:grid-cols-2")}>
-      <div className="space-y-2">
-        <Label id={`${id}-mode-label`}>{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
-        <SegmentedControl
-          id={`${id}-mode`}
-          aria-labelledby={`${id}-mode-label`}
-          value={resolvedMode}
-          disabled={disabled}
-          onValueChange={changeMode}
-          options={modeOptions}
-        />
-        <FieldMessage
-          hint={resolvedMode === "system" ? systemHint ?? t("accounting.dailyIncome.form.fields.referenceNumberSystemHint") : null}
-        />
-      </div>
+      <SwitchField
+        id={`${id}-mode`}
+        label={<>{t("accounting.dailyIncome.form.fields.referenceNumber")}: {t(resolvedMode === "system" ? "accounting.dailyIncome.form.fields.referenceNumberModeSystem" : "accounting.dailyIncome.form.fields.referenceNumberModeCustom")}</>}
+        description={resolvedMode === "system" ? systemHint ?? t("accounting.dailyIncome.form.fields.referenceNumberSystemHint") : undefined}
+        checked={resolvedMode === "system"}
+        disabled={disabled}
+        onCheckedChange={(checked) => changeMode(checked ? "system" : "custom")}
+      />
 
       {resolvedMode === "custom" ? (
         <div className="space-y-2">

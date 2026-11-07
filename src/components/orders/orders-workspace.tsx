@@ -949,6 +949,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     {
       id: "comments",
       label: t("orders.tableColumns.comments"),
+      sortField: "comments.description",
       defaultWidth: 360,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),

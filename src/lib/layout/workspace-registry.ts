@@ -42,7 +42,7 @@ import { DeliveriesWorkspace } from "@/components/deliveries/deliveries-workspac
 import { UserActivitiesWorkspace } from "@/components/user-activities/user-activities-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
-import { accountingClearingNavigationItems, barcodeNavigationItems, invoiceNavigationItems, navigation, routeNavigationItems, topNavigationItems } from "@/config/navigation";
+import { accountingClearingNavigationItems, barcodeNavigationItems, employeeNavigationItems, invoiceNavigationItems, navigation, routeNavigationItems, topNavigationItems } from "@/config/navigation";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 import { findNavigationItemByHref, flattenAllNavigationItems } from "@/lib/navigation/nav-utils";
 import { translate, type Locale } from "@/lib/i18n/catalog";
@@ -106,7 +106,7 @@ export function isWorkspaceRoute(href: string): boolean {
 export function resolveWorkspaceNavLabelKey(href: string): string | null {
   const pathname = href.split("?")[0] ?? href;
   const navItem = findNavigationItemByHref(
-    flattenAllNavigationItems(navigation, [...topNavigationItems, ...accountingClearingNavigationItems, ...barcodeNavigationItems, ...routeNavigationItems, ...invoiceNavigationItems]),
+    flattenAllNavigationItems(navigation, [...topNavigationItems, ...accountingClearingNavigationItems, ...barcodeNavigationItems, ...routeNavigationItems, ...invoiceNavigationItems, ...employeeNavigationItems]),
     pathname,
   );
   return navItem?.labelKey ?? null;

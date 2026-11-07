@@ -8,6 +8,7 @@ import { BarcodeStatusesButton } from "@/components/barcodes/barcode-statuses-bu
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatContainerLabel } from "@/lib/containers/display";
@@ -193,15 +194,12 @@ export function LabelUpdaterWorkspace() {
         <CardContent className="space-y-6">
           <div className="grid items-start gap-6 sm:grid-cols-3">
             <div className="space-y-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={changeStatus}
-                  onChange={(event) => setChangeStatus(event.target.checked)}
-                  className="size-4 rounded border-input"
-                />
-                {t("labels.updater.options.changeStatus")}
-              </label>
+              <SwitchField
+                id="label-updater-changeStatus"
+                label={t("labels.updater.options.changeStatus")}
+                checked={changeStatus}
+                onCheckedChange={setChangeStatus}
+              />
               {changeStatus ? (
                 <div className="space-y-2">
                   <Label htmlFor="newStatus">{t("labels.updater.options.newStatus")}</Label>
@@ -221,15 +219,12 @@ export function LabelUpdaterWorkspace() {
             </div>
 
             <div className="space-y-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={changeContainer}
-                  onChange={(event) => setChangeContainer(event.target.checked)}
-                  className="size-4 rounded border-input"
-                />
-                {t("labels.updater.options.changeContainer")}
-              </label>
+              <SwitchField
+                id="label-updater-changeContainer"
+                label={t("labels.updater.options.changeContainer")}
+                checked={changeContainer}
+                onCheckedChange={setChangeContainer}
+              />
               {changeContainer ? (
                 <div className="space-y-2">
                   <Label htmlFor="newContainer">{t("labels.updater.options.newContainer")}</Label>
@@ -248,15 +243,12 @@ export function LabelUpdaterWorkspace() {
             </div>
 
             <div className="space-y-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={changeRoute}
-                  onChange={(event) => setChangeRoute(event.target.checked)}
-                  className="size-4 rounded border-input"
-                />
-                {t("labels.updater.options.changeRoute")}
-              </label>
+              <SwitchField
+                id="label-updater-changeRoute"
+                label={t("labels.updater.options.changeRoute")}
+                checked={changeRoute}
+                onCheckedChange={setChangeRoute}
+              />
               {changeRoute ? (
                 <div className="space-y-2">
                   <Label htmlFor="newRoute">{t("labels.updater.options.newRoute")}</Label>

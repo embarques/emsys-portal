@@ -4,6 +4,7 @@ import { Building2 } from "lucide-react";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useTranslation } from "@/lib/i18n";
@@ -27,10 +28,13 @@ export function EmployeeDepartmentDialog({ state }: { state: ReturnType<typeof u
                 <Input id="department-name" autoFocus required disabled={state.busy} aria-invalid={!!state.form.formState.errors.name} {...state.form.register("name")} />
                 {state.form.formState.errors.name ? <p role="alert" className="text-sm text-destructive">{t(state.form.formState.errors.name.message ?? "common.validation.required")}</p> : null}
               </div>
-              <Label className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 px-3 py-3">
-                <input type="checkbox" disabled={state.busy} {...state.form.register("active")} />
-                {t("employeeDepartments.active")}
-              </Label>
+              <SwitchField
+                id="department-active"
+                label={t(state.form.watch("active") ? "employeeDepartments.active" : "employeeDepartments.inactive")}
+                checked={state.form.watch("active")}
+                disabled={state.busy}
+                onCheckedChange={(checked) => state.form.setValue("active", checked, { shouldDirty: true, shouldValidate: true })}
+              />
             </FormSection>
           </FormBody>
           <FormFooter error={state.error} isSubmitting={state.busy} submitLabel={t("common.actions.save")} onCancel={() => state.setOpen(false)} />

@@ -9,6 +9,7 @@ import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-pay
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SwitchField } from "@/components/ui/switch-field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -303,25 +304,13 @@ export function InvoiceDailyIncomeStep({
 
   const paymentForm = statement && statementOpen ? (
     <div className="space-y-3" data-invoice-wizard-focus="daily-income">
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <Label className="flex items-center gap-3">
-          <input
-            id="invoice-skip-payment"
-            type="checkbox"
-            className="size-4"
-            checked={skipPayment}
-            onChange={(event) => setSkipPayment(event.target.checked)}
-          />
-          <span className={cn("font-medium text-foreground", isMobileLayout ? "text-base" : "text-sm")}>
-            {t("invoices.wizard.dailyIncome.skipPayment")}
-          </span>
-        </Label>
-        <p className={cn("mt-2 leading-relaxed text-muted-foreground", isMobileLayout ? "text-base" : "text-sm")}>
-          {t(skipPayment
-            ? "invoices.wizard.dailyIncome.skipPaymentHint"
-            : "invoices.wizard.dailyIncome.unpaidContinueHint")}
-        </p>
-      </div>
+      <SwitchField
+        id="invoice-skip-payment"
+        label={t("invoices.wizard.dailyIncome.skipPayment")}
+        description={t(skipPayment ? "invoices.wizard.dailyIncome.skipPaymentHint" : "invoices.wizard.dailyIncome.unpaidContinueHint")}
+        checked={skipPayment}
+        onCheckedChange={setSkipPayment}
+      />
       <InvoicePaymentTransactionForm
         statement={statement}
         invoice={values}

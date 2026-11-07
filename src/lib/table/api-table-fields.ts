@@ -10,6 +10,8 @@ export type ApiTableField = {
   defaultVisible?: boolean;
   /** When false, the field is documented but intentionally has no directory column. */
   column?: false;
+  /** Server sort path for the generated column; without it the column is not sortable. */
+  sortField?: string;
 };
 
 export type ApiTableRecord = {
@@ -111,7 +113,7 @@ export function completeApiTableColumns<T extends ApiTableRecord>(
 ): DataTableColumn<T>[] {
   const result = columns.map((column) => ({ ...column }));
   const ids = new Set(columns.map((column) => column.id));
-  for (const { field, columnId = field, format, defaultVisible = true, column } of fields) {
+  for (const { field, columnId = field, format, defaultVisible = true, column, sortField } of fields) {
     if (column === false || ids.has(columnId) || PRIVATE_FIELDS.test(field)) continue;
     ids.add(columnId);
     const renderValue = (row: T) => {
@@ -126,7 +128,7 @@ export function completeApiTableColumns<T extends ApiTableRecord>(
       label: formatters.label(field),
       defaultVisible,
       // The schema describes response fields, not server-supported sort paths.
-      sortable: false,
+      ...(sortField ? { sortField } : { sortable: false }),
       renderCell: renderValue,
       copyValue: renderValue,
     });

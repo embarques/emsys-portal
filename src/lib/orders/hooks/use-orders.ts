@@ -59,7 +59,7 @@ export function useOrders(params: OrderListParams, options: { enabled?: boolean;
 
   return useWorkspaceQuery({
     queryKey: [...queryKeys.orders.list(params), companyId, user?.uid || email || "", hasPermission("canViewPickup", "pickup") ? "all" : "assigned", options.routeMode ?? false],
-    queryFn: () => fetchOrders(params),
+    queryFn: () => fetchOrders(options.routeMode ? { ...params, assignedRouteOnly: true } : params),
     enabled: queryEnabled && (options.enabled ?? true),
   });
 }

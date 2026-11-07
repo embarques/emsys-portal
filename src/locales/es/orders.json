@@ -494,6 +494,30 @@
       "route": {
         "id": {
           "label": "Ruta"
+        },
+        "name": {
+          "label": "Nombre de la ruta",
+          "placeholder": "Ingrese el nombre de la ruta…"
+        }
+      },
+      "routeNumber": {
+        "label": "Número de ruta",
+        "placeholder": "Ingrese el número de ruta…"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Ingrese el ID…"
+      },
+      "employee": {
+        "name": {
+          "label": "Empleado",
+          "placeholder": "Ingrese el empleado…"
+        }
+      },
+      "sector": {
+        "name": {
+          "label": "Sector",
+          "placeholder": "Ingrese el sector…"
         }
       },
       "predefinedRoute": {
@@ -570,6 +594,46 @@
       "createdAtRange": {
         "label": "Rango de creación",
         "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Actualizada por",
+          "placeholder": "Ingrese el nombre de usuario…"
+        }
+      },
+      "updatedAt": {
+        "label": "Fecha de actualización",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Rango de actualización",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "completedBy": {
+        "name": {
+          "label": "Completada por",
+          "placeholder": "Ingrese el nombre de usuario…"
+        }
+      },
+      "completedAt": {
+        "label": "Fecha de finalización",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "completedAtRange": {
+        "label": "Rango de finalización",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "legacySyncStatus": {
+        "label": "Estado de sincronización heredada",
+        "placeholder": "Ingrese el estado de sincronización heredada…"
+      },
+      "legacySyncError": {
+        "label": "Error de sincronización heredada",
+        "placeholder": "Ingrese el error de sincronización heredada…"
+      },
+      "legacySyncedAt": {
+        "label": "Fecha de sincronización heredada",
+        "placeholder": "AAAA-MM-DD"
       }
     }
   }

@@ -126,8 +126,10 @@
     "sender.id": "ID del remitente",
     "sender.name": {
       "default": "Remitente",
-      "name": "Nombre"
+      "name": "Nombre",
+      "full": "Nombre del remitente"
     },
+    "sender.phones.number": "Teléfonos del remitente",
     "sender.phone": {
       "default": "Teléfono del remitente",
       "short": "Teléfono"
@@ -149,6 +151,8 @@
     "receiver.address": "Dirección del destinatario",
     "receiver.address.city": "Ciudad",
     "receiver.address.state": "Provincia",
+    "receiver.address.address1": "Dirección",
+    "receiver.phones.number": "Teléfonos del destinatario",
     "receivers.name": "Destinatario",
     "receivers.phone": "Teléfono del destinatario",
     "receivers.address": "Dirección del destinatario",
@@ -156,6 +160,19 @@
     "receivers.address.state": "Estado del destinatario",
     "receivers.address.zipcode": "Código postal del destinatario",
     "route.id": "Ruta",
+    "route.name": {
+      "default": "Ruta",
+      "name": "Nombre de la ruta"
+    },
+    "route.rate": "Tasa de cambio (DOP/USD)",
+    "routeNumber": "Número de ruta",
+    "sector.name": "Sector",
+    "completedBy.name": "Completada por",
+    "completedAt": "Fecha de finalización",
+    "completedAtRange": "Rango de finalización",
+    "legacySyncStatus": "Estado de sincronización heredada",
+    "legacySyncError": "Error de sincronización heredada",
+    "legacySyncedAt": "Fecha de sincronización heredada",
     "predefinedRoute.id": "Ruta predefinida",
     "container.id": "ID de contenedor",
     "container.name": "Contenedor",
@@ -186,7 +203,10 @@
     },
     "invoice.cost": "Costo",
     "invoice.payment": "Pago",
-    "invoice.balance": "Saldo",
+    "invoice.balance": {
+      "default": "Saldo",
+      "invoice": "Balance de factura"
+    },
     "accounts.name": "Cuenta",
     "transactionAmount": "Monto",
     "transactionType": "Transacción",

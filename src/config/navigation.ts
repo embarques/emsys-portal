@@ -254,6 +254,22 @@ export const routeNavigationItems: NavigationItem[] = [
   },
 ];
 
+/** Opened from Employees; retained for workspace labels and colors. */
+export const employeeNavigationItems: NavigationItem[] = [
+  {
+    labelKey: "navigation.items.employeeTitles",
+    href: "/employee-titles",
+    icon: IdCard,
+    permission: PERMISSIONS.employeeTitlesView,
+  },
+  {
+    labelKey: "navigation.items.employeeDepartments",
+    href: "/employee-departments",
+    icon: IdCard,
+    permission: PERMISSIONS.employeeDepartmentsView,
+  },
+];
+
 const customersItem: NavigationItem = {
   labelKey: "navigation.items.customers",
   href: "/customers",
@@ -273,6 +289,13 @@ const reportsItem: NavigationItem = {
   href: "/reports",
   icon: FileChartColumn,
   permission: PERMISSIONS.reportsView,
+};
+
+const userActivitiesItem: NavigationItem = {
+  labelKey: "navigation.items.userActivities",
+  href: "/user-activities",
+  icon: ClipboardList,
+  permission: PERMISSIONS.userActivitiesView,
 };
 
 const accountingGroup: NavigationGroup = {
@@ -392,12 +415,6 @@ export const navigationSections: NavigationSection[] = [
             icon: ScrollText,
             permission: PERMISSIONS.invoicePoliciesList,
           },
-        ],
-      },
-      {
-        titleKey: "navigation.items.users",
-        icon: UserCog,
-        items: [
           {
             labelKey: "navigation.items.users",
             href: "/users",
@@ -405,37 +422,14 @@ export const navigationSections: NavigationSection[] = [
             permission: PERMISSIONS.usersView,
           },
           {
-            labelKey: "navigation.items.userActivities",
-            href: "/user-activities",
-            icon: ClipboardList,
-            permission: PERMISSIONS.userActivitiesView,
-          },
-        ],
-      },
-      {
-        titleKey: "navigation.items.employees",
-        icon: IdCard,
-        items: [
-          {
             labelKey: "navigation.items.employees",
             href: "/employees",
             icon: IdCard,
             permission: PERMISSIONS.employeesView,
           },
-          {
-            labelKey: "navigation.items.employeeTitles",
-            href: "/employee-titles",
-            icon: IdCard,
-            permission: PERMISSIONS.employeeTitlesView,
-          },
-          {
-            labelKey: "navigation.items.employeeDepartments",
-            href: "/employee-departments",
-            icon: IdCard,
-            permission: PERMISSIONS.employeeDepartmentsView,
-          },
         ],
       },
+      navigationItemToGroup(userActivitiesItem),
     ],
   },
 ];

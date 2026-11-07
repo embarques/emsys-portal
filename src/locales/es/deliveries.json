@@ -20,6 +20,7 @@
     "invoiceBalance": "Balance de factura",
     "name": "Nombre",
     "container": "Contenedor",
+    "route": "Ruta",
     "senderName": "Nombre del remitente",
     "senderPhones": "Teléfonos del remitente",
     "receiverName": "Nombre del destinatario",
@@ -49,6 +50,36 @@
         "number": {
           "label": "Número de factura",
           "placeholder": "Ingresa la factura…"
+        },
+        "balance": {
+          "label": "Balance de factura",
+          "placeholder": "Ingresa el monto…"
+        }
+      },
+      "route": {
+        "name": {
+          "label": "Ruta",
+          "placeholder": "Ingresa la ruta…"
+        },
+        "rate": {
+          "label": "Tasa de cambio (DOP/USD)",
+          "placeholder": "Ingresa la tasa…"
+        }
+      },
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Ingresa el nombre…"
+      },
+      "sender": {
+        "name": {
+          "label": "Nombre del remitente",
+          "placeholder": "Ingresa el nombre del remitente…"
+        },
+        "phones": {
+          "number": {
+            "label": "Teléfonos del remitente",
+            "placeholder": "Ingresa el teléfono…"
+          }
         }
       },
       "receiver": {
@@ -56,7 +87,17 @@
           "label": "Nombre del destinatario",
           "placeholder": "Ingresa el destinatario…"
         },
+        "phones": {
+          "number": {
+            "label": "Teléfonos del destinatario",
+            "placeholder": "Ingresa el teléfono…"
+          }
+        },
         "address": {
+          "address1": {
+            "label": "Dirección",
+            "placeholder": "Ingresa la dirección…"
+          },
           "state": {
             "label": "Provincia",
             "placeholder": "Ingresa la provincia…"
@@ -205,10 +246,5 @@
       }
     }
   },
-  "noCity": "Sin ciudad",
-  "sort": {
-    "label": "Ordenar por",
-    "asc": "Ascendente",
-    "desc": "Descendente"
-  }
+  "noCity": "Sin ciudad"
 }

@@ -17,6 +17,19 @@ export const PICKUP_BAR_OR_FIELDS = [
   "comments",
 ] as const;
 
+/** Route Appointments also searches every other text column the pickups search accepts. */
+export const PICKUP_ROUTE_BAR_EXTRA_FIELDS = [
+  "route.name",
+  "employee.name",
+  "sector.name",
+  "branch.code",
+  "branch.name",
+  "createdBy.name",
+  "updatedBy.name",
+  "purpose",
+  "legacySyncStatus",
+] as const;
+
 /**
  * Map legacy / invalid pickup search field paths to canonical API alias fields.
  * @see POST /pickups/search pickup search contract (dev)
@@ -59,11 +72,14 @@ export function resolvePickupSearchField(field: string): string {
  * leaves no digits so name/address/comments can still match.
  * API adds completed=false by default (incomplete pickups only).
  */
-export function createPickupBarSearchFilterGroup(value: string): ApiSearchFilterGroup | null {
+export function createPickupBarSearchFilterGroup(
+  value: string,
+  extraFields: readonly string[] = [],
+): ApiSearchFilterGroup | null {
   const term = value.trim();
   const idText = term.replace(/^#\s*/, "");
   const pickupId = /^\d+$/.test(idText) ? Number(idText) : null;
-  const group = createOrTextSearchFilterGroup(term, [...PICKUP_BAR_OR_FIELDS], "contains");
+  const group = createOrTextSearchFilterGroup(term, [...PICKUP_BAR_OR_FIELDS, ...extraFields], "contains");
   if (group && pickupId !== null && Number.isSafeInteger(pickupId) && pickupId > 0) {
     // Pickup IDs are numeric: the API requires a JSON number and equality.
     group.filters.unshift({ field: "id", operator: "eq", value: pickupId });

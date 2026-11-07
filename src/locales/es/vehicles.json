@@ -75,6 +75,25 @@
       "DR": "RD (código)"
     }
   },
+  "compliance": {
+    "bannerTitle_one": "1 fecha de inspección o registro requiere atención",
+    "bannerTitle_other": "{{count}} fechas de inspección o registro requieren atención",
+    "bannerDescription": "Estas fechas están a 7 días o menos, o ya pasaron. Renuévelas y actualice el registro del vehículo.",
+    "partial": "Solo se revisaron los primeros {{limit}} vehículos.",
+    "entry": "{{name}} · {{kind}} {{timing}}",
+    "more": "+{{count}} más",
+    "kind": {
+      "inspection": "Inspección",
+      "registration": "Registro"
+    },
+    "timing": {
+      "overdue_one": "venció hace 1 día",
+      "overdue_other": "venció hace {{count}} días",
+      "today": "vence hoy",
+      "dueIn_one": "vence en 1 día",
+      "dueIn_other": "vence en {{count}} días"
+    }
+  },
   "form": {
     "design": {
       "vehicle": "Identifica el vehículo y confirma su estado operativo.",
@@ -93,6 +112,7 @@
     },
     "fields": {
       "status": "Estado",
+      "statusHint": "Desactívelo cuando el vehículo esté fuera de servicio. Su registro se conserva.",
       "name": "Nombre",
       "vin": "VIN",
       "licensePlate": "Placa",

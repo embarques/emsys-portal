@@ -22,7 +22,9 @@
     "rareActivity": "Actividad rara",
     "rareActivityFallback": "Actividad de usuario rara",
     "invoicePoolLowTitle": "La reserva de facturas sin conexión se está agotando",
-    "invoicePoolLowDetail": "Solo quedan {{remaining}} números sin asignar (su umbral de alerta es {{threshold}}). Genere más antes de que los usuarios móviles se queden sin números."
+    "invoicePoolLowDetail": "Solo quedan {{remaining}} números sin asignar (su umbral de alerta es {{threshold}}). Genere más antes de que los usuarios móviles se queden sin números.",
+    "vehicleComplianceDueTitle_one": "1 fecha de inspección o registro de vehículo requiere atención",
+    "vehicleComplianceDueTitle_other": "{{count}} fechas de inspección o registro de vehículos requieren atención"
   },
   "search": {
     "openMenu": "Abrir acciones rápidas",

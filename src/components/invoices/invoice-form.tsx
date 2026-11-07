@@ -913,7 +913,6 @@ export function InvoiceForm({
         invoiceNumber={values.invoiceNumber}
         generatedInvoiceNumber={values.generatedInvoiceNumber}
         canUseManualNumber={canUseManualNumber}
-        variant="segmented"
         onModeChange={(nextAutoGenerate) => {
           updateField("autoGenerateNumber", nextAutoGenerate);
           if (nextAutoGenerate) {

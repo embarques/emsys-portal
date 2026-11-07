@@ -126,8 +126,10 @@
     "sender.id": "Sender ID",
     "sender.name": {
       "default": "Sender",
-      "name": "Name"
+      "name": "Name",
+      "full": "Sender name"
     },
+    "sender.phones.number": "Sender phones",
     "sender.phone": {
       "default": "Sender phone",
       "short": "Phone"
@@ -149,6 +151,8 @@
     "receiver.address": "Receiver address",
     "receiver.address.city": "City",
     "receiver.address.state": "Province",
+    "receiver.address.address1": "Address",
+    "receiver.phones.number": "Receiver phones",
     "receivers.name": "Receiver",
     "receivers.phone": "Receiver phone",
     "receivers.address": "Receiver address",
@@ -156,6 +160,19 @@
     "receivers.address.state": "Receiver state",
     "receivers.address.zipcode": "Receiver zip",
     "route.id": "Route",
+    "route.name": {
+      "default": "Route",
+      "name": "Route name"
+    },
+    "route.rate": "Exchange rate (DOP/USD)",
+    "routeNumber": "Route number",
+    "sector.name": "Sector",
+    "completedBy.name": "Completed by",
+    "completedAt": "Completed at",
+    "completedAtRange": "Completed at range",
+    "legacySyncStatus": "Legacy sync status",
+    "legacySyncError": "Legacy sync error",
+    "legacySyncedAt": "Legacy synced at",
     "predefinedRoute.id": "Predefined route",
     "container.id": "Container ID",
     "container.name": "Container",
@@ -186,7 +203,10 @@
     },
     "invoice.cost": "Cost",
     "invoice.payment": "Payment",
-    "invoice.balance": "Balance",
+    "invoice.balance": {
+      "default": "Balance",
+      "invoice": "Invoice balance"
+    },
     "accounts.name": "Account",
     "transactionAmount": "Amount",
     "transactionType": "Transaction",

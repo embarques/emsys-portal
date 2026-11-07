@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PackageCheck, Printer } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, ChevronUp, PackageCheck, Printer } from "lucide-react";
 
 import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
@@ -16,6 +16,8 @@ import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
+import { getPrimarySortSpec } from "@/lib/api/list-query";
+import { formatBarcodeDeliveryRoute } from "@/lib/barcodes/display";
 import { fetchAssignedDeliveryBarcodesPage } from "@/lib/deliveries/api/assigned-deliveries-api";
 import { ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS } from "@/lib/deliveries/filter-fields";
 import { useDeliveryAccess } from "@/lib/deliveries/hooks/use-deliver-invoice";
@@ -28,8 +30,48 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
+
+function SortableHeader({
+  label,
+  field,
+  sort,
+  onSort,
+}: {
+  label: string;
+  field: string;
+  sort: string;
+  onSort: (field: string) => void;
+}) {
+  const { t } = useTranslation();
+  const active = getPrimarySortSpec(sort);
+  const direction = active?.field === field ? active.direction : undefined;
+
+  return (
+    <th
+      className="whitespace-nowrap px-4 py-3 font-medium"
+      aria-sort={direction === "desc" ? "descending" : direction === "asc" ? "ascending" : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        aria-label={t("common.table.sortBy", { column: label })}
+        className="group/sort flex items-center gap-0.5 text-left"
+      >
+        {label}
+        {direction === "desc" ? (
+          <ChevronDown className="size-3.5 shrink-0 text-foreground/80" />
+        ) : direction === "asc" ? (
+          <ChevronUp className="size-3.5 shrink-0 text-foreground/80" />
+        ) : (
+          <ChevronsUpDown className="size-3.5 shrink-0 text-foreground/30 opacity-0 transition-opacity group-hover/sort:opacity-100" />
+        )}
+      </button>
+    </th>
+  );
+}
 
 function rowKey(row: AssignedDeliveryBarcode) {
   return row.barcodeId || (row.id > 0 ? String(row.id) : `${row.invoiceId}:${row.number}`);
@@ -42,7 +84,7 @@ export function DeliveriesWorkspace() {
 
 function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliveryAccess> }) {
   const { t } = useTranslation();
-  const [sort,setSort] = useState(DEFAULT_ASSIGNED_DELIVERY_SORT);
+  const { sort, onSortChange } = useTableSort(DEFAULT_ASSIGNED_DELIVERY_SORT);
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -57,20 +99,27 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
     fetchPage: fetchAssignedDeliveryBarcodesPage,
   });
 
-  const headers = [
-    t("deliveries.columns.barcode"),
-    t("deliveries.columns.invoice"),
-    t("deliveries.columns.invoiceBalance"),
-    t("deliveries.columns.rate"),
-    t("deliveries.columns.name"),
-    t("deliveries.columns.container"),
-    t("deliveries.columns.senderName"),
-    t("deliveries.columns.senderPhones"),
-    t("deliveries.columns.receiverName"),
-    t("deliveries.columns.address"),
-    t("deliveries.columns.city"),
-    t("deliveries.columns.phones"),
+  const headers: { key: string; sortField?: string }[] = [
+    { key: "barcode", sortField: "number" },
+    { key: "invoice", sortField: "invoice.number" },
+    { key: "invoiceBalance", sortField: "invoice.balance" },
+    { key: "rate", sortField: "route.rate" },
+    { key: "name", sortField: "name" },
+    { key: "container", sortField: "container.name" },
+    { key: "route", sortField: "route.name" },
+    { key: "senderName", sortField: "sender.name" },
+    { key: "senderPhones", sortField: "sender.phones.number" },
+    { key: "receiverName", sortField: "receiver.name" },
+    { key: "address", sortField: "receiver.address.address1" },
+    { key: "city", sortField: "receiver.address.city" },
+    { key: "phones", sortField: "receiver.phones.number" },
   ];
+
+  function toggleSort(field: string) {
+    const active = getPrimarySortSpec(sort);
+    onSortChange(field, active?.field === field && active.direction === "asc" ? "desc" : "asc");
+    table.pagination.setPage(1);
+  }
 
   const selectedRow = selectedKey ? table.items.find((row) => rowKey(row) === selectedKey) ?? null : null;
   const selectedActionDisabled = !selectedRow?.invoiceId || !selectedRow.delivery?.id;
@@ -91,11 +140,6 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <label className="flex items-center gap-2 text-sm">{t("deliveries.sort.label")}
-            <select className="h-10 rounded-md border bg-background px-3" value={sort} onChange={event => { setSort(event.target.value); table.pagination.setPage(1); }}>
-              {[ ["receiver.address.city", "city"], ["number", "barcode"], ["invoice.number", "invoice"], ["invoice.balance", "invoiceBalance"], ["name", "name"], ["container.name", "container"], ["sender.name", "senderName"], ["receiver.name", "receiverName"] ].flatMap(([field,key]) => ["asc","desc"].map(direction => <option key={`${field}:${direction}`} value={`${field}:${direction}`}>{t(`deliveries.columns.${key}`)} · {t(`deliveries.sort.${direction}`)}</option>))}
-            </select>
-          </label>
           <CatalogTableToolbar
             state={table}
             presetScope="deliveries"
@@ -175,7 +219,14 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left">
                 <tr>
-                  {headers.map((header) => <th key={header} className="whitespace-nowrap px-4 py-3 font-medium">{header}</th>)}
+                  {headers.map(({ key, sortField }) => {
+                    const label = t(`deliveries.columns.${key}`);
+                    return sortField ? (
+                      <SortableHeader key={key} label={label} field={sortField} sort={sort} onSort={toggleSort} />
+                    ) : (
+                      <th key={key} className="whitespace-nowrap px-4 py-3 font-medium">{label}</th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -203,6 +254,7 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDeliveryRate(row.routeRate)}</td>
                       <td className="px-4 py-3">{row.description}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.container?.name}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{formatBarcodeDeliveryRoute(row.route, t)}</td>
                       <td className="px-4 py-3">{row.sender?.name}</td>
                       <td className="min-w-[260px] px-4 py-3">
                         <TablePhoneCell phones={row.sender?.phones ?? []} callable />

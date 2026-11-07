@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { EmployeeDepartmentsButton } from "@/components/employee-departments/employee-departments-button";
+import { EmployeeTitlesButton } from "@/components/employee-titles/employee-titles-button";
 import { EmployeeMobileRow } from "@/components/employees/employee-mobile-row";
 import { EmployeeMobileSelectionToolbar } from "@/components/employees/employee-mobile-selection-toolbar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -107,6 +109,11 @@ export function EmployeeMobileList({
         >
           <Plus className="size-6" />
         </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <EmployeeTitlesButton />
+        <EmployeeDepartmentsButton />
       </div>
 
       <div className="flex items-center gap-3">

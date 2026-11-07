@@ -87,6 +87,45 @@ Unresolved defects, contract decisions and acceptance work, updated November 7,
 - Add reserved-invoice column search with nested AND/OR filters and cursor
   pagination. The frontend assumes this pending endpoint; see
   [reserved invoice search contract](reserved-invoice-search-api-contract.md).
+- **Route Deliveries: assigned-route scope.** Route Deliveries must list only
+  barcodes on a delivery route, but `GET /deliveries/assigned-barcodes` returns
+  every pending CONDUCE piece for `canViewDelivery`. The portal now always calls
+  `/deliveries/assigned-barcodes/search` with `route.name gt ""` ANDed in, which
+  relies on undocumented semantics (`gt ""` matching only non-empty strings and
+  excluding missing/null routes). Verify that behavior, or provide a supported
+  filter (for example `route.id` with an exists/`neq null` operator) or a
+  default/flag that scopes the endpoint to routed barcodes. Route Appointments
+  uses the same approach: `POST /pickups/search` always includes
+  `route.id gt ""` (live pickups expose `route: { id }` without a name), so
+  `canViewPickup` users only see pickups on a scheduled route. Verify the same
+  semantics there, including if `route.id` is stored as an ObjectID.
+- **Route Deliveries: search, sort and filter on every column.** The portal
+  assumes every column is sortable and offers an advanced filter per column.
+  `POST /deliveries/assigned-barcodes/search` must accept these filter fields,
+  which are not in its accepted list: `route.rate` (number),
+  `receiver.address.address1`, and `receiver.phones.number` (digits). Using them
+  today returns a visible query error. Once accepted, the portal will add
+  receiver address and phones to the search bar; they are kept out now because
+  one rejected leaf fails the whole search. Allow-list these sort fields on GET
+  and search: `number`, `invoice.number`, `invoice.balance`, `route.rate`,
+  `name`, `container.name`, `route.name`, `sender.name`,
+  `sender.phones.number`, `receiver.name`, `receiver.address.address1`,
+  `receiver.address.city`, `receiver.phones.number`.
+- **Route Appointments: search, sort and filter on every column.** The search
+  bar now also covers `route.name`, `employee.name`, `sector.name`,
+  `branch.code`, `branch.name`, `createdBy.name`, `updatedBy.name`, `purpose`
+  and `legacySyncStatus`. `POST /pickups/search` must accept these filter
+  fields, which are not in its accepted list: `completedBy.name` (only
+  `completedBy.id` today), `legacySyncError`, `legacySyncedAt` (date), and
+  `routeNumber` (number). `route.name` is accepted, but live pickups expose
+  only `route: { id }`, so name search/filter/sort needs the name stored or
+  resolved server-side. Allow-list these sort fields: `id`, `date`,
+  `completed`, `createdAt`, `updatedAt`, `sender.phone1`, `sender.name`,
+  `sender.address.address1`, `sender.address.city`, `sender.address.state`,
+  `sender.address.zipcode`, `sector.name`, `createdBy.name`, `updatedBy.name`,
+  `comments.description`, `branch.code`, `employee.name`, `route.name`,
+  `completedAt`, `completedBy.name`, `purpose`, `routeNumber`,
+  `legacySyncStatus`, `legacySyncError`, `legacySyncedAt`.
 - **Low offline-invoice pool alerts.** The portal now warns users with
   `canGenerateInvoicePool` (topbar notification and Reserved invoices banner)
   when `GET /invoices/reserved?userId=0` reports `remaining <= lowThreshold`,
@@ -95,6 +134,19 @@ Unresolved defects, contract decisions and acceptance work, updated November 7,
   alerts when an individual mobile user's assigned pool falls below that user's
   threshold, need backend support (per-user remaining plus threshold, without
   N+1 reads).
+- **Vehicle inspection/registration due alerts.** Send a severe warning when a
+  vehicle's `inspectionDate` or `registrationDate` is 7 days or fewer from
+  today (`date - today <= 7`, including dates already past), evaluated on the
+  business date. The portal now warns users with Vehicles access (topbar
+  notification, Vehicles banner and highlighted date cells) for active
+  vehicles, using the operator's local calendar day. It only sees this while
+  the portal is open, and only checks the first 200 vehicles because
+  `POST /vehicles/search` does not accept `inspectionDate`/`registrationDate`
+  filters. Neither field appears in the `vehicle.Vehicle` OpenAPI schema;
+  confirm both are persisted and returned as `YYYY-MM-DD` (or RFC3339) dates.
+  Needs backend support for push or persisted severe notifications to users
+  who manage vehicles, scoped to company/branch, plus `lte` filtering on both
+  dates so the portal can list due/overdue vehicles without loading the fleet.
 - Update `GET /invoices/reserved/mine` OpenAPI to document self-service grants,
   own unclaimed reservations and the optional `deviceId` filter.
 - Update `scripts/audit-api-table-columns.mjs` to read OpenAPI 3

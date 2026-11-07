@@ -9,11 +9,11 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SwitchField } from "@/components/ui/switch-field";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
-import { cn } from "@/lib/utils";
 import {
   VEHICLE_FUEL_TYPES,
   createEmptyVehicleForm,
@@ -52,14 +52,6 @@ export function VehicleForm({
         ...option,
         label: t(`vehicles.enums.fuelType.${option.value}`),
       })),
-    [t],
-  );
-
-  const statusOptions = useMemo(
-    () => [
-      { value: true, label: t("vehicles.enums.status.active") },
-      { value: false, label: t("vehicles.enums.status.inactive") },
-    ],
     [t],
   );
 
@@ -133,38 +125,13 @@ export function VehicleForm({
         <div className="grid gap-5 @4xl:grid-cols-2">
           <FormSection variant="card" icon={Car} title={`01 · ${t("vehicles.form.sections.vehicle")}`} description={t("vehicles.form.design.vehicle")}>
             <div className="space-y-2.5">
-              <div className="space-y-1">
-                <Label htmlFor="status">{t("vehicles.form.fields.status")}</Label>
-                <div
-                  id="status"
-                  className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
-                  role="radiogroup"
-                  aria-label={t("vehicles.form.fields.status")}
-                >
-                  {statusOptions.map((option) => {
-                    const selected = values.active === option.value;
-                    return (
-                      <button
-                        key={option.label}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        onClick={() => updateField("active", option.value)}
-                        className={cn(
-                          "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                          selected && option.value
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : selected
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <SwitchField
+                id="status"
+                label={<>{t("vehicles.form.fields.status")}: {t(values.active ? "vehicles.enums.status.active" : "vehicles.enums.status.inactive")}</>}
+                description={t("vehicles.form.fields.statusHint")}
+                checked={values.active}
+                onCheckedChange={(checked) => updateField("active", checked)}
+              />
 
               <div className="space-y-1">
                 <Label htmlFor="name">

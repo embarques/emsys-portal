@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { SwitchField } from "@/components/ui/switch-field";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import type { useInvoicePolicyWorkspace } from "@/lib/invoice-policies/hooks/use-invoice-policy-workspace";
 import { useTranslation } from "@/lib/i18n";
@@ -103,20 +103,14 @@ export function InvoicePolicyDialog({
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{t("invoicePolicies.fields.active")}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("invoicePolicies.form.activeHint")}
-                  </p>
-                </div>
-                <Switch
-                  checked={active}
-                  disabled={state.busy}
-                  onCheckedChange={(checked) => state.form.setValue("active", checked, { shouldDirty: true })}
-                  aria-label={t("invoicePolicies.fields.active")}
-                />
-              </div>
+              <SwitchField
+                id="invoice-policy-active"
+                label={t("invoicePolicies.fields.active")}
+                description={t("invoicePolicies.form.activeHint")}
+                checked={active}
+                disabled={state.busy}
+                onCheckedChange={(checked) => state.form.setValue("active", checked, { shouldDirty: true })}
+              />
             </FormSection>
           </FormBody>
           <FormFooter

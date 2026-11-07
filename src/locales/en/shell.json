@@ -22,7 +22,9 @@
     "rareActivity": "Rare activity",
     "rareActivityFallback": "Rare user activity",
     "invoicePoolLowTitle": "Offline invoice pool is running low",
-    "invoicePoolLowDetail": "Only {{remaining}} unassigned numbers left (your warning threshold is {{threshold}}). Generate more before mobile users run out."
+    "invoicePoolLowDetail": "Only {{remaining}} unassigned numbers left (your warning threshold is {{threshold}}). Generate more before mobile users run out.",
+    "vehicleComplianceDueTitle_one": "1 vehicle inspection or registration date needs attention",
+    "vehicleComplianceDueTitle_other": "{{count}} vehicle inspection or registration dates need attention"
   },
   "search": {
     "openMenu": "Open quick actions",

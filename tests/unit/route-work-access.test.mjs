@@ -127,7 +127,7 @@ test("appointment lists separate company, actor, permission scope and workspace 
   assert.notDeepEqual(ordinary.queryKey, broad.queryKey);
   assert.equal(broad.enabled, true);
   await broad.queryFn();
-  assert.deepEqual(calls, [params], "The API owns assignment scope; no inferred employee or client filter changes the request");
+  assert.deepEqual(calls, [{ ...params, assignedRouteOnly: true }], "Only the routed-pickup scope is added; the API owns employee assignment scope");
 
   auth = authFor([["canViewAssignedAppointments", "pickup"]]);
   const assigned = useOrders(params, { routeMode: true });

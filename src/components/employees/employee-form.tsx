@@ -26,6 +26,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { employeeDateToInputValue, isEmployeeEndDateBeforeToday } from "@/lib/employees/utils/employee-date";
+import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -104,13 +105,6 @@ export function EmployeeForm({
     [titlesQuery.data, values.title],
   );
 
-  const activeOptions = useMemo(
-    () => [
-      { value: "true", label: t("employees.enums.status.active") },
-      { value: "false", label: t("employees.enums.status.inactive") },
-    ],
-    [t],
-  );
 
   const branchOptions = useMemo(() => {
     const branches = branchesQuery.data ?? [];
@@ -339,19 +333,12 @@ export function EmployeeForm({
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="active">
-                    {t("employees.form.fields.active")} <span className="text-destructive">*</span>
-                  </Label>
-                  <SearchableSelect
-                    id="active"
-                    value={values.active ? "true" : "false"}
-                    onValueChange={(next) => updateField("active", next === "true")}
-                    required
-                    options={activeOptions}
-                    mobileSheet
-                  />
-                </div>
+                <SwitchField
+                  id="active"
+                  label={<>{t("employees.form.fields.active")}: {t(values.active ? "employees.enums.status.active" : "employees.enums.status.inactive")}</>}
+                  checked={values.active}
+                  onCheckedChange={(checked) => updateField("active", checked)}
+                />
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">

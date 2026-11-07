@@ -23,6 +23,7 @@ import {
   type NotificationItem,
 } from "@/lib/notifications/hooks/use-topbar-notifications";
 import { cn } from "@/lib/utils";
+import { describeVehicleComplianceTiming } from "@/lib/vehicles/compliance-due";
 
 function formatNotificationWhen(value: string, locale: string) {
   const date = new Date(value);
@@ -37,14 +38,37 @@ function formatNotificationWhen(value: string, locale: string) {
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
 
+const VEHICLE_COMPLIANCE_DETAIL_LIMIT = 3;
+
+function isSevereNotification(item: NotificationItem) {
+  return item.kind === "invoice-pool-low" || item.kind === "vehicle-compliance-due";
+}
+
 function notificationTitle(item: NotificationItem, t: Translate) {
   if (item.kind === "invoice-pool-low") return t("shell.notifications.invoicePoolLowTitle");
+  if (item.kind === "vehicle-compliance-due") {
+    const count = item.due.length;
+    return t(`shell.notifications.vehicleComplianceDueTitle_${count === 1 ? "one" : "other"}`, { count });
+  }
   return item.activity.description.trim() || t("shell.notifications.rareActivityFallback");
 }
 
 function notificationDetail(item: NotificationItem, t: Translate) {
   if (item.kind === "invoice-pool-low") {
     return t("shell.notifications.invoicePoolLowDetail", { remaining: item.remaining, threshold: item.threshold });
+  }
+  if (item.kind === "vehicle-compliance-due") {
+    const lines = item.due.slice(0, VEHICLE_COMPLIANCE_DETAIL_LIMIT).map((entry) => {
+      const timing = describeVehicleComplianceTiming(entry.daysRemaining);
+      return t("vehicles.compliance.entry", {
+        name: entry.vehicle.name || t("vehicles.dialogs.unnamed"),
+        kind: t(`vehicles.compliance.kind.${entry.kind}`),
+        timing: t(timing.key, timing.params),
+      });
+    });
+    const remaining = item.due.length - lines.length;
+    if (remaining > 0) lines.push(t("vehicles.compliance.more", { count: remaining }));
+    return lines.join(" · ");
   }
   const user = item.activity.user.name.trim();
   const origin = item.activity.origin.trim();
@@ -123,7 +147,7 @@ export function NotificationsMenu() {
                     "flex items-start gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
                     "hover:bg-accent hover:text-accent-foreground",
                     unseen && "bg-primary/5",
-                    item.kind === "invoice-pool-low" && "border border-destructive/30 bg-destructive/5",
+                    isSevereNotification(item) && "border border-destructive/30 bg-destructive/5",
                   )}
                 >
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
@@ -133,14 +157,14 @@ export function NotificationsMenu() {
                     <p
                       className={cn(
                         "line-clamp-2 font-medium leading-snug [overflow-wrap:anywhere]",
-                        item.kind === "invoice-pool-low" && "text-destructive",
+                        isSevereNotification(item) && "text-destructive",
                       )}
                       title={title}
                     >
                       {title}
                     </p>
                     <p
-                      className={cn("mt-1 text-xs text-muted-foreground", item.kind === "invoice-pool-low" ? "line-clamp-3" : "truncate")}
+                      className={cn("mt-1 text-xs text-muted-foreground", isSevereNotification(item) ? "line-clamp-3" : "truncate")}
                       title={detail}
                     >
                       {detail}
