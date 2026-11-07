@@ -125,7 +125,7 @@ test("filter definitions keep English copy identical and only change display fie
     assert.deepEqual(definition.options?.map((option) => option.value), original.options?.map((option) => option.value));
   });
 
-  const sameInSpanish = new Set(["ID", "#", "SKU", "UID", "ITN", "VIN", "vin"]);
+  const sameInSpanish = new Set(["ID", "#", "SKU", "UID", "ITN", "VIN", "vin", "Sector"]);
   const untranslated = localized
     .filter((definition, index) => definition.label === fields[index].label && !sameInSpanish.has(definition.label))
     .map((definition) => `${definition.field}=${definition.label}`);

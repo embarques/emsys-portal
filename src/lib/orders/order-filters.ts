@@ -13,6 +13,7 @@ const NUMERIC_FILTER_FIELDS: ReadonlySet<string> = new Set([
   "branch.id",
   "employee.id",
   "id",
+  "routeNumber",
   "sector.id",
 ]);
 
@@ -100,6 +101,10 @@ function expandOrderLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | n
       return expandDateRangeFilter("date", filter.value);
     case "createdAtRange":
       return expandDateRangeFilter("createdAt", filter.value);
+    case "updatedAtRange":
+      return expandDateRangeFilter("updatedAt", filter.value);
+    case "completedAtRange":
+      return expandDateRangeFilter("completedAt", filter.value);
     case "completed":
       return expandCompletedFilter(filter);
     default:

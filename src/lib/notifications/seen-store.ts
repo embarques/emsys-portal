@@ -39,3 +39,20 @@ export function notificationActivityId(activityId: string) {
 export function notificationInvoicePoolLowId(companyId: string | number | null | undefined, remaining: number) {
   return `invoice-pool-low:${companyId ?? ""}:${remaining}`;
 }
+
+function hashSignature(value: string): string {
+  let hash = 5381;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) + hash + value.charCodeAt(index)) | 0;
+  }
+  return (hash >>> 0).toString(36);
+}
+
+/** Resurfaces every business day and whenever the set of due vehicle dates changes. */
+export function notificationVehicleComplianceDueId(
+  companyId: string | number | null | undefined,
+  today: string,
+  entries: string[],
+) {
+  return `vehicle-compliance-due:${companyId ?? ""}:${today}:${hashSignature([...entries].sort().join("|"))}`;
+}

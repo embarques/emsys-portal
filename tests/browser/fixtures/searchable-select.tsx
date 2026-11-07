@@ -1,6 +1,8 @@
 import { WorkflowStepper } from "@/components/forms/workflow-stepper";
 import { InvoiceWizardStepper, resolveInvoiceWizardLayout, type InvoiceWizardStep } from "@/components/invoices/invoice-wizard-stepper";
 import { useState } from "react";
+import { InvoiceNumberModeFields } from "@/components/invoices/invoice-number-switch";
+
 import { createRoot } from "react-dom/client";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -11,6 +13,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
 import type { Customer } from "@/lib/customers/types";
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
+
+function NumberModeFixture() {
+  const [autoGenerate, setAutoGenerate] = useState(true);
+  const [number, setNumber] = useState("");
+  const navigate = useFormEnterNavigation();
+  return <form onKeyDown={navigate} onSubmit={(event) => event.preventDefault()}>
+    <InvoiceNumberModeFields id="test-number" autoGenerate={autoGenerate} invoiceNumber={number}
+      canUseManualNumber={document.documentElement.dataset.manualAllowed !== "false"}
+      generatedInvoiceNumber={document.documentElement.dataset.generatedNumber ?? ""}
+      disabled={document.documentElement.dataset.modeDisabled === "true"}
+      onModeChange={setAutoGenerate} onInvoiceNumberChange={setNumber} />
+    <input id="after-number" />
+    <output id="number-value">{number}</output>
+  </form>;
+}
 
 function AddressFixture() {
   const [value, setValue] = useState("");
@@ -103,6 +120,7 @@ function WorkflowStepperFixture() {
 }
 
 createRoot(document.getElementById("root")!).render(
+  document.documentElement.dataset.fixture === "number-mode" ? <NumberModeFixture /> :
   document.documentElement.dataset.fixture === "pickup-reference" ? <PickupReferenceFixture /> :
   document.documentElement.dataset.fixture === "stepper" ? <WorkflowStepperFixture /> :
   document.documentElement.dataset.fixture === "wizard" ? <DailyIncomeWizardFixture /> :

@@ -3,6 +3,7 @@ import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 const PHONE_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
+const NUMBER_OPERATORS = ["eq", "neq", "gt", "gte", "lt", "lte"] as const;
 
 const SENDER_ADDRESS_QUERY_FIELDS = [
   "sender.address.address1",
@@ -92,6 +93,41 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: ["eq", "neq"],
     valueType: "select",
     optionsSource: "pickupRoutes",
+  },
+  {
+    field: "route.name",
+    label: "Route name",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter route name…",
+  },
+  {
+    field: "routeNumber",
+    label: "Route number",
+    operators: [...NUMBER_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter route number…",
+  },
+  {
+    field: "id",
+    label: "ID",
+    operators: [...NUMBER_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter ID…",
+  },
+  {
+    field: "employee.name",
+    label: "Employee",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter employee…",
+  },
+  {
+    field: "sector.name",
+    label: "Sector",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter sector…",
   },
   {
     // Resolved by the API into sender cities OR ZIP codes before pagination.
@@ -210,5 +246,68 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
+  },
+  {
+    field: "updatedBy.name",
+    label: "Updated by",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter user name…",
+  },
+  {
+    field: "updatedAt",
+    label: "Updated at",
+    operators: [...DATE_OPERATORS],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
+  },
+  {
+    field: "updatedAtRange",
+    label: "Updated at range",
+    operators: ["eq"],
+    valueType: "range",
+    placeholder: "2026-01-01 to 2026-06-30",
+  },
+  {
+    field: "completedBy.name",
+    label: "Completed by",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter user name…",
+  },
+  {
+    field: "completedAt",
+    label: "Completed at",
+    operators: [...DATE_OPERATORS],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
+  },
+  {
+    field: "completedAtRange",
+    label: "Completed at range",
+    operators: ["eq"],
+    valueType: "range",
+    placeholder: "2026-01-01 to 2026-06-30",
+  },
+  {
+    field: "legacySyncStatus",
+    label: "Legacy sync status",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter legacy sync status…",
+  },
+  {
+    field: "legacySyncError",
+    label: "Legacy sync error",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter legacy sync error…",
+  },
+  {
+    field: "legacySyncedAt",
+    label: "Legacy synced at",
+    operators: [...DATE_OPERATORS],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
   },
 ];

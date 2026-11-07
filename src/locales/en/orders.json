@@ -494,6 +494,30 @@
       "route": {
         "id": {
           "label": "Route"
+        },
+        "name": {
+          "label": "Route name",
+          "placeholder": "Enter route name…"
+        }
+      },
+      "routeNumber": {
+        "label": "Route number",
+        "placeholder": "Enter route number…"
+      },
+      "id": {
+        "label": "ID",
+        "placeholder": "Enter ID…"
+      },
+      "employee": {
+        "name": {
+          "label": "Employee",
+          "placeholder": "Enter employee…"
+        }
+      },
+      "sector": {
+        "name": {
+          "label": "Sector",
+          "placeholder": "Enter sector…"
         }
       },
       "predefinedRoute": {
@@ -570,6 +594,46 @@
       "createdAtRange": {
         "label": "Created at range",
         "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter user name…"
+        }
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Updated at range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "completedBy": {
+        "name": {
+          "label": "Completed by",
+          "placeholder": "Enter user name…"
+        }
+      },
+      "completedAt": {
+        "label": "Completed at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "completedAtRange": {
+        "label": "Completed at range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "legacySyncStatus": {
+        "label": "Legacy sync status",
+        "placeholder": "Enter legacy sync status…"
+      },
+      "legacySyncError": {
+        "label": "Legacy sync error",
+        "placeholder": "Enter legacy sync error…"
+      },
+      "legacySyncedAt": {
+        "label": "Legacy synced at",
+        "placeholder": "YYYY-MM-DD"
       }
     }
   }

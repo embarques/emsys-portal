@@ -20,6 +20,7 @@
     "invoiceBalance": "Invoice balance",
     "name": "Name",
     "container": "Container",
+    "route": "Route",
     "senderName": "Sender name",
     "senderPhones": "Sender phones",
     "receiverName": "Receiver name",
@@ -49,6 +50,36 @@
         "number": {
           "label": "Invoice number",
           "placeholder": "Enter invoice…"
+        },
+        "balance": {
+          "label": "Invoice balance",
+          "placeholder": "Enter amount…"
+        }
+      },
+      "route": {
+        "name": {
+          "label": "Route",
+          "placeholder": "Enter route…"
+        },
+        "rate": {
+          "label": "Exchange rate (DOP/USD)",
+          "placeholder": "Enter rate…"
+        }
+      },
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter name…"
+      },
+      "sender": {
+        "name": {
+          "label": "Sender name",
+          "placeholder": "Enter sender name…"
+        },
+        "phones": {
+          "number": {
+            "label": "Sender phones",
+            "placeholder": "Enter phone…"
+          }
         }
       },
       "receiver": {
@@ -56,7 +87,17 @@
           "label": "Receiver name",
           "placeholder": "Enter receiver…"
         },
+        "phones": {
+          "number": {
+            "label": "Receiver phones",
+            "placeholder": "Enter phone…"
+          }
+        },
         "address": {
+          "address1": {
+            "label": "Address",
+            "placeholder": "Enter address…"
+          },
           "state": {
             "label": "Province",
             "placeholder": "Enter province…"
@@ -205,10 +246,5 @@
       }
     }
   },
-  "noCity": "No city",
-  "sort": {
-    "label": "Sort by",
-    "asc": "Ascending",
-    "desc": "Descending"
-  }
+  "noCity": "No city"
 }

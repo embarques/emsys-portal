@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { PackageCheck, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { formatBarcodeDeliveryRoute } from "@/lib/barcodes/display";
 import { formatDeliveryAddress, formatDeliveryPhones, formatDeliveryRate, type AssignedDeliveryBarcode } from "@/lib/deliveries/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -31,6 +32,7 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrin
     [t("deliveries.columns.rate"), formatDeliveryRate(row.routeRate)],
     [t("deliveries.columns.name"), row.description],
     [t("deliveries.columns.container"), row.container?.name],
+    [t("deliveries.columns.route"), row.route ? formatBarcodeDeliveryRoute(row.route, t) : undefined],
     [t("deliveries.columns.senderName"), row.sender?.name],
     [t("deliveries.columns.senderPhones"), senderPhones.length
       ? senderPhones.map((phone) => <a key={phone.dial} href={`tel:${phone.dial}`} className="block underline-offset-2 hover:underline">{phone.label}</a>)

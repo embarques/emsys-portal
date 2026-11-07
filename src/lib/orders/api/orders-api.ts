@@ -31,6 +31,7 @@ import { parseLastSyncedAt } from "@/lib/legacy-sync/last-synced";
 import {
   createPickupBarSearchFilterGroup,
   createPickupTextSearchFilter,
+  PICKUP_ROUTE_BAR_EXTRA_FIELDS,
   resolvePickupSearchField,
 } from "@/lib/orders/pickup-search";
 import { type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -424,7 +425,7 @@ function buildOrderSearchFilterGroups(
         }
       }
     } else {
-      const orGroup = createPickupBarSearchFilterGroup(trimmed);
+      const orGroup = createPickupBarSearchFilterGroup(trimmed, params.assignedRouteOnly ? PICKUP_ROUTE_BAR_EXTRA_FIELDS : []);
       if (orGroup) {
         groups.push(orGroup);
       }
@@ -452,14 +453,24 @@ function buildOrderSearchFilterGroups(
       groups.push({ operator: "and", filters: [{ field: "predefinedRoute.id", operator: row.operator === "neq" ? "neq" : "eq", value: id }] });
     }
   }
+  if (params.assignedRouteOnly) {
+    groups.push({ operator: "and", filters: [ASSIGNED_ROUTE_FILTER] });
+  }
   return groups;
 }
+
+/**
+ * `gt ""` (not `neq ""`) matches non-empty strings only, so pickups whose route
+ * is missing or null are excluded. Live pickups expose `route: { id }` without a name.
+ */
+const ASSIGNED_ROUTE_FILTER = { field: "route.id", operator: "gt", value: "" };
 
 function hasOrderListFilters(params: OrderListParams): boolean {
   return hasResourceListFilters({
     search: params.search,
     filterRows: params.filterRows,
     tableFilterFields: ORDER_TABLE_FILTER_FIELDS,
+    hasChipFilters: Boolean(params.assignedRouteOnly),
   });
 }
 

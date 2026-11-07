@@ -7,6 +7,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { EmployeeDepartmentsButton } from "@/components/employee-departments/employee-departments-button";
+import { EmployeeTitlesButton } from "@/components/employee-titles/employee-titles-button";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { EmployeeMobileList } from "@/components/employees/employee-mobile-list";
 import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
@@ -480,10 +482,14 @@ export function EmployeesWorkspace() {
           title={t("employees.title")}
           description={t("employees.pages.description")}
           actions={
-            <Button onClick={openAddForm} disabled={isSaving}>
-              <Plus className="h-4 w-4" />
-              {t("employees.actions.add")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <EmployeeTitlesButton />
+              <EmployeeDepartmentsButton />
+              <Button onClick={openAddForm} disabled={isSaving}>
+                <Plus className="h-4 w-4" />
+                {t("employees.actions.add")}
+              </Button>
+            </div>
           }
         />
       </div>

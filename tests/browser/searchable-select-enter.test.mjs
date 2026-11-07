@@ -64,7 +64,7 @@ async function fixture(width = 1280, kind = "select", settings = {}) {
   if (kind === "stepper") { await page.getByRole("navigation", { name: "Appointment steps" }).waitFor(); return page; }
   if (kind === "wizard") { await page.getByTestId("transaction-wizard").waitFor(); return page; }
   await page.locator("form").waitFor();
-  const first = { comments: "#comment-purpose-0", statement: "#statement-branch", transaction: "#transaction", customer: "#sender", address: "#address" }[kind] ?? "#branch";
+  const first = { "number-mode": "#test-number-mode", comments: "#comment-purpose-0", statement: "#statement-branch", transaction: "#transaction", customer: "#sender", address: "#address" }[kind] ?? "#branch";
   if (kind === "comments" && settings.quickEntry === "true") await page.getByRole("group", { name: "orders.comments.columns.purpose" }).first().waitFor();
   else await page.locator(first).waitFor();
   return page;
@@ -319,7 +319,7 @@ test("quick invoice entry advances from cost to amount before saving", async () 
   const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT", quickEntry: "true" });
   try {
     assert.equal(await page.locator("#journal-payment").isVisible(), true);
-    await page.locator("#journal-invoice-number-mode-custom").click();
+    await page.locator("#journal-invoice-number-mode").click();
     await page.locator("#journal-invoice-number").fill("80424");
     await page.locator("#journal-invoice-cost").fill("200");
     await page.locator("#journal-invoice-cost").press("Enter");
@@ -407,7 +407,7 @@ for (const width of [1280, 390]) {
       assert.equal(await page.locator("#journal-employee").isVisible(), false);
       assert.equal(await page.locator("#journal-skip-sender").isVisible(), false);
       assert.equal(await page.locator("#journal-invoice-number-mode").isVisible(), true);
-      assert.equal(await page.locator("#journal-invoice-number-mode-system").getAttribute("aria-checked"), "true");
+      assert.equal(await page.locator("#journal-invoice-number-mode").getAttribute("aria-checked"), "true");
       assert.equal(await page.locator("#journal-invoice-discount").isEditable(), true);
       const costBox = await page.locator("#journal-invoice-cost").boundingBox();
       const discountBox = await page.locator("#journal-invoice-discount").boundingBox();
@@ -594,13 +594,13 @@ for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "EXPENSE", "SALES",
   }
 }
 
-test("Enter on the custom invoice number segment focuses the invoice number input", async () => {
+test("Space on the invoice number switch focuses the custom invoice number input", async () => {
   const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT", ready: "true" });
   try {
-    await page.locator("#journal-invoice-number-mode-custom").focus();
-    await page.keyboard.press("Enter");
+    await page.locator("#journal-invoice-number-mode").focus();
+    await page.keyboard.press("Space");
     await page.waitForFunction(() => document.activeElement?.id === "journal-invoice-number");
-    assert.equal(await page.locator("#journal-invoice-number-mode-custom").getAttribute("aria-checked"), "true");
+    assert.equal(await page.locator("#journal-invoice-number-mode").getAttribute("aria-checked"), "false");
   } finally { await page.close(); }
 });
 
@@ -748,4 +748,41 @@ test("payment-method refetch preserves the transaction step and typed draft", as
     assert.equal(await page.locator("#journal-employee").isVisible(), false);
     assert.equal(await page.locator("#submitted").textContent(), "0");
   } finally { await page.close(); }
+});
+
+
+test("number mode switch focuses manual input, preserves typed input, and clears it on system mode", async () => {
+  const page = await fixture(1280, "number-mode");
+  try {
+    const mode = page.locator("#test-number-mode");
+    assert.equal(await mode.getAttribute("aria-checked"), "true");
+    await mode.press("Space");
+    await page.waitForFunction(() => document.activeElement.id === "test-number");
+    await page.locator("#test-number").fill("MANUAL-123");
+    assert.equal(await page.locator("#number-value").textContent(), "MANUAL-123");
+    await mode.click();
+    assert.equal(await mode.getAttribute("aria-checked"), "true");
+    assert.equal(await page.locator("#test-number").count(), 0);
+    assert.equal(await page.locator("#number-value").textContent(), "");
+    await mode.focus();
+    await mode.press("Enter");
+    assert.equal(await page.evaluate(() => document.activeElement.id), "after-number");
+    assert.equal(await mode.getAttribute("aria-checked"), "true");
+  } finally { await page.close(); }
+});
+
+test("locked number mode stays focusable and cannot be changed by mouse or keyboard", async () => {
+  for (const settings of [{ manualAllowed: "false" }, { generatedNumber: "INV-123" }]) {
+    const page = await fixture(1280, "number-mode", settings);
+    try {
+      const mode = page.locator("#test-number-mode");
+      assert.equal(await mode.getAttribute("aria-readonly"), "true");
+      await mode.click();
+      await mode.press("Space");
+      assert.equal(await mode.getAttribute("aria-checked"), "true");
+      assert.equal(await page.locator("#test-number").count(), 0);
+      await mode.press("Enter");
+      assert.equal(await page.evaluate(() => document.activeElement.id), "after-number");
+    } finally { await page.close(); }
+  }
 });

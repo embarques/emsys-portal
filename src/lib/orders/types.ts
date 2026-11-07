@@ -251,6 +251,8 @@ export type OrderListParams = {
   sort?: ApiListSortInput;
   search?: OrderSearchFilter;
   filterRows?: TableFilterRowState[];
+  /** Route Appointments: only pickups on a scheduled route; the search bar covers every text column. */
+  assignedRouteOnly?: boolean;
 };
 
 /** Optional sort for pickups list/search when explicitly requested. */

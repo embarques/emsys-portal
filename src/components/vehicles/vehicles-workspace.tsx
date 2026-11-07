@@ -7,6 +7,7 @@ import {
   Plus,
 } from "lucide-react";
 
+import { VehicleComplianceBanner, VehicleComplianceDateCell } from "@/components/vehicles/vehicle-compliance";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { VehicleViewSheet } from "@/components/vehicles/vehicle-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -51,11 +52,11 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   computeVehicleKpis,
-  formatVehicleDate,
   getBranchBadgeClass,
   getFuelTypeBadgeClass,
   getVehicleActiveBadgeClass,
 } from "@/lib/vehicles/display";
+import { useVehicleComplianceDue } from "@/lib/vehicles/hooks/use-vehicle-compliance-due";
 import { useVehicleFilterFields } from "@/lib/vehicles/hooks/use-vehicle-filter-fields";
 import { useVehicleLabels } from "@/lib/vehicles/hooks/use-vehicle-labels";
 import {
@@ -138,6 +139,8 @@ export function VehiclesWorkspace() {
 
   const branchKpis = useVehicleKpis();
   const branchCounts = computeVehicleKpis(branchKpis.items);
+  const compliance = useVehicleComplianceDue();
+  const complianceToday = compliance.today;
 
   const statCards = [
     {
@@ -325,13 +328,17 @@ export function VehiclesWorkspace() {
         id: "inspectionDate",
         label: t("vehicles.columns.inspectionDate"),
         cellClassName: "text-muted-foreground",
-        renderCell: (vehicle) => formatVehicleDate(vehicle.inspectionDate),
+        renderCell: (vehicle) => (
+          <VehicleComplianceDateCell vehicle={vehicle} kind="inspection" today={complianceToday} />
+        ),
       },
       {
         id: "registrationDate",
         label: t("vehicles.columns.registrationDate"),
         cellClassName: "text-muted-foreground",
-        renderCell: (vehicle) => formatVehicleDate(vehicle.registrationDate),
+        renderCell: (vehicle) => (
+          <VehicleComplianceDateCell vehicle={vehicle} kind="registration" today={complianceToday} />
+        ),
       },
       {
         id: "createdAt",
@@ -354,7 +361,7 @@ export function VehiclesWorkspace() {
         renderCell: (vehicle) => (vehicle.updatedAt ? formatAuditDateTime(vehicle.updatedAt) : dash),
       },
     ],
-    [branches, dash, t, vehicleLabels],
+    [branches, complianceToday, dash, t, vehicleLabels],
   );
 
   const columnVisibility = useApiTableColumns("vehicles-v2", tableColumns, VEHICLE_API_TABLE_FIELDS);
@@ -398,6 +405,13 @@ export function VehiclesWorkspace() {
       />
 
       <StatCards items={statCards} />
+
+      <VehicleComplianceBanner
+        items={compliance.items}
+        isPartial={compliance.isPartial}
+        onOpenVehicle={setViewVehicle}
+        className="mt-6"
+      />
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">

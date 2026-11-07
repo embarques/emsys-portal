@@ -6,9 +6,15 @@ import { createApiListTextSearch } from "@/lib/api/search-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useInvoicePoolLowStock } from "@/lib/invoices/hooks/use-invoice-pool-low-stock";
-import { notificationActivityId, notificationInvoicePoolLowId } from "@/lib/notifications/seen-store";
+import {
+  notificationActivityId,
+  notificationInvoicePoolLowId,
+  notificationVehicleComplianceDueId,
+} from "@/lib/notifications/seen-store";
 import { useUserActivities } from "@/lib/user-activities/hooks/use-user-activities";
 import type { UserActivity } from "@/lib/user-activities/types";
+import type { VehicleComplianceDue } from "@/lib/vehicles/compliance-due";
+import { useVehicleComplianceDue } from "@/lib/vehicles/hooks/use-vehicle-compliance-due";
 
 export type NotificationItem =
   | {
@@ -24,6 +30,13 @@ export type NotificationItem =
       href: "/invoices/reserved";
       remaining: number;
       threshold: number;
+      createdAt: string;
+    }
+  | {
+      id: string;
+      kind: "vehicle-compliance-due";
+      href: "/vehicles";
+      due: VehicleComplianceDue[];
       createdAt: string;
     };
 
@@ -46,6 +59,7 @@ export function useTopbarNotifications(options: { enabled?: boolean } = {}) {
     enabled: enabled && canViewActivities,
   });
   const invoicePool = useInvoicePoolLowStock();
+  const vehicleCompliance = useVehicleComplianceDue({ enabled });
 
   const items = useMemo(() => {
     const next: NotificationItem[] = [];
@@ -74,8 +88,22 @@ export function useTopbarNotifications(options: { enabled?: boolean } = {}) {
       });
     }
 
+    if (enabled && vehicleCompliance.items.length > 0) {
+      next.unshift({
+        id: notificationVehicleComplianceDueId(
+          vehicleCompliance.companyId,
+          vehicleCompliance.today,
+          vehicleCompliance.items.map((entry) => `${entry.vehicle.id}:${entry.kind}:${entry.date}`),
+        ),
+        kind: "vehicle-compliance-due",
+        href: "/vehicles",
+        due: vehicleCompliance.items,
+        createdAt: new Date(vehicleCompliance.updatedAt).toISOString(),
+      });
+    }
+
     return next;
-  }, [activitiesQuery.data?.items, enabled, invoicePool.companyId, invoicePool.isLow, invoicePool.remaining, invoicePool.threshold, invoicePool.updatedAt]);
+  }, [activitiesQuery.data?.items, enabled, invoicePool.companyId, invoicePool.isLow, invoicePool.remaining, invoicePool.threshold, invoicePool.updatedAt, vehicleCompliance.companyId, vehicleCompliance.items, vehicleCompliance.today, vehicleCompliance.updatedAt]);
 
   return {
     items,

@@ -59,16 +59,27 @@ function createClient() {
   };
 }
 
-test("unfiltered list requests the assigned-barcodes endpoint sorted by city", async () => {
+const ASSIGNED_ROUTE_LEAF = { field: "route.name", operator: "gt", value: "" };
+
+function collectLeaves(node, leaves = []) {
+  if (node && Array.isArray(node.filters)) node.filters.forEach((child) => collectLeaves(child, leaves));
+  else if (node && "field" in node) leaves.push(node);
+  return leaves;
+}
+
+test("unfiltered list searches only barcodes with an assigned route, sorted by city", async () => {
   const client = createClient();
   const { fetchAssignedDeliveryBarcodesPage } = loadFeature("src/lib/deliveries/api/assigned-deliveries-api.ts", client);
   const { DEFAULT_ASSIGNED_DELIVERY_SORT } = loadFeature("src/lib/deliveries/types.ts", client);
   const controller = new AbortController();
   const result = await fetchAssignedDeliveryBarcodesPage({ page: 1, limit: 25, sort: DEFAULT_ASSIGNED_DELIVERY_SORT }, controller.signal);
   assert.equal(client.calls.length, 1);
-  assert.equal(client.calls[0].method, "GET");
-  assert.match(client.calls[0].url, /^\/deliveries\/assigned-barcodes\?/);
-  assert.match(decodeURIComponent(client.calls[0].url), /sort=receiver\.address\.city:asc/);
+  assert.equal(client.calls[0].method, "POST");
+  assert.match(client.calls[0].url, /^\/deliveries\/assigned-barcodes\/search\?/);
+  assert.match(decodeURIComponent(client.calls[0].url), /page=1/);
+  assert.equal(client.calls[0].body.operator, "and");
+  assert.deepEqual(client.calls[0].body.filters, [ASSIGNED_ROUTE_LEAF]);
+  assert.deepEqual(client.calls[0].body.sort, [{ field: "receiver.address.city", direction: "asc" }]);
   assert.equal(client.calls[0].config.signal, controller.signal);
   assert.equal(result.total, 1);
   const [item] = result.items;
@@ -93,6 +104,8 @@ test("search posts the bar query across barcode, invoice, item, receiver, city, 
     assert.ok(fields.includes(`"${field}"`), field);
   }
   assert.ok(fields.includes("receiver.address.city"));
+  assert.equal(client.calls[0].body.operator, "and");
+  assert.ok(collectLeaves(client.calls[0].body).some((leaf) => JSON.stringify(leaf) === JSON.stringify(ASSIGNED_ROUTE_LEAF)));
 });
 
 test("address and phone helpers format the receiver columns", () => {

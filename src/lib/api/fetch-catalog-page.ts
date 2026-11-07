@@ -5,6 +5,7 @@ import {
   buildStripeStyleSearchBody,
   createListTextSearch,
   hasResourceListFilters,
+  type ApiSearchFilter,
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
 import { resolvePaginatedListTotal, type PaginatedResult } from "@/lib/api/types";
@@ -25,6 +26,8 @@ export type CatalogPageConfig<T> = {
   barOrSearchFields: readonly string[];
   filterFields: TableFilterFieldDefinition[];
   expandNode?: (node: ApiSearchFilterNode) => ApiSearchFilterNode | null;
+  /** Always ANDed into the query; forces POST /<endpoint>/search even without user filters. */
+  fixedFilters?: ApiSearchFilter[];
   /** Parses the envelope `data`; throw on contract violations like the feature's list fetchers do. */
   parseRows: (data: unknown) => T[];
 };
@@ -41,6 +44,7 @@ export function fetchCatalogPage<T>(config: CatalogPageConfig<T>, params: Catalo
       search,
       filterRows: params.filterRows,
       tableFilterFields: config.filterFields,
+      hasChipFilters: Boolean(config.fixedFilters?.length),
     }),
     buildGetQuery: () => buildApiListQuery({ page: params.page, limit: params.limit, sort: params.sort }),
     buildSearchBody: () =>
@@ -51,6 +55,7 @@ export function fetchCatalogPage<T>(config: CatalogPageConfig<T>, params: Catalo
           barOrSearchFields: config.barOrSearchFields,
           filterRows: params.filterRows,
           tableFilterFields: config.filterFields,
+          chipFilters: config.fixedFilters,
           expandNode: config.expandNode,
         }),
       }),

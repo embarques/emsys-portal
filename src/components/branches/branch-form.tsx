@@ -4,14 +4,14 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { branchFormSchema } from "@/lib/branches/schemas/branch.schema";
 import { Building2, MapPin, Phone, Settings } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
+import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { useTranslation } from "@/lib/i18n";
 import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-company";
@@ -49,14 +49,6 @@ export function BranchForm({
   const values = useWatch({ control }) as BranchFormValues;
   const [manualAddressEntry, setManualAddressEntry] = useState(false);
   const handleEnterNavigation = useFormEnterNavigation();
-
-  const booleanOptions = useMemo(
-    () => [
-      { value: "false", label: t("branches.enums.boolean.false") },
-      { value: "true", label: t("branches.enums.boolean.true") },
-    ],
-    [t],
-  );
 
   useEffect(() => {
     reset(initialValues ?? createEmptyBranchForm());
@@ -331,28 +323,18 @@ export function BranchForm({
             </div>
 
             <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="settings-invoiceCreatedThruIncomeStatement">
-                  {t("branches.form.fields.invoiceCreatedThruIncomeStatement")}
-                </Label>
-                <SearchableSelect
-                  id="settings-invoiceCreatedThruIncomeStatement"
-                  value={values.settings.invoiceCreatedThruIncomeStatement ? "true" : "false"}
-                  onValueChange={(next) =>
-                    updateSettingsField("invoiceCreatedThruIncomeStatement", next === "true")
-                  }
-                  options={booleanOptions}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="settings-printLabelCount">{t("branches.form.fields.printLabelCount")}</Label>
-                <SearchableSelect
-                  id="settings-printLabelCount"
-                  value={values.settings.printLabelCount ? "true" : "false"}
-                  onValueChange={(next) => updateSettingsField("printLabelCount", next === "true")}
-                  options={booleanOptions}
-                />
-              </div>
+              <SwitchField
+                id="settings-invoiceCreatedThruIncomeStatement"
+                label={<>{t("branches.form.fields.invoiceCreatedThruIncomeStatement")}: {t(values.settings.invoiceCreatedThruIncomeStatement ? "branches.enums.boolean.true" : "branches.enums.boolean.false")}</>}
+                checked={values.settings.invoiceCreatedThruIncomeStatement}
+                onCheckedChange={(checked) => updateSettingsField("invoiceCreatedThruIncomeStatement", checked)}
+              />
+              <SwitchField
+                id="settings-printLabelCount"
+                label={<>{t("branches.form.fields.printLabelCount")}: {t(values.settings.printLabelCount ? "branches.enums.boolean.true" : "branches.enums.boolean.false")}</>}
+                checked={values.settings.printLabelCount}
+                onCheckedChange={(checked) => updateSettingsField("printLabelCount", checked)}
+              />
             </div>
           </div>
         </FormSection>

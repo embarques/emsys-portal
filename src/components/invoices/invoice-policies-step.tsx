@@ -2,6 +2,7 @@
 
 import { SignaturePad } from "@/components/invoices/signature-pad";
 import { InvoiceWizardReviewSection } from "@/components/invoices/invoice-wizard-review-section";
+import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
 import type { InvoicePolicy } from "@/lib/invoice-policies/types";
 import { useTranslation } from "@/lib/i18n";
@@ -82,17 +83,13 @@ export function InvoicePoliciesStep({
           </Label>
         </>}
 
-        <Label className="flex items-center gap-3">
-          <input
-            id="invoice-skip-signature"
-            type="checkbox"
-            className="size-4"
-            checked={value.skipSignature}
-            disabled={disabled}
-            onChange={(event) => onChange({ ...value, skipSignature: event.target.checked })}
-          />
-          {t("invoices.wizard.policies.skipSignature")}
-        </Label>
+        <SwitchField
+          id="invoice-skip-signature"
+          label={t("invoices.wizard.policies.skipSignature")}
+          checked={value.skipSignature}
+          disabled={disabled}
+          onCheckedChange={(checked) => onChange({ ...value, skipSignature: checked })}
+        />
 
         {!value.skipSignature && <div>
           <Label htmlFor="invoice-signature-pad" className="text-sm font-medium">

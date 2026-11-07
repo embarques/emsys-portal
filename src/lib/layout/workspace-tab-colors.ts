@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import {
   accountingClearingNavigationItems,
   barcodeNavigationItems,
+  employeeNavigationItems,
   invoiceNavigationItems,
   navigation,
   routeNavigationItems,
@@ -77,6 +78,7 @@ const NAV_LABEL_TO_SECTION: Record<string, WorkspaceTabSection> = {
   "navigation.groups.admin": "admin",
   "navigation.items.users": "admin",
   "navigation.items.employees": "admin",
+  "navigation.items.userActivities": "admin",
 };
 
 /**
@@ -156,6 +158,7 @@ function buildPathSectionsFromNavigation(
   collectLeafHrefs(barcodeNavigationItems, "barcodes", pathSections);
   collectLeafHrefs(routeNavigationItems, "pickups", pathSections);
   collectLeafHrefs(invoiceNavigationItems, "invoices", pathSections);
+  collectLeafHrefs(employeeNavigationItems, "admin", pathSections);
 
   return pathSections;
 }

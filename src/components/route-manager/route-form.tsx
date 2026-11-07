@@ -6,6 +6,7 @@ import { Building2, CircleCheck, ClipboardList, Users } from "lucide-react";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
+import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useTranslation } from "@/lib/i18n";
@@ -19,7 +20,6 @@ import {
 } from "@/lib/branches/user-branch";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { routeCrewMembersSchema } from "@/lib/route-manager/schemas/route-crew.schema";
-import { cn } from "@/lib/utils";
 
 const EMPTY_BRANCHES: BranchRef[] = [];
 
@@ -175,37 +175,12 @@ export function RouteForm({
           ) : null}
 
           <FormSection variant="card" className="h-full" description={t("routes.form.design.status")} icon={CircleCheck} title={t("routes.activeRoute.status")}>
-            <div
-              className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
-              role="radiogroup"
-              aria-label={t("routes.activeRoute.status")}
-            >
-              {[
-                { value: true, label: t("routes.activeRoute.active") },
-                { value: false, label: t("routes.activeRoute.inactive") },
-              ].map((option) => {
-                const selected = values.active === option.value;
-                return (
-                  <button
-                    key={option.label}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => updateField("active", option.value)}
-                    className={cn(
-                      "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                      selected && option.value
-                        ? "bg-emerald-600 text-white shadow-sm"
-                        : selected
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
+            <SwitchField
+              id="route-active"
+              label={<>{t("routes.activeRoute.status")}: {t(values.active ? "routes.activeRoute.active" : "routes.activeRoute.inactive")}</>}
+              checked={values.active}
+              onCheckedChange={(checked) => updateField("active", checked)}
+            />
           </FormSection>
 
           <FormSection variant="card" className="h-full" description={t("routes.form.design.branch")} icon={Building2} title={t("routes.form.sections.branch")} required>

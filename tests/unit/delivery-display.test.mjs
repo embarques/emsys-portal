@@ -10,7 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 const require=createRequire(import.meta.url);
 const root=path.resolve(import.meta.dirname,"../..");
 const invoiceId="68f800000000000000000001";
-const row={id:1,barcodeId:"65f000000000000000000001",number:"BARCODE-1",invoiceId,invoiceNumber:"000123",description:"Box",routeRate:61.25,status:{id:6,name:"CONDUCE"},container:{name:"Container"},receiver:{name:"Receiver",province:"Santiago",address1:"Calle 1",apartment:"",city:"Santiago",zipcode:"",phones:[]}};
+const row={id:1,barcodeId:"65f000000000000000000001",number:"BARCODE-1",invoiceId,invoiceNumber:"000123",description:"Box",routeRate:61.25,status:{id:6,name:"CONDUCE"},container:{name:"Container"},route:{id:"route-1",name:"Santiago 1"},receiver:{name:"Receiver",province:"Santiago",address1:"Calle 1",apartment:"",city:"Santiago",zipcode:"",phones:[]}};
 function loadComponent(relative){
  const cache=new Map();
  const block=({children})=>React.createElement("div",null,children);
@@ -31,6 +31,7 @@ function loadComponent(relative){
   "@/components/deliveries/deliver-dialog":{DeliverDialog:()=>null},
   "@/components/deliveries/delivery-view-sheet":{DeliveryViewSheet:()=>null},
   "@/components/invoices/invoice-print-signatures-dialog":{InvoicePrintSignaturesDialog:()=>null},
+  "@/lib/barcodes/display":{formatBarcodeDeliveryRoute:(route)=>route?.name||"—"},
  };
  function load(filename){
   if(cache.has(filename))return cache.get(filename).exports;
@@ -49,6 +50,9 @@ test("desktop and mobile delivery rows show the business invoice number and omit
  assert.match(html,/>000123</);
  assert.match(html,/<td[^>]*>61[.,]25<\/td>/);
  assert.match(html,/<dd[^>]*>61[.,]25<\/dd>/);
+ assert.match(html,/deliveries\.columns\.route/);
+ assert.match(html,/<td[^>]*>Santiago 1<\/td>/);
+ assert.match(html,/<dd[^>]*>Santiago 1<\/dd>/);
  assert.doesNotMatch(html,/CONDUCE|>Status</);
  assert.doesNotMatch(html,new RegExp(invoiceId));
 });
@@ -83,6 +87,8 @@ test("deliveries default to city sorting and render city rather than province in
   assert.match(html,/>CITY ONLY<\/td>/);
   assert.match(html,/>CITY ONLY<\/h3>/);
   assert.doesNotMatch(html,/>PROVINCE ONLY<\/td>/);
-  for(const sort of ["receiver.address.city:desc","invoice.number:asc","number:asc"]) assert.ok(html.includes(`value="${sort}"`));
+  assert.doesNotMatch(html,/<select/);
+  assert.match(html,/aria-sort="ascending"><button[^>]*>deliveries\.columns\.city</);
+  assert.equal(html.match(/aria-sort="/g)?.length,13,"every Route Deliveries column is sortable");
  } finally {row.receiver=original;}
 });

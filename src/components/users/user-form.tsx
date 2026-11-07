@@ -9,7 +9,7 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Switch } from "@/components/ui/switch";
+import { SwitchField } from "@/components/ui/switch-field";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -17,7 +17,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useRoles } from "@/lib/roles/hooks/use-roles";
 import { DEFAULT_ROLE_LIST_PARAMS } from "@/lib/roles/types";
 import { createUserFormSchema } from "@/lib/users/schemas/user.schema";
-import { createEmptyUserForm, USER_ACTIVE_OPTIONS, type UserFormValues } from "@/lib/users/types";
+import { createEmptyUserForm, type UserFormValues } from "@/lib/users/types";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -81,15 +81,6 @@ export function UserForm({
   const passwordInvalid = Boolean(password) && !passwordValid;
   const confirmationValid = Boolean(confirmPassword) && confirmPassword === password;
   const confirmationInvalid = Boolean(confirmPassword) && !confirmationValid;
-
-  const activeOptions = useMemo(
-    () =>
-      USER_ACTIVE_OPTIONS.map((option) => ({
-        value: String(option.value),
-        label: t(option.value ? "users.enums.status.active" : "users.enums.status.inactive"),
-      })),
-    [t],
-  );
 
   useEffect(() => reset(initialValues ?? createEmptyUserForm()), [initialValues, reset]);
 
@@ -216,15 +207,14 @@ export function UserForm({
               control={control}
               name="active"
               render={({ field }) => (
-                <Field label={t("users.form.fields.active")} required>
-                  <SearchableSelect
-                    id="active"
-                    value={String(field.value)}
-                    onValueChange={(value) => field.onChange(value === "true")}
-                    options={activeOptions}
-                    mobileSheet
-                  />
-                </Field>
+                <SwitchField
+                  id="active"
+                  label={<>{t("users.form.fields.active")}: {t(field.value ? "users.enums.status.active" : "users.enums.status.inactive")}</>}
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                />
               )}
             />
             <Controller
@@ -298,15 +288,15 @@ export function UserForm({
             control={control}
             name="restrictLoginHours"
             render={({ field }) => (
-              <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="restrictLoginHours">{t("users.form.fields.restrictLoginHours")}</Label>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {t("users.form.fields.restrictLoginHoursHint")}
-                  </p>
-                </div>
-                <Switch id="restrictLoginHours" checked={field.value} onCheckedChange={field.onChange} />
-              </div>
+              <SwitchField
+                id="restrictLoginHours"
+                label={t("users.form.fields.restrictLoginHours")}
+                description={t("users.form.fields.restrictLoginHoursHint")}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
             )}
           />
           {restrictLoginHours ? (

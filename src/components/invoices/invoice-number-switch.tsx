@@ -4,8 +4,7 @@ import { useEffect, useRef, type InputHTMLAttributes } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import { SwitchField } from "@/components/ui/switch-field";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +18,6 @@ type Props = {
   canUseManualNumber?: boolean;
   disabled?: boolean;
   className?: string;
-  /** Render the mode choice as segments instead of a dropdown. */
-  variant?: "select" | "segmented";
   inputProps?: Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "disabled">;
   onModeChange: (autoGenerate: boolean) => void;
   onInvoiceNumberChange: (value: string) => void;
@@ -43,7 +40,6 @@ export function InvoiceNumberModeFields({
   canUseManualNumber = true,
   disabled = false,
   className,
-  variant = "select",
   inputProps,
   onModeChange,
   onInvoiceNumberChange,
@@ -52,18 +48,6 @@ export function InvoiceNumberModeFields({
   const mode: Mode = autoGenerate ? "system" : "custom";
   // Locked modes stay focusable so Enter navigation still stops on this field.
   const modeLocked = !canUseManualNumber || Boolean(generatedInvoiceNumber);
-  const modeOptions: { value: Mode; label: string; disabled: boolean }[] = [
-    {
-      value: "system",
-      label: t("invoices.form.autoNumber.modeSystem"),
-      disabled: modeLocked && mode !== "system",
-    },
-    {
-      value: "custom",
-      label: t("invoices.form.autoNumber.modeCustom"),
-      disabled: !canUseManualNumber || (modeLocked && mode !== "custom"),
-    },
-  ];
 
   const inputRef = useRef<HTMLInputElement>(null);
   const focusInputOnCustomRef = useRef(false);
@@ -74,7 +58,7 @@ export function InvoiceNumberModeFields({
     inputRef.current?.focus();
   }, [mode]);
 
-  function changeMode(next: string) {
+  function changeMode(next: Mode) {
     if (modeLocked) return;
     focusInputOnCustomRef.current = next === "custom";
     onModeChange(next !== "custom");
@@ -85,45 +69,18 @@ export function InvoiceNumberModeFields({
 
   return (
     <div className={cn("grid gap-4", mode === "custom" && "sm:grid-cols-2", className)}>
-      <div className="space-y-2">
-        {variant === "segmented" ? (
-          <>
-            <Label id={`${id}-mode-label`}>{t("invoices.form.fields.invoiceNumber")}</Label>
-            <SegmentedControl
-              id={`${id}-mode`}
-              aria-labelledby={`${id}-mode-label`}
-              value={mode}
-              disabled={disabled}
-              onValueChange={changeMode}
-              options={modeOptions}
-              className="h-9 max-md:h-12 [&>button]:py-0"
-            />
-          </>
-        ) : (
-          <>
-            <Label htmlFor={`${id}-mode`}>{t("invoices.form.fields.invoiceNumber")}</Label>
-            <SearchableSelect
-              id={`${id}-mode`}
-              value={mode}
-              disabled={disabled}
-              onValueChange={changeMode}
-              placeholder={t("invoices.form.placeholders.selectInvoiceNumberMode")}
-              searchable={false}
-              options={modeOptions}
-            />
-          </>
-        )}
-        {mode === "system" ? (
-          <p className="text-xs text-muted-foreground">
-            {generatedInvoiceNumber
-              ? generatedInvoiceNumber
-              : t("invoices.form.autoNumber.hint")}
-          </p>
-        ) : null}
-        {!canUseManualNumber ? (
-          <p className="text-xs text-muted-foreground">{t("invoices.form.autoNumber.permissionHint")}</p>
-        ) : null}
-      </div>
+      <SwitchField
+        id={`${id}-mode`}
+        label={<>{t("invoices.form.fields.invoiceNumber")}: {t(autoGenerate ? "invoices.form.autoNumber.modeSystem" : "invoices.form.autoNumber.modeCustom")}</>}
+        description={mode === "system" || !canUseManualNumber ? <>
+          {mode === "system" ? <p>{generatedInvoiceNumber || t("invoices.form.autoNumber.hint")}</p> : null}
+          {!canUseManualNumber ? <p>{t("invoices.form.autoNumber.permissionHint")}</p> : null}
+        </> : undefined}
+        checked={autoGenerate}
+        disabled={disabled}
+        aria-readonly={modeLocked || undefined}
+        onCheckedChange={(checked) => changeMode(checked ? "system" : "custom")}
+      />
 
       {mode === "custom" ? (
         <div className="space-y-2">

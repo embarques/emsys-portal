@@ -75,6 +75,25 @@
       "DR": "DR (code)"
     }
   },
+  "compliance": {
+    "bannerTitle_one": "1 inspection or registration date needs attention",
+    "bannerTitle_other": "{{count}} inspection or registration dates need attention",
+    "bannerDescription": "These dates are 7 days away or fewer, or already past. Renew them and update the vehicle record.",
+    "partial": "Only the first {{limit}} vehicles were checked.",
+    "entry": "{{name}} · {{kind}} {{timing}}",
+    "more": "+{{count}} more",
+    "kind": {
+      "inspection": "Inspection",
+      "registration": "Registration"
+    },
+    "timing": {
+      "overdue_one": "overdue by 1 day",
+      "overdue_other": "overdue by {{count}} days",
+      "today": "due today",
+      "dueIn_one": "due in 1 day",
+      "dueIn_other": "due in {{count}} days"
+    }
+  },
   "form": {
     "design": {
       "vehicle": "Identify the vehicle and confirm its operating status.",
@@ -93,6 +112,7 @@
     },
     "fields": {
       "status": "Status",
+      "statusHint": "Turn off when the vehicle is out of service. Its record is kept.",
       "name": "Name",
       "vin": "VIN",
       "licensePlate": "License plate",
