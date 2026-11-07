@@ -1,4 +1,17 @@
 {
+  "invoiceNumbering": {
+    "title": "Invoice numbering",
+    "description": "Set the prefix and range for automatically generated invoice numbers. The lock controls the suffix, range, and digit count.",
+    "prefix": "Prefix",
+    "suffix": "Suffix",
+    "startValue": "First number",
+    "maxValue": "Last number",
+    "paddingLength": "Digit count",
+    "isActive": "Enable automatic numbering",
+    "unlock": "Unlock suffix and range",
+    "lock": "Lock suffix and range",
+    "permissionRequired": "Unlock invoice numbering permission required"
+  },
   "title": "Settings",
   "pages": {
     "description": "Configure system settings, appearance, language, and account preferences."
