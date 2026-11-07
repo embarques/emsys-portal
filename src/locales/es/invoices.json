@@ -1,5 +1,11 @@
 {
   "pool": {
+    "reservedAt": "Reservado el",
+    "createdAt": "Creado el",
+    "id": "ID",
+    "sort": "Ordenar por",
+    "asc": "Ascendente",
+    "desc": "Descendente",
     "receivedAt": "Recibido el",
     "filterUser": "Filtrar por usuario",
     "allUsers": "Todos los usuarios",

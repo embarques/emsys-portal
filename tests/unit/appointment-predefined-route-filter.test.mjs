@@ -96,7 +96,7 @@ test("route appointments search only pickups with an assigned route, even withou
  const {calls,client}=createRecordingClient();
  await createLoader(client)(ordersApi).fetchOrders({ page: 1, limit: 50, assignedRouteOnly: true });
  assert.equal(calls.length,1);
- assert.deepEqual(pickupSearchBody(calls).filters,[{field:"route.id",operator:"gt",value:""}]);
+ assert.deepEqual(pickupSearchBody(calls).filters,[{field:"route.id",operator:"neq",value:null}]);
 });
 
 test("assigned-route scope is ANDed with search and filter rows", async () => {
@@ -104,7 +104,7 @@ test("assigned-route scope is ANDed with search and filter rows", async () => {
  await createLoader(client)(ordersApi).fetchOrders({ assignedRouteOnly: true, filterRows: [row("sender.address.city","eq","Miami"),row("sender.address.zipcode","eq","02119","or")] });
  const body=pickupSearchBody(calls);
  assert.equal(body.operator,"and");
- assert.ok(leaves(body).some(leaf=>leaf.field==="route.id" && leaf.operator==="gt" && leaf.value===""));
+ assert.ok(leaves(body).some(leaf=>leaf.field==="route.id" && leaf.operator==="neq" && leaf.value===null));
  assert.ok(leaves(body).some(leaf=>leaf.field==="sender.address.city"));
 });
 

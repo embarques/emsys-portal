@@ -59,7 +59,7 @@ function createClient() {
   };
 }
 
-const ASSIGNED_ROUTE_LEAF = { field: "route.name", operator: "gt", value: "" };
+const ASSIGNED_ROUTE_LEAF = { field: "route.id", operator: "neq", value: null };
 
 function collectLeaves(node, leaves = []) {
   if (node && Array.isArray(node.filters)) node.filters.forEach((child) => collectLeaves(child, leaves));

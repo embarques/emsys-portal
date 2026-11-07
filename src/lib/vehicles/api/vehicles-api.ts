@@ -216,12 +216,12 @@ function buildVehicleWritePayload(
   }
 
   const inspectionDateValue = values.inspectionDate.trim();
-  if (inspectionDateValue) {
+  if (inspectionDateValue || options.recordId) {
     payload.inspectionDate = inspectionDateValue;
   }
 
   const registrationDateValue = values.registrationDate.trim();
-  if (registrationDateValue) {
+  if (registrationDateValue || options.recordId) {
     payload.registrationDate = registrationDateValue;
   }
 
