@@ -54,7 +54,7 @@ export function useInvoicePool() {
     if(!stored) return null;
     try{return {key,action:JSON.parse(stored)};}catch{return null;}
   });
-  const form = useForm<InvoicePoolForm>({ resolver: zodResolver(invoicePoolFormSchema), defaultValues: { count: 50, userId: 0 } });
+  const form = useForm<InvoicePoolForm>({ resolver: zodResolver(invoicePoolFormSchema), defaultValues: { count: 20, userId: 0 } });
   const queryKey = ["invoice-pool", companyId, actor, appliedFilterQuery, numberQuery, page, sort];
   const query = useWorkspaceQuery({ queryKey, enabled: ready && canView && !searchPending,
     queryFn: ({ signal }) => fetchInvoicePool(page, sort, signal, numberQuery, appliedRows), retry: false });

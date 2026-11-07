@@ -1,5 +1,6 @@
 "use client";
 
+import { CompanyInvoiceNumberingSettings } from "./company-invoice-numbering-settings";
 import { CompanyPolicySettings } from "./company-policy-settings";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Monitor, Moon, Sun } from "lucide-react";
@@ -225,6 +226,7 @@ export function ConfigurationWorkspace() {
         </div>
         </form>
         <CompanyPolicySettings />
+        <CompanyInvoiceNumberingSettings />
       </div>
     </div>
   );
