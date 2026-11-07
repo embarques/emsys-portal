@@ -5,13 +5,13 @@ import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import { useTranslation } from "@/lib/i18n";
 import { formatInventoryMinor } from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import { parseUsdToMinor, parseWholeQuantity } from "@/lib/inventory/utils/money";
+import { cn } from "@/lib/utils";
 
 export type InventoryEditableLine = {
   key: string;
@@ -28,6 +28,8 @@ type InventoryDocumentLinesEditorProps<TLine extends InventoryEditableLine> = {
   withUnitCost?: boolean;
   /** Available quantity at the source holder, shown per line when provided. */
   availableByItem?: Map<string, number>;
+  /** Extra classes for the lines wrapper (e.g. a scroll cap). */
+  listClassName?: string;
   createLine: () => TLine;
   onChange: (lines: TLine[]) => void;
 };
@@ -38,6 +40,7 @@ export function InventoryDocumentLinesEditor<TLine extends InventoryEditableLine
   items,
   withUnitCost = false,
   availableByItem,
+  listClassName,
   createLine,
   onChange,
 }: InventoryDocumentLinesEditorProps<TLine>) {
@@ -69,100 +72,137 @@ export function InventoryDocumentLinesEditor<TLine extends InventoryEditableLine
     onChange(lines.map((line) => (line.key === key ? { ...line, ...patch } : line)));
   }
 
-  return (
-    <div className="space-y-3">
-      {lines.map((line, index) => {
-        const available = line.itemId ? availableByItem?.get(line.itemId) : undefined;
-        const requested = parseWholeQuantity(line.quantity);
-        const exceeds = available !== undefined && requested !== null && requested > available;
-        const lineMinor =
-          withUnitCost && requested !== null ? requested * (parseUsdToMinor(line.unitCost ?? "") ?? 0) : null;
+  const showAvailable = availableByItem !== undefined && !withUnitCost;
+  const wideColumns = withUnitCost
+    ? "@xl:grid-cols-[minmax(0,1fr)_6rem_7rem_7rem_2.25rem]"
+    : showAvailable
+      ? "@xl:grid-cols-[minmax(0,1fr)_6rem_7rem_2.25rem]"
+      : "@xl:grid-cols-[minmax(0,1fr)_7rem_2.25rem]";
+  const headerClass = "text-xs font-medium text-muted-foreground";
 
-        return (
-          <fieldset
-            key={line.key}
-            className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-[minmax(0,1fr)_7rem_auto] @3xl:grid-cols-[minmax(0,1fr)_7rem_8rem_auto]"
-          >
-            <legend className="px-1 text-xs font-medium text-muted-foreground">
-              {t("inventory.form.lineNumber", { number: index + 1 })}
-            </legend>
-            <div className="min-w-0 space-y-1">
-              <Label htmlFor={`${idPrefix}-item-${line.key}`}>
-                {t("inventory.form.fields.item")} <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                id={`${idPrefix}-item-${line.key}`}
-                value={line.itemId}
-                onValueChange={(itemId) => patchLine(line.key, { itemId } as Partial<TLine>)}
-                options={itemOptions}
-                placeholder={t("inventory.form.placeholders.item")}
-                searchPlaceholder={t("inventory.search.items")}
-                emptyMessage={t("inventory.empty.noOptions")}
-                selectAllOnFocus
-                required
-                mobileSheet
-              />
-              {available !== undefined ? (
-                <p className={exceeds ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
-                  {t("inventory.form.availableAtSource", { count: available })}
-                </p>
-              ) : null}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor={`${idPrefix}-quantity-${line.key}`}>
-                {t("inventory.form.fields.quantity")} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id={`${idPrefix}-quantity-${line.key}`}
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={line.quantity}
-                aria-invalid={exceeds || undefined}
-                onChange={(event) => patchLine(line.key, { quantity: event.target.value } as Partial<TLine>)}
-                onFocus={selectFormFieldTextOnFocus}
-                required
-              />
-            </div>
-            {withUnitCost ? (
-              <div className="space-y-1">
-                <Label htmlFor={`${idPrefix}-cost-${line.key}`}>
-                  {t("inventory.form.fields.unitCost")} <span className="text-destructive">*</span>
-                </Label>
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className={cn("hidden gap-2.5 px-0.5 @xl:grid", wideColumns)} aria-hidden>
+        <span className={headerClass}>
+          {t("inventory.form.fields.item")} <span className="text-destructive">*</span>
+        </span>
+        {showAvailable ? <span className={cn(headerClass, "text-right")}>{t("inventory.columns.available")}</span> : null}
+        <span className={headerClass}>
+          {t("inventory.form.fields.quantity")} <span className="text-destructive">*</span>
+        </span>
+        {withUnitCost ? (
+          <>
+            <span className={headerClass}>
+              {t("inventory.form.fields.unitCost")} <span className="text-destructive">*</span>
+            </span>
+            <span className={cn(headerClass, "text-right")}>{t("inventory.form.fields.lineTotal")}</span>
+          </>
+        ) : null}
+      </div>
+
+      <div className={cn("-m-1 space-y-2.5 p-1", listClassName)}>
+        {lines.map((line, index) => {
+          const available = line.itemId ? availableByItem?.get(line.itemId) : undefined;
+          const requested = parseWholeQuantity(line.quantity);
+          const exceeds = available !== undefined && requested !== null && requested > available;
+          const lineMinor =
+            withUnitCost && requested !== null ? requested * (parseUsdToMinor(line.unitCost ?? "") ?? 0) : 0;
+
+          return (
+            <div
+              key={line.key}
+              role="group"
+              aria-label={t("inventory.form.lineNumber", { number: index + 1 })}
+              className={cn(
+                "flex flex-col gap-2 rounded-lg border border-border/60 bg-muted/20 p-2.5 @xl:grid @xl:items-center @xl:gap-2.5 @xl:rounded-none @xl:border-0 @xl:bg-transparent @xl:p-0",
+                wideColumns,
+              )}
+            >
+              <div className="min-w-0">
+                <SearchableSelect
+                  id={`${idPrefix}-item-${line.key}`}
+                  aria-label={t("inventory.form.fields.item")}
+                  value={line.itemId}
+                  onValueChange={(itemId) => patchLine(line.key, { itemId } as Partial<TLine>)}
+                  options={itemOptions}
+                  placeholder={t("inventory.form.placeholders.item")}
+                  searchPlaceholder={t("inventory.search.items")}
+                  emptyMessage={t("inventory.empty.noOptions")}
+                  selectAllOnFocus
+                  required
+                  mobileSheet
+                />
+              </div>
+              <div className="flex items-center gap-2 @xl:contents">
+                {showAvailable ? (
+                  <p
+                    className={cn(
+                      "min-w-0 flex-1 text-xs tabular-nums @xl:text-right @xl:text-sm",
+                      exceeds ? "text-destructive" : "text-muted-foreground",
+                    )}
+                  >
+                    {available === undefined ? (
+                      <span className="hidden @xl:inline">—</span>
+                    ) : (
+                      <>
+                        <span className="@xl:hidden">{t("inventory.form.availableAtSource", { count: available })}</span>
+                        <span className="hidden @xl:inline">{available}</span>
+                      </>
+                    )}
+                  </p>
+                ) : null}
                 <Input
-                  id={`${idPrefix}-cost-${line.key}`}
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={line.unitCost ?? ""}
-                  onChange={(event) => patchLine(line.key, { unitCost: event.target.value } as Partial<TLine>)}
+                  id={`${idPrefix}-quantity-${line.key}`}
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  aria-label={t("inventory.form.fields.quantity")}
+                  placeholder={t("inventory.form.fields.quantity")}
+                  className={cn("w-24 shrink-0 @xl:w-auto", !showAvailable && !withUnitCost && "ml-auto @xl:ml-0")}
+                  value={line.quantity}
+                  aria-invalid={exceeds || undefined}
+                  onChange={(event) => patchLine(line.key, { quantity: event.target.value } as Partial<TLine>)}
                   onFocus={selectFormFieldTextOnFocus}
                   required
                 />
-                {lineMinor !== null ? (
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {t("inventory.form.fields.lineTotal")}: {formatInventoryMinor(lineMinor)}
-                  </p>
+                {withUnitCost ? (
+                  <>
+                    <Input
+                      id={`${idPrefix}-cost-${line.key}`}
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      aria-label={t("inventory.form.fields.unitCost")}
+                      className="w-28 shrink-0 @xl:w-auto"
+                      value={line.unitCost ?? ""}
+                      onChange={(event) => patchLine(line.key, { unitCost: event.target.value } as Partial<TLine>)}
+                      onFocus={selectFormFieldTextOnFocus}
+                      required
+                    />
+                    <p className="min-w-0 flex-1 text-right text-sm tabular-nums text-muted-foreground">
+                      <span className="sr-only @xl:hidden">{t("inventory.form.fields.lineTotal")}: </span>
+                      {formatInventoryMinor(lineMinor)}
+                    </p>
+                  </>
                 ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={lines.length <= 1}
+                  className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  title={t("inventory.form.removeLine")}
+                  aria-label={t("inventory.form.removeLine")}
+                  onClick={() => onChange(lines.filter((entry) => entry.key !== line.key))}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
-            ) : null}
-            <div className="flex items-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={lines.length <= 1}
-                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                title={t("inventory.form.removeLine")}
-                aria-label={t("inventory.form.removeLine")}
-                onClick={() => onChange(lines.filter((entry) => entry.key !== line.key))}
-              >
-                <Trash2 className="size-4" />
-              </Button>
             </div>
-          </fieldset>
-        );
-      })}
+          );
+        })}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button
           type="button"

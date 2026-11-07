@@ -562,7 +562,6 @@
       "CUSTODIAN": "Empleado / ruta"
     },
     "awaiting": "Pendiente de confirmación",
-    "confirmedBy": "{{name}} · {{date}}",
     "lastRejection": "Último rechazo",
     "rejectedBy": "{{party}} · {{name}} · {{date}}",
     "confirmAs": "Confirmar como {{party}}",

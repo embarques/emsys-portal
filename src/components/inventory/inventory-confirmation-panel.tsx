@@ -7,6 +7,7 @@ import { useTranslation } from "@/lib/i18n";
 import { formatInventoryDateTime } from "@/lib/inventory/display";
 import type { InventoryConfirmationParty, InventoryConfirmationState } from "@/lib/inventory/types/common";
 import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
+import { cn } from "@/lib/utils";
 
 type InventoryConfirmationPanelProps = {
   state: InventoryConfirmationState;
@@ -33,46 +34,59 @@ export function InventoryConfirmationPanel({
 
   return (
     <div className="space-y-3 text-sm">
-      <dl className="space-y-2">
+      <dl className="space-y-3">
         {parties.map((party) => {
           const confirmation = party === "WAREHOUSE" ? state.confirmations.warehouse : state.confirmations.custodian;
           if (!confirmation && !pending) return null;
           return (
-            <div key={party} className="flex items-start gap-2">
-              {confirmation ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
-              ) : (
-                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-              )}
-              <div className="min-w-0">
-                <dt className="font-medium">{partyLabel(party)}</dt>
-                <dd className="text-muted-foreground">
-                  {confirmation
-                    ? t("inventory.confirmations.confirmedBy", {
-                        name: confirmation.confirmedBy || t("common.empty.dash"),
-                        date: formatInventoryDateTime(confirmation.confirmedAt),
-                      })
-                    : t("inventory.confirmations.awaiting")}
-                </dd>
-                {confirmation?.notes ? <dd className="text-muted-foreground">{confirmation.notes}</dd> : null}
+            <div key={party} className="flex items-start gap-3">
+              <span
+                className={cn(
+                  "flex size-7 shrink-0 items-center justify-center rounded-full",
+                  confirmation
+                    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
+                    : "bg-muted text-muted-foreground",
+                )}
+                aria-hidden
+              >
+                {confirmation ? <CheckCircle2 className="size-4" /> : <Clock className="size-4" />}
+              </span>
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <dt className="font-medium leading-snug">{partyLabel(party)}</dt>
+                {confirmation ? (
+                  <>
+                    <dd className="leading-snug text-foreground/90 [overflow-wrap:anywhere]">
+                      {confirmation.confirmedBy || t("common.empty.dash")}
+                    </dd>
+                    <dd className="text-xs text-muted-foreground">{formatInventoryDateTime(confirmation.confirmedAt)}</dd>
+                    {confirmation.notes ? (
+                      <dd className="mt-1.5 rounded-md bg-muted/60 px-2.5 py-1.5 text-xs">
+                        <span className="block font-medium text-muted-foreground">{t("inventory.form.fields.notes")}</span>
+                        <span className="whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{confirmation.notes}</span>
+                      </dd>
+                    ) : null}
+                  </>
+                ) : (
+                  <dd className="text-muted-foreground">{t("inventory.confirmations.awaiting")}</dd>
+                )}
               </div>
             </div>
           );
         })}
       </dl>
       {rejection ? (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2">
+        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2.5">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden />
           <div className="min-w-0">
             <p className="font-medium">{t("inventory.confirmations.lastRejection")}</p>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground [overflow-wrap:anywhere]">
               {t("inventory.confirmations.rejectedBy", {
                 party: rejection.party ? partyLabel(rejection.party) : t("common.empty.dash"),
                 name: rejection.rejectedBy || t("common.empty.dash"),
                 date: formatInventoryDateTime(rejection.rejectedAt),
               })}
             </p>
-            <p>{rejection.reason}</p>
+            <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{rejection.reason}</p>
           </div>
         </div>
       ) : null}

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useTranslation } from "@/lib/i18n";
 import { buildInventorySupplierPayload } from "@/lib/inventory/schemas/inventory.schema";
+import { cn } from "@/lib/utils";
 import {
   createEmptySupplierContact,
   createEmptySupplierForm,
@@ -27,6 +28,8 @@ type InventorySupplierFormProps = {
   onCancel: () => void;
   isSubmitting?: boolean;
 };
+
+const CONTACT_ROW_COLUMNS = "@3xl:grid-cols-[repeat(3,minmax(0,1fr))_2.25rem]";
 
 function formatSelectedAddress(place: ParsedPlaceAddress): string {
   return [place.address1, place.city, [place.state, place.zipcode].filter(Boolean).join(" "), place.country]
@@ -49,49 +52,58 @@ function SupplierContactsEditor({
   }
 
   return (
-    <div className="space-y-3">
-      {entries.map((contact, index) => (
-        <fieldset key={index} className="grid gap-3 rounded-lg border border-border p-3 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-          <legend className="px-1 text-xs font-medium text-muted-foreground">
-            {t("inventory.form.contactNumber", { number: index + 1 })}
-          </legend>
-          <div className="space-y-1">
-            <Label htmlFor={`supplier-contact-name-${index}`}>{t("inventory.form.fields.contactName")}</Label>
+    <div className="flex flex-col gap-2.5">
+      <div className={cn("hidden gap-2.5 px-0.5 @3xl:grid", CONTACT_ROW_COLUMNS)} aria-hidden>
+        <span className="text-xs font-medium text-muted-foreground">{t("inventory.form.fields.contactName")}</span>
+        <span className="text-xs font-medium text-muted-foreground">{t("inventory.form.fields.contactPhone")}</span>
+        <span className="text-xs font-medium text-muted-foreground">{t("inventory.form.fields.contactEmail")}</span>
+      </div>
+
+      {/* Cap the list against the viewport so the dialog never scrolls on desktop. */}
+      <div className="-m-1 space-y-2.5 p-1 @3xl:max-h-[max(6rem,calc(90vh-35rem))] @3xl:overflow-y-auto">
+        {entries.map((contact, index) => (
+          <div
+            key={index}
+            role="group"
+            aria-label={t("inventory.form.contactNumber", { number: index + 1 })}
+            className={cn(
+              "grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-lg border border-border/60 bg-muted/20 p-2.5 @3xl:gap-2.5 @3xl:rounded-none @3xl:border-0 @3xl:bg-transparent @3xl:p-0",
+              CONTACT_ROW_COLUMNS,
+            )}
+          >
             <Input
               id={`supplier-contact-name-${index}`}
+              aria-label={t("inventory.form.fields.contactName")}
+              className="col-start-1 row-start-1"
               value={contact.name}
               placeholder={t("inventory.form.placeholders.contactName")}
               onChange={(event) => patch(index, { name: event.target.value })}
               onFocus={selectFormFieldTextOnFocus}
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`supplier-contact-phone-${index}`}>{t("inventory.form.fields.contactPhone")}</Label>
             <PhoneInput
               id={`supplier-contact-phone-${index}`}
+              aria-label={t("inventory.form.fields.contactPhone")}
+              className="col-span-2 @3xl:col-span-1 @3xl:col-start-2 @3xl:row-start-1"
               value={contact.phone}
               onChange={(phone) => patch(index, { phone })}
               onFocus={selectFormFieldTextOnFocus}
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`supplier-contact-email-${index}`}>{t("inventory.form.fields.contactEmail")}</Label>
             <Input
               id={`supplier-contact-email-${index}`}
               type="email"
+              aria-label={t("inventory.form.fields.contactEmail")}
+              className="col-span-2 @3xl:col-span-1 @3xl:col-start-3 @3xl:row-start-1"
               value={contact.email}
               placeholder={t("inventory.form.placeholders.email")}
               onChange={(event) => patch(index, { email: event.target.value })}
               onFocus={selectFormFieldTextOnFocus}
             />
-          </div>
-          <div className="flex items-end">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               disabled={entries.length <= 1}
-              className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              className="col-start-2 row-start-1 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive @3xl:col-start-4"
               title={t("inventory.form.removeContact")}
               aria-label={t("inventory.form.removeContact")}
               onClick={() => onChange(entries.filter((_, entryIndex) => entryIndex !== index))}
@@ -99,12 +111,13 @@ function SupplierContactsEditor({
               <Trash2 className="size-4" />
             </Button>
           </div>
-        </fieldset>
-      ))}
+        ))}
+      </div>
+
       <Button
         type="button"
         variant="outline"
-        className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
+        className="h-9 w-full shrink-0 justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
         onClick={() => onChange([...entries, createEmptySupplierContact()])}
       >
         <Plus className="size-4" />
@@ -126,6 +139,7 @@ export function InventorySupplierForm({
   const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
   const validation = buildInventorySupplierPayload(values);
+  const optionalBadge = <span className="text-xs text-muted-foreground">{t("inventory.form.workflow.optional")}</span>;
 
   useEffect(() => {
     setValues(initialValues ?? createEmptySupplierForm());
@@ -144,66 +158,70 @@ export function InventorySupplierForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-        <FormSection
-          icon={Building2}
-          title={`01 · ${t("inventory.form.sections.supplier")}`}
-          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-        >
-          <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.supplierDetailsHint")}</p>
-          <div className="space-y-1">
-            <Label htmlFor="companyName">
-              {t("inventory.form.fields.companyName")} <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="companyName"
-              autoComplete="organization"
-              autoFocus
-              value={values.companyName}
-              onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
-              onFocus={selectFormFieldTextOnFocus}
-              required
-            />
-          </div>
-        </FormSection>
+      <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid gap-5 @3xl:grid-cols-2">
+          <FormSection
+            variant="card"
+            icon={Building2}
+            title={`01 · ${t("inventory.form.sections.supplier")}`}
+            description={t("inventory.form.workflow.supplierDetailsHint")}
+          >
+            <div className="space-y-1">
+              <Label htmlFor="companyName">
+                {t("inventory.form.fields.companyName")} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="companyName"
+                autoComplete="organization"
+                autoFocus
+                value={values.companyName}
+                onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
+                onFocus={selectFormFieldTextOnFocus}
+                required
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            variant="card"
+            icon={MapPin}
+            title={`02 · ${t("inventory.form.sections.addresses")}`}
+            description={t("inventory.form.workflow.addressesDetailsHint")}
+            action={optionalBadge}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="supplier-address">{t("inventory.form.fields.address")}</Label>
+              <AddressAutocompleteInput
+                id="supplier-address"
+                value={values.addresses[0] ?? ""}
+                placeholder={t("inventory.form.placeholders.address")}
+                allowManualEntry
+                className="w-full"
+                manualEntryTogglePosition="label"
+                onValueChange={(address) =>
+                  setValues((current) => ({ ...current, addresses: [address, ...current.addresses.slice(1)] }))
+                }
+                onPlaceSelected={(place) =>
+                  setValues((current) => ({
+                    ...current,
+                    addresses: [formatSelectedAddress(place), ...current.addresses.slice(1)],
+                  }))
+                }
+              />
+            </div>
+          </FormSection>
+        </div>
 
         <FormSection
+          variant="card"
           icon={User}
-          title={`02 · ${t("inventory.form.sections.contacts")}`}
-          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-          action={<span className="text-xs text-muted-foreground">{t("inventory.form.workflow.optional")}</span>}
+          title={`03 · ${t("inventory.form.sections.contacts")}`}
+          description={t("inventory.form.workflow.contactsDetailsHint")}
+          action={optionalBadge}
         >
-          <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.contactsDetailsHint")}</p>
           <SupplierContactsEditor
             contacts={values.contacts}
             onChange={(contacts) => setValues((current) => ({ ...current, contacts }))}
-          />
-        </FormSection>
-
-        <FormSection
-          icon={MapPin}
-          title={`03 · ${t("inventory.form.sections.addresses")}`}
-          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-          action={<span className="text-xs text-muted-foreground">{t("inventory.form.workflow.optional")}</span>}
-        >
-          <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.addressesDetailsHint")}</p>
-          <Label htmlFor="supplier-address">{t("inventory.form.fields.address")}</Label>
-          <AddressAutocompleteInput
-            id="supplier-address"
-            value={values.addresses[0] ?? ""}
-            placeholder={t("inventory.form.placeholders.address")}
-            allowManualEntry
-            className="w-full"
-            manualEntryTogglePosition="label"
-            onValueChange={(address) =>
-              setValues((current) => ({ ...current, addresses: [address, ...current.addresses.slice(1)] }))
-            }
-            onPlaceSelected={(place) =>
-              setValues((current) => ({
-                ...current,
-                addresses: [formatSelectedAddress(place), ...current.addresses.slice(1)],
-              }))
-            }
           />
         </FormSection>
       </FormBody>

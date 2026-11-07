@@ -562,7 +562,6 @@
       "CUSTODIAN": "Employee / route"
     },
     "awaiting": "Awaiting confirmation",
-    "confirmedBy": "{{name}} · {{date}}",
     "lastRejection": "Last rejection",
     "rejectedBy": "{{party}} · {{name}} · {{date}}",
     "confirmAs": "Confirm as {{party}}",

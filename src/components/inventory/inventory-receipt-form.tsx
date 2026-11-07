@@ -159,14 +159,14 @@ export function InventoryReceiptForm({
   return (
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+        <FormBody workflow isBusy={isSubmitting}>
           <FormSection
+            variant="card"
             icon={Building2}
             title={`01 · ${t("inventory.form.sections.header")}`}
-            className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            description={t("inventory.form.workflow.receiptDraftHint")}
           >
-            <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.receiptDraftHint")}</p>
-            <div className="grid gap-4 @3xl:grid-cols-2">
+            <div className="grid items-end gap-4 @xl:grid-cols-2 @4xl:grid-cols-4">
               <div className="space-y-1">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="receipt-supplier">{t("inventory.form.fields.supplier")} <span className="text-destructive">*</span></Label>
@@ -236,9 +236,10 @@ export function InventoryReceiptForm({
             </div>
           </FormSection>
           <FormSection
+            variant="card"
             icon={ListOrdered}
             title={`02 · ${t("inventory.form.sections.lines")}`}
-            className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            description={t("inventory.form.workflow.receiptHint")}
             action={
               <FieldEntityActions
                 onAdd={() => {
@@ -249,12 +250,12 @@ export function InventoryReceiptForm({
               />
             }
           >
-            <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.receiptHint")}</p>
             <InventoryDocumentLinesEditor
               idPrefix="receipt"
               lines={values.lines}
               items={itemChoices}
               withUnitCost
+              listClassName="@4xl:max-h-[max(5rem,calc(90vh-38rem))] @4xl:overflow-y-auto"
               createLine={createEmptyReceiptLine}
               onChange={(lines) => patch({ lines })}
             />
@@ -271,7 +272,7 @@ export function InventoryReceiptForm({
       </form>
 
       <Dialog open={entityDialog === "item"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.addItemTitle")}</DialogTitle>
           </DialogHeader>

@@ -87,7 +87,7 @@ export function InventoryReceiptViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.form.fields.notes")} value={receipt.notes || dash} />
           </RecordViewSheetSection>
           {showConfirmations ? (
-            <RecordViewSheetSection title={t("inventory.confirmations.title")}>
+            <RecordViewSheetSection title={t("inventory.confirmations.title")} padding="relaxed">
               <InventoryConfirmationPanel
                 state={receipt}
                 parties={RECEIPT_PARTIES}
@@ -104,11 +104,13 @@ export function InventoryReceiptViewSheet({
                 key={line.id ?? `${line.itemId}-${index}`}
                 label={getItemNameById(line.itemId, items)}
                 value={`${line.quantity} × ${formatInventoryMinor(line.unitCostMinor)} = ${formatInventoryMinor(line.quantity * line.unitCostMinor)}`}
+                valueAlign="end"
               />
             ))}
             <RecordViewSheetDetailRow
               label={t("inventory.form.totalCost")}
               value={`${sumLineQuantities(receipt.lines)} · ${formatInventoryMinor(sumReceiptLinesMinor(receipt.lines))}`}
+              valueAlign="end"
             />
           </RecordViewSheetSection>
           <RecordViewSheetSection title={t("inventory.view.audit")}>

@@ -140,14 +140,14 @@ export function InventoryDispatchForm({
   return (
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
+        <FormBody workflow isBusy={isSubmitting}>
           <FormSection
+            variant="card"
             icon={Truck}
             title={`01 · ${t("inventory.form.sections.header")}`}
-            className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            description={t("inventory.form.workflow.dispatchDraftHint")}
           >
-            <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.dispatchDraftHint")}</p>
-            <div className="grid gap-4 @3xl:grid-cols-2">
+            <div className="grid items-end gap-4 @xl:grid-cols-2 @4xl:grid-cols-4">
               <InventoryHolderSelect
                 id="dispatch-from"
                 label={t("inventory.form.fields.fromHolder")}
@@ -196,7 +196,7 @@ export function InventoryDispatchForm({
                   required
                 />
               </div>
-              <div className="space-y-1 @3xl:col-span-2">
+              <div className="space-y-1 @xl:col-span-2 @4xl:col-span-4">
                 <Label htmlFor="dispatch-notes">{t("inventory.form.fields.notes")}</Label>
                 <Input
                   id="dispatch-notes"
@@ -209,9 +209,10 @@ export function InventoryDispatchForm({
             </div>
           </FormSection>
           <FormSection
+            variant="card"
             icon={ListOrdered}
             title={`02 · ${t("inventory.form.sections.lines")}`}
-            className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+            description={t("inventory.form.workflow.dispatchHint")}
             action={
               <FieldEntityActions
                 onAdd={() => {
@@ -222,12 +223,12 @@ export function InventoryDispatchForm({
               />
             }
           >
-            <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.dispatchHint")}</p>
             <InventoryDocumentLinesEditor
               idPrefix="dispatch"
               lines={values.lines}
               items={itemChoices}
               availableByItem={availableByItem}
+              listClassName="@4xl:max-h-[max(5rem,calc(90vh-38rem))] @4xl:overflow-y-auto"
               createLine={createEmptyDispatchLine}
               onChange={(lines) => patch({ lines })}
             />
@@ -244,7 +245,7 @@ export function InventoryDispatchForm({
       </form>
 
       <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.addItemTitle")}</DialogTitle>
           </DialogHeader>

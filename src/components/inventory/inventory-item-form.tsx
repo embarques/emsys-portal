@@ -61,100 +61,103 @@ export function InventoryItemForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-        <FormSection
-          icon={Tag}
-          title={`01 · ${t("inventory.form.sections.identification")}`}
-          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-        >
-          <p className="text-sm text-muted-foreground">{t("inventory.form.workflow.itemHint")}</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="item-name">{t("inventory.form.fields.name")} <span className="text-destructive">*</span></Label>
-              <Input
-                id="item-name"
-                autoFocus
-                value={values.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                onFocus={selectFormFieldTextOnFocus}
-                required
-              />
+      <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid gap-5 @3xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <FormSection
+            variant="card"
+            icon={Tag}
+            title={`01 · ${t("inventory.form.sections.identification")}`}
+            description={t("inventory.form.workflow.itemHint")}
+          >
+            <div className="grid gap-4 @xl:grid-cols-2">
+              <div className="space-y-1 @xl:col-span-2">
+                <Label htmlFor="item-name">{t("inventory.form.fields.name")} <span className="text-destructive">*</span></Label>
+                <Input
+                  id="item-name"
+                  autoFocus
+                  value={values.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  onFocus={selectFormFieldTextOnFocus}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="item-sku">{t("inventory.form.fields.sku")}</Label>
+                <Input
+                  id="item-sku"
+                  value={values.sku}
+                  placeholder={t("inventory.form.placeholders.sku")}
+                  onChange={(event) => updateField("sku", event.target.value)}
+                  onFocus={selectFormFieldTextOnFocus}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="item-category">{t("inventory.form.fields.category")}</Label>
+                <Input
+                  id="item-category"
+                  value={values.category}
+                  placeholder={t("inventory.form.placeholders.categoryText")}
+                  onChange={(event) => updateField("category", event.target.value)}
+                  onFocus={selectFormFieldTextOnFocus}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="item-unit">{t("inventory.form.fields.unit")}</Label>
+                <Input
+                  id="item-unit"
+                  value={values.unitOfMeasure}
+                  placeholder={t("inventory.form.placeholders.unit")}
+                  onChange={(event) => updateField("unitOfMeasure", event.target.value)}
+                  onFocus={selectFormFieldTextOnFocus}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="item-price">{t("inventory.form.fields.defaultSellingPrice")}</Label>
+                <Input
+                  id="item-price"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={values.defaultSellingPrice}
+                  onChange={(event) => updateField("defaultSellingPrice", event.target.value)}
+                  onFocus={selectFormFieldTextOnFocus}
+                />
+                <p className="text-xs text-muted-foreground">{t("inventory.form.workflow.priceHint")}</p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="item-sku">{t("inventory.form.fields.sku")}</Label>
-              <Input
-                id="item-sku"
-                value={values.sku}
-                placeholder={t("inventory.form.placeholders.sku")}
-                onChange={(event) => updateField("sku", event.target.value)}
-                onFocus={selectFormFieldTextOnFocus}
-              />
+          </FormSection>
+
+          <FormSection
+            variant="card"
+            icon={Tag}
+            title={`02 · ${t("inventory.form.sections.stockLevels")}`}
+            description={t("inventory.form.readOnlyStockHint")}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="item-available">{t("inventory.columns.available")}</Label>
+                <Input className="bg-muted/40 tabular-nums" id="item-available" readOnly value={String(stock.available)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="item-quarantined">{t("inventory.columns.quarantined")}</Label>
+                <Input className="bg-muted/40 tabular-nums" id="item-quarantined" readOnly value={String(stock.quarantined)} />
+              </div>
+              <div className="col-span-2 space-y-1">
+                <Label htmlFor="reorderThreshold">{t("inventory.form.fields.reorderThreshold")}</Label>
+                <Input
+                  id="reorderThreshold"
+                  type="number"
+                  min={0}
+                  step={1}
+                  aria-describedby="reorder-threshold-hint"
+                  value={values.reorderThreshold}
+                  onChange={(event) => updateField("reorderThreshold", event.target.value)}
+                  onFocus={selectFormFieldTextOnFocus}
+                />
+                <p id="reorder-threshold-hint" className="text-xs text-muted-foreground">{t("inventory.form.workflow.reorderHint")}</p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="item-category">{t("inventory.form.fields.category")}</Label>
-              <Input
-                id="item-category"
-                value={values.category}
-                placeholder={t("inventory.form.placeholders.categoryText")}
-                onChange={(event) => updateField("category", event.target.value)}
-                onFocus={selectFormFieldTextOnFocus}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="item-unit">{t("inventory.form.fields.unit")}</Label>
-              <Input
-                id="item-unit"
-                value={values.unitOfMeasure}
-                placeholder={t("inventory.form.placeholders.unit")}
-                onChange={(event) => updateField("unitOfMeasure", event.target.value)}
-                onFocus={selectFormFieldTextOnFocus}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="item-price">{t("inventory.form.fields.defaultSellingPrice")}</Label>
-              <Input
-                id="item-price"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={values.defaultSellingPrice}
-                onChange={(event) => updateField("defaultSellingPrice", event.target.value)}
-                onFocus={selectFormFieldTextOnFocus}
-              />
-              <p className="text-xs text-muted-foreground">{t("inventory.form.workflow.priceHint")}</p>
-            </div>
-          </div>
-        </FormSection>
-        <FormSection
-          icon={Tag}
-          title={`02 · ${t("inventory.form.sections.stockLevels")}`}
-          className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="item-available">{t("inventory.columns.available")}</Label>
-              <Input className="bg-muted/40 tabular-nums" id="item-available" readOnly value={String(stock.available)} />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="item-quarantined">{t("inventory.columns.quarantined")}</Label>
-              <Input className="bg-muted/40 tabular-nums" id="item-quarantined" readOnly value={String(stock.quarantined)} />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="reorderThreshold">{t("inventory.form.fields.reorderThreshold")}</Label>
-              <Input
-                id="reorderThreshold"
-                type="number"
-                min={0}
-                step={1}
-                aria-describedby="reorder-threshold-hint"
-                value={values.reorderThreshold}
-                onChange={(event) => updateField("reorderThreshold", event.target.value)}
-                onFocus={selectFormFieldTextOnFocus}
-              />
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">{t("inventory.form.readOnlyStockHint")}</p>
-          <p id="reorder-threshold-hint" className="text-xs text-muted-foreground">{t("inventory.form.workflow.reorderHint")}</p>
-        </FormSection>
+          </FormSection>
+        </div>
       </FormBody>
 
       <FormFooter

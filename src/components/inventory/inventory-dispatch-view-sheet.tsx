@@ -88,7 +88,7 @@ export function InventoryDispatchViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.form.fields.notes")} value={dispatch.notes || dash} />
           </RecordViewSheetSection>
           {showConfirmations ? (
-            <RecordViewSheetSection title={t("inventory.confirmations.title")}>
+            <RecordViewSheetSection title={t("inventory.confirmations.title")} padding="relaxed">
               <InventoryConfirmationPanel
                 state={dispatch}
                 parties={DISPATCH_PARTIES}
@@ -105,9 +105,14 @@ export function InventoryDispatchViewSheet({
                 key={line.id ?? `${line.itemId}-${index}`}
                 label={getItemNameById(line.itemId, items)}
                 value={String(line.quantity)}
+                valueAlign="end"
               />
             ))}
-            <RecordViewSheetDetailRow label={t("inventory.columns.totalQuantity")} value={String(sumLineQuantities(dispatch.lines))} />
+            <RecordViewSheetDetailRow
+              label={t("inventory.columns.totalQuantity")}
+              value={String(sumLineQuantities(dispatch.lines))}
+              valueAlign="end"
+            />
           </RecordViewSheetSection>
           <RecordViewSheetSection title={t("inventory.view.audit")}>
             <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDateTime(dispatch.createdAt)} />
