@@ -38,9 +38,9 @@ const item={id:"68f800000000000000000001",number:"INV-100",claimed:false,allocat
 test("pool list preserves company pool zero, pagination and cancellation",async()=>{
  const calls=[];const controller=new AbortController();
  const api=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{get:async(...args)=>{calls.push(args);return {success:true,data:{items:[item],remaining:1,lowThreshold:10}}}});
- const page=await api.fetchInvoicePool(0,"cursor",controller.signal);
- assert.equal(page.items[0].number,"INV-100");assert.equal(calls[0][0],"/invoices/reserved");
- assert.deepEqual(calls[0][1].params,{userId:0,after:"cursor",limit:50,q:undefined});assert.equal(calls[0][1].signal,controller.signal);
+ const page=await api.fetchInvoicePoolSummary(controller.signal);
+ assert.equal(page.remaining,1);assert.equal(calls[0][0],"/invoices/reserved");
+ assert.deepEqual(calls[0][1].params,{userId:0,limit:1});assert.equal(calls[0][1].signal,controller.signal);
 });
 test("mutation preserves operation identity and rejects unsuccessful envelopes",async()=>{
  const request={requestId:"stable",action:"generate",count:50,userId:0};let sent;
@@ -83,28 +83,23 @@ test("ordinary language and theme saves remain compatible with the older fixed-t
  assert.equal(saved.language,"es"); assert.equal(saved.theme,"dark"); assert.equal(saved.invoicePoolThreshold,10);
 });
 
-test("pool number search is sent server-side and preserves cancellation",async()=>{
- let options;
- const api=loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{get:async(url,value)=>{options=value;return {success:true,data:{items:[],remaining:0,lowThreshold:10}}}});
- const controller=new AbortController();
- await api.fetchInvoicePool(0,undefined,controller.signal,"  INV-001  ");
- assert.equal(options.params.q,"INV-001");assert.equal(options.params.userId,0);assert.equal(options.signal,controller.signal);
-});
-
-test("advanced pool search preserves typed zero/false, cursor, cancellation and number search", async () => {
+test("advanced pool search preserves typed zero/false, sort, page, cancellation and number search", async () => {
  let sent;
  const api = loadFeature("src/lib/invoices/api/invoice-pool-api.ts", {
   get: async () => { throw Error("must not silently fall back to an unfiltered list"); },
-  post: async (...args) => { sent = args; return {success:true,data:{items:[item],remaining:1,lowThreshold:10}}; },
+  post: async (...args) => { sent = args; return {success:true,data:[item],total:51}; },
  });
  const controller = new AbortController();
  const rows = [
   {id:"a",join:"and",field:"allocation.userId",operator:"eq",value:"0"},
   {id:"b",join:"and",field:"status",operator:"eq",value:"available"},
  ];
- await api.fetchInvoicePool(undefined,"next-cursor",controller.signal,"INV-100",rows);
+ const page = await api.fetchInvoicePool(2,"reservedAt:desc",controller.signal,"INV-100",rows);
+ assert.equal(page.hasNext,false);
+ assert.equal(page.remaining,51);
+ assert.deepEqual(sent[1].sort,[{field:"reservedAt",direction:"desc"}]);
  assert.equal(sent[0],"/invoices/reserved/search");
- assert.deepEqual(sent[2].params,{after:"next-cursor",limit:50});
+ assert.deepEqual(sent[2].params,{page:2,limit:50});
  assert.equal(sent[2].signal,controller.signal);
  const leaves = [];
  function visit(node) { if(node.filters) node.filters.forEach(visit); else leaves.push(node); }
@@ -113,7 +108,7 @@ test("advanced pool search preserves typed zero/false, cursor, cancellation and 
  assert.ok(leaves.some(node => node.field === "claimed" && node.value === false));
  assert.ok(leaves.some(node => node.field === "number" && node.value === "INV-100"));
  const missing = loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{post:async()=>{throw Error("Search endpoint unavailable");}});
- await assert.rejects(() => missing.fetchInvoicePool(undefined,undefined,controller.signal,"",rows),/Search endpoint unavailable/);
+ await assert.rejects(() => missing.fetchInvoicePool(1,"id:asc",controller.signal,"",rows),/Search endpoint unavailable/);
 });
 
 test("mixed pool joins and negated status match the full displayed status predicate", () => {
@@ -144,15 +139,15 @@ test("mixed pool joins and negated status match the full displayed status predic
  assert.deepEqual(samples.filter(row=>matches(row,body)).map(row=>row.number),["C"]);
 });
 
-test("reserved receivedAt accepts pending API fields without substituting another timestamp", () => {
+test("reserved reservedAt accepts pending API fields without substituting another timestamp", () => {
  const {reservedInvoiceSchema} = loadFeature("src/lib/invoices/schemas/invoice-pool.schema.ts",{});
- assert.equal(reservedInvoiceSchema.parse(item).receivedAt, undefined);
- assert.equal(reservedInvoiceSchema.parse({...item,receivedAt:null}).receivedAt, null);
- for (const receivedAt of ["2026-11-07T15:30:00Z","2026-11-07T10:30:00-05:00"]) {
-  assert.equal(reservedInvoiceSchema.parse({...item,receivedAt}).receivedAt, receivedAt);
+ assert.equal(reservedInvoiceSchema.parse(item).reservedAt, undefined);
+ assert.equal(reservedInvoiceSchema.parse({...item,reservedAt:null}).reservedAt, null);
+ for (const reservedAt of ["2026-11-07T15:30:00Z","2026-11-07T10:30:00-05:00"]) {
+  assert.equal(reservedInvoiceSchema.parse({...item,reservedAt}).reservedAt, reservedAt);
  }
- assert.equal(reservedInvoiceSchema.safeParse({...item,receivedAt:"invalid"}).success,false);
+ assert.equal(reservedInvoiceSchema.safeParse({...item,reservedAt:"invalid"}).success,false);
  const {buildInvoicePoolSearchBody} = loadFeature("src/lib/invoices/invoice-pool-filters.ts",{});
- const body = buildInvoicePoolSearchBody([{id:"date",join:"and",field:"receivedAt",operator:"gte",value:"2026-11-07"}]);
- assert.deepEqual(body,{operator:"and",filters:[{field:"receivedAt",operator:"gte",value:"2026-11-07"}]});
+ const body = buildInvoicePoolSearchBody([{id:"date",join:"and",field:"reservedAt",operator:"gte",value:"2026-11-07"}]);
+ assert.deepEqual(body,{operator:"and",filters:[{field:"reservedAt",operator:"gte",value:"2026-11-07"}]});
 });

@@ -12,10 +12,9 @@ import { parseAssignedDeliveryBarcodes } from "@/lib/deliveries/schemas/assigned
 import type { AssignedDeliveryBarcode } from "@/lib/deliveries/types";
 
 /**
- * Route Deliveries lists only barcodes on a delivery route. `gt ""` (not `neq ""`) is used
- * because it matches non-empty strings only, excluding barcodes whose route is missing or null.
+ * The route ID is present on routed pieces even when the route has no name.
  */
-const ASSIGNED_ROUTE_FILTER: ApiSearchFilter = { field: "route.name", operator: "gt", value: "" };
+const ASSIGNED_ROUTE_FILTER: ApiSearchFilter = { field: "route.id", operator: "neq", value: null };
 
 /** The API returns all tenant CONDUCE barcodes with delivery-view permission; no employee link is required. */
 export function fetchAssignedDeliveryBarcodesPage(

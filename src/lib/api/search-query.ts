@@ -27,6 +27,7 @@ export type ApiSearchOperator =
  * arrays. Strings are only valid for string fields.
  */
 export type ApiSearchFilterValue =
+  | null
   | string
   | number
   | boolean

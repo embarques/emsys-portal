@@ -459,11 +459,8 @@ function buildOrderSearchFilterGroups(
   return groups;
 }
 
-/**
- * `gt ""` (not `neq ""`) matches non-empty strings only, so pickups whose route
- * is missing or null are excluded. Live pickups expose `route: { id }` without a name.
- */
-const ASSIGNED_ROUTE_FILTER = { field: "route.id", operator: "gt", value: "" };
+// Daily-route IDs may be BSON ObjectIDs. Missing and null IDs are unrouted.
+const ASSIGNED_ROUTE_FILTER = { field: "route.id", operator: "neq", value: null };
 
 function hasOrderListFilters(params: OrderListParams): boolean {
   return hasResourceListFilters({

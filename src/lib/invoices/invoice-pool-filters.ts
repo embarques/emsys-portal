@@ -7,7 +7,7 @@ import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/tabl
 
 export const INVOICE_POOL_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   { field: "number", label: "Invoice number", operators: ["contains", "eq", "neq", "startsWith"], valueType: "text" },
-  { field: "receivedAt", label: "Received at", operators: ["eq", "neq", "gte", "lte"], valueType: "text", placeholder: "YYYY-MM-DD" },
+  { field: "reservedAt", label: "Reserved at", operators: ["eq", "neq", "gte", "lte"], valueType: "text", placeholder: "YYYY-MM-DD" },
   { field: "allocation.userId", label: "User", operators: ["eq", "neq"], valueType: "select", optionsSource: "users" },
   { field: "status", label: "Status", operators: ["eq", "neq"], valueType: "select", options: [
     { value: "available", label: "Available" },
@@ -33,8 +33,8 @@ function expandPoolFilter(node: ApiSearchFilterNode): ApiSearchFilterNode {
   };
 }
 
-export function buildInvoicePoolSearchBody(rows: TableFilterRowState[], search?: string) {
-  return buildStripeStyleSearchBody({ filterGroups: buildResourceSearchFilterGroups({
+export function buildInvoicePoolSearchBody(rows: TableFilterRowState[], search?: string, sort?: string) {
+  return buildStripeStyleSearchBody({ sort, filterGroups: buildResourceSearchFilterGroups({
     search: search?.trim() ? { value: search.trim() } : undefined,
     barOrSearchFields: ["number"],
     filterRows: rows,
