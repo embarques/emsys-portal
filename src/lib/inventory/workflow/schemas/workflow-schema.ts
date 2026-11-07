@@ -32,7 +32,7 @@ export function fieldsSchema(fields: Field[]) {
 
 type FormShape = Pick<Resource, 'key' | 'fields' | 'lines'>;
 
-/** Header fields plus optional repeated lines, with the cross-field rules from inventory.md. */
+/** Header fields plus optional repeated lines, with feature-owned cross-field validation. */
 export function workflowSchema(resource: FormShape) {
   const base = fieldsSchema(resource.fields ?? []);
   const group = z.object({ quantity: fieldSchema({ name: 'quantity', kind: 'number', min: 1 }), unitPriceMinor: fieldSchema({ name: 'unitPriceMinor', kind: 'money' }) });

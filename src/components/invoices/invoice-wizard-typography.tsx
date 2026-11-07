@@ -8,9 +8,3 @@ export const invoicePageTitleClassName =
 
 export const invoicePageDescriptionClassName =
   "mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground";
-
-export const invoiceStepEyebrowClassName =
-  "text-xs font-medium uppercase tracking-wide text-muted-foreground";
-
-export const invoiceStepTitleClassName =
-  "text-base font-semibold leading-tight text-foreground";

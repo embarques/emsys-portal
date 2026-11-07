@@ -33,6 +33,7 @@ import { BarcodesWorkspace } from "@/components/barcodes/barcodes-workspace";
 import { BarcodeStatusesWorkspace } from "@/components/barcodes/barcode-statuses-workspace";
 import { LabelUpdaterWorkspace } from "@/components/label-updater/label-updater-workspace";
 import { OrdersWorkspace } from "@/components/orders/orders-workspace";
+import { RouteAppointmentsMapWorkspace, RouteAppointmentsWorkspace } from "@/components/orders/route-appointments-workspace";
 import { OrdersMapWorkspace } from "@/components/orders/orders-map-workspace";
 import { RolesWorkspace } from "@/components/roles/roles-workspace";
 import { RouteManagerWorkspace } from "@/components/route-manager/route-manager-workspace";
@@ -41,13 +42,15 @@ import { DeliveriesWorkspace } from "@/components/deliveries/deliveries-workspac
 import { UserActivitiesWorkspace } from "@/components/user-activities/user-activities-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
-import { accountingClearingNavigationItems, navigation, topNavigationItems } from "@/config/navigation";
+import { accountingClearingNavigationItems, barcodeNavigationItems, invoiceNavigationItems, navigation, routeNavigationItems, topNavigationItems } from "@/config/navigation";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 import { findNavigationItemByHref, flattenAllNavigationItems } from "@/lib/navigation/nav-utils";
 import { translate, type Locale } from "@/lib/i18n/catalog";
 
 /** Maps dashboard routes to the client workspace component rendered inside a tab. */
 export const workspaceRegistry: Record<string, ComponentType> = {
+  "/route-appointments": RouteAppointmentsWorkspace,
+  "/route-appointments/map": RouteAppointmentsMapWorkspace,
   "/inventory/workflow": InventoryWorkflowWorkspace,
   "/": DashboardWorkspace,
   "/customers": CustomersWorkspace,
@@ -103,7 +106,7 @@ export function isWorkspaceRoute(href: string): boolean {
 export function resolveWorkspaceNavLabelKey(href: string): string | null {
   const pathname = href.split("?")[0] ?? href;
   const navItem = findNavigationItemByHref(
-    flattenAllNavigationItems(navigation, [...topNavigationItems, ...accountingClearingNavigationItems]),
+    flattenAllNavigationItems(navigation, [...topNavigationItems, ...accountingClearingNavigationItems, ...barcodeNavigationItems, ...routeNavigationItems, ...invoiceNavigationItems]),
     pathname,
   );
   return navItem?.labelKey ?? null;

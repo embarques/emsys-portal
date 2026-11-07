@@ -22,6 +22,9 @@ type TableFilterSelectProps = {
   mutedWhenEmpty?: boolean;
   fitToOptions?: boolean;
   searchable?: boolean;
+  manualFiltering?: boolean;
+  onSearchChange?: (query: string) => void;
+  loading?: boolean;
 };
 
 export function tableFilterSelectClassName(className?: string) {
@@ -39,6 +42,9 @@ export function TableFilterSelect({
   mutedWhenEmpty = false,
   fitToOptions = false,
   searchable = true,
+  manualFiltering,
+  onSearchChange,
+  loading,
 }: TableFilterSelectProps) {
   return (
     <SearchableSelect
@@ -53,6 +59,9 @@ export function TableFilterSelect({
       fitToOptions={fitToOptions}
       truncateSelection={!fitToOptions}
       searchable={searchable}
+      manualFiltering={manualFiltering}
+      onSearchChange={onSearchChange}
+      loading={loading}
     />
   );
 }

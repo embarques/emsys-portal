@@ -1,5 +1,6 @@
 {
   "errors": {
+    "pastAssignment": "Choose a daily route dated today or later. Past daily routes cannot receive new assignments.",
     "notFound": "Route not found.",
     "crewMinimum": "Select at least two crew members.",
     "branchNameRequired": "Branch name is required.",
@@ -19,13 +20,13 @@
     "routeManager": "Define reusable route crews with a status, branch, and crew members for appointments and deliveries.",
     "pickupRoutes": "Set the working appointment route for a date: branch, vehicle, route crew, and crew roles.",
     "deliveryRoutes": "Set the working delivery route: container, exchange rate, route crew, crew roles, and date.",
-    "dailyRoutes": "Set a working route for a date: branch, vehicle, route crew, and a role for each crew member. RD branches also need a container and exchange rate."
+    "dailyRoutes": "Set up each day’s vehicle, crew, roles, and exchange rate. RD branches also require a container."
   },
   "routeManager": {
     "title": "Route crews"
   },
   "dailyRoutes": {
-    "title": "Daily routes",
+    "title": "Today’s Routes",
     "editTitle": "Edit daily route",
     "addTabLabel": "Add daily route",
     "editTabLabel": "Edit {{name}}",

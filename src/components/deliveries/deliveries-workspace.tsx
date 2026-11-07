@@ -36,8 +36,12 @@ function rowKey(row: AssignedDeliveryBarcode) {
 }
 
 export function DeliveriesWorkspace() {
-  const { t } = useTranslation();
   const access = useDeliveryAccess();
+  return <RouteDeliveriesTable key={`${access.companyId}:${access.actorId}:${access.viewScope}:${access.canDeliver}:${access.canPrint}`} access={access} />;
+}
+
+function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliveryAccess> }) {
+  const { t } = useTranslation();
   const [sort,setSort] = useState(DEFAULT_ASSIGNED_DELIVERY_SORT);
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
@@ -49,7 +53,7 @@ export function DeliveriesWorkspace() {
     enabled: access.canList,
     keyPrefix: "deliveries.filters.fields",
     sort,
-    queryKey: (params) => queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params),
+    queryKey: (params) => [...queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params), access.viewScope],
     fetchPage: fetchAssignedDeliveryBarcodesPage,
   });
 
@@ -157,7 +161,7 @@ export function DeliveriesWorkspace() {
                     size="sm"
                     variant="outline"
                     className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={selectedActionDisabled}
+                    disabled={!selectedRow.invoiceId}
                     onClick={() => setPrintRow(selectedRow)}
                   >
                     <Printer className="h-4 w-4" />
@@ -228,7 +232,7 @@ export function DeliveriesWorkspace() {
         onDeliver={(row) => openFromView(setDeliverRow, row)}
         onPrint={(row) => openFromView(setPrintRow, row)}
       />
-      {printRow?.invoiceId && printRow.delivery?.id && access.canPrint && <InvoicePrintSignaturesDialog key={`${access.companyId}:${printRow.invoiceId}:${printRow.delivery.id}`} invoiceIds={[printRow.invoiceId]} trip={{ deliveryId: String(printRow.delivery.id) }} onClose={() => setPrintRow(null)} />}
+      {printRow?.invoiceId && access.canPrint && <InvoicePrintSignaturesDialog key={`${access.companyId}:${printRow.invoiceId}:${printRow.delivery?.id}`} invoiceIds={[printRow.invoiceId]} trip={printRow.delivery?.id ? { deliveryId: String(printRow.delivery.id) } : undefined} onClose={() => setPrintRow(null)} />}
       {deliverRow && access.canDeliver && <DeliverDialog
         key={`${access.companyId}:${access.actorId}:${deliverRow.invoiceId}:${deliverRow.route?.id}:${deliverRow.delivery?.id}`}
         target={deliverRow}

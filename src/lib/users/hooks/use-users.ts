@@ -92,12 +92,13 @@ export function useUserAutocomplete(
   });
 }
 
-export function useUsers(params: UserListParams) {
+export function useUsers(params: UserListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isUserListFiltered(params);
 
   return useWorkspaceQuery({
     queryKey: queryKeys.users.list(params),
     queryFn: () => fetchUsers(params),
+    enabled: options.enabled ?? true,
     placeholderData: keepPreviousData,
     staleTime: isFiltered ? 0 : 60_000,
   });

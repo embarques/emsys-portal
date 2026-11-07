@@ -22,14 +22,14 @@ function StepCircle({
   return (
     <span
       className={cn(
-        "relative z-10 flex size-9 items-center justify-center rounded-full text-sm font-semibold",
+        "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
         status === "complete" &&
           "bg-primary text-primary-foreground transition-colors group-hover:bg-[color-mix(in_oklab,var(--primary),black_16%)]",
-        status === "current" && "border-2 border-primary bg-card text-primary",
+        status === "current" && "border border-primary bg-card text-primary",
         status === "upcoming" && "bg-muted text-muted-foreground",
       )}
     >
-      {status === "complete" ? <Check className="size-4" /> : stepNumber}
+      {status === "complete" ? <Check className="size-3.5" /> : stepNumber}
     </span>
   );
 }
@@ -57,21 +57,11 @@ export function WorkflowStepper({
   );
   const currentStepLabel = steps[currentStepIndex]?.label ?? "";
   const progressValue = ((currentStepIndex + 1) / steps.length) * 100;
-  const gridColsClass =
-    steps.length === 3
-      ? "grid-cols-3"
-      : steps.length <= 4
-      ? "grid-cols-4"
-      : steps.length === 5
-        ? "grid-cols-5"
-        : steps.length === 6
-          ? "grid-cols-6"
-          : "grid-cols-7";
 
   return (
     <nav
       aria-label={ariaLabel}
-      className="shrink-0 border-b border-border bg-card px-4 py-3 md:px-5 md:py-3"
+      className="shrink-0 border-b border-border bg-card px-4 py-3 md:px-5 md:py-2"
     >
       <div className="md:hidden">
         <div className="flex items-center justify-between gap-3">
@@ -89,27 +79,13 @@ export function WorkflowStepper({
         </div>
       </div>
 
-      <div className="relative mx-auto hidden max-w-4xl md:block">
-        <div
-          className="absolute top-[1.125rem] h-0.5 bg-border"
-          style={{ left: `${50 / steps.length}%`, right: `${50 / steps.length}%` }}
-          aria-hidden
-        />
-        <div
-          className="absolute top-[1.125rem] h-0.5 bg-primary transition-[width]"
-          style={{
-            left: `${50 / steps.length}%`,
-            width: `${((currentStepIndex) / Math.max(steps.length - 1, 1)) * (100 - 100 / steps.length)}%`,
-          }}
-          aria-hidden
-        />
-
-        <ol className={cn("relative grid gap-2", gridColsClass)}>
+      <div className="hidden md:block">
+        <ol className="flex items-center gap-2">
           {steps.map((entry) => {
             const status = stepStatus(entry.id, step);
             const label = entry.label;
             const labelClassName = cn(
-              "max-w-[5.5rem] text-sm font-medium leading-tight",
+              "text-xs font-medium leading-tight",
               status === "upcoming" ? "text-muted-foreground" : "text-foreground",
             );
             const content = (
@@ -122,21 +98,21 @@ export function WorkflowStepper({
             return (
               <li
                 key={entry.id}
-                className="flex flex-col items-center gap-2 text-center"
+                className="flex min-w-0 flex-1 items-center gap-2 after:h-px after:min-w-2 after:flex-1 after:bg-border last:flex-none last:after:hidden"
                 aria-current={status === "current" ? "step" : undefined}
               >
                 {onSelectStep && (canSelectStep || status === "complete") ? (
                   <button
                     type="button"
                     disabled={status === "current" || (canSelectStep ? !canSelectStep(entry.id) : false)}
-                    className="group flex cursor-pointer disabled:cursor-default flex-col items-center gap-2 rounded-lg text-center outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="group flex min-h-9 cursor-pointer items-center gap-2 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default"
                     onClick={() => onSelectStep(entry.id)}
                     aria-label={goToStepLabel(label)}
                   >
                     {content}
                   </button>
                 ) : (
-                  content
+                  <span className="flex min-h-9 items-center gap-2">{content}</span>
                 )}
               </li>
             );

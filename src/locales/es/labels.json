@@ -1,5 +1,6 @@
 {
   "errors": {
+    "deliveredRouteLocked": "Los códigos entregados deben conservar la ruta diaria que los entregó. No se pueden reasignar ni desasignar.",
     "createFailed": "No se pudo crear el código de barras.",
     "updateFailed": "No se pudo actualizar el código de barras.",
     "numberRequiredToUpdate": "El número de código de barras es obligatorio para actualizar esta etiqueta.",
@@ -80,7 +81,8 @@
       "bulkLabel": "Múltiples códigos de barras (separados por coma o nueva línea)",
       "bulkPlaceholder": "LBL-..., LBL-...",
       "apply": "Aplicar",
-      "applyAll": "Aplicar todos los códigos"
+      "applyAll": "Aplicar todos los códigos",
+      "applying": "Aplicando…"
     },
     "search": {
       "statuses": "Buscar estados…",

@@ -147,7 +147,7 @@ type ApiCustomer = {
   receivers?: string[];
 };
 
-/** POST/PUT /customers — see API_PAYLOADS.md and live Customer schema (`phones[]`, `addresses[]`). */
+/** POST/PUT /customers — see api-docs.json and live Customer schema (`phones[]`, `addresses[]`). */
 type ApiCustomerWritePayload = {
   name: string;
   customerType: number;
@@ -204,7 +204,7 @@ function readNumericId(value: number | string | undefined): number | undefined {
 
 /**
  * Customer `accountBalance` is a stored API field (see
- * docs/archive/CUSTOMER_BACKEND_CONFIRMATION.md / API_PAYLOADS.md). Do not derive
+ * api-docs.json). Do not derive
  * it from invoices, payments, or journals.
  */
 function readAccountBalance(value: unknown): number {

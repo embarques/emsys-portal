@@ -28,6 +28,7 @@ import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pick
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { formatRouteDate } from "@/lib/route-manager/display";
 import { todayDateInputValue } from "@/lib/route-manager/types";
+import { assignmentToday } from "@/lib/pickup-delivery-routes/assignment-policy";
 
 export type AssignableAppointment = Pick<Order, "id" | "date" | "completed" | "branch">;
 
@@ -87,7 +88,7 @@ export function AssignAppointmentRouteDialog({
     [incompleteAppointments],
   );
   const skippedCompletedCount = appointments.length - incompleteAppointments.length;
-  const routeDate = todayDateInputValue();
+  const routeDate = assignmentToday();
   const hasFutureAppointment = incompleteAppointments.some(
     (appointment) => appointment.date.trim().slice(0, 10) > routeDate,
   );
@@ -138,7 +139,7 @@ export function AssignAppointmentRouteDialog({
   }, [open]);
 
   const isSaving = assignPickupsMutation.isPending;
-  const canSubmit = !scopeError && pickupIds.length > 0 && Boolean(routeId) && !isSaving;
+  const canSubmit = !scopeError && pickupIds.length > 0 && Boolean(selectedRoute) && !isSaving;
 
   function handleOpenChange(nextOpen: boolean) {
     if (isSaving) return;
@@ -157,10 +158,10 @@ export function AssignAppointmentRouteDialog({
   }
 
   async function confirmAssign() {
-    if (!canSubmit) return;
+    if (!canSubmit || !selectedRoute) return;
 
     try {
-      await assignPickupsMutation.mutateAsync({ routeId, pickupIds });
+      await assignPickupsMutation.mutateAsync({ routeId, pickupIds, routeDate: selectedRoute.date });
       const routeName = formatOrderRouteName({ routeId }, selectedRoute, t);
       const routeSuffix = routeName
         ? t("orders.toasts.assignedToRouteNamed", { routeName })

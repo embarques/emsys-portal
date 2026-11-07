@@ -4,8 +4,8 @@
     "reviewMismatch": "Los artículos de la entrega no coinciden con la factura y la entrega seleccionadas.",
     "completionMismatch": "La confirmación no coincide con la entrega seleccionada."
   },
-  "title": "Entregas",
-  "description": "Todos los códigos de entrega pendientes, ordenados por ciudad de forma predeterminada.",
+  "title": "Entregas de ruta",
+  "description": "Entregue códigos de ruta e imprima sus facturas. Sus permisos determinan las entregas disponibles.",
   "searchPlaceholder": "Buscar código, factura, artículo, destinatario, provincia o contenedor…",
   "empty": "No tienes entregas pendientes.",
   "noAccess": "No tienes acceso para ver las entregas.",

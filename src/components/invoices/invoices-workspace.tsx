@@ -25,6 +25,7 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { ReservedInvoicesButton } from "@/components/invoices/reserved-invoices-button";
 import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -1010,14 +1011,15 @@ export function InvoicesWorkspace() {
           title={t("invoices.title")}
           description={t("invoices.pages.description")}
           actions={
-            canCreateInvoices ? (
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <ReservedInvoicesButton />
+              {canCreateInvoices ? (
                 <Button onClick={openAddForm} disabled={isSaving}>
                   <Plus className="h-4 w-4" />
                   {t("invoices.workspace.addInvoice")}
                 </Button>
-              </div>
-            ) : undefined
+              ) : null}
+            </div>
           }
         />
       </div>

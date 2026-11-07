@@ -59,6 +59,11 @@ async function fixture(flags = {}) {
   return page;
 }
 
+async function generateNumbers(page) {
+  await page.getByRole("button",{name:"Generate numbers",exact:true}).click();
+  await page.getByRole("dialog").getByRole("button",{name:"Generate numbers",exact:true}).click();
+}
+
 
 test("reserved page presents available, assigned and downloaded numbers",async()=>{
  const page=await fixture();try{
@@ -70,7 +75,7 @@ test("reserved page presents available, assigned and downloaded numbers",async()
 });
 test("uncertain generation retries the exact persisted operation",async()=>{
  const page=await fixture({poolLoseAck:true});try{
-  await page.getByRole("button",{name:"Generate numbers",exact:true}).click();
+  await generateNumbers(page);
   await page.getByRole("button",{name:"Retry saved request",exact:true}).waitFor();
   assert.equal(await page.getByRole("button",{name:"Generate numbers",exact:true}).isDisabled(),true);
   await page.getByRole("button",{name:"Retry saved request",exact:true}).click();
@@ -81,7 +86,7 @@ test("uncertain generation retries the exact persisted operation",async()=>{
 });
 test("an uncertain generation survives a page reload",async()=>{
  const page=await fixture({poolLoseAck:true});try{
-  await page.getByRole("button",{name:"Generate numbers",exact:true}).click();
+  await generateNumbers(page);
   await page.getByRole("button",{name:"Retry saved request",exact:true}).waitFor();
   const first=await page.evaluate(()=>window.poolWrites[0]);
   await page.reload();await page.addStyleTag({content:css});await page.addScriptTag({content:script});
@@ -110,14 +115,18 @@ test("user selection is separate from generation and does not require an employe
  const page = await fixture();
  try {
   await page.getByRole("heading", {name:"Reserved invoices"}).waitFor();
-  await page.locator("#pool-user").click();
-  await page.getByRole("option", {name:"Ada User",exact:true}).click();
   await page.getByRole("checkbox", {name:"Select INV-100",exact:true}).check();
   await page.getByRole("button", {name:"Assign selected",exact:true}).click();
+  const dialog = page.getByRole("dialog");
+  assert.equal(await dialog.getByRole("button", {name:"Assign",exact:true}).isDisabled(),true);
+  await page.locator("#pool-user").click();
+  await page.getByRole("option", {name:"Ada User",exact:true}).click();
+  await dialog.getByRole("button", {name:"Assign",exact:true}).click();
   await page.getByText("Invoice pool updated.",{exact:true}).waitFor();
+  assert.equal(await page.getByRole("dialog").count(),0);
   const assigned = await page.evaluate(() => window.poolWrites[0]);
   assert.equal(assigned.action,"assign"); assert.equal(assigned.userId,3); assert.equal("employeeId" in assigned,false);
-  await page.getByRole("button", {name:"Generate numbers",exact:true}).click();
+  await generateNumbers(page);
   await page.waitForFunction(() => window.poolWrites.length === 2);
   const generated = await page.evaluate(() => window.poolWrites[1]);
   assert.equal(generated.action,"generate"); assert.equal(generated.userId,0);
@@ -125,7 +134,7 @@ test("user selection is separate from generation and does not require an employe
 });
 
 test("Reserved navigation labels resolve in both supported languages", async () => {
- for (const [locale,label] of [["en","Reserved"],["es","Reservadas"]]) {
+ for (const [locale,label] of [["en","Reserved invoices"],["es","Facturas reservadas"]]) {
   const catalog = JSON.parse(await readFile(`src/locales/${locale}/navigation.json`,"utf8"));
   assert.equal(catalog.items.reservedInvoices,label);
  }
@@ -133,12 +142,16 @@ test("Reserved navigation labels resolve in both supported languages", async () 
 
  test("missing user-view permission is explained instead of an empty selector", async () => {
   const page=await fixture({poolUsersDenied:true});try{
+   await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).check();
+   await page.getByRole("button",{name:"Assign selected",exact:true}).click();
    await page.getByText("You need permission to view users to select an assignee.",{exact:true}).waitFor();
    assert.equal(await page.locator("#pool-user").isDisabled(),true);
   }finally{await page.close();}
  });
  test("user lookup errors are shown rather than disguised as no matches", async () => {
   const page=await fixture({poolUsersError:true});try{
+   await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).check();
+   await page.getByRole("button",{name:"Assign selected",exact:true}).click();
    await page.getByRole("alert").filter({hasText:"User lookup unavailable"}).waitFor({timeout:15000});
   }finally{await page.close();}
  });
@@ -169,11 +182,11 @@ test("select all and unselect use invoice selection controls and skip downloaded
  assert.equal(await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).isChecked(),true);
  assert.equal(await page.getByRole("checkbox",{name:"Select INV-101",exact:true}).isChecked(),true);
  assert.equal(await page.getByRole("checkbox",{name:"Select INV-102",exact:true}).isChecked(),false);
- await page.getByRole("button",{name:"common.table.clearSelection",exact:true}).click();
+ await page.getByRole("button",{name:"Clear selection",exact:true}).click();
  assert.equal(await all.isChecked(),false);
  await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).check();
  assert.equal(await all.evaluate(element=>element.indeterminate),true);
- await page.getByRole("button",{name:"common.table.selectAllOthers",exact:true}).click();
+ await page.getByRole("button",{name:"Select all others",exact:true}).click();
  assert.equal(await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).isChecked(),false);
  assert.equal(await page.getByRole("checkbox",{name:"Select INV-101",exact:true}).isChecked(),true);
  await all.check();
@@ -181,4 +194,95 @@ test("select all and unselect use invoice selection controls and skip downloaded
  await all.uncheck();
  assert.equal(await page.getByRole("toolbar").count(),0);
  }finally{await page.close();}
+});
+
+test("reserved table keeps its controls inside a narrow viewport", async () => {
+ const page = await fixture();
+ try {
+  await page.setViewportSize({width:375,height:900});
+  await page.getByText("INV-100", {exact:true}).waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+  await page.getByRole("button", {name:"Columns",exact:true}).click();
+  await page.getByRole("heading", {name:"Customize columns",exact:true}).waitFor();
+ } finally { await page.close(); }
+});
+
+async function chooseFilter(page, index, field, condition, value) {
+ await page.getByLabel(`Filter field ${index}`, {exact:true}).click();
+ await page.getByRole("option", {name:field,exact:true}).click();
+ await page.getByLabel(`Filter condition ${index}`, {exact:true}).click();
+ await page.getByRole("option", {name:condition,exact:true}).click();
+ const input = page.getByLabel(`Filter value ${index}`, {exact:true});
+ if (field === "Invoice number") await input.fill(value);
+ else { await input.click(); await page.getByRole("option", {name:value,exact:true}).click(); }
+}
+
+test("advanced column filters preserve AND/OR logic and clear stale selections", async () => {
+ const page = await fixture();
+ try {
+  await page.getByRole("checkbox", {name:"Select INV-100",exact:true}).check();
+  await page.getByRole("button", {name:"Filter",exact:true}).click();
+  await chooseFilter(page, 1, "User", "Equals", "Company pool");
+  await page.waitForFunction(() => window.poolSearches?.length === 1);
+  await page.getByText("INV-100", {exact:true}).waitFor();
+  assert.equal(await page.getByText("INV-101", {exact:true}).count(), 0);
+  assert.equal(await page.getByRole("toolbar").count(), 0);
+  await page.getByRole("button", {name:"New filter",exact:true}).click();
+  await chooseFilter(page, 2, "Status", "Equals", "Downloaded to mobile");
+  await page.getByText("No reserved invoices in this pool.", {exact:true}).waitFor();
+  await page.getByLabel("Filter join 2", {exact:true}).click();
+  await page.getByRole("option", {name:"OR",exact:true}).click();
+  await page.getByText("INV-100", {exact:true}).waitFor();
+  await page.getByText("INV-102", {exact:true}).waitFor();
+  assert.equal(await page.getByText("INV-101", {exact:true}).count(), 0);
+  assert.equal(await page.locator("#pool-user").count(), 0);
+  await page.getByRole("button", {name:"New filter",exact:true}).click();
+  await chooseFilter(page, 3, "Invoice number", "Contains", "102");
+  await page.getByText("INV-102", {exact:true}).waitFor();
+  await page.waitForFunction(() => !document.body.innerText.includes("INV-100"));
+  await page.screenshot({path:"/tmp/emsys-reserved-advanced-filters.png",fullPage:true});
+  await page.getByRole("button", {name:"Clear all",exact:true}).click();
+  await page.getByText("INV-101", {exact:true}).waitFor();
+  assert.equal(await page.getByLabel("Filter field 2", {exact:true}).count(), 0);
+ } finally { await page.close(); }
+});
+
+test("advanced user values search remotely and share the initial user lookup", async () => {
+ const page = await fixture();
+ try {
+  await page.getByText("INV-100", {exact:true}).waitFor();
+  assert.deepEqual(await page.evaluate(() => window.poolUserQueries), [""]);
+  await page.getByRole("button", {name:"Filter",exact:true}).click();
+  await page.getByLabel("Filter field 1", {exact:true}).click();
+  await page.getByRole("option", {name:"User",exact:true}).click();
+  await page.getByLabel("Filter condition 1", {exact:true}).click();
+  await page.getByRole("option", {name:"Equals",exact:true}).click();
+  const filter = page.getByLabel("Filter value 1", {exact:true});
+  await filter.click(); await filter.fill("Grace");
+  await page.getByRole("option", {name:"Grace User",exact:true}).click();
+  await page.getByText("No reserved invoices in this pool.", {exact:true}).waitFor();
+  await page.waitForTimeout(350);
+  assert.equal(await filter.inputValue(), "Grace User");
+  assert.equal(await page.evaluate(() => window.poolUserQueries.filter(query => query === "Grace").length), 1);
+ } finally { await page.close(); }
+});
+
+test("received at displays the API timestamp and leaves missing dates blank", async () => {
+ const page = await fixture();
+ try {
+  const row = page.getByRole("row").filter({hasText:"INV-100"});
+  await row.getByText("Nov 7, 2026, 10:30 AM EST",{exact:true}).waitFor();
+  for (const number of ["INV-101","INV-102"]) {
+   assert.equal(await page.getByRole("row").filter({hasText:number}).getByRole("cell",{name:"—",exact:true}).count(),1);
+  }
+  await page.getByRole("button",{name:"Filter",exact:true}).click();
+  await page.getByLabel("Filter field 1",{exact:true}).click();
+  await page.getByRole("option",{name:"Received at",exact:true}).click();
+  await page.getByLabel("Filter condition 1",{exact:true}).click();
+  await page.getByRole("option",{name:"Equals",exact:true}).click();
+  await page.getByLabel("Filter value 1",{exact:true}).fill("2026-11-07T15:30:00Z");
+  await page.waitForFunction(()=>window.poolSearches?.length === 1);
+  await page.getByText("INV-100",{exact:true}).waitFor();
+  assert.equal(await page.getByText("INV-101",{exact:true}).count(),0);
+ } finally { await page.close(); }
 });

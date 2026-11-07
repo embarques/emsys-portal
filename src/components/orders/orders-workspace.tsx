@@ -27,6 +27,7 @@ import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
 import { AppointmentInvoiceDialogs } from "@/components/orders/appointment-invoice-dialogs";
+import { useRouteAppointmentsAccess } from "@/lib/orders/hooks/use-route-appointments-access";
 import { useCreateAppointmentInvoice } from "@/lib/orders/hooks/use-create-appointment-invoice";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -201,6 +202,9 @@ function MobileOrderRow({
   onView,
   onEdit,
   onDelete,
+  canDelete = true,
+  canEdit = true,
+  canRetryLegacySync = true,
   onRetryLegacySync,
   selected,
   selectionMode,
@@ -211,6 +215,9 @@ function MobileOrderRow({
   onView: (order: Order) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
+  canDelete?: boolean;
+  canEdit?: boolean;
+  canRetryLegacySync?: boolean;
   onRetryLegacySync: (order: Order) => void;
   selected: boolean;
   selectionMode: boolean;
@@ -284,12 +291,13 @@ function MobileOrderRow({
           type="button"
           variant="outline"
           className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
+          disabled={!canEdit}
           onClick={() => onEdit(order)}
         >
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
-        {order.legacySyncStatus === "failed" ? (
+        {canRetryLegacySync && order.legacySyncStatus === "failed" ? (
           <Button
             type="button"
             variant="outline"
@@ -303,7 +311,7 @@ function MobileOrderRow({
             {t("orders.actions.sync")}
           </Button>
         ) : null}
-        <Button
+        {canDelete ? <Button
           type="button"
           variant="outline"
           className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
@@ -311,7 +319,7 @@ function MobileOrderRow({
         >
           <Trash2 className="size-4" />
           {t("common.actions.delete")}
-        </Button>
+        </Button> : null}
       </div>
     </article>
   );
@@ -322,7 +330,8 @@ const defaultFilters: OrderFilterState = {
   rows: [],
 };
 
-export function OrdersWorkspace() {
+export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } = {}) {
+  const routeAccess = useRouteAppointmentsAccess();
   const { t } = useTranslation();
   const tabScope = useWorkspaceTabScope();
   const listActive = tabScope?.isActive ?? true;
@@ -360,17 +369,17 @@ export function OrdersWorkspace() {
     [deferredQuery, filters.rows, page, pageLimit, sort],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useOrders(listParams);
+  const { data, isLoading, isError, error, isFetching } = useOrders(listParams, { routeMode, enabled: !routeMode || routeAccess.canView });
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
     limit: 100,
     sort: "name:asc",
-  });
+  }, { enabled: !routeMode });
   const { data: branchesData, isLoading: branchesLoading } = useBranchPicker(200, {
     enabled: filtersOpen,
   });
 
-  const stats = useOrderStats();
+  const stats = useOrderStats({ enabled: !routeMode });
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
@@ -378,8 +387,8 @@ export function OrdersWorkspace() {
   const retryLegacySyncMutation = useRetryOrderLegacySync();
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
-  const appointmentInvoice = useCreateAppointmentInvoice();
-  const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
+  const appointmentInvoice = useCreateAppointmentInvoice(routeMode ? "/route-appointments" : "/appointments");
+  const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: !routeMode });
   const predefinedRouteFilter = usePredefinedRouteFilterOptions(
     filtersOpen || filters.rows.some((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD && row.value.trim()),
   );
@@ -387,7 +396,8 @@ export function OrdersWorkspace() {
   const advancedFilterFields = orderFilterFields.filter((field) => field.field !== PREDEFINED_ROUTE_FILTER_FIELD);
   const advancedRows = filters.rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD);
   const selectedPredefinedRoute = filters.rows.find((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD)?.value ?? "";
-  const canCreatePredefinedRoute = hasPermission(PERMISSIONS.predefinedRoutesCreate.name, PERMISSIONS.predefinedRoutesCreate.resourceType);
+  const canRetryLegacySync = !routeMode || hasPermission(PERMISSIONS.pickupsSyncLegacy.name, PERMISSIONS.pickupsSyncLegacy.resourceType);
+  const canCreatePredefinedRoute = !routeMode && hasPermission(PERMISSIONS.predefinedRoutesCreate.name, PERMISSIONS.predefinedRoutesCreate.resourceType);
   function selectPredefinedRoute(value: string) {
     setFilters((current) => ({ ...current, rows: [
       ...current.rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD),
@@ -456,6 +466,10 @@ export function OrdersWorkspace() {
     () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
     [selectedOrders],
   );
+  const selectedOrdersToUnassign = useMemo(
+    () => selectedOrdersWithRoute.filter(order => !order.completed),
+    [selectedOrdersWithRoute],
+  );
   const assignRouteOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(pickupRouteLookup.items, t),
     [pickupRouteLookup.items, t],
@@ -512,6 +526,7 @@ export function OrdersWorkspace() {
   const { openFormTab, openTab, isDesktopTabs } = useWorkspaceTabs();
 
   function openAddForm() {
+    if (routeMode) return;
     if (isDesktopTabs) {
       openFormTab({ feature: "orders", baseHref: "/appointments", mode: "add", label: t("orders.actions.add") });
       return;
@@ -521,11 +536,12 @@ export function OrdersWorkspace() {
   }
 
   function openEditForm(order: Order) {
+    if (routeMode && !routeAccess.canUpdate) return;
     if (isDesktopTabs) {
       setViewOrder(null);
       openFormTab({
         feature: "orders",
-        baseHref: "/appointments",
+        baseHref: routeMode ? "/route-appointments" : "/appointments",
         mode: "edit",
         entityId: getOrderRecordId(order),
         label: t("orders.actions.editNamed", { name: formatOrderId(order) }),
@@ -547,6 +563,9 @@ export function OrdersWorkspace() {
   }
 
   async function saveOrder(values: OrderFormValues) {
+    if (routeMode && (!routeAccess.canUpdate || formMode !== "edit")) {
+      return { error: t("shell.accessDenied.description") };
+    }
     try {
       if (formMode === "edit" && editingOrder) {
         if (areOrderFormValuesEquivalent(values, orderToFormValues(editingOrder))) {
@@ -578,6 +597,7 @@ export function OrdersWorkspace() {
   }
 
   async function confirmDelete() {
+    if (routeMode) return;
     if (!deleteTarget) return;
 
     const ids = Array.isArray(deleteTarget)
@@ -609,6 +629,7 @@ export function OrdersWorkspace() {
   }
 
   async function handleSetCompleted(completed: boolean) {
+    if (routeMode && !routeAccess.canUpdate) return;
     if (selectedOrders.length === 0) return;
 
     const affectedCount = selectedOrders.length;
@@ -661,6 +682,7 @@ export function OrdersWorkspace() {
   }
 
   function openAssignRoute() {
+    if (routeMode) return;
     if (selectedOrders.length === 0) return;
     setAssignRouteOpen(true);
   }
@@ -677,7 +699,7 @@ export function OrdersWorkspace() {
       sort,
       selectedIds,
     });
-    openTab("/appointments/map", t("orders.map.title"));
+    openTab(routeMode ? "/route-appointments/map" : "/appointments/map", t("orders.map.title"));
   }
 
   function viewSelectedRoute() {
@@ -697,7 +719,8 @@ export function OrdersWorkspace() {
   }
 
   function openClearRoute() {
-    if (selectedOrdersWithRoute.length === 0) {
+    if (routeMode) return;
+    if (selectedOrdersToUnassign.length === 0) {
       notifyError(t("orders.actions.noAssignedRoute"));
       return;
     }
@@ -705,11 +728,12 @@ export function OrdersWorkspace() {
   }
 
   async function confirmClearRoute() {
-    if (selectedOrdersWithRoute.length === 0) return;
+    if (routeMode) return;
+    if (selectedOrdersToUnassign.length === 0) return;
 
     console.info("[clearPickupRoute] UI confirm", {
-      count: selectedOrdersWithRoute.length,
-      orders: selectedOrdersWithRoute.map((order) => ({
+      count: selectedOrdersToUnassign.length,
+      orders: selectedOrdersToUnassign.map((order) => ({
         id: order.id,
         routeId: order.routeId ?? null,
         routeName: order.routeName ?? null,
@@ -718,7 +742,7 @@ export function OrdersWorkspace() {
     });
 
     try {
-      const result = await clearRouteMutation.mutateAsync(selectedOrdersWithRoute);
+      const result = await clearRouteMutation.mutateAsync(selectedOrdersToUnassign);
 
       reportBulkSettled({
         result,
@@ -773,6 +797,7 @@ export function OrdersWorkspace() {
   }
 
   async function handleRetryLegacySync(order: Order) {
+    if (!canRetryLegacySync) return;
     try {
       const syncedOrder = await retryLegacySyncMutation.mutateAsync(getOrderRecordId(order));
       notifySuccess(t("orders.toasts.legacyRetrySynced", { id: formatOrderId(syncedOrder) }));
@@ -995,21 +1020,21 @@ export function OrdersWorkspace() {
         <div>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-            <h1 className="text-4xl font-bold tracking-normal">{t("orders.title")}</h1>
+            <h1 className="text-4xl font-bold tracking-normal">{t(routeMode ? "navigation.items.routeAppointments" : "orders.title")}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            {!routeMode ? <div className="flex shrink-0 items-center gap-2">
               <Button
                 type="button"
                 size="icon"
                 className="mt-1 size-12 rounded-full"
                 onClick={openAddForm}
-                disabled={isSaving}
+                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
                 aria-label={t("orders.actions.add")}
               >
                 <Plus className="size-6" />
               </Button>
-            </div>
+            </div> : null}
           </div>
         </div>
 
@@ -1103,6 +1128,8 @@ export function OrdersWorkspace() {
             onEdit={() => { if (selectedOrders[0]) openEditForm(selectedOrders[0]); }}
             editDisabled={isSaving}
             onDelete={() => setDeleteTarget(selectedOrders)}
+            canDelete={!routeMode}
+            canEdit={!routeMode || routeAccess.canUpdate}
             deleteDisabled={isSaving}
             actions={<>
               {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
@@ -1146,7 +1173,7 @@ export function OrdersWorkspace() {
                 variant="outline"
                 size="sm"
                 className="bg-emerald-500/5 text-emerald-700 whitespace-nowrap hover:bg-emerald-500/10 hover:text-emerald-700"
-                disabled={isSaving}
+                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
                 onClick={() => openCompletionConfirm(true)}
               >
                 <CheckCircle2 className="size-4" />
@@ -1157,18 +1184,18 @@ export function OrdersWorkspace() {
                 variant="outline"
                 size="sm"
                 className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
-                disabled={isSaving}
+                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
                 onClick={() => openCompletionConfirm(false)}
               >
                 <XCircle className="size-4" />
                 {t("orders.actions.markIncomplete")}
               </Button>
-              <Button
+              {!routeMode ? <><Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="whitespace-nowrap"
-                disabled={isSaving}
+                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
                 onClick={openAssignRoute}
               >
                 <RouteIcon className="size-4" />
@@ -1190,14 +1217,14 @@ export function OrdersWorkspace() {
                 variant="outline"
                 size="sm"
                 className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
-                disabled={isSaving || selectedOrdersWithRoute.length === 0}
+                disabled={isSaving || selectedOrdersToUnassign.length === 0}
                 onClick={openClearRoute}
               >
                 <RouteOff className="size-4" />
                 {clearRouteMutation.isPending
                   ? t("orders.actions.clearingRoute")
                   : t("orders.actions.clearRoute")}
-              </Button>
+              </Button></> : null}
             </>}
           />
         ) : null}
@@ -1233,10 +1260,10 @@ export function OrdersWorkspace() {
           ) : orders.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">{t("orders.empty.noMatch")}</p>
-              <Button className="mt-4 h-11 rounded-xl" onClick={openAddForm}>
+              {!routeMode ? <Button className="mt-4 h-11 rounded-xl" onClick={openAddForm}>
                 <Plus className="size-4" />
                 {t("orders.actions.add")}
-              </Button>
+              </Button> : null}
             </div>
           ) : (
             orders.map((order) => (
@@ -1246,6 +1273,9 @@ export function OrdersWorkspace() {
                 onView={openViewOrder}
                 onEdit={openEditForm}
                 onDelete={setDeleteTarget}
+                canDelete={!routeMode}
+                canEdit={!routeMode || routeAccess.canUpdate}
+                canRetryLegacySync={canRetryLegacySync}
                 onRetryLegacySync={handleRetryLegacySync}
                 selected={selectedIds.includes(getOrderRecordId(order))}
                 selectionMode={selectedCount > 0}
@@ -1259,19 +1289,19 @@ export function OrdersWorkspace() {
 
       <div className="hidden md:block">
         <PageHeader
-        title={t("orders.title")}
-        description={t("orders.pages.description")}
+        title={t(routeMode ? "navigation.items.routeAppointments" : "orders.title")}
+        description={t(routeMode ? "orders.pages.routeAppointments" : "orders.pages.description")}
         actions={
           <div className="flex items-center gap-2">
-            <Button onClick={openAddForm} disabled={isSaving}>
+            {!routeMode ? <Button onClick={openAddForm} disabled={isSaving || (routeMode && !routeAccess.canUpdate)}>
               <Plus className="h-4 w-4" />
               {t("orders.actions.add")}
-            </Button>
+            </Button> : null}
           </div>
         }
       />
 
-        <StatCardsCarousel>
+        {!routeMode ? <StatCardsCarousel>
           <NewAppointmentsStatCard />
           {statCards.map((stat) => (
             <FlippableStatCard
@@ -1281,7 +1311,7 @@ export function OrdersWorkspace() {
               icon={stat.icon}
             />
           ))}
-        </StatCardsCarousel>
+        </StatCardsCarousel> : null}
         <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
@@ -1364,6 +1394,8 @@ export function OrdersWorkspace() {
             if (order) openEditForm(order);
           }}
           onDelete={() => setDeleteTarget(selectedOrders)}
+          canDelete={!routeMode}
+          canEdit={!routeMode || routeAccess.canUpdate}
           deleteDisabled={isSaving}
           actions={
             <>
@@ -1409,7 +1441,7 @@ export function OrdersWorkspace() {
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={isSaving}
+                      disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
                       onClick={() => openCompletionConfirm(true)}
                       className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
                     >
@@ -1419,7 +1451,7 @@ export function OrdersWorkspace() {
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={isSaving}
+                      disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
                       onClick={() => openCompletionConfirm(false)}
                       className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
                     >
@@ -1430,7 +1462,7 @@ export function OrdersWorkspace() {
                   <TableSelectionActionDivider />
                 </>
               ) : null}
-              <TableSelectionExpandableActionGroup
+              {!routeMode ? <TableSelectionExpandableActionGroup
                 label={t("orders.actions.manageRoutes")}
                 icon={RouteIcon}
                 expanded={routesExpanded}
@@ -1444,7 +1476,7 @@ export function OrdersWorkspace() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={isSaving}
+                  disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
                   onClick={openAssignRoute}
                 >
                   <RouteIcon className="h-4 w-4" />
@@ -1463,7 +1495,7 @@ export function OrdersWorkspace() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={isSaving || selectedOrdersWithRoute.length === 0}
+                  disabled={isSaving || selectedOrdersToUnassign.length === 0}
                   onClick={openClearRoute}
                   className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
                 >
@@ -1472,7 +1504,7 @@ export function OrdersWorkspace() {
                     ? t("orders.actions.clearingRoute")
                     : t("orders.actions.clearRoute")}
                 </Button>
-              </TableSelectionExpandableActionGroup>
+              </TableSelectionExpandableActionGroup> : null}
             </>
           }
         />
@@ -1502,7 +1534,7 @@ export function OrdersWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             renderSelectCellActions={(order) =>
-              order.legacySyncStatus === "failed" ? (
+              canRetryLegacySync && order.legacySyncStatus === "failed" ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -1525,10 +1557,10 @@ export function OrdersWorkspace() {
             emptyState={
               <>
                 <p className="text-muted-foreground">{t("orders.empty.noMatch")}</p>
-                <Button className="mt-4" onClick={openAddForm}>
+                {!routeMode ? <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
                   {t("orders.actions.add")}
-                </Button>
+                </Button> : null}
               </>
             }
           />
@@ -1559,7 +1591,9 @@ export function OrdersWorkspace() {
           if (!open) setViewOrder(null);
         }}
         onEdit={openEditForm}
-        onDelete={(order) => {
+        canEdit={routeMode ? routeAccess.canUpdate : undefined}
+        loadRouteDetails={!routeMode}
+        onDelete={routeMode ? undefined : (order) => {
           setViewOrder(null);
           setDeleteTarget(order);
         }}
@@ -1700,13 +1734,13 @@ export function OrdersWorkspace() {
           <DialogHeader>
             <DialogTitle>{t("orders.dialogs.clearRouteTitle")}</DialogTitle>
             <DialogDescription>
-              {selectedOrdersWithRoute.length === 1
+              {selectedOrdersToUnassign.length === 1
                 ? t("orders.dialogs.clearRouteDescription", {
-                    count: selectedOrdersWithRoute.length,
+                    count: selectedOrdersToUnassign.length,
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
                   })
                 : t("orders.dialogs.clearRouteDescription_plural", {
-                    count: selectedOrdersWithRoute.length,
+                    count: selectedOrdersToUnassign.length,
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
                   })}
             </DialogDescription>

@@ -2,7 +2,7 @@
 
 EMSYS list endpoints use a shared query string format.
 
-For **create/update request bodies** (POST/PUT payloads), see [`API_PAYLOADS.md`](./API_PAYLOADS.md).
+For **create/update request bodies** (POST/PUT payloads), see [`api-docs.json`](api-docs.json).
 
 ## Parameters
 

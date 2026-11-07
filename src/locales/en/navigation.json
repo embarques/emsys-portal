@@ -36,8 +36,9 @@
     "routeManager": "Route crews",
     "routeGroups": "Route crews",
     "routeCrews": "Route crews",
-    "dailyRoutes": "Daily routes",
-    "deliveries": "Deliveries",
+    "dailyRoutes": "Today’s Routes",
+    "deliveries": "Route Deliveries",
+    "routeAppointments": "Route Appointments",
     "predefinedRoutes": "Predefined routes",
     "pickupRoutes": "Routes",
     "orderRoutes": "Appointment routes",
@@ -66,7 +67,7 @@
     "pendingInventoryTransactions": "Pending Transactions",
     "pendingFinancialActivity": "Pending Reconciliation",
     "pendingClearance": "Pending Clearance",
-    "reservedInvoices": "Reserved",
+    "reservedInvoices": "Reserved invoices",
     "changeRequests": "Change requests"
   }
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { MapPin, Phone } from "lucide-react";
+
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { formatCoreAddressLines } from "@/lib/customers/display";
 import {
@@ -46,26 +48,34 @@ export function CustomerContactSummary({
   const hasDetails = Boolean(phoneLine) || hasAddress || showMissingPhone || showMissingAddress;
 
   return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <p className="text-sm font-medium text-foreground">{customer.name}</p>
-      {hasDetails ? (
-        <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
-          {phoneLine ? (
-            <p className="break-words">{phoneLine}</p>
-          ) : showMissingPhone ? (
-            <p>
-              <span className={optionalMissingClassName}>{missingPhoneLabel}</span>
-            </p>
-          ) : null}
-          {hasAddress ? (
-            <p className="break-words">{addressLine}</p>
-          ) : showMissingAddress ? (
-            <p>
-              <span className={optionalMissingClassName}>{missingAddressLabel}</span>
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+    <div className="rounded-xl border border-primary/15 bg-card p-3 shadow-sm">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-foreground">{customer.name}</p>
+        {hasDetails ? (
+          <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">
+            {phoneLine || showMissingPhone ? (
+              <p className="flex items-start gap-1.5">
+                <Phone className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+                {phoneLine ? (
+                  <span className="min-w-0 break-words">{phoneLine}</span>
+                ) : (
+                  <span className={optionalMissingClassName}>{missingPhoneLabel}</span>
+                )}
+              </p>
+            ) : null}
+            {hasAddress || showMissingAddress ? (
+              <p className="flex items-start gap-1.5">
+                <MapPin className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+                {hasAddress ? (
+                  <span className="min-w-0 break-words">{addressLine}</span>
+                ) : (
+                  <span className={optionalMissingClassName}>{missingAddressLabel}</span>
+                )}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

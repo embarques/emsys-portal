@@ -1,6 +1,6 @@
 ---
 description: Check numbers vs internal refNumber — UI Check number maps to API paymentReference; preserve leading zeros.
-globs: src/lib/accounting/checks/**/*.{ts,tsx},src/lib/accounting/daily-income/**/*.{ts,tsx},src/components/accounting/check*.tsx,src/components/accounting/*check*,APP_CONTEXT.md,API_PAYLOADS.md
+globs: src/lib/accounting/checks/**/*.{ts,tsx},src/lib/accounting/daily-income/**/*.{ts,tsx},src/components/accounting/check*.tsx,src/components/accounting/*check*,APP_CONTEXT.md
 alwaysApply: false
 ---
 

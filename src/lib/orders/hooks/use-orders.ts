@@ -53,14 +53,14 @@ function useOrdersQueryEnabled() {
   );
 }
 
-export function useOrders(params: OrderListParams) {
-  const { companyId } = useAuth();
+export function useOrders(params: OrderListParams, options: { enabled?: boolean; routeMode?: boolean } = {}) {
+  const { companyId, user, email, hasPermission } = useAuth();
   const queryEnabled = useOrdersQueryEnabled();
 
   return useWorkspaceQuery({
-    queryKey: [...queryKeys.orders.list(params), companyId],
+    queryKey: [...queryKeys.orders.list(params), companyId, user?.uid || email || "", hasPermission("canViewPickup", "pickup") ? "all" : "assigned", options.routeMode ?? false],
     queryFn: () => fetchOrders(params),
-    enabled: queryEnabled,
+    enabled: queryEnabled && (options.enabled ?? true),
   });
 }
 
@@ -385,8 +385,8 @@ export function useAssignPickupsToRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ routeId, pickupIds }: { routeId: string; pickupIds: number[] }) =>
-      assignPickupsToRoute(routeId, pickupIds),
+    mutationFn: ({ routeId, pickupIds, routeDate }: { routeId: string; pickupIds: number[]; routeDate: string }) =>
+      assignPickupsToRoute(routeId, pickupIds, routeDate),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }

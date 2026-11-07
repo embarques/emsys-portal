@@ -10,6 +10,7 @@ import { TablePaginationControls } from "@/components/app-shell/table-pagination
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { RouteCrewsButton } from "@/components/route-manager/route-crews-button";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { ACTIVE_ROUTE_API_TABLE_FIELDS } from "@/lib/pickup-delivery-routes/table-fields";
@@ -385,10 +386,13 @@ export function ActiveRoutesDirectoryWorkspace({
         title={t(`routes.${copyPrefix}.title`)}
         description={t(`routes.pages.${copyPrefix}`)}
         actions={
-          <Button onClick={openAddActiveRoute}>
-            <Plus className="h-4 w-4" />
-            {t(`routes.${copyPrefix}.setActiveRoute`)}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <RouteCrewsButton />
+            <Button onClick={openAddActiveRoute}>
+              <Plus className="h-4 w-4" />
+              {t(`routes.${copyPrefix}.setActiveRoute`)}
+            </Button>
+          </div>
         }
       />
 

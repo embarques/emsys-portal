@@ -17,6 +17,8 @@ export const PERMISSIONS = {
   clientsUpdate: { name: "canUpdateCustomer", resourceType: "customer" },
   clientsDelete: { name: "canDeleteCustomer", resourceType: "customer" },
   pickupsView: { name: "canViewPickup", resourceType: "pickup" },
+  routeAppointmentsView: { name: "canViewAssignedAppointments", resourceType: "pickup" },
+  routeAppointmentsUpdate: { name: "canUpdateAssignedAppointments", resourceType: "pickup" },
   pickupsSyncLegacy: { name: "canSyncLegacyPickups", resourceType: "pickup" },
   /** Pickups submenu — API has no route/vehicle/dispatch seed; gate with pickup view. */
   routesView: { name: "canViewPickup", resourceType: "pickup" },
@@ -25,6 +27,7 @@ export const PERMISSIONS = {
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },
   dispatchView: { name: "canViewPickup", resourceType: "pickup" },
   invoicePoolView: { name: "canViewInvoicePool", resourceType: "invoice_pool" },
+  invoicePoolGenerate: { name: "canGenerateInvoicePool", resourceType: "invoice_pool" },
   invoicesPrint: { name: "canPrintInvoice", resourceType: "invoice" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
   invoicesCreate: { name: "canCreateInvoice", resourceType: "invoice" },
@@ -41,6 +44,8 @@ export const PERMISSIONS = {
   containersView: { name: "canViewContainer", resourceType: "container" },
   deliveriesUpdate: { name: "canUpdateDelivery", resourceType: "delivery" },
   deliveriesView: { name: "canViewDelivery", resourceType: "delivery" },
+  routeDeliveriesView: { name: "canViewAssignedDeliveries", resourceType: "delivery" },
+  routeDeliveriesUpdate: { name: "canUpdateAssignedDeliveries", resourceType: "delivery" },
   packagesView: { name: "canViewLabels", resourceType: "labels" },
   barcodeStatusesView: { name: "canViewLabels", resourceType: "labels" },
   /**
@@ -239,6 +244,8 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
 
 /** Permission names that satisfy a required view when resource types differ in legacy data. */
 const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
+  canviewassignedappointments: ["canviewassignedappointments", "canviewpickup", "canviewroute", "canviewvehicle", "canviewdispatch"],
+  canviewassigneddeliveries: ["canviewassigneddeliveries", "canviewdelivery", "canviewinventory"],
   canviewdashboard: ["canviewdashboard", "canviewsettings"],
   canviewsettings: ["canviewdashboard", "canviewsettings"],
   canviewcustomer: ["canviewclient", "canviewcustomer"],

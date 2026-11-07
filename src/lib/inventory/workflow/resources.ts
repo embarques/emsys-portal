@@ -6,7 +6,7 @@ import type { Command, Field, Resource } from './types/workflow';
  * Named capabilities documented by Swagger: inventory.read, sales.read,
  * payments.read, payments.allocate, payments.handover, payments.handover.receive,
  * collections.read, closeout.read, closeout.reopen, reports.read, audit.read,
- * routes.read. The remaining write capabilities follow inventory.md.
+ * routes.read. Remaining write-capability acceptance is in docs/inventory-workflow.md.
  */
 
 const ref = (name: string, reference: Field['reference'], optional = false, labelKey?: string): Field => ({ name, reference, optional, labelKey });
@@ -31,7 +31,7 @@ export const MANUAL_DISPOSITION_TYPES = ['LOST', 'MISSING', 'STOLEN', 'DAMAGED']
 export const DAMAGE_RESOLUTIONS = ['QUARANTINE', 'WRITE_OFF'] as const;
 export const PRICING_MODES = ['TOTAL_PER_ITEM', 'PRICE_GROUPS'] as const;
 export const ALLOCATION_TARGETS = ['SALES_REPORT', 'COLLECTION_OBLIGATION'] as const;
-/** Swagger types crew roles as free strings; these are the roles defined in inventory.md. */
+/** The API schema permits free-string crew roles; these are the portal picker values. */
 export const CREW_ROLES = ['driver', 'supervisor', 'helper'] as const;
 
 const item = ref('itemId', 'items');

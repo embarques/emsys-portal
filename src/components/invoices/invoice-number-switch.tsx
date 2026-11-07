@@ -96,6 +96,7 @@ export function InvoiceNumberModeFields({
               disabled={disabled}
               onValueChange={changeMode}
               options={modeOptions}
+              className="h-9 max-md:h-12 [&>button]:py-0"
             />
           </>
         ) : (

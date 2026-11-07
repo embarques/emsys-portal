@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, ChevronUp, Loader2, LoaderCircle, Plus, Search, UserPlus, UsersRound } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Loader2, LoaderCircle, Plus, Search, UserPlus, UsersRound, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
@@ -45,6 +45,8 @@ export type CustomerPartySelectProps = {
   value: string;
   selectedCustomer?: Customer | null;
   onValueChange: (customerId: string, customer: Customer, addressId?: string) => void;
+  /** Shows an X on the trigger that clears the current selection. */
+  onClear?: () => void;
   /** Opens the customer editor so a new address can be added to this party. */
   onAddAddress?: (customer: Customer) => void;
   placeholder?: string;
@@ -180,6 +182,7 @@ export function CustomerPartySelect({
   value,
   selectedCustomer,
   onValueChange,
+  onClear,
   onAddAddress,
   placeholder,
   pickerTitle,
@@ -244,6 +247,7 @@ export function CustomerPartySelect({
   const loading = isSearchPending || (isSearching && autocompleteQuery.isFetching);
   const displayLabel = selectedCustomer?.name ?? "";
   const hasSelection = Boolean(value && selectedCustomer);
+  const canClear = Boolean(onClear) && hasSelection && !disabled;
 
   useEffect(() => {
     const customerId = pendingAddressFocusRef.current;
@@ -409,6 +413,33 @@ export function CustomerPartySelect({
     setDetailCustomerId(null);
   }
 
+  function handleClear() {
+    if (!onClear) return;
+    onClear();
+    resetPickerState();
+    selectionEditedRef.current = false;
+    if (!isMobile) inputRef.current?.focus();
+  }
+
+  function renderClearButton() {
+    if (!canClear) return null;
+    return (
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={t("common.ui.clearSelection")}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={(event) => {
+          event.stopPropagation();
+          handleClear();
+        }}
+        className="absolute right-8 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <X className="size-4" aria-hidden />
+      </button>
+    );
+  }
+
   function handleAddCustomer() {
     if (!onAddCustomer) return;
     setOpen(false);
@@ -450,6 +481,8 @@ export function CustomerPartySelect({
           const isExpanded = expandedIds.has(displayCustomer.id);
           const isHighlighted = index === highlightedIndex;
           const preview = buildCollapsedPreview(previewResult);
+          const requiresAddressChoice = addressCount > 1 && !showingSuggestions;
+          const showHeaderAddress = !requiresAddressChoice || preview.showMatchedBadge;
           const isLoadingDetail =
             isExpanded &&
             detailCustomerId === displayCustomer.id &&
@@ -523,26 +556,28 @@ export function CustomerPartySelect({
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">{phone}</p>
                     ) : null}
 
-                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                      <p className="flex flex-wrap items-center gap-1.5">
-                        {preview.showMatchedBadge ? (
-                          <Badge
-                            variant="outline"
-                            className="h-5 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-800 dark:text-amber-200"
-                          >
-                            {t("customers.addresses.matchedBadge")}
-                          </Badge>
-                        ) : null}
-                        <span className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground/90")}>
-                          {preview.visibleLine}
-                        </span>
-                      </p>
-                      {preview.primaryLine ? (
-                        <p className={ADDRESS_TEXT_WRAP_CLASSNAME}>
-                          {t("customers.addresses.primaryPrefix")} {preview.primaryLine}
+                    {showHeaderAddress ? (
+                      <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                        <p className="flex flex-wrap items-center gap-1.5">
+                          {preview.showMatchedBadge ? (
+                            <Badge
+                              variant="outline"
+                              className="h-5 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-800 dark:text-amber-200"
+                            >
+                              {t("customers.addresses.matchedBadge")}
+                            </Badge>
+                          ) : null}
+                          <span className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground/90")}>
+                            {preview.visibleLine}
+                          </span>
                         </p>
-                      ) : null}
-                    </div>
+                        {preview.primaryLine && !requiresAddressChoice ? (
+                          <p className={ADDRESS_TEXT_WRAP_CLASSNAME}>
+                            {t("customers.addresses.primaryPrefix")} {preview.primaryLine}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -660,6 +695,7 @@ export function CustomerPartySelect({
               "relative flex h-9 w-full min-w-0 max-w-full items-center rounded-md border border-input bg-background px-3 pr-9 text-left text-sm shadow-xs max-md:h-12 max-md:rounded-xl max-md:text-base",
               disabled && "cursor-not-allowed opacity-50",
               triggerClassName,
+              canClear && "pr-16 md:pr-16",
             )}
           >
             <span className={cn("min-w-0 flex-1 truncate", !hasSelection && "text-muted-foreground")}>
@@ -667,6 +703,7 @@ export function CustomerPartySelect({
             </span>
             <ChevronDown className="absolute right-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           </button>
+          {renderClearButton()}
 
           <SheetContent
             side="bottom"
@@ -726,6 +763,7 @@ export function CustomerPartySelect({
               "flex h-9 w-full min-w-0 max-w-full items-center rounded-md border border-input bg-background px-3 pr-9 text-sm shadow-xs max-md:h-12 max-md:rounded-xl max-md:text-base",
               disabled && "cursor-not-allowed opacity-50",
               triggerClassName,
+              canClear && "pr-16 md:pr-16",
             )}
             onClick={() => {
               if (disabled) return;
@@ -776,6 +814,7 @@ export function CustomerPartySelect({
             >
               {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </button>
+            {renderClearButton()}
           </div>
         </PopoverAnchor>
 

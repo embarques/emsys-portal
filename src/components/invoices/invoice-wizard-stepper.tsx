@@ -39,15 +39,6 @@ const STEP_LABEL_KEYS: Record<InvoiceWizardStepKind, string> = {
   preview: "invoices.wizard.steps.preview",
 };
 
-const STEP_TITLE_KEYS: Record<InvoiceWizardStepKind, string> = {
-  details: "invoices.wizard.stepTitles.enterDetails",
-  parties: "invoices.wizard.stepTitles.selectParties",
-  lineItems: "invoices.wizard.stepTitles.addLineItems",
-  payment: "invoices.wizard.stepTitles.paymentInfo",
-  documents: "invoices.documents.title",
-  preview: "invoices.wizard.stepTitles.reviewAndSave",
-};
-
 export function resolveInvoiceWizardLayout(options: {
   requireDailyIncomeRegistration: boolean;
   includeDocumentsStep?: boolean;
@@ -94,10 +85,6 @@ export function getInvoiceWizardStepKind(
 
 export function getInvoiceWizardStepLabelKey(kind: InvoiceWizardStepKind): string {
   return STEP_LABEL_KEYS[kind];
-}
-
-export function getInvoiceWizardStepTitleKey(kind: InvoiceWizardStepKind): string {
-  return STEP_TITLE_KEYS[kind];
 }
 
 type Props = {

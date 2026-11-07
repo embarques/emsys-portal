@@ -1,5 +1,8 @@
 {
   "pool": {
+    "receivedAt": "Received at",
+    "filterUser": "Filter by user",
+    "allUsers": "All users",
     "search": "Search reserved numbers",
     "searchPlaceholder": "Type an invoice number…",
     "selectAll": "Select all selectable numbers on this page",
@@ -12,7 +15,11 @@
     "invalidCount": "Enter a whole number from 1 to 100.",
     "companyPool": "Company pool",
     "generate": "Generate numbers",
+    "generateMore": "Generate more numbers",
+    "lowStockWarning": "The unassigned company pool has only {{remaining}} numbers left, at or below your warning threshold of {{threshold}}. Generate more numbers so mobile users don't run out offline.",
+    "generatePrompt": "How many invoice numbers do you want to generate? They are added to the unassigned company pool.",
     "downloadNotice": "Downloaded numbers must be returned from their mobile device before reassignment.",
+    "downloadNoticeLabel": "Why can't this number be reassigned?",
     "pending": "A request is awaiting confirmation. Retry it before making another change.",
     "retry": "Retry saved request",
     "saved": "Invoice pool updated.",
@@ -20,6 +27,9 @@
     "all": "All reserved numbers",
     "remaining": "Unused numbers",
     "assign": "Assign selected",
+    "assignTitle": "Assign reserved numbers",
+    "assignPrompt": "Choose the user who will receive the {{count}} selected numbers.",
+    "assignSubmit": "Assign",
     "return": "Return selected to pool",
     "select": "Select",
     "number": "Invoice number",
@@ -30,7 +40,7 @@
     "empty": "No reserved invoices in this pool.",
     "previous": "Previous",
     "next": "Next",
-    "generationNotice": "Generated numbers are added to the unassigned company pool. Select numbers below, then choose a user to assign them.",
+    "generationNotice": "Generated numbers were added to the unassigned company pool. Select them below, then choose a user to assign them.",
     "unassigned": "Unassigned",
     "user": "User",
     "searchUser": "Search active users",
@@ -188,16 +198,14 @@
       "editDescription": "Update the invoice details, customers, and merchandise, then review the changes before saving.",
       "partiesHint": "Find customers by name or phone. Confirm their contact details and the pickup or delivery address.",
       "itemsHint": "Record the merchandise, quantities, and prices. Label counts identify the individual pieces that need tracking.",
-      "totals": "Totals",
-      "paymentHint": "Review Daily Income and payment details before continuing.",
-      "reviewHint": "Check the customers, merchandise, labels, and totals before saving."
+      "totals": "Totals"
     },
     "fields": {
       "date": "Date",
       "invoiceNumber": "Invoice number",
       "container": "Container",
       "pending": "Pending",
-      "paymentLocation": "Pending payment branch",
+      "paymentLocation": "Where will this invoice be paid?",
       "createdAt": "Created at",
       "createdBy": "Created by",
       "sender": "Sender",
@@ -228,6 +236,8 @@
       "selectPickupRoute": "Select appointment route",
       "noPickupRoute": "No appointment route",
       "searchPickupRoutes": "Search appointment routes…",
+      "selectPaymentLocation": "Select branch",
+      "searchPaymentLocations": "Search branches…",
       "selectWarehouseEmployee": "Select warehouse employee",
       "selectOfficeEmployee": "Select office employee",
       "searchEmployees": "Search employees…"
@@ -313,20 +323,12 @@
     "goToStep": "Go to {{label}}",
     "progress": "Step {{current}} of {{total}}",
     "phoneProgress": "{{current}} of {{total}}",
-    "stepEyebrow": "Step {{step}} of {{total}} · {{label}}",
     "steps": {
       "details": "Details",
       "parties": "Parties",
       "lineItems": "Line items",
       "payment": "Payment",
       "preview": "Preview"
-    },
-    "stepTitles": {
-      "enterDetails": "Enter invoice details",
-      "selectParties": "Select sender & receiver",
-      "addLineItems": "Add line items",
-      "paymentInfo": "Payment information",
-      "reviewAndSave": "Review & save invoice"
     },
     "policies": {
       "title": "Company policies",
@@ -347,7 +349,7 @@
       "dateRequired": "Date is required.",
       "invoiceNumberRequired": "Invoice number is required.",
       "containerRequired": "Container is required.",
-      "paymentLocationRequired": "Select the pending payment branch.",
+      "paymentLocationRequired": "Select where this invoice will be paid.",
       "pickupRouteRequired": "Appointment route is required.",
       "warehouseEmployeeRequired": "Warehouse employee is required.",
       "officeEmployeeRequired": "Office employee is required.",
@@ -882,7 +884,7 @@
   "printSignatures": {
     "action": "Print invoice",
     "title": "Choose signatures",
-    "backToDeliveries": "Back to deliveries",
+    "backToDeliveries": "Back to route deliveries",
     "backToInvoices": "Back to invoices",
     "popupBlocked": "Your PDF is ready, but the browser blocked the new tab. Tap Open PDF to view or print it.",
     "openPdf": "Open PDF",

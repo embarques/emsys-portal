@@ -141,10 +141,12 @@ export async function fillInvoiceWizardStep1(
 ) {
   const invoiceNumber = options.invoiceNumber ?? defaultInvoiceNumber();
 
-  await wizard.locator("#invoiceNumber").fill(invoiceNumber);
   await expect(wizard.locator("#date")).not.toHaveValue("");
   await dismissOpenPopovers(page);
   await selectFirstSearchableOption(page, wizard, "containerId", "container");
+  await dismissOpenPopovers(page);
+  await wizard.getByRole("radio", { name: "Enter your own" }).click();
+  await wizard.locator("#invoiceNumber").fill(invoiceNumber);
 
   const nextButton = wizard.getByRole("button", { name: "Next" });
   await nextButton.scrollIntoViewIfNeeded();
@@ -301,7 +303,6 @@ export async function expectInvoiceWizardReadyForNextEntry(wizard: Locator) {
   await expect(wizard.getByText("Step 1 of 5")).toBeVisible({
     timeout: 10_000,
   });
-  await expect(wizard.locator("#invoiceNumber")).toHaveValue("");
 }
 
 export async function completeInvoiceCreateWizard(

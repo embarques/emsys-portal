@@ -36,8 +36,9 @@
     "routeManager": "Cuadrillas de ruta",
     "routeGroups": "Cuadrillas de ruta",
     "routeCrews": "Cuadrillas de ruta",
-    "dailyRoutes": "Rutas diarias",
-    "deliveries": "Entregas",
+    "dailyRoutes": "Rutas de hoy",
+    "deliveries": "Entregas de ruta",
+    "routeAppointments": "Citas de ruta",
     "predefinedRoutes": "Rutas predefinidas",
     "pickupRoutes": "Rutas",
     "orderRoutes": "Rutas de citas",
@@ -66,7 +67,7 @@
     "pendingInventoryTransactions": "Transacciones pendientes",
     "pendingFinancialActivity": "Conciliación pendiente",
     "pendingClearance": "Liquidación pendiente",
-    "reservedInvoices": "Reservadas",
+    "reservedInvoices": "Facturas reservadas",
     "changeRequests": "Solicitudes de cambio"
   }
 }

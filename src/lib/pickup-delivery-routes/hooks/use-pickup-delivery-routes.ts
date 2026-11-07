@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { assignmentToday } from "@/lib/pickup-delivery-routes/assignment-policy";
 import { useCallback, useMemo } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
@@ -28,12 +29,13 @@ import { getActiveRouteTableFilterFields } from "@/lib/pickup-delivery-routes/fi
 export function useActiveRoutePicker(
   routeType: RouteType,
   limit = 200,
-  options: { enabled?: boolean } = {},
+  options: { enabled?: boolean; assignable?: boolean } = {},
 ) {
   const listParams = {
     ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
     limit,
     routeType,
+    ...(options.assignable ? { minDate: assignmentToday() } : {}),
   };
   const keys = getScheduledRouteQueryKeys(routeType);
 
@@ -47,7 +49,7 @@ export function useActiveRoutePicker(
 
 export function useDailyRoutePicker(
   limit = 200,
-  options: { enabled?: boolean; branchCode?: string; routeType?: RouteType; date?: string } = {},
+  options: { enabled?: boolean; branchCode?: string; routeType?: RouteType; date?: string; assignable?: boolean } = {},
 ) {
   const branchCode = options.branchCode?.trim() || undefined;
   const date = options.date?.trim().slice(0, 10) || undefined;
@@ -57,6 +59,7 @@ export function useDailyRoutePicker(
     ...(branchCode ? { branchCode } : {}),
     ...(options.routeType ? { routeType: options.routeType } : {}),
     ...(date ? { date } : {}),
+    ...(options.assignable ? { minDate: assignmentToday() } : {}),
   };
 
   return useWorkspaceQuery({

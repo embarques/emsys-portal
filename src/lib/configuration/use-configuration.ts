@@ -26,6 +26,7 @@ export function useUpdateUserPreferences() {
     onSuccess: (preference) => {
       syncConfigurationStore(preference);
       queryClient.setQueryData(scope.key, preference);
+      void queryClient.invalidateQueries({ queryKey: ["invoice-pool"] });
     },
   });
 }

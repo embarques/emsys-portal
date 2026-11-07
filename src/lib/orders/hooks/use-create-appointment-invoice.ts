@@ -13,7 +13,7 @@ import { getUniqueOrderReceivers, type Order } from "@/lib/orders/types";
  * Starts a new invoice from one appointment. Appointments with several
  * receivers ask which one first; desktop opens an invoice tab, mobile a dialog.
  */
-export function useCreateAppointmentInvoice() {
+export function useCreateAppointmentInvoice(appointmentsHref = "/appointments") {
   const { t } = useTranslation();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const { canCreateFromAppointment: canCreateInvoice, isAssignedOnly, canOpenInvoices } = useInvoiceCreateAccess();
@@ -30,7 +30,7 @@ export function useCreateAppointmentInvoice() {
       openFormTab({
         feature: "invoices",
         // Users without /invoices access (and the assigned flow) keep the form under Appointments.
-        baseHref: isAssignedOnly || !canOpenInvoices ? "/appointments" : "/invoices",
+        baseHref: isAssignedOnly || !canOpenInvoices ? appointmentsHref : "/invoices",
         mode: "add",
         label: t("orders.actions.createInvoiceTab", { id: formatOrderId(order) }),
         invoicePrefill: prefill,

@@ -1,4 +1,6 @@
 import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
+import { assertBarcodeRouteChangeAllowed } from "@/lib/labels/route-assignment-policy";
+import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -288,7 +290,11 @@ export async function createBarcode(payload: BarcodeWritePayload): Promise<Barco
   };
 }
 
-export async function updateBarcode(id: number, payload: BarcodeWritePayload): Promise<Barcode> {
+export async function updateBarcode(id: number, payload: BarcodeWritePayload, existing?: Barcode): Promise<Barcode> {
+  if (payload.route !== undefined) {
+    const saved = existing ?? await fetchBarcodeById(id);
+    assertBarcodeRouteChangeAllowed(saved.status, saved.route, payload.route);
+  }
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.BARCODES}/${id}`,
     payload,
@@ -821,6 +827,7 @@ export async function generateLabels(
 export async function assignInvoiceItemBarcodesToRoute(
   routeId: string,
   barcodeIds: Array<string | number>,
+  routeDate: string,
 ): Promise<InvoiceItemBarcodeRoute> {
   const id = routeId.trim();
   if (!id) {
@@ -828,6 +835,7 @@ export async function assignInvoiceItemBarcodesToRoute(
   }
 
   const ids = coerceUint32Ids(barcodeIds);
+  assertAssignableRouteDate(routeDate);
   if (ids.length === 0) {
     throw new Error(translateCurrent("labels.errors.noContainerBarcodes"));
   }
@@ -926,7 +934,7 @@ async function assignCatalogBarcodeRoute(
         }
       : {}),
     route,
-  });
+  }, existing);
 }
 
 /**
@@ -941,6 +949,7 @@ export async function assignBarcodesToDailyRoute(
   routeName: string,
   targets: AssignBarcodeToRouteTarget[],
   onProgress?: (progress: RouteAssignmentProgress) => void,
+  routeDate = "",
 ): Promise<InvoiceItemBarcodeRoute> {
   const trimmedRouteId = routeId.trim();
   if (!trimmedRouteId) {
@@ -949,6 +958,8 @@ export async function assignBarcodesToDailyRoute(
   if (targets.length === 0) {
     throw new Error(translateCurrent("labels.errors.selectAtLeastOne"));
   }
+
+  assertAssignableRouteDate(routeDate);
 
   const route = {
     id: trimmedRouteId,
@@ -1019,21 +1030,21 @@ export async function assignBarcodesToDailyRoute(
 
         // Preserve existing status/container from the live invoice when present.
         const liveInvoice = await fetchInvoiceById(invoiceId);
-        const liveByNumber = new Map<string, { statusId?: number; statusName?: string; containerId?: string; containerName?: string; barcodeId?: string }>();
+        const liveByNumber = new Map<string, InvoiceLineItemBarcode>();
         for (const item of liveInvoice.lineItems) {
           for (const barcode of item.barcodes ?? []) {
-            liveByNumber.set(barcode.number.trim(), {
-              statusId: barcode.statusId,
-              statusName: barcode.statusName,
-              containerId: barcode.containerId,
-              containerName: barcode.containerName,
-              barcodeId: barcode.barcodeId,
-            });
+            liveByNumber.set(barcode.number.trim(), barcode);
           }
         }
 
         const resolvedPatches = patches.map((patch) => {
           const live = liveByNumber.get(patch.number);
+          if (!live) throw new Error(translateCurrent("labels.errors.notFound"));
+          assertBarcodeRouteChangeAllowed(
+            { id: live.statusId, name: live.statusName },
+            { id: live.routeId },
+            route,
+          );
           const status =
             live?.statusId != null && live.statusId > 0 && live.statusName?.trim()
               ? { id: live.statusId, name: live.statusName.trim() }

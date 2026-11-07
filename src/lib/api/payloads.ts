@@ -1,6 +1,6 @@
 /**
  * Shared EMSYS API write payload shapes.
- * Canonical examples: API_PAYLOADS.md
+ * Canonical wire schema: api-docs.json
  */
 
 /** GeoJSON Point — coordinates use GeoJSON order: [longitude, latitude]. */

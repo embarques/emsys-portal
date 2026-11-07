@@ -1,118 +1,119 @@
 # Backend/API gaps — pending work
 
-Last verified **November 6, 2026** against `https://api.embarqueros.com/v1`,
-mock company `64d5c0b0d1eab2aaf30b1819`. Only unresolved defects, verification
-and follow-up work remain here. Detailed evidence and retained-record IDs are in
-the [verification archive](archive/backend-api-verification-2026-11-06.md).
+Unresolved defects, contract decisions and acceptance work, updated November 7,
+2026. API shapes are defined in [api-docs.json](../api-docs.json).
 
-## Confirmed defects
+## Confirmed remaining defects
 
-1. **User updates clear the Firebase UID when omitted.** `PUT /users/87`
-   returned 200, subsequent GET omitted the UID, and Firebase-authenticated API
-   access returned 403. Restoring the original UID restored access. Preserve the
-   existing UID on ordinary updates; the portal's update payload omits it.
+- **Historical reconciliation/filter coverage is still incomplete in this tenant.**
+  Before mutation fixtures, PAYMENT search returned 24,132 rows; adding
+  `OUTSTANDING` returned 3, and `RECONCILED` returned 0. The oldest sampled
+  PAYMENT has an empty status.
+  Journal `6aee1319d037620215133a92` reads as `OUTSTANDING` but disappears
+  when that status is added to its exact-ID search. Confirm backfill deployment
+  and execution, review ambiguous rows and verify safe reruns
+  and unchanged invoice balances. See [financial controls](financial-controls.md).
 
-2. **Uncleared Debit/Wire invoice payments cannot be edited or reversed.**
-   `PUT /journals/{id}` and `POST /journals/{id}/reverse` return
-   `409 Invoice balance cannot be negative` despite a fresh `expectedVersion`
-   and eligible `allowedActions`. Reproduced with $0.02/$0.03 payments against
-   invoice 475917, starting balance $120/payment $0. Correct the deferred-receipt
-   adjustment path without requiring bank clearance first.
-   See [payment accounts](payment-accounts-api-contract.md) and
-   [journal edits](closeout-transaction-edits.md).
+- **Normally created zero-cost invoices cannot complete delivery.** A fixture
+  requested with cost/discount/payment/balance all zero reads back without those
+  financial fields and completion returns 409. Preserve authoritative zero values
+  without weakening fail-closed handling for genuinely unknown balances.
 
-3. **Self-pool generation rejects the self-service grant.** Fresh user 88,
-   role 15, has exactly `canGenerateOwnInvoicePool` (`invoice_pool_self:create`).
-   `POST /invoices/reserved/actions` with `action: generate-self`, a new UUID and
-   `count: 1` returns `403 invoice pool permission required`; admin execution
-   works. Fix restricted execution, then verify own listing without pool-view
-   permission and foreign-user isolation.
-
-4. **BANK child creation fails with a misleading validation error.**
-   `POST /chart-accounts` with documented `type`, `displayName` and
-   `parentAccount` returns `400 chart account type and display name are required`
-   under both the BANK umbrella and an existing BANK account. The EXPENSE-parent
-   control returns the same error, so it does not prove parent-type validation.
-   Resolve creation before testing hierarchy constraints.
-   See [payment accounts](payment-accounts-api-contract.md).
-
-5. **Barcode assignment and delivery review disagree.** Updates to newly
-   created catalog barcodes returned 200 with CONDUCE and delivery 10471 saved;
-   review of the exact matching invoice/delivery pairs returned
-   `404 invoice is not assigned to this delivery`. An invoice-embedded update
-   also returned 200 while retaining ALM-NY and omitting delivery. Fix assignment
-   persistence/readback so isolated delivery completion can be exercised.
-   See [delivery completion](delivery-completion-api-contract.md).
-
-6. **Legacy reconciliation status remains incomplete.** The latest count
-   before the follow-up's new payments was 24,130 PAYMENT rows, with only
-   3 matching OUTSTANDING and 0 RECONCILED. Define and apply the historical
-   backfill rule so eligible older entries appear in Pending Transactions.
-   See [pending transactions](pending-transactions-update.md).
+- **Temporary customer deletion fails.** `DELETE /customers/{id}` returns 500
+  for the two test customers despite current version headers. Resolve deletion
+  through the supported lifecycle; the inactive fixtures and identifiers are in
+  [mock-data follow-up](mock-data-follow-up.md).
 
 ## Pending verification and contract decisions
 
+- **Daily-route assignment edge cases.** Verify concurrent completion, broader
+  mixed/ineligible batches, scoped permissions, business-midnight rollover and
+  unfinished barcode movement/removal from old routes. Publish unfinished
+  barcode route-removal semantics explicitly.
+
 - **Valid cash-account selection and account safeguards.** Provide a persisted
-  CASH ON HAND hierarchy and a valid posting child in the mock company. Its only
-  custom ASSET is an orphan and cannot establish successful chosen-account
-  posting/readback. Verify create/sync/update, INITIAL-PAYMENT selection, cash
-  expenses, inactive and tenant/branch scope, BANK deletion/type protection,
+  CASH ON HAND hierarchy and a valid posting child in the mock company. The
+  fresh bounded cash lookup still finds only orphan ASSET 4, Cash Account, which
+  cannot establish chosen-account posting/readback. Verify create/sync/update,
+  INITIAL-PAYMENT selection, cash expenses, inactive and tenant/branch scope,
+  BANK deletion/type protection,
   parent validation, cycles and cash/bank report roll-ups.
   See [payment accounts](payment-accounts-api-contract.md).
 
-- **Assigned-only invoice creation.** Role 16 lacks full invoice-create access.
-  The proposed valid `/invoices/sync/create-assigned` request and assignment/
-  receiver-negative variants all return generic `400 Invoice request is invalid`,
-  including a one-cent request with an explicit receivedBy route discriminator.
-  Establish a valid positive request or correct the contract before certifying
-  creation/replay and appointment/customer enforcement.
+- **Assigned-only invoice edge cases.** Verify ownership/customer negatives,
+  revoked assignments and races, replay after deletion, initial-payment effects
+  and the portal entry point. Clarify why `canOperateDailyRoute` activates a
+  protected-record 403 on assigned creation. Resolve branch-association 400s in
+  custom-code branch 11 and generic 400s for explicit `receivedBy` variants;
+  distinguish branch/payload requirements from missing permissions.
   See [assigned invoices](assigned-invoice-api-contract.md).
 
-- **Remaining delivery balance cases.** After fixing assignment/review, verify
-  zero, negative/unavailable balances, uncleared receipts and concurrent invoice
-  changes. Do not add an override to the published no-override contract.
+- **Remaining delivery balance cases.** Resolve the zero-cost defect above;
+  verify negative, unavailable/invalid balances, uncleared receipts, concurrent
+  invoice changes, photo ownership, policy-negative cases and assigned-only crews.
+  Preserve the no-override contract.
   See [delivery completion](delivery-completion-api-contract.md).
 
-- **Permission combinations and refresh behavior.** Verify legacy CRUD grants
-  cannot substitute for standalone capabilities, inventory `autoReconcile` with
-  an accepted create control, and broader tenant/branch isolation. Role edits
-  exposed new grants through `/users/permissions` before the action accepted
-  them; establish the intended authorization cache/refresh behavior.
-  See [reconciliation permissions](reconciliation-permissions-api-todo.md).
+- **Permission combinations and refresh behavior.** Verify inventory journal
+  `autoReconcile`, broader permission combinations and tenant/branch isolation.
+  A role update returned 200 and exposed the new reconciliation grant through `/users/permissions`, but the command still
+  returned 403 with the same token. Establish cache TTL/refresh/re-login behavior.
+  See [reconciliation permissions](financial-controls.md).
 
-- **Inventory edge cases and payment-method parity.** Verify remaining
-  DAMAGED/LOST/MISSING/STOLEN/TRANSFERRED outcomes, concurrency and failure
-  atomicity. Decide and document Debit/Wire support for inventory reconciliation:
-  WIRE returned `422 unknown accounting payment method`, and the inventory
-  payment enum excludes both methods. Journal support does not establish this
-  separate contract. See [inventory workflows](inventory-dispatch-workflows.md).
+- **Inventory edge cases and payment-method parity.** Verify broader failure
+  atomicity, races, valuation and reopen revisions. WIRE and DEBIT-CARD each return
+  422 `unknown accounting payment method`; the inventory enum excludes both.
+  Decide this separate contract explicitly.
+  See [inventory workflows](inventory-workflow.md).
 
 - **Daily-route historical snapshots and joint custody.** Verify legacy
-  snapshot coverage, immutability and schema alignment. Define arbitrary joint
-  assignment and reconciliation semantics beyond the existing single-holder
-  ledger/ROUTE_CREW model. See [daily-route accountability](daily-route-accountability.md).
+  invoice/journal snapshot coverage, historical membership, responsible-party
+  changes, permissions and client/schema alignment for remaining combinations.
+  See [daily-route accountability](daily-route-accountability.md).
 
-- **Write-time closeout recovery.** Verify `409 CLOSEOUT_REQUIRED` when posting
-  without the current closeout, including rollover and concurrency. Explicit
-  closeout creation does not prove this error path; do not close the shared
-  current period merely to force it.
+- **Write-time closeout recovery.** Verify STALE_OPEN_CLOSEOUT, LATEST_CLOSED,
+  real rollover, injected failures and affected client draft flows. Confirm that
+  retired scheduler jobs are absent from deployment.
   See [closeout contract](transaction-triggered-closeouts.md).
 
-- **Historical unfiltered journal errors need a safe recheck.** Unfiltered
-  `GET /journals?page=1&limit=1` previously returned MongoDB
-  `QueryExceededMemoryLimitNoDiskUseAllowed` (400), and empty-filter journal
-  search returned 500. They were not repeated because of the known database-load
-  risk. Reproduce in an isolated dataset and verify bounded/indexed queries.
+- **Journal query capacity.** Verify indexed query plans, representative load
+  and performance budgets.
 
 ## Documentation and mock-data follow-up
 
-- Refresh local `api-docs.json`: 242 paths versus 297 live, missing 55 paths,
-  with the old journal DELETE description. Align older feature-document status
-  lines and contracts with verified behavior.
+- Exclude retained test stock, financial records and closeouts from meaningful
+  reporting; resolve outstanding fixture follow-up in
+  [mock-data-follow-up.md](mock-data-follow-up.md).
+- Add reserved-invoice column search with nested AND/OR filters and cursor
+  pagination. The frontend assumes this pending endpoint; see
+  [reserved invoice search contract](reserved-invoice-search-api-contract.md).
+- **Low offline-invoice pool alerts.** The portal now warns users with
+  `canGenerateInvoicePool` (topbar notification and Reserved invoices banner)
+  when `GET /invoices/reserved?userId=0` reports `remaining <= lowThreshold`,
+  using the requester's own threshold preference. It only sees this while the
+  portal is open. Push or persisted severe notifications to generators, and
+  alerts when an individual mobile user's assigned pool falls below that user's
+  threshold, need backend support (per-user remaining plus threshold, without
+  N+1 reads).
+- Update `GET /invoices/reserved/mine` OpenAPI to document self-service grants,
+  own unclaimed reservations and the optional `deviceId` filter.
+- Update `scripts/audit-api-table-columns.mjs` to read OpenAPI 3
+  `components.schemas` (and retain Swagger 2 support if needed), then rerun the
+  table coverage audit. The current run fails with a TypeError because it reads
+  the absent `definitions` field.
 - Provide a supported invoice-lifecycle repair for retained mock initial-payment
-  journals. INV-26-001482/001483 retain $0.02 combined cash/SALES postings; six
-  earlier invoice-owned journals remained active after their invoices were
-  deleted. Use the [archive](archive/backend-api-verification-2026-11-06.md) and
-  [retained-journal details](payment-accounts-api-contract.md#live-mutation-verification--november-5-2026)
-  for IDs. Exclude retained tagged fixtures from meaningful mock reporting until
-  repaired through supported operations.
+  postings. INV-26-001482/001483 retain $0.02 combined cash/SALES postings; six
+  invoice-owned entries also remain after their invoices were deleted. Repair
+  through supported operations and exclude these fixtures from meaningful mock
+  reporting until resolved:
+
+  | Invoice | Journal requiring repair |
+  | --- | --- |
+  | INV-26-001476 (deleted) | `6aecbaae87c1d88ee1a3d670` |
+  | INV-26-001477 (deleted) | `6aecbaaf87c1d88ee1a3d676` |
+  | INV-26-001478 (deleted) | `6aecbab087c1d88ee1a3d67c` |
+  | INV-26-001479 (deleted) | `6aecbab187c1d88ee1a3d682` |
+  | INV-26-001480 (deleted) | `6aecbab287c1d88ee1a3d688` |
+  | INV-26-001481 (deleted) | `6aecbab387c1d88ee1a3d68e` |
+  | INV-26-001482 | `6aee1104d037620215133a67` |
+  | INV-26-001483 | `6aee1105d037620215133a6d` |

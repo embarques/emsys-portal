@@ -131,7 +131,7 @@ type ApiBranch = {
   settings?: ApiBranchSettings;
 };
 
-/** POST/PUT /branches — see API_PAYLOADS.md */
+/** POST/PUT /branches — see api-docs.json */
 type ApiBranchWritePayload = {
   name: string;
   type: string;

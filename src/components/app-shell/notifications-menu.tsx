@@ -35,11 +35,17 @@ function formatNotificationWhen(value: string, locale: string) {
   }).format(date);
 }
 
-function notificationTitle(item: NotificationItem, t: (key: string) => string) {
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
+function notificationTitle(item: NotificationItem, t: Translate) {
+  if (item.kind === "invoice-pool-low") return t("shell.notifications.invoicePoolLowTitle");
   return item.activity.description.trim() || t("shell.notifications.rareActivityFallback");
 }
 
-function notificationDetail(item: NotificationItem, t: (key: string) => string) {
+function notificationDetail(item: NotificationItem, t: Translate) {
+  if (item.kind === "invoice-pool-low") {
+    return t("shell.notifications.invoicePoolLowDetail", { remaining: item.remaining, threshold: item.threshold });
+  }
   const user = item.activity.user.name.trim();
   const origin = item.activity.origin.trim();
   return [user, origin].filter(Boolean).join(" · ") || t("shell.notifications.rareActivity");
@@ -117,6 +123,7 @@ export function NotificationsMenu() {
                     "flex items-start gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
                     "hover:bg-accent hover:text-accent-foreground",
                     unseen && "bg-primary/5",
+                    item.kind === "invoice-pool-low" && "border border-destructive/30 bg-destructive/5",
                   )}
                 >
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
@@ -124,12 +131,18 @@ export function NotificationsMenu() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p
-                      className="line-clamp-2 font-medium leading-snug [overflow-wrap:anywhere]"
+                      className={cn(
+                        "line-clamp-2 font-medium leading-snug [overflow-wrap:anywhere]",
+                        item.kind === "invoice-pool-low" && "text-destructive",
+                      )}
                       title={title}
                     >
                       {title}
                     </p>
-                    <p className="mt-1 truncate text-xs text-muted-foreground" title={detail}>
+                    <p
+                      className={cn("mt-1 text-xs text-muted-foreground", item.kind === "invoice-pool-low" ? "line-clamp-3" : "truncate")}
+                      title={detail}
+                    >
                       {detail}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">

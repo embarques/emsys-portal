@@ -99,6 +99,8 @@ export type ActiveRouteListParams = {
   branchCode?: string;
   /** When set (`YYYY-MM-DD`), scopes the list to routes scheduled on that calendar day. */
   date?: string;
+  /** Earliest selectable calendar day for new assignments. */
+  minDate?: string;
 };
 
 export type ActiveRouteSearchFilter = ApiListTextSearch;

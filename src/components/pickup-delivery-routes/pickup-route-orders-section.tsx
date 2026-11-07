@@ -51,7 +51,7 @@ export function PickupRouteOrdersSection({
       ),
     [data?.items],
   );
-  const orderIds = useMemo(() => orders.map((order) => order.id), [orders]);
+  const orderIds = useMemo(() => orders.filter(order => !order.completed).map((order) => order.id), [orders]);
   const effectiveSelectedIds = useMemo(
     () => selectedIds.filter((id) => orderIds.includes(id)),
     [orderIds, selectedIds],
@@ -217,6 +217,7 @@ export function PickupRouteOrdersSection({
                             type="checkbox"
                             className="size-4 rounded border-input"
                             checked={isSelected}
+                            disabled={order.completed || isUnassigning}
                             onChange={() => toggleOrder(order.id)}
                             aria-label={t("routes.pickupRoutes.view.orders.selectOrder", {
                               orderId: order.id,

@@ -38,6 +38,9 @@ type DataTableProps<T> = {
   isRowSelectable?: (row: T) => boolean;
   selectedIds?: string[];
   allPageSelected?: boolean;
+  selectAllLabel?: string;
+  selectAllDisabled?: boolean;
+  selectAllIndeterminate?: boolean;
   onToggleSelectAll?: (checked: boolean) => void;
   onToggleSelect?: (id: string, checked: boolean) => void;
   rowLabel?: (row: T) => string;
@@ -74,6 +77,9 @@ function DataTableContent<T>({
   isRowSelectable,
   selectedIds = [],
   allPageSelected = false,
+  selectAllLabel,
+  selectAllDisabled = false,
+  selectAllIndeterminate = false,
   onToggleSelectAll,
   onToggleSelect,
   rowLabel,
@@ -318,7 +324,9 @@ function DataTableContent<T>({
               >
                 <input
                   type="checkbox"
-                  aria-label={t("tableFields.table.selectAllOnPage")}
+                  aria-label={selectAllLabel ?? t("tableFields.table.selectAllOnPage")}
+                  disabled={selectAllDisabled}
+                  ref={(element) => { if (element) element.indeterminate = selectAllIndeterminate; }}
                   checked={allPageSelected}
                   onChange={(event) => onToggleSelectAll?.(event.target.checked)}
                   className="size-4 rounded border-input"

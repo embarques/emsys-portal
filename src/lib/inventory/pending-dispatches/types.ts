@@ -1,7 +1,7 @@
 import type { InventoryConfirmationState } from "@/lib/inventory/types/common";
 import type { InventoryHolderType } from "@/lib/inventory/types/holders";
 
-/** How dispatched supplies left the holder's custody. Contract: `docs/inventory-dispatch-workflows.md`. */
+/** How dispatched supplies left the holder's custody. Wire contract: `api-docs.json`. */
 export const RECONCILIATION_OUTCOMES = ["SOLD", "RETURNED", "DAMAGED", "LOST", "MISSING", "STOLEN"] as const;
 export type ReconciliationOutcome = (typeof RECONCILIATION_OUTCOMES)[number];
 

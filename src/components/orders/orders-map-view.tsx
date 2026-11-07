@@ -132,6 +132,7 @@ type MarkerBinding = {
 };
 
 export type OrdersMapViewProps = {
+  allowRouteManagement?: boolean;
   active: boolean;
   filters: OrderFilterState;
   sort: OrderListParams["sort"];
@@ -187,6 +188,7 @@ function buildStopsBoundsLiteral(stops: PickupMapStop[]): LatLngBoundsLiteral | 
 }
 
 export function OrdersMapView({
+  allowRouteManagement = true,
   active,
   filters,
   sort,
@@ -243,7 +245,7 @@ export function OrdersMapView({
     [filters.query, filters.rows, sort],
   );
 
-  const { data, isLoading, isError } = useOrders(mapListParams);
+  const { data, isLoading, isError } = useOrders(mapListParams, { routeMode: !allowRouteManagement });
   const orders = useMemo(() => data?.items ?? [], [data?.items]);
 
   const orderByRecordId = useMemo(() => {
@@ -293,7 +295,7 @@ export function OrdersMapView({
     [selectedStops],
   );
   const selectedAssignedStops = useMemo(
-    () => selectedStops.filter((stop) => Boolean(stop.routeId?.trim())),
+    () => selectedStops.filter((stop) => Boolean(stop.routeId?.trim()) && !stop.completed),
     [selectedStops],
   );
   /** Optimizing needs 2+ stops, every one assigned to the same route. */
@@ -500,16 +502,19 @@ export function OrdersMapView({
   }, [mapReady, markerSize, mapSelectedIds, mappedStops, routeColors, stopNumbers, t]);
 
   function openAssignRouteDialog() {
+    if (!allowRouteManagement) return;
     if (selectedStops.length === 0) return;
     setAssignRouteOpen(true);
   }
 
   function openUnassignDialog() {
+    if (!allowRouteManagement) return;
     if (selectedAssignedStops.length === 0) return;
     setUnassignOpen(true);
   }
 
   async function confirmUnassign() {
+    if (!allowRouteManagement) return;
     if (selectedAssignedStops.length === 0) return;
 
     const ordersToClear = selectedAssignedStops
@@ -657,7 +662,7 @@ export function OrdersMapView({
     );
   }
 
-  const routeOrderingEnabled = Boolean(dailyRouteId);
+  const routeOrderingEnabled = allowRouteManagement && Boolean(dailyRouteId);
   const routeStops = mappedStops.filter((stop) => stop.routeId?.trim() === dailyRouteId);
   const everyRouteStopNumbered =
     routeStops.length > 0 && routeStops.every((stop) => stopNumbers.has(stop.orderRecordId));
@@ -760,7 +765,7 @@ export function OrdersMapView({
               </TableSelectionActionGroup>
             ) : null}
             {routeOrderingEnabled ? <TableSelectionActionDivider /> : null}
-            <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
+            {allowRouteManagement ? <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
               {!routeOrderingEnabled ? (
                 <Button
                   variant="outline"
@@ -782,7 +787,7 @@ export function OrdersMapView({
                 <RouteOff className="h-4 w-4" />
                 {t("orders.actions.unassignRoute")}
               </Button>
-            </TableSelectionActionGroup>
+            </TableSelectionActionGroup> : null}
           </div>
         </div>
 

@@ -32,7 +32,7 @@ Do not mix these concepts. They look similar in code but mean different things i
 
 - Appointments often live under `orders` (`src/lib/orders`, `OrdersWorkspace`, `/appointments`)
 - Barcode Scanner lives at `/label-updater` (`LabelUpdaterWorkspace`)
-- Daily routes live at `/daily-routes` (pickup-delivery-routes components; `/appointment-routes` and `/delivery-routes` redirect here)
+- Today’s Routes (dated daily-route setup) lives at `/daily-routes` (pickup-delivery-routes components; `/appointment-routes` and `/delivery-routes` redirect here)
 
 ---
 
@@ -105,6 +105,11 @@ by a mobile installation. Downloaded numbers must be returned from that device
 before reassignment. They are excluded from customer invoice lists and financial
 totals. See the API contract `docs/contracts/reserved-invoice-pools.md` in emsys-api.
 Pool view, generation and assignment have separate explicit permissions.
+The directory uses the shared column filter builder for Invoice number, Received
+at, User, and Status with AND/OR joins. Received at is a separate API timestamp
+and displays a dash until supplied; it does not fall back to generation or
+assignment time. Advanced search awaits the backend endpoint in
+[the reserved invoice search contract](docs/reserved-invoice-search-api-contract.md).
 
 ### Barcodes
 
@@ -134,7 +139,7 @@ Barcode **status** is a manual location flag in the logistics process (where the
 
 **Default on create:** every newly created barcode / invoice line-item label should start as **`ALM-NY`**. The API should set this when status is omitted (including barcodes created with the invoice). The portal also sends `ALM-NY` when it must gap-fill a missing label so creates are never empty. Later location changes stay manual.
 
-**Barcode statuses** (`/barcode-statuses`) belongs under the Barcodes sidebar group. Its list, create, update, and delete UI is wired for the forthcoming barcode-status catalog API.
+**Barcode statuses** (`/barcode-statuses`) opens from the **Barcode Statuses** header action on both the Barcodes table and Barcode Scanner, subject to the existing labels view permission. It has no separate sidebar entry. Its list, create, update, and delete UI is wired for the forthcoming barcode-status catalog API.
 
 **Barcodes table (Barcode Manager):**
 
@@ -173,9 +178,11 @@ The barcode scanner provides a quick way to scan an item's barcode and update it
 
 Scanned numbers are merchandise labels that originated on an invoice. Resolve by invoice embed first, then catalog. This allows workers to mark where merchandise is without opening the invoice. Status pickers load from the same `status-options` endpoint.
 
+Delivered merchandise labels retain the daily route that delivered them; their route cannot be reassigned or removed. Completed appointments likewise retain the route that completed them. New route assignments must use a daily route dated today or later. Unfinished records may move from an old route to a valid destination or be unassigned. Backend enforcement, the authoritative business timezone, and the barcode route-removal contract remain pending in `docs/backend-api-gaps.md`.
+
 ### Inventory
 
-Inventory manages the company's **internal supplies and materials**, separate from customer merchandise. It follows the ledger model in `inventory.md`, which the live Swagger now publishes under `/v1/inventory/...` (see `docs/inventory-swagger-verification.md`).
+Inventory manages the company's **internal supplies and materials**, separate from customer merchandise. Stock belongs to persistent warehouse, employee, vehicle or route-crew holders. Current wire models are in `api-docs.json`; remaining integration work is in `docs/inventory-workflow.md`.
 
 Stock belongs to a persistent **holder**: a warehouse, employee, vehicle, or route crew (`/inventory/holders`). A daily route is context only, never a stock destination. Quantities are never stored on items; they come from read-only **stock balances** per item, holder and condition (`AVAILABLE` / `QUARANTINED`).
 
@@ -186,7 +193,7 @@ The sub-tables under Inventory use that contract:
 - **Dispatches**: multi-line transfers from a warehouse to an employee, vehicle or crew holder (optional responsible employee and daily-route context). Dispatches record **no revenue**.
 - **Suppliers**: `companyName`, `contacts[]` (`{name, phone, email}`), `addresses[]`, `isActive`. Deactivated, not deleted.
 
-Receipts and dispatches are versioned documents: created as **DRAFT**, edited with PATCH + `If-Match`, then **posted** (`If-Match` + `Idempotency-Key`) or **cancelled** (`If-Match`). Posting submits the document as **PENDING_CONFIRMATION**. A receipt adds stock only when the **warehouse** confirms it. A dispatch reserves the source stock and moves it to the holder only when both the **warehouse** and the **custodian** (responsible employee, holder employee, crew member or route supervisor) confirm the handoff. Either party can reject with a reason, which returns the document to DRAFT. Confirmations need `canConfirmInventoryWarehouse` / `canConfirmInventoryCustodian` plus the API's per-user `allowedActions`. The same user cannot confirm both sides. Pending, posted and cancelled documents are read-only. The Stock table also shows **In warehouse** and **Pending** (in custody with employees, vehicles or crews, not reconciled yet). Contract: `docs/inventory-dispatch-workflows.md`. Money is integer USD cents (`…Minor`); `receivedAt` / `dispatchedAt` / `occurredAt` are UTC instants; `businessDate` is a calendar date. The server-owned `audit` block (`createdAt`, `createdBy`, `updatedAt`, `updatedBy`) is never sent.
+Receipts and dispatches are versioned documents: created as **DRAFT**, edited with PATCH + `If-Match`, then **posted** (`If-Match` + `Idempotency-Key`) or **cancelled** (`If-Match`). Posting submits the document as **PENDING_CONFIRMATION**. A receipt adds stock only when the **warehouse** confirms it. A dispatch reserves the source stock and moves it to the holder only when both the **warehouse** and the **custodian** (responsible employee, holder employee, crew member or route supervisor) confirm the handoff. Either party can reject with a reason, which returns the document to DRAFT. Confirmations need `canConfirmInventoryWarehouse` / `canConfirmInventoryCustodian` plus the API's per-user `allowedActions`. The same user cannot confirm both sides. Pending, posted and cancelled documents are read-only. The Stock table also shows **In warehouse** and **Pending** (in custody with employees, vehicles or crews, not reconciled yet). Remaining acceptance: `docs/inventory-workflow.md`; wire models: `api-docs.json`. Money is integer USD cents (`…Minor`); `receivedAt` / `dispatchedAt` / `occurredAt` are UTC instants; `businessDate` is a calendar date. The server-owned `audit` block (`createdAt`, `createdBy`, `updatedAt`, `updatedBy`) is never sent.
 
 **Supply operations** (`/inventory/workflow`, behind `NEXT_PUBLIC_INVENTORY_WORKFLOW_ENABLED=true`) covers the rest of the lifecycle: returns, loss & damage dispositions, physical counts, adjustments, aggregate supply sales, payments and allocations, office cash handovers, collection obligations and settlements, daily closeouts (preview, close, reopen, revisions), holder custody and reassignment, item price history, route crews, daily routes, and the stock-valuation / sales / obligations / discrepancy reports, audit events and journal entries. Closeout requires available and quarantined counts that reconcile with a fresh server preview; financial differences require an explanation. Reopening needs `closeout.reopen` and a reason, and creates a new immutable revision. Retained stock persists overnight with its holder.
 
@@ -206,15 +213,17 @@ Routes organize day-to-day appointment stops and delivery stops.
 
 **Route crews** require at least two distinct employees when adding or editing in the portal. The API must enforce the same minimum. For a single employee, assign the `employee` field instead of creating a crew. They are reusable people templates: **status**, **branch**, and **crew members**. They have no `name` (the crew members already identify it), date, vehicle, or driver/supervisor/helper roles. The portal labels a crew by its member names.
 
-**Daily routes** are the dated working route for a visit or delivery day: **branch**, **date**, **vehicle**, and **employees with roles** (driver, supervisor, helper(s)). Daily routes do not store a route crew. In the form, employees can be added one by one, or filled in from a route crew as a shortcut (the crew is not saved). The minimum is one employee who is both driver and supervisor; the first hand-picked employee takes any lead role still open. If the branch is RD, the form also includes **container** and **exchange rate**. They have no status/active flag, no `dayOfWeek` (derived from the date), and no legacy `type` (`routeType` is canonical). Daily-route names are generated by the API as `YYYY-MM-DD_Vehicle_Supervisor+Employee+…` from the date, vehicle, supervisor, driver and helpers, are read-only, and are never included as a top-level `name` in Add/Edit requests. Roles are assigned on the daily route, never on the crew template.
+**Route crew management** (`/routes`) opens from the **Route Crews** header action on Daily Routes or beside route-crew selectors in the daily-route form and shared crew-assignment dialog, subject to the existing route-view permission. It has no separate sidebar entry. Inventory crew holders use their separate `/route-crews` catalog.
+
+**Today’s Routes** (UI name; `/daily-routes`) sets up each day’s vehicle, crew, roles, and exchange rate. These daily routes are the dated working route for a visit or delivery day: **branch**, **date**, **vehicle**, and **employees with roles** (driver, supervisor, helper(s)). Daily routes do not store a route crew. In the form, employees can be added one by one, or filled in from a route crew as a shortcut (the crew is not saved). The minimum is one employee who is both driver and supervisor; the first hand-picked employee takes any lead role still open. If the branch is RD, the form also includes **container** and **exchange rate**. They have no status/active flag, no `dayOfWeek` (derived from the date), and no legacy `type` (`routeType` is canonical). Daily-route names are generated by the API as `YYYY-MM-DD_Vehicle_Supervisor+Employee+…` from the date, vehicle, supervisor, driver and helpers, are read-only, and are never included as a top-level `name` in Add/Edit requests. Roles are assigned on the daily route, never on the crew template.
 
 A new daily route can start from a previous day’s configuration. Copying to another date is allowed; the API rejects duplicates using the exact employee ID set (independent of order), vehicle, and date.
 
 The same employee can be driver and supervisor, or driver, or supervisor, or helper. A helper holds only the helper role. Every daily route needs at least one supervisor and one driver (they can be the same person); the portal blocks saving without them, and the API must enforce the same.
 
-**Predefined routes** (`/predefined-routes`) are reusable named coverage filters, separate from route crews and daily routes. The list shows ID, name, Cities, and ZIP codes. The form retains one ordered mixed city/ZIP textbox list. Data is persisted through `/v1/predefined-routes` in the tenant `predefined_routes` collection. The appointment Route selector (below advanced filters) sends `predefinedRoute.id`; the API matches the customer sender address city OR ZIP and combines this restriction with existing filters using AND before counting/pagination. Add is available beside the selector; Edit/Delete are only in the catalog. Contract: `docs/predefined-routes.md`.
+**Predefined routes** (`/predefined-routes`) are reusable named coverage filters, separate from route crews and daily routes. The list shows ID, name, Cities, and ZIP codes. The form retains one ordered mixed city/ZIP textbox list. Data is persisted through `/v1/predefined-routes` in the tenant `predefined_routes` collection. The appointment Route selector (below advanced filters) sends `predefinedRoute.id`; the API matches the customer sender address city OR ZIP and combines this restriction with existing filters using AND before counting/pagination. Add is available beside the selector; Edit/Delete are only in the catalog. Migration follow-up: `docs/predefined-routes.md`; API shapes: `api-docs.json`.
 
-Route modeling (backend changes reported; verify against the next OpenAPI export):
+Route concepts and wire-model boundaries:
 
 **Route crews** (`/v1/routes`): reusable people templates. Persist only **active**, **branch** (`id` + `code` + `name`), and **employees** (`id` + `name`, at least two distinct ids). Do not persist `name`, date, vehicle, trip number, or driver/supervisor/helper roles on the crew. Strip those fields from existing crew records. Reject create/update when another crew in the same company already has the same **branch** and the same **employee id set** (order-independent; compare ids, not names).
 
@@ -233,26 +242,37 @@ The system allows us to:
 
 This section helps coordinate the day-to-day movement of employees and merchandise.
 
-#### Deliveries
+#### Route Deliveries
 
-**Complete delivery balance gate:** The current completion wizard starts with Review balance, then items, photos, signature, and finish. The balance is shown in USD and in DOP at the barcode's daily route `rate`. The API invoice balance must be exactly zero before proceeding and is rechecked before completion. Cash payments apply immediately; check, Zelle, deposit and card payments count only once **cleared**. Users with delivery view (`canViewDelivery`), Cuadre create (`canCreateIncomeStatement`) and journal create (`canCreateJournal`) may post a PAYMENT on today's open Cuadre for their branch (opening today's Cuadre at the route rate when none exists), or refresh after another user settles the invoice. When outstanding non-cash payments for the invoice cover the balance, the same users may **override** the clearance requirement after accepting that they are liable for the payment if it does not clear; the override is rechecked before completion. Payments persist independently of delivery. Atomic backend enforcement is a required follow-up; see the zero-balance section of `docs/delivery-completion-api-contract.md`.
+**Complete delivery balance gate:** Completion requires an authoritative finite invoice balance of exactly zero and no linked uncleared receipts. Cash receipts apply immediately; bank receipts apply through journal clearance. The wizard rechecks the API balance before completion; it does not subtract pending payments locally or offer an uncleared-payment override. Payments remain independent of delivery cancellation. Payment entry uses the collecting branch's current closeout and its permissions; opening a missing period requires the separate closeout-create grant. USD/DOP display uses the documented route rate. Remaining atomicity, assignment and balance-case acceptance is in `docs/delivery-completion-api-contract.md`.
 
-Portal route: `/deliveries` (Routes sidebar, `canViewDelivery`). The driver's work list: barcodes on DR daily routes whose crew includes the signed-in user's employee (`employee.user.id`), excluding barcodes already delivered. Columns: barcode, invoice, invoice balance (open balance of the barcode's invoice, from the list row's `invoice.balance`; blank when the API omits it; with its DOP equivalent at the row's daily route `rate`), name (merchandise), container, status, sender name and sender phones (from the list row's `sender`; blank when the API omits it), receiver name, address + apartment, city (receiver address `city`), receiver phones, and **Deliver**. Default server sort is city ascending; the sort selector offers ascending or descending order by city, barcode, invoice, invoice balance, item name, container, sender name, or receiver name. The status is always chosen by the driver; there is no preselected default. On phones the table becomes cards grouped under city headings when sorting by city, with tap-to-call phone buttons and a full-width Deliver button. This keeps Barcodes strictly for barcode management — Barcodes has no Deliver or signing actions.
+Portal route: `/deliveries` (**Route Deliveries** in the Routes sidebar). This is the restricted barcode work table: **Deliver** and **Print invoice** are its only record actions. `canViewDelivery` returns all tenant pending pieces; `canViewAssignedDeliveries` returns only the authenticated employee’s assigned delivery work. The same controls apply to both scopes; the API enforces assignment isolation. The API may include pending pieces without a route or numeric delivery for broad-access users. Delivery requires a valid numeric delivery; invoice printing requires only a linked invoice. Columns include barcode, invoice, balance and its DOP equivalent, daily-route rate, merchandise, container, sender/receiver contact details, address and city. Server sorting defaults to city ascending. On phones, records become cards grouped by city when sorting by city. The status is chosen explicitly by the driver. The main **Barcodes** table also exposes permission-gated **Deliver** (pending CONDUCE pieces with invoice and numeric delivery) and **Print invoice**, reusing the same delivery wizard and signature-selection print dialog.
 
-The list comes from `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`; the API owns the "assigned to me" and "pending" scoping and joins the invoice receiver. The portal never resolves the current employee or filters assignment client-side. Contract: `docs/delivery-completion-api-contract.md`.
+The list comes from `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`; the API owns tenant, pending status, and assigned-only scope and joins invoice parties. The portal does not resolve employee membership client-side. Completion accepts `canUpdateDelivery` or `canUpdateAssignedDeliveries`, alongside the required invoice access. Contract: `docs/delivery-completion-api-contract.md`.
 
-**Deliver** covers every barcode on the clicked invoice assigned to the clicked daily route, across all line items and including rows outside the current page (resolved from the invoice detail; never by line item, package sequence, visible selection, or invoice alone).
+#### Route Appointments
 
-**The DR daily route is the delivery.** Its `/vehicle-routes` id both selects the group and addresses the delivery endpoint. The legacy `/deliveries` records (numeric id, `trip-container` name, own employee list) are not linked to daily routes, and new barcode route assignments leave `barcode.delivery` empty, so the portal does not use `delivery.id`. The form contains, in order:
+`/route-appointments` reuses the Appointments table with the same search, filters, server pagination, viewing, editing, completion, printing and invoice creation workflows, subject to each action’s permission. Route management, deletion and standalone appointment creation are absent in this workspace, including mobile cards and detail sheets. Its map (`/route-appointments/map`) is for viewing stops and has no assignment, removal or route ordering controls. General Appointments keeps its existing controls. Both list and search use the existing pickups API: `canViewPickup` defaults to all permitted appointments; `canViewAssignedAppointments` is restricted by the API to the signed-in employee’s pickup routes. Updates accept the ordinary or assigned-appointment update grant; assigned-only writes cannot change route assignment. The UI does not filter an already downloaded page to infer assignment.
 
-1. **New status** — picked from the tenant barcode status catalog and applied to the group's barcodes that are not already at that status, via the invoice-embedded barcode update.
-2. **Delivery documents** — invoice-document uploads (with separate mobile photo and video capture) named `delivery_N` with their original extension, one invoice-wide sequence across file types. Each batch reads all document metadata pages (including original names retained after a rename) and starts above the highest number. Writes are sequential; failed and unattempted files stay queued, completed files are not resent, and completion waits for queued files to be uploaded or removed. Same-origin tabs are serialized with Web Locks. Uploads persist independently of completion.
-3. **Terms and conditions** — the active invoice policies with one agreement checkbox; when any exist the receiver must tick it. Completion is blocked while they load or if they fail to load. The agreement itself is not saved separately.
-4. **Delivery receiver signature** — the **delivery receiver** (whoever physically receives the merchandise) can differ from the **invoice receiver**. The driver enters the delivery receiver's name, ID number (cédula), and signature; all three are required and start empty. When the invoice receiver is on file, a "Same as invoice receiver" shortcut fills name and ID (still editable). One signature covers both the delivery and the terms agreement. The portal sends it to the invoice receiver-signature endpoint: `PUT /v1/deliveries/{dailyRouteId}/invoices/{invoiceId}/receiver/signature` with `{ receiverSignature: { signerName, idNumber, contentType: "image/png", data } }` (raw base64). In that one request the API **always** saves a `delivery_signature` invoice document (signature PNG plus delivery receiver name, ID, signing time, collecting user, daily route), and **also** stores it as the invoice receiver signature when that field is empty (the first one is never overwritten). The invoice receiver party (`receiver.name` / `IDNumber`) is never changed by a delivery. The portal cannot see signatures on invoice responses and does not make these decisions.
+**Deliver** is an invoice-level logistics operation scoped to the selected
+route/delivery and its pending merchandise pieces, including pieces beyond the
+visible table page. The API owns group membership and permitted selection.
+Operational DR daily-route identity and legacy numeric delivery identity must
+not be substituted for each other without the agreed wire contract; remaining
+identity/migration work is in `docs/delivery-completion-api-contract.md`.
 
-On submit the portal reloads the invoice and rejects a changed group, saves the signature, then writes the status. If the status write fails, Retry skips the already-saved signature. Deliver requires `canUpdateDelivery` (`delivery`), `canViewInvoice`, and `canUpdateInvoice` (`invoice`); the API remains authoritative for driver/route authorization.
+The wizard reviews balance, selects pieces, optionally uploads photos, captures
+the actual receiver and signature, and submits completion. The delivery receiver
+may differ from the invoice receiver; signing never changes the customer party.
+Signature images are write-only and rendered into PDFs server-side. Read and
+completion responses expose metadata, not image bytes.
 
-**API follow-ups:** the assigned-barcodes endpoint; accept the daily route id (24-character ObjectID) in the receiver-signature path instead of the numeric delivery id; atomic per-invoice `delivery_N` sequence allocation with a durable high-water mark; publishing the receiver-signature endpoint in Swagger.
+Completion uses the documented atomic API command with a stable UUID and exact
+payload on retry. It associates the selected photos, saves the private receipt
+and changes only selected pieces together. Uploaded attachments persist
+independently when completion fails or is cancelled. Printing uses metadata-only
+signature options and the existing server PDF endpoint. API permissions, versions,
+assignment checks and failure behavior remain authoritative.
 
 ### Customers
 
@@ -294,58 +314,49 @@ The goal is to maintain a centralized financial history of the company's operati
 
 ### Today's Transactions (Daily Income)
 
-Accounting now presents **Pending Reconciliation** (existing
-`/accounting/pending-financial-activity` route) and **Pending Clearance**
-(`/accounting/pending-clearance`) separately. Reconciliation verifies money
-custody/documents; clearance verifies financial settlement. Both span all
-closeouts and remain actionable after closeout closure; neither changes the
-other status or historical financial amounts. A transaction can appear in both.
-The proposed backend fields, clearance command, permission and remaining
-financial-correction work are documented in
-`docs/transaction-reconciliation-clearance.md`; this supersedes older statements
-in this document that conflate clearing and reconciliation.
+Today's Transactions (`/accounting/daily-income`) records and browses a closeout's
+invoice registrations/initial payments, existing-invoice payments, adjustments,
+income, expenses, inventory changes and account transfers. Loan creation and
+loan payments use their dedicated feature APIs. Historical closeouts remain
+available for browsing; financial writes use the server-selected current period.
 
-The sidebar, workspace heading, and navigation tabs display **Today's Transactions**
-(**Transacciones de hoy** in Spanish). The existing `/accounting/daily-income`
-route, Daily Income API contracts, and current/historical closeout behavior remain
-unchanged.
+**Pending Reconciliation** (`/accounting/pending-financial-activity`) verifies
+money custody and supporting documents. **Pending Clearance**
+(`/accounting/pending-clearance`) records financial settlement. Both span all
+closeouts, use independent journal statuses and can contain the same transaction.
+Only explicitly authorized actions are available; role names do not grant access.
+Reconciliation never applies invoice receipts. Clearance applies deferred bank
+receipts once without changing the original ledger date or period.
 
-Closeouts use the server clock and configured location timezone. Transactions
-require the latest closeout to be open and dated today; 409 CLOSEOUT_REQUIRED
-reasons are NONE_EXISTS, STALE_OPEN_CLOSEOUT, and LATEST_CLOSED. The transaction
-attempt never closes rows. Only RD prompts for currency/rate; other branches
-use USD/rate 1. POST income-statements with only those two fields. The server owns location/date, preserves today's
-existing open row, atomically closes all other open location rows, and returns
-or creates today's row. Manual close/reopen/edit/delete and automatic cron
-rollover are retired. Calendar navigation uses the context endpoint's server
-date/timezone and current/previous metadata. Treat businessDate as a date label.
-Draft transaction values survive the recovery dialog, and successful entries
-are attributed to the closeout ID actually returned by the server.
+Queries, advanced filters and pagination run on the server. Matching and selected
+Income / Expenses / Net totals use `/journals/summary`, preserve currency groups,
+and do not substitute a current-page total for all matching records.
 
-When a financial transaction omits both assignee families, the API defaults to
-the creator's linked employee, if present. An explicit employee/daily route is
-preserved. Inventory dispatch continues to require an explicit stock recipient.
+**Register inventory change** records company supplies as received or dispatched.
+Received entries select supplier/item/quantity/cost and link an expense journal
+to a receipt. Dispatched entries select item/quantity/value and responsible
+holders and link a sales journal to a dispatch. The journal and linked document
+commit together; stock changes follow the required receipt/handoff confirmations.
+A permitted `autoReconcile` command must enforce the corresponding backend rules.
+A daily route supplies attribution, not ownership of every crew member's stock.
 
-Daily Income is used to manage and record the company's daily incoming transactions.
+A financial entry belongs to an employee or a daily vehicle-route with its
+responsible supervisor. With neither supplied, the API resolves the creator's
+linked employee. Employee entries clear route aliases; route entries preserve
+route attribution and the supervisor in `employee`. Inventory entries send
+`employee: null` and use `inventoryHolders`. Local assignee discriminators are
+not persisted.
 
-**Advanced filters and selected totals:** the transactions table has advanced filters for invoice #, date / date range, user, account, cost, payment, balance, amount, employee, transaction type, payment method, check number, external reference number, income statement and internal reference number (`DAILY_INCOME_TABLE_FILTER_FIELDS`). Until the journal search allowlist is confirmed they run in the browser over the closeout rows already loaded (up to 500 per closeout), combining rows left to right like the API filter builder. Selecting rows shows **Income / Expenses / Net income** for the selection, per currency, classified like the Daily Income summary. Accounting → Pending Transactions now shares the Daily Income columns and provides server search/advanced filters, cross-page selection (up to 200 journals of one payment method), a selected transaction list with per-currency totals, and admin reconciliation confirmation. This implementation targets the proposed journal API contract and requires backend support before deployment (`docs/pending-transactions-update.md`). The mobile list does not offer filters or selection yet.
+The internal `refNumber` is separate from `external_reference_number` and the
+paper check number. A duplicate-payment conflict (`DUPLICATE_PAYMENT`, message
+`Duplicate payment warning`) requires explicit confirmation before retrying the
+same values with `allowDuplicatePayment: true`; other conflicts do not authorize
+an override. Never carry that override into another payment.
 
-It provides a way to record and track income received each day and maintain a historical record of daily revenue.
-
-**Register inventory change** (after Register income) records company supplies on the closeout: **received** (choose a supplier) or **dispatched** (an optional daily route for reporting plus one or more **responsible holders**: a vehicle, employees, or both; see Daily route attribution and accountability). Users pick an inventory item, quantity, and either unit price or total (the other amount updates automatically). Supplier, employee, and daily route can be created from the dropdown the same way sender/receiver can on invoices and appointments. The journal is posted as `transactionType: "INVENTORY"` with `inventoryDirection`. Received creates a receipt and posts an expense; dispatched creates a dispatch and posts sales. Journal and stock movement happen in one API transaction. When creating a dispatched change, users with `canReconcileInventoryDispatch` can turn on **Auto-reconcile (mark as sold)**, the inventory counterpart of auto-clear. It sends `autoReconcile: true`, and the API completes the handoff and reconciles the full quantity as sold in the same transaction, so the dispatch never shows in Pending Transactions. Do not persist portal-only `assigneeSource`.
-
-A journal is posted under an **employee** `{ id, name }`, or attributed to a **daily vehicle-route** `{ id, name }` (same shape as invoice `receivedBy`) together with the route's **responsible supervisor** in `employee`. The portal picker uses a local `assigneeSource` (`employee` | `route`) so the form can choose which of those to save; do **not** persist that discriminator.
-
-API assignee rules (`POST` / `PUT` `/v1/journals`):
-
-- If neither assignee is provided, default to the creator’s linked employee on the server. Portal validation permits an empty assignee and explains this default.
-- Employee journals keep `employee` and clear `vehicleRoute` / `route` / `employeeGroup`.
-- Route journals keep `vehicleRoute`, `route`, and compatibility `employeeGroup` **and** `employee` = the responsible daily-route supervisor (required by the portal; the API must validate it is a supervisor on that route).
-- Inventory journals send `employee: null`; dispatched inventory carries `inventoryHolders` instead.
-- Discriminate route ids by shape: 24-char Mongo ObjectID → daily route.
-- Responses and searchable fields include the route assignee fields and a read-only `dailyRoute` snapshot.
-
-**Payment references and duplicate confirmation:** Daily Income transaction forms keep the internal `refNumber` separate from the optional payment reference (`external_reference_number`). The API returns HTTP 409 with `message: "Duplicate payment warning"` for a possible duplicate. The portal offers an explicit confirmation and resubmits the same values with `allowDuplicatePayment: true` only after confirmation. Other conflicts remain normal errors. The override is not a form default and never carries into another payment. Transaction details display the saved payment reference and `duplicatePaymentOverride` audit flag.
+Financial writes respect current grants, versions and backend `allowedActions`.
+Protected corrections use an audited void/reversal/correction or approved change
+request, with dedicated invoice, inventory and loan lifecycles preserved. Pending
+work is in `docs/financial-controls.md` and `docs/payment-accounts-api-contract.md`.
 
 ### Checks
 
@@ -353,7 +364,10 @@ Checks manages invoice payments made by check.
 
 CHECK or CHEQUE invoice payments (`INITIAL-PAYMENT` and `PAYMENT`) create an **outstanding check** and do **not** update the invoice `payment` / `balance`. The invoice payment is applied only when the check is marked **cleared**.
 
-The Checks workspace is view-only aside from that status change. Staff can search and open a check, and can mark **outstanding** checks as **cleared**. They cannot add checks or delete them from this directory, and a cleared check cannot be moved back to outstanding here. Outstanding status is shown in red and cleared status in green. Checks is not listed in the sidebar. Payments are approved (cleared) by an admin in **Accounting → Pending Transactions**, whose sidebar entry shows the combined count of outstanding checks, Zelle, deposit, and credit card payments (target: all outstanding transactions; see `docs/pending-transactions-update.md`). **Target:** clearing moves entirely to the journal's `reconciliationStatus`, and this directory becomes view-only (no **Mark cleared**).
+The Checks workspace is a read-only clearing directory. Settlement is performed
+through the journal's permitted clearance command in Accounting → Pending
+Clearance; it is independent of internal reconciliation. Status and audit data
+come from the API and linked journal.
 
 **Check number vs internal reference:** The UI always labels this **Check number**. On the backend that value is `paymentReference` (legacy `checkNumber` still dual-read/written). The portal normalizes it to `checkNumber` for UI/code. Keep it as a **string** so leading zeros are preserved when it carries into generated checks. `refNumber` is the **internal** transaction reference only — never use it as the paper check number.
 
@@ -371,11 +385,19 @@ Each check stores:
 
 ### Zelle, Deposits, and Credit Cards (clearing directories)
 
-These Accounting directories mirror Checks for invoice payments made by Zelle, bank deposit, or credit card: outstanding payments do not change the invoice balance until marked **cleared**. Each method retains its own directory with search, view, and multi-select **Mark cleared**. Admins approve (reconcile) payments in **Accounting → Pending Transactions**; that view does not link to the directories. **Target:** clearing becomes only the journal's `reconciliationStatus`, OK'd by an admin in Pending Transactions. These directories and Checks then become view-only (no **Mark cleared**), with status taken from the linked journal (`docs/pending-transactions-update.md`).
+These directories show bank-channel invoice receipts and their linked journal
+settlement state. Outstanding bank receipts apply to invoice balances only through
+the permitted journal-clearance command. The directories are read-only; internal
+reconciliation and bank clearance are separate operations.
 
-**API:** `/v1/zelle-payments`, `/v1/deposits`, `/v1/credit-card-payments` — same outstanding/cleared lifecycle and endpoints as `/v1/checks` (list, search, detail, create, update/clear, delete). Each method has its own role permissions (list, view, create, update, delete) on resources `zelle_payment`, `deposit`, and `credit_card_payment`; they are independent of check grants.
+The API resources are `/v1/zelle-payments`, `/v1/deposits` and
+`/v1/credit-card-payments`, with their documented read permissions. Current payloads
+and independent journal commands are defined in `api-docs.json`.
 
-**Auto-approve in Daily Income:** When adding an invoice payment (`INITIAL-PAYMENT` or `PAYMENT`) by check, Zelle, deposit, or credit card with an amount above zero, the payment step shows an **Auto-approve (mark as cleared)** switch. It is off by default and only appears when the user has that method's update permission (the same grant as **Mark cleared**). When on, the journal create request sends `autoClear: true` so the API creates the record already cleared and applies it to the invoice balance. It is not offered when editing a transaction, in quick entry, or in the invoice wizard's payment step. Auto-approve is the admin's way to skip **Pending Transactions**: without it, the journal waits there as Outstanding until an admin reconciles it. Admin-only auto-approve for every transaction type and payment method is a backend TODO in `docs/pending-transactions-update.md`.
+**Auto-approve in Daily Income:** `autoClear` is the existing wire flag for
+internal auto-reconciliation and requires `canReconcileJournal`. It does not grant
+or substitute for bank clearance. The frontend must preserve that distinction
+and never infer clearance rights from per-method update permissions.
 
 Each clearable payment stores:
 
@@ -402,7 +424,7 @@ This includes:
 
 These accounts provide the structure used to classify and organize financial transactions.
 
-**Cash and bank umbrellas:** `CASH ON HAND` is the default cash account; any ASSET account nested under it (via Parent account, any depth) is a user-defined cash account. A general `BANK` system account is the bank umbrella; user-defined bank accounts sit under it, and sub-banks under another bank. Cash income lands in a chosen cash account (default CASH ON HAND); every other method lands in a bank account (the general bank when none are defined). Cash expenses leave a chosen cash account; other expenses leave a chosen bank account. Cash-account selection, Debit card/Wire and non-cash expenses are behind `NEXT_PUBLIC_PAYMENT_ACCOUNTS_ENABLED` until the backend ships `docs/payment-accounts-api-contract.md`.
+**Cash and bank umbrellas:** `CASH ON HAND` is the default cash account; any ASSET account nested under it (via Parent account, any depth) is a user-defined cash account. A general `BANK` system account is the bank umbrella; user-defined bank accounts sit under it, and sub-banks under another bank. Cash income lands in a chosen cash account (default CASH ON HAND); every other method lands in a bank account (the general bank when none are defined). Cash expenses leave a chosen cash account; other expenses leave a chosen bank account. Cash-account selection, Debit card/Wire and non-cash expenses are behind `NEXT_PUBLIC_PAYMENT_ACCOUNTS_ENABLED` until the remaining acceptance work in `docs/payment-accounts-api-contract.md` is resolved.
 
 ### Items
 
@@ -461,7 +483,7 @@ Portal route: `/invoice-policies` (Admin sidebar). Tenant catalog of policy titl
 
 Active invoice policies are shown during **invoice creation** in the review step. The customer must agree to active policies. “Skip signature” is checked by default; unchecking it requires a signature (mouse or touch), including when there are no active policies. Creation sends `customerSignature: { signerName, data, contentType }` using the sender name, raw base64 PNG data, and `image/png`. The API supplies `signedAt` and `collectedBy`. Edit payloads omit signatures so the API preserves them; invoice JSON responses exclude both signatures. The signature is stored on the invoice instead of uploaded as a policy agreement document.
 
-Report mapping: sender signature → Autorizado por; receiver signature, API signing date, and submitted ID → Recibido por / Fecha / ID. Receiver signatures are collected from the **Deliveries** workspace (see Routes → Deliveries), not from Barcodes.
+Report mapping: sender signature → Autorizado por; receiver signature, API signing date, and submitted ID → Recibido por / Fecha / ID. Receiver signatures are collected through the shared delivery wizard opened from **Route Deliveries** or the permission-gated **Deliver** action in Barcodes.
 
 Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
 
@@ -592,46 +614,37 @@ Driver/supervisor combined assignments and singleton lead-role behavior remain
 supported. Deploy with the API supervisor contract change; legacy role data must
 be migrated before switching clients.
 
-### Transaction-triggered closeouts and pending financial activity
+### Closeouts and pending financial activity
 
-Scheduled midnight closeouts are retired. The portal no longer exposes automation settings or requests the automation endpoint; closeouts are created explicitly with the server date and branch timezone, either when Add transaction finds no open current closeout or during Daily Income recovery (`CLOSEOUT_REQUIRED`). Only RD (codes RD/DR/DO) asks for currency and exchange rate; other branches use USD/rate 1. See `docs/transaction-triggered-closeouts.md`. Removing portal settings does not disable an already deployed API cron job.
+Closeouts are opened explicitly using the server date and branch timezone.
+RD/DR/DO branches supply currency/rate; other branches use USD/rate 1. Journals
+use the current authorized location period, never a viewed historical date or
+caller-selected old period. Closed periods remain read-only for membership;
+later reconciliation and settlement do not reopen them.
 
-New journals send an optional branch, never a historical closeout ID or the currently viewed old date. The backend assigns the current accounting period from recording time. Historical closeouts remain viewable but cannot reopen or accept new membership. Transactions in the **current open closeout** can be edited by users with `canUpdateJournal` while they are Outstanding and not reversed; invoice registrations, inventory changes and loans keep their own workflows (`docs/closeout-transaction-edits.md`). Transactions in historical closeouts, reconciled transactions and reversals cannot be edited, and posted transactions cannot be deleted; use an auditable reversing adjustment. Active/Inactive are the user-facing closeout states, with legacy OPEN/CLOSED normalized for compatibility.
+Missing-period recovery follows `CLOSEOUT_REQUIRED`. Pending transaction inputs
+must survive setup failure/cancellation and must not be reposted if already
+committed. See `docs/transaction-triggered-closeouts.md` for remaining acceptance.
 
-**Accounting → Pending Transactions** (`/accounting/pending-financial-activity`) is a **separate page** that aggregates every **Outstanding** transaction from **all closeouts**. *Outstanding* means **not yet cleared/reconciled by an admin** — not an unpaid invoice balance. Once reconciled, a transaction leaves Pending Transactions and remains in its closeout in Daily Income. The page has the **same table functionality as Daily Income**: columns, advanced filters, multi-select and selected Income / Expenses / Net income. Reconciliation is just a field on the journal (transaction). **Only admins reconcile** — the admin's OK that the money was received or the expense is approved. Admins can skip this step by turning on **Auto-approve (mark as cleared)** when adding the transaction in Daily Income; anything created without it (or by a non-admin) arrives Outstanding and waits here. Admins filter however they want (payment method, user, employee, dates, …), select rows of one payment method, check the selected totals, and reconcile them together. Reconciling never changes the transaction's date, closeout, amount, employee or daily route. **Reconciled is final:** a reconciled transaction cannot be reversed and never returns to Outstanding. Generic reversals (Outstanding transactions only) additionally require journal-create permission; invoice payments are applied/reversed transactionally.
+Accounting's two pending queues use server search, sorting, totals and scoped
+permissions. Reconciliation checks internal custody; clearance settles bank
+receipts. Backend versions and `allowedActions` govern edits and audited
+corrections. Current unresolved work is in `docs/financial-controls.md`.
 
-*Prepared portal implementation:* the page now uses the proposed outstanding journal search, summary and batch reconciliation contract. Its shared Daily Income columns, server filters, cross-page selection and confirmation require the backend additions in `docs/pending-transactions-update.md` before deployment. The sidebar badge and separate payment directories still follow the legacy payment-clearing lifecycle.
+**Inventory → Pending Transactions** (`/inventory/pending-transactions`) tracks
+posted supplies until every unit is accounted for. Reconciliations cover sold,
+returned, damaged, lost, missing and stolen quantities; unaccounted stock stays
+with its holder. Sold supplies can include payments and an unpaid collection
+obligation. Notes explain losses and credit. Warehouse and responsible custodian
+confirm before effects apply. Entries whose sales were recorded at dispatch
+cannot record that revenue twice. This workspace has its own dispatch-list and
+reconciliation permissions, independently of accounting access. Remaining cases
+and contract decisions are in `docs/inventory-workflow.md`.
 
-**TODO (backend/API and portal):** every TODO for the Daily Income and Pending Transactions tables lives in `docs/pending-transactions-update.md`.
-
-**Inventory → Pending Transactions** (`/inventory/pending-transactions`) is a separate workspace that lists posted inventory ledger dispatches whose supplies are not fully accounted for yet, oldest first, filtered by holder, dispatch date and age. **Reconcile** records, per dispatched item, how many units were sold (with actual revenue), returned to the source warehouse, damaged (quarantined or written off), lost, missing or stolen; the remaining quantity stays in the holder's custody. Sales carry payment lines per method (cash; check with bank account and check number; Zelle, deposit or card with bank account and optional reference) that cannot exceed the revenue; any unpaid remainder is a credit sale that becomes a collection obligation for the income recipient (route supervisor or responsible employee). A description is required for losses and for credit. A submitted reconciliation is **pending confirmation**: its quantities show as awaiting confirmation, and stock, dispositions, the sale and income journals apply only when both the warehouse and the custodian confirm. Either side can reject it with a reason. Dispatches whose sales Daily Income already recorded collect no revenue or payments. One submission is one idempotent command, and the dispatch leaves the list when every item is confirmed as accounted for. Viewing needs dispatch list/view permissions; reconciling needs the dedicated `canReconcileInventoryDispatch`, which legacy inventory view grants do not imply. The API contract is proposed in `docs/inventory-dispatch-workflows.md` and must ship with the backend. Its sidebar entry and page require inventory dispatch list permission, independently of accounting access.
-
-**Income / Expenses / Net income totals** classify journals exactly like the Daily Income summary (`src/lib/accounting/daily-income/journal-classification.ts`): income = Payment, Initial payment, Sales, inventory dispatched; expenses = expense account lines, otherwise Expense and inventory received; discounts, surcharges, transfers and loans are excluded; per currency, never converted. Totals across every matching row (all pages) and cross-page selections come from `POST /v1/journals/summary` once it ships — do not substitute current-page totals or download the full directory.
-
-Currency and exchange-rate inputs for daily closeout creation appear only for branch code RD. Other branches use USD/rate 1 without asking the user; this also applies to rollover recovery and invoice registration. RD exchange rate remains editable for either USD or DOP.
-
-Invoice and delivery flows query the server-selected current closeout. Missing periods use explicit server-dated creation with RD-only settings; manual closing/reopening remains unavailable. Generic reversing adjustments do not replace invoice-lifecycle, inventory or loan corrections and require `canCreateFinancialAdjustment` in addition to existing journal/reconciliation grants. Occurrence dates do not determine period membership.
-
-The supplied `api-docs.json` snapshot lacks the transaction-triggered rollover, current-period, financial-activity and reversal endpoint schemas. Regenerate those endpoint definitions from the backend export before claiming full OpenAPI parity; do not restore the retired automation contract.
-
-
-### Portal alignment status (2026-10-26)
-
-The closeout workspace defaults to the server-selected current closeout and offers a
-Current shortcut alongside historical date navigation. Open status is checked
-against that current record, without browser-clock period expiration. Current mode
-uses the existing current query; a history query only runs for a selected date.
-Customer edit conflicts already use the duplicate-customer error presentation;
-route and invoice uniqueness remain server-enforced, with mutation failures shown
-without clearing the form.
-
-Backend changes reported in this update replace the older proposed rollover
-semantics: explicit creation of today's closeout closes older open periods, using
-the server date and branch timezone. Scheduled/manual closing and reopening are
-retired. Only RD prompts for currency/rate; other branches use USD at 1. The local
-OpenAPI export still lacks the recovery error and creation response; do not infer
-new wire fields or retry a possibly successful transaction.
-
+Journal summaries preserve currencies and exclude non-income/expense transfers,
+discounts, surcharges and loans according to the shared classification helper.
+Current contracts are published in `api-docs.json`; pending implementation and
+migration work is indexed in `docs/backend-api-gaps.md`.
 
 ### Add transaction starts the current closeout
 
@@ -652,11 +665,9 @@ the closeout rollover dialog; this action does not automatically retry a journal
 mutation or reopen a closed period. Backend creation must enforce the
 reported server-date/timezone, stale-period closure, and concurrency invariants.
 
-### Financial controls alignment (2026-11-04)
+### Financial controls
 
-`docs/financial-controls.md` supersedes the historical accounting descriptions
-above that combine reconciliation and clearance or forbid controlled corrections
-of reconciled transactions. Reconciliation records internal verification; bank
+Reconciliation records internal verification; bank
 clearance records settlement and applies deferred invoice receipts. Backend
 `allowedActions` and version checks govern direct edits, voids, notes and
 reversals. Daily-route operators request protected changes through
@@ -664,7 +675,7 @@ reversals. Daily-route operators request protected changes through
 closeout opening remains in place, and neither later verification nor settlement
 reopens a historical period.
 
-### Daily-route permission and approval readiness (2026-11-05)
+### Protected daily-route records
 
 “Street Team” refers to employees assigned to a dated daily route. Request actions
 must be authorized by the API for that record; frontend role names and route
@@ -673,7 +684,6 @@ entry points from the five resource detail views, validated target/version/actio
 checks, stable retries, and no journal hard-delete client. Its editor currently
 covers limited fields and inventory dispatches only.
 
-Live mock-company checks found the change-request routes and expected workflow
-grants unavailable. Approval, assignment isolation, atomic corrections and audit
-invariants are not certified. Deployment evidence, the reproducible suite and
-backend acceptance matrix are in `docs/daily-route-permissions-approval-audit.md`.
+Approval, assignment isolation, atomic corrections and audit invariants require
+server enforcement. Their remaining acceptance cases are in
+`docs/financial-controls.md`.

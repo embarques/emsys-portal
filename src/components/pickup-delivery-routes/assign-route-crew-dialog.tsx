@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Route as RouteIcon } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
+import { RouteCrewsButton } from "@/components/route-manager/route-crews-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
@@ -55,6 +56,7 @@ import {
   type RouteEmployeeRef,
 } from "@/lib/route-manager/types";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
+import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 
 export type AssignRouteCrewDialogProps = {
   open: boolean;
@@ -299,6 +301,7 @@ export function AssignRouteCrewDialog({
     }
 
     try {
+      assertAssignableRouteDate(date);
       const saved = await upsertMutation.mutateAsync({
         values: buildScheduledRouteFormValues({
           routeType,
@@ -314,6 +317,7 @@ export function AssignRouteCrewDialog({
       if (isDelivery) {
         const result = await assignBarcodesMutation.mutateAsync({
           routeId: saved.id,
+          routeDate: saved.date,
           barcodeIds: deliveryBarcodeIds,
         });
         const routeName =
@@ -328,7 +332,7 @@ export function AssignRouteCrewDialog({
           }),
         );
       } else {
-        await assignPickupsMutation.mutateAsync({ routeId: saved.id, pickupIds: pickupItemIds });
+        await assignPickupsMutation.mutateAsync({ routeId: saved.id, routeDate: saved.date, pickupIds: pickupItemIds });
         const routeName = formatOrderRouteName({ routeId: saved.id }, saved, t);
         const routeSuffix = routeName
           ? t("orders.toasts.assignedToRouteNamed", { routeName })
@@ -390,7 +394,10 @@ export function AssignRouteCrewDialog({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="assign-route-crew">{t("routes.activeRoute.route")}</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="assign-route-crew">{t("routes.activeRoute.route")}</Label>
+              <RouteCrewsButton compact onOpen={() => handleOpenChange(false)} />
+            </div>
             <SearchableSelect
               id="assign-route-crew"
               value={routeCrewId}

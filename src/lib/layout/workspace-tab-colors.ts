@@ -2,7 +2,10 @@ import type { CSSProperties } from "react";
 
 import {
   accountingClearingNavigationItems,
+  barcodeNavigationItems,
+  invoiceNavigationItems,
   navigation,
+  routeNavigationItems,
   topNavigationItems,
   type NavigationGroup,
   type NavigationItem,
@@ -150,6 +153,9 @@ function buildPathSectionsFromNavigation(
   }
 
   collectLeafHrefs(accountingClearingNavigationItems, "accounting", pathSections);
+  collectLeafHrefs(barcodeNavigationItems, "barcodes", pathSections);
+  collectLeafHrefs(routeNavigationItems, "pickups", pathSections);
+  collectLeafHrefs(invoiceNavigationItems, "invoices", pathSections);
 
   return pathSections;
 }

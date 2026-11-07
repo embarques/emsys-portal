@@ -1,4 +1,5 @@
 import {mutationVersionHeaders, type VersionedRecord} from "@/lib/api/mutation-version";
+import { assertBarcodeRouteChangeAllowed } from "@/lib/labels/route-assignment-policy";
 import { customerSignatureSchema, type CustomerSignature } from "@/lib/invoices/schemas/customer-signature.schema";
 import { resolveInvoiceItemCount } from "@/lib/invoices/item-count";
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
@@ -1184,6 +1185,11 @@ export async function patchInvoiceEmbeddedBarcodes(
       if (patchIndex < 0) continue;
 
       const patch = remaining[patchIndex]!;
+      assertBarcodeRouteChangeAllowed(
+        barcode.status,
+        { id: barcode.route?.id != null ? String(barcode.route.id) : barcode.route?.routeId },
+        patch.route,
+      );
       barcode.number = patch.number;
       barcode.status = patch.status;
       if (patch.container) {
@@ -1206,6 +1212,7 @@ export async function patchInvoiceEmbeddedBarcodes(
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
     invoice,
+    { headers: mutationVersionHeaders(invoice.version) },
   );
 
   assertMutationSuccess(response, "Unable to update invoice barcodes.");
@@ -1262,6 +1269,7 @@ export async function removeInvoiceEmbeddedBarcodes(
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
     invoice,
+    { headers: mutationVersionHeaders(invoice.version) },
   );
   assertMutationSuccess(response, "Unable to remove invoice barcodes.");
   return removed;

@@ -20,7 +20,7 @@ import type { Order, OrderFilterState, OrderListParams } from "@/lib/orders/type
 import type { AppointmentRouteStopOrder } from "@/lib/orders/utils/appointment-route-optimization";
 import { useTranslation } from "@/lib/i18n";
 
-export function OrdersMapWorkspace() {
+export function OrdersMapWorkspace({ routeMode = false }: { routeMode?: boolean } = {}) {
   const viewportRef = useFormViewport();
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -57,7 +57,7 @@ export function OrdersMapWorkspace() {
   }, [mapActive, mapTitle, tabId, updateTabLabel]);
 
   const unassignRouteMutation = useUnassignPickupsFromRoute();
-  const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
+  const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: !routeMode });
 
   function handleStopOrderChange(nextStopOrder: AppointmentRouteStopOrder | null) {
     setStopOrder(nextStopOrder);
@@ -65,6 +65,7 @@ export function OrdersMapWorkspace() {
   }
 
   async function handleUnassignRoute(ordersToClear: Order[]) {
+    if (routeMode) return;
     const result = await unassignRouteMutation.mutateAsync(ordersToClear);
 
     reportBulkSettled({
@@ -91,6 +92,7 @@ export function OrdersMapWorkspace() {
         <PageHeader title={mapTitle} description={mapDescription} />
       </div>
       <OrdersMapView
+        allowRouteManagement={!routeMode}
         active={mapActive}
         filters={filters}
         sort={sort}

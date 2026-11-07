@@ -3,6 +3,7 @@
   "entityPlural": "appointments",
   "title": "Appointments",
   "pages": {
+    "routeAppointments": "Work route appointments: view, edit, complete, print, and create invoices. Your permissions determine which appointments are available.",
     "description": "Schedule client visits for pickup, supply deliveries, payment collection, or estimates."
   },
   "noun": "appointments",
@@ -373,13 +374,14 @@
     "comingSoon": "{{label}} is coming soon."
   },
   "errors": {
+    "completedRouteLocked": "Completed appointments must keep the daily route that completed them. They cannot be reassigned or unassigned.",
     "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again.",
     "pickupAccessUnavailable": "Pickup access unavailable. Your user is not linked to a pickup employee, and you do not have permission to view all pickups."
   },
   "map": {
     "title": "Appointments map view",
     "description": "Visualize the selected appointments on a map to make route assignment easier.",
-    "dailyRouteTitle": "Daily Routes Map",
+    "dailyRouteTitle": "Today’s Routes Map",
     "dailyRouteDescription": "Visualize route stops and arrange their visit order.",
     "dailyRouteSelectionHint": "Select stops to optimize their visit order",
     "loading": "Loading verified pickup stops…",

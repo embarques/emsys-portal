@@ -1,35 +1,20 @@
-# Assigned invoices (`canCreateAssignedInvoice`)
+# Assigned invoices — remaining gaps
 
-Field staff create invoices from an appointment without the full invoice wizard.
+- Verify appointment ownership, revoked assignment, sender and allowed receivers,
+  linked customer identity and enforced container/receivedBy rules. Include
+  customer-negative requests and assignment-revocation races.
+- Verify replay after invoice deletion returns a conflict without recreation.
+- Verify the portal's actual entry point uses the supported restricted contract
+  and cover remaining permission combinations.
+- Clarify `canOperateDailyRoute` compatibility: adding it activates the protected
+  daily-route guard and returns 403. Establish the intended assigned-create path
+  for operators without granting unrelated management privileges.
+- Clarify branch configuration and `receivedBy` requirements. Isolated branch 11
+  with a custom code returns a branch-association 400 despite an explicit branch
+  and branch-assigned user; explicit receivedBy variants also return generic 400.
+- Verify any initial payment uses its separately authorized journal receipt and
+  cannot duplicate financial effects on invoice retry.
 
-## Portal
-
-Who gets the assigned flow: users with `canCreateAssignedInvoice` (resource `invoice`) and **without** `canCreateInvoice`. Users with `canCreateInvoice` keep the full wizard, including when they start from an appointment.
-
-Entry point: Appointments → select one appointment (or open View appointment) → **Create invoice**. The desktop form tab lives under `/appointments` for the assigned flow and for anyone without `canViewInvoice`, so it never depends on opening `/invoices`.
-
-On open the portal resolves, for the signed-in user:
-
-1. `GET /users/current` → tenant user id.
-2. `POST /employees/search` with `{ "field": "user.id", "operator": "eq", "value": <userId> }` → the linked employee. The portal re-checks `employee.user.id` client-side and prefers an active match.
-3. `POST /vehicle-routes/search` for today (`date` gte/lt day range, `routeType: "pickup"`) → the first active, non-delivery daily route whose `employees[].id` includes that employee. That gives `receivedBy` = daily route + route crew.
-4. Otherwise the employee's branch `type` / department decides `office` or `warehouse`, with `receivedBy` = that employee + their branch. Delivery-branch or inactive employees are not resolved.
-5. `GET /containers` sorted `id:desc`, limit 1 → latest container.
-6. Date = today.
-
-Step 1 (details) is shown read-only and the wizard opens on step 2. Step 2 shows the appointment sender and lets the user choose only among the appointment's receivers; there is no customer search, add, or edit. If no employee is linked, no assignment resolves, or no container exists, the form is blocked with a message to contact an administrator.
-
-On save, `POST /invoices` uses the resolved branch, container and `receivedBy` directly (no extra container/employee/route reads).
-
-## API needs
-
-Live check (November 3, 2026, [backend-api-gaps.md](backend-api-gaps.md)):
-`canCreateAssignedInvoice` is **not seeded**; `POST /employees/search` already
-accepts `user.id`. Read grants and server-side validation cannot be tested
-until the permission is seeded and assigned to a test user who lacks
-`canCreateInvoice`.
-
-- Seed `canCreateAssignedInvoice` (`resourceType: "invoice"`) and accept it on `POST /invoices` for callers without `canCreateInvoice`.
-- Allow `user.id` as a filter field on `POST /employees/search`.
-- Grant these reads to roles holding the permission: `GET /users/current`, employee search, vehicle-route search, container list, pickup view (appointments), item catalog, active invoice policies, and the Daily Income (Cuadre) payment registration used by the create wizard.
-- Recommended: for callers holding only `canCreateAssignedInvoice`, the API should verify that `pickup`, `container`, `receivedBy` and the sender/receiver match the appointment and the caller's assignment, because the portal restriction is UI-only.
+See the [API schema](../api-docs.json) and
+[backend gaps](backend-api-gaps.md). Generic 400 responses do not establish
+correct ownership or customer validation.

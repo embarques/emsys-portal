@@ -67,7 +67,7 @@
   },
   "invoicePool": {
     "title": "Offline invoice pool",
-    "description": "The mobile app shows the available invoice count in red when it reaches this number or lower.",
+    "description": "The mobile app shows the available invoice count in red when it reaches this number or lower. If you can generate offline invoice numbers, the portal also sends you a severe warning when the unassigned company pool reaches this number or lower.",
     "threshold": "Low invoice warning threshold",
     "invalid": "Enter a whole number from 0 to 10000.",
     "saveError": "The server could not confirm your invoice warning threshold. Refresh and try again."

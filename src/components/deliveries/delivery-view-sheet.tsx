@@ -86,7 +86,7 @@ export function DeliveryViewSheet({ row, open, onOpenChange, canDeliver, canPrin
                 </Button>
               ) : null}
               {canPrint ? (
-                <Button type="button" variant="outline" className={canDeliver ? undefined : "flex-1"} disabled={actionDisabled} onClick={() => onPrint(row)}>
+                <Button type="button" variant="outline" className={canDeliver ? undefined : "flex-1"} disabled={!row.invoiceId} onClick={() => onPrint(row)}>
                   <Printer className="size-4" />{t("invoices.printSignatures.action")}
                 </Button>
               ) : null}

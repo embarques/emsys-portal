@@ -36,7 +36,7 @@ function loadFeature(relative, apiClient, invoices) {
 const feature = "src/lib/labels/api/barcodes-api.ts";
 const delay = () => new Promise(resolve => setTimeout(resolve, 5));
 
-function fixture(failInvoice) {
+function fixture(failInvoice, statusId = 3, routeDate = "2099-01-01") {
   let active = 0;
   let peak = 0;
   const writes = [];
@@ -54,7 +54,7 @@ function fixture(failInvoice) {
       active--;
       return { lineItems: [{ barcodes: targets.filter(t => t.invoiceId === id).map(t => ({
         number: t.number, barcodeId: `object-${t.number}`,
-        statusId: 7, statusName: "ENTREGADO", containerId: "9", containerName: "Container",
+        statusId, statusName: statusId === 7 ? "ENTREGADO" : "EN TRANSITO", containerId: "9", containerName: "Container",
       })) }] };
     },
     patchInvoiceEmbeddedBarcodes: async (id, patches) => {
@@ -63,20 +63,20 @@ function fixture(failInvoice) {
       writes.push({ id, patches });
     },
   });
-  return { api, targets, writes, peak: () => peak };
+  return { api, targets, writes, routeDate, peak: () => peak };
 }
 
 test("route assignments run concurrently, group invoice labels, and preserve location fields", async () => {
   const f = fixture();
   const progress = [];
-  const result = await f.api.assignBarcodesToDailyRoute("route", "Daily route", f.targets, p => progress.push(p));
+  const result = await f.api.assignBarcodesToDailyRoute("route", "Daily route", f.targets, p => progress.push(p), f.routeDate);
   assert.equal(result.assignedCount, 12);
   assert.equal(f.peak(), 4);
   assert.equal(f.writes.length, 6);
   assert.equal(new Set(f.writes.map(w => w.id)).size, 6);
   for (const { patches } of f.writes) {
     assert.equal(patches.length, 2);
-    assert.deepEqual(patches[0].status, { id: 7, name: "ENTREGADO" });
+    assert.deepEqual(patches[0].status, { id: 3, name: "EN TRANSITO" });
     assert.deepEqual(patches[0].container, { id: 9, name: "Container" });
     assert.deepEqual(patches[0].route, { id: "route", name: "Daily route" });
   }
@@ -86,13 +86,13 @@ test("route assignments run concurrently, group invoice labels, and preserve loc
 
 test("partial failure waits for all assignments and reports the successful count", async () => {
   const f = fixture("0");
-  await assert.rejects(f.api.assignBarcodesToDailyRoute("route", "Daily route", f.targets), /10 of 12 labels assigned.*Write rejected/);
+  await assert.rejects(f.api.assignBarcodesToDailyRoute("route", "Daily route", f.targets, undefined, f.routeDate), /10 of 12 labels assigned.*Write rejected/);
   assert.equal(f.writes.length, 5);
 });
 
 test("unresolved labels prevent any assignments", async () => {
   const f = fixture();
-  await assert.rejects(f.api.assignBarcodesToDailyRoute("route", "Daily route", [...f.targets, { number: "missing" }]), /Barcode not found/);
+  await assert.rejects(f.api.assignBarcodesToDailyRoute("route", "Daily route", [...f.targets, { number: "missing" }], undefined, f.routeDate), /Barcode not found/);
   assert.equal(f.writes.length, 0);
 });
 
@@ -103,7 +103,7 @@ test("catalog lookups and updates are bounded and duplicate catalog IDs are writ
   const writes = [];
   const records = Array.from({ length: 9 }, (_, index) => ({
     id: index + 1, number: String(index + 1),
-    status: { id: 7, name: "ENTREGADO" }, container: { id: 9, name: "Container" },
+    status: { id: 3, name: "EN TRANSITO" }, container: { id: 9, name: "Container" },
   }));
   async function request(result) {
     active++;
@@ -121,7 +121,7 @@ test("catalog lookups and updates are bounded and duplicate catalog IDs are writ
     },
   }, {});
   const targets = [...records, records[0]].map(row => ({ number: row.number }));
-  const result = await api.assignBarcodesToDailyRoute("route", "Daily route", targets);
+  const result = await api.assignBarcodesToDailyRoute("route", "Daily route", targets, undefined, "2099-01-01");
   assert.equal(peak, 4);
   assert.equal(result.assignedCount, 9);
   assert.equal(writes.length, 9);
@@ -130,4 +130,27 @@ test("catalog lookups and updates are bounded and duplicate catalog IDs are writ
     assert.deepEqual(payload.container, records[0].container);
     assert.deepEqual(payload.route, { id: "route", name: "Daily route" });
   }
+});
+
+test("historical destination routes are rejected before any barcode writes", async () => {
+  const f = fixture(undefined, 3, "2000-01-01");
+  await assert.rejects(f.api.assignBarcodesToDailyRoute("route", "Old route", f.targets, undefined, f.routeDate), /today or later/);
+  assert.equal(f.writes.length, 0);
+});
+
+test("delivered embedded labels cannot move to another daily route", async () => {
+  const f = fixture(undefined, 7);
+  await assert.rejects(f.api.assignBarcodesToDailyRoute("route", "Daily route", f.targets, undefined, f.routeDate), /cannot be reassigned or unassigned/);
+  assert.equal(f.writes.length, 0);
+});
+
+test("delivered catalog labels cannot move to another daily route", async () => {
+  let writes = 0;
+  const api = loadFeature(feature, {
+    post: async () => ({ data: [{ id: 1, number: "DELIVERED", status: { id: 7, name: "ENTREGADO" }, route: { id: "original" } }] }),
+    get: async () => ({ data: { id: 1, number: "DELIVERED", status: { id: 7, name: "ENTREGADO" }, route: { id: "original" } } }),
+    put: async () => { writes++; return {success: true}; },
+  }, {});
+  await assert.rejects(api.assignBarcodesToDailyRoute("route", "Daily route", [{ number: "DELIVERED" }], undefined, "2099-01-01"), /cannot be reassigned or unassigned/);
+  assert.equal(writes, 0);
 });

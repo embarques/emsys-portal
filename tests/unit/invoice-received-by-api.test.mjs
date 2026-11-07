@@ -115,8 +115,10 @@ for (const generatedInvoiceNumber of [undefined, "INV-26-001423"]) {
 test("wizard requires a manual number and accepts automatic allocation", () => {
  const {findInvoiceWizardStep1Issue}=loadFeature("src/lib/invoices/invoice-wizard-validation.ts",{});
  const {createEmptyInvoiceForm}=loadFeature("src/lib/invoices/types.ts",{});
- const values={...createEmptyInvoiceForm(),date:"2026-10-16",containerId:"1",pickupSource:"office",pickupEmployeeId:"1",paymentLocation:"US",autoGenerateNumber:false,invoiceNumber:""};
- assert.match(findInvoiceWizardStep1Issue(values,key=>key).message,/invoiceNumberRequired/);
+ const values={...createEmptyInvoiceForm(),date:"2026-10-16",containerId:"1",pickupSource:"office",pickupEmployeeId:"1",autoGenerateNumber:false,invoiceNumber:""};
+ const issue=findInvoiceWizardStep1Issue(values,key=>key);
+ assert.equal(issue.step,1);
+ assert.match(issue.message,/invoiceNumberRequired/);
  assert.equal(findInvoiceWizardStep1Issue({...values,autoGenerateNumber:true},key=>key),null);
 });
 

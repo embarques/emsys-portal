@@ -1,7 +1,7 @@
 export const INVENTORY_DOCUMENT_STATUSES = ["DRAFT", "PENDING_CONFIRMATION", "POSTED", "CANCELLED"] as const;
 export type InventoryDocumentStatus = (typeof INVENTORY_DOCUMENT_STATUSES)[number];
 
-/** Who confirms a physical handoff. Contract: `docs/inventory-dispatch-workflows.md`. */
+/** Who confirms a physical handoff. Wire contract: `api-docs.json`. */
 export const INVENTORY_CONFIRMATION_PARTIES = ["WAREHOUSE", "CUSTODIAN"] as const;
 export type InventoryConfirmationParty = (typeof INVENTORY_CONFIRMATION_PARTIES)[number];
 

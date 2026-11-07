@@ -116,6 +116,16 @@ const invoicesItem: NavigationItem = {
   permission: PERMISSIONS.invoicesView,
 };
 
+/** Opened from Invoices; retained for workspace labels and colors. */
+export const invoiceNavigationItems: NavigationItem[] = [
+  {
+    labelKey: "navigation.items.reservedInvoices",
+    href: "/invoices/reserved",
+    icon: FileText,
+    permission: PERMISSIONS.invoicePoolView,
+  },
+];
+
 const itemsItem: NavigationItem = {
   labelKey: "navigation.items.items",
   href: "/items",
@@ -146,14 +156,18 @@ const barcodesItem: NavigationItem = {
       icon: ScanBarcode,
       permission: PERMISSIONS.packagesView,
     },
-    {
-      labelKey: "navigation.items.barcodeStatuses",
-      href: "/barcode-statuses",
-      icon: Tags,
-      permission: PERMISSIONS.barcodeStatusesView,
-    },
   ],
 };
+
+/** Opened from Barcodes and Barcode Scanner; retained for workspace labels and colors. */
+export const barcodeNavigationItems: NavigationItem[] = [
+  {
+    labelKey: "navigation.items.barcodeStatuses",
+    href: "/barcode-statuses",
+    icon: Tags,
+    permission: PERMISSIONS.barcodeStatusesView,
+  },
+];
 
 const inventoryItem: NavigationItem = {
   labelKey: "navigation.submenus.inventory",
@@ -198,12 +212,6 @@ const routesItem: NavigationItem = {
   icon: Route,
   children: [
     {
-      labelKey: "navigation.items.routeCrews",
-      href: "/routes",
-      icon: Users,
-      permission: PERMISSIONS.dispatchView,
-    },
-    {
       labelKey: "navigation.items.dailyRoutes",
       href: "/daily-routes",
       icon: MapPinned,
@@ -213,7 +221,13 @@ const routesItem: NavigationItem = {
       labelKey: "navigation.items.deliveries",
       href: "/deliveries",
       icon: PackageCheck,
-      permission: PERMISSIONS.deliveriesView,
+      permission: PERMISSIONS.routeDeliveriesView,
+    },
+    {
+      labelKey: "navigation.items.routeAppointments",
+      href: "/route-appointments",
+      icon: CalendarClock,
+      permission: PERMISSIONS.routeAppointmentsView,
     },
     {
       labelKey: "navigation.items.predefinedRoutes",
@@ -223,6 +237,22 @@ const routesItem: NavigationItem = {
     },
   ],
 };
+
+/** Crew templates are managed from daily routes and crew selectors. */
+export const routeNavigationItems: NavigationItem[] = [
+  {
+    labelKey: "orders.map.title",
+    href: "/route-appointments/map",
+    icon: MapPinned,
+    permission: PERMISSIONS.routeAppointmentsView,
+  },
+  {
+    labelKey: "navigation.items.routeCrews",
+    href: "/routes",
+    icon: Users,
+    permission: PERMISSIONS.dispatchView,
+  },
+];
 
 const customersItem: NavigationItem = {
   labelKey: "navigation.items.customers",
@@ -314,7 +344,7 @@ export const navigationSections: NavigationSection[] = [
     id: "daily",
     groups: [
       navigationItemToGroup(appointmentsItem),
-      {titleKey:invoicesItem.labelKey,icon:invoicesItem.icon,items:[invoicesItem,{labelKey:"navigation.items.reservedInvoices",href:"/invoices/reserved",icon:FileText,permission:PERMISSIONS.invoicePoolView}]},
+      navigationItemToGroup(invoicesItem),
       accountingGroup,
       ...[routesItem, barcodesItem].map(navigationItemToGroup),
     ],

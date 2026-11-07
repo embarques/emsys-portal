@@ -77,7 +77,7 @@ type ApiContainer = {
   updatedAt?: string;
 };
 
-/** POST/PUT /containers — see API_PAYLOADS.md */
+/** POST/PUT /containers — see api-docs.json */
 type ApiContainerWritePayload = {
   name: string;
   booking: string;

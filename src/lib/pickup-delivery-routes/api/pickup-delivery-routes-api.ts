@@ -381,6 +381,10 @@ function buildVehicleRouteSearchBody(params: ActiveRouteListParams) {
         ]
       : []),
     ...(date ? [{ operator: "and" as const, filters: buildDayRangeFilters(date) }] : []),
+    ...(params.minDate ? [{
+      operator: "and" as const,
+      filters: [{ field: "date", operator: "gte" as const, value: toRouteDateIso(params.minDate) }],
+    }] : []),
     ...buildResourceSearchFilterGroups({
       search: params.search,
       barOrSearchFields: VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS,

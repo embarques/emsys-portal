@@ -20,7 +20,9 @@
     "loading": "Loading notifications…",
     "empty": "No rare activity right now.",
     "rareActivity": "Rare activity",
-    "rareActivityFallback": "Rare user activity"
+    "rareActivityFallback": "Rare user activity",
+    "invoicePoolLowTitle": "Offline invoice pool is running low",
+    "invoicePoolLowDetail": "Only {{remaining}} unassigned numbers left (your warning threshold is {{threshold}}). Generate more before mobile users run out."
   },
   "search": {
     "openMenu": "Open quick actions",

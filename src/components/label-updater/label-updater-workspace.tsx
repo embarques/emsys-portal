@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ScanBarcode } from "lucide-react";
+import { Loader2, ScanBarcode } from "lucide-react";
 
 import { PageHeader } from "@/components/app-shell/page-header";
+import { BarcodeStatusesButton } from "@/components/barcodes/barcode-statuses-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { FALLBACK_BARCODE_STATUS_OPTIONS, type LabelUpdateResult } from "@/lib/l
 import { useTranslation } from "@/lib/i18n";
 import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import { isAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 import { cn } from "@/lib/utils";
 
 function ResultCell({ value }: { value?: string | number }) {
@@ -34,11 +36,12 @@ export function LabelUpdaterWorkspace() {
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const { data: containersData } = useContainerPicker();
   const containers = useMemo(() => containersData?.items ?? [], [containersData?.items]);
-  const { data: routesData } = useActiveRoutePicker("delivery", 200);
-  const routes = useMemo(() => routesData?.items ?? [], [routesData?.items]);
+  const { data: routesData } = useActiveRoutePicker("delivery", 200, { assignable: true });
+  const routes = useMemo(() => (routesData?.items ?? []).filter(route => isAssignableRouteDate(route.date)), [routesData?.items]);
   const applyScanMutation = useApplyBarcodeScan();
   const applyBulkMutation = useApplyBarcodeScanBulk();
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const submissionInFlight = useRef(false);
 
   const [changeStatus, setChangeStatus] = useState(true);
   const [changeContainer, setChangeContainer] = useState(false);
@@ -112,6 +115,7 @@ export function LabelUpdaterWorkspace() {
       newContainerId: changeContainer ? newContainerId : undefined,
       changeRoute,
       newRouteRecordId: changeRoute ? newRouteRecordId : undefined,
+      newRouteDate: changeRoute ? routes.find(route => route.id === newRouteRecordId)?.date : undefined,
       statusOptions: barcodeStatusOptions,
       resolveRouteLabel,
       resolveContainerLabel,
@@ -120,12 +124,10 @@ export function LabelUpdaterWorkspace() {
 
   async function submitBarcode(rawBarcode: string) {
     const barcode = rawBarcode.trim();
-    if (!barcode) return;
+    if (!barcode || isSubmitting || submissionInFlight.current) return;
 
+    submissionInFlight.current = true;
     setFormError(null);
-    // Clear immediately so the next scan/Enter is not blocked by in-flight state.
-    setBarcodeInput("");
-    focusBarcodeInput();
 
     try {
       const result = await applyScanMutation.mutateAsync({
@@ -133,9 +135,11 @@ export function LabelUpdaterWorkspace() {
         options: buildScannerOptions(),
       });
       setResults((current) => [result, ...current]);
-      focusBarcodeInput();
+      if (result.success) setBarcodeInput("");
     } catch (error) {
       setFormError(toErrorMessage(error));
+    } finally {
+      submissionInFlight.current = false;
       focusBarcodeInput();
     }
   }
@@ -153,8 +157,9 @@ export function LabelUpdaterWorkspace() {
       .map((entry) => entry.trim())
       .filter(Boolean);
 
-    if (barcodes.length === 0 || isSubmitting) return;
+    if (barcodes.length === 0 || isSubmitting || submissionInFlight.current) return;
 
+    submissionInFlight.current = true;
     setFormError(null);
 
     try {
@@ -164,16 +169,21 @@ export function LabelUpdaterWorkspace() {
       });
       setResults((current) => [...nextResults.reverse(), ...current]);
       setBulkBarcodes("");
-      focusBarcodeInput();
     } catch (error) {
       setFormError(toErrorMessage(error));
+    } finally {
+      submissionInFlight.current = false;
       focusBarcodeInput();
     }
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("labels.title")} description={t("labels.pages.description")} />
+      <PageHeader
+        title={t("labels.title")}
+        description={t("labels.pages.description")}
+        actions={<BarcodeStatusesButton />}
+      />
 
       <Card>
         <CardHeader>
@@ -279,10 +289,17 @@ export function LabelUpdaterWorkspace() {
               <Button
                 type="button"
                 disabled={isSubmitting}
+                aria-busy={applyScanMutation.isPending}
                 onClick={() => void submitBarcode(barcodeInput)}
               >
-                <ScanBarcode className="h-4 w-4" />
-                {t("labels.updater.options.apply")}
+                {applyScanMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ScanBarcode className="h-4 w-4" aria-hidden="true" />
+                )}
+                <span role="status">
+                  {t(applyScanMutation.isPending ? "labels.updater.options.applying" : "labels.updater.options.apply")}
+                </span>
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">{t("labels.updater.options.barcodeHint")}</p>
@@ -305,9 +322,13 @@ export function LabelUpdaterWorkspace() {
               variant="outline"
               size="sm"
               disabled={isSubmitting}
+              aria-busy={applyBulkMutation.isPending}
               onClick={() => void applyBulkBarcodes()}
             >
-              {t("labels.updater.options.applyAll")}
+              {applyBulkMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+              <span role="status">
+                {t(applyBulkMutation.isPending ? "labels.updater.options.applying" : "labels.updater.options.applyAll")}
+              </span>
             </Button>
           </div>
         </CardContent>

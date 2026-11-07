@@ -4,8 +4,8 @@
     "reviewMismatch": "Delivery items do not match the selected invoice and delivery.",
     "completionMismatch": "Completion does not match the selected delivery."
   },
-  "title": "Deliveries",
-  "description": "All pending delivery barcodes, ordered by city by default.",
+  "title": "Route Deliveries",
+  "description": "Deliver route barcodes and print their invoices. Your permissions determine which deliveries are available.",
   "searchPlaceholder": "Search barcode, invoice, item, receiver, province, or container…",
   "empty": "You have no pending deliveries.",
   "noAccess": "You do not have access to view deliveries.",

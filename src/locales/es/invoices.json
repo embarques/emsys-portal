@@ -1,5 +1,8 @@
 {
   "pool": {
+    "receivedAt": "Recibido el",
+    "filterUser": "Filtrar por usuario",
+    "allUsers": "Todos los usuarios",
     "search": "Buscar números reservados",
     "searchPlaceholder": "Escribe un número de factura…",
     "selectAll": "Seleccionar todos los números disponibles de esta página",
@@ -12,7 +15,11 @@
     "invalidCount": "Introduzca un número entero del 1 al 100.",
     "companyPool": "Grupo de la empresa",
     "generate": "Generar números",
+    "generateMore": "Generar más números",
+    "lowStockWarning": "La reserva de la empresa sin asignar solo tiene {{remaining}} números, igual o por debajo de su umbral de alerta de {{threshold}}. Genere más números para que los usuarios móviles no se queden sin ellos sin conexión.",
+    "generatePrompt": "¿Cuántos números de factura desea generar? Se agregan a la reserva de la empresa sin asignar.",
     "downloadNotice": "Los números descargados deben devolverse desde su dispositivo móvil antes de reasignarlos.",
+    "downloadNoticeLabel": "¿Por qué no se puede reasignar este número?",
     "pending": "Hay una solicitud pendiente de confirmación. Reinténtela antes de realizar otro cambio.",
     "retry": "Reintentar solicitud guardada",
     "saved": "Grupo de facturas actualizado.",
@@ -20,6 +27,9 @@
     "all": "Todos los números reservados",
     "remaining": "Números sin usar",
     "assign": "Asignar selección",
+    "assignTitle": "Asignar números reservados",
+    "assignPrompt": "Elija el usuario que recibirá los {{count}} números seleccionados.",
+    "assignSubmit": "Asignar",
     "return": "Devolver selección al grupo",
     "select": "Seleccionar",
     "number": "Número de factura",
@@ -30,7 +40,7 @@
     "empty": "No hay facturas reservadas en este grupo.",
     "previous": "Anterior",
     "next": "Siguiente",
-    "generationNotice": "Los números generados se agregan a la reserva de la empresa sin asignar. Seleccione los números abajo y luego elija un usuario para asignarlos.",
+    "generationNotice": "Los números generados se agregaron a la reserva de la empresa sin asignar. Selecciónelos abajo y luego elija un usuario para asignarlos.",
     "unassigned": "Sin asignar",
     "user": "Usuario",
     "searchUser": "Buscar usuarios activos",
@@ -188,16 +198,14 @@
       "editDescription": "Actualiza los datos de la factura, los clientes y la mercancía y revisa los cambios antes de guardar.",
       "partiesHint": "Busca clientes por nombre o teléfono. Confirma sus datos de contacto y la dirección de recogida o entrega.",
       "itemsHint": "Registra la mercancía, las cantidades y los precios. Las etiquetas identifican las piezas individuales que necesitan seguimiento.",
-      "totals": "Totales",
-      "paymentHint": "Revisa el cuadre y los datos del pago antes de continuar.",
-      "reviewHint": "Verifica los clientes, la mercancía, las etiquetas y los totales antes de guardar."
+      "totals": "Totales"
     },
     "fields": {
       "date": "Fecha",
       "invoiceNumber": "Número de factura",
       "container": "Contenedor",
       "pending": "Pendiente",
-      "paymentLocation": "Pendiente para pagar",
+      "paymentLocation": "¿Dónde se pagará esta factura?",
       "createdAt": "Creado el",
       "createdBy": "Creado por",
       "sender": "Remitente",
@@ -228,6 +236,8 @@
       "selectPickupRoute": "Seleccionar ruta de citas",
       "noPickupRoute": "Sin ruta de citas",
       "searchPickupRoutes": "Buscar rutas de citas…",
+      "selectPaymentLocation": "Seleccionar sucursal",
+      "searchPaymentLocations": "Buscar sucursales…",
       "selectWarehouseEmployee": "Seleccionar empleado de almacén",
       "selectOfficeEmployee": "Seleccionar empleado de oficina",
       "searchEmployees": "Buscar empleados…"
@@ -313,20 +323,12 @@
     "goToStep": "Ir a {{label}}",
     "progress": "Paso {{current}} de {{total}}",
     "phoneProgress": "{{current}} de {{total}}",
-    "stepEyebrow": "Paso {{step}} de {{total}} · {{label}}",
     "steps": {
       "details": "Detalles",
       "parties": "Partes",
       "lineItems": "Artículos",
       "payment": "Pago",
       "preview": "Vista previa"
-    },
-    "stepTitles": {
-      "enterDetails": "Ingresar detalles de la factura",
-      "selectParties": "Seleccionar remitente y destinatario",
-      "addLineItems": "Agregar artículos",
-      "paymentInfo": "Información de pago",
-      "reviewAndSave": "Revisar y guardar factura"
     },
     "policies": {
       "title": "Políticas de la empresa",
@@ -347,7 +349,7 @@
       "dateRequired": "La fecha es obligatoria.",
       "invoiceNumberRequired": "El número de factura es obligatorio.",
       "containerRequired": "El contenedor es obligatorio.",
-      "paymentLocationRequired": "Selecciona la sucursal pendiente para pagar.",
+      "paymentLocationRequired": "Selecciona dónde se pagará esta factura.",
       "pickupRouteRequired": "La ruta de citas es obligatoria.",
       "warehouseEmployeeRequired": "El empleado de almacén es obligatorio.",
       "officeEmployeeRequired": "El empleado de oficina es obligatorio.",
@@ -882,7 +884,7 @@
   "printSignatures": {
     "action": "Imprimir factura",
     "title": "Elegir firmas",
-    "backToDeliveries": "Volver a entregas",
+    "backToDeliveries": "Volver a entregas de ruta",
     "backToInvoices": "Volver a facturas",
     "popupBlocked": "Su PDF está listo, pero el navegador bloqueó la nueva pestaña. Pulse Abrir PDF para verlo o imprimirlo.",
     "openPdf": "Abrir PDF",

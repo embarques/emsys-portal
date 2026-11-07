@@ -118,6 +118,8 @@ type Props = {
   manualInvoiceTotals?: boolean;
   /** Show the description field in Payment & references. */
   showDescription?: boolean;
+  /** Grouped layout: tighter cards with payment method and account fields on one row. */
+  compact?: boolean;
   onAssigneeComplete?: () => void;
 };
 
@@ -146,6 +148,7 @@ export function RegisterInvoiceTransactionFields({
   paymentSectionFirst = false,
   manualInvoiceTotals = false,
   showDescription = false,
+  compact = false,
   onAssigneeComplete,
 }: Props) {
   const { t } = useTranslation();
@@ -364,7 +367,7 @@ export function RegisterInvoiceTransactionFields({
 
   const methodFields = (
     <>
-      <div className="space-y-2 min-w-0 sm:col-span-2">
+      <div className={cn("space-y-2 min-w-0", !compact && "sm:col-span-2")}>
         {paymentDetailsRequired ? (
           <RequiredLabel htmlFor="journal-payment">
             {t("accounting.dailyIncome.form.fields.paymentMethod")}

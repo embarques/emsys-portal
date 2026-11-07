@@ -1,6 +1,9 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
+import { formatUserErrorMessage } from "@/lib/errors/format-user-error";
+import { assertBarcodeRouteChangeAllowed } from "@/lib/labels/route-assignment-policy";
+import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 import { translateCurrent } from "@/lib/i18n/translate-current";
 import { fetchBarcodeStatusOptions } from "@/lib/barcodes/api/barcode-status-options-api";
 import {
@@ -248,6 +251,25 @@ export async function applyBarcodeScanUpdate(
   performedBy = DEFAULT_CREATED_BY,
   t?: TranslateFn,
 ): Promise<LabelUpdateResult> {
+  const timestamp = new Date().toISOString();
+  try {
+    return await performBarcodeScanUpdate(barcodeInput, options, performedBy, t);
+  } catch (error) {
+    return failureResult(
+      barcodeInput.trim() || "—",
+      formatUserErrorMessage(error, t ?? translateCurrent),
+      timestamp,
+      performedBy,
+    );
+  }
+}
+
+async function performBarcodeScanUpdate(
+  barcodeInput: string,
+  options: BarcodeScannerOptions,
+  performedBy = DEFAULT_CREATED_BY,
+  t?: TranslateFn,
+): Promise<LabelUpdateResult> {
   const barcode = barcodeInput.trim();
   const timestamp = new Date().toISOString();
   const translate = (key: string, params?: Record<string, string | number>) =>
@@ -364,6 +386,10 @@ export async function applyBarcodeScanUpdate(
   }
 
   let updated: Barcode;
+  assertBarcodeRouteChangeAllowed(existing.status, existing.route, payload.route);
+  if (payload.route && payload.route.id !== existing.route?.id) {
+    assertAssignableRouteDate(options.newRouteDate ?? "");
+  }
   if (embedded) {
     const status =
       payload.status?.id != null && payload.status.id > 0 && payload.status.name?.trim()
@@ -393,7 +419,7 @@ export async function applyBarcodeScanUpdate(
           status,
           container: payload.container ?? undefined,
           route: payload.route ?? undefined,
-        });
+        }, catalog);
       }
     } catch {
       // Catalog may not have a row yet; invoice embed remains authoritative.
@@ -410,7 +436,7 @@ export async function applyBarcodeScanUpdate(
         : existing.route,
     };
   } else {
-    updated = await updateBarcode(existing.id, payload);
+    updated = await updateBarcode(existing.id, payload, existing);
   }
 
   const resultTimestamp = updated.updatedAt ?? timestamp;

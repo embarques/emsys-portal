@@ -3,6 +3,7 @@
   "entityPlural": "citas",
   "title": "Citas",
   "pages": {
+    "routeAppointments": "Gestione las citas de ruta: consulte, edite, complete, imprima y cree facturas. Sus permisos determinan las citas disponibles.",
     "description": "Programe visitas a clientes para recogida, entrega de suministros, cobro o presupuestos."
   },
   "noun": "citas",
@@ -373,6 +374,7 @@
     "comingSoon": "{{label}} estará disponible pronto."
   },
   "errors": {
+    "completedRouteLocked": "Las citas completadas deben conservar la ruta diaria que las completó. No se pueden reasignar ni desasignar.",
     "missingCompanyContext": "Falta el contexto de empresa para esta cuenta. Las solicitudes a la API de EMSYS requieren el encabezado x-company-id. Agregue companyId a su perfil de Firebase o al claim personalizado del JWT y vuelva a iniciar sesión.",
     "pickupAccessUnavailable": "Acceso a recogidas no disponible. Su usuario no está vinculado a un empleado de recogidas y no tiene permiso para ver todas las recogidas."
   },

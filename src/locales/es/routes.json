@@ -1,5 +1,6 @@
 {
   "errors": {
+    "pastAssignment": "Seleccione una ruta diaria de hoy o de una fecha posterior. No se puede asignar a rutas diarias pasadas.",
     "notFound": "No se encontró la ruta.",
     "crewMinimum": "Seleccione al menos dos miembros de la cuadrilla.",
     "branchNameRequired": "El nombre de la sucursal es obligatorio.",
@@ -25,7 +26,7 @@
     "title": "Cuadrillas de ruta"
   },
   "dailyRoutes": {
-    "title": "Rutas diarias",
+    "title": "Rutas de hoy",
     "editTitle": "Editar ruta diaria",
     "addTabLabel": "Agregar ruta diaria",
     "editTabLabel": "Editar {{name}}",

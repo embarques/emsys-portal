@@ -27,6 +27,7 @@ type TableAdvancedFilterBuilderProps = {
   rows: TableFilterRowState[];
   fields: TableFilterFieldDefinition[];
   dynamicOptions?: Record<string, TableFilterFieldOption[]>;
+  dynamicSearch?: Record<string, { onSearchChange: (query: string) => void; loading: boolean }>;
   onChange: (rows: TableFilterRowState[]) => void;
   /** When true and there are no rows, inserts one blank row to edit. */
   open?: boolean;
@@ -38,6 +39,7 @@ export function TableAdvancedFilterBuilder({
   rows,
   fields,
   dynamicOptions = {},
+  dynamicSearch = {},
   onChange,
   open = false,
   seedEmptyRowWhenOpen = true,
@@ -82,6 +84,7 @@ export function TableAdvancedFilterBuilder({
         const ariaIndex = { index: index + 1 };
         const operators = definition?.operators ?? [];
         const valueOptions = resolveFilterRowOptions(definition, dynamicOptions);
+        const remoteSearch = definition?.optionsSource ? dynamicSearch[definition.optionsSource] : undefined;
         const usesRange = definition?.valueType === "range";
         const usesSelect = definition?.valueType === "select";
         const canPickOperator = Boolean(definition) && !usesRange;
@@ -147,6 +150,9 @@ export function TableAdvancedFilterBuilder({
                 mutedWhenEmpty
                 disabled={!canPickValue}
                 options={valueOptions}
+                manualFiltering={Boolean(remoteSearch)}
+                onSearchChange={remoteSearch?.onSearchChange}
+                loading={remoteSearch?.loading}
                 onChange={(value) => updateRow(row.id, { value })}
               />
             ) : (

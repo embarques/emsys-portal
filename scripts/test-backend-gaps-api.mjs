@@ -94,7 +94,7 @@ function seedRecord(doc, item, names) {
 
 // --- Reconciliation permissions -------------------------------------------
 {
-  const doc = "reconciliation-permissions-api-todo.md";
+  const doc = "financial-controls.md";
   const grants = [
     ["canReconcileJournal", "journal"],
     ["canReconcileInventoryDispatch", "inventory_dispatch"],
@@ -132,7 +132,7 @@ function seedRecord(doc, item, names) {
 
 // --- Pending Transactions / journal reconciliation ---------------------------
 {
-  const doc = "pending-transactions-update.md";
+  const doc = "financial-controls.md";
   const outstanding = { field: "reconciliationStatus", operator: "eq", value: "OUTSTANDING" };
   const sample = await search("/journals", [outstanding]);
   const row = rows(sample)[0];
@@ -208,7 +208,7 @@ function seedRecord(doc, item, names) {
 
 // --- Invoice policies --------------------------------------------------------
 {
-  const doc = "invoice-policies-api-todo.md";
+  const doc = "backend-api-gaps.md";
   seedRecord(doc, "Permissions seeded", ["canListInvoicePolicy", "canViewInvoicePolicy", "canCreateInvoicePolicy", "canUpdateInvoicePolicy", "canDeleteInvoicePolicy"]);
   const list = await request("GET", "/invoice-policies?page=1&limit=1");
   const active = await request("GET", "/invoice-policies/active");
@@ -284,7 +284,7 @@ function seedRecord(doc, item, names) {
 
 // --- Closeout transaction edits ----------------------------------------------
 {
-  const doc = "closeout-transaction-edits.md";
+  const doc = "financial-controls.md";
   const grant = catalog.find((permission) => permission.name === "canUpdateJournal")
     ?? catalog.find((permission) => permission.resourceType === "journal" && permission.update === true);
   record(doc, "canUpdateJournal in the permission catalog", grant ? "DONE" : "MISSING",
@@ -299,7 +299,7 @@ function seedRecord(doc, item, names) {
 
 // --- Inventory dispatch workflows --------------------------------------------
 {
-  const doc = "inventory-dispatch-workflows.md";
+  const doc = "inventory-workflow.md";
   seedRecord(doc, "Confirmation and reconcile permissions seeded", ["canConfirmInventoryWarehouse", "canConfirmInventoryCustodian", "canReconcileInventoryDispatch"]);
   const expected = ["confirmations", "allowedActions", "rejection"];
   for (const [label, path] of [["Dispatch", "/inventory/dispatches"], ["Receipt", "/inventory/receipts"]]) {
@@ -331,7 +331,7 @@ function seedRecord(doc, item, names) {
 
 // --- Stale update protection -------------------------------------------------
 {
-  const doc = "stale-update-protection.md";
+  const doc = "financial-controls.md";
   for (const [label, path] of [["Invoice", "/invoices"], ["Customer", "/customers"]]) {
     const version = rows(await request("GET", `${path}?page=1&limit=1`))[0]?.version;
     const put = await request("PUT", `${path}/${ZERO_OBJECT_ID}`, {});
@@ -406,7 +406,7 @@ if (opts.writes) {
     const cash = { paymentMethod: method("CASH"), invoiceId: invoice.id, transactionType: "PAYMENT" };
 
     {
-      const doc = "reconciliation-permissions-api-todo.md";
+      const doc = "financial-controls.md";
       const holds = userPermissions.has("canReconcileJournal");
       const { res, journal } = await post("autoClear", { ...cash, amount: 1.07, allowDuplicatePayment: true, autoClear: true });
       record(doc, "Journal create with autoClear requires canReconcileJournal",
@@ -427,7 +427,7 @@ if (opts.writes) {
     }
 
     {
-      const doc = "pending-transactions-update.md";
+      const doc = "financial-controls.md";
       const before = await invoiceTotals();
       const { res, journal } = await post("zelle-payment", {
         transactionType: "PAYMENT", invoiceId: invoice.id, amount: 1, paymentMethod: method("ZELLE"),
@@ -478,7 +478,7 @@ if (opts.writes) {
     }
 
     {
-      const doc = "closeout-transaction-edits.md";
+      const doc = "financial-controls.md";
       const before = await invoiceTotals();
       const { res, journal } = await post("edit-original", { ...cash, amount: 1.04, allowDuplicatePayment: true });
       if (!journal) {

@@ -118,7 +118,7 @@ type InvoiceFormProps = {
   wizardTotalSteps?: number;
   appearance?: "default" | "wizard" | "phoneWizard";
   showFooter?: boolean;
-  /** Hide pending payment branch when the wizard payment step owns that field. */
+  /** Ask where the invoice will be paid, below the line items. */
   showPaymentLocation?: boolean;
   onValuesChange?: (values: InvoiceFormValues) => void;
   /** Wizard Next: called when Enter is pressed on invoice number or the last field. */
@@ -718,6 +718,11 @@ export function InvoiceForm({
     setFormError(null);
   }
 
+  function clearSender() {
+    commitValues((current) => ({ ...current, senderId: "", sender: null }));
+    setFormError(null);
+  }
+
   function updateReceiver(_receiverId: string, receiver: Customer) {
     commitValues((current) => ({ ...current, receiverId: receiver.id, receiver }));
     setFormError(null);
@@ -885,6 +890,46 @@ export function InvoiceForm({
     />,
   );
 
+  const invoiceNumberField = isEditing ? (
+    renderField(
+      t("invoices.form.fields.invoiceNumber"),
+      "invoiceNumber",
+      true,
+      <Input
+        id="invoiceNumber"
+        value={values.invoiceNumber}
+        onChange={(event) => updateField("invoiceNumber", event.target.value)}
+        disabled={!canUseManualNumber}
+        placeholder={t("invoices.form.placeholders.invoiceNumber")}
+        required
+      />,
+      wizardFieldCol,
+    )
+  ) : (
+    <div className={cn(isPhoneWizard ? undefined : isWizard ? "@2xl:col-span-2" : "sm:col-span-2")}>
+      <InvoiceNumberModeFields
+        id="invoiceNumber"
+        autoGenerate={Boolean(values.autoGenerateNumber)}
+        invoiceNumber={values.invoiceNumber}
+        generatedInvoiceNumber={values.generatedInvoiceNumber}
+        canUseManualNumber={canUseManualNumber}
+        variant="segmented"
+        onModeChange={(nextAutoGenerate) => {
+          updateField("autoGenerateNumber", nextAutoGenerate);
+          if (nextAutoGenerate) {
+            updateField("invoiceNumber", "");
+          }
+        }}
+        onInvoiceNumberChange={(next) => updateField("invoiceNumber", next)}
+        inputProps={
+          isWizard && !values.autoGenerateNumber
+            ? wizardInputFieldProps(values.invoiceNumber)
+            : undefined
+        }
+      />
+    </div>
+  );
+
   const detailsFields = (
     <div
       className={cn(
@@ -1005,69 +1050,34 @@ export function InvoiceForm({
             wizardFieldCol,
             <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
           )}
-      {showPaymentLocation
-        ? renderField(
-            t("invoices.form.fields.paymentLocation"),
-            "paymentLocation",
-            true,
-            <SearchableSelect
-              id="paymentLocation"
-              value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
-              onValueChange={(next) =>
-                updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-              }
-              placeholder={t("invoices.form.fields.paymentLocation")}
-              {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
-              required
-              loading={branchesLoading}
-              options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
-                value: branch.code.trim().toUpperCase(),
-                label: branch.code.trim().toUpperCase(),
-              }))}
-            />,
-            wizardFieldCol,
-          )
-        : null}
-      {isEditing ? (
-        renderField(
-          t("invoices.form.fields.invoiceNumber"),
-          "invoiceNumber",
-          true,
-          <Input
-            id="invoiceNumber"
-            value={values.invoiceNumber}
-            onChange={(event) => updateField("invoiceNumber", event.target.value)}
-            disabled={!canUseManualNumber}
-            placeholder={t("invoices.form.placeholders.invoiceNumber")}
-            required
-          />,
-          wizardFieldCol,
-        )
-      ) : (
-        <div className={cn(isPhoneWizard ? undefined : isWizard ? "@2xl:col-span-2" : "sm:col-span-2")}>
-          <InvoiceNumberModeFields
-            id="invoiceNumber"
-            autoGenerate={Boolean(values.autoGenerateNumber)}
-            invoiceNumber={values.invoiceNumber}
-            generatedInvoiceNumber={values.generatedInvoiceNumber}
-            canUseManualNumber={canUseManualNumber}
-            onModeChange={(nextAutoGenerate) => {
-              updateField("autoGenerateNumber", nextAutoGenerate);
-              if (nextAutoGenerate) {
-                updateField("invoiceNumber", "");
-              }
-            }}
-            onInvoiceNumberChange={(next) => updateField("invoiceNumber", next)}
-            inputProps={
-              isWizard && !values.autoGenerateNumber
-                ? wizardInputFieldProps(values.invoiceNumber)
-                : undefined
-            }
-          />
-        </div>
-      )}
+      {invoiceNumberField}
     </div>
   );
+
+  const paymentLocationField = showPaymentLocation
+    ? renderField(
+        t("invoices.form.fields.paymentLocation"),
+        "paymentLocation",
+        true,
+        <SearchableSelect
+          id="paymentLocation"
+          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
+          onValueChange={(next) =>
+            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
+          }
+          placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
+          searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
+          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
+          required
+          loading={branchesLoading}
+          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
+            value: branch.code.trim().toUpperCase(),
+            label: branch.code.trim().toUpperCase(),
+          }))}
+        />,
+        isPhoneWizard ? undefined : "max-w-md",
+      )
+    : null;
 
   const dash = t("common.empty.dash");
   const assignedContainer = containers.find((container) => String(container.id) === values.containerId);
@@ -1196,6 +1206,7 @@ export function InvoiceForm({
           value={values.senderId}
           selectedCustomer={values.sender}
           onValueChange={updateSender}
+          onClear={clearSender}
           onAddAddress={(customer) => void openAddAddress("sender", customer)}
           placeholder={t("invoices.form.placeholders.selectSender")}
           required
@@ -1312,19 +1323,26 @@ export function InvoiceForm({
 
           {showLineItemsSection ? (
             isWizard ? (
-              <div className={isPhoneWizard ? undefined : "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"}>
-                {!isPhoneWizard ? <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{t("invoices.form.design.itemsHint")}</p> : null}
-                <InvoiceLineItemsEditor
-                  lineItems={values.lineItems}
-                  catalogItems={catalogItems}
-                  appearance={isPhoneWizard ? "phoneWizard" : "wizard"}
-                  onChange={(lineItems) => updateField("lineItems", lineItems)}
-                  requestFocusKey={
-                    focusFieldId === INVOICE_WIZARD_FIELDS.lineItems ? focusFieldKey : 0
-                  }
-                  requestEditLineItemId={requestEditLineItemId}
-                />
-              </div>
+              <>
+                <div className={isPhoneWizard ? undefined : "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"}>
+                  {!isPhoneWizard ? <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{t("invoices.form.design.itemsHint")}</p> : null}
+                  <InvoiceLineItemsEditor
+                    lineItems={values.lineItems}
+                    catalogItems={catalogItems}
+                    appearance={isPhoneWizard ? "phoneWizard" : "wizard"}
+                    onChange={(lineItems) => updateField("lineItems", lineItems)}
+                    requestFocusKey={
+                      focusFieldId === INVOICE_WIZARD_FIELDS.lineItems ? focusFieldKey : 0
+                    }
+                    requestEditLineItemId={requestEditLineItemId}
+                  />
+                </div>
+                {paymentLocationField ? (
+                  <div className={isPhoneWizard ? undefined : "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"}>
+                    {paymentLocationField}
+                  </div>
+                ) : null}
+              </>
             ) : (
               <FormSection variant="card" description={t("invoices.form.design.itemsHint")} icon={ClipboardList} title={t("invoices.form.sections.description")}>
                 <InvoiceLineItemsEditor
@@ -1332,6 +1350,7 @@ export function InvoiceForm({
                   catalogItems={catalogItems}
                   onChange={(lineItems) => updateField("lineItems", lineItems)}
                 />
+                {paymentLocationField}
               </FormSection>
             )
           ) : null}

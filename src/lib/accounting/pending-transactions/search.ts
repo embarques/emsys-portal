@@ -14,7 +14,7 @@ function expandRanges(node: ApiSearchFilterNode): ApiSearchFilterNode {
   ] };
 }
 
-// Proposed contract: docs/pending-transactions-update.md. Requires backend deployment.
+// Shared journal search scope; remaining acceptance: docs/financial-controls.md.
 export const PENDING_TRANSACTION_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   ...DAILY_INCOME_TABLE_FILTER_FIELDS,
   { field: "branch.id", label: "Branch ID", operators: ["eq"], valueType: "text" as const },

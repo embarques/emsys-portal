@@ -67,7 +67,7 @@
   },
   "invoicePool": {
     "title": "Reserva de facturas sin conexión",
-    "description": "La aplicación móvil muestra la cantidad de facturas disponibles en rojo cuando alcanza este número o uno menor.",
+    "description": "La aplicación móvil muestra la cantidad de facturas disponibles en rojo cuando alcanza este número o uno menor. Si puede generar números de factura sin conexión, el portal también le envía una alerta grave cuando la reserva de la empresa sin asignar alcanza este número o uno menor.",
     "threshold": "Umbral de aviso de facturas disponibles",
     "invalid": "Introduzca un número entero del 0 al 10000.",
     "saveError": "El servidor no pudo confirmar el umbral de aviso de facturas. Actualice e inténtelo de nuevo."

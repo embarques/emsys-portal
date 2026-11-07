@@ -73,7 +73,7 @@ export function DeliveryMobileRow({ row, canDeliver, onDeliver, canPrint, onPrin
           <PackageCheck className="size-4" />{t("deliveries.deliver.action")}
         </Button>
       ) : null}
-      {canPrint && onPrint ? <Button type="button" variant="outline" className="mt-2 h-11 w-full" disabled={!row.invoiceId || !row.delivery?.id} onClick={() => onPrint(row)}>{t("invoices.printSignatures.action")}</Button> : null}
+      {canPrint && onPrint ? <Button type="button" variant="outline" className="mt-2 h-11 w-full" disabled={!row.invoiceId} onClick={() => onPrint(row)}>{t("invoices.printSignatures.action")}</Button> : null}
       {(canDeliver || (canPrint && onPrint)) ? <DeliveryActionNotice row={row} /> : null}
     </article>
   );

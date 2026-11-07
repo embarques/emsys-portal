@@ -40,7 +40,9 @@ type OrderViewSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (order: Order) => void;
-  onDelete: (order: Order) => void;
+  onDelete?: (order: Order) => void;
+  canEdit?: boolean;
+  loadRouteDetails?: boolean;
   /** Omit to hide Create invoice (e.g. no invoice access). */
   onCreateInvoice?: (order: Order) => void;
 };
@@ -107,10 +109,12 @@ export function OrderViewSheet({
   onEdit,
   onDelete,
   onCreateInvoice,
+  canEdit,
+  loadRouteDetails = true,
 }: OrderViewSheetProps) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
-  const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
+  const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: loadRouteDetails && Boolean(order) });
 
   if (!order) return null;
 
@@ -232,8 +236,8 @@ export function OrderViewSheet({
 
         <RecordViewSheetActions
           editLabel={t("orders.actions.editPickup")}
-          onEdit={hasPermission("canUpdatePickup", "pickup") ? () => onEdit(order) : undefined}
-          onDelete={hasPermission("canDeletePickup", "pickup") ? () => onDelete(order) : undefined}
+          onEdit={(canEdit ?? hasPermission("canUpdatePickup", "pickup")) ? () => onEdit(order) : undefined}
+          onDelete={onDelete && hasPermission("canDeletePickup", "pickup") ? () => onDelete(order) : undefined}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

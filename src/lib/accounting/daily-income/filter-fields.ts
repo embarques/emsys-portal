@@ -14,10 +14,9 @@ export const DAILY_INCOME_TRANSACTION_TYPE_VALUES = [
 export const DAILY_INCOME_PAYMENT_METHOD_VALUES = ["CASH", "CHECK", "ZELLE", "DEPOSIT", "CREDIT-CARD"] as const;
 
 /**
- * Advanced filters shared by Daily Income and (once it moves onto journals) Pending Transactions.
- * Field keys are `POST /journals/search` paths; only `invoice.number`, `transactionType` and
- * `incomeStatement.id` are confirmed server-side, so Daily Income applies them to the loaded
- * closeout rows (see docs/pending-transactions-update.md).
+ * Advanced filters shared by Daily Income and Pending Transactions.
+ * Field keys target POST /journals/search; remaining acceptance is tracked in
+ * docs/financial-controls.md.
  */
 export const DAILY_INCOME_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   { field: "invoice.number", label: "Invoice #", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter invoice number…" },

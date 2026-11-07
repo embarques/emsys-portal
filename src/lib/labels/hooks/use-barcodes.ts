@@ -52,21 +52,23 @@ export function useAssignBarcodesToRoute() {
     mutationFn: ({
       routeId,
       routeName,
+      routeDate,
       barcodes,
       barcodeIds,
       onProgress,
     }: {
       routeId: string;
       routeName?: string;
+      routeDate: string;
       onProgress?: (progress: RouteAssignmentProgress) => void;
       barcodes?: AssignBarcodeToRouteTarget[];
       /** @deprecated Prefer `barcodes` — numeric/uint32 ids for the invoice-embedded endpoint. */
       barcodeIds?: Array<string | number>;
     }) => {
       if (barcodes && barcodes.length > 0) {
-        return assignBarcodesToDailyRoute(routeId, routeName ?? routeId, barcodes, onProgress);
+        return assignBarcodesToDailyRoute(routeId, routeName ?? routeId, barcodes, onProgress, routeDate);
       }
-      return assignInvoiceItemBarcodesToRoute(routeId, barcodeIds ?? []);
+      return assignInvoiceItemBarcodesToRoute(routeId, barcodeIds ?? [], routeDate);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });

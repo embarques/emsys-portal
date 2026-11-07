@@ -27,6 +27,7 @@ import {
   formatActiveRouteReferenceLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import { isAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 
 export type AssignBarcodeRouteResult = {
   success: boolean;
@@ -57,10 +58,11 @@ export function AssignBarcodeRouteDialog({
   const dailyRoutesQuery = useDailyRoutePicker(200, {
     enabled: open,
     branchCode: DELIVERY_BRANCH_CODE,
+    assignable: true,
   });
   const assignBarcodesMutation = useAssignBarcodesToRoute();
 
-  const dailyRoutes = useMemo(() => dailyRoutesQuery.data?.items ?? [], [dailyRoutesQuery.data?.items]);
+  const dailyRoutes = useMemo(() => (dailyRoutesQuery.data?.items ?? []).filter(route => isAssignableRouteDate(route.date)), [dailyRoutesQuery.data?.items]);
   const routeOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(dailyRoutes, t),
     [dailyRoutes, t],
@@ -75,7 +77,7 @@ export function AssignBarcodeRouteDialog({
   }, [open]);
 
   const isSaving = assignBarcodesMutation.isPending;
-  const canSubmit = barcodes.length > 0 && Boolean(routeId) && !isSaving;
+  const canSubmit = barcodes.length > 0 && Boolean(selectedRoute) && !isSaving;
 
   function handleOpenChange(nextOpen: boolean) {
     if (isSaving) return;
@@ -94,7 +96,7 @@ export function AssignBarcodeRouteDialog({
   }
 
   async function confirmAssign() {
-    if (!canSubmit) return;
+    if (!canSubmit || !selectedRoute) return;
 
     const routeName = selectedRoute
       ? formatActiveRouteReferenceLabel(selectedRoute, t)
@@ -124,6 +126,7 @@ export function AssignBarcodeRouteDialog({
       const result = await assignBarcodesMutation.mutateAsync({
         routeId,
         routeName,
+        routeDate: selectedRoute.date,
         barcodes: needsUpdate,
         onProgress: setProgress,
       });

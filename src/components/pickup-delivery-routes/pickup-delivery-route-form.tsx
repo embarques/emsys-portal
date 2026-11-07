@@ -16,6 +16,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
+import { RouteCrewsButton } from "@/components/route-manager/route-crews-button";
 import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
 import { FieldEntityActions, fieldEntityActionClassName } from "@/components/forms/field-entity-actions";
 import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pickup-route-orders-section";
@@ -209,13 +210,16 @@ export function ActiveRouteForm({
                 label={t("routes.activeRoute.route")}
                 hint={t("routes.dailyRoutes.form.design.crew")}
                 action={
-                  <FieldEntityActions
-                    onAdd={onCreateRouteClick}
-                    onEdit={onEditRouteClick}
-                    hasSelection={Boolean(values.routeRecordId)}
-                    addIcon={Plus}
-                    newLabel={t("routes.activeRoute.createRoute")}
-                  />
+                  <div className="flex flex-wrap items-center justify-end gap-1">
+                    <RouteCrewsButton compact />
+                    <FieldEntityActions
+                      onAdd={onCreateRouteClick}
+                      onEdit={onEditRouteClick}
+                      hasSelection={Boolean(values.routeRecordId)}
+                      addIcon={Plus}
+                      newLabel={t("routes.activeRoute.createRoute")}
+                    />
+                  </div>
                 }
               >
                 <SearchableSelect

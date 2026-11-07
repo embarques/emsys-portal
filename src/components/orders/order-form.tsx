@@ -200,6 +200,11 @@ export function OrderForm({
     setFormError(null);
   }
 
+  function clearSender() {
+    setValues((current) => ({ ...current, senderId: "", sender: null, senderAddressIndex: 0 }));
+    setFormError(null);
+  }
+
   function addReceiver() {
     const key = crypto.randomUUID();
     setValues((current) => ({
@@ -441,6 +446,7 @@ export function OrderForm({
                       value={values.senderId}
                       selectedCustomer={values.sender}
                       onValueChange={updateSender}
+                      onClear={clearSender}
                       onAddAddress={(customer) => void openAddAddress("sender", customer)}
                       placeholder={t("orders.form.placeholders.selectSender")}
                       required

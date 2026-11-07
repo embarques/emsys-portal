@@ -19,11 +19,12 @@ export function useDeliveryAccess() {
   return {
     companyId,
     actorId: user?.uid || email || "",
+    viewScope: has(PERMISSIONS.deliveriesView) ? "all" : "assigned",
     canPrint: session && has(PERMISSIONS.invoicesPrint),
-    canList: session && has(PERMISSIONS.deliveriesView),
+    canList: session && has(PERMISSIONS.routeDeliveriesView),
     // Status changes and delivery documents are written on the invoice.
     canDeliver: session
-      && has(PERMISSIONS.deliveriesUpdate)
+      && (has(PERMISSIONS.deliveriesUpdate) || has(PERMISSIONS.routeDeliveriesUpdate))
       && has(PERMISSIONS.invoicesView)
       && has(PERMISSIONS.invoicesUpdate),
   };

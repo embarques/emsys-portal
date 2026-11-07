@@ -1,5 +1,6 @@
 {
   "errors": {
+    "deliveredRouteLocked": "Delivered barcodes must keep the daily route that delivered them. They cannot be reassigned or unassigned.",
     "createFailed": "Unable to create barcode.",
     "updateFailed": "Unable to update barcode.",
     "numberRequiredToUpdate": "Barcode number is required to update this label.",
@@ -80,7 +81,8 @@
       "bulkLabel": "Multiple barcodes (comma or newline separated)",
       "bulkPlaceholder": "LBL-..., LBL-...",
       "apply": "Apply",
-      "applyAll": "Apply all barcodes"
+      "applyAll": "Apply all barcodes",
+      "applying": "Applying…"
     },
     "search": {
       "statuses": "Search statuses…",

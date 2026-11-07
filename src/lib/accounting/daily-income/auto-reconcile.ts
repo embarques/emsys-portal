@@ -7,7 +7,7 @@ export const AUTO_RECONCILE_PERMISSION = PERMISSIONS.inventoryDispatchesReconcil
 /**
  * Dispatched inventory already records its sale on the journal, so the API can reconcile the whole
  * quantity as sold on create instead of leaving it pending in the holder's custody.
- * Contract: `docs/inventory-dispatch-workflows.md` → Auto-reconciliation.
+ * Remaining acceptance: `docs/inventory-workflow.md`.
  */
 export function isAutoReconcileEligible(
   values: Pick<DailyIncomeJournalValues, "transactionType" | "inventoryDirection" | "inventoryQuantity">,

@@ -41,6 +41,8 @@ export type BarcodeScannerOptions = {
   changeRoute: boolean;
   /** Vehicle-route record id (`ActiveRoute.id`). */
   newRouteRecordId?: string;
+  /** Date captured with the selected daily route, checked again on submission. */
+  newRouteDate?: string;
   /** Live tenant catalog; fetched from status-options when omitted. */
   statusOptions?: readonly BarcodeStatusOption[];
   resolveRouteLabel?: (routeRecordId: string) => string;

@@ -20,7 +20,9 @@
     "loading": "Cargando notificaciones…",
     "empty": "No hay actividad rara por ahora.",
     "rareActivity": "Actividad rara",
-    "rareActivityFallback": "Actividad de usuario rara"
+    "rareActivityFallback": "Actividad de usuario rara",
+    "invoicePoolLowTitle": "La reserva de facturas sin conexión se está agotando",
+    "invoicePoolLowDetail": "Solo quedan {{remaining}} números sin asignar (su umbral de alerta es {{threshold}}). Genere más antes de que los usuarios móviles se queden sin números."
   },
   "search": {
     "openMenu": "Abrir acciones rápidas",

@@ -90,3 +90,69 @@ test("pool number search is sent server-side and preserves cancellation",async()
  await api.fetchInvoicePool(0,undefined,controller.signal,"  INV-001  ");
  assert.equal(options.params.q,"INV-001");assert.equal(options.params.userId,0);assert.equal(options.signal,controller.signal);
 });
+
+test("advanced pool search preserves typed zero/false, cursor, cancellation and number search", async () => {
+ let sent;
+ const api = loadFeature("src/lib/invoices/api/invoice-pool-api.ts", {
+  get: async () => { throw Error("must not silently fall back to an unfiltered list"); },
+  post: async (...args) => { sent = args; return {success:true,data:{items:[item],remaining:1,lowThreshold:10}}; },
+ });
+ const controller = new AbortController();
+ const rows = [
+  {id:"a",join:"and",field:"allocation.userId",operator:"eq",value:"0"},
+  {id:"b",join:"and",field:"status",operator:"eq",value:"available"},
+ ];
+ await api.fetchInvoicePool(undefined,"next-cursor",controller.signal,"INV-100",rows);
+ assert.equal(sent[0],"/invoices/reserved/search");
+ assert.deepEqual(sent[2].params,{after:"next-cursor",limit:50});
+ assert.equal(sent[2].signal,controller.signal);
+ const leaves = [];
+ function visit(node) { if(node.filters) node.filters.forEach(visit); else leaves.push(node); }
+ visit(sent[1]);
+ assert.ok(leaves.some(node => node.field === "allocation.userId" && node.value === 0));
+ assert.ok(leaves.some(node => node.field === "claimed" && node.value === false));
+ assert.ok(leaves.some(node => node.field === "number" && node.value === "INV-100"));
+ const missing = loadFeature("src/lib/invoices/api/invoice-pool-api.ts",{post:async()=>{throw Error("Search endpoint unavailable");}});
+ await assert.rejects(() => missing.fetchInvoicePool(undefined,undefined,controller.signal,"",rows),/Search endpoint unavailable/);
+});
+
+test("mixed pool joins and negated status match the full displayed status predicate", () => {
+ const {buildInvoicePoolSearchBody} = loadFeature("src/lib/invoices/invoice-pool-filters.ts",{});
+ const samples = [
+  {number:"A",claimed:false,allocation:{userId:0}},
+  {number:"B",claimed:false,allocation:{userId:3}},
+  {number:"C",claimed:true,allocation:{userId:3}},
+  {number:"D",claimed:true,allocation:{userId:0}},
+ ];
+ function matches(row,node) {
+  if(node.filters) return node.operator === "or" ? node.filters.some(child=>matches(row,child)) : node.filters.every(child=>matches(row,child));
+  const actual = node.field === "allocation.userId" ? row.allocation.userId : row[node.field];
+  return node.operator === "neq" ? actual !== node.value : actual === node.value;
+ }
+ for (const [status,expected] of [["available",["A"]],["assigned",["B"]],["downloaded",["C","D"]]]) {
+  for (const operator of ["eq","neq"]) {
+   const body = buildInvoicePoolSearchBody([{id:"a",join:"and",field:"status",operator,value:status}]);
+   assert.deepEqual(samples.filter(row=>matches(row,body)).map(row=>row.number),operator === "eq" ? expected : samples.map(row=>row.number).filter(number=>!expected.includes(number)));
+  }
+ }
+ const body = buildInvoicePoolSearchBody([
+  {id:"a",join:"and",field:"number",operator:"eq",value:"A"},
+  {id:"b",join:"or",field:"status",operator:"eq",value:"downloaded"},
+  {id:"c",join:"and",field:"allocation.userId",operator:"eq",value:"3"},
+  {id:"blank",join:"or",field:"",operator:"",value:""},
+ ]);
+ assert.deepEqual(samples.filter(row=>matches(row,body)).map(row=>row.number),["C"]);
+});
+
+test("reserved receivedAt accepts pending API fields without substituting another timestamp", () => {
+ const {reservedInvoiceSchema} = loadFeature("src/lib/invoices/schemas/invoice-pool.schema.ts",{});
+ assert.equal(reservedInvoiceSchema.parse(item).receivedAt, undefined);
+ assert.equal(reservedInvoiceSchema.parse({...item,receivedAt:null}).receivedAt, null);
+ for (const receivedAt of ["2026-11-07T15:30:00Z","2026-11-07T10:30:00-05:00"]) {
+  assert.equal(reservedInvoiceSchema.parse({...item,receivedAt}).receivedAt, receivedAt);
+ }
+ assert.equal(reservedInvoiceSchema.safeParse({...item,receivedAt:"invalid"}).success,false);
+ const {buildInvoicePoolSearchBody} = loadFeature("src/lib/invoices/invoice-pool-filters.ts",{});
+ const body = buildInvoicePoolSearchBody([{id:"date",join:"and",field:"receivedAt",operator:"gte",value:"2026-11-07"}]);
+ assert.deepEqual(body,{operator:"and",filters:[{field:"receivedAt",operator:"gte",value:"2026-11-07"}]});
+});

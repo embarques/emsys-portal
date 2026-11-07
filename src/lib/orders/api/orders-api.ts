@@ -1,4 +1,6 @@
 import { ORDER_API_TABLE_FIELDS } from "@/lib/orders/table-fields";
+import { translateCurrent } from "@/lib/i18n/translate-current";
+import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -133,7 +135,7 @@ type ApiPickupEmployeeRef = {
   active?: boolean;
 };
 
-/** POST/PUT /pickups — see API_PAYLOADS.md */
+/** POST/PUT /pickups — see api-docs.json */
 type ApiPickupWritePayload = {
   date: string;
   branch: ApiBranchDtoPayload;
@@ -644,6 +646,7 @@ function buildRoutePickupsFilter(routeId: string): TableFilterRowState[] {
 export async function assignPickupsToRoute(
   vehicleRouteId: string,
   pickupIds: number[],
+  routeDate: string,
 ): Promise<void> {
   const id = vehicleRouteId.trim();
   if (!id) {
@@ -653,6 +656,8 @@ export async function assignPickupsToRoute(
   if (pickupIds.length === 0) {
     throw new Error("Select at least one appointment to assign.");
   }
+
+  assertAssignableRouteDate(routeDate);
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.PICKUP_ROUTES}/${id}`,
@@ -773,6 +778,9 @@ export async function clearPickupRouteAssignment(order: Order): Promise<void> {
   }
 
   const pickupId = String(order.id);
+  if (order.completed) {
+    throw new Error(translateCurrent("orders.errors.completedRouteLocked"));
+  }
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.PICKUPS}/${pickupId}/route`,
   );

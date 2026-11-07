@@ -23,17 +23,12 @@ import {
 import {
   getInvoiceWizardStepKind,
   getInvoiceWizardStepLabelKey,
-  getInvoiceWizardStepTitleKey,
   InvoiceWizardStepper,
   resolveInvoiceWizardLayout,
   type InvoiceWizardStep,
   type InvoiceWizardFormStep,
 } from "@/components/invoices/invoice-wizard-stepper";
-import {
-  invoiceStepEyebrowClassName,
-  invoiceStepTitleClassName,
-  invoiceWizardTypographyRoot,
-} from "@/components/invoices/invoice-wizard-typography";
+import { invoiceWizardTypographyRoot } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { getNavigableFormFields } from "@/hooks/use-form-enter-navigation";
@@ -236,11 +231,8 @@ export function InvoiceFormWizard({
   const previousReceiverIdRef = useRef(values.receiverId);
 
   const findStep1Issue = useCallback(
-    (formValues: InvoiceFormValues) =>
-      findInvoiceWizardStep1Issue(formValues, t, {
-        includePaymentLocation: !requireDailyIncomeRegistration,
-      }),
-    [requireDailyIncomeRegistration, t],
+    (formValues: InvoiceFormValues) => findInvoiceWizardStep1Issue(formValues, t),
+    [t],
   );
   const findStep2Issue = useCallback(
     (formValues: InvoiceFormValues) => findInvoiceWizardStep2Issue(formValues, t),
@@ -370,7 +362,6 @@ export function InvoiceFormWizard({
                 dailyIncome,
                 t,
                 "continue",
-                currentValues,
                 paymentStepId,
               )
             : null;
@@ -648,15 +639,6 @@ export function InvoiceFormWizard({
       : undefined;
 
   const stepLabelKey = getInvoiceWizardStepLabelKey(stepKind);
-  const stepTitleKey = getInvoiceWizardStepTitleKey(stepKind);
-  const stepHintKey =
-    stepKind === "preview"
-      ? "invoices.form.design.reviewHint"
-      : stepKind === "payment"
-        ? "invoices.form.design.paymentHint"
-        : stepKind === "documents"
-          ? "invoices.documents.formats"
-          : null;
 
   const formStep = (
     <InvoiceForm
@@ -665,7 +647,6 @@ export function InvoiceFormWizard({
       wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
       wizardTotalSteps={previewStep}
       showFooter={false}
-      showPaymentLocation={!requireDailyIncomeRegistration}
       initialValues={values}
       submitLabel={submitLabel}
       onSubmit={() => ({ error: null })}
@@ -686,15 +667,6 @@ export function InvoiceFormWizard({
       onContextChange={handleDailyIncomeContextChange}
       onContinue={handleDailyIncomePaymentContinue}
       paymentSubmitRef={paymentSubmitRef}
-      onPaymentLocationChange={(paymentLocation) => {
-        setValues((current) => {
-          const next = { ...current, paymentLocation };
-          valuesRef.current = next;
-          return next;
-        });
-        setStepError(null);
-        setSubmitError(null);
-      }}
     />
   );
 
@@ -971,21 +943,6 @@ export function InvoiceFormWizard({
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card">
-          <div
-            data-print-hide
-            className="shrink-0 space-y-1 border-b border-border bg-card px-5 py-3"
-          >
-            <p className={cn(invoiceStepEyebrowClassName, "hidden sm:block")}>
-              {t("invoices.wizard.stepEyebrow", {
-                step,
-                total: previewStep,
-                label: t(stepLabelKey),
-              })}
-            </p>
-            <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
-            {stepHintKey ? <p className="text-sm text-muted-foreground">{t(stepHintKey)}</p> : null}
-          </div>
-
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div
               className={cn(

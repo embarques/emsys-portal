@@ -27,11 +27,7 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { type InvoiceDailyIncomeContext } from "@/lib/invoices/invoice-daily-income-context";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
-import {
-  mapPaymentLocationToPaidRegion,
-  type InvoiceFormValues,
-  type InvoicePaymentLocation,
-} from "@/lib/invoices/types";
+import { type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { useOpenInvoiceCloseout } from "@/lib/invoices/hooks/use-open-invoice-closeout";
@@ -44,47 +40,7 @@ type Props = {
   onContinue?: (context: InvoiceDailyIncomeContext) => void;
   /** Set while the inline payment form is shown; the wizard Next button calls it. */
   paymentSubmitRef: MutableRefObject<(() => Promise<void>) | null>;
-  onPaymentLocationChange?: (paymentLocation: InvoicePaymentLocation) => void;
 };
-
-function PendingPaymentBranchField({
-  value,
-  onChange,
-  className,
-}: {
-  value: InvoicePaymentLocation;
-  onChange?: (paymentLocation: InvoicePaymentLocation) => void;
-  className?: string;
-}) {
-  const { t } = useTranslation();
-  const branchesQuery = useBranchPicker(200);
-  const branches = branchesQuery.data?.items ?? [];
-
-  return (
-    <div className={cn("rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5", className)}>
-      <div className="space-y-2">
-        <Label htmlFor="paymentLocation">
-          {t("invoices.form.fields.paymentLocation")}
-          <span className="text-destructive"> *</span>
-        </Label>
-        <SearchableSelect
-          id="paymentLocation"
-          value={mapPaymentLocationToPaidRegion(value)}
-          onValueChange={(next) => onChange?.(next as InvoicePaymentLocation)}
-          placeholder={t("invoices.form.fields.paymentLocation")}
-          required
-          loading={branchesQuery.isLoading}
-          options={branches
-            .filter((branch) => branch.code.trim())
-            .map((branch) => ({
-              value: branch.code.trim().toUpperCase(),
-              label: branch.code.trim().toUpperCase(),
-            }))}
-        />
-      </div>
-    </div>
-  );
-}
 
 function CloseoutCurrencyForm({
   canCreate,
@@ -240,17 +196,9 @@ export function InvoiceDailyIncomeStep({
   onContextChange,
   onContinue,
   paymentSubmitRef,
-  onPaymentLocationChange,
 }: Props) {
   const { t } = useTranslation();
   const isMobileLayout = useIsMobileViewport();
-
-  const paymentLocationField = (
-    <PendingPaymentBranchField
-      value={values.paymentLocation}
-      onChange={onPaymentLocationChange}
-    />
-  );
 
   const [localRegistration, setLocalRegistration] = useState<DailyIncomeJournal | null>(null);
   const [localStatement, setLocalStatement] = useState<DailyIncomeStatement | null>(null);
@@ -401,7 +349,6 @@ export function InvoiceDailyIncomeStep({
   if (isLoading) {
     return (
       <div className="space-y-5">
-        {paymentLocationField}
         <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {t("invoices.wizard.dailyIncome.checking")}
@@ -414,7 +361,6 @@ export function InvoiceDailyIncomeStep({
     if (queryError) {
       return (
         <div className="space-y-5">
-          {paymentLocationField}
           <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
@@ -435,7 +381,6 @@ export function InvoiceDailyIncomeStep({
     if (registration) {
       return (
         <div className="space-y-5">
-          {paymentLocationField}
           <div className="rounded-xl border bg-card p-4">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
@@ -468,7 +413,6 @@ export function InvoiceDailyIncomeStep({
     if (!statementOpen) {
       return (
         <div className="space-y-5">
-          {paymentLocationField}
           <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
             <div className="space-y-2">
               <p className="font-semibold text-amber-950 dark:text-amber-100">
@@ -504,7 +448,6 @@ export function InvoiceDailyIncomeStep({
 
     return (
       <div className="space-y-5">
-        {paymentLocationField}
         {paymentForm}
       </div>
     );
@@ -512,8 +455,6 @@ export function InvoiceDailyIncomeStep({
 
   return (
     <div className="space-y-5 p-4 sm:p-6">
-      {paymentLocationField}
-
       {queryError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
           <div className="flex items-start gap-3">
