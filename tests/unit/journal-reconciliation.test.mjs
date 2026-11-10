@@ -71,6 +71,17 @@ test("clearance action requires explicit server eligibility independently of rec
  assert.equal(isJournalQueueActionable({...row,reconciliationStatus:"OUTSTANDING",clearanceStatus:"CLEARED"},"reconciliation"),true);
 });
 
+test("queue block reasons explain why a row cannot be processed", () => {
+ const {getJournalQueueBlockReason} = loader()("src/lib/accounting/daily-income/journal-queue.ts");
+ const row={clearanceStatus:"OUTSTANDING",reconciliationStatus:"RECONCILED",allowedActions:{clear:true}};
+ assert.equal(getJournalQueueBlockReason(row,"clearance"),null);
+ assert.equal(getJournalQueueBlockReason({...row,allowedActions:undefined},"clearance"),"notAuthorized");
+ assert.equal(getJournalQueueBlockReason({...row,allowedActions:{clear:false}},"clearance"),"notAuthorized");
+ assert.equal(getJournalQueueBlockReason({...row,clearanceStatus:"CLEARED"},"clearance"),"notOutstanding");
+ assert.equal(getJournalQueueBlockReason({...row,transactionStatus:"VOIDED"},"clearance"),"inactive");
+ assert.equal(getJournalQueueBlockReason(row,"reconciliation"),"notOutstanding");
+});
+
 test("clearance fields and explicit false action grants survive journal normalization", async () => {
  const api=loader({post:async()=>({total:1,data:[{id:"id",transactionType:"PAYMENT",transactionAmount:80,clearanceStatus:"CLEARED",clearedAt:"2026-11-04T18:00:00Z",clearedBy:{id:1,name:"Admin"},allowedActions:{edit:false,clear:false},reconciliationStatus:"OUTSTANDING"}]})})("src/lib/accounting/daily-income/api.ts");
  const {items:[row]}=await api.fetchDailyIncomeJournals({pendingClearance:true,page:1,limit:50});
@@ -79,6 +90,13 @@ test("clearance fields and explicit false action grants survive journal normaliz
  assert.equal(row.allowedActions.edit,false);
  assert.equal(row.allowedActions.clear,false);
  assert.equal(row.clearedBy.name,"Admin");
+});
+
+test("voided entries keep NOT_REQUIRED for both clearance and reconciliation", async () => {
+ const api=loader({post:async()=>({total:1,data:[{id:"id",transactionType:"PAYMENT",transactionAmount:80,transactionStatus:"VOIDED",clearanceStatus:"NOT_REQUIRED",reconciliationStatus:"NOT_REQUIRED"}]})})("src/lib/accounting/daily-income/api.ts");
+ const {items:[row]}=await api.fetchDailyIncomeJournals({incomeStatementId:1,page:1,limit:50});
+ assert.equal(row.clearanceStatus,"NOT_REQUIRED");
+ assert.equal(row.reconciliationStatus,"NOT_REQUIRED");
 });
 
 test("clearance command and badge use their own endpoint and filter with a stable request ID", async () => {

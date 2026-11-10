@@ -9,6 +9,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   useNavAlertCount,
   useNavAlertLabel,
+  useNavCount,
+  useNavCountLabel,
 } from "@/lib/navigation/use-nav-alert-count";
 import {
   useFlatNavigation,
@@ -50,12 +52,15 @@ function CollapsedSidebarIconLink({
 }) {
   const alertCount = useNavAlertCount(item.href);
   const alertLabel = useNavAlertLabel(item.href, alertCount);
+  const count = useNavCount(item.href);
+  const countLabel = useNavCountLabel(item.href, count);
 
   if (!item.href) return null;
 
   const active = navigationItemMatchesPath(item, pathname);
   const Icon = item.icon;
-  const linkLabel = alertLabel ? `${item.label}, ${alertLabel}` : item.label;
+  const badgeLabels = [alertLabel, countLabel].filter(Boolean).join(", ");
+  const linkLabel = badgeLabels ? `${item.label}, ${badgeLabels}` : item.label;
 
   return (
     <Tooltip>
@@ -73,6 +78,12 @@ function CollapsedSidebarIconLink({
             count={alertCount}
             label={alertLabel}
             className="pointer-events-none absolute -right-1 -top-1"
+          />
+          <NavAlertBadge
+            count={count}
+            label={countLabel}
+            tone="count"
+            className={cn("pointer-events-none absolute -right-1", alertCount > 0 ? "-bottom-1" : "-top-1")}
           />
         </span>
       </TooltipTrigger>

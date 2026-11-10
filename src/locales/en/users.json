@@ -212,6 +212,30 @@
       "createdAt": {
         "label": "Created at",
         "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "startTime": {
+        "label": "Shift start",
+        "placeholder": "09:00"
+      },
+      "endTime": {
+        "label": "Shift end",
+        "placeholder": "09:00"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter name…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter name…"
+        }
       }
     }
   }

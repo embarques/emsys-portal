@@ -342,6 +342,7 @@ export function RolesWorkspace() {
     {
       id: "permissions",
       label: t("roles.columns.permissions"),
+      sortable: false,
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (role) => (
@@ -363,6 +364,7 @@ export function RolesWorkspace() {
     {
       id: "createdBy",
       label: t("roles.columns.createdBy"),
+      sortField: "createdBy.name",
       cellClassName: "text-muted-foreground",
       renderCell: (role) => role.createdBy || dash,
     },

@@ -42,8 +42,29 @@ export const VEHICLE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "year",
     label: "Year",
-    operators: ["eq", "neq"],
+    operators: ["eq", "neq", "gte", "lte"],
     valueType: "text",
     placeholder: "Enter year…",
+  },
+  {
+    field: "updatedBy.name",
+    label: "Updated by",
+    operators: ["startsWith", "contains", "eq", "neq"],
+    valueType: "text",
+    placeholder: "Enter name…",
+  },
+  {
+    field: "createdAt",
+    label: "Created at",
+    operators: ["eq", "neq", "gte", "lte"],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
+  },
+  {
+    field: "updatedAt",
+    label: "Updated at",
+    operators: ["eq", "neq", "gte", "lte"],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
   },
 ];

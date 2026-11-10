@@ -58,5 +58,6 @@
   "all": "All routes",
   "routeLabel": "ROUTE",
   "showMore": "+{{count}} more",
-  "showLess": "Show less"
+  "showLess": "Show less",
+  "entities": "predefined routes"
 }

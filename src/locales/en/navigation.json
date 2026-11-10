@@ -69,5 +69,9 @@
     "pendingClearance": "Pending Clearance",
     "reservedInvoices": "Reserved invoices",
     "changeRequests": "Change requests"
+  },
+  "badges": {
+    "pendingAppointments": "{{count}} pending appointments",
+    "todayTransactions": "{{count}} transactions today"
   }
 }

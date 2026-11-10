@@ -6,6 +6,7 @@ import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-tabl
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import { normalizeApiError } from "@/lib/api/api-error";
 import { runSettledWithConcurrency } from "@/lib/api/run-settled-with-concurrency";
 import {
   buildApiSearchPaginationQuery,
@@ -87,8 +88,8 @@ export type BarcodeWritePayload = {
   status: { id: number; name: string };
   container?: { id: number; name: string };
   delivery?: { id: number; name: string };
-  /** Delivery route (vehicle-route record id). */
-  route?: { id: string; name: string };
+  /** Omit to preserve; null removes an unfinished barcode's daily route. */
+  route?: { id: string; name: string } | null;
   /** Merchandise / line-item description when the API stores it on the barcode. */
   description?: string;
 };
@@ -896,7 +897,8 @@ async function resolveCatalogBarcodeId(target: AssignBarcodeToRouteTarget): Prom
     try {
       const found = await fetchBarcodeByNumber(number);
       if (found.id > 0) return found.id;
-    } catch {
+    } catch (error) {
+      if (!isCatalogLookupMiss(error)) throw error;
       // Fall through to the staged catalog id when search misses.
     }
   }
@@ -905,16 +907,23 @@ async function resolveCatalogBarcodeId(target: AssignBarcodeToRouteTarget): Prom
     try {
       const existing = await fetchBarcodeById(target.catalogId);
       if (existing.id > 0) return existing.id;
-    } catch {
+    } catch (error) {
+      if (!isCatalogLookupMiss(error)) throw error;
       // Staged catalogId was not a real /barcodes row.
     }
   }
   return null;
 }
 
+function isCatalogLookupMiss(error: unknown): boolean {
+  return normalizeApiError(error).status === 404 ||
+    (error instanceof Error && error.message === translateCurrent("labels.errors.notFound"));
+}
+
 async function assignCatalogBarcodeRoute(
   catalogId: number,
   route: { id: string; name: string },
+  routeDate: string,
 ): Promise<void> {
   const existing = await fetchBarcodeById(catalogId);
   const status =
@@ -922,6 +931,7 @@ async function assignCatalogBarcodeRoute(
       ? { id: existing.status.id, name: existing.status.name.trim() }
       : NEW_BARCODE_STATUS;
 
+  assertAssignableRouteDate(routeDate);
   await updateBarcode(catalogId, {
     number: existing.number,
     status,
@@ -1015,7 +1025,7 @@ export async function assignBarcodesToDailyRoute(
   const jobs: Array<{ count: number; run: () => Promise<void> }> =
     Array.from(new Set(catalogIds), (catalogId) => ({
       count: 1,
-      run: () => assignCatalogBarcodeRoute(catalogId, route),
+      run: () => assignCatalogBarcodeRoute(catalogId, route, routeDate),
     }));
   for (const [invoiceId, invoiceTargets] of embeddedByInvoice) {
     jobs.push({
@@ -1066,6 +1076,7 @@ export async function assignBarcodesToDailyRoute(
           };
         });
 
+        assertAssignableRouteDate(routeDate);
         await patchInvoiceEmbeddedBarcodes(invoiceId, resolvedPatches);
       },
     });

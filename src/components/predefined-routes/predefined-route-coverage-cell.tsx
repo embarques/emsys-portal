@@ -11,7 +11,7 @@ export function PredefinedRouteCoverageCell({ entries }: { entries: string[] }) 
   if (!entries.length) return <>{t("common.empty.dash")}</>;
   const visible = expanded ? entries : entries.slice(0, 5);
   return <div className="flex max-w-xl flex-wrap gap-1">
-    {visible.map((entry) => <Badge key={entry.toLowerCase()} variant="secondary">{entry}</Badge>)}
+    {visible.map((entry) => <Badge key={entry.toLowerCase()} variant="secondary" data-uniform-width="off">{entry}</Badge>)}
     {entries.length > 5 && <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs text-primary" aria-expanded={expanded} onClick={() => setExpanded((current) => !current)}>
       {expanded ? t("predefinedRoutes.showLess") : t("predefinedRoutes.showMore", { count: entries.length - 5 })}
     </Button>}

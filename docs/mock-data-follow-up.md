@@ -40,10 +40,19 @@ units and their associated documents:
 
 ## Temporary customer cleanup
 
-Resolve `DELETE /customers/{id}` returning 500 with current version headers for
-test customers `6aef49649025bfbf23017c8e` and
-`6aef49649025bfbf23017c90`. Keep these inactive fixtures out of meaningful
-reporting and retire them through supported operations.
+Retire inactive test customers `6aef49649025bfbf23017c8e` and
+`6aef49649025bfbf23017c90` through supported operations and exclude them from
+meaningful reporting until cleanup is complete.
+
+## Retained verification artifacts
+
+- Exclude reserved number `INV-26-001500` (`6aef8b3125aee8b238568f7b`) from
+  meaningful mock-report assertions while it remains in the approved test pool.
+- Establish the retention/disposition of linked mock signature, audit and receipt
+  history for invoice `6aef8c0a25aee8b238568f90`, delivery `10482`, and signature
+  `6aef8c0c25aee8b238568f95`. Retained linked history was authorized; its cleanup
+  was not verified. Preserve required audit records and exclude test history
+  from meaningful reporting.
 
 ## Test identity lifecycle
 

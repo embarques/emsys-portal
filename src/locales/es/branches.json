@@ -65,6 +65,12 @@
     "editTitle": "Editar sucursal",
     "addDescription": "Cree una nueva sucursal.",
     "notFound": "No se pudo encontrar esta sucursal.",
+    "design": {
+      "branch": "Defina el nombre y los datos de los documentos.",
+      "address": "Busque la dirección de la sucursal o ingrésela manualmente.",
+      "contact": "Agregue los teléfonos de esta sucursal.",
+      "settings": "Configure etiquetas, facturas y archivos."
+    },
     "sections": {
       "branch": "Sucursal",
       "contact": "Contacto",
@@ -166,6 +172,30 @@
         "zipcode": {
           "label": "Código postal",
           "placeholder": "Ingrese código postal…"
+        }
+      },
+      "id": {
+        "label": "ID de sucursal",
+        "placeholder": "Escriba el ID de la sucursal…"
+      },
+      "createdAt": {
+        "label": "Creado",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Actualizado",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Creado por",
+          "placeholder": "Escriba el nombre…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Actualizado por",
+          "placeholder": "Escriba el nombre…"
         }
       }
     }

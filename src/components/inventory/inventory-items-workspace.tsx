@@ -32,6 +32,7 @@ import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/f
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -498,7 +499,7 @@ export function InventoryItemsWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
           <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
@@ -526,7 +527,7 @@ export function InventoryItemsWorkspace() {
       />
 
       <Dialog open={documentDialog === "receipt"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
+        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.newReceiptTitle")}</DialogTitle>
           </DialogHeader>
@@ -551,7 +552,7 @@ export function InventoryItemsWorkspace() {
       </Dialog>
 
       <Dialog open={documentDialog === "dispatch"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
+        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.newDispatchTitle")}</DialogTitle>
           </DialogHeader>
@@ -575,7 +576,7 @@ export function InventoryItemsWorkspace() {
       </Dialog>
 
       <Dialog open={documentDialog === "adjustment"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.adjustStockTitle")}</DialogTitle>
           </DialogHeader>

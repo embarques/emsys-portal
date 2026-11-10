@@ -9,6 +9,8 @@ export const CUSTOMER_PHONE_SEARCH_FIELDS = ["phones.number", "phone1", "phone2"
  */
 export const CUSTOMER_BAR_OR_SEARCH_FIELDS = [
   "name",
+  "email",
+  "IDNumber",
   ...CUSTOMER_PHONE_SEARCH_FIELDS,
   ...CUSTOMER_BAR_ADDRESS_SEARCH_FIELDS,
 ] as const;

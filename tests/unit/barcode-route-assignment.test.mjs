@@ -44,7 +44,7 @@ function fixture(failInvoice, statusId = 3, routeDate = "2099-01-01") {
     number: String(index + 1), invoiceId: String(Math.floor(index / 2)),
   }));
   const api = loadFeature(feature, {
-    post: async () => { throw new Error("Not in catalog"); },
+    post: async () => ({ data: [] }),
     get: async () => { throw new Error("Not in catalog"); },
   }, {
     fetchInvoiceById: async (id) => {
@@ -153,4 +153,97 @@ test("delivered catalog labels cannot move to another daily route", async () => 
   }, {});
   await assert.rejects(api.assignBarcodesToDailyRoute("route", "Daily route", [{ number: "DELIVERED" }], undefined, "2099-01-01"), /cannot be reassigned or unassigned/);
   assert.equal(writes, 0);
+});
+
+function httpError(status) {
+  return Object.assign(new Error(`HTTP ${status}`), { isAxiosError: true, response: { status, data: { message: `HTTP ${status}` } } });
+}
+
+for (const status of [401, 403, 500, 503]) {
+  test(`catalog lookup HTTP ${status} cannot fall through to an invoice write`, async () => {
+    let fallbackReads = 0;
+    const api = loadFeature(feature, {
+      post: async () => { throw httpError(status); },
+      get: async () => { fallbackReads++; },
+    }, {
+      fetchInvoiceById: async () => { fallbackReads++; },
+      patchInvoiceEmbeddedBarcodes: async () => { throw new Error("Unexpected write"); },
+    });
+    await assert.rejects(api.assignBarcodesToDailyRoute("next", "Next", [{ number: "A", catalogId: 42, invoiceId: "invoice" }], undefined, "2099-01-01"), status === 401 ? /session has expired/ : new RegExp(`HTTP ${status}`));
+    assert.equal(fallbackReads, 0);
+  });
+}
+
+test("mixed catalog/invoice failures settle every job and report only persisted pieces", async () => {
+  const catalog = [
+    { id: 1, number: "A", status: { id: 3, name: "EN TRANSITO" } },
+    { id: 2, number: "B", status: { id: 7, name: "ENTREGADO" }, route: { id: "old" } },
+  ];
+  const writes = [];
+  const progress = [];
+  const api = loadFeature(feature, {
+    post: async () => ({ data: catalog }),
+    get: async url => ({ data: catalog[Number(url.split("/").at(-1)) - 1] }),
+    put: async (_url, payload) => { await delay(); writes.push(payload.number); return { success: true, data: payload }; },
+  }, {
+    fetchInvoiceById: async id => ({ lineItems: [{ barcodes: id === "good" ? ["C", "D"].map(number => ({ number, barcodeId: number, statusId: 3, statusName: "EN TRANSITO" })) : [] }] }),
+    patchInvoiceEmbeddedBarcodes: async (_id, patches) => { await delay(); writes.push(...patches.map(p => p.number)); },
+  });
+  const targets = [{ number: "A" }, { number: "B" }, { number: "C", invoiceId: "good" }, { number: "D", invoiceId: "good" }, { number: "E", invoiceId: "missing" }];
+  await assert.rejects(api.assignBarcodesToDailyRoute("next", "Next", targets, p => progress.push(p), "2099-01-01"), /3 of 5 labels assigned/);
+  assert.deepEqual(writes.sort(), ["A", "C", "D"]);
+  assert.deepEqual(progress.at(-1), { phase: "assigning", completed: 5, total: 5 });
+});
+
+test("completion after lookup is checked again before a catalog route write", async () => {
+  let writes = 0;
+  const pending = { id: 1, number: "A", status: { id: 6, name: "CONDUCE" }, route: { id: "old" } };
+  const api = loadFeature(feature, {
+    post: async () => ({ data: [pending] }),
+    get: async () => ({ data: { ...pending, status: { id: 7, name: "ENTREGADO" } } }),
+    put: async () => { writes++; },
+  }, {});
+  await assert.rejects(api.assignBarcodesToDailyRoute("next", "Next", [{ number: "A" }], undefined, "2099-01-01"), /0 of 1.*cannot be reassigned or unassigned/);
+  assert.equal(writes, 0);
+});
+
+for (const embedded of [false, true]) {
+  test(`${embedded ? "embedded" : "catalog"} assignment rechecks calendar rollover after asynchronous reads`, async () => {
+    const RealDate = globalThis.Date;
+    let instant = new RealDate("2099-01-01T23:59:59").getTime();
+    let writes = 0;
+    const pending = { id: 1, number: "A", status: { id: 3, name: "EN TRANSITO" } };
+    const api = loadFeature(feature, {
+      post: async () => ({ data: embedded ? [] : [pending] }),
+      get: async () => { instant = new RealDate("2099-01-02T00:00:01").getTime(); return { data: pending }; },
+      put: async () => { writes++; },
+    }, {
+      fetchInvoiceById: async () => {
+        instant = new RealDate("2099-01-02T00:00:01").getTime();
+        return { lineItems: [{ barcodes: [{ number: "A", barcodeId: "A", statusId: 3, statusName: "EN TRANSITO" }] }] };
+      },
+      patchInvoiceEmbeddedBarcodes: async () => { writes++; },
+    });
+    globalThis.Date = class extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [instant])); }
+    };
+    try {
+      await assert.rejects(api.assignBarcodesToDailyRoute("next", "Next", [{ number: "A", ...(embedded ? { invoiceId: "invoice" } : {}) }], undefined, "2099-01-01"), /0 of 1.*today or later/);
+      assert.equal(writes, 0);
+    } finally { globalThis.Date = RealDate; }
+  });
+}
+
+test("unfinished catalog route null is sent explicitly; omitted route stays omitted", async () => {
+  const sent = [];
+  const existing = { id: 1, number: "A", status: { id: 6, name: "CONDUCE" }, route: { id: "old", name: "Old" } };
+  const api = loadFeature(feature, {
+    put: async (_url, payload) => { sent.push(JSON.parse(JSON.stringify(payload))); return { success: true, data: payload }; },
+  }, {});
+  await api.updateBarcode(1, { number: "A", status: existing.status, route: null }, existing);
+  await api.updateBarcode(1, { number: "A", status: existing.status }, existing);
+  assert.equal(sent[0].route, null);
+  assert.equal(Object.hasOwn(sent[1], "route"), false);
+  await assert.rejects(api.updateBarcode(1, { number: "A", status: { id: 7, name: "ENTREGADO" }, route: null }, { ...existing, status: { id: 7, name: "ENTREGADO" } }), /cannot be reassigned or unassigned/);
+  assert.equal(sent.length, 2);
 });

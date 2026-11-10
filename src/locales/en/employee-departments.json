@@ -43,5 +43,6 @@
       }
     }
   },
-  "searchPlaceholder": "Search departments…"
+  "searchPlaceholder": "Search departments…",
+  "entities": "departments"
 }

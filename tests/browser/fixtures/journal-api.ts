@@ -9,6 +9,7 @@ const clearanceRows = rows.map((row,index) => ({...row,
  paymentMethod:{name:index === 1 ? "ZELLE" : "CHECK"},
  reconciliationStatus:index === 0 ? "RECONCILED" : "OUTSTANDING",
  clearanceStatus:"OUTSTANDING", allowedActions:{clear:index !== 1},
+ ...(index === 0 ? {paymentReference:"004521"} : {}),
  incomeStatement:{id:32600,status:"CLOSED"},
 }));
 export const apiClient = {get: async () => ({data: []}), post: async (url: string, body: Record<string,unknown>) => {

@@ -305,6 +305,7 @@ export function VehiclesWorkspace() {
       {
         id: "branch",
         label: t("vehicles.columns.branch"),
+        sortField: "branch.code",
         truncateCell: false,
         cellClassName: "overflow-visible",
         renderCell: (vehicle) => (
@@ -349,6 +350,7 @@ export function VehiclesWorkspace() {
       {
         id: "createdBy",
         label: t("vehicles.columns.createdBy"),
+        sortField: "createdBy.name",
         defaultVisible: false,
         cellClassName: "text-muted-foreground",
         renderCell: (vehicle) => vehicle.createdBy || dash,

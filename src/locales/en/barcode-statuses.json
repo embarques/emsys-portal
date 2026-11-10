@@ -29,8 +29,13 @@
       "id": {
         "label": "ID",
         "placeholder": "Enter ID…"
+      },
+      "prevStatus": {
+        "label": "Valid previous statuses",
+        "placeholder": "Enter status name…"
       }
     }
   },
-  "searchPlaceholder": "Search statuses…"
+  "searchPlaceholder": "Search statuses…",
+  "entities": "barcode statuses"
 }

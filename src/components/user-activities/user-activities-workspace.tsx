@@ -9,10 +9,11 @@ import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-to
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { USER_ACTIVITY_API_TABLE_FIELDS } from "@/lib/user-activities/table-fields";
 import { USER_ACTIVITY_TABLE_FILTER_FIELDS } from "@/lib/user-activities/filter-fields";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -30,7 +31,8 @@ import {
   DEFAULT_USER_ACTIVITY_LIST_PARAMS,
   type UserActivity,
 } from "@/lib/user-activities/types";
-import { useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
+import { buildTableSelectionResetKey, useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
+import { useTableRowSelection } from "@/lib/table/hooks/use-table-row-selection";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
@@ -40,6 +42,7 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const getActivityRowId = (row: UserActivity) => row.activityId;
 
 function localizeUserActivityFilterOption(
   field: string,
@@ -90,6 +93,7 @@ export function UserActivitiesWorkspace() {
     enabled: canView,
   });
   const activities = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
+  const selection = useTableRowSelection(activities, getActivityRowId, buildTableSelectionResetKey(debouncedQuery, filterRows));
   const total = data?.total ?? 0;
   rememberTotal(total);
   const totalPages = Math.max(1, Math.ceil(total / pageLimit));
@@ -224,10 +228,6 @@ export function UserActivitiesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <div>
-            <CardTitle>{t("userActivities.title")}</CardTitle>
-            <CardDescription>{t("userActivities.description")}</CardDescription>
-          </div>
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
@@ -269,6 +269,13 @@ export function UserActivitiesWorkspace() {
           />
         </CardHeader>
 
+        <TableSelectionToolbar
+          selectedIds={selection.selectedIds}
+          pageRowIds={selection.pageRowIds}
+          totalCount={total}
+          onSelectedIdsChange={selection.setSelectedIds}
+        />
+
         {isError ? (
           <div className="border-b px-6 py-3 text-sm text-destructive">
             {normalizeApiError(error).message}
@@ -285,6 +292,11 @@ export function UserActivitiesWorkspace() {
             minWidth={1100}
             sort={sort}
             onSortChange={onSortChange}
+            selectable
+            selectedIds={selection.selectedIds}
+            allPageSelected={selection.allPageSelected}
+            onToggleSelectAll={selection.toggleAll}
+            onToggleSelect={selection.toggle}
             emptyState={
               <>
                 <Activity className="mx-auto mb-3 h-8 w-8 text-muted-foreground/60" />

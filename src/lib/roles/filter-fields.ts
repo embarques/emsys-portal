@@ -78,4 +78,14 @@ export const ROLE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
   },
+  {
+    field: "systemRole",
+    label: "System role",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: [
+      { value: "true", label: "Yes" },
+      { value: "false", label: "No" },
+    ],
+  },
 ];

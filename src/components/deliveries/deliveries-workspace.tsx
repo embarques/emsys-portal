@@ -6,7 +6,7 @@ import { ChevronDown, ChevronsUpDown, ChevronUp, PackageCheck, Printer } from "l
 import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
 import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
@@ -30,7 +30,6 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
-import { useTableSort } from "@/lib/table/use-table-sort";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
@@ -84,20 +83,22 @@ export function DeliveriesWorkspace() {
 
 function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliveryAccess> }) {
   const { t } = useTranslation();
-  const { sort, onSortChange } = useTableSort(DEFAULT_ASSIGNED_DELIVERY_SORT);
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [viewKey, setViewKey] = useState<string | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const table = useCatalogTable({
     fields: ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS,
     keepPrevious: false,
     enabled: access.canList,
     keyPrefix: "deliveries.filters.fields",
-    sort,
+    defaultSort: DEFAULT_ASSIGNED_DELIVERY_SORT,
+    getRowId: rowKey,
     queryKey: (params) => [...queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params), access.viewScope],
     fetchPage: fetchAssignedDeliveryBarcodesPage,
   });
+  const { sort } = table;
+  const { selectedIds, selectedRows } = table.selection;
 
   const headers: { key: string; sortField?: string }[] = [
     { key: "barcode", sortField: "number" },
@@ -117,15 +118,15 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
 
   function toggleSort(field: string) {
     const active = getPrimarySortSpec(sort);
-    onSortChange(field, active?.field === field && active.direction === "asc" ? "desc" : "asc");
-    table.pagination.setPage(1);
+    table.onSortChange(field, active?.field === field && active.direction === "asc" ? "desc" : "asc");
   }
 
-  const selectedRow = selectedKey ? table.items.find((row) => rowKey(row) === selectedKey) ?? null : null;
+  const viewRow = viewKey ? table.items.find((row) => rowKey(row) === viewKey) ?? null : null;
+  const selectedRow = selectedRows.length === 1 ? selectedRows[0]! : null;
   const selectedActionDisabled = !selectedRow?.invoiceId || !selectedRow.delivery?.id;
 
   function openRow(row: AssignedDeliveryBarcode) {
-    setSelectedKey(rowKey(row));
+    setViewKey(rowKey(row));
     setViewOpen(true);
   }
 
@@ -179,46 +180,57 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
               );
             })}
           </ul>
-          {selectedRow && (access.canDeliver || access.canPrint) ? (
-            <TableSelectionBar
-              className="hidden md:flex"
-              selectedCount={1}
-              totalCount={table.items.length}
-              onClear={() => setSelectedKey(null)}
-              actions={<>
-                {access.canDeliver ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-                    disabled={selectedActionDisabled}
-                    onClick={() => setDeliverRow(selectedRow)}
-                  >
-                    <PackageCheck className="h-4 w-4" />
-                    {t("deliveries.deliver.action")}
-                  </Button>
-                ) : null}
-                {access.canPrint ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={!selectedRow.invoiceId}
-                    onClick={() => setPrintRow(selectedRow)}
-                  >
-                    <Printer className="h-4 w-4" />
-                    {t("invoices.printSignatures.action")}
-                  </Button>
-                ) : null}
-              </>}
-            />
-          ) : null}
+          <TableSelectionToolbar
+            className="hidden md:flex"
+            selectedIds={selectedIds}
+            pageRowIds={table.selection.pageRowIds}
+            totalCount={table.total}
+            onSelectedIdsChange={table.selection.setSelectedIds}
+            actions={access.canDeliver || access.canPrint ? <>
+              {access.canDeliver ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+                  disabled={selectedActionDisabled}
+                  onClick={() => { if (selectedRow) setDeliverRow(selectedRow); }}
+                >
+                  <PackageCheck className="h-4 w-4" />
+                  {t("deliveries.deliver.action")}
+                </Button>
+              ) : null}
+              {access.canPrint ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                  disabled={!selectedRow?.invoiceId}
+                  onClick={() => { if (selectedRow) setPrintRow(selectedRow); }}
+                >
+                  <Printer className="h-4 w-4" />
+                  {t("invoices.printSignatures.action")}
+                </Button>
+              ) : null}
+            </> : undefined}
+          />
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left">
                 <tr>
+                  <th className="w-10 py-3 pl-4 pr-2">
+                    <input
+                      type="checkbox"
+                      aria-label={t("tableFields.table.selectAllOnPage")}
+                      checked={table.selection.allPageSelected}
+                      ref={(element) => {
+                        if (element) element.indeterminate = !table.selection.allPageSelected && selectedRows.length > 0;
+                      }}
+                      onChange={(event) => table.selection.toggleAll(event.target.checked)}
+                      className="size-4 rounded border-input"
+                    />
+                  </th>
                   {headers.map(({ key, sortField }) => {
                     const label = t(`deliveries.columns.${key}`);
                     return sortField ? (
@@ -236,8 +248,8 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
                     <InteractiveTableRow
                       key={key}
                       className="align-top"
-                      active={key === selectedKey}
-                      aria-selected={key === selectedKey}
+                      active={key === viewKey || selectedIds.includes(key)}
+                      aria-selected={selectedIds.includes(key)}
                       tabIndex={0}
                       onRowClick={() => openRow(row)}
                       onKeyDown={(event) => {
@@ -246,6 +258,15 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
                         openRow(row);
                       }}
                     >
+                      <td className="py-3 pl-4 pr-2" onClick={(event) => event.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          aria-label={t("tableFields.table.selectRow", { row: row.number || key })}
+                          checked={selectedIds.includes(key)}
+                          onChange={(event) => table.selection.toggle(key, event.target.checked)}
+                          className="size-4 rounded border-input"
+                        />
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums">{row.number}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.invoiceNumber}</td>
                       <td className="whitespace-nowrap px-4 py-3">
@@ -276,8 +297,8 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
       </Card>
 
       <DeliveryViewSheet
-        row={selectedRow}
-        open={viewOpen && Boolean(selectedRow)}
+        row={viewRow}
+        open={viewOpen && Boolean(viewRow)}
         onOpenChange={setViewOpen}
         canDeliver={access.canDeliver}
         canPrint={access.canPrint}
@@ -291,7 +312,8 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
         onClose={() => setDeliverRow(null)}
         onDelivered={() => {
           setDeliverRow(null);
-          setSelectedKey(null);
+          setViewKey(null);
+          table.selection.setSelectedIds([]);
         }}
       />}
     </div>

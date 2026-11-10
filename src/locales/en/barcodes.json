@@ -170,6 +170,10 @@
         "id": {
           "label": "Route",
           "placeholder": "Select a DR daily route…"
+        },
+        "name": {
+          "label": "Route name",
+          "placeholder": "Enter route name…"
         }
       },
       "id": {
@@ -207,6 +211,20 @@
           "label": "Editor ID",
           "placeholder": "Enter editor ID…"
         }
+      },
+      "delivery": {
+        "name": {
+          "label": "Delivery",
+          "placeholder": "Enter delivery…"
+        }
+      },
+      "tripNumber": {
+        "label": "Trip number",
+        "placeholder": "Enter trip number…"
+      },
+      "barcodeId": {
+        "label": "Barcode ID",
+        "placeholder": "Enter barcode ID…"
       }
     }
   }

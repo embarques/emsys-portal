@@ -29,8 +29,13 @@
       "id": {
         "label": "ID",
         "placeholder": "Ingrese el ID…"
+      },
+      "prevStatus": {
+        "label": "Estados previos válidos",
+        "placeholder": "Escriba el nombre del estado…"
       }
     }
   },
-  "searchPlaceholder": "Buscar estados…"
+  "searchPlaceholder": "Buscar estados…",
+  "entities": "estados de código de barras"
 }

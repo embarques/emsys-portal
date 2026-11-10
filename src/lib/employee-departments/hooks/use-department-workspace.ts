@@ -53,5 +53,5 @@ export function useDepartmentWorkspace(options: { onSaved?: (item: EmployeeDepar
       feedback.notifyDeleted(t("employeeDepartments.entity"), 1);
     } catch (cause) { feedback.notifyError(normalizeApiError(cause).message); }
   }
-  return { query, form, open, editing, error, busy, edit, save, remove, setOpen: (value: boolean) => { if (!busy) setOpen(value); } };
+  return { query, form, open, editing, error, busy, edit, save, remove, deleteRecord: (item: EmployeeDepartment) => mutations.remove.mutateAsync(item.id), setOpen: (value: boolean) => { if (!busy) setOpen(value); } };
 }

@@ -168,7 +168,12 @@
         "code": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
       },
       "active": { "label": "Estado", "placeholder": "Seleccionar estado…" },
-      "year": { "label": "Año", "placeholder": "Ingrese año…" }
+      "year": { "label": "Año", "placeholder": "Ingrese año…" },
+      "updatedBy": {
+        "name": { "label": "Actualizado por", "placeholder": "Escriba el nombre…" }
+      },
+      "createdAt": { "label": "Creado", "placeholder": "AAAA-MM-DD" },
+      "updatedAt": { "label": "Actualizado", "placeholder": "AAAA-MM-DD" }
     }
   }
 }

@@ -195,7 +195,10 @@ export const DEFAULT_ROUTE_DIRECTORY_SORT = "createdAt:desc";
 /** Fields the bar search fans out across with an OR group (must be in the `/routes/search` allow-list). */
 export const ROUTE_BAR_OR_SEARCH_FIELDS = [
   "branch.code",
+  "branch.name",
   "employees.name",
+  "createdBy.name",
+  "updatedBy.name",
 ] as const;
 
 export function createEmptyVehicleRef(): RouteVehicleRef {

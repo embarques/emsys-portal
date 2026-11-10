@@ -6,14 +6,14 @@ import type { DailyIncomeJournalListParams } from "./types";
 const text: TableFilterFieldDefinition["operators"] = ["eq", "neq", "contains", "startsWith"];
 const numeric: TableFilterFieldDefinition["operators"] = ["eq", "neq", "gte", "lte"];
 export const DAILY_INCOME_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
-  ...["invoice.number", "createdBy.name", "accounts.name", "employee.name", "paymentReference", "external_reference_number", "refNumber"].map(field => ({field, label: field, operators: text, valueType: "text" as const})),
+  ...["invoice.number", "createdBy.name", "accounts.name", "employee.name", "paymentReference", "external_reference_number", "refNumber", "description"].map(field => ({field, label: field, operators: text, valueType: "text" as const})),
   ...["incomeStatement.id", "invoice.cost", "invoice.payment", "invoice.balance", "transactionAmount"].map(field => ({field, label: field, operators: numeric, valueType: "text" as const})),
   {field: "employee.id", label: "Employee ID", operators: text, valueType: "text"},
   {field: "date", label: "Date", operators: ["gte", "lte"], valueType: "text", placeholder: "YYYY-MM-DD"},
   {field: "dateRange", label: "Date range", operators: ["eq"], valueType: "range"},
   {field: "transactionType", label: "Transaction", operators: ["eq", "neq"], valueType: "select", options: ["INITIAL-PAYMENT", "PAYMENT", "SALES", "EXPENSE", "INVENTORY", "DISCOUNT", "SURCHARGE", "TRANSFER", "LOAN"].map(value => ({value, label: value}))},
   {field: "paymentMethod.name", label: "Payment method", operators: ["eq", "neq"], valueType: "select", options: ["CASH", "CHECK", "ZELLE", "DEPOSIT", "CREDIT-CARD"].map(value => ({value, label: value}))},
-  {field: "reconciliationStatus", label: "Reconciliation", operators: ["eq", "neq"], valueType: "select", options: ["OUTSTANDING", "RECONCILED"].map(value => ({value, label: value}))},
+  {field: "reconciliationStatus", label: "Reconciliation", operators: ["eq", "neq"], valueType: "select", options: ["NOT_REQUIRED", "OUTSTANDING", "RECONCILED"].map(value => ({value, label: value}))},
   {field: "clearanceStatus", label: "Clearance", operators: ["eq", "neq"], valueType: "select", options: ["NOT_REQUIRED", "OUTSTANDING", "CLEARED"].map(value => ({value, label: value}))},
 ];
 export const PENDING_JOURNAL_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
@@ -39,7 +39,7 @@ export function expandJournalFilterNode(node: ApiSearchFilterNode): ApiSearchFil
 export function buildJournalSearchBody(params: DailyIncomeJournalListParams) {
   const groups = buildResourceSearchFilterGroups({
     search: params.query ? {value: params.query} : undefined,
-    barOrSearchFields: ["invoice.number", "refNumber", "createdBy.name", "employee.name"],
+    barOrSearchFields: ["invoice.number", "refNumber", "createdBy.name", "employee.name", "accounts.name", "paymentReference", "external_reference_number"],
     filterRows: params.filterRows,
     tableFilterFields: PENDING_JOURNAL_TABLE_FILTER_FIELDS,
     expandNode: expandJournalFilterNode,

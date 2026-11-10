@@ -173,6 +173,9 @@
       "updatedAtRange": {
         "label": "Rango de actualización",
         "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "systemRole": {
+        "label": "Rol del sistema"
       }
     }
   }

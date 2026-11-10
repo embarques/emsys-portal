@@ -11,6 +11,18 @@
     "selectedCount": "Seleccionadas:",
     "clearSelected": "Marcar como liquidado",
     "sameMethod": "Seleccione hasta 200 transacciones autorizadas con el mismo método de pago. Solo se pueden liquidar las transacciones autorizadas por la API.",
+    "blocked": {
+      "inactive": "Esta transacción fue anulada o revertida, por lo que no se puede liquidar.",
+      "notOutstanding": "Esta transacción no está pendiente de liquidación.",
+      "notAuthorized": "La API no ha autorizado la liquidación de esta transacción.",
+      "paymentMethod": "Solo se pueden agregar transacciones de {{method}} a la selección actual.",
+      "limit": "Puede liquidar hasta 200 transacciones a la vez.",
+      "noMethod": "sin método de pago"
+    },
+    "confirmList": {
+      "caption": "Transacciones por marcar como liquidadas",
+      "externalReference": "Ref. externa / N.º de cheque"
+    },
     "confirmTitle": "¿Marcar las transacciones seleccionadas como liquidadas?",
     "confirmDescription": "Confirme que estos pagos se han liquidado o verificado por su canal financiero. Solo registra la liquidación; no cambia el historial de conciliación, los saldos de facturas ni los importes del cierre. No emite un reembolso ni una reversión bancaria.",
     "pendingAlert": "{{count}} transacciones pendientes de liquidación",
@@ -151,6 +163,25 @@
         "updatedAtRange": {
           "label": "Rango de actualización",
           "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "description": {
+          "label": "Descripción",
+          "placeholder": "Escriba la descripción…"
+        },
+        "parentAccount": {
+          "name": {
+            "label": "Cuenta principal",
+            "placeholder": "Escriba la cuenta principal…"
+          }
+        },
+        "systemAccount": {
+          "label": "Cuenta del sistema"
+        },
+        "default": {
+          "label": "Cuenta predeterminada"
+        },
+        "branchAccount": {
+          "label": "Cuenta de sucursal"
         }
       }
     }
@@ -173,6 +204,10 @@
           "number": {
             "label": "Factura #",
             "placeholder": "Ingrese el número de factura…"
+          },
+          "balance": {
+            "label": "Balance de factura",
+            "placeholder": "0.00"
           }
         },
         "refNumber": {
@@ -218,6 +253,20 @@
             "label": "Actualizado por",
             "placeholder": "Ingrese el nombre de quien actualizó…"
           }
+        },
+        "updatedAt": {
+          "label": "Actualizado",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "clearedBy": {
+          "name": {
+            "label": "Liquidado por",
+            "placeholder": "Escriba el nombre…"
+          }
+        },
+        "id": {
+          "label": "ID de registro",
+          "placeholder": "Escriba el ID de registro…"
         }
       }
     }
@@ -483,6 +532,10 @@
           "number": {
             "label": "Factura #",
             "placeholder": "Ingrese el número de factura…"
+          },
+          "balance": {
+            "label": "Balance de factura",
+            "placeholder": "0.00"
           }
         },
         "refNumber": {
@@ -528,6 +581,20 @@
             "label": "Actualizado por",
             "placeholder": "Ingrese el nombre de quien actualizó…"
           }
+        },
+        "updatedAt": {
+          "label": "Actualizado",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "clearedBy": {
+          "name": {
+            "label": "Liquidado por",
+            "placeholder": "Escriba el nombre…"
+          }
+        },
+        "id": {
+          "label": "ID de registro",
+          "placeholder": "Escriba el ID de registro…"
         }
       }
     }
@@ -734,10 +801,24 @@
         "selectType": "Seleccionar tipo",
         "enterDetails": "Ingresar detalles"
       },
+      "changeType": "Cambiar tipo",
       "typeSelector": {
         "title": "Elija un tipo de transacción",
         "description": "Seleccione el tipo de transacción que desea registrar.",
         "ariaLabel": "Tipo de transacción",
+        "options": {
+          "INITIAL-PAYMENT": "Nueva factura",
+          "PAYMENT": "Pago de factura",
+          "DISCOUNT": "Descuento",
+          "SURCHARGE": "Recargo",
+          "SALES": "Ingreso",
+          "EXPENSE": "Gasto",
+          "INVENTORY": "Movimiento de inventario",
+          "INVENTORY-PAYMENT": "Pago de inventario",
+          "LOAN-ISSUE": "Nuevo préstamo",
+          "LOAN-PAYMENT": "Pago de préstamo",
+          "TRANSFER": "Transferir entre cuentas"
+        },
         "groups": {
           "invoices": "Facturas",
           "incomeExpenses": "Ingresos y gastos",
@@ -1329,6 +1410,58 @@
       "debit": "Débito · Cuenta de préstamo",
       "credit": "Crédito · Cuenta de activo de origen",
       "closeoutRequired": "Se requiere un cierre activo de Ingresos diarios para la sucursal de la cuenta de préstamo seleccionada."
+    },
+    "filters": {
+      "fields": {
+        "openedAt": {
+          "label": "Apertura",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "openedAtRange": {
+          "label": "Rango de apertura",
+          "placeholder": "2026-06-13 a 2026-08-14"
+        },
+        "lastActivityAt": {
+          "label": "Última actividad",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "lastActivityAtRange": {
+          "label": "Rango de última actividad",
+          "placeholder": "2026-06-13 a 2026-08-14"
+        },
+        "employee": {
+          "name": {
+            "label": "Empleado",
+            "placeholder": "Escriba el nombre del empleado…"
+          }
+        },
+        "status": {
+          "label": "Estado"
+        },
+        "loanAccount": {
+          "id": {
+            "label": "Cuenta de préstamo"
+          }
+        },
+        "principalAmount": {
+          "label": "Monto principal",
+          "placeholder": "Escriba el monto..."
+        },
+        "description": {
+          "label": "Descripción",
+          "placeholder": "Escriba la descripción…"
+        },
+        "referenceNumber": {
+          "label": "Número de referencia",
+          "placeholder": "Escriba la referencia…"
+        },
+        "branch": {
+          "name": {
+            "label": "Nombre de sucursal",
+            "placeholder": "Escriba el nombre de la sucursal…"
+          }
+        }
+      }
     }
   },
   "financialActivity": {
@@ -1550,6 +1683,7 @@
     "description": "Transacciones pendientes de verificación de dinero o documentos, de todos los cierres. La conciliación registra la responsabilidad; la liquidación registra por separado el pago efectivamente liquidado.",
     "createdAt": "Creado el",
     "status": "Conciliación",
+    "NOT_REQUIRED": "No requerida",
     "OUTSTANDING": "Pendiente",
     "RECONCILED": "Conciliado",
     "selectedTotals": "Transacciones seleccionadas",
@@ -1658,6 +1792,10 @@
           "label": "ID de sucursal",
           "placeholder": "ID de sucursal"
         }
+      },
+      "description": {
+        "label": "Descripción",
+        "placeholder": "Descripción"
       }
     },
     "batchComplete": "Todas las transacciones seleccionadas están confirmadas.",

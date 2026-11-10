@@ -81,6 +81,7 @@ export function usePredefinedRouteWorkspace(onCreated?: (route: PredefinedRoute)
     edit,
     save,
     remove,
+    deleteRecord: (item: PredefinedRoute) => mutations.remove.mutateAsync(item.id),
     setOpen: (value: boolean) => {
       if (!busy) setOpen(value);
     },

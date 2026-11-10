@@ -58,5 +58,6 @@
       }
     }
   },
-  "searchPlaceholder": "Buscar políticas…"
+  "searchPlaceholder": "Buscar políticas…",
+  "entities": "políticas de factura"
 }

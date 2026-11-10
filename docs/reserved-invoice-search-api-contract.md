@@ -1,67 +1,10 @@
-# Reserved invoice advanced search (backend implementation pending)
+# Reserved invoice search — remaining contract gaps
 
-The Reserved invoices directory now uses the shared column / condition / value
-filter builder, including AND/OR joins and the existing saved-filter presets.
-This document is the proposed frontend/backend contract, requested on the
-assumption that EMSYS API will add support. It does not assert that the endpoint
-is deployed. The portal keeps `GET /invoices/reserved` for unfiltered browsing
-and the existing number-search bar. Completed advanced filters use the endpoint
-below; an unavailable endpoint produces a visible query error, without silently
-showing unfiltered results or filtering only one cursor page.
+## Response and pagination
 
-## Request
-
-`POST /v1/invoices/reserved/search?limit=50&after=<optional opaque cursor>`
-
-Use the central Axios authentication and company headers, and the same explicit
-invoice-pool view permission and tenant isolation as the existing GET endpoint.
-This is a read-only search, not a pool mutation. It must not claim, assign,
-generate, consume, return, or otherwise change a reservation.
-
-The JSON body follows the application's shared search tree format:
-
-```json
-{
-  "operator": "and",
-  "filters": [
-    {
-      "operator": "or",
-      "filters": [
-        { "field": "allocation.userId", "operator": "eq", "value": 0 },
-        { "field": "claimed", "operator": "eq", "value": true }
-      ]
-    },
-    { "field": "number", "operator": "contains", "value": "102" }
-  ]
-}
-```
-
-Allowed leaves:
-
-| Field | JSON value | Operators |
-| --- | --- | --- |
-| `number` | string | `eq`, `neq`, `contains`, `startsWith` |
-| `receivedAt` | date (`YYYY-MM-DD`) or RFC 3339 timestamp string | `eq`, `neq`, `gte`, `lte` |
-| `allocation.userId` | integer (zero selects the company pool) | `eq`, `neq` |
-| `claimed` | boolean | `eq` |
-
-The portal converts the displayed Status filter into these canonical leaves:
-
-- Available: `claimed = false AND allocation.userId = 0`.
-- Assigned, awaiting download: `claimed = false AND allocation.userId != 0`.
-- Downloaded to mobile: `claimed = true`.
-- Status `neq` negates the entire predicate, including both leaves when present.
-
-The builder combines completed rows left to right: `A OR B AND C` becomes
-`(A OR B) AND C`, matching the shared query-logic preview. The search bar is
-ANDed with the entire advanced expression as a `number contains` leaf. Blank
-rows have no effect. Preserve numeric zero and boolean false as typed values.
-Validate fields, operators, values, tenant scope, and bounded expression size on
-the server; apply all predicates before cursor pagination.
-
-## Response
-
-Return the existing success envelope and invoice-pool page schema:
+`POST /v1/invoices/reserved/search` returns a flat `data` array with page
+metadata, incompatible with the Portal's cursor-page schema. Align the response
+with the required shape:
 
 ```json
 {
@@ -69,29 +12,53 @@ Return the existing success envelope and invoice-pool page schema:
   "data": {
     "items": [],
     "remaining": 0,
-    "lowThreshold": 10
+    "lowThreshold": 10,
+    "nextCursor": "optional opaque cursor"
   }
 }
 ```
 
-Each item retains `id`, `number`, `claimed`, and `allocation: { userId, token }`.
-The API is also expected to add `receivedAt`, a nullable RFC 3339 timestamp for
-when the invoice was received. This is a separate business field: do not replace
-it with generation, assignment, download, or record-creation time. Older records
-may omit the field or return null; the portal displays a dash in either case.
-The table formats populated values in the configured application timezone.
-For advanced filters, a date-only value covers the business calendar day in
-that timezone (`eq` / `neq` compare the day; `gte` starts at its beginning and
-`lte` includes its end). Timestamp values compare instants. Missing/null values
-must not satisfy `eq`, `gte`, or `lte`; `neq` includes them. Validate date inputs
-on the server. This addition, including filter support, awaits backend delivery.
+- Define and verify `limit` and `after` behavior. `remaining` must count matching
+  unused reservations across all pages, not just the current page.
+- Bind cursors to company, filter expression and sort; verify cursor boundaries,
+  stable tie handling and cancellation without loading the full pool in memory.
+- Keep response failures visible in the Portal; do not silently display
+  unfiltered results or filter just one cursor page.
 
-Use the existing stable cursor order and optional `nextCursor`. `remaining`
-counts matching unused reserved numbers across all pages, including assigned
-and downloaded numbers, rather than only the returned page. A cursor belongs to
-the same company and filter expression. Honor cancellation and use indexed,
-bounded queries rather than loading the entire pool into application memory.
+## Sorting and schema documentation
 
-Backend acceptance checks should cover nested AND/OR, negated status, search-bar
-intersection, company-pool zero, boolean false, permission denial, tenant
-isolation, cursor boundaries, and representative query-plan/request budgets.
+- Correct GET sort handling: `number:asc` and `number:desc` returned identical
+  ascending pages. Align GET/search ordering and document the accepted fields.
+- Verify additional sort fields, sort ties and cursor binding.
+- Document search, timestamp fields, request filters/operators, sorts and
+  response pagination in OpenAPI.
+
+## Received-at business field
+
+Add/document `receivedAt` as a nullable RFC 3339 timestamp for when the invoice
+was received. It is distinct from `reservedAt`, generation, assignment, download
+and record creation. Define the authoritative application/business timezone;
+older missing values must remain null/absent rather than use another timestamp.
+
+Verify these `receivedAt` filter semantics:
+
+- `eq` / `neq` with a date-only value compare the business calendar day.
+- `gte` starts at the beginning of that day; `lte` includes its end.
+- Timestamp values compare instants.
+- Missing/null values do not satisfy `eq`, `gte` or `lte`; `neq` includes them.
+- Invalid date inputs are rejected.
+
+## Remaining acceptance
+
+- Verify all documented field/operator combinations and reserved timestamp date
+  boundaries; a successful sample does not establish complete operator coverage.
+- Cover negated multi-leaf status predicates, search-bar intersection and
+  left-to-right mixed AND/OR expressions with cursor pagination.
+- Verify invoice-pool view permission, denied callers, company/tenant isolation,
+  bounded expression size and cancellation. Searches must never mutate a pool.
+- Verify representative query plans and request/payload budgets.
+- Correct the user-specific threshold mismatch: `userId=73` returned 10 while
+  the requester's configured threshold was 0.
+
+See [remaining live findings](backend-gap-verification-2026-11-07.md) and
+[backend/API gaps](backend-api-gaps.md).

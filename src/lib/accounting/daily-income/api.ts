@@ -281,7 +281,7 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     version:typeof raw.version==="number" ? raw.version : undefined,
  transactionStatus:raw.transactionStatus==="ACTIVE"||raw.transactionStatus==="VOIDED"||raw.transactionStatus==="REVERSED"?raw.transactionStatus:undefined,
  voidedAt:stringValue(raw.voidedAt)||null,
- reconciliationStatus: raw.reconciliationStatus === "RECONCILED" ? "RECONCILED" : raw.reconciliationStatus === "OUTSTANDING" ? "OUTSTANDING" : undefined,
+ reconciliationStatus: raw.reconciliationStatus === "RECONCILED" || raw.reconciliationStatus === "OUTSTANDING" || raw.reconciliationStatus === "NOT_REQUIRED" ? raw.reconciliationStatus : undefined,
     clearanceStatus: raw.clearanceStatus === "CLEARED" || raw.clearanceStatus === "OUTSTANDING" || raw.clearanceStatus === "NOT_REQUIRED" ? raw.clearanceStatus : undefined,
     clearedAt: stringValue(raw.clearedAt) || null,
     clearedBy: normalizePartyRef(raw.clearedBy) ?? null,

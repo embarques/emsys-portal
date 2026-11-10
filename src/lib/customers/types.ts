@@ -475,6 +475,15 @@ export function areCustomerFormValuesEquivalent(
   );
 }
 
+/** Keep unrelated identity fields out of a partial address update. */
+export function isCustomerAddressOnlyEdit(
+  values: CustomerFormValues,
+  originalValues: CustomerFormValues,
+): boolean {
+  return !areCustomerFormValuesEquivalent(values, originalValues) &&
+    areCustomerFormValuesEquivalent({ ...values, addresses: originalValues.addresses }, originalValues);
+}
+
 /** @deprecated Use customerType from the API. */
 export const CLIENT_TYPES: { value: ClientType; label: string }[] = [
   { value: "sender", label: "Sender" },

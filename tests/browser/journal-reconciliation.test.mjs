@@ -116,15 +116,21 @@ test("journal selection spans pages, restricts methods, and retries approval wit
   await openFixture(clearance);
   await clearance.evaluate(()=>{window.pendingClearance=true;window.failClearance=true;});
   await clearance.addScriptTag({content:script});
+  await clearance.getByRole("button",{name:"accounting.journalClearance.blocked.notAuthorized",exact:true}).waitFor();
   await clearance.getByRole("checkbox",{name:"Select TXN-A1",exact:true}).check();
   assert.equal(await clearance.getByRole("checkbox",{name:"Select TXN-B1",exact:true}).isDisabled(),true);
+  assert.equal(await clearance.getByRole("button",{name:"accounting.journalClearance.blocked.notAuthorized",exact:true}).count(),1);
   // TXN-A1 is already reconciled and belongs to a closed closeout, but can still settle.
   await clearance.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
   const clearanceDialog=clearance.getByRole("dialog");
+  const confirmList=clearanceDialog.getByRole("table",{name:"accounting.journalClearance.confirmList.caption"});
+  assert.equal(await confirmList.getByRole("row").count(),2);
+  for (const value of ["INV-26-001475","TXN-A1","004521","CHECK"]) await confirmList.getByRole("cell",{name:value,exact:true}).waitFor();
   await clearanceDialog.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
   await clearanceDialog.getByRole("alert").waitFor();
   await clearanceDialog.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
   await clearanceDialog.getByText("accounting.journalClearance.batchComplete",{exact:true}).waitFor();
+  await confirmList.getByRole("cell",{name:"TXN-A1",exact:true}).waitFor();
   assert.equal(await clearanceDialog.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).isDisabled(),true);
   await clearanceDialog.getByRole("button",{name:"common.actions.cancel",exact:true}).click();
   const clearanceCalls=await clearance.evaluate(()=>window.journalCalls);

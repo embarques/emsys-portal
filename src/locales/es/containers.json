@@ -185,6 +185,26 @@
       "arrivalDateRange": {
         "label": "Rango de llegada",
         "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "createdAt": {
+        "label": "Creado",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Actualizado",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Creado por",
+          "placeholder": "Escriba el nombre…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Actualizado por",
+          "placeholder": "Escriba el nombre…"
+        }
       }
     }
   }

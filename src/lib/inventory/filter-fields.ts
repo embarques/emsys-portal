@@ -60,6 +60,7 @@ function dateFields(field: string, label: string): TableFilterFieldDefinition[] 
 export const INVENTORY_FILTER_OPTION_SOURCES = {
   suppliers: "inventorySuppliers",
   holders: "inventoryHolders",
+  items: "inventoryItems",
 } as const;
 
 export const INVENTORY_ITEM_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
@@ -80,6 +81,7 @@ export const INVENTORY_RECEIPT_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[]
   DOCUMENT_STATUS_FIELD,
   referenceField("supplierId", "Supplier", INVENTORY_FILTER_OPTION_SOURCES.suppliers),
   referenceField("toHolderId", "Warehouse", INVENTORY_FILTER_OPTION_SOURCES.holders),
+  referenceField("lines.itemId", "Item", INVENTORY_FILTER_OPTION_SOURCES.items),
   ...dateFields("receivedAt", "Received"),
 ];
 
@@ -87,6 +89,7 @@ export const INVENTORY_DISPATCH_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[
   DOCUMENT_STATUS_FIELD,
   referenceField("toHolderId", "Dispatched to", INVENTORY_FILTER_OPTION_SOURCES.holders),
   referenceField("fromHolderId", "From", INVENTORY_FILTER_OPTION_SOURCES.holders),
+  referenceField("lines.itemId", "Item", INVENTORY_FILTER_OPTION_SOURCES.items),
   ...dateFields("dispatchedAt", "Dispatched"),
 ];
 

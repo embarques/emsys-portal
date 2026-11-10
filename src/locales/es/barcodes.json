@@ -170,6 +170,10 @@
         "id": {
           "label": "Ruta",
           "placeholder": "Seleccione una ruta diaria de RD…"
+        },
+        "name": {
+          "label": "Nombre de ruta",
+          "placeholder": "Escriba el nombre de la ruta…"
         }
       },
       "id": {
@@ -207,6 +211,20 @@
           "label": "ID del editor",
           "placeholder": "Ingrese el ID…"
         }
+      },
+      "delivery": {
+        "name": {
+          "label": "Entrega",
+          "placeholder": "Escriba la entrega…"
+        }
+      },
+      "tripNumber": {
+        "label": "Número de viaje",
+        "placeholder": "Escriba el número de viaje…"
+      },
+      "barcodeId": {
+        "label": "ID de código de barras",
+        "placeholder": "Escriba el ID del código de barras…"
       }
     }
   }

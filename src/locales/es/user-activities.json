@@ -56,6 +56,14 @@
       "timestampRange": {
         "label": "Rango de fechas",
         "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "activityId": {
+        "label": "ID de actividad",
+        "placeholder": "Escriba el ID de actividad…"
+      },
+      "quantity": {
+        "label": "Cantidad",
+        "placeholder": "0"
       }
     }
   }

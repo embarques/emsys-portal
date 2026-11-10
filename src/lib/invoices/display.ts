@@ -248,6 +248,23 @@ export function formatInvoiceLineItemsSummary(invoice: Invoice, limit = 2): stri
   return `${visible.join(", ")}${suffix}`;
 }
 
+export function formatInvoiceTableLineItemsSummary(
+  invoice: Invoice,
+  t: TranslateFn,
+): string {
+  const lineItemCount = invoice.lineItems.length;
+  if (lineItemCount === 0) return t("common.empty.dash");
+
+  const labelCount = invoice.lineItems.reduce((total, item) => total + item.labelCount, 0);
+  const itemLabel = t(
+    lineItemCount === 1 ? "invoices.columns.itemSingular" : "invoices.columns.itemPlural",
+  );
+  const labelLabel = t(
+    labelCount === 1 ? "invoices.columns.labelSingular" : "invoices.columns.labelPlural",
+  );
+  return `${lineItemCount} ${itemLabel} · ${labelCount} ${labelLabel}`;
+}
+
 export function getInvoiceSubtotal(invoice: Invoice): number {
   return getInvoiceTotal(invoice);
 }

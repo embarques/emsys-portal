@@ -73,7 +73,7 @@ export function InvoiceNumberModeFields({
         id={`${id}-mode`}
         label={<>{t("invoices.form.fields.invoiceNumber")}: {t(autoGenerate ? "invoices.form.autoNumber.modeSystem" : "invoices.form.autoNumber.modeCustom")}</>}
         description={mode === "system" || !canUseManualNumber ? <>
-          {mode === "system" ? <p>{generatedInvoiceNumber || t("invoices.form.autoNumber.hint")}</p> : null}
+          {mode === "system" ? <p>{generatedInvoiceNumber || t(canUseManualNumber ? "invoices.form.autoNumber.turnOffHint" : "invoices.form.autoNumber.hint")}</p> : null}
           {!canUseManualNumber ? <p>{t("invoices.form.autoNumber.permissionHint")}</p> : null}
         </> : undefined}
         checked={autoGenerate}

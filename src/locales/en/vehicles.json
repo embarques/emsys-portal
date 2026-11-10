@@ -168,7 +168,12 @@
         "code": { "label": "Branch", "placeholder": "Select branch…" }
       },
       "active": { "label": "Status", "placeholder": "Select status…" },
-      "year": { "label": "Year", "placeholder": "Enter year…" }
+      "year": { "label": "Year", "placeholder": "Enter year…" },
+      "updatedBy": {
+        "name": { "label": "Updated by", "placeholder": "Enter name…" }
+      },
+      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
+      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" }
     }
   }
 }

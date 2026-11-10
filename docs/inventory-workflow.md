@@ -8,9 +8,6 @@ commands are defined in [api-docs.json](../api-docs.json); business meaning is i
 
 - Verify broader concurrency and injected-failure atomicity across stock,
   dispositions, sales, obligations, payments and journals.
-- Decide Debit/Wire support for reconciliation payments. WIRE and DEBIT-CARD
-  return 422 unknown accounting payment method; the inventory enum excludes both.
-  Journal method support does not establish this separate contract.
 - Confirm exact named write capabilities where endpoint descriptions only say
   "documented named capability". Cover denied CRUD fallbacks, responsible-party
   changes, tenant/branch isolation and grant revocation.

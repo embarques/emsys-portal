@@ -187,6 +187,19 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
   };
 }
 
+/** Incomplete appointments visible to the user (server-scoped for assigned-only users). */
+export function usePendingOrderCount(active = true) {
+  const { companyId, hasPermission } = useAuth();
+  const queryEnabled = useOrdersQueryEnabled();
+  const query = useWorkspaceQuery({
+    queryKey: [...queryKeys.orders.stats("pending"), "nav-count", companyId],
+    queryFn: () => fetchOrders(buildOrderStatsCountParams(buildPendingOrderStatsFilterRows())),
+    enabled: active && queryEnabled && hasPermission("canViewPickup", "pickup"),
+    staleTime: 30_000,
+  });
+  return active ? query.data?.total ?? 0 : 0;
+}
+
 /** Count of appointments created within a rolling timeframe, plus prior-period count for % change. */
 export function useNewOrderStats(period: NewOrderStatPeriod) {
   const query = useInsightsKpis(period, { enabled: useOrdersQueryEnabled() });

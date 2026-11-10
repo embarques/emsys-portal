@@ -12,6 +12,7 @@ import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { resolveCopyableText } from "@/lib/table/copyable-cell";
 import { measureTableColumnContentWidth } from "@/lib/table/measure-column-width";
 import { stretchColumnWidthsToFill } from "@/lib/table/stretch-column-widths";
+import { syncTablePillWidths, UNIFORM_PILL_CELL_CLASSNAME } from "@/lib/table/uniform-pill-widths";
 import {
   createRowPointerState,
   shouldIgnoreRowClick,
@@ -230,6 +231,20 @@ function DataTableContent<T>({
     // Refit only when table inputs change; the per-render helper would retrigger every pass.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey]);
+
+  useLayoutEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    syncTablePillWidths(table);
+
+    let cancelled = false;
+    document.fonts?.ready.then(() => {
+      if (!cancelled) syncTablePillWidths(table);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rows, columns, visibleColumnKey, selectable]);
 
   // Measure the scroll container so short tables can stretch to the card width
   // and empty-state copy stays pinned to the visible viewport.
@@ -513,6 +528,7 @@ function DataTableContent<T>({
                       style={{ width: getDisplayColumnWidth(column.id) }}
                       className={cn(
                         "px-2 py-3 align-top",
+                        UNIFORM_PILL_CELL_CLASSNAME,
                         shouldTruncate ? "overflow-hidden" : "whitespace-normal break-words",
                         column.cellClassName,
                         isLeadingColumn && "pl-4",

@@ -109,8 +109,7 @@
       "invalidDate": "Use una fecha válida en formato AAAA-MM-DD o una marca de tiempo RFC3339."
     },
     "design": {
-      "employee": "Confirma el nombre, departamento, cargo y datos laborales del empleado.",
-      "branch": "Elige la sucursal donde trabaja este empleado.",
+      "employee": "Confirma el nombre, sucursal, departamento, cargo y datos laborales del empleado.",
       "address": "Busca una dirección o cambia al ingreso manual.",
       "contact": "Agrega teléfonos y correo. Usa la estrella para elegir el teléfono principal."
     },
@@ -120,7 +119,6 @@
     "notFound": "No se pudo encontrar este empleado.",
     "sections": {
       "employee": "Empleado",
-      "branch": "Sucursal",
       "address": "Dirección",
       "contact": "Contacto"
     },
@@ -208,7 +206,16 @@
         "code": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
       },
       "cost": { "label": "Costo", "placeholder": "Ingrese monto…" },
-      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" }
+      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
+      "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
+      "startDate": { "label": "Fecha de inicio", "placeholder": "AAAA-MM-DD" },
+      "endDate": { "label": "Fecha de salida", "placeholder": "AAAA-MM-DD" },
+      "totalLoanGiven": { "label": "Total de préstamos otorgados", "placeholder": "Escriba el monto…" },
+      "totalPaymentReceived": { "label": "Total de pagos recibidos", "placeholder": "Escriba el monto…" },
+      "loanAmountOwed": { "label": "Saldo de préstamo adeudado", "placeholder": "Escriba el monto…" },
+      "user": {
+        "name": { "label": "Usuario vinculado", "placeholder": "Escriba el nombre del usuario…" }
+      }
     }
   }
 }

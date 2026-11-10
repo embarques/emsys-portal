@@ -9,7 +9,8 @@
       "hash": "#",
       "user": "User ID",
       "customer": "Customer ID",
-      "account": "Account #"
+      "account": "Account #",
+      "branch": "Branch ID"
     },
     "name": {
       "default": "Name",
@@ -114,7 +115,10 @@
     "role.id": "Role ID",
     "role.name": "Role",
     "user.id": "User ID",
-    "user.name": "User",
+    "user.name": {
+      "default": "User",
+      "linked": "Linked user"
+    },
     "employee.id": "Employee ID",
     "employee.name": {
       "default": "Employee",
@@ -241,7 +245,35 @@
     "receivedAt": "Received",
     "receivedAtRange": "Received range",
     "dispatchedAt": "Dispatched",
-    "dispatchedAtRange": "Dispatched range"
+    "dispatchedAtRange": "Dispatched range",
+    "clearedBy.name": "Cleared by",
+    "parentAccount.name": "Parent account",
+    "systemAccount": "System account",
+    "default": "Default account",
+    "branchAccount": "Branch account",
+    "referenceNumber": "Reference number",
+    "vehicle.name": "Vehicle",
+    "activityId": "Activity ID",
+    "quantity": "Quantity",
+    "lines.itemId": "Item",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "totalLoanGiven": "Total loans given",
+    "totalPaymentReceived": "Total payments received",
+    "loanAmountOwed": "Loan balance owed",
+    "surcharge": "Surcharge",
+    "registration": "Registration",
+    "receivedBy.name": "Received by",
+    "pickupEmployee.name": "Pickup employee",
+    "officeBranch.name": "Office branch",
+    "pickupSource": "Pickup source",
+    "delivery.name": "Delivery",
+    "barcodeId": "Barcode ID",
+    "prevStatus": "Valid previous statuses",
+    "startTime": "Shift start",
+    "endTime": "Shift end",
+    "systemRole": "System role",
+    "accountBalance": "Account balance"
   },
   "placeholders": {
     "dateFormat": "YYYY-MM-DD",

@@ -17,7 +17,7 @@ import {
   hasResourceListFilters,
   type ApiSearchFilter,
 } from "@/lib/api/search-query";
-import { BRANCH_TABLE_FILTER_FIELDS } from "@/lib/branches/filter-fields";
+import { BRANCH_TABLE_FILTER_FIELDS, expandBranchFilterNode } from "@/lib/branches/filter-fields";
 import { BRANCH_BAR_OR_SEARCH_FIELDS } from "@/lib/branches/search-fields";
 import {
   buildApiAddressPayload,
@@ -68,6 +68,7 @@ function buildBranchSearchBody(params: BranchListParams) {
       filterRows: params.filterRows,
       tableFilterFields: BRANCH_TABLE_FILTER_FIELDS,
       chipFilters: buildBranchChipFilters(params),
+      expandNode: expandBranchFilterNode,
     }),
   });
 }

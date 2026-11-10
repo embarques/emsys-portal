@@ -43,5 +43,6 @@
       }
     }
   },
-  "searchPlaceholder": "Buscar cargos…"
+  "searchPlaceholder": "Buscar cargos…",
+  "entities": "cargos"
 }

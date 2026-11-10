@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { keepPreviousData, type QueryKey } from "@tanstack/react-query";
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { CatalogPageParams } from "@/lib/api/fetch-catalog-page";
+import type { SortDirection } from "@/lib/api/list-query";
 import type { PaginatedResult } from "@/lib/api/types";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
+import { buildTableSelectionResetKey } from "@/lib/table/directory-table-state";
 import {
   countCompleteFilterRows,
   type TableFilterFieldDefinition,
@@ -13,6 +15,7 @@ import {
 } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableRowSelection } from "@/lib/table/hooks/use-table-row-selection";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -22,7 +25,10 @@ type UseCatalogTableOptions<T> = {
   keepPrevious?: boolean;
   /** Locale prefix for field labels, e.g. `employeeTitles.filters.fields`. */
   keyPrefix: string;
-  sort: string;
+  /** Initial `field:direction` sort; header clicks replace it. */
+  defaultSort: string;
+  /** Row identity for checkbox selection. */
+  getRowId: (row: T) => string;
   queryKey: (params: CatalogPageParams) => QueryKey;
   fetchPage: (params: CatalogPageParams, signal?: AbortSignal) => Promise<PaginatedResult<T>>;
   localizeOption?: (
@@ -32,11 +38,12 @@ type UseCatalogTableOptions<T> = {
   ) => TableFilterFieldOption;
 };
 
-/** Search box, advanced filters and pagination for a small catalog, all applied by the API. */
-export function useCatalogTable<T>({ fields, keyPrefix, sort, queryKey, fetchPage, localizeOption, enabled = true, keepPrevious = true }: UseCatalogTableOptions<T>) {
+/** Search box, advanced filters, header sort and pagination for a small catalog, all applied by the API. */
+export function useCatalogTable<T>({ fields, keyPrefix, defaultSort, getRowId, queryKey, fetchPage, localizeOption, enabled = true, keepPrevious = true }: UseCatalogTableOptions<T>) {
   const [query, setQueryState] = useState("");
   const [rows, setRowsState] = useState<TableFilterRowState[]>([]);
   const [open, setOpen] = useState(false);
+  const [sort, setSort] = useState(defaultSort);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const localizedFields = useLocalizedFilterFields(fields, keyPrefix, localizeOption);
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
@@ -64,6 +71,16 @@ export function useCatalogTable<T>({ fields, keyPrefix, sort, queryKey, fetchPag
   const total = pageQuery.data?.total ?? 0;
   rememberTotal(total);
   const totalPages = Math.max(1, Math.ceil(total / pageLimit));
+  const items = useMemo(() => pageQuery.data?.items ?? [], [pageQuery.data?.items]);
+  const selection = useTableRowSelection(items, getRowId, buildTableSelectionResetKey(debouncedQuery, rows));
+
+  const onSortChange = useCallback(
+    (field: string, direction: SortDirection) => {
+      setSort(`${field}:${direction}`);
+      setPage(1);
+    },
+    [setPage],
+  );
 
   return {
     query,
@@ -81,13 +98,16 @@ export function useCatalogTable<T>({ fields, keyPrefix, sort, queryKey, fetchPag
     fields: localizedFields,
     activeFilterCount,
     hasActiveFilters,
-    items: pageQuery.data?.items ?? [],
+    sort,
+    onSortChange,
+    items,
     total,
     isLoading: pageQuery.isLoading,
     isError: pageQuery.isError,
     error: pageQuery.error,
     refetch: pageQuery.refetch,
     pagination: { page: Math.min(page, totalPages), totalPages, pageSize, setPage, changePageSize },
+    selection,
     clear: () => {
       setQueryState("");
       setRowsState([]);

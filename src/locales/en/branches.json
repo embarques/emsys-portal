@@ -65,6 +65,12 @@
     "editTitle": "Edit branch",
     "addDescription": "Create a new branch.",
     "notFound": "This branch could not be found.",
+    "design": {
+      "branch": "Set the branch name and document details.",
+      "address": "Search for the branch address or enter it manually.",
+      "contact": "Add phone numbers for this branch.",
+      "settings": "Set label, invoice, and storage options."
+    },
     "sections": {
       "branch": "Branch",
       "contact": "Contact",
@@ -166,6 +172,30 @@
         "zipcode": {
           "label": "Zip code",
           "placeholder": "Enter zip code…"
+        }
+      },
+      "id": {
+        "label": "Branch ID",
+        "placeholder": "Enter branch ID…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter name…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter name…"
         }
       }
     }

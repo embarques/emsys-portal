@@ -251,6 +251,7 @@ function ReservedInvoicePoolPanel() {
               columnLayout={columnLayout}
               minWidth={560}
               isPageDataPending={model.query.isFetching}
+              sortUnavailable
               selectable
               isRowSelectable={item => !model.selectionLocked && !item.claimed}
               selectedIds={model.selected.map(item => item.id)}

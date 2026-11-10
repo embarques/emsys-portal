@@ -185,6 +185,26 @@
       "arrivalDateRange": {
         "label": "Arrival range",
         "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter name…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter name…"
+        }
       }
     }
   }

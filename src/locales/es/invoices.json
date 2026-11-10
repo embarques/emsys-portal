@@ -315,7 +315,8 @@
       "modeCustom": "Ingresar el propio",
       "customLabel": "Número de factura personalizado",
       "assignedOnSave": "Se asignará al guardar",
-      "hint": "EMSYS generará un número de factura del rango de su empresa al guardar."
+      "hint": "EMSYS generará un número de factura del rango de su empresa al guardar.",
+      "turnOffHint": "Desactive la opción de número generado por el sistema para ingresar un número de factura personalizado"
     }
   },
   "wizard": {
@@ -555,6 +556,11 @@
       "scanned": "Escaneado"
     },
     "lineItems": {
+      "title": "Artículos de la factura",
+      "invoice": "Factura {{number}}",
+      "view": "Ver artículos",
+      "viewForInvoice": "Ver artículos de la factura {{number}}",
+      "loading": "Cargando artículos…",
       "showBarcodes": "Mostrar códigos de barras",
       "hideBarcodes": "Ocultar códigos de barras",
       "showBarcodesCount": "Ver {{count}} código de barras",
@@ -763,6 +769,10 @@
       "route": {
         "_id": {
           "label": "Ruta"
+        },
+        "name": {
+          "label": "Ruta",
+          "placeholder": "Escriba la ruta…"
         }
       },
       "employee": {
@@ -796,6 +806,46 @@
       "updatedAtRange": {
         "label": "Rango de actualización",
         "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "surcharge": {
+        "label": "Recargo",
+        "placeholder": "Escriba el monto…"
+      },
+      "registration": {
+        "label": "Registro",
+        "placeholder": "Escriba el registro…"
+      },
+      "receivedBy": {
+        "name": {
+          "label": "Recibido por",
+          "placeholder": "Escriba el nombre…"
+        }
+      },
+      "pickupEmployee": {
+        "name": {
+          "label": "Empleado de recogida",
+          "placeholder": "Escriba el nombre del empleado…"
+        }
+      },
+      "officeBranch": {
+        "name": {
+          "label": "Sucursal de oficina",
+          "placeholder": "Escriba la sucursal de oficina…"
+        }
+      },
+      "pickupSource": {
+        "label": "Origen de recogida",
+        "placeholder": "Escriba el origen de recogida…"
+      },
+      "id": {
+        "label": "ID de registro",
+        "placeholder": "Escriba el ID de registro…"
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Actualizado por",
+          "placeholder": "Escriba el nombre…"
+        }
       }
     },
     "options": {

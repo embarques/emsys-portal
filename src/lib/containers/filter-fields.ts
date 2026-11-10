@@ -111,4 +111,32 @@ export const CONTAINER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
   },
+  {
+    field: "createdAt",
+    label: "Created at",
+    operators: [...DATE_OPERATORS],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
+  },
+  {
+    field: "updatedAt",
+    label: "Updated at",
+    operators: [...DATE_OPERATORS],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
+  },
+  {
+    field: "createdBy.name",
+    label: "Created by",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter name…",
+  },
+  {
+    field: "updatedBy.name",
+    label: "Updated by",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter name…",
+  },
 ];

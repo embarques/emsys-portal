@@ -41,10 +41,10 @@ export function CreateLoanDialog(props: Props) {
   </Dialog>;
 }
 
-function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange }: Props) {
+export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange, continuous = false }: Props & { continuous?: boolean }) {
   const { t } = useTranslation();
   const text = (key: string) => t(`accounting.loans.createForm.${key}`);
-  const state = useCreateLoanForm(onSubmit, pending);
+  const state = useCreateLoanForm(onSubmit, pending, continuous);
   const { form, step, busy, closeoutReady, setCloseoutReady } = state;
   const { register, setValue, watch, formState: { errors } } = form;
   const values = watch();
@@ -59,11 +59,11 @@ function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSub
     {rows.map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words whitespace-pre-wrap text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}
   </dl>;
   return <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={event => { event.preventDefault(); void state.advance(); }}>
-    <div className="shrink-0 border-b px-5 py-4"><TransactionWizardStepper step={step} labels={stepLabels} disabled={busy} onSelectStep={state.setStep} /></div>
+    {!continuous ? <div className="shrink-0 border-b px-5 py-4"><TransactionWizardStepper step={step} labels={stepLabels} disabled={busy} onSelectStep={state.setStep} /></div> : null}
     <FormBody workflow isBusy={busy}>
-      <h2 ref={heading} tabIndex={-1} className="text-base font-semibold outline-none">{stepLabels[step - 1]}</h2>
+      {!continuous ? <h2 ref={heading} tabIndex={-1} className="text-base font-semibold outline-none">{stepLabels[step - 1]}</h2> : null}
       <fieldset disabled={busy} className="min-w-0 space-y-4">
-        <div className={step === 1 ? "space-y-4" : "hidden"}>
+        <div className={continuous || step === 1 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={User} title={text("steps.employee")} description={text("employeeHint")}>
             <div className="space-y-2">{requiredLabel("loan-employee", text("employee"))}
               <SearchableSelect id="loan-employee" aria-label={text("employee")} aria-invalid={Boolean(errors.employeeId)} value={values.employeeId ? String(values.employeeId) : ""}
@@ -73,7 +73,7 @@ function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSub
             </div>
           </FormSection>
         </div>
-        <div className={step === 2 ? "space-y-4" : "hidden"}>
+        <div className={continuous || step === 2 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={Banknote} title={text("accounts")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">{requiredLabel("loan-account", text("loanAccount"))}
@@ -120,18 +120,18 @@ function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSub
             </div>
           </FormSection>
         </div> : null}
-        <div className={step > 1 ? "" : "hidden"}>
+        <div className={continuous || step > 1 ? "" : "hidden"}>
           <LoanCloseoutPanel key={selectedAccount?.id ?? 0} branchId={selectedAccount?.branch?.id} branchCode={selectedAccount?.branch?.code} branchName={selectedAccount?.branch?.name} date={values.transactionDate} onReadyChange={setCloseoutReady} />
         </div>
       </fieldset>
     </FormBody>
     <div className="shrink-0 space-y-3 border-t bg-card px-5 py-4">
-      {errors.root?.server?.message ? <FormFooterNoticeMessage tone="error" message={errors.root.server.message} /> : step > 1 && !closeoutReady ? <FormFooterNoticeMessage tone="warning" message={text("closeoutRequired")} /> : null}
+      {errors.root?.server?.message ? <FormFooterNoticeMessage tone="error" message={errors.root.server.message} /> : (continuous || step > 1) && !closeoutReady ? <FormFooterNoticeMessage tone="warning" message={text("closeoutRequired")} /> : null}
       <div className="flex items-center justify-between gap-3">
-        <div>{step > 1 ? <Button type="button" variant="outline" disabled={busy} onClick={() => state.setStep(step - 1)}><ArrowLeft className="size-4" />{t("common.actions.previous")}</Button> : null}</div>
-        <div className="flex items-center gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>{t("common.actions.cancel")}</Button><Button type="submit" disabled={busy || (step > 1 && !closeoutReady)}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : step === 3 ? <Save className="size-4" /> : <ArrowRight className="size-4" />}
-          {busy ? t("common.actions.saving") : step === 3 ? text("title") : t("common.actions.next")}
+        <div>{!continuous && step > 1 ? <Button type="button" variant="outline" disabled={busy} onClick={() => state.setStep(step - 1)}><ArrowLeft className="size-4" />{t("common.actions.previous")}</Button> : null}</div>
+        <div className="flex items-center gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>{t("common.actions.cancel")}</Button><Button type="submit" disabled={busy || ((continuous || step > 1) && !closeoutReady)}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : continuous || step === 3 ? <Save className="size-4" /> : <ArrowRight className="size-4" />}
+          {busy ? t("common.actions.saving") : continuous || step === 3 ? text("title") : t("common.actions.next")}
         </Button></div>
       </div>
     </div>

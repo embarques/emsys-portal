@@ -17,6 +17,14 @@ export async function clearJournals(input: {requestId: string; ids: string[]}) {
   return apiClient.post<{data: {cleared: string[]; clearedAt: string}}>(API_ENDPOINTS.ACCOUNTING_JOURNAL_CLEARANCE, input);
 }
 
+export async function fetchIncomeStatementJournalCount(incomeStatementId: number, signal?: AbortSignal): Promise<number> {
+ const response = await apiClient.post<{total: number}>(`${endpoint}/search`, {
+  filters: [{field: "incomeStatement.id", operator: "eq", value: incomeStatementId}],
+  pagination: {page: 1, limit: 1}, sort: [{field: "createdAt", direction: "desc"}]
+ }, {signal});
+ return response.total;
+}
+
 export async function fetchOutstandingJournalCount(signal?: AbortSignal, queue: "reconciliation" | "clearance" = "reconciliation"): Promise<number> {
  const response = await apiClient.post<{total: number}>(`${endpoint}/search`, {
   filters: [{field: queue === "clearance" ? "clearanceStatus" : "reconciliationStatus", operator:"eq", value:"OUTSTANDING"}],

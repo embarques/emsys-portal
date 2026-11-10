@@ -74,11 +74,12 @@ export function BranchForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody isBusy={isSubmitting}>
-        <FormSection icon={Building2} title={t("branches.form.sections.branch")}>
-          <div className="space-y-2.5">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="min-w-0 w-full flex-1 space-y-1">
+      <FormBody workflow isBusy={isSubmitting}>
+        <div className="grid items-start gap-5 @4xl:grid-cols-2 @6xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <FormSection variant="card" icon={Building2} title={`01 · ${t("branches.form.sections.branch")}`} description={t("branches.form.design.branch")}>
+          <div className="space-y-4">
+            <div className="grid gap-4 @4xl:grid-cols-2">
+              <div className="min-w-0 space-y-1">
                 <Label htmlFor="name">
                   {t("branches.form.fields.name")} <span className="text-destructive">*</span>
                 </Label>
@@ -89,13 +90,13 @@ export function BranchForm({
                   required
                 />
               </div>
-              <div className="min-w-0 flex-1 space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label htmlFor="code">{t("branches.form.fields.code")}</Label>
                 <Input id="code" value={values.code} onChange={(event) => updateField("code", event.target.value)} />
               </div>
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="grid gap-4 @4xl:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="type">{t("branches.form.fields.type")}</Label>
                 <Input id="type" value={values.type} onChange={(event) => updateField("type", event.target.value)} />
@@ -118,20 +119,24 @@ export function BranchForm({
         </FormSection>
 
         <FormSection
+          variant="card"
+          className="@6xl:col-start-2 @6xl:row-span-2 @6xl:row-start-1"
           icon={MapPin}
-          title={t("branches.form.sections.address")}
+          title={`02 · ${t("branches.form.sections.address")}`}
+          description={t("branches.form.design.address")}
           action={
             <button
               type="button"
               className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              aria-pressed={manualAddressEntry}
               onClick={() => setManualAddressEntry((current) => !current)}
             >
               {manualAddressEntry ? t("common.address.useGoogle") : t("common.address.useManual")}
             </button>
           }
         >
-          <div className="space-y-2.5">
-            <div className="flex items-end gap-2">
+          <div className="space-y-4">
+            <div className="flex items-end gap-3">
               <div className="min-w-0 flex-1 space-y-1">
                 <Label htmlFor="address-address1" className="text-xs text-muted-foreground">
                   {t("branches.form.fields.address1")}
@@ -149,7 +154,7 @@ export function BranchForm({
                   manualEntryTogglePosition="none"
                 />
               </div>
-              <div className="w-24 shrink-0 space-y-1 sm:w-32">
+              <div className="w-24 shrink-0 space-y-1">
                 <Label htmlFor="address-apartment" className="text-xs text-muted-foreground">
                   {t("branches.form.fields.apartment")}
                 </Label>
@@ -162,6 +167,9 @@ export function BranchForm({
             </div>
 
             <div className="space-y-1">
+              <Label htmlFor="address-address2" className="text-xs text-muted-foreground">
+                {t("branches.form.fields.address2")}
+              </Label>
               <Input
                 id="address-address2"
                 value={values.address.address2}
@@ -171,7 +179,7 @@ export function BranchForm({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="address-city" className="text-xs text-muted-foreground">
                   {t("branches.form.fields.city")}
@@ -224,21 +232,21 @@ export function BranchForm({
           </div>
         </FormSection>
 
-        <FormSection icon={Phone} title={t("branches.form.sections.contact")}>
+        <FormSection variant="card" className="@4xl:col-start-1 @4xl:row-start-2" icon={Phone} title={`03 · ${t("branches.form.sections.contact")}`} description={t("branches.form.design.contact")}>
           <div className="space-y-1">
-            <Label>{t("branches.form.fields.phones")}</Label>
             <PhoneListEditor
               idPrefix="branch-phone"
               compact
+              listClassName="[&>div>div:first-child]:w-32 [&>div>div:first-child]:sm:w-32 max-md:[&>div]:flex-wrap max-md:[&>div>div:first-child]:basis-full"
               phones={values.phones}
               onChange={(phones) => updateField("phones", phones)}
             />
           </div>
         </FormSection>
 
-        <FormSection icon={Settings} title={t("branches.form.sections.settings")}>
-          <div className="space-y-2.5">
-            <div className="grid gap-2.5 sm:grid-cols-2">
+        <FormSection variant="card" className="@6xl:col-start-3 @6xl:row-span-2 @6xl:row-start-1" icon={Settings} title={`04 · ${t("branches.form.sections.settings")}`} description={t("branches.form.design.settings")}>
+          <div className="space-y-3">
+            <div className="grid gap-4 @4xl:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="settings-labelPrefix">{t("branches.form.fields.labelPrefix")}</Label>
                 <Input
@@ -258,7 +266,7 @@ export function BranchForm({
               </div>
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="grid gap-4 @4xl:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="settings-defaultLabelStatus">{t("branches.form.fields.defaultLabelStatus")}</Label>
                 <Input
@@ -279,7 +287,7 @@ export function BranchForm({
               </div>
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="grid gap-4 @4xl:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="settings-s3Profile">{t("branches.form.fields.s3Profile")}</Label>
                 <Input
@@ -298,7 +306,7 @@ export function BranchForm({
               </div>
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="grid gap-4 @4xl:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="settings-s3BucketFolder">{t("branches.form.fields.s3BucketFolder")}</Label>
                 <Input
@@ -322,7 +330,7 @@ export function BranchForm({
               </div>
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="grid gap-3">
               <SwitchField
                 id="settings-invoiceCreatedThruIncomeStatement"
                 label={<>{t("branches.form.fields.invoiceCreatedThruIncomeStatement")}: {t(values.settings.invoiceCreatedThruIncomeStatement ? "branches.enums.boolean.true" : "branches.enums.boolean.false")}</>}
@@ -338,6 +346,7 @@ export function BranchForm({
             </div>
           </div>
         </FormSection>
+        </div>
       </FormBody>
 
       <FormFooter

@@ -109,8 +109,7 @@
       "invalidDate": "Use a valid YYYY-MM-DD date or RFC3339 timestamp."
     },
     "design": {
-      "employee": "Confirm the employee’s name, department, title, and employment details.",
-      "branch": "Choose the branch where this employee works.",
+      "employee": "Confirm the employee’s name, branch, department, title, and employment details.",
       "address": "Search for an address or switch to manual entry.",
       "contact": "Add contact numbers and email. Use the star to choose the main phone number."
     },
@@ -120,7 +119,6 @@
     "notFound": "This employee could not be found.",
     "sections": {
       "employee": "Employee",
-      "branch": "Branch",
       "address": "Address",
       "contact": "Contact"
     },
@@ -208,7 +206,16 @@
         "code": { "label": "Branch", "placeholder": "Select branch…" }
       },
       "cost": { "label": "Cost", "placeholder": "Enter amount…" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" }
+      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
+      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
+      "startDate": { "label": "Start date", "placeholder": "YYYY-MM-DD" },
+      "endDate": { "label": "End date", "placeholder": "YYYY-MM-DD" },
+      "totalLoanGiven": { "label": "Total loans given", "placeholder": "Enter amount…" },
+      "totalPaymentReceived": { "label": "Total payments received", "placeholder": "Enter amount…" },
+      "loanAmountOwed": { "label": "Loan balance owed", "placeholder": "Enter amount…" },
+      "user": {
+        "name": { "label": "Linked user", "placeholder": "Enter user name…" }
+      }
     }
   }
 }

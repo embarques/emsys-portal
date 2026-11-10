@@ -9,6 +9,7 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { InventoryDocumentLinesEditor } from "@/components/inventory/inventory-document-lines-editor";
 import { InventoryHolderSelect } from "@/components/inventory/inventory-holder-select";
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
+import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -228,7 +229,6 @@ export function InventoryDispatchForm({
               lines={values.lines}
               items={itemChoices}
               availableByItem={availableByItem}
-              listClassName="@4xl:max-h-[max(5rem,calc(90vh-38rem))] @4xl:overflow-y-auto"
               createLine={createEmptyDispatchLine}
               onChange={(lines) => patch({ lines })}
             />
@@ -245,7 +245,7 @@ export function InventoryDispatchForm({
       </form>
 
       <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
+        <DialogContent className={`${INVENTORY_FORM_DIALOG_CLASS_NAME} z-[70]`}>
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("inventory.form.addItemTitle")}</DialogTitle>
           </DialogHeader>

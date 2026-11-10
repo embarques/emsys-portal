@@ -58,6 +58,20 @@ export const USER_ACTIVITY_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter record ID…",
   },
   {
+    field: "activityId",
+    label: "Activity ID",
+    operators: ["eq", "neq"],
+    valueType: "text",
+    placeholder: "Enter activity ID…",
+  },
+  {
+    field: "quantity",
+    label: "Quantity",
+    operators: ["eq", "neq", "gte", "lte"],
+    valueType: "text",
+    placeholder: "0",
+  },
+  {
     field: "timestamp",
     label: "Date",
     operators: ["gte", "lte"],
@@ -74,5 +88,6 @@ export const USER_ACTIVITY_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
 ];
 
 export const expandUserActivityFilterNode = createTypedFilterExpander({
+  numericFields: ["quantity"],
   rangeFields: { timestampRange: "timestamp" },
 });
