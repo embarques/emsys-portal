@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -38,10 +38,11 @@ import {
 import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import { cn } from "@/lib/utils";
 
-export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
+export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBusyChange }: {
   dispatch: PendingInventoryDispatch;
   canReconcile: boolean;
   onClose: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
@@ -76,6 +77,11 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
   const dateTime = (iso?: string) => iso ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso)) : "—";
   const busy = form.formState.isSubmitting || reconcile.isPending;
   const confirmationPending = confirmReconciliation.isPending || rejectReconciliation.isPending;
+  const anyPending = busy || confirmationPending;
+  useEffect(() => {
+    onBusyChange?.(anyPending);
+  }, [anyPending, onBusyChange]);
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
   const nothingMessage = errors.lines?.message ?? errors.lines?.root?.message;
   const hasLoss = lines.some((line) => LOSS_OUTCOMES.some((outcome) => (readOutcomeQuantity(line[outcome]) ?? 0) > 0));
   const notesRequired = hasLoss || creditMinor({ lines, payments, salesRecordedAtDispatch: dispatch.salesRecordedAtDispatch }) > 0;

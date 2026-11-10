@@ -27,7 +27,11 @@ const DATE_FILTERS = ["from", "through"] as const;
 const COLUMNS = ["dispatchedAt", "holder", "responsible", "dailyRoute", "items", "dispatched", "awaiting", "outstanding", "age", "actions"] as const;
 const VISIBLE_ITEMS = 2;
 
-export function PendingInventoryDispatchesPanel() {
+export function PendingInventoryDispatchesPanel({ presentation = "page", onBusyChange }: {
+  presentation?: "page" | "inline";
+  /** Reports while a reconciliation is saving so a host (e.g. the add-transaction wizard) can lock navigation. */
+  onBusyChange?: (busy: boolean) => void;
+} = {}) {
   const { t } = useTranslation();
   const { companyId, hasPermission } = useAuth();
   const canReconcile = hasPermission(PERMISSIONS.inventoryDispatchesReconcile.name, PERMISSIONS.inventoryDispatchesReconcile.resourceType);
@@ -55,7 +59,7 @@ export function PendingInventoryDispatchesPanel() {
     const shown = pending.slice(0, VISIBLE_ITEMS).map((line) => `${line.item.name} (${line.outstandingQuantity})`).join(", ");
     return pending.length > VISIBLE_ITEMS ? `${shown} ${text("moreItems", { count: pending.length - VISIBLE_ITEMS })}` : shown;
   }
-  return <div className="space-y-6">
+  return <div className={presentation === "inline" ? "space-y-4" : "space-y-6"}>
     {/* Flex, not grid: SearchableSelect's full-height wrapper overflows bottom-aligned grid cells. */}
     <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4">
       <div className="min-w-0 flex-[2_1_14rem] space-y-2"><Label htmlFor="pending-inventory-holder">{text("holder")}</Label><SearchableSelect id="pending-inventory-holder" value={filters.holder || ALL_VALUE} onValueChange={(value) => filter("holder", value === ALL_VALUE ? "" : value)} options={holderOptions} loading={holdersQuery.isLoading} placeholder={text("selectHolder")} searchPlaceholder={text("searchHolders")} emptyMessage={text("noHoldersFound")} mobileSheet /></div>
@@ -83,6 +87,6 @@ export function PendingInventoryDispatchesPanel() {
       {query.isFetching ? <p role="status" className="text-sm text-muted-foreground">{text("loading")}</p> : null}
       <div className="flex items-center justify-end gap-3"><Button variant="outline" disabled={page <= 1 || query.isFetching} onClick={() => setPage((value) => value - 1)}>{text("previous")}</Button><span>{page}</span><Button variant="outline" disabled={page * PENDING_DISPATCHES_PAGE_SIZE >= (query.data?.total ?? 0) || query.isFetching} onClick={() => setPage((value) => value + 1)}>{text("next")}</Button></div>
     </> : null}
-    {selected ? <ReconcileDispatchDialog key={`${companyId}:${selected.id}`} dispatch={selected} canReconcile={canReconcile} onClose={() => setSelection(null)} /> : null}
+    {selected ? <ReconcileDispatchDialog key={`${companyId}:${selected.id}`} dispatch={selected} canReconcile={canReconcile} onClose={() => setSelection(null)} onBusyChange={onBusyChange} /> : null}
   </div>;
 }
