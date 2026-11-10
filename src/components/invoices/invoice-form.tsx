@@ -346,7 +346,7 @@ export function InvoiceForm({
     { enabled: isEmployeePickupSource },
   );
   const pickupRouteOptions = useMemo(
-    () => buildActiveRouteAssignmentOptions(pickupRoutes, t, { order: "created" }),
+    () => buildActiveRouteAssignmentOptions(pickupRoutes, t),
     [pickupRoutes, t],
   );
   const pickupSourceEmployees = useMemo(() => {

@@ -59,7 +59,7 @@ export function RecordLoanPaymentDialog(props: Props) {
   );
 }
 
-function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange }: Props) {
+export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange }: Props) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.paymentForm.${key}`, values);
   const schema = useMemo(() => createLoanPaymentSchema(t), [t]);

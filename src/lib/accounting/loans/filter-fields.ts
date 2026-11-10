@@ -65,4 +65,25 @@ export const LOAN_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     valueType: "text",
     placeholder: "Enter amount...",
   },
+  {
+    field: "description",
+    label: "Description",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter description…",
+  },
+  {
+    field: "referenceNumber",
+    label: "Reference number",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter reference…",
+  },
+  {
+    field: "branch.name",
+    label: "Branch name",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter branch name…",
+  },
 ];

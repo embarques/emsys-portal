@@ -145,6 +145,7 @@ export function CustomerViewSheet({
             <FlippableCustomerAddresses
               customer={resolvedCustomer}
               isLoading={detailQuery.isFetching}
+              onBeforeAddressEdit={() => onOpenChange(false)}
             />
           ) : null}
 

@@ -27,6 +27,14 @@ export function useCustomerFilterFields(): TableFilterFieldDefinition[] {
 
         return {
           ...field,
+          ...(field.field === "active" && field.options
+            ? {
+                options: field.options.map((option) => ({
+                  ...option,
+                  label: t(option.value === "true" ? "common.statuses.active" : "common.statuses.inactive"),
+                })),
+              }
+            : {}),
           label: label !== labelKey ? label : field.label,
           ...(placeholder && placeholder !== placeholderKey
             ? { placeholder }

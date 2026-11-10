@@ -112,7 +112,8 @@ export type DailyRouteAttribution = {
 export type DailyIncomeJournal = ApiTableRecord & {
  version?: number; transactionStatus?: "ACTIVE"|"VOIDED"|"REVERSED";voidedAt?:string|null;
   id: string;
-  reconciliationStatus?: "OUTSTANDING" | "RECONCILED";
+  /** NOT_REQUIRED applies to voided/reversed entries. */
+  reconciliationStatus?: "NOT_REQUIRED" | "OUTSTANDING" | "RECONCILED";
   /** Independent settlement status; NOT_REQUIRED applies to non-clearable transactions. */
   clearanceStatus?: "NOT_REQUIRED" | "OUTSTANDING" | "CLEARED";
   clearedAt?: string | null;

@@ -77,6 +77,7 @@ export function CustomerFormWorkspace({
         const nextCustomer = await updateCustomerMutation.mutateAsync({
           customerId: editingCustomer.id,
           values,
+          originalValues: customerToFormValues(editingCustomer),
         });
         notifyUpdated(t("customers.entity"), nextCustomer.name);
         closeFormTabAndReturn(tabId);

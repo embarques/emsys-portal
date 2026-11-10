@@ -11,6 +11,18 @@
     "selectedCount": "Selected:",
     "clearSelected": "Mark cleared",
     "sameMethod": "Select up to 200 eligible transactions with the same payment method. Only transactions the API authorizes for clearance can be cleared.",
+    "blocked": {
+      "inactive": "This transaction was voided or reversed, so it can't be cleared.",
+      "notOutstanding": "This transaction isn't pending clearance.",
+      "notAuthorized": "The API hasn't authorized clearing this transaction.",
+      "paymentMethod": "Only {{method}} transactions can be added to the current selection.",
+      "limit": "You can clear up to 200 transactions at a time.",
+      "noMethod": "no payment method"
+    },
+    "confirmList": {
+      "caption": "Transactions to mark as cleared",
+      "externalReference": "External ref / Check #"
+    },
     "confirmTitle": "Mark selected transactions as cleared?",
     "confirmDescription": "Confirm that these payments have settled or been verified through their financial channel. This records settlement only; reconciliation history, invoice balances and closeout amounts stay unchanged. It does not issue a bank refund or reversal.",
     "pendingAlert": "{{count}} transactions pending clearance",
@@ -151,6 +163,25 @@
         "updatedAtRange": {
           "label": "Updated at range",
           "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "Enter description…"
+        },
+        "parentAccount": {
+          "name": {
+            "label": "Parent account",
+            "placeholder": "Enter parent account…"
+          }
+        },
+        "systemAccount": {
+          "label": "System account"
+        },
+        "default": {
+          "label": "Default account"
+        },
+        "branchAccount": {
+          "label": "Branch account"
         }
       }
     }
@@ -173,6 +204,10 @@
           "number": {
             "label": "Invoice #",
             "placeholder": "Enter invoice number…"
+          },
+          "balance": {
+            "label": "Invoice balance",
+            "placeholder": "0.00"
           }
         },
         "refNumber": {
@@ -218,6 +253,20 @@
             "label": "Updated by",
             "placeholder": "Enter updater name…"
           }
+        },
+        "updatedAt": {
+          "label": "Updated at",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "clearedBy": {
+          "name": {
+            "label": "Cleared by",
+            "placeholder": "Enter name…"
+          }
+        },
+        "id": {
+          "label": "Record ID",
+          "placeholder": "Enter record ID…"
         }
       }
     }
@@ -483,6 +532,10 @@
           "number": {
             "label": "Invoice #",
             "placeholder": "Enter invoice number…"
+          },
+          "balance": {
+            "label": "Invoice balance",
+            "placeholder": "0.00"
           }
         },
         "refNumber": {
@@ -528,6 +581,20 @@
             "label": "Updated by",
             "placeholder": "Enter updater name…"
           }
+        },
+        "updatedAt": {
+          "label": "Updated at",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "clearedBy": {
+          "name": {
+            "label": "Cleared by",
+            "placeholder": "Enter name…"
+          }
+        },
+        "id": {
+          "label": "Record ID",
+          "placeholder": "Enter record ID…"
         }
       }
     }
@@ -734,10 +801,24 @@
         "selectType": "Select type",
         "enterDetails": "Enter details"
       },
+      "changeType": "Change type",
       "typeSelector": {
         "title": "Choose a transaction type",
         "description": "Select the type of transaction you want to record.",
         "ariaLabel": "Transaction type",
+        "options": {
+          "INITIAL-PAYMENT": "New invoice",
+          "PAYMENT": "Invoice payment",
+          "DISCOUNT": "Discount",
+          "SURCHARGE": "Surcharge",
+          "SALES": "Income",
+          "EXPENSE": "Expense",
+          "INVENTORY": "Inventory movement",
+          "INVENTORY-PAYMENT": "Inventory payment",
+          "LOAN-ISSUE": "New loan",
+          "LOAN-PAYMENT": "Loan payment",
+          "TRANSFER": "Transfer between accounts"
+        },
         "groups": {
           "invoices": "Invoices",
           "incomeExpenses": "Income & expenses",
@@ -1329,6 +1410,58 @@
       "debit": "Debit · Loan account",
       "credit": "Credit · Source asset account",
       "closeoutRequired": "An active Daily Income closeout is required for the selected loan account’s branch."
+    },
+    "filters": {
+      "fields": {
+        "openedAt": {
+          "label": "Opened",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "openedAtRange": {
+          "label": "Opened range",
+          "placeholder": "2026-06-13 to 2026-08-14"
+        },
+        "lastActivityAt": {
+          "label": "Last activity",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "lastActivityAtRange": {
+          "label": "Last activity range",
+          "placeholder": "2026-06-13 to 2026-08-14"
+        },
+        "employee": {
+          "name": {
+            "label": "Employee",
+            "placeholder": "Enter employee name…"
+          }
+        },
+        "status": {
+          "label": "Status"
+        },
+        "loanAccount": {
+          "id": {
+            "label": "Loan account"
+          }
+        },
+        "principalAmount": {
+          "label": "Principal amount",
+          "placeholder": "Enter amount..."
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "Enter description…"
+        },
+        "referenceNumber": {
+          "label": "Reference number",
+          "placeholder": "Enter reference…"
+        },
+        "branch": {
+          "name": {
+            "label": "Branch name",
+            "placeholder": "Enter branch name…"
+          }
+        }
+      }
     }
   },
   "financialActivity": {
@@ -1550,6 +1683,7 @@
     "description": "Transactions awaiting verification of money or supporting documents across all closeouts. Reconciliation records accountability; clearance separately records financial settlement.",
     "createdAt": "Created at",
     "status": "Reconciliation",
+    "NOT_REQUIRED": "Not required",
     "OUTSTANDING": "Outstanding",
     "RECONCILED": "Reconciled",
     "selectedTotals": "Selected transactions",
@@ -1658,6 +1792,10 @@
           "label": "Branch ID",
           "placeholder": "Branch ID"
         }
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Description"
       }
     },
     "batchComplete": "All selected transactions are confirmed.",

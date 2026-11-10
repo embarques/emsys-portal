@@ -3,6 +3,7 @@
 import { Loader2, MapPin } from "lucide-react";
 
 import { AddressActionRow } from "@/components/addresses/address-action-row";
+import { CustomerUnverifiedAddressAction } from "@/components/customers/customer-unverified-address-action";
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import type { Customer } from "@/lib/customers/types";
 import {
@@ -16,11 +17,13 @@ import { useTranslation } from "@/lib/i18n";
 type FlippableCustomerAddressesProps = {
   customer: Customer;
   isLoading?: boolean;
+  onBeforeAddressEdit?: () => void;
 };
 
 export function FlippableCustomerAddresses({
   customer,
   isLoading = false,
+  onBeforeAddressEdit,
 }: FlippableCustomerAddressesProps) {
   const { t } = useTranslation();
   const orderedAddresses = orderAddressesForDisplay(customer);
@@ -46,6 +49,14 @@ export function FlippableCustomerAddresses({
             key={address.id ?? `${customer.id}-address-${index}`}
             label={t(getAddressLabelKey(address, index))}
             address={address}
+            labelAction={
+              <CustomerUnverifiedAddressAction
+                customer={customer}
+                address={address}
+                label={t(getAddressLabelKey(address, index))}
+                onBeforeEdit={onBeforeAddressEdit}
+              />
+            }
           />
         ))
       )}

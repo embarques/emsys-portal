@@ -182,7 +182,16 @@
         "id": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
       },
       "active": { "label": "Activo", "placeholder": "Seleccionar estado…" },
-      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" }
+      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
+      "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
+      "startTime": { "label": "Inicio de turno", "placeholder": "09:00" },
+      "endTime": { "label": "Fin de turno", "placeholder": "09:00" },
+      "createdBy": {
+        "name": { "label": "Creado por", "placeholder": "Escriba el nombre…" }
+      },
+      "updatedBy": {
+        "name": { "label": "Actualizado por", "placeholder": "Escriba el nombre…" }
+      }
     }
   }
 }

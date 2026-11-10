@@ -59,6 +59,7 @@ import {
   resolveCustomerBranchId,
   normalizeCustomerAddresses,
   normalizeCustomerFormValues,
+  isCustomerAddressOnlyEdit,
   getCustomerPrimaryCoreAddress,
   coreAddressHasContent,
   validateCustomerFormValues,
@@ -175,13 +176,14 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
-const CUSTOMER_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["branch.id", "createdBy.id", "updatedBy.id"]);
+const CUSTOMER_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["branch.id", "createdBy.id", "updatedBy.id", "accountBalance"]);
+const CUSTOMER_BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
 
-/** Coerces numeric customer leaf fields to JSON numbers (branch and user ids are numeric). */
+/** Coerces numeric/boolean customer leaf fields to JSON values (branch and user ids are numeric). */
 function coerceCustomerNumericNode(node: ApiSearchFilterNode): ApiSearchFilterNode {
   if (isApiSearchFilter(node)) {
-    if (!CUSTOMER_NUMERIC_FIELDS.has(node.field)) return node;
-    return coerceTypedLeafFilter(node, { numericFields: CUSTOMER_NUMERIC_FIELDS }) ?? node;
+    if (!CUSTOMER_NUMERIC_FIELDS.has(node.field) && !CUSTOMER_BOOLEAN_FIELDS.has(node.field)) return node;
+    return coerceTypedLeafFilter(node, { numericFields: CUSTOMER_NUMERIC_FIELDS, booleanFields: CUSTOMER_BOOLEAN_FIELDS }) ?? node;
   }
 
   return {
@@ -812,13 +814,21 @@ export async function createCustomer(values: CustomerFormValues): Promise<Custom
 export async function updateCustomer(
   customerId: string,
   values: CustomerFormValues,
+  originalValues?: CustomerFormValues,
 ): Promise<Customer> {
   const syncedValues = normalizeCustomerFormValues(values);
-  const branch = await resolveCustomerWriteBranch(syncedValues.branch);
+  validateCustomerFormValues(syncedValues);
+  const headers = mutationVersionHeaders(values.version);
+  const addressOnly = originalValues?.id === customerId && isCustomerAddressOnlyEdit(syncedValues, originalValues);
+  // PUT merges supplied fields. Address-only edits must not resubmit unchanged
+  // names/phones, which can conflict with legacy duplicate customer records.
+  const payload = addressOnly
+    ? { id: customerId, addresses: buildCustomerAddressesWritePayload(syncedValues, false) }
+    : buildCustomerWritePayload({ ...syncedValues, branch: await resolveCustomerWriteBranch(syncedValues.branch) }, { customerId });
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.CUSTOMERS}/${customerId}`,
-    buildCustomerWritePayload({ ...syncedValues, branch }, { customerId }),
-    {headers: mutationVersionHeaders(values.version)},
+    payload,
+    { headers },
   );
 
   assertMutationSuccess(response, "Unable to update customer.");

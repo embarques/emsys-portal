@@ -62,6 +62,7 @@ import { CreateLoanDialog } from "@/components/accounting/create-loan-dialog";
 import { RecordLoanPaymentDialog } from "@/components/accounting/record-loan-payment-dialog";
 import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -102,6 +103,10 @@ function loanStatusClassName(status: Loan["status"]) {
     default:
       return "border-transparent bg-muted text-muted-foreground";
   }
+}
+
+function localizeLoanFilterOption(field: string, option: { value: string; label: string }, t: (key: string) => string) {
+  return field === "status" ? { ...option, label: t(`accounting.loans.status.${option.value}`) } : option;
 }
 
 function accountLabel(account: { displayName?: string; name: string }) {
@@ -444,6 +449,11 @@ export function LoansWorkspace() {
   const [paymentHistoryLoan, setPaymentHistoryLoan] = useState<Loan | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query, 250);
   const { sort, onSortChange } = useTableSort(DEFAULT_LOAN_LIST_PARAMS.sort, () => setPage(1));
+  const loanFilterFields = useLocalizedFilterFields(
+    LOAN_TABLE_FILTER_FIELDS,
+    "accounting.loans.filters.fields",
+    localizeLoanFilterOption,
+  );
   const search = createApiListTextSearch(debouncedQuery);
   const listParams = useMemo(
     () => ({
@@ -506,7 +516,7 @@ export function LoansWorkspace() {
       ? loanTransactionsQuery.error.message
       : paymentLabels.loadError
     : null;
-  const activeFilterCount = countCompleteFilterRows(filters.rows, LOAN_TABLE_FILTER_FIELDS);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, loanFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const employees = employeesQuery.data?.items ?? [];
   const accounts = accountsQuery.data?.items ?? [];
@@ -607,6 +617,7 @@ export function LoansWorkspace() {
       {
         id: "actions",
         label: t("accounting.loans.columns.actions"),
+        sortable: false,
         stopRowClick: true,
         renderCell: (loan) => (
           <Button
@@ -797,7 +808,7 @@ export function LoansWorkspace() {
                     presets={{
                       storageKey: "accounting-loans",
                       rows: filters.rows,
-                      fields: LOAN_TABLE_FILTER_FIELDS,
+                      fields: loanFilterFields,
                       onApply: (rows) => {
                         setFilters((current) => ({ ...current, rows }));
                         setPage(1);
@@ -808,7 +819,7 @@ export function LoansWorkspace() {
                     <TableAdvancedFilterBuilder
                       open={filtersOpen}
                       rows={filters.rows}
-                      fields={LOAN_TABLE_FILTER_FIELDS}
+                      fields={loanFilterFields}
                       dynamicOptions={{ loanAccounts: loanAccountFilterOptions }}
                       onChange={(rows) => {
                         setFilters((current) => ({ ...current, rows }));
@@ -1075,7 +1086,7 @@ export function LoansWorkspace() {
                       <TableAdvancedFilterBuilder
                         open={filtersOpen}
                         rows={filters.rows}
-                        fields={LOAN_TABLE_FILTER_FIELDS}
+                        fields={loanFilterFields}
                         dynamicOptions={{ loanAccounts: loanAccountFilterOptions }}
                         onChange={(rows) => {
                           setFilters((current) => ({ ...current, rows }));

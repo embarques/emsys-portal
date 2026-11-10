@@ -15,8 +15,12 @@ import {
 import {
   useNavAlertCount,
   useNavAlertLabel,
+  useNavCount,
+  useNavCountLabel,
   useNavItemsAlertCount,
   useNavItemsAlertLabel,
+  useNavItemsCount,
+  useNavItemsCountLabel,
 } from "@/lib/navigation/use-nav-alert-count";
 import {
   useNavigationSections,
@@ -59,23 +63,27 @@ function NavLeafLink({
 }) {
   const alertCount = useNavAlertCount(item.href);
   const alertLabel = useNavAlertLabel(item.href, alertCount);
+  const count = useNavCount(item.href);
+  const countLabel = useNavCountLabel(item.href, count);
 
   if (!item.href) return null;
 
   const active = navigationItemMatchesPath(item, pathname);
   const Icon = item.icon;
+  const badgeLabels = [alertLabel, countLabel].filter(Boolean).join(", ");
 
   return (
     <WorkspaceNavLink
       href={item.href}
       label={item.label}
       onClick={onNavigate}
-      aria-label={alertLabel ? `${item.label}, ${alertLabel}` : item.label}
+      aria-label={badgeLabels ? `${item.label}, ${badgeLabels}` : item.label}
       className={cn(navRowClassName(active), className)}
     >
       <Icon className={navIconClassName} />
       <span className={navLabelClassName}>{item.label}</span>
       <NavAlertBadge count={alertCount} label={alertLabel} />
+      <NavAlertBadge count={count} label={countLabel} tone="count" />
     </WorkspaceNavLink>
   );
 }
@@ -88,6 +96,8 @@ function NavExpandRow({
   onToggle,
   alertCount = 0,
   alertLabel = "",
+  count = 0,
+  countLabel = "",
 }: {
   label: string;
   icon?: TranslatedNavigationItem["icon"];
@@ -96,21 +106,25 @@ function NavExpandRow({
   onToggle: () => void;
   alertCount?: number;
   alertLabel?: string;
+  count?: number;
+  countLabel?: string;
 }) {
   const showAlert = !open && alertCount > 0;
-  const visibleAlertLabel = showAlert ? alertLabel : "";
+  const showCount = !open && count > 0;
+  const visibleLabels = [showAlert ? alertLabel : "", showCount ? countLabel : ""].filter(Boolean).join(", ");
 
   return (
     <button
       type="button"
       aria-expanded={open}
-      aria-label={visibleAlertLabel ? `${label}, ${visibleAlertLabel}` : undefined}
+      aria-label={visibleLabels ? `${label}, ${visibleLabels}` : undefined}
       onClick={onToggle}
       className={navRowClassName(active)}
     >
       {Icon ? <Icon className={navIconClassName} /> : null}
       <span className={navLabelClassName}>{label}</span>
-      {showAlert ? <NavAlertBadge count={alertCount} label={visibleAlertLabel} /> : null}
+      {showAlert ? <NavAlertBadge count={alertCount} label={alertLabel} /> : null}
+      {showCount ? <NavAlertBadge count={count} label={countLabel} tone="count" /> : null}
       {open ? (
         <ChevronDown className={navChevronClassName} />
       ) : (
@@ -132,6 +146,8 @@ function NavSubmenu({
   const hasActiveChild = submenuHasActiveRoute(item, pathname);
   const alertCount = useNavItemsAlertCount(item.children ?? []);
   const alertLabel = useNavItemsAlertLabel(item.children ?? [], alertCount);
+  const count = useNavItemsCount(item.children ?? []);
+  const countLabel = useNavItemsCountLabel(item.children ?? [], count);
   const [open, setOpen] = React.useState(hasActiveChild);
 
   React.useEffect(() => {
@@ -165,6 +181,8 @@ function NavSubmenu({
         active={hasActiveChild && !open}
         alertCount={alertCount}
         alertLabel={alertLabel}
+        count={count}
+        countLabel={countLabel}
         onToggle={() => setOpen((current) => !current)}
       />
 
@@ -207,6 +225,8 @@ function NavGroup({
 }) {
   const alertCount = useNavItemsAlertCount(group.items);
   const alertLabel = useNavItemsAlertLabel(group.items, alertCount);
+  const count = useNavItemsCount(group.items);
+  const countLabel = useNavItemsCountLabel(group.items, count);
 
   if (isFlatNavigationGroup(group.items)) {
     const onlyItem = group.items[0];
@@ -238,6 +258,8 @@ function NavGroup({
         active={isParentSelected}
         alertCount={alertCount}
         alertLabel={alertLabel}
+        count={count}
+        countLabel={countLabel}
         onToggle={onToggle}
       />
 

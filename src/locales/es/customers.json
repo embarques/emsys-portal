@@ -62,6 +62,7 @@
     "directions": "Cómo llegar",
     "verified": "Verificada",
     "unverified": "No verificada",
+    "editUnverifiedAria": "Editar dirección no verificada: {{label}} de {{name}}",
     "unverifiedNotice": {
       "title": "La dirección de este cliente no está verificada.",
       "description": "Actualícela con una dirección sugerida por Google para confirmar la ubicación.",
@@ -323,6 +324,13 @@
           "label": "Sucursal",
           "placeholder": "Seleccione sucursal…"
         }
+      },
+      "accountBalance": {
+        "label": "Balance de cuenta",
+        "placeholder": "0.00"
+      },
+      "active": {
+        "label": "Estado"
       }
     }
   }

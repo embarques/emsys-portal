@@ -9,7 +9,8 @@
       "hash": "#",
       "user": "ID de usuario",
       "customer": "ID de cliente",
-      "account": "N.º de cuenta"
+      "account": "N.º de cuenta",
+      "branch": "ID de sucursal"
     },
     "name": {
       "default": "Nombre",
@@ -114,7 +115,10 @@
     "role.id": "ID de rol",
     "role.name": "Rol",
     "user.id": "ID de usuario",
-    "user.name": "Usuario",
+    "user.name": {
+      "default": "Usuario",
+      "linked": "Usuario vinculado"
+    },
     "employee.id": "ID de empleado",
     "employee.name": {
       "default": "Empleado",
@@ -241,7 +245,35 @@
     "receivedAt": "Recibido",
     "receivedAtRange": "Rango de recepción",
     "dispatchedAt": "Despachado",
-    "dispatchedAtRange": "Rango de despacho"
+    "dispatchedAtRange": "Rango de despacho",
+    "clearedBy.name": "Liquidado por",
+    "parentAccount.name": "Cuenta principal",
+    "systemAccount": "Cuenta del sistema",
+    "default": "Cuenta predeterminada",
+    "branchAccount": "Cuenta de sucursal",
+    "referenceNumber": "Número de referencia",
+    "vehicle.name": "Vehículo",
+    "activityId": "ID de actividad",
+    "quantity": "Cantidad",
+    "lines.itemId": "Artículo",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de salida",
+    "totalLoanGiven": "Total de préstamos otorgados",
+    "totalPaymentReceived": "Total de pagos recibidos",
+    "loanAmountOwed": "Saldo de préstamo adeudado",
+    "surcharge": "Recargo",
+    "registration": "Registro",
+    "receivedBy.name": "Recibido por",
+    "pickupEmployee.name": "Empleado de recogida",
+    "officeBranch.name": "Sucursal de oficina",
+    "pickupSource": "Origen de recogida",
+    "delivery.name": "Entrega",
+    "barcodeId": "ID de código de barras",
+    "prevStatus": "Estados previos válidos",
+    "startTime": "Inicio de turno",
+    "endTime": "Fin de turno",
+    "systemRole": "Rol del sistema",
+    "accountBalance": "Balance de cuenta"
   },
   "placeholders": {
     "dateFormat": "AAAA-MM-DD",

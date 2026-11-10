@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, MapPin, Plus } from "lucide-react";
 
 import { AddressActionRow } from "@/components/addresses/address-action-row";
+import { CustomerUnverifiedAddressAction } from "@/components/customers/customer-unverified-address-action";
 
 import {
   RecordViewSheet,
@@ -117,6 +118,14 @@ export function CustomerAddressesSheet({
                   key={address.id ?? `${getAddressLabelKey(address, index)}-${index}`}
                   label={t(getAddressLabelKey(address, index))}
                   address={address}
+                  labelAction={resolvedCustomer ? (
+                    <CustomerUnverifiedAddressAction
+                      customer={resolvedCustomer}
+                      address={address}
+                      label={t(getAddressLabelKey(address, index))}
+                      onBeforeEdit={() => onOpenChange(false)}
+                    />
+                  ) : null}
                 />
               ))}
             </RecordViewSheetSection>
@@ -168,12 +177,21 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
     <>
       <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME, className)}>
         {addressLines.length > 0 ? (
-          <div className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={addressTitle}>
-            {addressLines.map((line, index) => (
-              <p key={index} className={ADDRESS_TEXT_WRAP_CLASSNAME}>
-                {line}
-              </p>
-            ))}
+          <div className="flex items-start gap-1">
+            <div className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "flex-1 leading-snug")} title={addressTitle}>
+              {addressLines.map((line, index) => (
+                <p key={index} className={ADDRESS_TEXT_WRAP_CLASSNAME}>
+                  {line}
+                </p>
+              ))}
+            </div>
+            {primary ? (
+              <CustomerUnverifiedAddressAction
+                customer={resolvedCustomer}
+                address={primary}
+                label={t(getAddressLabelKey(primary, 0))}
+              />
+            ) : null}
           </div>
         ) : (
           <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")}>—</p>

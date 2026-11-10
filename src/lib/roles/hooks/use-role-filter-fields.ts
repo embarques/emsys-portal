@@ -14,6 +14,10 @@ function localizeFilterOption(
     return { ...option, label: t(`roles.enums.status.${statusKey}`) };
   }
 
+  if (field === "systemRole") {
+    return { ...option, label: t(option.value === "true" ? "common.apiColumns.yes" : "common.apiColumns.no") };
+  }
+
   return option;
 }
 

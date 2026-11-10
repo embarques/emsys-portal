@@ -524,7 +524,7 @@ export function BranchesWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-7xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>
               {formMode === "edit" ? t("branches.form.editTitle") : t("branches.form.addTitle")}

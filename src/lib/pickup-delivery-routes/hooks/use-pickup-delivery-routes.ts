@@ -1,7 +1,9 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
-import { assignmentToday } from "@/lib/pickup-delivery-routes/assignment-policy";
+import { useAssignmentToday } from "@/lib/pickup-delivery-routes/hooks/use-assignment-today";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { permissionKey } from "@/lib/auth/permissions";
 import { useCallback, useMemo } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
@@ -26,23 +28,38 @@ import { hasResourceListFilters } from "@/lib/api/search-query";
 import { getScheduledRouteQueryKeys, queryKeys } from "@/lib/query/query-keys";
 import { getActiveRouteTableFilterFields } from "@/lib/pickup-delivery-routes/filter-fields";
 
+function useRoutePickerScope() {
+  const { companyId, user, email, roleId, permissions, isAuthenticated, permissionsLoading } = useAuth();
+  const actorId = user?.uid || email || "";
+  const scope = useMemo(() => ({
+    companyId,
+    actorId,
+    authenticated: isAuthenticated,
+    roleId,
+    permissions: permissions.map(permissionKey).sort(),
+  }), [companyId, actorId, isAuthenticated, roleId, permissions]);
+  return { scope, ready: isAuthenticated && Boolean(companyId) && !permissionsLoading };
+}
+
 export function useActiveRoutePicker(
   routeType: RouteType,
   limit = 200,
   options: { enabled?: boolean; assignable?: boolean } = {},
 ) {
+  const { scope, ready } = useRoutePickerScope();
+  const today = useAssignmentToday(Boolean(options.assignable && (options.enabled ?? true)));
   const listParams = {
     ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
     limit,
     routeType,
-    ...(options.assignable ? { minDate: assignmentToday() } : {}),
+    ...(options.assignable ? { minDate: today } : {}),
   };
   const keys = getScheduledRouteQueryKeys(routeType);
 
   return useWorkspaceQuery({
-    queryKey: keys.list(listParams),
+    queryKey: [...keys.list(listParams), scope],
     queryFn: () => fetchActiveRoutes(listParams),
-    enabled: options.enabled ?? true,
+    enabled: ready && (options.enabled ?? true) && (!options.assignable || Boolean(today)),
     staleTime: 60_000,
   });
 }
@@ -51,6 +68,8 @@ export function useDailyRoutePicker(
   limit = 200,
   options: { enabled?: boolean; branchCode?: string; routeType?: RouteType; date?: string; assignable?: boolean } = {},
 ) {
+  const { scope, ready } = useRoutePickerScope();
+  const today = useAssignmentToday(Boolean(options.assignable && (options.enabled ?? true)));
   const branchCode = options.branchCode?.trim() || undefined;
   const date = options.date?.trim().slice(0, 10) || undefined;
   const listParams = {
@@ -59,13 +78,13 @@ export function useDailyRoutePicker(
     ...(branchCode ? { branchCode } : {}),
     ...(options.routeType ? { routeType: options.routeType } : {}),
     ...(date ? { date } : {}),
-    ...(options.assignable ? { minDate: assignmentToday() } : {}),
+    ...(options.assignable ? { minDate: today } : {}),
   };
 
   return useWorkspaceQuery({
-    queryKey: queryKeys.dailyRouteSchedules.list(listParams),
+    queryKey: [...queryKeys.dailyRouteSchedules.list(listParams), scope],
     queryFn: () => fetchActiveRoutes(listParams),
-    enabled: options.enabled ?? true,
+    enabled: ready && (options.enabled ?? true) && (!options.assignable || Boolean(today)),
     staleTime: 60_000,
   });
 }

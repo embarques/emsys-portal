@@ -56,6 +56,14 @@
       "timestampRange": {
         "label": "Date range",
         "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "activityId": {
+        "label": "Activity ID",
+        "placeholder": "Enter activity ID…"
+      },
+      "quantity": {
+        "label": "Quantity",
+        "placeholder": "0"
       }
     }
   }

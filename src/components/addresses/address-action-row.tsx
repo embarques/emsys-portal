@@ -1,6 +1,7 @@
 "use client";
 
 import { Copy, MapPin, Navigation } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ type AddressActionRowProps = {
   label: string;
   address: CustomerCoreAddress;
   className?: string;
+  labelAction?: ReactNode;
 };
 
 function buildMapsSearchHref(query: string): string {
@@ -28,7 +30,7 @@ function buildMapsDirectionsHref(query: string): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
 }
 
-export function AddressActionRow({ label, address, className }: AddressActionRowProps) {
+export function AddressActionRow({ label, address, className, labelAction }: AddressActionRowProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const lines = formatCoreAddressLines(address);
@@ -55,7 +57,10 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
+          {labelAction}
+        </div>
         <div className={cn("text-sm font-medium leading-snug text-foreground", ADDRESS_TEXT_WRAP_CLASSNAME)}>
           {lines.map((line, index) => (
             <p key={index}>{line}</p>

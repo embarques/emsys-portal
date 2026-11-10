@@ -4,7 +4,14 @@ import {
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
 
-const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id", "branch.id", "cost"]);
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set([
+  "id",
+  "branch.id",
+  "cost",
+  "totalLoanGiven",
+  "totalPaymentReceived",
+  "loanAmountOwed",
+]);
 const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
 
 export function expandEmployeeFilterNode(node: ApiSearchFilterNode): ApiSearchFilterNode | null {

@@ -46,10 +46,11 @@ import {
   useDeleteChartAccount,
   useUpdateChartAccount,
 } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
-import type {
-  ChartAccount,
-  ChartAccountType,
-  ChartAccountValues,
+import {
+  DEFAULT_CHART_ACCOUNT_LIST_PARAMS,
+  type ChartAccount,
+  type ChartAccountType,
+  type ChartAccountValues,
 } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -64,6 +65,7 @@ import {
   formatPaginatedListSummary,
 } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -75,7 +77,11 @@ function localizeChartAccountFilterOption(
   option: { value: string; label: string },
   t: (key: string) => string,
 ) {
-  return field === "type" ? { ...option, label: t(`accounting.chartOfAccounts.types.${option.value}`) } : option;
+  if (field === "type") return { ...option, label: t(`accounting.chartOfAccounts.types.${option.value}`) };
+  if (field === "systemAccount" || field === "default" || field === "branchAccount") {
+    return { ...option, label: t(option.value === "true" ? "common.apiColumns.yes" : "common.apiColumns.no") };
+  }
+  return option;
 }
 
 const EMPTY_ACCOUNT: ChartAccountValues = {
@@ -210,6 +216,7 @@ export function ChartOfAccountsWorkspace() {
   const feedback = useFeedback();
   const isMobileViewport = useIsMobileViewport();
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_CHART_ACCOUNT_LIST_PARAMS.sort, () => setPage(1));
   const [query, setQuery] = useState("");
   const [mobileTypeFilter, setMobileTypeFilter] = useState<
     ChartAccountType | ""
@@ -236,6 +243,7 @@ export function ChartOfAccountsWorkspace() {
   const accountsQuery = useChartAccounts({
     page,
     limit: pageLimit,
+    sort,
     query: deferredQuery,
     type: activeTypeFilter || undefined,
     ...(activeFilterRows.length ? { filterRows: activeFilterRows } : {}),
@@ -331,6 +339,7 @@ export function ChartOfAccountsWorkspace() {
       {
         id: "branch",
         label: t("accounting.chartOfAccounts.columns.branch"),
+        sortField: "branch.code",
         renderCell: (account) =>
           account.branch?.code ??
           t("accounting.chartOfAccounts.values.allBranches"),
@@ -339,6 +348,7 @@ export function ChartOfAccountsWorkspace() {
         id: "parent",
         defaultVisible: false,
         label: t("accounting.chartOfAccounts.columns.parent"),
+        sortField: "parentAccount.name",
         renderCell: (account) =>
           account.parentAccount?.displayName ??
           account.parentAccount?.name ??
@@ -354,6 +364,7 @@ export function ChartOfAccountsWorkspace() {
         id: "system",
         defaultVisible: false,
         label: t("accounting.chartOfAccounts.columns.system"),
+        sortField: "systemAccount",
         truncateCell: false,
         renderCell: (account) =>
           account.systemAccount ? (
@@ -641,6 +652,8 @@ export function ChartOfAccountsWorkspace() {
                 rowLabel={(account) => account.displayName}
                 columnLayout={columnLayout}
                 minWidth={640}
+                sort={sort}
+                onSortChange={onSortChange}
                 selectable
                 selectedIds={selectedIds}
                 allPageSelected={allPageSelected}

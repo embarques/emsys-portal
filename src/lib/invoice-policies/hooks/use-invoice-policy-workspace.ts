@@ -86,6 +86,7 @@ export function useInvoicePolicyWorkspace(
     edit,
     save,
     remove,
+    deleteRecord: (item: InvoicePolicy) => mutations.remove.mutateAsync(item.id),
     setOpen: (value: boolean) => {
       if (!busy) setOpen(value);
     },

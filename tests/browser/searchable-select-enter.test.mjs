@@ -17,10 +17,18 @@ before(async () => {
   directory = await mkdtemp(path.join(tmpdir(), "emsys-select-test-"));
   const compiler = webpackPackage.webpack({
     mode: "development", devtool: false,
-    plugins: [new webpackPackage.webpack.DefinePlugin({ "process.env": JSON.stringify({ NODE_ENV: "development" }) })],
+    plugins: [
+      new webpackPackage.webpack.DefinePlugin({ "process.env": JSON.stringify({ NODE_ENV: "development" }) }),
+      // The fixture is injected as one inline script, so lazy chunks cannot be fetched.
+      new webpackPackage.webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
+    ],
     entry: path.resolve("tests/browser/fixtures/searchable-select.tsx"),
-    output: { path: directory, filename: "fixture.js" },
+    output: { path: directory, filename: "fixture.js", publicPath: "" },
     resolve: { extensions: [".tsx", ".ts", ".js"], alias: {
+      "@/lib/accounting/loans/use-loan-entry$": path.resolve("tests/browser/fixtures/wizard-entry-hooks.ts"),
+      "@/lib/accounting/daily-income/use-inventory-payment-entry$": path.resolve("tests/browser/fixtures/wizard-entry-hooks.ts"),
+      "@/components/accounting/loan-entry-dialog$": path.resolve("tests/browser/fixtures/wizard-entry-components.tsx"),
+      "@/components/accounting/pending-inventory-dispatches-panel$": path.resolve("tests/browser/fixtures/wizard-entry-components.tsx"),
       "@/lib/inventory/hooks/use-inventory$": path.resolve("tests/browser/fixtures/inventory-hooks.ts"),
       "@/lib/employees/hooks/use-employees$": path.resolve("tests/browser/fixtures/inventory-hooks.ts"),
       "@/lib/auth/hooks/use-auth$": path.resolve("tests/browser/fixtures/documents-auth.ts"),
@@ -692,29 +700,39 @@ test("autofocused pickup reference skips Enter until typing or arrow navigation"
   }
 });
 
+const typeCategory = (page, key) => page.getByRole("button", { name: `accounting.dailyIncome.wizard.typeSelector.groups.${key}`, exact: true });
+const typeOption = (page, value) => page.getByRole("button", { name: `accounting.dailyIncome.wizard.typeSelector.options.${value}`, exact: true });
+
 test("transaction categories share headings and open existing payment flows", async () => {
   const page = await fixture(1280, "wizard", { styled: true });
   try {
-    const group = page.getByRole("radiogroup", { name: "accounting.dailyIncome.wizard.typeSelector.ariaLabel", exact: true });
-    assert.equal(await group.getByRole("radio").count(), 11);
-    const categories = group.getByRole("group");
-    assert.deepEqual(await categories.evaluateAll((elements) => elements.map((element) => element.querySelectorAll('[role="radio"]').length)), [4, 2, 2, 2, 1]);
-    for (const key of ["invoices", "incomeExpenses", "inventory", "loans", "transfers"]) {
-      assert.equal(await group.getByRole("heading", { name: `accounting.dailyIncome.wizard.typeSelector.groups.${key}`, exact: true }).count(), 1);
+    for (const [key, count] of [["invoices", 4], ["incomeExpenses", 2], ["inventory", 2], ["loans", 2], ["transfers", 1]]) {
+      await typeCategory(page, key).click();
+      const region = page.getByRole("region", { name: `accounting.dailyIncome.wizard.typeSelector.groups.${key}`, exact: true });
+      assert.equal(await region.getByRole("button").count(), count, key);
     }
-    await group.getByRole("radio", { name: /transactionTypes\.loanIssue\.label/ }).click();
+    const changeType = page.getByRole("button", { name: "accounting.dailyIncome.wizard.changeType", exact: true });
+    await typeCategory(page, "loans").click();
+    await typeOption(page, "LOAN-ISSUE").click();
     assert.equal(await page.locator("#loan-entry").textContent(), "issue");
-    await group.getByRole("radio", { name: /transactionTypes\.loanPayment\.label/ }).click();
+    await changeType.click();
+    await typeCategory(page, "loans").click();
+    await typeOption(page, "LOAN-PAYMENT").click();
     assert.equal(await page.locator("#loan-entry").textContent(), "payment");
-    await group.getByRole("radio", { name: /transactionTypes\.inventoryPayment\.label/ }).click();
-    assert.equal(await page.locator("#inventory-payment-open").textContent(), "true");
+    await changeType.click();
+    await typeCategory(page, "inventory").click();
+    await typeOption(page, "INVENTORY-PAYMENT").click();
+    assert.equal(await page.locator("#inventory-panel").textContent(), "inline");
+    await page.getByRole("button", { name: "Start inventory save", exact: true }).click();
+    assert.equal(await changeType.isDisabled(), true);
     assert.equal(await page.locator("#submitted").textContent(), "0");
   } finally { await page.close(); }
   const denied = await fixture(1280, "wizard", { inventoryAccess: "false", loanAccess: "false" });
   try {
-    for (const key of ["inventoryPayment", "loanIssue", "loanPayment"]) {
-      assert.equal(await denied.getByRole("radio", { name: new RegExp(`transactionTypes\.${key}\.label`) }).isDisabled(), true);
-    }
+    await typeCategory(denied, "inventory").click();
+    assert.equal(await typeOption(denied, "INVENTORY-PAYMENT").isDisabled(), true);
+    await typeCategory(denied, "loans").click();
+    for (const value of ["LOAN-ISSUE", "LOAN-PAYMENT"]) assert.equal(await typeOption(denied, value).isDisabled(), true);
   } finally { await denied.close(); }
 });
 

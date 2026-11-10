@@ -1,12 +1,18 @@
 "use client";
 
-import { Tag, Pencil, Plus, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Tag, Plus } from "lucide-react";
 
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 
+import { CatalogBulkDeleteDialog } from "@/components/app-shell/catalog-bulk-delete-dialog";
+import { DirectoryTableRowActions } from "@/components/app-shell/directory-table-row-actions";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
+import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,24 +22,47 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { normalizeApiError } from "@/lib/api/axios";
 import { useBarcodeStatusesWorkspace } from "@/lib/barcodes/hooks/use-barcode-statuses-workspace";
 import { fetchBarcodeStatusesPage } from "@/lib/barcodes/api/barcode-statuses-api";
 import { BARCODE_STATUS_TABLE_FILTER_FIELDS } from "@/lib/barcodes/barcode-status-filter-fields";
+import type { BarcodeStatusOption } from "@/lib/labels/types";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useCatalogBulkDelete } from "@/lib/table/hooks/use-catalog-bulk-delete";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
-import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
+import type { DataTableColumn } from "@/lib/table/types";
+import { CatalogDataTable, CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
+
+const statusRowId = (status: BarcodeStatusOption) => String(status.id);
 
 export function BarcodeStatusesWorkspace() {
   const handleEnterNavigation = useFormEnterNavigation();
-  const { t, isSaving, isDeleting, dialogOpen, setDialogOpen, editing, form, error, openCreate, openEdit, save, remove } = useBarcodeStatusesWorkspace();
+  const { t, isSaving, isDeleting, dialogOpen, setDialogOpen, editing, form, error, openCreate, openEdit, save, remove, deleteRecord } = useBarcodeStatusesWorkspace();
   const table = useCatalogTable({
     fields: BARCODE_STATUS_TABLE_FILTER_FIELDS,
     keyPrefix: "barcodeStatuses.filters.fields",
-    sort: "name:asc",
+    defaultSort: "name:asc",
+    getRowId: statusRowId,
     queryKey: queryKeys.barcodeStatuses.page,
     fetchPage: fetchBarcodeStatusesPage,
   });
+  const bulkDelete = useCatalogBulkDelete({
+    getId: statusRowId,
+    deleteOne: deleteRecord,
+    entityLabel: t("barcodeStatuses.entity"),
+    onDeleted: (ids) => table.selection.setSelectedIds((current) => current.filter((id) => !ids.includes(id))),
+  });
+  const columns = useMemo<DataTableColumn<BarcodeStatusOption>[]>(() => [
+    { id: "id", label: t("common.apiColumns.id"), defaultWidth: 96, cellClassName: "tabular-nums", renderCell: (status) => status.id },
+    { id: "name", label: t("barcodeStatuses.fields.name"), cellClassName: "font-medium", renderCell: (status) => status.name },
+    {
+      id: "prevStatus",
+      label: t("barcodeStatuses.fields.previousStatus"),
+      cellClassName: "text-muted-foreground",
+      renderCell: (status) => status.prevStatus || t("common.empty.dash"),
+    },
+  ], [t]);
+  const columnLayout = useColumnVisibility("barcode-statuses-catalog-v1", columns);
+  const { selectedIds, selectedRows } = table.selection;
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -48,55 +77,44 @@ export function BarcodeStatusesWorkspace() {
         }
       />
 
-      <div className="mt-6 overflow-hidden rounded-xl border bg-card">
-        <div className="border-b px-4 py-3">
+      <Card className="mt-6 gap-0">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <CatalogTableToolbar
             state={table}
             presetScope="barcode-statuses"
             searchPlaceholder={t("barcodeStatuses.searchPlaceholder")}
+            columnLayout={columnLayout}
           />
-        </div>
-        {table.isLoading ? (
-          <p className="p-6 text-sm text-muted-foreground">{t("common.loading")}</p>
-        ) : table.isError ? (
-          <p className="p-6 text-sm text-destructive">{normalizeApiError(table.error).message}</p>
-        ) : table.items.length === 0 ? (
-          <p className="p-6 text-sm text-muted-foreground">
-            {table.hasActiveFilters ? t("common.table.noMatches") : t("barcodeStatuses.empty")}
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left">
-              <tr>
-                <th className="px-4 py-3 font-medium">{t("common.apiColumns.id")}</th>
-                <th className="px-4 py-3 font-medium">{t("barcodeStatuses.fields.name")}</th>
-                <th className="px-4 py-3 font-medium">{t("barcodeStatuses.fields.previousStatus")}</th>
-                <th className="w-28 px-4 py-3 text-right font-medium">{t("common.actions.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {table.items.map((status) => (
-                <tr key={status.id} className="border-b last:border-0">
-                  <td className="px-4 py-3">{status.id}</td>
-                  <td className="px-4 py-3 font-medium">{status.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{status.prevStatus || "—"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(status)} aria-label={t("common.actions.edit")}>
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" disabled={isDeleting} onClick={() => void remove(status)} aria-label={t("common.actions.delete")}>
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {!table.isLoading && !table.isError ? <CatalogTablePagination state={table} /> : null}
-      </div>
+        </CardHeader>
+        <TableSelectionToolbar
+          selectedIds={selectedIds}
+          pageRowIds={table.selection.pageRowIds}
+          totalCount={table.total}
+          onSelectedIdsChange={table.selection.setSelectedIds}
+          deleteDisabled={isDeleting || bulkDelete.isPending}
+          onEdit={() => { if (selectedRows[0]) openEdit(selectedRows[0]); }}
+          onDelete={() => bulkDelete.request(selectedRows)}
+        />
+        <CatalogDataTable
+          state={table}
+          columns={columnLayout.columns}
+          columnLayout={columnLayout}
+          rowKey={statusRowId}
+          rowLabel={(status) => status.name}
+          emptyMessage={t("barcodeStatuses.empty")}
+          onRowDoubleClick={openEdit}
+          renderSelectCellActions={(status) => (
+            <DirectoryTableRowActions
+              row={status}
+              onEdit={openEdit}
+              onDelete={(row) => void remove(row)}
+              deleteDisabled={isDeleting}
+            />
+          )}
+        />
+        <CatalogTablePagination state={table} />
+      </Card>
+      <CatalogBulkDeleteDialog state={bulkDelete} entity={t("barcodeStatuses.entity")} entities={t("barcodeStatuses.entities")} getName={(status) => status.name} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">

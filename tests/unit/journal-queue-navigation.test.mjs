@@ -13,7 +13,8 @@ function fixture() {
   const loadedModule = {exports: {}};
   function require(name) {
     if (name.endsWith("use-auth")) return {useAuth: () => ({companyId: context.companyId, hasPermission: () => context.permitted})};
-    if (name.endsWith("daily-income/hooks")) return {useAccountingQueryEnabled: () => true};
+    if (name.endsWith("daily-income/hooks")) return {useAccountingQueryEnabled: () => true, useCurrentCloseoutTransactionCount: active => active ? 4 : 0};
+    if (name.endsWith("orders/hooks/use-orders")) return {usePendingOrderCount: active => active ? 7 : 0};
     if (name.endsWith("reconciliation-api")) return {fetchOutstandingJournalCount: () => {throw new Error("Unexpected request");}};
     if (name.endsWith("query-keys")) return {queryKeys: {accounting: {all: ["accounting"]}}};
     if (name.endsWith("use-workspace-query")) return {useWorkspaceQuery: options => {
@@ -50,4 +51,14 @@ test("accounting group counts pending tasks from both queues", () => {
     {href: "/accounting/pending-clearance"},
   ]), 8);
   assert.equal(api.useNavAlertLabel("/accounting/pending-clearance", 5), "accounting.journalClearance.pendingAlert");
+});
+
+test("informational counts only load for appointments and daily income", () => {
+  const {api} = fixture();
+  assert.equal(api.useNavCount("/appointments"), 7);
+  assert.equal(api.useNavCount("/accounting/daily-income"), 4);
+  assert.equal(api.useNavCount("/customers"), 0);
+  assert.equal(api.useNavItemsCount([{href: "/accounting/daily-income"}, {href: "/accounting/loans"}]), 4);
+  assert.equal(api.useNavCountLabel("/appointments", 7), "navigation.badges.pendingAppointments");
+  assert.equal(api.useNavCountLabel("/accounting/daily-income", 0), "");
 });

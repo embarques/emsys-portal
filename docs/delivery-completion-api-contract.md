@@ -2,7 +2,9 @@
 
 ## Route contract decisions
 
-- Verify midnight rollover and unfinished barcode route-removal semantics.
+- Define and verify invoice-embedded unfinished-barcode removal, numeric
+  delivery/trip effects and server business-midnight behavior. See
+  [pending assignment semantics](daily-route-assignment-api-contract.md).
 - Agree the DR daily-route versus legacy numeric delivery identity and any
   required migration before changing route IDs in review/completion/signature
   requests. Confirm whether legacy delivery-document naming still needs atomic
@@ -10,9 +12,6 @@
 
 ## Completion acceptance
 
-- Resolve zero-cost invoices omitting their financial fields on readback and
-  returning 409 on completion. Preserve fail-closed handling for genuinely
-  unknown balances.
 - Verify negative, unavailable/invalid balances and linked uncleared receipts.
 - Prove balance/receipt checks participate in the same atomic operation as
   completion when invoice finances change concurrently.

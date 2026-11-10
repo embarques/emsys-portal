@@ -8,7 +8,7 @@ import { useTranslation } from "@/lib/i18n";
 import { createLoanFormSchema } from "./schemas";
 import type { LoanCreateValues } from "./types";
 
-export function useCreateLoanForm(onSubmit: (values: LoanCreateValues) => Promise<void>, pending: boolean) {
+export function useCreateLoanForm(onSubmit: (values: LoanCreateValues) => Promise<void>, pending: boolean, continuous = false) {
   const { t } = useTranslation();
   const schema = useMemo(() => createLoanFormSchema(t), [t]);
   const [step, setStep] = useState(1);
@@ -24,11 +24,11 @@ export function useCreateLoanForm(onSubmit: (values: LoanCreateValues) => Promis
   const busy = pending || form.formState.isSubmitting;
   async function advance() {
     if (busy || submitting.current) return;
-    if (step === 1) {
+    if (!continuous && step === 1) {
       if (await form.trigger("employeeId", { shouldFocus: true })) setStep(2);
       return;
     }
-    if (step === 2) {
+    if (!continuous && step === 2) {
       if (await form.trigger(undefined, { shouldFocus: true }) && closeoutReady) setStep(3);
       return;
     }

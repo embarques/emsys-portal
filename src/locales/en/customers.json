@@ -62,6 +62,7 @@
     "directions": "Get directions",
     "verified": "Verified",
     "unverified": "Unverified",
+    "editUnverifiedAria": "Edit unverified address: {{label}} for {{name}}",
     "unverifiedNotice": {
       "title": "This client's address isn't verified.",
       "description": "Update it with a Google-suggested address to confirm the location.",
@@ -323,6 +324,13 @@
           "label": "Branch",
           "placeholder": "Select branch…"
         }
+      },
+      "accountBalance": {
+        "label": "Account balance",
+        "placeholder": "0.00"
+      },
+      "active": {
+        "label": "Status"
       }
     }
   }

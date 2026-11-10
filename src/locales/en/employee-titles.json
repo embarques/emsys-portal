@@ -43,5 +43,6 @@
       }
     }
   },
-  "searchPlaceholder": "Search titles…"
+  "searchPlaceholder": "Search titles…",
+  "entities": "titles"
 }

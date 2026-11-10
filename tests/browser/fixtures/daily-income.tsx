@@ -65,15 +65,11 @@ const wizardInvoices = [{
 export function DailyIncomeWizardFixture() {
   const [wizardPaymentMethods, setWizardPaymentMethods] = useState(paymentMethods);
   const [submitted, setSubmitted] = useState(0);
-  const [inventoryPaymentOpen, setInventoryPaymentOpen] = useState(false);
-  const [loanEntry, setLoanEntry] = useState("");
   return <QueryClientProvider client={client}>
-    <AddTransactionWizard open presentation="tab" mode="add" onRegisterLoan={document.documentElement.dataset.loanAccess === "false" ? undefined : () => setLoanEntry("issue")} onRegisterLoanPayment={document.documentElement.dataset.loanAccess === "false" ? undefined : () => setLoanEntry("payment")} onRegisterInventoryPayment={document.documentElement.dataset.inventoryAccess === "false" ? undefined : () => setInventoryPaymentOpen(true)} employees={[{ ...createEmptyEmployeeForm(), id: 1, name: "Maria", department: "Office", title: "Clerk", active: true, branch: branches[0] } as Employee]}
+    <AddTransactionWizard open presentation="tab" mode="add" employees={[{ ...createEmptyEmployeeForm(), id: 1, name: "Maria", department: "Office", title: "Clerk", active: true, branch: branches[0] } as Employee]}
       statementBranchId={1} accounts={accounts} bankAccounts={[accounts[3]]} invoices={wizardInvoices} paymentMethods={wizardPaymentMethods} isSubmitting={false}
       onSubmit={async () => { setSubmitted(n => n + 1); }} onCancel={() => {}} />
     <output id="submitted">{submitted}</output>
     <button type="button" onClick={() => setWizardPaymentMethods((methods) => methods.map((method) => ({ ...method })))}>Refresh payment methods</button>
-    <output id="loan-entry">{loanEntry}</output>
-    <output id="inventory-payment-open">{String(inventoryPaymentOpen)}</output>
   </QueryClientProvider>;
 }

@@ -16,6 +16,7 @@ import {
 
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
 import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
+import { InvoiceLineItemsCell } from "@/components/invoices/invoice-line-items-cell";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -162,28 +163,6 @@ function InvoicePartyPhoneCell({ party }: { party: OrderParty | null | undefined
       )) : t("common.empty.dash")}
     </div>
   );
-}
-
-function formatInvoiceLineItemsSummary(
-  invoice: Invoice,
-  t: ReturnType<typeof useTranslation>["t"],
-): string {
-  const lineItemCount = invoice.lineItems.length;
-  if (lineItemCount === 0) return t("common.empty.dash");
-
-  const labelCount = invoice.lineItems.reduce((total, item) => total + item.labelCount, 0);
-  const firstItemName = invoice.lineItems.find((item) => item.itemName.trim())?.itemName.trim();
-  const itemLabel = t(
-    lineItemCount === 1 ? "invoices.columns.itemSingular" : "invoices.columns.itemPlural",
-  );
-  const labelLabel = t(
-    labelCount === 1 ? "invoices.columns.labelSingular" : "invoices.columns.labelPlural",
-  );
-  const countSummary = `${lineItemCount} ${itemLabel} · ${labelCount} ${labelLabel}`;
-
-  if (!firstItemName) return countSummary;
-  if (lineItemCount === 1) return `${countSummary} · ${firstItemName}`;
-  return `${countSummary} · ${firstItemName} +${lineItemCount - 1}`;
 }
 
 function hasPendingRegistration(invoice: Invoice): boolean {
@@ -804,9 +783,10 @@ export function InvoicesWorkspace() {
     {
       id: "invoiceDetails",
       label: t("invoices.columns.invoiceDetails"),
+      copyable: false,
       defaultVisible: false,
       defaultWidth: 240,
-      renderCell: (invoice) => formatInvoiceLineItemsSummary(invoice, t),
+      renderCell: (invoice) => <InvoiceLineItemsCell invoice={invoice} />,
     },
     {
       id: "paidStatus",

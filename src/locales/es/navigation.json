@@ -69,5 +69,9 @@
     "pendingClearance": "Liquidación pendiente",
     "reservedInvoices": "Facturas reservadas",
     "changeRequests": "Solicitudes de cambio"
+  },
+  "badges": {
+    "pendingAppointments": "{{count}} citas pendientes",
+    "todayTransactions": "{{count}} transacciones hoy"
   }
 }

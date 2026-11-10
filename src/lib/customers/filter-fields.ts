@@ -109,4 +109,21 @@ export const CUSTOMER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     valueType: "select",
     optionsSource: "branches",
   },
+  {
+    field: "accountBalance",
+    label: "Account balance",
+    operators: ["eq", "neq", "gte", "lte"],
+    valueType: "text",
+    placeholder: "0.00",
+  },
+  {
+    field: "active",
+    label: "Status",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: [
+      { value: "true", label: "Active" },
+      { value: "false", label: "Inactive" },
+    ],
+  },
 ];

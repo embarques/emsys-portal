@@ -207,8 +207,11 @@ export function useUpdateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ customerId, values }: { customerId: string; values: CustomerFormValues }) =>
-      updateCustomer(customerId, values),
+    mutationFn: ({ customerId, values, originalValues }: {
+      customerId: string;
+      values: CustomerFormValues;
+      originalValues?: CustomerFormValues;
+    }) => updateCustomer(customerId, values, originalValues),
     onSuccess: (_data, variables) => {
       invalidateCustomers(queryClient);
       queryClient.invalidateQueries({

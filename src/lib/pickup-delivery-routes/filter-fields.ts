@@ -104,6 +104,13 @@ const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     valueType: "text",
     placeholder: "Enter rate…",
   },
+  {
+    field: "vehicle.name",
+    label: "Vehicle",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter vehicle…",
+  },
 ];
 
 const DELIVERY_ONLY_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [

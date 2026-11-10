@@ -108,9 +108,37 @@ export const CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[]
     valueType: "text",
     placeholder: "Enter updater name…",
   },
+  {
+    field: "updatedAt",
+    label: "Updated at",
+    operators: [...DATE_OPERATORS],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
+  },
+  {
+    field: "clearedBy.name",
+    label: "Cleared by",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter name…",
+  },
+  {
+    field: "invoice.balance",
+    label: "Invoice balance",
+    operators: [...NUMERIC_OPERATORS],
+    valueType: "text",
+    placeholder: "0.00",
+  },
+  {
+    field: "id",
+    label: "Record ID",
+    operators: ["eq", "neq"],
+    valueType: "text",
+    placeholder: "Enter record ID…",
+  },
 ];
 
 export const expandClearablePaymentFilterNode = createTypedFilterExpander({
-  numericFields: ["paymentAmount"],
+  numericFields: ["paymentAmount", "invoice.balance"],
   rangeFields: { datePostedRange: "datePosted", clearedAtRange: "clearedAt", createdAtRange: "createdAt" },
 });

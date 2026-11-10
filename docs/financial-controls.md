@@ -7,9 +7,11 @@ in [APP_CONTEXT.md](../APP_CONTEXT.md).
 ## Journal lifecycle and migration
 
 - Verify payment-method/account corrections and remaining lifecycle concurrency.
-- Historical reconciliation/filter coverage is still incomplete in the tested
-  tenant: 24,132 PAYMENT rows, only 3 matching OUTSTANDING and none RECONCILED;
-  one OUTSTANDING readback disappears under its matching status filter. Confirm
+- Historical reconciliation/filter coverage remains incomplete: the November 7
+  recheck returned 24,134 PAYMENT rows, only 3 matching OUTSTANDING and none
+  RECONCILED. Earlier testing also found an OUTSTANDING readback disappearing
+  under its matching status filter. See the
+  [live verification report](backend-gap-verification-2026-11-07.md). Confirm
   execution of the backend's reported evidence-based backfill, review ambiguous
   rows and verify safe reruns without changing invoice balances.
 - Verify edits cannot move entries between closeouts; prove
@@ -24,9 +26,13 @@ in [APP_CONTEXT.md](../APP_CONTEXT.md).
 
 - Verify remaining permission combinations, inventory journal autoReconcile
   with an accepted create control, and tenant/branch scope.
-- Establish grant-change/cache refresh behavior: a fresh role edit exposed the
-  reconciliation grant through `/users/permissions`, while the command still
-  returned 403 with the same token.
+- Fix grant-change enforcement across permission reads and command gates.
+  Reconciliation grant additions appear in `/users/permissions` while commands
+  still return 403 with the same token. Pickup grant additions remain denied
+  after fresh sign-in; revoked pickup update grants still permit persisted writes
+  after fresh sign-in. Determine stale cache versus role-snapshot behavior,
+  invalidate affected authorization state, and verify immediate denial after
+  revocation. See [pickup authorization gaps](daily-route-assignment-api-contract.md).
 - Verify `/change-requests` end to end with assigned employee, supervisor and
   authorized management identities. Route/schema presence does not certify policy.
 - For pickup, invoice, journal, barcode and inventory-dispatch targets, verify

@@ -28,7 +28,7 @@ import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pick
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { formatRouteDate } from "@/lib/route-manager/display";
 import { todayDateInputValue } from "@/lib/route-manager/types";
-import { assignmentToday } from "@/lib/pickup-delivery-routes/assignment-policy";
+import { useAssignmentToday } from "@/lib/pickup-delivery-routes/hooks/use-assignment-today";
 
 export type AssignableAppointment = Pick<Order, "id" | "date" | "completed" | "branch">;
 
@@ -88,7 +88,7 @@ export function AssignAppointmentRouteDialog({
     [incompleteAppointments],
   );
   const skippedCompletedCount = appointments.length - incompleteAppointments.length;
-  const routeDate = assignmentToday();
+  const routeDate = useAssignmentToday(open);
   const hasFutureAppointment = incompleteAppointments.some(
     (appointment) => appointment.date.trim().slice(0, 10) > routeDate,
   );

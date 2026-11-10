@@ -28,6 +28,7 @@ import {
 } from "@/lib/pickup-delivery-routes/display";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { isAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
+import { useAssignmentToday } from "@/lib/pickup-delivery-routes/hooks/use-assignment-today";
 
 export type AssignBarcodeRouteResult = {
   success: boolean;
@@ -54,6 +55,7 @@ export function AssignBarcodeRouteDialog({
   const [progress, setProgress] = useState<RouteAssignmentProgress | null>(null);
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const today = useAssignmentToday(open);
 
   const dailyRoutesQuery = useDailyRoutePicker(200, {
     enabled: open,
@@ -62,7 +64,7 @@ export function AssignBarcodeRouteDialog({
   });
   const assignBarcodesMutation = useAssignBarcodesToRoute();
 
-  const dailyRoutes = useMemo(() => (dailyRoutesQuery.data?.items ?? []).filter(route => isAssignableRouteDate(route.date)), [dailyRoutesQuery.data?.items]);
+  const dailyRoutes = useMemo(() => (dailyRoutesQuery.data?.items ?? []).filter(route => isAssignableRouteDate(route.date, today)), [dailyRoutesQuery.data?.items, today]);
   const routeOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(dailyRoutes, t),
     [dailyRoutes, t],

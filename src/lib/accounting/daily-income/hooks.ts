@@ -26,8 +26,10 @@ import type {
   DailyIncomeStatement,
   DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
+import { fetchIncomeStatementJournalCount } from "@/lib/accounting/daily-income/reconciliation-api";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useAppSelector } from "@/lib/store/hooks";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 /** EMSYS API returns 403 when Authorization or x-company-id are not ready yet. */
 export function useAccountingQueryEnabled(extraEnabled = true) {
@@ -189,6 +191,29 @@ export function useSessionDailyIncomeTransactions(statementId: number, sessionId
 }
 
 export function useCurrentIncomeStatement(branchId:number){const {companyId,hasPermission}=useAuth();const enabled=useAccountingQueryEnabled(branchId>0 && hasPermission("canViewIncomeStatement", "income_statement"));return useWorkspaceQuery({queryKey:[...queryKeys.accounting.all,"current-closeout",companyId,branchId],queryFn:({signal})=>fetchCurrentIncomeStatement(branchId,signal),enabled,refetchInterval:30000});}
+
+/** Journals on the user's branch current closeout (what Daily Income opens to). */
+export function useCurrentCloseoutTransactionCount(active = true) {
+  const { companyId, hasPermission } = useAuth();
+  const currentUser = useCurrentUser();
+  const branchId = currentUser.data?.branch?.id ?? 0;
+  const canView = hasPermission("canViewIncomeStatement", "income_statement") && hasPermission("canViewJournal", "journal");
+  const statementEnabled = useAccountingQueryEnabled(active && canView && branchId > 0);
+  const statementQuery = useWorkspaceQuery({
+    queryKey: [...queryKeys.accounting.all, "current-closeout", companyId, branchId],
+    queryFn: ({ signal }) => fetchCurrentIncomeStatement(branchId, signal),
+    enabled: statementEnabled,
+    staleTime: 30_000,
+  });
+  const statementId = statementQuery.data?.id ?? 0;
+  const countQuery = useWorkspaceQuery({
+    queryKey: [...queryKeys.accounting.all, "closeout-journal-count", companyId, statementId],
+    queryFn: ({ signal }) => fetchIncomeStatementJournalCount(statementId, signal),
+    enabled: statementEnabled && statementId > 0,
+    staleTime: 30_000,
+  });
+  return active && statementId > 0 ? countQuery.data ?? 0 : 0;
+}
 
 export function useCloseoutCalendar(branchId: number) {
  const {companyId,user,hasPermission} = useAuth();

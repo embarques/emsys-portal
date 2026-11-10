@@ -3,12 +3,15 @@ import { createTypedFilterExpander } from "@/lib/table/typed-filter-expander";
 
 /**
  * Server filters for POST /barcode-statuses/search. `previousStatus` /
- * `previousStatus.name` are rejected by the API allow-list.
+ * `previousStatus.name` are rejected by the API allow-list; the documented
+ * field is `prevStatus`. It stays out of the bar search until verified live,
+ * because one rejected leaf fails the whole OR group.
  */
 export const BARCODE_STATUS_BAR_OR_SEARCH_FIELDS = ["name"] as const;
 
 export const BARCODE_STATUS_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   { field: "name", label: "Name", operators: ["contains", "startsWith", "eq", "neq"], valueType: "text", placeholder: "Enter status name…" },
+  { field: "prevStatus", label: "Valid previous statuses", operators: ["contains", "startsWith", "eq", "neq"], valueType: "text", placeholder: "Enter status name…" },
   { field: "id", label: "ID", operators: ["eq", "neq", "gte", "lte"], valueType: "text", placeholder: "Enter ID…" },
 ];
 

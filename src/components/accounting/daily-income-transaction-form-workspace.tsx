@@ -1,8 +1,5 @@
 "use client";
 
-import { LoanEntryDialog } from "@/components/accounting/loan-entry-dialog";
-import { useLoanEntry } from "@/lib/accounting/loans/use-loan-entry";
-import { useInventoryPaymentEntry } from "@/lib/accounting/daily-income/use-inventory-payment-entry";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -44,8 +41,6 @@ export function DailyIncomeTransactionFormWorkspace(props: WorkspaceFormHostProp
 }
 
 function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHostProps) {
-  const openInventoryPayment = useInventoryPaymentEntry();
-  const loanEntry = useLoanEntry();
   const { t } = useTranslation();
   const isEditing = mode === "edit";
   const transactionSessionId = useId();
@@ -242,9 +237,6 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           presentation="tab"
           open
           mode="add"
-          onRegisterInventoryPayment={openInventoryPayment}
-          onRegisterLoan={loanEntry.openCreate}
-          onRegisterLoanPayment={loanEntry.openPayment}
           onEntryActiveChange={setEntryActive}
           onSelectedTypeChange={setSelectedType}
           employees={employees}
@@ -263,5 +255,5 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       )}
     </FormTabShell>
   );
-  return <><LoanEntryDialog entry={loanEntry} employees={employees} accounts={accountsQuery.data?.items ?? []} />{isEditing ? wizard : <SessionTransactionsLayout active={entryActive} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
+  return <>{isEditing ? wizard : <SessionTransactionsLayout active={entryActive} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
 }

@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVENTORY_RECEIPT_API_TABLE_FIELDS } from "@/lib/inventory/receipts/table-fields";
 import {
@@ -27,12 +28,13 @@ import {
   matchReferenceIds,
 } from "@/lib/inventory/filter-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
+import { buildTableSelectionResetKey, useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
 import { createInventorySearchFilter, DEFAULT_INVENTORY_RECEIPT_LIST_PARAMS } from "@/lib/inventory/types/list";
 import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
@@ -71,8 +73,10 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
+import { useTableRowSelection } from "@/lib/table/hooks/use-table-row-selection";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const getDocumentRowId = (row: InventoryReceipt) => row.id;
 
 export function InventoryReceiptsWorkspace() {
   const { t } = useTranslation();
@@ -116,8 +120,9 @@ export function InventoryReceiptsWorkspace() {
     () => ({
       [INVENTORY_FILTER_OPTION_SOURCES.suppliers]: suppliers.map((supplier) => ({ value: supplier.id, label: supplier.companyName })),
       [INVENTORY_FILTER_OPTION_SOURCES.holders]: holders.map((holder) => ({ value: holder.id, label: holder.displayName })),
+      [INVENTORY_FILTER_OPTION_SOURCES.items]: items.map((item) => ({ value: item.id, label: item.name })),
     }),
-    [holders, suppliers],
+    [holders, items, suppliers],
   );
 
   const directoryParams = useMemo(
@@ -145,6 +150,8 @@ export function InventoryReceiptsWorkspace() {
   );
   const directoryQuery = useInventoryDirectoryPage("receipts", directoryParams);
   const pageRows = useResolvedPaginatedItems(directoryQuery.data?.items, directoryQuery.data?.total, directoryQuery.isFetching);
+  const selection = useTableRowSelection(pageRows, getDocumentRowId, buildTableSelectionResetKey(debouncedQuery, filterRows));
+  const selectedReceipt = selection.selectedRows.length === 1 ? selection.selectedRows[0]! : null;
   const totalMatched = directoryQuery.data?.total ?? 0;
   rememberTotal(totalMatched);
   const totalPages = Math.max(1, Math.ceil(totalMatched / pageLimit));
@@ -349,6 +356,16 @@ export function InventoryReceiptsWorkspace() {
           />
         </CardHeader>
 
+        <TableSelectionToolbar
+          selectedIds={selection.selectedIds}
+          pageRowIds={selection.pageRowIds}
+          totalCount={totalMatched}
+          onSelectedIdsChange={selection.setSelectedIds}
+          onView={() => { if (selectedReceipt) setViewReceipt(selectedReceipt); }}
+          onEdit={canUpdate ? () => { if (selectedReceipt) openEditForm(selectedReceipt); } : undefined}
+          editDisabled={selectedReceipt?.status !== "DRAFT"}
+        />
+
         {listErrorMessage ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : isLoading ? (
@@ -369,6 +386,11 @@ export function InventoryReceiptsWorkspace() {
             sort={sort}
             onSortChange={onSortChange}
             minWidth={960}
+            selectable
+            selectedIds={selection.selectedIds}
+            allPageSelected={selection.allPageSelected}
+            onToggleSelectAll={selection.toggleAll}
+            onToggleSelect={selection.toggle}
             onRowClick={setViewReceipt}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewReceipt?.id}
@@ -420,7 +442,7 @@ export function InventoryReceiptsWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-5xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
           <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>{formMode === "edit" ? t("inventory.form.editReceiptTitle") : t("inventory.form.newReceiptTitle")}</DialogTitle>
           </DialogHeader>

@@ -19,7 +19,7 @@ function loadComponent(relative){
   "@/components/phones/table-phone-cell":{TablePhoneCell:()=>null},
   "@/lib/i18n":{useTranslation:()=>({t:(key)=>({"deliveries.columns.invoice":"Invoice #","deliveries.columns.status":"Status"}[key]??key)})},
   "@/lib/deliveries/hooks/use-deliver-invoice":{useDeliveryAccess:()=>({canList:true,canDeliver:false,canPrint:false,companyId:"company",actorId:"actor"})},
-  "@/lib/table/hooks/use-catalog-table":{useCatalogTable:()=>({items:[row],isLoading:false,isError:false,hasActiveFilters:false})},
+  "@/lib/table/hooks/use-catalog-table":{useCatalogTable:({defaultSort})=>({items:[row],total:1,isLoading:false,isError:false,hasActiveFilters:false,sort:defaultSort,onSortChange:()=>{},selection:{selectedIds:[],selectedRows:[],pageRowIds:[],allPageSelected:false,setSelectedIds:()=>{},toggle:()=>{},toggleAll:()=>{}}})},
   "@/components/app-shell/catalog-table-toolbar":{CatalogTablePagination:()=>null,CatalogTableToolbar:()=>null},
   "@/components/app-shell/page-header":{PageHeader:()=>null},
   "@/components/ui/card":{Card:block,CardHeader:block},

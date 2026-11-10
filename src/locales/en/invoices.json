@@ -321,7 +321,8 @@
       "modeCustom": "Enter your own",
       "customLabel": "Custom invoice number",
       "assignedOnSave": "Assigned when saved",
-      "hint": "EMSYS will generate an invoice number from your company’s range when you save."
+      "hint": "EMSYS will generate an invoice number from your company’s range when you save.",
+      "turnOffHint": "Turn off system generated invoice setting to enter a custom invoice number"
     }
   },
   "wizard": {
@@ -561,6 +562,11 @@
       "scanned": "Scanned"
     },
     "lineItems": {
+      "title": "Line items",
+      "invoice": "Invoice {{number}}",
+      "view": "View line items",
+      "viewForInvoice": "View line items for invoice {{number}}",
+      "loading": "Loading line items…",
       "showBarcodes": "Show barcodes",
       "hideBarcodes": "Hide barcodes",
       "showBarcodesCount": "View {{count}} barcode",
@@ -769,6 +775,10 @@
       "route": {
         "_id": {
           "label": "Route"
+        },
+        "name": {
+          "label": "Route",
+          "placeholder": "Enter route…"
         }
       },
       "employee": {
@@ -802,6 +812,46 @@
       "updatedAtRange": {
         "label": "Updated at range",
         "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "surcharge": {
+        "label": "Surcharge",
+        "placeholder": "Enter amount…"
+      },
+      "registration": {
+        "label": "Registration",
+        "placeholder": "Enter registration…"
+      },
+      "receivedBy": {
+        "name": {
+          "label": "Received by",
+          "placeholder": "Enter name…"
+        }
+      },
+      "pickupEmployee": {
+        "name": {
+          "label": "Pickup employee",
+          "placeholder": "Enter employee name…"
+        }
+      },
+      "officeBranch": {
+        "name": {
+          "label": "Office branch",
+          "placeholder": "Enter office branch…"
+        }
+      },
+      "pickupSource": {
+        "label": "Pickup source",
+        "placeholder": "Enter pickup source…"
+      },
+      "id": {
+        "label": "Record ID",
+        "placeholder": "Enter record ID…"
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter name…"
+        }
       }
     },
     "options": {

@@ -11,6 +11,10 @@ These are recheck targets, not claims of a fresh failing run.
   `tests/browser/deliver-dialog.test.mjs`.
 - Recheck ambiguous file-input selectors and wizard completion in
   `tests/browser/invoice-documents.test.mjs`.
+- Recheck the locked invoice-number dropdown test in
+  `tests/browser/invoice-form.test.mjs`: without manual-number permission, it
+  times out looking for the custom-number option. Align the fixture and
+  assertions with the intended permission behavior without weakening the gate.
 - Recheck row labels, cross-page selection and selected totals in
   `tests/browser/journal-reconciliation.test.mjs` and
   `tests/browser/pending-transactions.test.mjs`.
@@ -24,6 +28,16 @@ These are recheck targets, not claims of a fresh failing run.
   complete authenticated inventory and loan entry/payment flows and loan lookup
   pagination beyond one page. Confirm the API's loan permission contract before
   adding new permission names or fallbacks.
+
+## Planned features
+
+- **Batch barcode querying.** In Barcode Manager (`/barcodes`), let users
+  enter a comma-separated list or range of invoice numbers, or a list or range
+  of barcode numbers, and load all matching barcodes in one server-side search.
+  Validate and deduplicate entries, show entries that matched nothing and keep
+  the results selectable for bulk update. Add en/es copy for the input, errors
+  and empty states. Depends on the backend batch barcode lookup in
+  [backend-api-gaps.md](backend-api-gaps.md#directory-tables-search-filter-sort-and-selection-coverage).
 
 ## Tooling
 

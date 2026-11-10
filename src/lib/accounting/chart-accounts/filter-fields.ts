@@ -3,6 +3,10 @@ import { createTypedFilterExpander } from "@/lib/table/typed-filter-expander";
 
 const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 const DATE_OPERATORS = ["gte", "lte"] as const;
+const YES_NO_OPTIONS = [
+  { value: "true", label: "Yes" },
+  { value: "false", label: "No" },
+];
 
 /**
  * Advanced filters for POST /chart-accounts/search.
@@ -58,6 +62,41 @@ export const CHART_ACCOUNT_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter branch name…",
   },
   {
+    field: "description",
+    label: "Description",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter description…",
+  },
+  {
+    field: "parentAccount.name",
+    label: "Parent account",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter parent account…",
+  },
+  {
+    field: "systemAccount",
+    label: "System account",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: YES_NO_OPTIONS,
+  },
+  {
+    field: "default",
+    label: "Default account",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: YES_NO_OPTIONS,
+  },
+  {
+    field: "branchAccount",
+    label: "Branch account",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: YES_NO_OPTIONS,
+  },
+  {
     field: "createdAt",
     label: "Created at",
     operators: [...DATE_OPERATORS],
@@ -89,5 +128,6 @@ export const CHART_ACCOUNT_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
 
 export const expandChartAccountFilterNode = createTypedFilterExpander({
   numericFields: ["id"],
+  booleanFields: ["systemAccount", "default", "branchAccount"],
   rangeFields: { createdAtRange: "createdAt", updatedAtRange: "updatedAt" },
 });

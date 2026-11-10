@@ -122,6 +122,7 @@ export const ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS = [
   "container.number",
   "date",
   "tripNumber",
+  "branch.code",
 ] as const;
 
 export function buildActiveRouteListParams(input: {

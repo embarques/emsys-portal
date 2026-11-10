@@ -147,20 +147,12 @@ function compareActiveRoutesByDateDesc(left: ActiveRoute, right: ActiveRoute): n
   return formatActiveRouteRowLabel(left).localeCompare(formatActiveRouteRowLabel(right));
 }
 
-function compareActiveRoutesByCreatedDesc(left: ActiveRoute, right: ActiveRoute): number {
-  const byCreated = right.createdAt.localeCompare(left.createdAt);
-  return byCreated !== 0 ? byCreated : compareActiveRoutesByDateDesc(left, right);
-}
-
-/** Searchable options for assigning pickups or invoice barcodes to scheduled routes. */
+/** Searchable daily route options, ordered by route date newest first. */
 export function buildActiveRouteAssignmentOptions(
   records: ActiveRoute[],
   t?: (key: string) => string,
-  options: { order?: "date" | "created" } = {},
 ): TableFilterFieldOption[] {
-  const compare =
-    options.order === "created" ? compareActiveRoutesByCreatedDesc : compareActiveRoutesByDateDesc;
-  return [...records].sort(compare).map((record) => ({
+  return [...records].sort(compareActiveRoutesByDateDesc).map((record) => ({
     value: record.id,
     label: formatActiveRouteAssignmentLabel(record, t),
     keywords: [

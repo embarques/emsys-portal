@@ -173,6 +173,9 @@
       "updatedAtRange": {
         "label": "Updated at range",
         "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "systemRole": {
+        "label": "System role"
       }
     }
   }

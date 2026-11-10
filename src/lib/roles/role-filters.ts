@@ -6,7 +6,7 @@ import {
 } from "@/lib/api/search-query";
 
 const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id"]);
-const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
+const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active", "systemRole"]);
 
 function parseRangeValue(raw: string): { start: string; end: string } | null {
   const trimmed = raw.trim();

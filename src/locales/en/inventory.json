@@ -218,6 +218,11 @@
         "receivedAtRange": {
           "label": "Received range",
           "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "lines": {
+          "itemId": {
+            "label": "Item"
+          }
         }
       }
     },
@@ -239,6 +244,11 @@
         "dispatchedAtRange": {
           "label": "Dispatched range",
           "placeholder": "2026-01-01 to 2026-06-30"
+        },
+        "lines": {
+          "itemId": {
+            "label": "Item"
+          }
         }
       }
     },

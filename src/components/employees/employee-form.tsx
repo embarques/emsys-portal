@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeFormSchema } from "@/lib/employees/schemas/employee.schema";
 import { getEmployeeTitleOptions } from "@/lib/employee-titles/utils/title-options";
 import { useAllBranchOptions } from "@/lib/branches/hooks/use-branches";
-import { Building2, MapPin, Phone, Plus, Pencil, User as UserIcon } from "lucide-react";
+import { MapPin, Phone, Plus, Pencil, User as UserIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -250,7 +250,7 @@ export function EmployeeForm({
             {departmentsQuery.isError || titlesQuery.isError || branchesQuery.isError ? (
               <p role="alert" className="text-sm text-destructive @4xl:col-span-2">{normalizeApiError(departmentsQuery.error || titlesQuery.error || branchesQuery.error).message}</p>
             ) : null}
-            <FormSection variant="card" className="@4xl:row-span-3" icon={UserIcon} title={`01 · ${t("employees.form.sections.employee")}`} description={t("employees.form.design.employee")}>
+            <FormSection variant="card" className="@4xl:row-span-2" icon={UserIcon} title={`01 · ${t("employees.form.sections.employee")}`} description={t("employees.form.design.employee")}>
               <div className="space-y-2.5">
                 <div className="space-y-1">
                   <Label htmlFor="name">
@@ -262,6 +262,22 @@ export function EmployeeForm({
                     onChange={(event) => updateField("name", event.target.value)}
                     placeholder={t("employees.form.placeholders.name")}
                     required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="branch-portal">
+                    {t("employees.form.fields.branch")} <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="branch-portal"
+                    value={values.branch.id ? String(values.branch.id) : ""}
+                    onValueChange={updateBranch}
+                    searchPlaceholder={t("employees.form.placeholders.branchSearch")}
+                    required
+                    options={branchOptions}
+                    disabled={branchesQuery.isLoading}
+                    mobileSheet
                   />
                 </div>
 
@@ -401,28 +417,10 @@ export function EmployeeForm({
               </div>
             </FormSection>
 
-            <FormSection variant="card" icon={Building2} title={`02 · ${t("employees.form.sections.branch")}`} description={t("employees.form.design.branch")}>
-              <div className="space-y-1">
-                <Label htmlFor="branch-portal">
-                  {t("employees.form.fields.branch")} <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="branch-portal"
-                  value={values.branch.id ? String(values.branch.id) : ""}
-                  onValueChange={updateBranch}
-                  searchPlaceholder={t("employees.form.placeholders.branchSearch")}
-                  required
-                  options={branchOptions}
-                  disabled={branchesQuery.isLoading}
-                  mobileSheet
-                />
-              </div>
-            </FormSection>
-
           <FormSection
             variant="card"
             icon={MapPin}
-            title={`03 · ${t("employees.form.sections.address")}`} description={t("employees.form.design.address")}
+            title={`02 · ${t("employees.form.sections.address")}`} description={t("employees.form.design.address")}
             action={
               <button
                 type="button"
@@ -532,7 +530,7 @@ export function EmployeeForm({
             </div>
           </FormSection>
 
-          <FormSection variant="card" icon={Phone} title={`04 · ${t("employees.form.sections.contact")}`} description={t("employees.form.design.contact")}>
+          <FormSection variant="card" icon={Phone} title={`03 · ${t("employees.form.sections.contact")}`} description={t("employees.form.design.contact")}>
             <div className="space-y-2.5">
               <PhoneListEditor
                 idPrefix="employee-phone"

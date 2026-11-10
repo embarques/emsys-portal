@@ -374,5 +374,9 @@
     "enabled": "Enabled",
     "sortOrder": "Sort order",
     "filters": "Filters"
+  },
+  "statuses": {
+    "active": "Active",
+    "inactive": "Inactive"
   }
 }

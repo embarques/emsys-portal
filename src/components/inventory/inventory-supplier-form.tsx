@@ -59,8 +59,7 @@ function SupplierContactsEditor({
         <span className="text-xs font-medium text-muted-foreground">{t("inventory.form.fields.contactEmail")}</span>
       </div>
 
-      {/* Cap the list against the viewport so the dialog never scrolls on desktop. */}
-      <div className="-m-1 space-y-2.5 p-1 @3xl:max-h-[max(6rem,calc(90vh-35rem))] @3xl:overflow-y-auto">
+      <div className="-m-1 space-y-2.5 p-1">
         {entries.map((contact, index) => (
           <div
             key={index}
@@ -159,7 +158,8 @@ export function InventorySupplierForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody workflow isBusy={isSubmitting}>
-        <div className="grid gap-5 @3xl:grid-cols-2">
+        <div className="grid items-start gap-5 @5xl:grid-cols-2">
+        <div className="grid gap-5 @3xl:grid-cols-2 @5xl:grid-cols-1">
           <FormSection
             variant="card"
             icon={Building2}
@@ -224,6 +224,7 @@ export function InventorySupplierForm({
             onChange={(contacts) => setValues((current) => ({ ...current, contacts }))}
           />
         </FormSection>
+        </div>
       </FormBody>
 
       <FormFooter

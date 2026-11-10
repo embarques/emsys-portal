@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import {
@@ -610,7 +611,7 @@ export function RegisterInventoryChangeFields({
       </FormSection>
 
       <Dialog open={entityDialog === "supplier"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>
               {editingSupplier ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}

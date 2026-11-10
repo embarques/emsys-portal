@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -38,10 +38,11 @@ import {
 import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import { cn } from "@/lib/utils";
 
-export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
+export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBusyChange }: {
   dispatch: PendingInventoryDispatch;
   canReconcile: boolean;
   onClose: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
@@ -76,6 +77,11 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
   const dateTime = (iso?: string) => iso ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso)) : "—";
   const busy = form.formState.isSubmitting || reconcile.isPending;
   const confirmationPending = confirmReconciliation.isPending || rejectReconciliation.isPending;
+  const anyPending = busy || confirmationPending;
+  useEffect(() => {
+    onBusyChange?.(anyPending);
+  }, [anyPending, onBusyChange]);
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
   const nothingMessage = errors.lines?.message ?? errors.lines?.root?.message;
   const hasLoss = lines.some((line) => LOSS_OUTCOMES.some((outcome) => (readOutcomeQuantity(line[outcome]) ?? 0) > 0));
   const notesRequired = hasLoss || creditMinor({ lines, payments, salesRecordedAtDispatch: dispatch.salesRecordedAtDispatch }) > 0;
@@ -123,7 +129,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !busy && !confirmationPending) onClose(); }}>
-      <DialogContent centerInWorkspace className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl" aria-busy={busy}>
+      <DialogContent centerInWorkspace className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-7xl" aria-busy={busy}>
         <DialogHeader>
           <DialogTitle>{text("title")}</DialogTitle>
           <DialogDescription>{text("description", { holder: dispatch.holder.displayName, date: dateTime(dispatch.dispatchedAt) })}</DialogDescription>
@@ -157,7 +163,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
         {!canReconcile ? <p role="status" className="text-sm text-muted-foreground">{text("readOnly")}</p> : lines.length ? (
           <form onSubmit={submit} className="space-y-4 border-t pt-4">
             <fieldset disabled={busy} className="min-w-0 space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="reconcile-occurred-at">{text("occurredAt")}</Label>
                   <Input id="reconcile-occurred-at" type="datetime-local" aria-invalid={Boolean(errors.occurredAt)} {...form.register("occurredAt")} />
@@ -172,7 +178,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
                     {errors.incomeEmployeeId?.message ? <p role="alert" className="text-xs text-destructive">{t(errors.incomeEmployeeId.message)}</p> : null}
                   </div>
                 ) : null}
-                <div className="space-y-2 sm:col-span-2">
+                <div className={cn("space-y-2 sm:col-span-2", collectsSales && incomeOptions.length > 0 && "lg:col-span-1")}>
                   <Label htmlFor="reconcile-notes">{text("notes")}</Label>
                   <Input id="reconcile-notes" maxLength={1000} aria-invalid={Boolean(errors.notes)} aria-describedby="reconcile-notes-hint" {...form.register("notes")} />
                   <p id="reconcile-notes-hint" className={cn("text-xs", notesRequired ? "text-foreground" : "text-muted-foreground")}>{text("notesHint")}</p>
@@ -180,6 +186,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
                 </div>
               </div>
               {dispatch.salesRecordedAtDispatch ? <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">{text("salesRecorded")}</p> : null}
+              <div className="grid gap-4 xl:grid-cols-2">
               {lines.map((line, index) => {
                 const remaining = line.outstanding - accountedQuantity(line);
                 const lineErrors = errors.lines?.[index];
@@ -219,6 +226,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose }: {
                   {messages.map((message) => <p key={message} role="alert" className="text-xs text-destructive">{t(message)}</p>)}
                 </fieldset>;
               })}
+              </div>
               {collectsSales ? (
                 <ReconcileDispatchPayments
                   form={form}

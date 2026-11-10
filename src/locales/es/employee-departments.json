@@ -43,5 +43,6 @@
       }
     }
   },
-  "searchPlaceholder": "Buscar departamentos…"
+  "searchPlaceholder": "Buscar departamentos…",
+  "entities": "departamentos"
 }

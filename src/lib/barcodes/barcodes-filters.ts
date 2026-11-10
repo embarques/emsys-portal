@@ -16,6 +16,7 @@ const NUMERIC_COMPARE_OPERATORS: ReadonlySet<string> = new Set([
   "lte",
 ]);
 const ID_REF_FIELDS: ReadonlySet<string> = new Set(["id", "createdBy.id", "updatedBy.id"]);
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["tripNumber"]);
 
 function expandBarcodeIdRefFilter(filter: ApiSearchFilter): ApiSearchFilter | null {
   if (STRING_ID_OPERATORS.has(filter.operator)) {
@@ -36,7 +37,7 @@ function expandBarcodeLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode |
     return expandBarcodeIdRefFilter(filter);
   }
 
-  return coerceTypedLeafFilter(filter, { numericFields: new Set() });
+  return coerceTypedLeafFilter(filter, { numericFields: NUMERIC_FIELDS });
 }
 
 export function expandBarcodeFilterNode(node: ApiSearchFilterNode): ApiSearchFilterNode | null {

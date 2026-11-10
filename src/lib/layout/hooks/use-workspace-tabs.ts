@@ -182,7 +182,9 @@ export function useWorkspaceTabs() {
               form: {
                 ...(params.customerFormIntent != null
                   ? { customerFormIntent: params.customerFormIntent }
-                  : {}),
+                  : params.focusAddressIndex != null
+                    ? { customerFormIntent: undefined }
+                    : {}),
                 ...(params.focusAddressIndex != null
                   ? { focusAddressIndex: params.focusAddressIndex }
                   : {}),

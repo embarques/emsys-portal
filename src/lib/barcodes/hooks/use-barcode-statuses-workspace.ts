@@ -79,5 +79,21 @@ export function useBarcodeStatusesWorkspace() {
     }
   }
 
-  return { t, statusesQuery, statuses, isSaving, isDeleting: deleteMutation.isPending, dialogOpen, setDialogOpen, editing, form, error, openCreate, openEdit, save: form.handleSubmit(save), remove };
+  return {
+    t,
+    statusesQuery,
+    statuses,
+    isSaving,
+    isDeleting: deleteMutation.isPending,
+    dialogOpen,
+    setDialogOpen,
+    editing,
+    form,
+    error,
+    openCreate,
+    openEdit,
+    save: form.handleSubmit(save),
+    remove,
+    deleteRecord: (status: BarcodeStatusOption) => deleteMutation.mutateAsync(status.id),
+  };
 }

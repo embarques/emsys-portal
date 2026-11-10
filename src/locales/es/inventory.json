@@ -218,6 +218,11 @@
         "receivedAtRange": {
           "label": "Rango de recepción",
           "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "lines": {
+          "itemId": {
+            "label": "Artículo"
+          }
         }
       }
     },
@@ -239,6 +244,11 @@
         "dispatchedAtRange": {
           "label": "Rango de despacho",
           "placeholder": "2026-01-01 a 2026-06-30"
+        },
+        "lines": {
+          "itemId": {
+            "label": "Artículo"
+          }
         }
       }
     },
