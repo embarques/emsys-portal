@@ -78,10 +78,10 @@ function ReservedInvoicePoolPanel() {
       renderCell: (item) => item.number,
     },
     {
-      id: "receivedAt",
-      label: text("receivedAt"),
+      id: "reservedAt",
+      label: text("reservedAt"),
       cellClassName: "text-muted-foreground",
-      renderCell: (item) => item.receivedAt ? formatAuditDateTime(item.receivedAt) : "—",
+      renderCell: (item) => item.reservedAt ? formatAuditDateTime(item.reservedAt) : "—",
     },
     {
       id: "user",
@@ -203,6 +203,20 @@ function ReservedInvoicePoolPanel() {
 
       <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
+          <label className="flex items-center gap-2 text-sm">
+            {text("sort")}
+            <select className="h-9 rounded-md border bg-background px-2" value={model.sort}
+              disabled={busy || model.pending} onChange={event => model.setSort(event.target.value)}>
+              {[
+                ["id", "id"], ["number", "number"], ["reservedAt", "reservedAt"],
+                ["createdAt", "createdAt"], ["allocation.userId", "user"], ["claimed", "status"],
+              ].flatMap(([field, label]) => ["asc", "desc"].map(direction => (
+                <option key={`${field}:${direction}`} value={`${field}:${direction}`}>
+                  {text(label)} · {text(direction)}
+                </option>
+              )))}
+            </select>
+          </label>
           <TableDirectoryToolbar
             search={<TableSearchInput value={model.numberSearch} onChange={model.setNumberSearch} maxLength={100} placeholder={text("search")} disabled={busy || model.pending} />}
             searchSummary={remaining}
@@ -270,7 +284,7 @@ function ReservedInvoicePoolPanel() {
           <p className="text-sm text-muted-foreground" aria-live="polite">{remaining}</p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={!model.hasPrevious || model.query.isFetching || model.searchPending || busy} onClick={model.previous}><ChevronLeft className="size-4" />{text("previous")}</Button>
-            <Button variant="outline" size="sm" disabled={!model.query.data?.nextCursor || model.query.isFetching || model.searchPending || busy} onClick={model.next}>{text("next")}<ChevronRight className="size-4" /></Button>
+            <Button variant="outline" size="sm" disabled={!model.query.data?.hasNext || model.query.isFetching || model.searchPending || busy} onClick={model.next}>{text("next")}<ChevronRight className="size-4" /></Button>
           </div>
         </div>
       </Card>

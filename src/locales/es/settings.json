@@ -1,4 +1,17 @@
 {
+  "invoiceNumbering": {
+    "title": "Numeración de facturas",
+    "description": "Configure el prefijo y el rango de las facturas generadas automáticamente. El candado controla el sufijo, el rango y la cantidad de dígitos.",
+    "prefix": "Prefijo",
+    "suffix": "Sufijo",
+    "startValue": "Número inicial",
+    "maxValue": "Número final",
+    "paddingLength": "Cantidad de dígitos",
+    "isActive": "Activar numeración automática",
+    "unlock": "Desbloquear sufijo y rango",
+    "lock": "Bloquear sufijo y rango",
+    "permissionRequired": "Se requiere permiso para desbloquear el rango de facturas"
+  },
   "title": "Configuración",
   "pages": {
     "description": "Configure ajustes del sistema, apariencia, idioma y preferencias de la cuenta."

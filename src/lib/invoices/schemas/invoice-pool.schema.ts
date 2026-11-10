@@ -9,9 +9,10 @@ export type InvoicePoolForm = z.infer<typeof invoicePoolFormSchema>;
 export const reservedInvoiceSchema = z.object({
   id: z.string().regex(/^[a-f0-9]{24}$/i),
   number: z.string().min(1),
-  receivedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  reservedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  createdAt: z.string().datetime({ offset: true }).nullable().optional(),
   claimed: z.boolean().default(false),
-  allocation: z.object({ userId: z.number().int().nonnegative(), token: z.string().min(1) }),
+  allocation: z.object({ userId: z.number().int().nonnegative(), token: z.string().min(1).optional() }),
 });
 export type ReservedInvoice = z.infer<typeof reservedInvoiceSchema>;
 export const invoicePoolPageSchema = z.object({

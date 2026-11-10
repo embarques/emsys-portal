@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   VERSION: "/version",
  FINANCIAL_ACTIVITY: "/financial-activity",
   HEALTH: "/health",
+  COMPANY_INVOICE_NUMBERING: "/companies/current/invoice-numbering",
   CURRENT_COMPANY_POLICY: "/companies/current/policy",
   CURRENT_COMPANY: "/companies/current",
   AUTH_TOKEN: "/auth/token",
