@@ -661,7 +661,7 @@
     "status": {
       "open": "Activo",
       "closed": "Inactivo",
-      "badge": "{{status}} · #{{id}}"
+      "closeoutNumber": "Cierre #{{id}}"
     },
     "summary": {
       "loadingTotals": "Cargando totales del resumen…",
@@ -679,6 +679,8 @@
       "no": "No"
     },
     "sessionPanel": {
+      "currentTitle": "Transacción actual",
+      "unsaved": "Sin guardar",
       "total": "Total",
       "show": "Mostrar transacciones",
       "hide": "Ocultar transacciones",
@@ -801,7 +803,7 @@
         "selectType": "Seleccionar tipo",
         "enterDetails": "Ingresar detalles"
       },
-      "changeType": "Cambiar tipo",
+      "changeType": "Cambiar transacción",
       "typeSelector": {
         "title": "Elija un tipo de transacción",
         "description": "Seleccione el tipo de transacción que desea registrar.",
@@ -931,7 +933,8 @@
         "referenceNumberModeCustom": "Ingresar el propio",
         "referenceNumberCustom": "Número de referencia interna personalizado",
         "referenceNumberHint": "EMSYS la usa para identificar la transacción.",
-        "referenceNumberSystemHint": "EMSYS generará un número de referencia interna al guardar.",
+        "referenceNumberSystemHint": "EMSYS generará un número de referencia interna al guardar. Desactívelo para ingresar el suyo.",
+        "referenceNumberCustomHint": "Actívelo para que EMSYS genere el número de referencia interna.",
         "account": "Cuenta",
         "sourceAccount": "Cuenta origen",
         "amount": "Monto",
@@ -939,9 +942,9 @@
         "description": "Descripción",
         "cost": "Costo",
         "balance": "Saldo",
-        "skipSender": "Omitir cliente remitente",
         "senderClient": "Cliente remitente",
-        "skipReceiver": "Omitir cliente destinatario",
+        "partyModeSkip": "Omitir",
+        "partyModeInclude": "Seleccionar cliente",
         "partySkipped": "Omitido",
         "receiverClient": "Cliente destinatario",
         "inventoryDirection": "Recibido o despachado",
@@ -1015,7 +1018,6 @@
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 si aún no se ha pagado.",
-        "partiesOptional": "Opcional. Deje ambos omitidos y presione Siguiente para ir a la revisión.",
         "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
         "sourceAccount": "De dónde provienen los fondos.",
         "cashAccount": "Dónde se guarda el efectivo. Por defecto, Efectivo en caja.",
@@ -1090,7 +1092,7 @@
         "inventoryHoldersRequired": "Seleccione un vehículo o al menos un empleado responsable de este inventario."
       },
       "sections": {
-        "assignment": "Asignación",
+        "assignment": "Asignado a",
         "invoiceDetails": "Datos de la factura",
         "invoiceAmount": "Monto de la factura",
         "paymentDetails": "Pago y referencias",

@@ -67,7 +67,7 @@ export function TransactionReferenceNumberFields({
       <SwitchField
         id={`${id}-mode`}
         label={<>{t("accounting.dailyIncome.form.fields.referenceNumber")}: {t(resolvedMode === "system" ? "accounting.dailyIncome.form.fields.referenceNumberModeSystem" : "accounting.dailyIncome.form.fields.referenceNumberModeCustom")}</>}
-        description={resolvedMode === "system" ? systemHint ?? t("accounting.dailyIncome.form.fields.referenceNumberSystemHint") : undefined}
+        description={resolvedMode === "system" ? systemHint ?? t("accounting.dailyIncome.form.fields.referenceNumberSystemHint") : t("accounting.dailyIncome.form.fields.referenceNumberCustomHint")}
         checked={resolvedMode === "system"}
         disabled={disabled}
         onCheckedChange={(checked) => changeMode(checked ? "system" : "custom")}

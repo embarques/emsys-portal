@@ -38,7 +38,7 @@ async function fixture(hash = "", width = 1200) {
   return page;
 }
 
-test("desktop shows one category, exposes help on keyboard focus, and dispatches each action unchanged", async () => {
+test("desktop shows one category, keeps each description under its type, and dispatches each action unchanged", async () => {
   const page = await fixture();
   try {
     assert.equal(await page.locator('[role="region"]:visible').count(), 1);
@@ -46,9 +46,13 @@ test("desktop shows one category, exposes help on keyboard focus, and dispatches
     const invoices = await page.getByRole("button", { name: "Invoices", exact: true }).boundingBox();
     const actions = await page.locator('[role="region"]:visible').boundingBox();
     assert.ok(actions.x > invoices.x + invoices.width);
+    const newInvoice = page.getByRole("button", { name: "New invoice", exact: true });
+    const description = newInvoice.getByText("Register a new invoice and its initial payment", { exact: true });
+    assert.equal(await description.isVisible(), true);
+    assert.equal(await page.getByText("Register a new invoice and its initial payment", { exact: true }).count(), 1);
     const payment = page.getByRole("button", { name: "Invoice payment", exact: true });
+    assert.equal(await payment.getByText("Record a payment for an existing invoice", { exact: true }).isVisible(), true);
     await payment.focus();
-    assert.equal(await page.getByText("Record a payment for an existing invoice", { exact: true }).last().isVisible(), true);
     await page.keyboard.press("Enter");
     assert.equal(await page.locator("#selection").textContent(), "PAYMENT");
     const categories = {
@@ -110,5 +114,76 @@ test("returning from a transaction opens its category", async () => {
   try {
     assert.equal(await page.getByRole("region", { name: "Income & expenses" }).count(), 1);
     assert.equal(await page.getByRole("button", { name: "Expense", exact: true }).isVisible(), true);
+  } finally { await page.close(); }
+});
+
+test("changing categories clears the previously selected transaction highlight", async () => {
+  const page = await fixture("expense");
+  try {
+    const expense = page.getByRole("button", { name: "Expense", exact: true });
+    assert.equal(await expense.locator(".lucide-check").count(), 1);
+    await page.getByRole("button", { name: "Invoices", exact: true }).click();
+    assert.equal(await page.locator('[role="region"]:visible .lucide-check').count(), 0);
+    await page.getByRole("button", { name: "Income & expenses", exact: true }).click();
+    assert.equal(await expense.locator(".lucide-check").count(), 0);
+    assert.equal(await expense.evaluate((element) => element.classList.contains("bg-primary/5")), false);
+  } finally { await page.close(); }
+});
+
+
+test("selected form replaces options inside its category and section links scroll only its body", async () => {
+  for (const width of [1200, 390]) {
+    const page = await fixture("inline", width);
+    try {
+      await page.getByRole("button", { name: "New invoice", exact: true }).click();
+      const panel = page.getByRole("region", { name: "Invoices", exact: true });
+      const nav = panel.getByRole("navigation", { name: "New invoice" });
+      await nav.getByRole("button", { name: "Payment & references", exact: true }).waitFor();
+      assert.equal(await panel.getByRole("button", { name: "Invoice payment", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: "Invoices", exact: true }).count(), 0);
+      assert.equal(await page.getByText("Choose a transaction type", { exact: true }).count(), 0);
+      const body = panel.locator("[data-form-body]");
+      const navTop = (await nav.boundingBox()).y;
+      await nav.getByRole("button", { name: "Payment & references", exact: true }).focus();
+      await page.keyboard.press("Enter");
+      assert.ok(await body.evaluate((element) => element.scrollTop) > 300, JSON.stringify(await body.evaluate((element) => ({ top: element.scrollTop, height: element.clientHeight, scroll: element.scrollHeight, parent: element.parentElement.clientHeight }))));
+      assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute("data-form-section")), true);
+      assert.equal((await nav.boundingBox()).y, navTop);
+      assert.equal(await page.locator("#selection").textContent(), "");
+      await nav.getByRole("button", { name: "New invoice", exact: true }).click();
+      assert.equal(await body.evaluate((element) => element.scrollTop), 0);
+      await page.getByRole("button", { name: "Toggle customers" }).click();
+      await nav.getByRole("button", { name: "Customers", exact: true }).waitFor();
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+      await page.screenshot({ path: path.join(tmpdir(), `emsys-transaction-inline-${width}.png`) });
+      await page.getByRole("button", { name: "Change transaction", exact: true }).click();
+      assert.equal(await panel.getByRole("button", { name: "Invoice payment", exact: true }).isVisible(), true);
+      await page.getByRole("button", { name: "Income & expenses", exact: true }).click();
+      assert.equal(await page.getByRole("region", { name: "Income & expenses", exact: true }).getByRole("button", { name: "Expense", exact: true }).isVisible(), true);
+    } finally { await page.close(); }
+  }
+});
+
+test("keyboard navigation into a new section scrolls that section to the top of the form body, clicks do not", async () => {
+  const page = await fixture("inline");
+  try {
+    await page.getByRole("button", { name: "New invoice", exact: true }).click();
+    const body = page.locator("[data-form-body]");
+    const offsetFromTop = (name) => page.evaluate((title) => {
+      const section = Array.from(document.querySelectorAll("[data-form-section]")).find((element) => element.querySelector("h3")?.textContent === title);
+      return Math.round(section.getBoundingClientRect().top - document.querySelector("[data-form-body]").getBoundingClientRect().top);
+    }, name);
+    await page.getByLabel("Assignment field").click();
+    await page.keyboard.press("Tab");
+    assert.equal(await page.evaluate(() => document.activeElement?.closest("label")?.textContent), "Invoice details field");
+    assert.equal(await offsetFromTop("Invoice details"), 16);
+    await page.keyboard.press("Tab");
+    assert.equal(await page.evaluate(() => document.activeElement?.closest("label")?.textContent), "Invoice notes field");
+    assert.equal(await offsetFromTop("Invoice details"), 16);
+    await page.keyboard.press("Tab");
+    assert.equal(await offsetFromTop("Invoice amount"), 16);
+    const scrollTop = await body.evaluate((element) => element.scrollTop);
+    await page.getByLabel("Invoice amount field").click();
+    assert.equal(await body.evaluate((element) => element.scrollTop), scrollTop);
   } finally { await page.close(); }
 });

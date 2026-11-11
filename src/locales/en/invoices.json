@@ -321,8 +321,7 @@
       "modeCustom": "Enter your own",
       "customLabel": "Custom invoice number",
       "assignedOnSave": "Assigned when saved",
-      "hint": "EMSYS will generate an invoice number from your company’s range when you save.",
-      "turnOffHint": "Turn off system generated invoice setting to enter a custom invoice number"
+      "hint": "EMSYS will generate an invoice number from your company’s range when you save."
     }
   },
   "wizard": {

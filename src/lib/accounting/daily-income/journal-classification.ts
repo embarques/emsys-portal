@@ -2,9 +2,12 @@ import type { DailyIncomeJournal } from "./types";
 
 type ClassifiableJournal = Pick<DailyIncomeJournal, "transactionType" | "amount" | "inventoryDirection" | "accounts">;
 
+/** Contra-revenue that reduces accounts receivable; the API still types it as EXPENSE. */
+export const SALES_DISCOUNTS_ACCOUNT = "SALES DISCOUNTS";
+
 /** Daily Income expense for a journal: EXPENSE account lines win over the transaction type. */
 export function journalExpenseAmount(item: ClassifiableJournal): number {
-  const expenseLines = item.accounts.filter((account) => account.type === "EXPENSE");
+  const expenseLines = item.accounts.filter((account) => account.type === "EXPENSE" && account.name !== SALES_DISCOUNTS_ACCOUNT);
   if (expenseLines.length > 0) return expenseLines.reduce((total, account) => total + account.debit, 0);
   if (item.transactionType === "EXPENSE" || (item.transactionType === "INVENTORY" && item.inventoryDirection === "received")) {
     return item.amount;

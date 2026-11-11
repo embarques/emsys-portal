@@ -265,40 +265,35 @@ export function TransactionAssigneeSelect({
     if (routeId) onAssigneeComplete?.();
   }
 
+  const sourceControl = allowDailyRoute ? (
+    <SegmentedControl
+      id={`${id}-source`}
+      aria-label={t("accounting.dailyIncome.form.fields.assignedTo")}
+      value={source}
+      onValueChange={handleSourceChange}
+      options={sourceOptions}
+    />
+  ) : null;
+
   return (
     <div className={singleColumn ? "flex flex-col gap-4" : "grid gap-4 sm:grid-cols-2"}>
-      {allowDailyRoute ? (
-        <div className="space-y-2">
-          <Label id={`${id}-source-label`}>
-            {t("accounting.dailyIncome.form.fields.assignedTo")}
-          </Label>
-          <SegmentedControl
-            id={`${id}-source`}
-            aria-labelledby={`${id}-source-label`}
-            value={source}
-            onValueChange={handleSourceChange}
-            options={sourceOptions}
-          />
-        </div>
-      ) : null}
+      {sourceControl}
 
       {source === "route" ? (
         <div className="space-y-2 sm:col-span-2">
-          <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="journal-route">
-              {t("accounting.dailyIncome.form.fields.route")}
-            </Label>
-            {onAddRoute ? (
+          {onAddRoute ? (
+            <div className="flex items-center justify-end gap-2">
               <FieldEntityActions
                 hasSelection={Boolean(routeId)}
                 onAdd={onAddRoute}
                 onEdit={onEditRoute}
                 addIcon={Route}
               />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           <SearchableSelect
             id="journal-route"
+            aria-label={t("accounting.dailyIncome.form.fields.route")}
             value={routeId ?? ""}
             onValueChange={handleRouteChange}
             placeholder={t("accounting.dailyIncome.form.placeholders.selectRoute")}
@@ -337,19 +332,19 @@ export function TransactionAssigneeSelect({
         </div>
       ) : (
         <div className="space-y-2 sm:col-span-2">
-          <div className="flex items-center justify-between gap-2">
-            <Label htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</Label>
-            {onAddEmployee ? (
+          {onAddEmployee ? (
+            <div className="flex items-center justify-end gap-2">
               <FieldEntityActions
                 hasSelection={Boolean(employeeId)}
                 onAdd={onAddEmployee}
                 onEdit={onEditEmployee}
                 addIcon={UserPlus}
               />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           <SearchableSelect
             id={id}
+            aria-label={t("accounting.dailyIncome.form.fields.employee")}
             value={employeeValue}
             onValueChange={handleEmployeeChange}
             placeholder={t("accounting.dailyIncome.form.placeholders.selectEmployee")}

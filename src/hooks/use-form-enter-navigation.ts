@@ -7,7 +7,10 @@ const FIELD_SELECTOR = [
   "[role='combobox']",
   "[role='switch']",
   "[role='checkbox']",
+  "[data-enter-navigation='field'] [role='radio']",
 ].join(",");
+
+const FIELD_BUTTON_SELECTOR = "[role='switch'], [role='checkbox'], [data-enter-navigation='field'] [role='radio']";
 
 const automaticSelectionFocus = new WeakSet<HTMLElement>();
 
@@ -196,7 +199,7 @@ export function handleFormEnterNavigation(
   if (!(target instanceof HTMLElement)) return;
   if (target.closest('[data-enter-navigation="ignore"]')) return;
   if ((target.tagName === "TEXTAREA" && !advanceTextareas) || target.isContentEditable) return;
-  const isFieldButton = target.matches('[role="switch"], [role="checkbox"]');
+  const isFieldButton = target.matches(FIELD_BUTTON_SELECTOR);
   if ((target.tagName === "BUTTON" && !isFieldButton) || target.tagName === "A") return;
   const inputType = (target as HTMLInputElement).type;
   if (inputType === "submit" || (inputType === "button" && !isFieldButton)) return;

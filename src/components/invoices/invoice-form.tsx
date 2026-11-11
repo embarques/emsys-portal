@@ -909,6 +909,8 @@ export function InvoiceForm({
     <div className={cn(isPhoneWizard ? undefined : isWizard ? "@2xl:col-span-2" : "sm:col-span-2")}>
       <InvoiceNumberModeFields
         id="invoiceNumber"
+        variant="segmented"
+        compact
         autoGenerate={Boolean(values.autoGenerateNumber)}
         invoiceNumber={values.invoiceNumber}
         generatedInvoiceNumber={values.generatedInvoiceNumber}

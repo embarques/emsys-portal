@@ -33,7 +33,7 @@ export function FormTabShell({ title, description, actions, children, className,
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <div className={cn("flex shrink-0 items-center justify-between gap-4 border-b border-border px-5 py-4", compactHeader && "py-3")}>
-          <div className={cn("min-w-0", compactHeader && "flex flex-1 flex-wrap items-baseline justify-between gap-x-4 gap-y-1")}>
+          <div className={cn("min-w-0", compactHeader && "flex flex-1 flex-wrap items-baseline gap-x-3 gap-y-1")}>
             <h2 className="text-base font-semibold leading-tight">{title}</h2>
             {description ? (
               <p className={cn("text-sm text-muted-foreground", !compactHeader && "mt-0.5")}>{description}</p>

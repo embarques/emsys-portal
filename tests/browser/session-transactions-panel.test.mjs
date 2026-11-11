@@ -24,11 +24,14 @@ function load(filename) {
  cache.set(filename, loadedModule.exports);
  const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
  function localRequire(name) {
+  if (name === "@/lib/i18n/translate-current") return { translateCurrent: translate };
   if (name === "@/lib/i18n") return { useTranslation: () => ({ t: translate }) };
   if (name === "@/hooks/use-form-viewport") return { useFormViewport: () => React.createRef() };
   if (name.startsWith("@/") || name.startsWith(".")) {
    const target = name.startsWith("@/") ? path.resolve("src", name.slice(2)) : path.resolve(path.dirname(filename), name);
-   const resolved = [target + ".ts", target + ".tsx"].find(file => { try { readFileSync(file); return true; } catch { return false; } });
+   if (target.endsWith(".json")) return JSON.parse(readFileSync(target, "utf8"));
+   const resolved = [target + ".ts", target + ".tsx", path.join(target, "index.ts"), path.join(target, "index.tsx")].find(file => { try { readFileSync(file); return true; } catch { return false; } });
+   assert.ok(resolved, `Cannot resolve ${name} from ${filename}`);
    return load(resolved);
   }
   return require(name);
@@ -117,6 +120,45 @@ test("discounted invoice shows discount in the saved entry and totals without ov
    assert.deepEqual(await summary.locator("dd").allTextContents(), ["$100.00", "$20.00", "$80.00", "$0.00"]);
    assert.equal(await summary.evaluate(el => el.scrollWidth <= el.clientWidth), true);
   }
-  assert.ok((await panel.locator("footer").innerText()).includes("$60.00"));
+  assert.ok((await panel.locator("footer > div").first().innerText()).includes("$80.00"));
  } finally { await page.close(); }
+});
+
+test("current transaction summary hides blank fields and preserves zero amounts in the closeout currency", () => {
+ const { TransactionReview } = load(path.resolve("src/components/accounting/transaction-review.tsx"));
+ const markup = renderToStaticMarkup(React.createElement(TransactionReview, {
+  compact: true, currency: "DOP", values: {
+   transactionType: "INITIAL-PAYMENT", autoGenerateInvoiceNumber: false,
+   invoiceNumber: "INV-DRAFT", invoiceCost: 100, invoiceDiscount: 0, amount: 0,
+   employeeName: "Ana", description: "   ", includeSender: false, senderName: "Hidden sender",
+   includeReceiver: true, receiverName: "Luis",
+  },
+ }));
+ assert.ok(markup.includes("Transacción actual"));
+ assert.ok(markup.includes("Sin guardar"));
+ assert.ok(markup.includes("INV-DRAFT"));
+ assert.ok(markup.includes("Ana"));
+ assert.equal((markup.match(/Luis/g) ?? []).length, 1);
+ assert.ok(markup.includes("DOP"));
+ assert.ok(markup.includes("0.00"));
+ assert.ok(!markup.includes("Hidden sender"));
+ assert.ok(!markup.includes(translate("accounting.dailyIncome.form.fields.description")));
+ assert.ok(!markup.includes(translate("accounting.dailyIncome.form.fields.partySkipped")));
+ assert.ok(!markup.includes(translate("accounting.dailyIncome.form.fields.paymentMethod")));
+});
+
+test("current transaction summary clears absent amounts and irrelevant payment details", () => {
+ const { TransactionReview } = load(path.resolve("src/components/accounting/transaction-review.tsx"));
+ const markup = renderToStaticMarkup(React.createElement(TransactionReview, {
+  compact: true, currency: "USD", values: {
+   transactionType: "INVENTORY", inventoryDirection: "received", inventoryItemName: "Cinta",
+   inventoryQuantity: 0, inventoryUnitPrice: NaN, paymentMethodName: "CASH", checkNumber: "STALE-CHECK",
+  },
+ }));
+ assert.ok(markup.includes("Cinta"));
+ assert.ok(markup.includes(">0</dd>"));
+ assert.ok(!markup.includes("NaN"));
+ assert.ok(!markup.includes("STALE-CHECK"));
+ assert.ok(!markup.includes(translate("accounting.dailyIncome.form.fields.paymentMethod")));
+ assert.ok(!markup.includes(translate("accounting.dailyIncome.form.fields.unitPrice")));
 });

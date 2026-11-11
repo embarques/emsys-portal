@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
 import type { TransactionEntryCategory } from "@/lib/accounting/daily-income/transaction-type-config";
@@ -25,11 +26,15 @@ const LoanEntryForm = dynamic(() => import("@/components/accounting/loan-entry-d
 const PendingInventoryDispatchesPanel = dynamic(() => import("@/components/accounting/pending-inventory-dispatches-panel").then((module) => module.PendingInventoryDispatchesPanel));
 
 type SharedProps = {
+  summaryContainer?: HTMLElement | null;
+  summaryCurrency?: string;
   onEntryActiveChange?: (active: boolean) => void;
-  /** When set, the parent renders the selected type summary instead of the form body. */
+  /** Notify hosts of the active journal type. */
   onSelectedTypeChange?: (type: JournalTransactionType | null) => void;
   open: boolean;
   presentation?: "dialog" | "tab";
+  /** Host header slot (tab presentation) for the change-type control and selected type label. */
+  headerActionsContainer?: HTMLElement | null;
   appearance?: "default" | "phone";
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
@@ -255,10 +260,71 @@ export function AddTransactionWizard(props: Props) {
 
   function chooseType() {
     if (isSubmitting) return;
+    if (currentValuesRef.current && !specialType) setDetailValues(currentValuesRef.current);
     loanEntry.close();
     setSpecialType(null);
     setShowTypePicker(true);
   }
+
+  const entryHeaderActions = !isEdit && !showTypePicker ? (
+    <div className="flex min-w-0 items-center gap-2">
+      <Button type="button" variant="ghost" size="sm" disabled={isSubmitting} onClick={chooseType}>
+        <ArrowLeft className="size-3.5" />{t("accounting.dailyIncome.wizard.changeType")}
+      </Button>
+      <p className="truncate text-sm font-semibold">
+        {t(`accounting.dailyIncome.wizard.typeSelector.options.${specialType ?? selectedType}`)}
+      </p>
+    </div>
+  ) : null;
+  const headerActionsTarget = presentation === "tab" ? props.headerActionsContainer : null;
+
+  const entryContent = (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {presentation === "tab" && !headerActionsTarget && entryHeaderActions ? (
+        <div className="flex shrink-0 justify-end border-b bg-card px-3 py-2">{entryHeaderActions}</div>
+      ) : null}
+      {specialType === "INVENTORY-PAYMENT" && inventoryPaymentEnabled ? (
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <PendingInventoryDispatchesPanel presentation="inline" onBusyChange={setInventoryBusy} />
+        </div>
+      ) : specialType === "LOAN-ISSUE" || specialType === "LOAN-PAYMENT" ? (
+        <LoanEntryForm entry={loanEntry} employees={props.employees} accounts={props.accounts} onComplete={() => { setSpecialType(null); setShowTypePicker(true); }} />
+      ) : null}
+      {selectedType && !specialType ? (
+        <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", !showTypePicker && !specialType ? "flex" : "hidden")}>
+          <fieldset disabled={isSubmitting} className="contents">
+            <DailyIncomeTransactionForm
+              key={`${selectedType}-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}
+              summaryContainer={!showTypePicker && !specialType ? props.summaryContainer : null}
+              summaryCurrency={props.summaryCurrency}
+              formId={formId}
+              transactionType={selectedType}
+              initialValues={detailValues}
+              employees={props.employees}
+              dailyRoutes={props.dailyRoutes}
+              statementDate={props.statementDate}
+              statementBranchId={props.statementBranchId}
+              accounts={props.accounts}
+              bankAccounts={props.bankAccounts}
+              invoices={props.invoices}
+              paymentMethods={props.paymentMethods}
+              showTypeSummary={false}
+              showSectionNavigation={!isEdit}
+              appearance={appearance}
+              focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
+              allowAutoClear={!isEdit}
+              originalDiscount={originalDiscount}
+              originalSurcharge={originalSurcharge}
+              showInvoiceDetails={selectedType === "PAYMENT"}
+              onValuesChange={rememberFormValues}
+              onStepErrorChange={setStepError}
+              onSubmit={handleFormSubmit}
+            />
+          </fieldset>
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
     <div
@@ -273,61 +339,20 @@ export function AddTransactionWizard(props: Props) {
         <DialogHeader className="shrink-0 border-b border-border px-5 py-4 pr-12">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
+          {entryHeaderActions}
         </DialogHeader>
       ) : null}
-      {!showTypePicker && !isEdit ? (
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b px-5 py-3">
-          <p className="text-sm font-medium">{specialType
-            ? t(`accounting.dailyIncome.wizard.typeSelector.options.${specialType}`)
-            : t("accounting.dailyIncome.wizard.steps.enterDetails")}</p>
-          <Button type="button" variant="ghost" size="sm" disabled={isSubmitting} onClick={chooseType}>
-            <ArrowLeft className="size-4" />{t("accounting.dailyIncome.wizard.changeType")}
-          </Button>
-        </div>
-      ) : null}
+      {headerActionsTarget && entryHeaderActions ? createPortal(entryHeaderActions, headerActionsTarget) : null}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {showTypePicker ? (
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            <TransactionTypeSelector value={selectedType} onChange={handleTypeChange} appearance={appearance}
-              inventoryPaymentEnabled={inventoryPaymentEnabled} loanIssueEnabled={Boolean(loanEntry.openCreate)} loanPaymentEnabled={Boolean(loanEntry.openPayment)} />
+        {isEdit ? entryContent : (
+          <div className={cn("flex min-h-0 flex-1 flex-col", showTypePicker ? "overflow-y-auto px-5 py-4" : "overflow-hidden")}>
+            <TransactionTypeSelector value={specialType ?? selectedType} onChange={handleTypeChange} appearance={appearance}
+              onGroupChange={chooseType} isBusy={isSubmitting}
+              inventoryPaymentEnabled={inventoryPaymentEnabled} loanIssueEnabled={Boolean(loanEntry.openCreate)} loanPaymentEnabled={Boolean(loanEntry.openPayment)}>
+              {!showTypePicker ? entryContent : null}
+            </TransactionTypeSelector>
           </div>
-        ) : specialType === "INVENTORY-PAYMENT" && inventoryPaymentEnabled ? (
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            <PendingInventoryDispatchesPanel presentation="inline" onBusyChange={setInventoryBusy} />
-          </div>
-        ) : specialType === "LOAN-ISSUE" || specialType === "LOAN-PAYMENT" ? (
-          <LoanEntryForm entry={loanEntry} employees={props.employees} accounts={props.accounts} onComplete={() => { setSpecialType(null); setShowTypePicker(true); }} />
-        ) : null}
-        {selectedType ? (
-          <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", !showTypePicker && !specialType ? "flex" : "hidden")}>
-            <fieldset disabled={isSubmitting} className="contents">
-              <DailyIncomeTransactionForm
-                key={`${selectedType}-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}
-                formId={formId}
-                transactionType={selectedType}
-                initialValues={detailValues}
-                employees={props.employees}
-                dailyRoutes={props.dailyRoutes}
-                statementDate={props.statementDate}
-                statementBranchId={props.statementBranchId}
-                accounts={props.accounts}
-                bankAccounts={props.bankAccounts}
-                invoices={props.invoices}
-                paymentMethods={props.paymentMethods}
-                showTypeSummary={!isEdit && !props.onSelectedTypeChange}
-                appearance={appearance}
-                focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
-                allowAutoClear={!isEdit}
-                originalDiscount={originalDiscount}
-                originalSurcharge={originalSurcharge}
-                showInvoiceDetails={selectedType === "PAYMENT"}
-                onValuesChange={rememberFormValues}
-                onStepErrorChange={setStepError}
-                onSubmit={handleFormSubmit}
-              />
-            </fieldset>
-          </div>
-        ) : null}
+        )}
       </div>
       {!specialType || showTypePicker ? (
         <div className={cn("shrink-0 space-y-3 border-t border-border bg-card px-5 py-3", isPhone && "pb-[calc(env(safe-area-inset-bottom)+1rem)]")}>

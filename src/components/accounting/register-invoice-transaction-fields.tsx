@@ -16,9 +16,9 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { InvoiceNumberModeFields } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
-import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useCustomerPicker, useCustomerSearch } from "@/lib/customers/hooks/use-customers";
 import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
@@ -338,6 +338,48 @@ export function RegisterInvoiceTransactionFields({
     setValue("receiverName", customer?.name ?? "", { shouldValidate: true });
   }
 
+  function setPartyIncluded(side: "sender" | "receiver", include: boolean) {
+    if (side === "sender") {
+      setValue("includeSender", include, { shouldValidate: true });
+      if (include) return;
+      setValue("senderId", undefined, { shouldValidate: true });
+      setValue("senderName", "");
+      setSenderQuery("");
+      return;
+    }
+    setValue("includeReceiver", include, { shouldValidate: true });
+    if (include) return;
+    setValue("receiverId", undefined, { shouldValidate: true });
+    setValue("receiverName", "");
+    setReceiverQuery("");
+  }
+
+  function partyModeField(side: "sender" | "receiver", included: boolean, field: React.ReactNode) {
+    const id = `journal-${side}-mode`;
+    return (
+      <div className="space-y-2 min-w-0">
+        <div className="space-y-2">
+          <Label id={`${id}-label`}>
+            {t(side === "sender" ? "accounting.dailyIncome.form.fields.senderClient" : "accounting.dailyIncome.form.fields.receiverClient")}
+          </Label>
+          <div data-enter-navigation="field">
+            <SegmentedControl<"skip" | "include">
+              id={id}
+              aria-labelledby={`${id}-label`}
+              value={included ? "include" : "skip"}
+              onValueChange={(next) => setPartyIncluded(side, next === "include")}
+              options={[
+                { value: "skip", label: t("accounting.dailyIncome.form.fields.partyModeSkip") },
+                { value: "include", label: t("accounting.dailyIncome.form.fields.partyModeInclude") },
+              ]}
+            />
+          </div>
+        </div>
+        {included ? field : null}
+      </div>
+    );
+  }
+
   const assigneeFields = (
     <>
       {showEmployee ? (
@@ -475,6 +517,8 @@ export function RegisterInvoiceTransactionFields({
         <div className={grouped ? "min-w-0" : "min-w-0 sm:col-span-2"}>
           <InvoiceNumberModeFields
             id="journal-invoice-number"
+            variant="segmented"
+            compact
             autoGenerate={automaticNumber}
             invoiceNumber={watch("invoiceNumber") ?? ""}
             canUseManualNumber={canUseManualNumber}
@@ -679,75 +723,43 @@ export function RegisterInvoiceTransactionFields({
   const partiesFields = (
     <>
       {showParties ? (
-        <div className="space-y-3 min-w-0 sm:col-span-2">
-          <div className="grid min-w-0 grid-cols-2 gap-4">
-            <SwitchField
-              id="journal-skip-sender"
-              label={t("accounting.dailyIncome.form.fields.skipSender")}
-              checked={!includeSender}
-              onCheckedChange={(skip) => {
-                setValue("includeSender", !skip, { shouldValidate: true });
-                if (skip) {
-                  setValue("senderId", undefined, { shouldValidate: true });
-                  setValue("senderName", "");
-                  setSenderQuery("");
-                }
-              }}
-            />
-            <SwitchField
-              id="journal-skip-receiver"
-              label={t("accounting.dailyIncome.form.fields.skipReceiver")}
-              checked={!includeReceiver}
-              onCheckedChange={(skip) => {
-                setValue("includeReceiver", !skip, { shouldValidate: true });
-                if (skip) {
-                  setValue("receiverId", undefined, { shouldValidate: true });
-                  setValue("receiverName", "");
-                  setReceiverQuery("");
-                }
-              }}
-            />
-          </div>
-          {includeSender || includeReceiver ? (
-            <div className={grouped ? "grid min-w-0 gap-4 sm:grid-cols-2" : "space-y-3"}>
-              {includeSender ? (
-                <div className="space-y-2 min-w-0">
-                  <Label htmlFor="journal-sender">{t("accounting.dailyIncome.form.fields.senderClient")}</Label>
-                  <SearchableSelect
-                    id="journal-sender"
-                    value={senderId ?? ""}
-                    onValueChange={updateSender}
-                    placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
-                    searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
-                    manualFiltering
-                    mobileSheet
-                    loading={senderSearch.isFetching}
-                    onSearchChange={setSenderQuery}
-                    options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
-                  />
-                  <FieldMessage error={errors.senderId?.message} />
-                </div>
-              ) : null}
-              {includeReceiver ? (
-                <div className="space-y-2 min-w-0">
-                  <Label htmlFor="journal-receiver">{t("accounting.dailyIncome.form.fields.receiverClient")}</Label>
-                  <SearchableSelect
-                    id="journal-receiver"
-                    value={receiverId ?? ""}
-                    onValueChange={updateReceiver}
-                    placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
-                    searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
-                    manualFiltering
-                    mobileSheet
-                    loading={receiverSearch.isFetching}
-                    onSearchChange={setReceiverQuery}
-                    options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
-                  />
-                  <FieldMessage error={errors.receiverId?.message} />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+        <div className="space-y-4 min-w-0 sm:col-span-2">
+          {partyModeField("sender", Boolean(includeSender), (
+            <>
+              <SearchableSelect
+                id="journal-sender"
+                aria-label={t("accounting.dailyIncome.form.fields.senderClient")}
+                value={senderId ?? ""}
+                onValueChange={updateSender}
+                placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
+                searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
+                manualFiltering
+                mobileSheet
+                loading={senderSearch.isFetching}
+                onSearchChange={setSenderQuery}
+                options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
+              />
+              <FieldMessage error={errors.senderId?.message} />
+            </>
+          ))}
+          {partyModeField("receiver", Boolean(includeReceiver), (
+            <>
+              <SearchableSelect
+                id="journal-receiver"
+                aria-label={t("accounting.dailyIncome.form.fields.receiverClient")}
+                value={receiverId ?? ""}
+                onValueChange={updateReceiver}
+                placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
+                searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
+                manualFiltering
+                mobileSheet
+                loading={receiverSearch.isFetching}
+                onSearchChange={setReceiverQuery}
+                options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
+              />
+              <FieldMessage error={errors.receiverId?.message} />
+            </>
+          ))}
         </div>
       ) : null}
     </>
@@ -764,7 +776,7 @@ export function RegisterInvoiceTransactionFields({
           </div>
         </FormSection>
         <FormSection className={amountsStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceAmount")}>
-          <div className="grid w-full min-w-0 max-w-md grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,12rem)] gap-x-2 gap-y-3">
+          <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,12rem)] gap-x-2 gap-y-3">
             {costFields}
             {discountFields}
             {amountFields}
@@ -788,7 +800,6 @@ export function RegisterInvoiceTransactionFields({
         className={activeStep && activeStep !== "parties" ? "hidden" : undefined}
         variant="card"
         title={t("accounting.dailyIncome.form.sections.customers")}
-        description={t("accounting.dailyIncome.form.hints.partiesOptional")}
       >
         {partiesFields}
       </FormSection>
