@@ -56,6 +56,7 @@ import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useTranslation } from "@/lib/i18n";
 import { useGenerateReport, useGenerateIncomeReport } from "@/lib/reports/hooks/use-reports";
+import { timezoneDisplayName } from "@/lib/timezones";
 import { cn } from "@/lib/utils";
 
 import { buildPaymentReceiptRequest, } from "@/lib/accounting/daily-income/print-payment-receipt";
@@ -243,7 +244,7 @@ function DailyIncomeMobileSummary({
 export function DailyIncomeWorkspace() {
   const currentUser = useCurrentUser();
   const { hasPermission } = useAuth();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const feedback = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const [branchCode, setBranchCode] = useState("");
@@ -284,6 +285,7 @@ export function DailyIncomeWorkspace() {
   const currentDate = currentStatementQuery.data?.date.slice(0, 10) ?? "";
   const date = selectedDate || currentDate || serverToday;
   const statement = statementQuery.data ?? null;
+  const statementTimezone = statement?.timezone ?? calendar.data?.serverTimezone;
   useEffect(() => {
     if (!openCreateOnLoad) return;
     if (statementQuery.isLoading) return;
@@ -475,6 +477,12 @@ export function DailyIncomeWorkspace() {
     setTransactionDialog(true);
   }
 
+  const addTransactionButton = (className?: string) => (
+    <Button className={className} onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}>
+      <Plus className="size-4" />{t("accounting.dailyIncome.actions.addTransaction")}
+    </Button>
+  );
+
   return <div className="overflow-x-hidden">
     {startTransaction.error && !startTransaction.setupOpen && <p role="alert" className="mb-4 text-sm text-destructive">{startTransaction.error}</p>}
     {startTransaction.setupOpen && <TransactionCloseoutSetup pending={startTransaction.isPending} error={startTransaction.error} onSubmit={(values) => void startTransaction.start(values)} onCancel={startTransaction.cancel} />}
@@ -589,6 +597,7 @@ export function DailyIncomeWorkspace() {
         </Button>
       ) : null}
       {!calendar.data?.current && hasPermission("canCreateIncomeStatement","income_statement") && selectedBranch?.id === currentUser.data?.branch?.id ? <Button onClick={() => setStatementDialog(true)} disabled={!serverToday}><Plus className="h-4 w-4" />{t("accounting.dailyIncome.actions.createCloseout")}</Button> : null}
+      {addTransactionButton()}
     </>} />
 
     {statement ? (
@@ -602,8 +611,40 @@ export function DailyIncomeWorkspace() {
     ) : null}
 
     <Card className="mb-6 gap-0 py-0">
-      <CardContent className="flex flex-wrap items-start gap-4 py-4">
-        <div className="flex w-fit flex-col gap-2">
+      <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 py-3">
+        <div className="flex w-fit items-center gap-2">
+          <Label htmlFor="daily-date" className="sr-only">{t("accounting.dailyIncome.filters.date")}</Label>
+          <CloseoutDateNavigation id="daily-date" date={date} today={serverToday || date} onChange={(next) => { setDate(next);  }} />
+        </div>
+        <div className="flex w-fit items-center gap-2">
+          {statement ? (
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <Badge
+                className={cn(
+                  "gap-1.5 rounded-full font-medium",
+                  statement.status === "OPEN"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+                    : "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300",
+                )}
+              >
+                <span className={cn("size-1.5 rounded-full", statement.status === "OPEN" ? "bg-emerald-500" : "bg-slate-400")} aria-hidden />
+                {t(statement.status === "OPEN" ? "accounting.dailyIncome.status.open" : "accounting.dailyIncome.status.closed")}
+              </Badge>
+              <span className="text-sm text-muted-foreground" title={statementTimezone ? timezoneDisplayName(statementTimezone, locale, "long") || statementTimezone : undefined}>
+                {[
+                  t("accounting.dailyIncome.status.closeoutNumber", { id: String(statement.id).padStart(5, "0") }),
+                  statement.date.slice(0, 10) !== date ? formatAccountingDate(statement.date) : null,
+                  statementTimezone ? timezoneDisplayName(statementTimezone, locale) || statementTimezone : null,
+                ].filter(Boolean).join(" · ")}
+              </span>
+            </div>
+          ) : (
+            <Badge className="rounded-full border-amber-200 bg-amber-50 font-medium text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+              {t("accounting.dailyIncome.filters.noCloseout")}
+            </Badge>
+          )}
+        </div>
+        <div className="ml-auto flex w-fit items-center gap-2">
           <Label htmlFor="daily-branch">{t("accounting.dailyIncome.filters.branch")}</Label>
           <SearchableSelect
             id="daily-branch"
@@ -623,40 +664,13 @@ export function DailyIncomeWorkspace() {
             searchPlaceholder={t("accounting.dailyIncome.filters.searchBranches")}
           />
         </div>
-        <div className="flex w-fit flex-col gap-2">
-          <Label>{t("accounting.dailyIncome.filters.status")}</Label>
-          <Badge
-            className={
-              statement?.status === "OPEN"
-                ? "h-10 min-h-10 whitespace-nowrap rounded-lg border-2 border-transparent px-3 text-sm font-medium text-white hover:bg-emerald-600 bg-emerald-600"
-                : statement
-                  ? "h-10 min-h-10 whitespace-nowrap rounded-lg border-2 border-transparent px-3 text-sm font-medium text-white hover:bg-slate-600 bg-slate-600"
-                  : "h-10 min-h-10 whitespace-nowrap rounded-lg border-2 border-transparent px-3 text-sm font-medium text-white hover:bg-amber-600 bg-amber-600"
-            }
-          >
-            {statement
-              ? [
-                  t("accounting.dailyIncome.status.badge", {
-                    status: statement.status === "OPEN" ? t("accounting.dailyIncome.status.open") : t("accounting.dailyIncome.status.closed"),
-                    id: String(statement.id).padStart(5, "0"),
-                  }),
-                  statement.date.slice(0, 10),
-                  statement.timezone ?? calendar.data?.serverTimezone,
-                ].filter(Boolean).join(" · ")
-              : t("accounting.dailyIncome.filters.noCloseout")}
-          </Badge>
-        </div>
-        <div className="ml-auto flex w-fit flex-col gap-2">
-          <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
-          <CloseoutDateNavigation id="daily-date" date={date} today={serverToday || date} onChange={(next) => { setDate(next);  }} />
-        </div>
       </CardContent>
     </Card>
 
     </div>
 
-    {!statement ? <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2><Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button></div> : null}
-    {statement ? <JournalTransactionsTable key={`${currentUser.data?.id}:${statement.id}`} incomeStatementId={statement.id} headerActions={<Button onClick={() => void startTransaction.start()} disabled={!startTransaction.canStart || startTransaction.isPending}><Plus className="size-4"/>{t("accounting.dailyIncome.actions.addTransaction")}</Button>} isPrintingReceipt={generateReceiptMutation.isPending} onView={setViewJournal} onEdit={openEditTransactionForm} canEditRow={canEditJournal} onPrintReceipt={journal => void printReceipt(journal)} /> : null}
+    {!statement ? <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2>{addTransactionButton("md:hidden")}</div> : null}
+    {statement ? <JournalTransactionsTable key={`${currentUser.data?.id}:${statement.id}`} incomeStatementId={statement.id} headerActions={addTransactionButton("md:hidden")} isPrintingReceipt={generateReceiptMutation.isPending} onView={setViewJournal} onEdit={openEditTransactionForm} canEditRow={canEditJournal} onPrintReceipt={journal => void printReceipt(journal)} /> : null}
 
     {statementDialog ? <CloseoutRolloverDialog open={statementDialog} onOpenChange={setStatementDialog} onReady={async created=>{setBranchCode(created.branch?.code??branchCode);setDate(created.date);await calendar.refetch();}} /> : null}
     <DailyIncomePrintDialog

@@ -1,6 +1,6 @@
 # Backend/API gaps — pending work
 
-Unresolved defects, contract decisions and acceptance work, updated November 10,
+Unresolved defects, contract decisions and acceptance work, updated November 11,
 2026. API shapes are defined in [api-docs.json](../api-docs.json).
 
 ## Confirmed remaining defects
@@ -22,6 +22,27 @@ Unresolved defects, contract decisions and acceptance work, updated November 10,
   likewise leaves list access denied. Fix stale cache/role-snapshot enforcement,
   define propagation guarantees and verify both grant additions and revocations.
   See [assignment authorization gaps](daily-route-assignment-api-contract.md).
+
+- **Invoice discounts are classified as expenses.** Discount journals debit
+  `SALES DISCOUNTS`, which the API types `EXPENSE`. A discount reduces accounts
+  receivable and moves no cash or bank funds, so it must not count as an expense
+  or reduce the closeout's cash total. Make `SALES DISCOUNTS` a contra-revenue
+  account, post every discount as debit `SALES DISCOUNTS` / credit
+  `ACCOUNTS RECEIVABLE`, and exclude it from closeout expense and cash totals.
+  Until then the portal excludes `SALES DISCOUNTS` from its session total and
+  journal expense totals by account name.
+
+- **Journal create hangs after a failed create.** When `POST /journals` is
+  rejected (e.g. duplicate invoice number) and the user corrects the entry and
+  saves again, the retry never responds. In development the Next.js proxy drops
+  it after 30 seconds (`socket hang up`, `ECONNRESET`) and the portal shows
+  "Request failed (500)"; without the proxy the save likely stays pending until a
+  server or gateway timeout. The portal resets its submit state after the first
+  error and posts the corrected values, so the stall is server-side. Suspected cause: the failed create does not fully
+  roll back and keeps a lock (closeout, invoice number counter or similar) that
+  blocks the next write. Ensure every failed create aborts its transaction and
+  releases its locks, and confirm whether the timed-out retry still commits,
+  since a further retry could post a duplicate entry.
 
 ## Pending verification and contract decisions
 

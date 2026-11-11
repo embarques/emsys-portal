@@ -3,11 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 
 import { InvoiceAdjustmentPresetButtons } from "@/components/accounting/invoice-adjustment-preset-buttons";
-import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
+import { getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
+import { TransactionSectionNavigation } from "@/components/accounting/transaction-section-navigation";
+import { INLINE_FIELD_ROW_CLASS_NAME } from "@/components/forms/inline-field-row";
 import { TransactionReview } from "@/components/accounting/transaction-review";
 import { getTransactionFieldStep, getTransactionStepFields, hasPaymentDetailsStep, isExpensePaidByMethod, TRANSACTION_FIELD_IDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { applyMoneyAccount, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listSelectableBankAccounts, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
@@ -23,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { focusWithoutOpeningCombobox, getNavigableFormFields, isDesktopFormNavigation, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { useScrollFocusedSectionToTop } from "@/hooks/use-scroll-focused-section-to-top";
 import { finalizeInventoryChangeJournal } from "@/lib/accounting/daily-income/inventory-change";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
@@ -48,10 +52,15 @@ import { cn } from "@/lib/utils";
 import { CloseoutRolloverDialog } from "./closeout-rollover-dialog";
 import { isCloseoutRequired } from "@/lib/accounting/daily-income/closeout-required";
 
+const RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME =
+  "w-40 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 type Props = {
+  summaryContainer?: HTMLElement | null;
+  summaryCurrency?: string;
   onValuesChange?: (values: DailyIncomeJournalValues) => void;
   quickEntry?: boolean;
   activeStep?: TransactionFormStep;
@@ -69,6 +78,7 @@ type Props = {
   paymentMethods: AccountingLookup[];
   formId: string;
   showTypeSummary?: boolean;
+  showSectionNavigation?: boolean;
   appearance?: "default" | "phone";
   focusSecondFieldSignal?: number;
   /** Offer the auto-clear switch (create only). */
@@ -128,6 +138,7 @@ export function DailyIncomeTransactionForm({
   paymentMethods,
   formId,
   showTypeSummary = false,
+  showSectionNavigation = false,
   appearance = "default",
   focusSecondFieldSignal,
   allowAutoClear = false,
@@ -137,6 +148,8 @@ export function DailyIncomeTransactionForm({
   onStepErrorChange,
   onSubmit,
   onValuesChange,
+  summaryContainer,
+  summaryCurrency,
 }: Props) {
   const { t } = useTranslation();
   const initialTransactionType = transactionType;
@@ -148,6 +161,7 @@ export function DailyIncomeTransactionForm({
   const isPhone = appearance === "phone";
   const typeOption = getTransactionTypeOption(transactionType, t);
   const handleEnterNavigation = useFormEnterNavigation();
+  useScrollFocusedSectionToTop(formRef, showSectionNavigation);
   const [sourceAccountDefaultCleared, setSourceAccountDefaultCleared] = useState(false);
   const schema = useMemo(
     () =>
@@ -404,8 +418,8 @@ export function DailyIncomeTransactionForm({
   const showExistingInvoiceDetails = showInvoiceDetails && type === "PAYMENT";
   const showInvoiceParties = type === "DISCOUNT" || type === "SURCHARGE";
 
-  const invoiceSelectControls = (
-    <>
+  const invoiceSelectRow = (details: React.ReactNode) => (
+    <div className={INLINE_FIELD_ROW_CLASS_NAME}>
       <RequiredLabel htmlFor="journal-invoice">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
       <SearchableSelect
         id="journal-invoice"
@@ -425,23 +439,27 @@ export function DailyIncomeTransactionForm({
         mobileSheet
         options={invoiceOptions}
       />
-      <FieldMessage error={errors.invoiceId?.message} />
-    </>
+      <FieldMessage error={errors.invoiceId?.message} className="sm:col-start-2" />
+      {details ? <div className="min-w-0 sm:col-start-2">{details}</div> : null}
+    </div>
   );
 
-  function renderAmountField(labelKey = "accounting.dailyIncome.form.fields.amount") {
+  function renderAmountField(labelKey = "accounting.dailyIncome.form.fields.amount", inline = false) {
     return (
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-amount">{t(labelKey)}</RequiredLabel>
-        <Input
-          id="journal-amount"
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
-          {...register("amount", { setValueAs: moneyFormSetValueAs })}
-        />
-        <FieldMessage error={errors.amount?.message} />
+      <div className={inline ? "space-y-1" : "space-y-2"}>
+        <div className={inline ? "flex items-center justify-between gap-4" : "space-y-2"}>
+          <RequiredLabel htmlFor="journal-amount">{t(labelKey)}</RequiredLabel>
+          <Input
+            id="journal-amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+            className={cn(inline && RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME)}
+            {...register("amount", { setValueAs: moneyFormSetValueAs })}
+          />
+        </div>
+        <FieldMessage error={errors.amount?.message} className={inline ? "justify-end" : undefined} />
       </div>
     );
   }
@@ -466,22 +484,11 @@ export function DailyIncomeTransactionForm({
       ?? (isDiscount && balanceAfter != null && balanceAfter < 0 ? t("accounting.dailyIncome.form.validation.discountExceedsBalance") : undefined);
     const maxAmount = isDiscount ? baseBalance : undefined;
     return (
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
-        <Input
-          id="journal-amount"
-          type="number"
-          min="0.01"
-          step="0.01"
-          max={maxAmount != null && maxAmount > 0 ? maxAmount : undefined}
-          placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
-          aria-invalid={Boolean(error)}
-          {...register("amount", { setValueAs: moneyFormSetValueAs })}
-        />
-        <FieldMessage error={error} hint={hint} />
+      <div className="space-y-4">
         <InvoiceAdjustmentPresetButtons
           key={kind}
           kind={kind}
+          inline
           total={invoiceTotal}
           maxAmount={maxAmount}
           amount={amount}
@@ -492,13 +499,29 @@ export function DailyIncomeTransactionForm({
             input?.select();
           }}
         />
+        <div className={INLINE_FIELD_ROW_CLASS_NAME}>
+          <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
+          <Input
+            id="journal-amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            max={maxAmount != null && maxAmount > 0 ? maxAmount : undefined}
+            placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+            aria-invalid={Boolean(error)}
+            className={cn(RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME, "max-sm:w-full sm:justify-self-end")}
+            {...register("amount", { setValueAs: moneyFormSetValueAs })}
+          />
+          <FieldMessage error={error} hint={hint} className="justify-end text-right sm:col-start-2" />
+        </div>
       </div>
     );
   }
   const amountField = type === "DISCOUNT" || type === "SURCHARGE" ? renderInvoiceAdjustmentAmountField(type) : renderAmountField();
+  const inlineDescription = needsExistingInvoice && !showPaymentDetails;
   const descriptionField = (
-    <div className="space-y-2 sm:col-span-2">
-      <Label htmlFor="journal-description">{t("accounting.dailyIncome.form.fields.description")}</Label>
+    <div className={cn("sm:col-span-2", inlineDescription ? cn(INLINE_FIELD_ROW_CLASS_NAME, "sm:items-start") : "space-y-2")}>
+      <Label htmlFor="journal-description" className={inlineDescription ? "sm:pt-2.5" : undefined}>{t("accounting.dailyIncome.form.fields.description")}</Label>
       <textarea
         id="journal-description"
         rows={3}
@@ -509,11 +532,47 @@ export function DailyIncomeTransactionForm({
     </div>
   );
 
-  function readOnlyInvoiceField(id: string, label: string, value: string, inputClassName = "bg-muted/40") {
+  function invoiceDetailsCard(showParties: boolean, showAmounts: boolean) {
+    if (!selectedInvoice) return null;
+    const detail = (label: string, value: React.ReactNode, className?: string, id?: string) => (
+      <div className={cn("min-w-0", showAmounts && showParties && "col-span-2")}>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p id={id} className={cn("truncate font-medium", className)}>{value}</p>
+      </div>
+    );
+    const amountDetail = (label: string, amount: number, className?: string) => (
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className={cn("font-medium tabular-nums", className)}>{formatAccountingMoney(amount)}</p>
+      </div>
+    );
     return (
-      <div className="space-y-2 min-w-0">
-        <Label htmlFor={id}>{label}</Label>
-        <Input id={id} readOnly tabIndex={-1} value={value} className={cn("tabular-nums", inputClassName)} />
+      <div className={cn("grid grid-cols-2 gap-x-4 gap-y-2 rounded-md bg-muted/70 px-3 py-2.5 text-sm", showAmounts && "sm:grid-cols-4")}>
+        {showParties ? (
+          <>
+            {detail(t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice.sender?.name || t("common.empty.dash"), undefined, "journal-invoice-sender")}
+            {detail(t("accounting.dailyIncome.form.fields.receiverClient"), getInvoicePrimaryReceiver(selectedInvoice)?.name || t("common.empty.dash"), undefined, "journal-invoice-receiver")}
+          </>
+        ) : null}
+        {showAmounts ? (
+          <>
+            {amountDetail(t("accounting.dailyIncome.form.invoiceSummary.total"), getInvoiceTotal(selectedInvoice))}
+            {amountDetail(t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice.discount)}
+            {amountDetail(t("accounting.dailyIncome.form.invoiceSummary.paid"), selectedInvoice.amountPaid)}
+            {amountDetail(t("accounting.dailyIncome.form.invoiceSummary.balance"), getInvoiceBalanceAmount(selectedInvoice), getInvoiceBalanceTextClassName(getInvoiceBalanceAmount(selectedInvoice)))}
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
+  function invoiceSummaryRow(id: string, label: string, amount: number | null | undefined, isBalance = false) {
+    return (
+      <div className={cn("flex items-baseline justify-between gap-4 py-1.5", isBalance && "mt-1.5 border-t border-border pt-3")}>
+        <dt className={cn("text-muted-foreground", isBalance && "font-medium text-foreground")}>{label}</dt>
+        <dd id={id} className={cn("pr-3 tabular-nums", isBalance ? cn("text-base font-semibold", getInvoiceBalanceTextClassName(amount)) : "font-medium")}>
+          {amount == null ? t("common.empty.dash") : formatAccountingMoney(amount)}
+        </dd>
       </div>
     );
   }
@@ -603,6 +662,7 @@ export function DailyIncomeTransactionForm({
 
   return (
     <>
+    {summaryContainer ? createPortal(<TransactionReview values={watch()} compact currency={summaryCurrency} />, summaryContainer) : null}
     <form
       id={formId}
       ref={formRef}
@@ -632,6 +692,7 @@ export function DailyIncomeTransactionForm({
       onKeyDown={handleEnterNavigation}
       className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden", isPhone && "bg-background")}
     >
+      {showSectionNavigation ? <TransactionSectionNavigation formRef={formRef} title={t(`accounting.dailyIncome.wizard.typeSelector.options.${transactionType}`)} /> : null}
       <FormBody
         workflow={!isPhone && activeStep !== "review"}
         className={cn(
@@ -714,23 +775,17 @@ export function DailyIncomeTransactionForm({
             {showExistingInvoiceDetails ? (
               <>
                 <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
-                  <div className="space-y-4">
-                    <div className="space-y-2 min-w-0">{invoiceSelectControls}</div>
-                    <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-                      {readOnlyInvoiceField("journal-invoice-sender", t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice?.sender?.name ?? "")}
-                      {readOnlyInvoiceField("journal-invoice-receiver", t("accounting.dailyIncome.form.fields.receiverClient"), (selectedInvoice && getInvoicePrimaryReceiver(selectedInvoice)?.name) ?? "")}
-                    </div>
-                  </div>
+                  {invoiceSelectRow(invoiceDetailsCard(true, false))}
                 </FormSection>
                 <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceAmount")}>
                   <div className="space-y-4">
-                    <div className="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-4">
-                      {readOnlyInvoiceField("journal-invoice-total", t("accounting.dailyIncome.form.invoiceSummary.total"), selectedInvoice ? formatAccountingMoney(getInvoiceTotal(selectedInvoice)) : "")}
-                      {readOnlyInvoiceField("journal-invoice-discount", t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice ? formatAccountingMoney(selectedInvoice.discount) : "")}
-                      {readOnlyInvoiceField("journal-invoice-paid", t("accounting.dailyIncome.form.invoiceSummary.paid"), selectedInvoice ? formatAccountingMoney(selectedInvoice.amountPaid) : "")}
-                      {readOnlyInvoiceField("journal-invoice-balance", t("accounting.dailyIncome.form.invoiceSummary.balance"), selectedInvoice ? formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice)) : "", getInvoiceBalanceInputClassName(selectedInvoice ? getInvoiceBalanceAmount(selectedInvoice) : null))}
-                    </div>
-                    {renderAmountField("accounting.dailyIncome.form.fields.paymentAmount")}
+                    <dl className="min-w-0 text-sm">
+                      {invoiceSummaryRow("journal-invoice-total", t("accounting.dailyIncome.form.invoiceSummary.total"), selectedInvoice ? getInvoiceTotal(selectedInvoice) : null)}
+                      {invoiceSummaryRow("journal-invoice-discount", t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice?.discount ?? null)}
+                      {invoiceSummaryRow("journal-invoice-paid", t("accounting.dailyIncome.form.invoiceSummary.paid"), selectedInvoice?.amountPaid ?? null)}
+                      {invoiceSummaryRow("journal-invoice-balance", t("accounting.dailyIncome.form.invoiceSummary.balance"), selectedInvoice ? getInvoiceBalanceAmount(selectedInvoice) : null, true)}
+                    </dl>
+                    {renderAmountField("accounting.dailyIncome.form.fields.paymentAmount", true)}
                   </div>
                 </FormSection>
               </>
@@ -738,40 +793,8 @@ export function DailyIncomeTransactionForm({
             <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t(needsExistingInvoice ? "accounting.dailyIncome.form.sections.invoiceDetails" : "accounting.dailyIncome.form.sections.amounts")}>
               <div className="grid gap-4 sm:grid-cols-2">
                 {needsExistingInvoice ? (
-                  <div className="space-y-2 sm:col-span-2">
-                    {invoiceSelectControls}
-                    {selectedInvoice ? (
-                      <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-border bg-card px-3 py-2 text-sm sm:grid-cols-4">
-                        {showInvoiceParties ? (
-                          <>
-                            <div className="col-span-2 min-w-0">
-                              <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.senderClient")}</p>
-                              <p className="truncate font-medium">{selectedInvoice.sender?.name || "—"}</p>
-                            </div>
-                            <div className="col-span-2 min-w-0">
-                              <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.receiverClient")}</p>
-                              <p className="truncate font-medium">{getInvoicePrimaryReceiver(selectedInvoice)?.name || "—"}</p>
-                            </div>
-                          </>
-                        ) : null}
-                        <div>
-                          <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.total")}</p>
-                          <p className="font-medium">{formatAccountingMoney(getInvoiceTotal(selectedInvoice))}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.discount")}</p>
-                          <p className="font-medium">{formatAccountingMoney(selectedInvoice.discount)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.paid")}</p>
-                          <p className="font-medium">{formatAccountingMoney(selectedInvoice.amountPaid)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.balance")}</p>
-                          <p className={cn("font-medium tabular-nums", getInvoiceBalanceTextClassName(getInvoiceBalanceAmount(selectedInvoice)))}>{formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice))}</p>
-                        </div>
-                      </div>
-                    ) : null}
+                  <div className="min-w-0 sm:col-span-2">
+                    {invoiceSelectRow(invoiceDetailsCard(showInvoiceParties, true))}
                   </div>
                 ) : null}
 

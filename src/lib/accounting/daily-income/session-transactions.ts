@@ -49,7 +49,10 @@ export function sessionTransactionTotals(entries: SessionTransaction[]) {
   return [...totals.values()];
 }
 
-/** Operational net: collections minus expenses, discounts, loans and transfers, as in the closeout. */
+/**
+ * Operational net: collections minus expenses, loans and transfers. Discounts and surcharges
+ * only change what the customer owes (accounts receivable), so they move no cash.
+ */
 export function sessionTransactionsNetTotal(entries: SessionTransaction[]): number {
   let cents = 0;
   for (const entry of entries) {
@@ -59,15 +62,15 @@ export function sessionTransactionsNetTotal(entries: SessionTransaction[]): numb
     if (lines.length) {
       for (const line of lines) {
         if (d.type === "TRANSFER") amount -= line.debit;
-        else if (line.name === "ACCOUNTS RECEIVABLE" || line.name === "SALES") continue;
+        else if (line.name === "ACCOUNTS RECEIVABLE" || line.name === "SALES" || line.name === "SALES DISCOUNTS") continue;
         else if (line.name === "LOAN RECEIVABLE") amount -= line.debit - line.credit;
-        else if (line.name === "SALES DISCOUNTS" || line.type === "EXPENSE") amount -= line.debit;
+        else if (line.type === "EXPENSE") amount -= line.debit;
         else if (line.type === "BANK") amount += line.debit;
         else if (line.name === "CASH ON HAND" || line.type === "ASSET") amount += Math.max(0, line.debit);
       }
     } else {
-      const outflow = ["EXPENSE", "DISCOUNT", "LOAN", "TRANSFER"].includes(d.type) || (d.type === "INVENTORY" && d.direction === "received");
-      amount = d.type === "SURCHARGE" ? 0 : outflow ? -d.amount : d.amount;
+      const outflow = ["EXPENSE", "LOAN", "TRANSFER"].includes(d.type) || (d.type === "INVENTORY" && d.direction === "received");
+      amount = d.type === "DISCOUNT" || d.type === "SURCHARGE" ? 0 : outflow ? -d.amount : d.amount;
     }
     cents += Math.round(amount * 100);
   }

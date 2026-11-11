@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 
+import { INLINE_FIELD_ROW_CLASS_NAME } from "@/components/forms/inline-field-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAccountingMoney } from "@/lib/accounting/display";
@@ -14,9 +15,12 @@ import {
   type InvoiceAdjustmentKind,
 } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 type Props = {
   kind: InvoiceAdjustmentKind;
+  /** Show the label beside the buttons instead of above them. */
+  inline?: boolean;
   /** Invoice total that percents are taken from; undefined until an invoice is selected. */
   total: number | undefined;
   /** Presets above this amount are disabled (a discount cannot exceed the balance). */
@@ -29,6 +33,7 @@ type Props = {
 
 export function InvoiceAdjustmentPresetButtons({
   kind,
+  inline = false,
   total,
   maxAmount,
   amount,
@@ -71,8 +76,8 @@ export function InvoiceAdjustmentPresetButtons({
   }
 
   return (
-    <div className="space-y-2">
-      <p id={labelId} className="text-xs font-medium text-muted-foreground">
+    <div className={inline ? INLINE_FIELD_ROW_CLASS_NAME : "space-y-2"}>
+      <p id={labelId} className={inline ? "text-sm font-medium leading-none" : "text-xs font-medium text-muted-foreground"}>
         {t(`accounting.dailyIncome.form.adjustmentPresets.label.${kind}`)}
       </p>
       <div role="group" aria-labelledby={labelId} className="flex flex-wrap gap-2">
@@ -131,7 +136,7 @@ export function InvoiceAdjustmentPresetButtons({
         </Button>
       </div>
       {customPercentOpen ? (
-        <div className="flex items-center gap-2">
+        <div className={cn("flex flex-wrap items-center gap-2", inline && "sm:col-start-2")}>
           <label htmlFor={customPercentId} className="text-xs text-muted-foreground">
             {t("accounting.dailyIncome.form.adjustmentPresets.customPercentLabel")}
           </label>

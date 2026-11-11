@@ -2,6 +2,8 @@
 
 import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
+import { transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
 import { isAutoReconcileEligible } from "@/lib/accounting/daily-income/auto-reconcile";
@@ -13,16 +15,18 @@ import { useTranslation } from "@/lib/i18n";
 
 type Props = {
   values: DailyIncomeJournalValues;
+  compact?: boolean;
+  currency?: string;
   onEdit?: (step: TransactionFormStep) => void;
 };
 
-export function TransactionReview({ values: v, onEdit }: Props) {
+export function TransactionReview({ values: v, onEdit, compact = false, currency }: Props) {
   const { t } = useTranslation();
   const inventory = v.transactionType === "INVENTORY";
   const registerInvoice = v.transactionType === "INITIAL-PAYMENT";
   const paymentDetails = hasPaymentDetailsStep(v.transactionType);
   const expensePaidByMethod = isExpensePaidByMethod(v.transactionType);
-  const money = (value: number | undefined) => value == null ? undefined : formatAccountingMoney(value);
+  const money = (value: number | undefined) => value == null || !Number.isFinite(value) ? undefined : currency ? formatDailyIncomeMoney(value, currency) : formatAccountingMoney(value);
   const dispatched = inventory && v.inventoryDirection === "dispatched";
   const holders = dispatched ? inventoryHoldersFromValues(v) : null;
   const holderNames = holders ? [holders.vehicle?.name, ...holders.employees.map((employee) => employee.name)].filter(Boolean).join(", ") : undefined;
@@ -33,14 +37,14 @@ export function TransactionReview({ values: v, onEdit }: Props) {
   ];
   const amountRows: [string, string | undefined][] = [
     [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.total" : "accounting.dailyIncome.form.fields.cost", money(v.invoiceCost)],
-    ["accounting.dailyIncome.form.invoiceSummary.discount", registerInvoice ? money(v.invoiceDiscount ?? 0) : undefined],
+    ["accounting.dailyIncome.form.invoiceSummary.discount", registerInvoice ? money(compact ? v.invoiceDiscount : v.invoiceDiscount ?? 0) : undefined],
     [registerInvoice ? "accounting.dailyIncome.form.invoiceSummary.paid" : "accounting.dailyIncome.form.fields.amount", inventory ? undefined : money(v.amount)],
     ["accounting.dailyIncome.form.fields.balance", registerInvoice && v.invoiceCost != null ? money(v.invoiceCost - (v.invoiceDiscount ?? 0) - (v.amount ?? 0)) : undefined],
   ];
   const groups: { step: TransactionFormStep; rows: [string, string | number | undefined][]; invoiceSummary?: { invoice: [string, string | undefined]; payment: [string, string | undefined][] } }[] = [
     {
       step: "assignment", rows: [
-        ["accounting.dailyIncome.form.fields.assignedTo", inventory ? undefined : v.routeName || v.employeeName || v.routeId || v.employeeId || t("accounting.dailyIncome.form.creatorAssignee")],
+        ["accounting.dailyIncome.form.fields.assignedTo", inventory ? undefined : v.routeName || v.employeeName || v.routeId || v.employeeId || (compact ? undefined : t("accounting.dailyIncome.form.creatorAssignee"))],
         ["accounting.dailyIncome.form.fields.responsibleSupervisor", !inventory && v.routeId ? v.supervisorName || v.supervisorId : undefined],
         ["accounting.dailyIncome.form.fields.inventoryDirection", inventory && v.inventoryDirection ? t(`accounting.dailyIncome.form.inventory.${v.inventoryDirection}`) : undefined],
         ["inventory.form.fields.supplier", inventory ? v.inventorySupplierName : undefined],
@@ -79,11 +83,36 @@ export function TransactionReview({ values: v, onEdit }: Props) {
     }] : []),
     ...(hasPartiesStep(v.transactionType) ? [{
       step: "parties" as const, rows: [
-        ["accounting.dailyIncome.form.fields.senderClient", v.includeSender ? v.senderName : t("accounting.dailyIncome.form.fields.partySkipped")],
-        ["accounting.dailyIncome.form.fields.receiverClient", v.includeReceiver ? v.receiverName : t("accounting.dailyIncome.form.fields.partySkipped")],
+        ["accounting.dailyIncome.form.fields.senderClient", v.includeSender ? v.senderName : compact ? undefined : t("accounting.dailyIncome.form.fields.partySkipped")],
+        ["accounting.dailyIncome.form.fields.receiverClient", v.includeReceiver ? v.receiverName : compact ? undefined : t("accounting.dailyIncome.form.fields.partySkipped")],
       ] as [string, string | undefined][]
     }] : []),
   ];
+  if (compact) {
+    const rows = groups.flatMap((group) => [
+      ...(group.invoiceSummary ? [group.invoiceSummary.invoice, ...group.invoiceSummary.payment] : []),
+      ...group.rows,
+    ]).filter(([, value]) => value != null && (typeof value !== "string" || value.trim() !== "") && (typeof value !== "number" || Number.isFinite(value)));
+    // Sender/receiver can also occur in the parties section of the full review.
+    const uniqueRows = rows.filter(([label], index) => rows.findIndex(([key]) => key === label) === index);
+    return (
+      <section aria-label={t("accounting.dailyIncome.sessionPanel.currentTitle")} className="border-b bg-muted/30 px-4 py-3">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">{t("accounting.dailyIncome.sessionPanel.currentTitle")}</h3>
+          <span className="text-xs text-muted-foreground">{t("accounting.dailyIncome.sessionPanel.unsaved")}</span>
+        </div>
+        <p className="mb-3 text-xs font-medium text-muted-foreground">{transactionTypeLabel(v.transactionType, t)}</p>
+        <dl className="space-y-2">
+          {uniqueRows.map(([label, value]) => (
+            <div key={label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-3 text-xs">
+              <dt className="text-muted-foreground">{t(label)}</dt>
+              <dd className="min-w-0 break-words whitespace-pre-wrap text-right font-medium tabular-nums">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    );
+  }
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.wizard.workflow.reviewHint")}</p>

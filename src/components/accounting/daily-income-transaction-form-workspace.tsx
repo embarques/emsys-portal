@@ -5,7 +5,6 @@ import { Loader2 } from "lucide-react";
 
 import { SessionTransactionsLayout } from "@/components/accounting/session-transactions-panel";
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
-import { TransactionTypeSummary } from "@/components/accounting/transaction-type-summary";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,7 @@ import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCrea
 import { journalEditBlockReason } from "@/lib/accounting/daily-income/journal-editability";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
-import type { DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -44,8 +43,9 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const { t } = useTranslation();
   const isEditing = mode === "edit";
   const transactionSessionId = useId();
+  const [summaryContainer, setSummaryContainer] = useState<HTMLDivElement | null>(null);
   const [entryActive, setEntryActive] = useState(false);
-  const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(null);
+  const [headerActionsContainer, setHeaderActionsContainer] = useState<HTMLDivElement | null>(null);
   const { notifySuccess } = useFeedback();
   const { hasPermission } = useAuth();
   const canUpdateJournals = hasPermission(PERMISSIONS.journalsUpdate.name, PERMISSIONS.journalsUpdate.resourceType);
@@ -210,7 +210,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       compactHeader
       title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}
       description={description}
-      actions={!isEditing && selectedType ? <TransactionTypeSummary type={selectedType} className="py-2" /> : null}
+      actions={!isEditing ? <div ref={setHeaderActionsContainer} className="empty:hidden" /> : null}
       className="min-w-0 max-w-5xl"
     >
       {isEditing && initialValues ? (
@@ -237,8 +237,10 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           presentation="tab"
           open
           mode="add"
+          summaryContainer={summaryContainer}
+          summaryCurrency={statement.currency}
+          headerActionsContainer={headerActionsContainer}
           onEntryActiveChange={setEntryActive}
-          onSelectedTypeChange={setSelectedType}
           employees={employees}
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}
@@ -255,5 +257,5 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       )}
     </FormTabShell>
   );
-  return <>{isEditing ? wizard : <SessionTransactionsLayout active={entryActive} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
+  return <>{isEditing ? wizard : <SessionTransactionsLayout summaryRef={setSummaryContainer} active={entryActive} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
 }

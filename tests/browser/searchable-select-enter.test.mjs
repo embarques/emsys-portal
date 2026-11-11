@@ -327,7 +327,7 @@ test("quick invoice entry advances from cost to amount before saving", async () 
   const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT", quickEntry: "true" });
   try {
     assert.equal(await page.locator("#journal-payment").isVisible(), true);
-    await page.locator("#journal-invoice-number-mode").click();
+    await page.locator("#journal-invoice-number-mode-custom").click();
     await page.locator("#journal-invoice-number").fill("80424");
     await page.locator("#journal-invoice-cost").fill("200");
     await page.locator("#journal-invoice-cost").press("Enter");
@@ -389,8 +389,11 @@ for (const width of [1280, 390]) {
       assert.match(await valueOf("journal-invoice-discount"), /20\.00/);
       assert.match(await valueOf("journal-invoice-paid"), /50\.00/);
       assert.match(await valueOf("journal-invoice-balance"), /130\.00/);
-      for (const id of ["journal-invoice-sender", "journal-invoice-total", "journal-invoice-discount", "journal-invoice-paid", "journal-invoice-balance"]) {
-        assert.equal(await page.locator(`#${id}`).getAttribute("readonly"), "", id);
+      for (const id of ["journal-invoice-sender", "journal-invoice-receiver"]) {
+        assert.equal(await page.locator(`#${id}`).evaluate(el => el.tagName), "P", id);
+      }
+      for (const id of ["journal-invoice-total", "journal-invoice-discount", "journal-invoice-paid", "journal-invoice-balance"]) {
+        assert.equal(await page.locator(`#${id}`).evaluate(el => el.tagName), "DD", id);
       }
       assert.equal(await page.locator("#journal-amount").isEditable(), true);
 
@@ -407,15 +410,15 @@ for (const width of [1280, 390]) {
       assert.equal(await page.locator("#journal-invoice").count(), 0);
 
       assert.equal(await page.locator("#journal-employee").isVisible(), true);
-      for (const id of ["journal-invoice-number-mode", "journal-skip-sender", "journal-skip-receiver", "journal-invoice-cost", "journal-invoice-discount", "journal-amount", "journal-invoice-balance"]) {
+      for (const id of ["journal-invoice-number-mode", "journal-sender-mode", "journal-receiver-mode", "journal-invoice-cost", "journal-invoice-discount", "journal-amount", "journal-invoice-balance"]) {
         assert.equal(await page.locator(`#${id}`).isVisible(), false, id);
       }
       await next.click();
 
       assert.equal(await page.locator("#journal-employee").isVisible(), false);
-      assert.equal(await page.locator("#journal-skip-sender").isVisible(), false);
+      assert.equal(await page.locator("#journal-sender-mode").isVisible(), false);
       assert.equal(await page.locator("#journal-invoice-number-mode").isVisible(), true);
-      assert.equal(await page.locator("#journal-invoice-number-mode").getAttribute("aria-checked"), "true");
+      assert.equal(await page.locator("#journal-invoice-number-mode-system").getAttribute("aria-checked"), "true");
       assert.equal(await page.locator("#journal-invoice-discount").isEditable(), true);
       const costBox = await page.locator("#journal-invoice-cost").boundingBox();
       const discountBox = await page.locator("#journal-invoice-discount").boundingBox();
@@ -449,18 +452,18 @@ for (const width of [1280, 390]) {
       await next.click();
 
       assert.equal(await page.locator("#journal-check-number").isVisible(), false);
-      assert.equal(await page.locator("#journal-skip-sender").isChecked(), true);
-      assert.equal(await page.locator("#journal-skip-receiver").isChecked(), true);
+      assert.equal(await page.locator("#journal-sender-mode-skip").getAttribute("aria-checked"), "true");
+      assert.equal(await page.locator("#journal-receiver-mode-skip").getAttribute("aria-checked"), "true");
       assert.equal(await page.locator("#journal-sender").count(), 0);
       assert.equal(await page.locator("#journal-receiver").count(), 0);
-      await page.locator("#journal-skip-sender").click();
-      assert.equal(await page.locator("#journal-skip-sender").isChecked(), false);
+      await page.locator("#journal-sender-mode-include").click();
+      assert.equal(await page.locator("#journal-sender-mode-include").getAttribute("aria-checked"), "true");
       assert.equal(await page.locator("#journal-sender").isVisible(), true);
-      await page.locator("#journal-skip-sender").click();
+      await page.locator("#journal-sender-mode-skip").click();
       assert.equal(await page.locator("#journal-sender").count(), 0);
-      const skipSenderBox = await page.locator("#journal-skip-sender").boundingBox();
-      const skipReceiverBox = await page.locator("#journal-skip-receiver").boundingBox();
-      assert.ok(Math.abs(skipSenderBox.y - skipReceiverBox.y) < 1);
+      const senderModeBox = await page.locator("#journal-sender-mode").boundingBox();
+      const receiverModeBox = await page.locator("#journal-receiver-mode").boundingBox();
+      assert.ok(senderModeBox.y < receiverModeBox.y);
       await next.click();
 
       const save = page.getByRole("button", { name: "accounting.dailyIncome.wizard.saveTransaction", exact: true });
@@ -602,13 +605,13 @@ for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "EXPENSE", "SALES",
   }
 }
 
-test("Space on the invoice number switch focuses the custom invoice number input", async () => {
+test("choosing Enter your own invoice number with the arrow key focuses the custom invoice number input", async () => {
   const page = await fixture(1280, "transaction", { step: "amounts", transactionType: "INITIAL-PAYMENT", ready: "true" });
   try {
-    await page.locator("#journal-invoice-number-mode").focus();
-    await page.keyboard.press("Space");
+    await page.locator("#journal-invoice-number-mode-system").focus();
+    await page.keyboard.press("ArrowRight");
     await page.waitForFunction(() => document.activeElement?.id === "journal-invoice-number");
-    assert.equal(await page.locator("#journal-invoice-number-mode").getAttribute("aria-checked"), "false");
+    assert.equal(await page.locator("#journal-invoice-number-mode-custom").getAttribute("aria-checked"), "true");
   } finally { await page.close(); }
 });
 

@@ -661,7 +661,7 @@
     "status": {
       "open": "Active",
       "closed": "Inactive",
-      "badge": "{{status}} · #{{id}}"
+      "closeoutNumber": "Closeout #{{id}}"
     },
     "summary": {
       "loadingTotals": "Loading summary totals…",
@@ -679,6 +679,8 @@
       "no": "No"
     },
     "sessionPanel": {
+      "currentTitle": "Current transaction",
+      "unsaved": "Not saved",
       "total": "Total",
       "show": "Show transactions",
       "hide": "Hide transactions",
@@ -801,7 +803,7 @@
         "selectType": "Select type",
         "enterDetails": "Enter details"
       },
-      "changeType": "Change type",
+      "changeType": "Change transaction",
       "typeSelector": {
         "title": "Choose a transaction type",
         "description": "Select the type of transaction you want to record.",
@@ -931,7 +933,8 @@
         "referenceNumberModeCustom": "Enter your own",
         "referenceNumberCustom": "Custom internal reference number",
         "referenceNumberHint": "EMSYS uses this to identify the transaction.",
-        "referenceNumberSystemHint": "EMSYS will generate an internal reference number when you save.",
+        "referenceNumberSystemHint": "EMSYS will generate an internal reference number when you save. Turn this off to enter your own.",
+        "referenceNumberCustomHint": "Turn this on to have EMSYS generate the internal reference number.",
         "account": "Account",
         "sourceAccount": "Source account",
         "amount": "Amount",
@@ -939,9 +942,9 @@
         "description": "Description",
         "cost": "Cost",
         "balance": "Balance",
-        "skipSender": "Skip sender client",
         "senderClient": "Sender client",
-        "skipReceiver": "Skip receiver client",
+        "partyModeSkip": "Skip",
+        "partyModeInclude": "Select client",
         "partySkipped": "Skipped",
         "receiverClient": "Receiver client",
         "inventoryDirection": "Received or dispatched",
@@ -1015,7 +1018,6 @@
       },
       "hints": {
         "amountZeroAllowed": "Use $0.00 if nothing was paid yet.",
-        "partiesOptional": "Optional. Leave both skipped and press Next to go to review.",
         "expenseAccount": "The expense category this spending belongs to.",
         "sourceAccount": "Where the funds are coming from.",
         "cashAccount": "Where the cash is kept. Defaults to Cash on hand.",
@@ -1090,7 +1092,7 @@
         "inventoryHoldersRequired": "Select a vehicle or at least one employee responsible for this inventory."
       },
       "sections": {
-        "assignment": "Assignment",
+        "assignment": "Assigned to",
         "invoiceDetails": "Invoice details",
         "invoiceAmount": "Invoice amount",
         "paymentDetails": "Payment & references",

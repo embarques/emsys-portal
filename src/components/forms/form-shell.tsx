@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { AlertCircle, Info, Loader2 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n";
@@ -37,8 +38,9 @@ export function FormSection({
   className,
   children,
 }: FormSectionProps) {
+  const sectionId = useId();
   return (
-    <section className={cn("space-y-2.5", variant === "card" && "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm", className)}>
+    <section id={sectionId} data-form-section tabIndex={-1} className={cn("space-y-2.5", variant === "card" && "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm", className)}>
       <div className="flex min-h-7 items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {Icon ? <Icon className="size-4 shrink-0 text-primary" /> : null}
@@ -70,7 +72,7 @@ export function FormBody({ className, workflow = false, isBusy = false, busyLabe
   const { t } = useTranslation();
 
   return (
-    <div className={cn("relative min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", workflow && "@container space-y-5 p-4 sm:p-6", className)}>
+    <div data-form-body className={cn("relative min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", workflow && "@container space-y-5 p-4 sm:p-6", className)}>
       {children}
       {isBusy ? (
         <div

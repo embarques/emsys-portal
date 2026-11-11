@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type Ref, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { PanelRightOpen, ReceiptText, X } from "lucide-react";
 import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
@@ -8,7 +8,7 @@ import { transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form
 import { sessionTransactionDetails, sessionTransactionTotals, sessionTransactionsNetTotal, type SessionTransaction } from "@/lib/accounting/daily-income/session-transactions";
 import { useTranslation } from "@/lib/i18n";
 
-export function SessionTransactionsPanel({ entries, currency, onClose }: { entries: SessionTransaction[]; currency: string; onClose?: () => void }) {
+export function SessionTransactionsPanel({ entries, currency, onClose, summaryRef }: { summaryRef?: Ref<HTMLDivElement>; entries: SessionTransaction[]; currency: string; onClose?: () => void }) {
   const { t } = useTranslation();
   const prefix = "accounting.dailyIncome.sessionPanel";
   const field = (name: string) => t(`accounting.dailyIncome.form.fields.${name}`);
@@ -31,6 +31,7 @@ export function SessionTransactionsPanel({ entries, currency, onClose }: { entri
   return <aside aria-label={t(`${prefix}.title`)} className="absolute inset-0 hidden h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm xl:flex">
     <header className="flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3"><div><h2 className="text-base font-semibold">{t(`${prefix}.title`)}</h2><p className="mt-0.5 text-xs text-muted-foreground">{t(`${prefix}.subtitle`, { count: entries.length })}</p></div>{onClose && <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label={t(`${prefix}.hide`)} onClick={onClose}><X className="size-4" aria-hidden="true" /></Button>}</header>
     <div role="region" aria-label={t(`${prefix}.list`)} tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      {summaryRef && <div ref={summaryRef} />}
       {entries.length === 0 ? <div className="px-5 py-10 text-center text-sm text-muted-foreground"><ReceiptText className="mx-auto mb-3 size-6" aria-hidden="true" />{t(`${prefix}.empty`)}</div> : entries.map((entry) => {
         const d = sessionTransactionDetails(entry);
         const invoice = d.type === "INITIAL-PAYMENT";
@@ -51,7 +52,7 @@ export function SessionTransactionsPanel({ entries, currency, onClose }: { entri
   </aside>;
 }
 
-export function SessionTransactionsLayout({ children, entries, currency, active = true }: { children: ReactNode; entries: SessionTransaction[]; currency: string; active?: boolean }) {
+export function SessionTransactionsLayout({ children, entries, currency, active = true, summaryRef }: { summaryRef?: Ref<HTMLDivElement>; children: ReactNode; entries: SessionTransaction[]; currency: string; active?: boolean }) {
   const { t } = useTranslation();
   const [panelVisible, setPanelVisible] = useState(true);
   const showPanel = active && panelVisible;
@@ -83,6 +84,7 @@ export function SessionTransactionsLayout({ children, entries, currency, active 
           className={showPanel ? "relative hidden min-h-0 min-w-0 xl:block" : "hidden"}
         >
           <SessionTransactionsPanel
+            summaryRef={summaryRef}
             entries={entries}
             currency={currency}
             onClose={() => setPanelVisible(false)}

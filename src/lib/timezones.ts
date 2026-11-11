@@ -20,6 +20,17 @@ export function timezoneOption(value: string, locale: string) {
   };
 }
 
+/** Display name for an IANA timezone (e.g. "EST" / "Eastern Standard Time"); empty if unknown. */
+export function timezoneDisplayName(value: string, locale: string, style: "short" | "long" = "short", at = new Date()) {
+  try {
+    return new Intl.DateTimeFormat(locale, { timeZone: value, timeZoneName: style })
+      .formatToParts(at).find(part => part.type === "timeZoneName")?.value ?? "";
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error;
+    return "";
+  }
+}
+
 // Shared by company and branch pickers; avoid repeating Intl work while typing.
 const optionsByLocale = new Map<string, ReturnType<typeof timezoneOption>[]>();
 

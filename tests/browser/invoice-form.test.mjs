@@ -122,7 +122,7 @@ test("the receiver picker offers pickup receivers, a search of all receivers and
 
 const focusedId = (page, id) => page.waitForFunction((id) => document.activeElement?.id === id, id);
 
-test("appointment route, warehouse and office employee advance to the invoice number dropdown on Enter", async () => {
+test("appointment route, warehouse and office employee advance to the invoice number mode on Enter", async () => {
   for (const [sourceIndex, assignment] of [[0, "routeId"], [1, "pickupEmployeeId"], [2, "pickupEmployeeId"]]) {
     const page = await fixture();
     try {
@@ -133,17 +133,17 @@ test("appointment route, warehouse and office employee advance to the invoice nu
 
       await page.keyboard.press("ArrowDown");
       await page.keyboard.press("Enter");
-      await focusedId(page, "invoiceNumber-mode");
+      await focusedId(page, "invoiceNumber-mode-system");
 
       await page.locator(`#${assignment}`).focus();
       await page.keyboard.press("Escape");
       await page.keyboard.press("Enter");
-      await focusedId(page, "invoiceNumber-mode");
+      await focusedId(page, "invoiceNumber-mode-system");
     } finally { await page.close(); }
   }
 });
 
-test("without manual number permission the locked invoice number dropdown still receives focus", async () => {
+test("without manual number permission the locked invoice number mode still receives focus", async () => {
   const page = await fixture({ manualNumber: false });
   try {
     await page.locator("#pickupSource").focus();
@@ -152,18 +152,35 @@ test("without manual number permission the locked invoice number dropdown still 
     await focusedId(page, "routeId");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
-    await focusedId(page, "invoiceNumber-mode");
-    assert.equal(await page.locator("#invoiceNumber-mode").isDisabled(), false);
+    await focusedId(page, "invoiceNumber-mode-system");
+    assert.equal(await page.locator("#invoiceNumber-mode-system").isDisabled(), false);
+    assert.equal(await page.locator("#invoiceNumber-mode-custom").isDisabled(), true);
 
-    await page.keyboard.press("ArrowDown");
-    await page.getByRole("option", { name: "invoices.form.autoNumber.modeCustom" }).click({ force: true });
-    await page.keyboard.press("Escape");
-    assert.equal(await page.locator("#invoiceNumber-mode").textContent(), "invoices.form.autoNumber.modeSystem");
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await page.locator("#invoiceNumber-mode-system").getAttribute("aria-checked"), "true");
     assert.equal(await page.locator("#invoiceNumber").count(), 0);
 
-    await page.locator("#invoiceNumber-mode").focus();
     await page.keyboard.press("Enter");
     await focusedId(page, "wizard-next");
+  } finally { await page.close(); }
+});
+
+test("choosing Enter your own invoice number shows the number input below the full-width segments", async () => {
+  const page = await fixture();
+  try {
+    assert.equal(await page.locator("#invoiceNumber-mode-system").getAttribute("aria-checked"), "true");
+    assert.equal(await page.locator("#invoiceNumber").count(), 0);
+
+    await page.locator("#invoiceNumber-mode-custom").click();
+    await focusedId(page, "invoiceNumber");
+    assert.equal(await page.locator("#invoiceNumber-mode-custom").getAttribute("aria-checked"), "true");
+    const segments = await page.locator("#invoiceNumber-mode").boundingBox();
+    const input = await page.locator("#invoiceNumber").boundingBox();
+    assert.ok(input.y >= segments.y + segments.height, "input sits below the segments");
+    assert.ok(Math.abs(segments.width - input.width) <= 1, "segments span the field width");
+
+    await page.locator("#invoiceNumber-mode-system").click();
+    await page.locator("#invoiceNumber").waitFor({ state: "detached" });
   } finally { await page.close(); }
 });
 
@@ -179,7 +196,7 @@ test("appointment routes open newest route date first even when an older route w
     assert.match(labels[1], /South route/);
 
     await page.keyboard.press("Enter");
-    await focusedId(page, "invoiceNumber-mode");
+    await focusedId(page, "invoiceNumber-mode-system");
     assert.match(await page.locator("#routeId").inputValue(), /North route/);
   } finally { await page.close(); }
 });
@@ -247,7 +264,7 @@ test("clicking an added line item opens it for editing in a highlighted panel", 
   } finally { await page.close(); }
 });
 
-test("typing an employee name and pressing Enter selects it and focuses the invoice number dropdown", async () => {
+test("typing an employee name and pressing Enter selects it and focuses the invoice number mode", async () => {
   const page = await fixture();
   try {
     await page.locator("#pickupSource").focus();
@@ -256,7 +273,7 @@ test("typing an employee name and pressing Enter selects it and focuses the invo
     await focusedId(page, "pickupEmployeeId");
     await page.keyboard.type("Ana");
     await page.keyboard.press("Enter");
-    await focusedId(page, "invoiceNumber-mode");
+    await focusedId(page, "invoiceNumber-mode-system");
     assert.equal(await page.locator("#pickupEmployeeId").inputValue(), "Ana Warehouse");
   } finally { await page.close(); }
 });

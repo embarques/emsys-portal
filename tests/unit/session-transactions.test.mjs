@@ -54,9 +54,17 @@ test("Total combines collections and outflows without adding invoice cost or unp
  const { sessionTransactionsNetTotal } = loadedModule.exports;
  assert.equal(sessionTransactionsNetTotal([entry("INITIAL-PAYMENT", 1210, {}, { invoiceCost: 1210 }), entry("EXPENSE", 125), entry("EXPENSE", 10)]), 1075);
  assert.equal(sessionTransactionsNetTotal([entry("INITIAL-PAYMENT", 0, {}, { invoiceCost: 200 })]), 0);
- assert.equal(sessionTransactionsNetTotal([entry("PAYMENT", 100), entry("DISCOUNT", 10), entry("TRANSFER", 20), entry("LOAN", 5)]), 65);
+ assert.equal(sessionTransactionsNetTotal([entry("PAYMENT", 100), entry("DISCOUNT", 10), entry("TRANSFER", 20), entry("LOAN", 5)]), 75);
  assert.equal(sessionTransactionsNetTotal([entry("INVENTORY", 30, { inventoryDirection: "received" }), entry("INVENTORY", 50, { inventoryDirection: "dispatched" })]), 20);
  assert.equal(sessionTransactionsNetTotal([entry("SURCHARGE", 10)]), 0);
  assert.equal(sessionTransactionsNetTotal([entry("INITIAL-PAYMENT", 100, { accounts: [{ name: "CASH ON HAND", type: "ASSET", debit: 40, credit: 0 }, { name: "ACCOUNTS RECEIVABLE", type: "ASSET", debit: 60, credit: 0 }, { name: "SALES", type: "REVENUE", debit: 0, credit: 100 }] })]), 40);
  assert.equal(sessionTransactionsNetTotal([entry("SALES", 0.1), entry("SALES", 0.2)]), 0.3);
+});
+
+test("discounts reduce accounts receivable, not the cash total", () => {
+ const { sessionTransactionsNetTotal } = loadedModule.exports;
+ const discountLines = [{ name: "SALES DISCOUNTS", type: "EXPENSE", debit: 20, credit: 0 }, { name: "ACCOUNTS RECEIVABLE", type: "ASSET", debit: 0, credit: 20 }];
+ assert.equal(sessionTransactionsNetTotal([entry("DISCOUNT", 20, { accounts: discountLines })]), 0);
+ assert.equal(sessionTransactionsNetTotal([entry("INITIAL-PAYMENT", 80, { accounts: [{ name: "CASH ON HAND", type: "ASSET", debit: 80, credit: 0 }, { name: "SALES DISCOUNTS", type: "EXPENSE", debit: 20, credit: 0 }] })]), 80);
+ assert.equal(sessionTransactionsNetTotal([entry("EXPENSE", 15, { accounts: [{ name: "OFFICE SUPPLIES", type: "EXPENSE", debit: 15, credit: 0 }] })]), -15);
 });

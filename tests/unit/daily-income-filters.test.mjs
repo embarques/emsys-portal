@@ -87,3 +87,14 @@ test("selected totals classify income and expenses like the Daily Income summary
     { currency: "DOP", income: 100, expenses: 0, net: 100, count: 1 },
   ]);
 });
+
+test("invoice discounts are not counted as expenses", () => {
+  const totals = summarizeJournalTotals([
+    journal({ id: "d1", transactionType: "DISCOUNT", amount: 20, accounts: [
+      { name: "SALES DISCOUNTS", type: "EXPENSE", debit: 20, credit: 0 },
+      { name: "ACCOUNTS RECEIVABLE", type: "ASSET", debit: 0, credit: 20 },
+    ] }),
+    journal({ id: "d2", transactionType: "DISCOUNT", amount: 5, accounts: [] }),
+  ]);
+  assert.deepEqual(totals, [{ currency: "USD", income: 0, expenses: 0, net: 0, count: 2 }]);
+});
