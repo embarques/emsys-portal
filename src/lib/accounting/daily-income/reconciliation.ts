@@ -6,6 +6,8 @@ import { useAccountingQueryEnabled } from "@/lib/accounting/daily-income/hooks";
 import { fetchDailyIncomeJournals } from "./api";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { DailyIncomeJournalListParams } from "./types";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { createRandomId } from "@/lib/utils/id";
 
 import {clearJournals, fetchJournalSummary, reconcileJournals, type JournalSummaryInput} from "./reconciliation-api";
 export type {JournalCurrencySummary} from "./reconciliation-api";
@@ -32,10 +34,24 @@ export function useReconcileJournals() {
     onSuccess: () => client.invalidateQueries({queryKey: queryKeys.accounting.all})});
 }
 
+/** Bank transactions reconcile only through clearance, so cleared IDs are reconciled right after. */
 export function useClearJournals() {
   const client = useQueryClient();
-  const {companyId} = useAuth();
-  return useMutation({mutationFn: clearJournals, retry: false,
+  const {companyId, hasPermission} = useAuth();
+  const canReconcile = hasPermission(PERMISSIONS.journalsReconcile.name, PERMISSIONS.journalsReconcile.resourceType);
+  return useMutation({
+    mutationFn: async ({reconcileIds = [], ...command}: {requestId: string; ids: string[]; reconcileIds?: string[]}) => {
+      const response = await clearJournals(command);
+      const ids = response.data.cleared.filter(id => reconcileIds.includes(id));
+      if (!canReconcile || ids.length === 0) return {...response, reconciliationPending: ids};
+      try {
+        const reconciled = await reconcileJournals({requestId: createRandomId(), ids});
+        return {...response, reconciliationPending: ids.filter(id => !reconciled.data.reconciled.includes(id))};
+      } catch {
+        return {...response, reconciliationPending: ids};
+      }
+    },
+    retry: false,
     onSuccess: (_result, command) => client.invalidateQueries({predicate: query =>
       query.queryKey[0] === "accounting" &&
       ((["journals", "journal-summary", "outstanding-journal-count"].includes(String(query.queryKey[1])) &&

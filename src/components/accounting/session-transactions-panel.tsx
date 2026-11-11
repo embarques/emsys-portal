@@ -43,7 +43,7 @@ export function SessionTransactionsPanel({ entries, currency, onClose, summaryRe
           </div>
           {invoice && amounts(d.cost, d.amount, d.balance, true, d.discount)}
           {d.type === "INVENTORY" ? <p className="break-words text-xs text-muted-foreground">{d.direction ? t(`accounting.dailyIncome.form.inventory.${d.direction}`) : ""} · {t("inventory.form.fields.quantity")}: {d.quantity ?? "—"}{d.supplier ? ` · ${d.supplier}` : ""}</p> : !["DISCOUNT", "SURCHARGE"].includes(d.type) && <p className="break-words text-xs text-muted-foreground">{field("paymentMethod")}: {methodLabel(d.method, d.amount)}</p>}
-          {d.type === "TRANSFER" && d.sourceAccount && <p className="break-words text-xs text-muted-foreground">{field("sourceAccount")}: {d.sourceAccount}</p>}
+          {d.type === "TRANSFER" && d.sourceAccount && <p className="break-words text-xs text-muted-foreground">{field("transferFrom")}: {d.sourceAccount}</p>}
           {!invoiceRelated && d.description && <p className="break-words text-xs text-muted-foreground">{d.description}</p>}
         </article>;
       })}

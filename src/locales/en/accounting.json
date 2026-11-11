@@ -2,7 +2,7 @@
   "pendingTasksAlert": "{{count}} pending accounting tasks",
   "journalClearance": {
     "title": "Pending Clearance",
-    "description": "Transactions awaiting financial settlement or verification through their payment channel, across all closeouts. Clearance is independent of reconciliation and does not reopen a closed period.",
+    "description": "Transactions awaiting financial settlement or verification through their payment channel, across all closeouts. Bank transactions are reconciled when they clear. Clearance does not reopen a closed period.",
     "status": "Clearance",
     "NOT_REQUIRED": "Not required",
     "OUTSTANDING": "Pending",
@@ -17,6 +17,7 @@
       "notAuthorized": "The API hasn't authorized clearing this transaction.",
       "paymentMethod": "Only {{method}} transactions can be added to the current selection.",
       "limit": "You can clear up to 200 transactions at a time.",
+      "awaitingClearance": "Bank transactions are reconciled when they clear. Clear it in Pending Clearance first.",
       "noMethod": "no payment method"
     },
     "confirmList": {
@@ -24,7 +25,8 @@
       "externalReference": "External ref / Check #"
     },
     "confirmTitle": "Mark selected transactions as cleared?",
-    "confirmDescription": "Confirm that these payments have settled or been verified through their financial channel. This records settlement only; reconciliation history, invoice balances and closeout amounts stay unchanged. It does not issue a bank refund or reversal.",
+    "confirmDescription": "Confirm that these payments have settled or been verified through their financial channel. Clearing also reconciles them and applies pending invoice payments. Closeout amounts stay unchanged. It does not issue a bank refund or reversal.",
+    "reconciliationPending": "Cleared, but reconciliation could not be confirmed for some transactions. They remain in Pending Reconciliation.",
     "pendingAlert": "{{count}} transactions pending clearance",
     "batchComplete": "All selected transactions are confirmed.",
     "batchUnconfirmed": "Some results are unconfirmed. Retry the original batch to retrieve its result; no omitted transaction is labeled as failed.",
@@ -309,6 +311,7 @@
         "paymentReference": "Zelle reference",
         "paymentAmount": "Amount",
         "datePosted": "Date posted",
+        "notes": "Notes",
         "referenceNumber": "Internal reference number",
         "createdBy": "Created by",
         "clearedAt": "Cleared on"
@@ -762,12 +765,14 @@
       "statementUpdated": "Daily income updated.",
       "statementOpened": "Daily income opened.",
       "statementClosed": "Daily income closed.",
+      "paymentSavedClearanceUnconfirmed": "Payment saved. Automatic clearance could not be confirmed. Check Pending clearance before retrying; do not enter the payment again.",
+      "paymentClearedReconciliationPending": "Payment saved and cleared. Reconciliation could not be confirmed; it remains in Pending Reconciliation.",
       "transactionCreated": "Transaction created.",
       "transactionCreatedWithType": "Transaction created: {{type}}.",
       "transactionCreatedWithTarget": "Transaction created: {{type}} - {{target}}.",
       "transactionUpdated": "Transaction updated.",
       "invoiceRegistered": "New invoice #{{invoiceNumber}} created and payment registered.",
-      "checkPaymentHeld": "Payment recorded and applied. Awaiting accounting reconciliation.",
+      "checkPaymentHeld": "Payment recorded and pending clearance. It will be applied to the invoice after it clears.",
       "reportReady": "Daily income report ready."
     },
     "errors": {
@@ -818,6 +823,7 @@
           "INVENTORY": "Inventory movement",
           "INVENTORY-PAYMENT": "Inventory payment",
           "LOAN-ISSUE": "New loan",
+          "LOAN-INCREASE": "Additional loan amount",
           "LOAN-PAYMENT": "Loan payment",
           "TRANSFER": "Transfer between accounts"
         },
@@ -902,6 +908,10 @@
         "label": "Register new loan",
         "description": "Issue a new employee loan"
       },
+      "loanIncrease": {
+        "label": "Register additional loan amount",
+        "description": "Lend more on an existing loan"
+      },
       "loanPayment": {
         "label": "Register loan payment",
         "description": "Record a payment toward an employee’s loans"
@@ -920,14 +930,21 @@
         "expenseBankAccount": "Paid from bank account",
         "expenseCashAccount": "Paid from cash account",
         "checkNumber": "Check number",
-        "checkNumberHint": "Paper check number. Payment applies when recorded.",
+        "checkNumberHint": "Paper check number. The payment is applied to the invoice after clearance.",
         "autoClear": "Auto-reconcile",
-        "autoClearHint": "Reconcile this transaction when saved. Requires reconciliation permission and does not mark the payment as financially cleared.",
+        "autoClearPayment": "Auto-clear payment on save",
+        "bankPaymentClearanceHint": "Bank payments are not applied to the invoice until they are cleared.",
+        "bankPaymentAutoClearHint": "By default, this payment stays uncleared and unreconciled, and is not applied to the invoice until it is cleared. Enable auto-clear only if you are certain the funds have arrived in the selected bank account; it also reconciles the payment.",
+        "autoClearTransaction": "Auto-clear transaction on save",
+        "bankTransactionClearanceHint": "Bank transactions remain pending until they are cleared.",
+        "bankTransactionAutoClearHint": "Leave this off unless you are certain the transaction has settled and is already reflected in the selected bank account. Auto-clear clears it on save; internal reconciliation follows when permitted.",
+        "autoClearHint": "Reconcile this transaction when saved. This confirms you already received this payment.",
         "autoClearReviewValue": "Reconciled on creation",
         "autoReconcile": "Auto-reconcile (mark as sold)",
         "autoReconcileHint": "Skip the pending step: the handoff is completed and the full quantity is reconciled as sold when you save, so it does not appear in Pending Transactions.",
         "autoReconcileReviewValue": "Reconciled as sold on save",
         "invoice": "Invoice",
+        "invoiceNumber": "Invoice number",
         "referenceNumber": "Internal reference number",
         "referenceNumberModeSystem": "System generated",
         "referenceNumberModeCustom": "Enter your own",
@@ -937,6 +954,8 @@
         "referenceNumberCustomHint": "Turn this on to have EMSYS generate the internal reference number.",
         "account": "Account",
         "sourceAccount": "Source account",
+        "transferFrom": "From account",
+        "transferTo": "To account",
         "amount": "Amount",
         "paymentAmount": "Payment amount",
         "description": "Description",
@@ -988,6 +1007,8 @@
         "selectAccount": "Select account",
         "searchAccounts": "Search accounts…",
         "selectSourceAccount": "Select source account",
+        "selectTransferFrom": "Select the account money leaves",
+        "selectTransferTo": "Select the account money goes to",
         "selectInvoice": "Select invoice",
         "selectInvoiceMode": "Select existing or new invoice",
         "searchInvoices": "Search invoices",
@@ -1017,11 +1038,12 @@
         "noDailyRoute": "No daily route"
       },
       "hints": {
-        "amountZeroAllowed": "Use $0.00 if nothing was paid yet.",
+        "balanceAfterClearance": "New balance is a preview after this payment is applied. Pending payments affect the invoice balance when cleared.",
         "expenseAccount": "The expense category this spending belongs to.",
         "sourceAccount": "Where the funds are coming from.",
+        "transferFrom": "Cash or bank account the money leaves.",
+        "transferTo": "Cash or bank account the money goes to.",
         "cashAccount": "Where the cash is kept. Defaults to Cash on hand.",
-        "paymentMethodOptionalZero": "Recorded as Cash while the amount is $0.00.",
         "costFromLineItems": "From the invoice line items.",
         "routeSupervisorAccountability": "The daily route is kept for reporting. The supervisor is responsible for reconciling this transaction.",
         "inventoryHolders": "Holders share one assignment: 20 boxes for a vehicle and two employees is 20 boxes in total.",
@@ -1033,6 +1055,8 @@
         "discount": "Discount",
         "paid": "Paid",
         "balance": "Balance",
+        "previousBalance": "Previous balance",
+        "newBalance": "New balance",
         "sender": "Sender: {{name}}",
         "receiver": "Receiver: {{name}}"
       },
@@ -1082,6 +1106,7 @@
         "amountExceedsBalance": "Amount cannot exceed the invoice balance.",
         "accountRequired": "Account is required.",
         "sourceAccountRequired": "Source account is required.",
+        "transferSameAccount": "Choose a different account to transfer to.",
         "inventoryRequired": "Select received or dispatched.",
         "inventoryItemRequired": "Item is required.",
         "inventoryQuantityRequired": "Quantity must be greater than zero.",
@@ -1095,11 +1120,13 @@
         "assignment": "Assigned to",
         "invoiceDetails": "Invoice details",
         "invoiceAmount": "Invoice amount",
-        "paymentDetails": "Payment & references",
+        "paymentDetails": "Payment details",
+        "referenceAndNotes": "Reference & notes",
         "customers": "Sender & receiver (optional)",
         "inventoryMovement": "Inventory movement",
         "inventoryAmounts": "Item & amounts",
-        "amounts": "Accounts & amount"
+        "amounts": "Accounts & amount",
+        "transferDetails": "Transfer details"
       }
     },
     "duplicatePayment": {
@@ -1216,6 +1243,7 @@
     },
     "transactionTypes": {
       "ISSUE": "Loan issued",
+      "INCREASE": "Additional amount",
       "PAYMENT": "Payment"
     },
     "stats": {
@@ -1263,6 +1291,7 @@
     "toasts": {
       "created": "Loan created.",
       "createdFor": "Loan created for {{name}}.",
+      "increased": "Additional loan amount recorded.",
       "paymentRecorded": "Loan payment recorded."
     },
     "errors": {
@@ -1280,6 +1309,8 @@
       "receivedAccountRequired": "Payment received account is required.",
       "paymentAmountRequired": "Payment amount is required.",
       "paymentAmountPositive": "Payment amount must be greater than zero.",
+      "increaseAmountRequired": "Additional amount is required.",
+      "increaseAmountPositive": "Additional amount must be greater than zero.",
       "loanRequired": "Select a loan."
     },
     "journalPreview": {
@@ -1335,6 +1366,40 @@
         "empty": "This employee has no active loans.",
         "overpayment": "The payment exceeds the current balance by {{amount}}."
       }
+    },
+    "increaseForm": {
+      "sections": {
+        "loan": "Employee and loan",
+        "balance": "Loan balance",
+        "amount": "Additional amount",
+        "notes": "Reference and notes",
+        "journal": "Journal entry summary"
+      },
+      "loanHint": "Choose the employee and the active loan to add to.",
+      "employee": "Employee",
+      "selectEmployee": "Select employee",
+      "searchEmployees": "Search employees",
+      "loan": "Loan",
+      "selectLoan": "Select loan",
+      "selectEmployeeFirst": "Select an employee first",
+      "searchLoans": "Search loans",
+      "noActiveLoans": "This employee has no active loans.",
+      "loanOptionDescription": "Opened {{opened}} · Balance {{balance}}",
+      "originalAmount": "Original amount",
+      "currentBalance": "Current balance",
+      "balanceAfter": "Balance after",
+      "sourceAccount": "Source asset account",
+      "selectSourceAccount": "Select source asset account",
+      "searchAssetAccounts": "Search asset accounts",
+      "amount": "Additional amount",
+      "date": "Date",
+      "reference": "Reference number",
+      "optional": "Optional",
+      "notes": "Description",
+      "notesPlaceholder": "Reason for the additional amount",
+      "journalDebit": "Debit · Loan account",
+      "journalCredit": "Credit · Source asset account",
+      "submit": "Add to loan"
     },
     "payments": {
       "title": "Payments",
@@ -1682,7 +1747,7 @@
   },
   "journalReconciliation": {
     "title": "Pending Reconciliation",
-    "description": "Transactions awaiting verification of money or supporting documents across all closeouts. Reconciliation records accountability; clearance separately records financial settlement.",
+    "description": "Transactions awaiting verification of money or supporting documents across all closeouts. Bank transactions can't be reconciled here until they clear; clearing reconciles them.",
     "createdAt": "Created at",
     "status": "Reconciliation",
     "NOT_REQUIRED": "Not required",

@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import type { Loan, LoanCreateValues, LoanPaymentValues } from "@/lib/accounting/loans/types";
+import type { Loan, LoanCreateValues, LoanIncreaseValues, LoanPaymentValues } from "@/lib/accounting/loans/types";
 
 declare global {
   interface Window {
-    loanEntryRequests?: Array<{ kind: string; values: LoanCreateValues | LoanPaymentValues }>;
+    loanEntryRequests?: Array<{ kind: string; values: LoanCreateValues | LoanIncreaseValues | LoanPaymentValues }>;
     loanEntryFailure?: boolean;
   }
 }
@@ -17,6 +17,12 @@ export function useCurrentIncomeStatement(branchId: number) {
 export function useCreateLoan() {
   return useMutation({ mutationFn: async (values: LoanCreateValues) => {
     (window.loanEntryRequests ??= []).push({ kind: "issue", values });
+    return null;
+  } });
+}
+export function useIncreaseLoan() {
+  return useMutation({ mutationFn: async (values: LoanIncreaseValues) => {
+    (window.loanEntryRequests ??= []).push({ kind: "increase", values });
     return null;
   } });
 }

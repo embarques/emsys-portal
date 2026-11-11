@@ -34,6 +34,7 @@ export function loanStatusLabel(status: LoanStatus, t: TranslateFn) {
 export function loanTransactionTypeLabel(type: LoanTransactionType, t: TranslateFn) {
   switch (type) {
     case "ISSUE":
+    case "INCREASE":
     case "PAYMENT":
       return t(`accounting.loans.transactionTypes.${type}`);
     default:

@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   ArrowUpCircle,
+  BadgePlus,
   Banknote,
   FileText,
   Landmark,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 import type { JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { isLoanIncreaseEnabled } from "@/lib/accounting/loans/loan-increase";
 import type { TranslateFn } from "@/lib/feedback/messages";
 
 export type TransactionTypeOption = {
@@ -60,7 +62,7 @@ const LEGACY_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
   { value: "LOAN", icon: Landmark, iconClassName: "text-indigo-700", iconBackgroundClassName: "bg-indigo-50" },
 ];
 
-export type TransactionEntryCategory = JournalTransactionType | "INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-PAYMENT";
+export type TransactionEntryCategory = JournalTransactionType | "INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-INCREASE" | "LOAN-PAYMENT";
 export type TransactionEntryOption = Omit<TransactionTypeOption, "value"> & { value: TransactionEntryCategory };
 
 function transactionTypeKey(type: JournalTransactionType) {
@@ -95,6 +97,7 @@ export function buildTransactionEntryOptions(t: TranslateFn): TransactionEntryOp
   });
   for (const [value, key, icon] of [
     ["LOAN-ISSUE", "loanIssue", Landmark],
+    ...(isLoanIncreaseEnabled() ? [["LOAN-INCREASE", "loanIncrease", BadgePlus] as const] : []),
     ["LOAN-PAYMENT", "loanPayment", HandCoins],
   ] as const) {
     options.push({ value, label: t(`accounting.dailyIncome.transactionTypes.${key}.label`),
@@ -109,7 +112,7 @@ const ENTRY_GROUPS: Array<{ id: string; categories: TransactionEntryCategory[] }
   { id: "invoices", categories: ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"] },
   { id: "incomeExpenses", categories: ["SALES", "EXPENSE"] },
   { id: "inventory", categories: ["INVENTORY", "INVENTORY-PAYMENT"] },
-  { id: "loans", categories: ["LOAN-ISSUE", "LOAN-PAYMENT"] },
+  { id: "loans", categories: ["LOAN-ISSUE", "LOAN-INCREASE", "LOAN-PAYMENT"] },
   { id: "transfers", categories: ["TRANSFER"] },
 ];
 

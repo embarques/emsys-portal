@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Banknote, Loader2, Save, User } from "lucide-react";
 import { FormBody, FormFooterNoticeMessage, FormSection } from "@/components/forms/form-shell";
 import { TransactionWizardStepper } from "./transaction-wizard-stepper";
-import { LoanCloseoutPanel } from "./loan-closeout-panel";
+import { LoanCloseoutGate, LoanCloseoutPanel } from "./loan-closeout-panel";
+import { JournalSummaryLine } from "./loan-journal-summary-line";
+import { CurrentTransactionSummary } from "./transaction-review";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -41,7 +44,7 @@ export function CreateLoanDialog(props: Props) {
   </Dialog>;
 }
 
-export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange, continuous = false }: Props & { continuous?: boolean }) {
+export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange, continuous = false, summaryContainer }: Props & { continuous?: boolean; summaryContainer?: HTMLElement | null }) {
   const { t } = useTranslation();
   const text = (key: string) => t(`accounting.loans.createForm.${key}`);
   const state = useCreateLoanForm(onSubmit, pending, continuous);
@@ -120,11 +123,22 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
             </div>
           </FormSection>
         </div> : null}
-        <div className={continuous || step > 1 ? "" : "hidden"}>
-          <LoanCloseoutPanel key={selectedAccount?.id ?? 0} branchId={selectedAccount?.branch?.id} branchCode={selectedAccount?.branch?.code} branchName={selectedAccount?.branch?.name} date={values.transactionDate} onReadyChange={setCloseoutReady} />
-        </div>
+        {continuous ? (
+          <LoanCloseoutGate key={selectedAccount?.id ?? 0} branchId={selectedAccount?.branch?.id} date={values.transactionDate} onReadyChange={setCloseoutReady} />
+        ) : (
+          <div className={step > 1 ? "" : "hidden"}>
+            <LoanCloseoutPanel key={selectedAccount?.id ?? 0} branchId={selectedAccount?.branch?.id} branchCode={selectedAccount?.branch?.code} branchName={selectedAccount?.branch?.name} date={values.transactionDate} onReadyChange={setCloseoutReady} />
+          </div>
+        )}
       </fieldset>
     </FormBody>
+    {summaryContainer ? createPortal(<CurrentTransactionSummary typeLabel={t("accounting.dailyIncome.wizard.typeSelector.options.LOAN-ISSUE")} rows={[
+      [text("employee"), values.employeeName || t("common.empty.dash")],
+      [text("debit"), <JournalSummaryLine key="debit" account={values.loanAccountName} amount={values.principalAmount} />],
+      [text("credit"), <JournalSummaryLine key="credit" account={values.sourceAccountName} amount={values.principalAmount} />],
+      [text("date"), values.transactionDate || t("common.empty.dash")],
+      ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
+    ]} />, summaryContainer) : null}
     <div className="shrink-0 space-y-3 border-t bg-card px-5 py-4">
       {errors.root?.server?.message ? <FormFooterNoticeMessage tone="error" message={errors.root.server.message} /> : (continuous || step > 1) && !closeoutReady ? <FormFooterNoticeMessage tone="warning" message={text("closeoutRequired")} /> : null}
       <div className="flex items-center justify-between gap-3">

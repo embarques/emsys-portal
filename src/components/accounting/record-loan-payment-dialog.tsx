@@ -1,10 +1,15 @@
 "use client";
 
 import { useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Banknote, Landmark, ReceiptText, User } from "lucide-react";
+import { TransactionSectionNavigation } from "@/components/accounting/transaction-section-navigation";
+import { useScrollFocusedSectionToTop } from "@/hooks/use-scroll-focused-section-to-top";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
+import { JournalSummaryLine } from "@/components/accounting/loan-journal-summary-line";
+import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -59,12 +64,14 @@ export function RecordLoanPaymentDialog(props: Props) {
   );
 }
 
-export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange }: Props) {
+export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange, summaryContainer }: Props & { summaryContainer?: HTMLElement | null }) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.paymentForm.${key}`, values);
   const schema = useMemo(() => createLoanPaymentSchema(t), [t]);
   const handleEnterNavigation = useFormEnterNavigation();
   const submitting = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  useScrollFocusedSectionToTop(formRef);
   const form = useForm<LoanPaymentValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -102,6 +109,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
     (selectedLoanId && initialLoan?.id === selectedLoanId ? initialLoan : undefined);
   const allocationLoans = allocationMode === "specific-loan" ? (selectedLoan ? [selectedLoan] : []) : employeeLoans;
   const allocation = allocateLoanPayment(allocationLoans, amount);
+  const previewReady = allocationLoans.length > 0 && !employeeLoansQuery.isError;
   const creditedLoans = allocation.rows.filter((row) => row.applied > 0).map((row) => row.loan);
   const creditAccountName = Array.from(
     new Set((creditedLoans.length > 0 ? creditedLoans : allocationLoans.slice(0, 1)).map((loan) => accountLabel(loan.loanAccount)).filter(Boolean)),
@@ -128,7 +136,8 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
   });
 
   return (
-    <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={submit}>
+    <form ref={formRef} className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={submit}>
+      <TransactionSectionNavigation formRef={formRef} title={text("title")} />
       <FormBody workflow isBusy={busy}>
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           <FormSection
@@ -223,7 +232,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             />
           </FormSection>
 
-          <FormSection variant="card" icon={ReceiptText} title={text("sections.payment")}>
+          <FormSection variant="card" className="p-4 [&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground" icon={ReceiptText} title={text("sections.payment")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 {requiredLabel("loan-payment-received-account", text("receivedAccount"))}
@@ -250,22 +259,35 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                 {fieldError("receivedAccountId")}
               </div>
               <div className="space-y-2">
-                {requiredLabel("loan-payment-amount", text("amount"))}
-                <Input
-                  id="loan-payment-amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  aria-invalid={Boolean(errors.amount)}
-                  {...register("amount", { setValueAs: (value) => (value === "" ? undefined : Number(value)) })}
-                />
-                {fieldError("amount")}
-              </div>
-              <div className="space-y-2">
                 {requiredLabel("loan-payment-date", text("date"))}
                 <DateInput id="loan-payment-date" aria-invalid={Boolean(errors.transactionDate)} {...register("transactionDate")} />
                 {fieldError("transactionDate")}
               </div>
+            </div>
+            <div className="grid min-w-0 grid-cols-3 items-center gap-x-3 gap-y-1 rounded-xl border border-border bg-muted/35 p-3 sm:gap-x-4">
+              <dl className="contents">
+                <dt className="col-start-1 row-start-1 self-start text-xs font-medium leading-4 text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.previousBalance")}</dt>
+                <dd id="loan-payment-previous-balance" className="col-start-1 row-start-2 min-w-0 break-words text-lg font-semibold text-orange-700 tabular-nums md:text-2xl dark:text-orange-400">
+                  {previewReady ? formatLoanMoney(allocation.totals.balance) : t("common.empty.dash")}
+                </dd>
+                <dt className="col-start-3 row-start-1 self-start text-right text-xs font-medium leading-4 text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.newBalance")}</dt>
+                <dd id="loan-payment-new-balance" className="col-start-3 row-start-2 min-w-0 break-words text-right text-lg font-semibold text-emerald-700 tabular-nums md:text-2xl dark:text-emerald-400">
+                  {previewReady ? formatLoanMoney(allocation.totals.balanceAfter) : t("common.empty.dash")}
+                </dd>
+              </dl>
+              <div className="col-start-2 row-start-1 min-w-0 self-start text-center [&>label]:block">
+                {requiredLabel("loan-payment-amount", t("accounting.dailyIncome.form.fields.paymentAmount"))}
+              </div>
+              <Input
+                id="loan-payment-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                aria-invalid={Boolean(errors.amount)}
+                className="col-start-2 row-start-2 h-10 text-center text-lg font-semibold tabular-nums md:text-lg [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                {...register("amount", { setValueAs: (value) => (value === "" ? undefined : Number(value)) })}
+              />
+              {errors.amount ? <div className="col-start-2 row-start-3 text-center">{fieldError("amount")}</div> : null}
             </div>
           </FormSection>
 
@@ -290,14 +312,26 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             </div>
           </FormSection>
 
-          <FormSection variant="card" icon={Banknote} title={text("sections.journal")}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <JournalLine label={text("journalDebit")} account={receivedAccountName} amount={amount} />
-              <JournalLine label={text("journalCredit")} account={creditAccountName} amount={amount} />
-            </div>
-          </FormSection>
+          {summaryContainer ? null : (
+            <FormSection variant="card" icon={Banknote} title={text("sections.journal")}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <JournalLine label={text("journalDebit")} account={receivedAccountName} amount={amount} />
+                <JournalLine label={text("journalCredit")} account={creditAccountName} amount={amount} />
+              </div>
+            </FormSection>
+          )}
         </fieldset>
       </FormBody>
+      {summaryContainer ? createPortal(<CurrentTransactionSummary typeLabel={t("accounting.dailyIncome.wizard.typeSelector.options.LOAN-PAYMENT")} rows={[
+        [text("employee"), watch("employeeName") || t("common.empty.dash")],
+        [text("allocationMode"), allocationMode === "specific-loan"
+          ? selectedLoan?.description || (selectedLoan ? t("accounting.loans.fallbackDescription") : text("specificLoan"))
+          : text("oldestFirst")],
+        [text("journalDebit"), <JournalSummaryLine key="debit" account={receivedAccountName} amount={amount} />],
+        [text("journalCredit"), <JournalSummaryLine key="credit" account={creditAccountName} amount={amount} />],
+        [text("date"), watch("transactionDate") || t("common.empty.dash")],
+        ...(watch("referenceNumber")?.trim() ? [[text("reference"), watch("referenceNumber")] as [string, string]] : []),
+      ]} />, summaryContainer) : null}
       <FormFooter
         error={errors.root?.server?.message}
         warning={noActiveLoans ? text("balances.empty") : null}
@@ -322,7 +356,7 @@ function JournalLine({ label, account, amount }: { label: string; account: strin
   );
 }
 
-function BalanceTile({ label, value, emphasis = false }: { label: string; value: number; emphasis?: boolean }) {
+export function BalanceTile({ label, value, emphasis = false }: { label: string; value: number; emphasis?: boolean }) {
   return (
     <div className={cn("rounded-lg border bg-muted/20 p-3", emphasis && "border-primary/30 bg-primary/5")}>
       <p className="text-xs text-muted-foreground">{label}</p>

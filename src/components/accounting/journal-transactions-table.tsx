@@ -102,7 +102,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const canSelect = (row: DailyIncomeJournal) => selectionBlockReason(row) === null;
   function renderBlockedHint(row: DailyIncomeJournal) {
     const reason = processMutation.isPending ? null : selectionBlockReason(row);
-    if (!reason) return null;
+    if (!reason || (!clearance && reason !== "awaitingClearance")) return null;
     const label = t(`accounting.journalClearance.blocked.${reason}`, {method: method || t("accounting.journalClearance.blocked.noMethod")});
     return <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" className="size-7 text-muted-foreground" aria-label={label}><Info className="size-4" aria-hidden="true"/></Button></TooltipTrigger><TooltipContent className="max-w-xs">{label}</TooltipContent></Tooltip>;
   }
@@ -169,7 +169,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       columns={layout.columns} columnLayout={layout} rows={rows} rowKey={row => row.id} rowLabel={row => row.refNumber || row.id}
       page={page} isPageDataPending={rowsQuery.isFetching} selectable selectedIds={ids}
       isRowSelectable={row => !processMutation.isPending && canSelect(row)}
-      renderSelectCellActions={clearance ? renderBlockedHint : undefined}
+      renderSelectCellActions={isQueue ? renderBlockedHint : undefined}
       allPageSelected={rows.length > 0 && rows.every(row => ids.includes(row.id))}
       onToggleSelect={toggle} onToggleSelectAll={togglePage} onRowClick={onView}
       sort={sort} onSortChange={(field, direction) => {setSort(`${field}:${direction}`); setPage(1);}}
@@ -185,17 +185,20 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
         <p>{text(outcome.complete ? "batchComplete" : "batchUnconfirmed")}</p>
         {outcome.confirmed.map(id => <p key={id}>{id} — {text("confirmed")}</p>)}
         {outcome.unconfirmed.map(id => <p key={id}>{id} — {text("unconfirmed")}</p>)}
+        {clearance && clearanceMutation.data?.reconciliationPending.length ? <p>{text("reconciliationPending")}</p> : null}
       </div> : null}
-      <DialogFooter><Button variant="outline" disabled={processMutation.isPending} onClick={() => setConfirmOpen(false)}>{t("common.actions.cancel")}</Button><Button disabled={(!ready && !outcome) || outcome?.complete === true || processMutation.isPending || !command} onClick={() => {if (!command) return; processMutation.mutate(command, {onSuccess: (response) => {
- const data=response?.data;
- const acknowledged = data && (clearance ? ("cleared" in data ? data.cleared : undefined) : ("reconciled" in data ? data.reconciled : undefined));
+      <DialogFooter><Button variant="outline" disabled={processMutation.isPending} onClick={() => setConfirmOpen(false)}>{t("common.actions.cancel")}</Button><Button disabled={(!ready && !outcome) || outcome?.complete === true || processMutation.isPending || !command} onClick={() => {if (!command) return;
+ const onSuccess = (acknowledged: string[] | undefined) => {
  const result = atomicBatchOutcome(command.ids,[...(outcome?.confirmed??[]),...(Array.isArray(acknowledged)?acknowledged:[])]);
  setOutcome(result);
  setSelected(current => Object.fromEntries(Object.entries(current).filter(([id]) => !result.confirmed.includes(id))));
  setPage(1);
  // Keep the exact original command for an uncertain-response retry. Its UUID
  // must never be reused with only the omitted IDs or another payload.
- }});}}>{actionLabel}</Button></DialogFooter>
+ };
+ if (clearance) clearanceMutation.mutate({...command, reconcileIds: commandRows.filter(row => row.reconciliationStatus === "OUTSTANDING").map(row => row.id)}, {onSuccess: response => onSuccess(response?.data?.cleared)});
+ else reconciliationMutation.mutate(command, {onSuccess: response => onSuccess(response?.data?.reconciled)});
+ }}>{actionLabel}</Button></DialogFooter>
     </DialogContent></Dialog>
   </Card>;
 }

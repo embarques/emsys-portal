@@ -36,6 +36,7 @@ export type DailyIncomeJournalSchemaMessages = {
   amountExceedsBalance: string;
   accountRequired: string;
   sourceAccountRequired: string;
+  transferSameAccount?: string;
   inventoryRequired: string;
   inventoryItemRequired: string;
   inventoryQuantityRequired: string;
@@ -121,6 +122,7 @@ export function createDailyIncomeJournalSchema(
       paymentMethodName: z.string().optional(),
       checkNumber: z.string().optional(),
       autoClear: z.boolean().optional(),
+      clearPaymentOnSave: z.boolean().optional(),
       autoReconcile: z.boolean().optional(),
       inventoryDirection: z.enum(["received", "dispatched"]).optional(),
       inventoryItemId: z.string().optional(),
@@ -337,6 +339,14 @@ export function createDailyIncomeJournalSchema(
           code: "custom",
           path: ["sourceAccountId"],
           message: messages.sourceAccountRequired,
+        });
+      }
+
+      if (values.transactionType === "TRANSFER" && values.accountId && values.accountId === values.sourceAccountId) {
+        context.addIssue({
+          code: "custom",
+          path: ["accountId"],
+          message: messages.transferSameAccount ?? "Choose a different account to transfer to.",
         });
       }
     });

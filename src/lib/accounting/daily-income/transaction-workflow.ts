@@ -85,6 +85,7 @@ export function getTransactionStepLabelKey(step: TransactionFormStep, type: Jour
     return `accounting.dailyIncome.form.sections.${step === "assignment" ? "inventoryMovement" : "inventoryAmounts"}`;
   }
   if (step === "amounts") {
+    if (type === "TRANSFER") return "accounting.dailyIncome.form.sections.transferDetails";
     return `accounting.dailyIncome.form.sections.${type && ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type) ? "invoiceDetails" : "amounts"}`;
   }
   return `accounting.dailyIncome.wizard.workflow.${step}`;

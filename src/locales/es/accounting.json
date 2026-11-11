@@ -2,7 +2,7 @@
   "pendingTasksAlert": "{{count}} tareas contables pendientes",
   "journalClearance": {
     "title": "Liquidación pendiente",
-    "description": "Transacciones pendientes de liquidación o verificación por su canal de pago, de todos los cierres. La liquidación es independiente de la conciliación y no reabre períodos cerrados.",
+    "description": "Transacciones pendientes de liquidación o verificación por su canal de pago, de todos los cierres. Las transacciones bancarias se concilian al liquidarse. La liquidación no reabre períodos cerrados.",
     "status": "Liquidación",
     "NOT_REQUIRED": "No requerida",
     "OUTSTANDING": "Pendiente",
@@ -17,6 +17,7 @@
       "notAuthorized": "La API no ha autorizado la liquidación de esta transacción.",
       "paymentMethod": "Solo se pueden agregar transacciones de {{method}} a la selección actual.",
       "limit": "Puede liquidar hasta 200 transacciones a la vez.",
+      "awaitingClearance": "Las transacciones bancarias se concilian al liquidarse. Primero liquídela en Liquidación pendiente.",
       "noMethod": "sin método de pago"
     },
     "confirmList": {
@@ -24,7 +25,8 @@
       "externalReference": "Ref. externa / N.º de cheque"
     },
     "confirmTitle": "¿Marcar las transacciones seleccionadas como liquidadas?",
-    "confirmDescription": "Confirme que estos pagos se han liquidado o verificado por su canal financiero. Solo registra la liquidación; no cambia el historial de conciliación, los saldos de facturas ni los importes del cierre. No emite un reembolso ni una reversión bancaria.",
+    "confirmDescription": "Confirme que estos pagos se han liquidado o verificado por su canal financiero. Al liquidarlos también se concilian y se aplican los pagos pendientes a las facturas. No cambia los importes del cierre. No emite un reembolso ni una reversión bancaria.",
+    "reconciliationPending": "Liquidadas, pero no se pudo confirmar la conciliación de algunas transacciones. Permanecen en Conciliación pendiente.",
     "pendingAlert": "{{count}} transacciones pendientes de liquidación",
     "batchComplete": "Todas las transacciones seleccionadas están confirmadas.",
     "batchUnconfirmed": "Hay resultados sin confirmar. Reintenta el lote original para recuperar el resultado. Una transacción omitida no se considera fallida.",
@@ -762,12 +764,14 @@
       "statementUpdated": "Ingresos diarios actualizados.",
       "statementOpened": "Ingresos diarios abiertos.",
       "statementClosed": "Ingresos diarios cerrados.",
+      "paymentSavedClearanceUnconfirmed": "Pago guardado. No se pudo confirmar la liquidación automática. Revise Liquidaciones pendientes antes de reintentar; no vuelva a registrar el pago.",
+      "paymentClearedReconciliationPending": "Pago guardado y liquidado. No se pudo confirmar la conciliación; permanece en Conciliación pendiente.",
       "transactionCreated": "Transacción creada.",
       "transactionCreatedWithType": "Transacción creada: {{type}}.",
       "transactionCreatedWithTarget": "Transacción creada: {{type}} - {{target}}.",
       "transactionUpdated": "Transacción actualizada.",
       "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado.",
-      "checkPaymentHeld": "Pago registrado y aplicado. Pendiente de conciliación contable.",
+      "checkPaymentHeld": "Pago registrado y pendiente de liquidación. Se aplicará a la factura cuando se liquide.",
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
@@ -818,6 +822,7 @@
           "INVENTORY": "Movimiento de inventario",
           "INVENTORY-PAYMENT": "Pago de inventario",
           "LOAN-ISSUE": "Nuevo préstamo",
+          "LOAN-INCREASE": "Monto adicional de préstamo",
           "LOAN-PAYMENT": "Pago de préstamo",
           "TRANSFER": "Transferir entre cuentas"
         },
@@ -902,6 +907,10 @@
         "label": "Registrar nuevo préstamo",
         "description": "Registrar un nuevo préstamo a un empleado"
       },
+      "loanIncrease": {
+        "label": "Registrar monto adicional de préstamo",
+        "description": "Prestar más sobre un préstamo existente"
+      },
       "loanPayment": {
         "label": "Registrar pago de préstamo",
         "description": "Registrar un pago de los préstamos de un empleado"
@@ -920,14 +929,22 @@
         "expenseBankAccount": "Pagado desde la cuenta bancaria",
         "expenseCashAccount": "Pagado desde la cuenta de efectivo",
         "checkNumber": "Número de cheque",
-        "checkNumberHint": "Número del cheque. El pago se aplica al registrarlo.",
+        "checkNumberHint": "Número del cheque. El pago se aplica a la factura después de liquidarse.",
         "autoClear": "Conciliar automáticamente",
-        "autoClearHint": "Concilia esta transacción al guardar. Requiere permiso de conciliación y no marca el pago como liquidado por su canal financiero.",
+        "autoClearPayment": "Liquidar el pago automáticamente al guardar",
+        "bankPaymentClearanceHint": "Los pagos bancarios no se aplican a la factura hasta que se liquidan.",
+        "bankPaymentAutoClearHint": "Por defecto, este pago queda sin liquidar ni conciliar, y no se aplica a la factura hasta que se liquide. Active la liquidación automática solo si tiene la certeza de que los fondos ingresaron en la cuenta bancaria seleccionada; también concilia el pago.",
+        "autoClearTransaction": "Liquidar la transacción automáticamente al guardar",
+        "bankTransactionClearanceHint": "Las transacciones bancarias permanecen pendientes hasta que se liquidan.",
+        "bankTransactionAutoClearHint": "Deje esta opción desactivada salvo que tenga la certeza de que la transacción se liquidó y ya se refleja en la cuenta bancaria seleccionada. Se liquidará al guardar y se conciliará internamente cuando tenga el permiso correspondiente.",
+        "autoClearHint": "Concilia esta transacción al guardar. Esto confirma que ya recibió este pago.",
         "autoClearReviewValue": "Conciliado al crear",
         "autoReconcile": "Conciliar automáticamente (marcar como vendido)",
         "autoReconcileHint": "Omite el paso de pendiente: al guardar se completa la entrega y toda la cantidad se concilia como vendida, por lo que no aparece en Transacciones pendientes.",
         "autoReconcileReviewValue": "Conciliado como vendido al guardar",
         "invoice": "Factura",
+        "invoiceNumber": "Número de factura",
+        "notes": "Notas",
         "referenceNumber": "Número de referencia interna",
         "referenceNumberModeSystem": "Generado por el sistema",
         "referenceNumberModeCustom": "Ingresar el propio",
@@ -937,6 +954,8 @@
         "referenceNumberCustomHint": "Actívelo para que EMSYS genere el número de referencia interna.",
         "account": "Cuenta",
         "sourceAccount": "Cuenta origen",
+        "transferFrom": "Cuenta de origen",
+        "transferTo": "Cuenta de destino",
         "amount": "Monto",
         "paymentAmount": "Monto del pago",
         "description": "Descripción",
@@ -988,6 +1007,8 @@
         "selectAccount": "Seleccionar cuenta",
         "searchAccounts": "Buscar cuentas…",
         "selectSourceAccount": "Seleccionar cuenta origen",
+        "selectTransferFrom": "Seleccione la cuenta de donde sale el dinero",
+        "selectTransferTo": "Seleccione la cuenta a donde va el dinero",
         "selectInvoice": "Seleccionar factura",
         "selectInvoiceMode": "Seleccionar factura existente o nueva",
         "searchInvoices": "Buscar facturas",
@@ -1017,11 +1038,12 @@
         "noDailyRoute": "Sin ruta diaria"
       },
       "hints": {
-        "amountZeroAllowed": "Use $0.00 si aún no se ha pagado.",
+        "balanceAfterClearance": "El nuevo saldo es una vista previa después de aplicar este pago. Los pagos pendientes afectan el saldo de la factura cuando se liquidan.",
         "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
         "sourceAccount": "De dónde provienen los fondos.",
+        "transferFrom": "Cuenta de efectivo o banco de donde sale el dinero.",
+        "transferTo": "Cuenta de efectivo o banco a donde va el dinero.",
         "cashAccount": "Dónde se guarda el efectivo. Por defecto, Efectivo en caja.",
-        "paymentMethodOptionalZero": "Se registra como efectivo mientras el monto sea $0.00.",
         "costFromLineItems": "Tomado de los renglones de la factura.",
         "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. El supervisor es responsable de cuadrar esta transacción.",
         "inventoryHolders": "Los responsables comparten una sola asignación: 20 cajas para un vehículo y dos empleados son 20 cajas en total.",
@@ -1033,6 +1055,8 @@
         "discount": "Descuento",
         "paid": "Pagado",
         "balance": "Saldo",
+        "previousBalance": "Saldo anterior",
+        "newBalance": "Nuevo saldo",
         "sender": "Remitente: {{name}}",
         "receiver": "Destinatario: {{name}}"
       },
@@ -1082,6 +1106,7 @@
         "amountExceedsBalance": "El monto no puede exceder el saldo de la factura.",
         "accountRequired": "La cuenta es obligatoria.",
         "sourceAccountRequired": "La cuenta origen es obligatoria.",
+        "transferSameAccount": "Elija una cuenta de destino diferente.",
         "inventoryRequired": "Seleccione recibido o despachado.",
         "inventoryItemRequired": "El artículo es obligatorio.",
         "inventoryQuantityRequired": "La cantidad debe ser mayor que cero.",
@@ -1095,11 +1120,13 @@
         "assignment": "Asignado a",
         "invoiceDetails": "Datos de la factura",
         "invoiceAmount": "Monto de la factura",
-        "paymentDetails": "Pago y referencias",
+        "paymentDetails": "Detalles del pago",
+        "referenceAndNotes": "Referencia y notas",
         "customers": "Remitente y destinatario (opcional)",
         "inventoryMovement": "Movimiento de inventario",
         "inventoryAmounts": "Artículo e importes",
-        "amounts": "Cuentas e importe"
+        "amounts": "Cuentas e importe",
+        "transferDetails": "Detalles de la transferencia"
       }
     },
     "duplicatePayment": {
@@ -1216,6 +1243,7 @@
     },
     "transactionTypes": {
       "ISSUE": "Préstamo otorgado",
+      "INCREASE": "Monto adicional",
       "PAYMENT": "Pago"
     },
     "stats": {
@@ -1263,6 +1291,7 @@
     "toasts": {
       "created": "Préstamo creado.",
       "createdFor": "Préstamo creado para {{name}}.",
+      "increased": "Monto adicional de préstamo registrado.",
       "paymentRecorded": "Pago de préstamo registrado."
     },
     "errors": {
@@ -1280,6 +1309,8 @@
       "receivedAccountRequired": "La cuenta de recepción del pago es obligatoria.",
       "paymentAmountRequired": "El monto del pago es obligatorio.",
       "paymentAmountPositive": "El monto del pago debe ser mayor que cero.",
+      "increaseAmountRequired": "El monto adicional es obligatorio.",
+      "increaseAmountPositive": "El monto adicional debe ser mayor que cero.",
       "loanRequired": "Seleccione un préstamo."
     },
     "journalPreview": {
@@ -1335,6 +1366,40 @@
         "empty": "Este empleado no tiene préstamos activos.",
         "overpayment": "El pago excede el saldo actual por {{amount}}."
       }
+    },
+    "increaseForm": {
+      "sections": {
+        "loan": "Empleado y préstamo",
+        "balance": "Saldo del préstamo",
+        "amount": "Monto adicional",
+        "notes": "Referencia y notas",
+        "journal": "Resumen del asiento contable"
+      },
+      "loanHint": "Seleccione el empleado y el préstamo activo al que se sumará el monto.",
+      "employee": "Empleado",
+      "selectEmployee": "Seleccione un empleado",
+      "searchEmployees": "Buscar empleados",
+      "loan": "Préstamo",
+      "selectLoan": "Seleccione un préstamo",
+      "selectEmployeeFirst": "Seleccione primero un empleado",
+      "searchLoans": "Buscar préstamos",
+      "noActiveLoans": "Este empleado no tiene préstamos activos.",
+      "loanOptionDescription": "Abierto {{opened}} · Saldo {{balance}}",
+      "originalAmount": "Monto original",
+      "currentBalance": "Saldo actual",
+      "balanceAfter": "Saldo después",
+      "sourceAccount": "Cuenta de activo de origen",
+      "selectSourceAccount": "Seleccione la cuenta de activo de origen",
+      "searchAssetAccounts": "Buscar cuentas de activo",
+      "amount": "Monto adicional",
+      "date": "Fecha",
+      "reference": "Número de referencia",
+      "optional": "Opcional",
+      "notes": "Descripción",
+      "notesPlaceholder": "Motivo del monto adicional",
+      "journalDebit": "Débito · Cuenta de préstamo",
+      "journalCredit": "Crédito · Cuenta de activo de origen",
+      "submit": "Agregar al préstamo"
     },
     "payments": {
       "title": "Pagos",
@@ -1682,7 +1747,7 @@
   },
   "journalReconciliation": {
     "title": "Conciliación pendiente",
-    "description": "Transacciones pendientes de verificación de dinero o documentos, de todos los cierres. La conciliación registra la responsabilidad; la liquidación registra por separado el pago efectivamente liquidado.",
+    "description": "Transacciones pendientes de verificación de dinero o documentos, de todos los cierres. Las transacciones bancarias no se pueden conciliar aquí hasta que se liquiden; al liquidarse se concilian.",
     "createdAt": "Creado el",
     "status": "Conciliación",
     "NOT_REQUIRED": "No requerida",

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ReceiptText, UserRound } from "lucide-react";
 import type { UseFormSetValue, UseFormTrigger, UseFormWatch, FieldErrors } from "react-hook-form";
 
 import { FieldMessage } from "@/components/forms/field-message";
 import { FormSection } from "@/components/forms/form-shell";
-import { getInvoiceBalanceInputClassName } from "@/components/accounting/invoice-balance-tone";
+import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { PaymentAccountSelect } from "@/components/accounting/payment-account-select";
@@ -187,6 +188,7 @@ export function RegisterInvoiceTransactionFields({
   const invoiceDiscount = watch("invoiceDiscount");
   const amount = watch("amount");
   const autoClear = watch("autoClear");
+  const clearPaymentOnSave = watch("clearPaymentOnSave");
   const [costDraft, setCostDraft] = useState<string | null>(null);
   const [discountDraft, setDiscountDraft] = useState<string | null>(null);
   const [amountDraft, setAmountDraft] = useState<string | null>(null);
@@ -197,10 +199,9 @@ export function RegisterInvoiceTransactionFields({
   const paymentDetailsRequired = (Number(amount) || 0) > 0;
   const balance = computeInvoiceBalance(invoiceCost, manualInvoiceTotals ? invoiceDiscount : 0, amount);
   const stackedAmounts = grouped && manualInvoiceTotals;
-  const amountRowClassName = stackedAmounts ? "col-span-3 grid min-w-0 grid-cols-subgrid items-center gap-y-1" : "space-y-2 min-w-0";
-  const amountMessageClassName = stackedAmounts ? "col-start-3" : undefined;
-  const amountOperator = (symbol: string) =>
-    stackedAmounts ? <span aria-hidden className="text-center text-lg font-semibold leading-none text-muted-foreground">{symbol}</span> : null;
+  const inlineInvoiceParties = stackedAmounts && !activeStep;
+  const amountRowClassName = stackedAmounts ? "row-span-3 grid min-w-0 grid-rows-subgrid gap-y-1" : "space-y-2 min-w-0";
+  const amountMessageClassName = stackedAmounts ? "row-start-3" : undefined;
   const includeSender = watch("includeSender");
   const includeReceiver = watch("includeReceiver");
   const senderId = watch("senderId");
@@ -357,16 +358,24 @@ export function RegisterInvoiceTransactionFields({
   function partyModeField(side: "sender" | "receiver", included: boolean, field: React.ReactNode) {
     const id = `journal-${side}-mode`;
     return (
-      <div className="space-y-2 min-w-0">
+      <div className={cn("min-w-0 space-y-2", inlineInvoiceParties && side === "receiver" && "border-l border-border pl-4")}>
         <div className="space-y-2">
-          <Label id={`${id}-label`}>
-            {t(side === "sender" ? "accounting.dailyIncome.form.fields.senderClient" : "accounting.dailyIncome.form.fields.receiverClient")}
-          </Label>
+          <div className={cn(inlineInvoiceParties && "flex min-w-0 items-center gap-2")}>
+            {inlineInvoiceParties ? (
+              <span aria-hidden="true" className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", side === "sender" ? "bg-primary/10 text-primary" : "border border-border bg-muted/40 text-muted-foreground")}>
+                <UserRound className="size-3.5" />
+              </span>
+            ) : null}
+            <Label id={`${id}-label`}>
+              {t(side === "sender" ? "accounting.dailyIncome.form.fields.senderClient" : "accounting.dailyIncome.form.fields.receiverClient")}
+            </Label>
+          </div>
           <div data-enter-navigation="field">
             <SegmentedControl<"skip" | "include">
               id={id}
               aria-labelledby={`${id}-label`}
               value={included ? "include" : "skip"}
+              className={inlineInvoiceParties ? "[&>button]:px-1 [&>button]:text-xs" : undefined}
               onValueChange={(next) => setPartyIncluded(side, next === "include")}
               options={[
                 { value: "skip", label: t("accounting.dailyIncome.form.fields.partyModeSkip") },
@@ -423,6 +432,8 @@ export function RegisterInvoiceTransactionFields({
           value={paymentMethodId != null ? String(paymentMethodId) : ""}
           onValueChange={(next) => {
             const method = paymentMethods.find((item) => item.id === Number(next));
+            setValue("autoClear", false, { shouldDirty: true });
+            setValue("clearPaymentOnSave", false, { shouldDirty: true });
             setValue("paymentMethodId", method?.id, { shouldValidate: true, shouldDirty: true });
             setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true, shouldDirty: true });
             if (!requiresBankAccount(method?.name)) {
@@ -443,14 +454,7 @@ export function RegisterInvoiceTransactionFields({
           options={paymentMethodOptions}
           aria-invalid={Boolean(errors.paymentMethodId)}
         />
-        <FieldMessage
-          error={errors.paymentMethodId?.message}
-          hint={
-            !paymentDetailsRequired && paymentMethodName?.trim() && !isCashPaymentMethod(paymentMethodName)
-              ? t("accounting.dailyIncome.form.hints.paymentMethodOptionalZero")
-              : null
-          }
-        />
+        <FieldMessage error={errors.paymentMethodId?.message} />
       </div>
     </>
   );
@@ -467,7 +471,11 @@ export function RegisterInvoiceTransactionFields({
           valueName={paymentAccountName}
           required={paymentDetailsRequired}
           error={errors.paymentAccountId?.message}
-          onChange={(account) => applyMoneyAccount(setValue, "paymentAccount", account)}
+          onChange={(account) => {
+            applyMoneyAccount(setValue, "paymentAccount", account);
+            setValue("autoClear", false, { shouldDirty: true });
+            setValue("clearPaymentOnSave", false, { shouldDirty: true });
+          }}
         />
       ) : showCashAccount ? (
         <PaymentAccountSelect
@@ -519,6 +527,8 @@ export function RegisterInvoiceTransactionFields({
             id="journal-invoice-number"
             variant="segmented"
             compact
+            showModeLabel
+            modeLabelIcon={<ReceiptText aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />}
             autoGenerate={automaticNumber}
             invoiceNumber={watch("invoiceNumber") ?? ""}
             canUseManualNumber={canUseManualNumber}
@@ -548,7 +558,6 @@ export function RegisterInvoiceTransactionFields({
           placeholder={t("accounting.dailyIncome.form.placeholders.externalReferenceNumber")}
           {...register("externalReferenceNumber")}
         />
-        <FieldMessage hint={t("accounting.dailyIncome.form.fields.externalReferenceHint")} />
       </div>
     </>
   );
@@ -558,6 +567,8 @@ export function RegisterInvoiceTransactionFields({
       transactionType="INITIAL-PAYMENT"
       amount={amount}
       paymentMethodName={paymentMethodName}
+      paymentClearanceChecked={Boolean(clearPaymentOnSave)}
+      onPaymentClearanceCheckedChange={(checked) => setValue("clearPaymentOnSave", checked, { shouldDirty: true })}
       checked={Boolean(autoClear)}
       onCheckedChange={(checked) => setValue("autoClear", checked, { shouldDirty: true })}
     />
@@ -569,7 +580,6 @@ export function RegisterInvoiceTransactionFields({
         <RequiredLabel htmlFor="journal-invoice-cost">
           {t(manualInvoiceTotals ? "accounting.dailyIncome.form.invoiceSummary.total" : "accounting.dailyIncome.form.fields.cost")}
         </RequiredLabel>
-        {amountOperator("")}
         {invoiceCostReadOnly ? (
           <Input
             id="journal-invoice-cost"
@@ -619,7 +629,6 @@ export function RegisterInvoiceTransactionFields({
   const discountFields = manualInvoiceTotals ? (
     <div className={amountRowClassName}>
       <Label htmlFor="journal-invoice-discount">{t("accounting.dailyIncome.form.invoiceSummary.discount")}</Label>
-      {amountOperator("−")}
       <Input
         id="journal-invoice-discount"
         inputMode="decimal"
@@ -663,7 +672,6 @@ export function RegisterInvoiceTransactionFields({
         <Label htmlFor="journal-amount">
           {t(manualInvoiceTotals ? "accounting.dailyIncome.form.invoiceSummary.paid" : "accounting.dailyIncome.form.fields.amount")}
         </Label>
-        {amountOperator("−")}
         <Input
           id="journal-amount"
           inputMode="decimal"
@@ -690,40 +698,36 @@ export function RegisterInvoiceTransactionFields({
             } : grouped ? undefined : submitFormOnEnterKeyDown}
           aria-invalid={Boolean(errors.amount)}
         />
-        <FieldMessage
-          className={amountMessageClassName}
-          error={errors.amount?.message}
-          hint={t("accounting.dailyIncome.form.hints.amountZeroAllowed")}
-        />
+        <FieldMessage className={amountMessageClassName} error={errors.amount?.message} />
       </div>
     </>
   );
 
-  const balanceFields = (
+  const hasInvoiceTotal = (Number(invoiceCost) || 0) > 0;
+  const balanceFields = hasInvoiceTotal ? (
     <>
-      <div className={amountRowClassName}>
+      <div className={stackedAmounts ? "min-w-0 space-y-1" : amountRowClassName}>
         <Label htmlFor="journal-invoice-balance">{t("accounting.dailyIncome.form.fields.balance")}</Label>
-        {amountOperator("=")}
         <Input
           id="journal-invoice-balance"
           readOnly
           tabIndex={-1}
           value={balance == null ? "" : formatMoneyFormDisplayValue(balance)}
-          className={cn("tabular-nums", stackedAmounts && "text-right font-semibold", getInvoiceBalanceInputClassName(balance))}
+          className={cn("tabular-nums", stackedAmounts ? cn("border-0 bg-transparent p-0 text-left text-2xl font-semibold shadow-none max-md:text-2xl md:text-2xl", getInvoiceBalanceTextClassName(balance)) : getInvoiceBalanceInputClassName(balance))}
           aria-invalid={balance != null && balance < 0}
         />
         <FieldMessage
-          className={amountMessageClassName}
+          className={stackedAmounts ? undefined : amountMessageClassName}
           error={balance != null && balance < 0 ? t("accounting.dailyIncome.form.validation.balanceNegative") : null}
         />
       </div>
     </>
-  );
+  ) : null;
 
   const partiesFields = (
     <>
       {showParties ? (
-        <div className="space-y-4 min-w-0 sm:col-span-2">
+        <div className={inlineInvoiceParties ? "grid min-w-0 grid-cols-2 gap-4 px-4 py-3" : "space-y-4 min-w-0 sm:col-span-2"}>
           {partyModeField("sender", Boolean(includeSender), (
             <>
               <SearchableSelect
@@ -769,22 +773,26 @@ export function RegisterInvoiceTransactionFields({
     const assignmentStepClassName = activeStep && activeStep !== "assignment" ? "hidden" : undefined;
     const amountsStepClassName = activeStep && activeStep !== "amounts" ? "hidden" : undefined;
     const invoiceDetailsSection = manualInvoiceTotals ? (
-      <>
-        <FormSection className={amountsStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
-          <div className="space-y-4">
-            {invoiceFields}
+      <FormSection className={cn("p-4 [&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground", amountsStepClassName)} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            {showInvoiceNumber ? <div className="border-b border-border bg-muted/25 px-4 py-3">{invoiceFields}</div> : null}
+            {inlineInvoiceParties ? partiesFields : null}
+            <div className="flex items-center gap-3 border-t border-border bg-muted/50 px-4 py-2.5">
+              <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ReceiptText className="size-5" />
+              </span>
+              <h4 className="text-xs font-medium text-muted-foreground">{t("accounting.dailyIncome.form.sections.invoiceAmount")}</h4>
+            </div>
+            <div className="grid min-w-0 grid-cols-3 gap-x-3 gap-y-1 bg-muted/35 px-4 py-3 sm:gap-x-6">
+              {costFields}
+              {discountFields}
+              {amountFields}
+            </div>
+            {balanceFields ? <div className="border-t border-border px-4 py-3">{balanceFields}</div> : null}
           </div>
-        </FormSection>
-        <FormSection className={amountsStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceAmount")}>
-          <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,12rem)] gap-x-2 gap-y-3">
-            {costFields}
-            {discountFields}
-            {amountFields}
-            <div aria-hidden className="col-span-2 col-start-2 border-t-2 border-foreground/70" />
-            {balanceFields}
-          </div>
-        </FormSection>
-      </>
+        </div>
+      </FormSection>
     ) : (
       <FormSection className={amountsStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
         {showInvoiceNumber ? <div className="mb-4">{invoiceFields}</div> : null}
@@ -795,7 +803,7 @@ export function RegisterInvoiceTransactionFields({
         </div>
       </FormSection>
     );
-    const partiesSection = showParties && !quickEntry ? (
+    const partiesSection = showParties && !quickEntry && !inlineInvoiceParties ? (
       <FormSection
         className={activeStep && activeStep !== "parties" ? "hidden" : undefined}
         variant="card"

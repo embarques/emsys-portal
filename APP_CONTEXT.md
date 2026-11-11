@@ -197,9 +197,11 @@ Receipts and dispatches are versioned documents: created as **DRAFT**, edited wi
 
 **Supply operations** (`/inventory/workflow`, behind `NEXT_PUBLIC_INVENTORY_WORKFLOW_ENABLED=true`) covers the rest of the lifecycle: returns, loss & damage dispositions, physical counts, adjustments, aggregate supply sales, payments and allocations, office cash handovers, collection obligations and settlements, daily closeouts (preview, close, reopen, revisions), holder custody and reassignment, item price history, route crews, daily routes, and the stock-valuation / sales / obligations / discrepancy reports, audit events and journal entries. Closeout requires available and quarantined counts that reconcile with a fresh server preview; financial differences require an explanation. Reopening needs `closeout.reopen` and a reason, and creates a new immutable revision. Retained stock persists overnight with its holder.
 
-Daily Income **Add transaction categories** are Invoices (New invoice, Invoice payment, Discount, Surcharge), Income & expenses (Income, Expense), Inventory (Inventory movement, Inventory payment), Loans (New loan, Loan payment), and Account transfers (Transfer between accounts). The chooser shows a category list beside one category’s action rows on desktop. Small screens and the phone presentation use expandable category sections with one category open at a time. Invoices opens by default; returning from a transaction restores its category. Desktop shows contextual help for the focused or hovered action; small screens keep descriptions beside each action. Choosing an action immediately continues its existing workflow.
+Daily Income **Add transaction categories** are Invoices (New invoice, Invoice payment, Discount, Surcharge), Income & expenses (Income, Expense), Inventory (Inventory movement, Inventory payment), Loans (New loan, Additional loan amount when enabled, Loan payment), and Account transfers (Transfer between accounts). The chooser shows a category list beside one category’s action rows on desktop. Small screens and the phone presentation use expandable category sections with one category open at a time. Invoices opens by default; returning from a transaction restores its category. Desktop shows contextual help for the focused or hovered action; small screens keep descriptions beside each action. Choosing an action immediately continues its existing workflow.
 
 **Register new loan / Register loan payment** reuse the dedicated loan creation and employee loan-payment dialogs and existing loan APIs, including the existing payment allocation rules. They do not post a generic `LOAN` journal directly. The chooser reuses its employee/account lookups, and payment loans load only after selecting an employee. Loan actions inherit the Add transaction journal-create and income-statement-view gates; the API remains authoritative for loan permissions.
+
+**Additional loan amount** adds to an employee's existing active loan (like a surcharge on the loan): debit the loan's account, credit a source asset account, and raise the loan principal and balance. It is hidden behind `NEXT_PUBLIC_LOAN_INCREASE_ENABLED` until the API ships the proposed `POST /loans/{id}/increases` (see `docs/backend-api-gaps.md`).
 
 **Register new invoice** starts an `INITIAL-PAYMENT`; **Register invoice payment** starts a `PAYMENT` for an existing invoice. Both retain Assignment → Invoice details → Payment & references → Review. Their invoice mode is fixed by the chosen category. Existing invoices display sender, receiver, total, discount, paid, and balance read-only above the payment amount. New invoices allow system or custom numbers, optional sender/receiver, and Total/Discount/Paid with the calculated Balance. After saving, the same category remains active and shared employee/daily-route and payment-method selections carry forward.
 
@@ -323,10 +325,19 @@ available for browsing; financial writes use the server-selected current period.
 **Pending Reconciliation** (`/accounting/pending-financial-activity`) verifies
 money custody and supporting documents. **Pending Clearance**
 (`/accounting/pending-clearance`) records financial settlement. Both span all
-closeouts, use independent journal statuses and can contain the same transaction.
+closeouts, use separate journal statuses and can contain the same transaction.
 Only explicitly authorized actions are available; role names do not grant access.
 Reconciliation never applies invoice receipts. Clearance applies deferred bank
 receipts once without changing the original ledger date or period.
+
+**Bank transactions reconcile only through clearance.** A journal whose
+`clearanceStatus` is `OUTSTANDING` stays unreconciled and uncleared until it
+clears; Pending Reconciliation blocks it ("awaiting clearance"). Clearing, whether
+manual in Pending Clearance or auto-clear on save, also reconciles it. Cash and
+`NOT_REQUIRED` journals reconcile as before. Until the API does this atomically,
+the portal follows each confirmed clear with `/journals/reconcile` for those IDs
+(requires `canReconcileJournal`); a cleared journal whose follow-up failed stays
+reconcilable in Pending Reconciliation. See `docs/backend-api-gaps.md`.
 
 Queries, advanced filters and pagination run on the server. Matching and selected
 Income / Expenses / Net totals use `/journals/summary`, preserve currency groups,
@@ -397,7 +408,19 @@ and independent journal commands are defined in `api-docs.json`.
 **Auto-approve in Daily Income:** `autoClear` is the existing wire flag for
 internal auto-reconciliation and requires `canReconcileJournal`. It does not grant
 or substitute for bank clearance. The frontend must preserve that distinction
-and never infer clearance rights from per-method update permissions.
+and never infer clearance rights from per-method update permissions. Bank invoice
+payments and bank Income/Expense transactions never send `autoClear`; they reconcile only through clearance.
+
+**Auto-clear bank transactions:** the frontend-only `clearPaymentOnSave`
+option defaults to false and requires `canClearJournal`. For PAYMENT,
+INITIAL-PAYMENT, SALES (Income), and EXPENSE bank transactions, it creates the journal and then calls the existing
+`POST /journals/clear` command with a UUID request ID. Once clearance is confirmed,
+it reconciles the journal with `POST /journals/reconcile` when the user has
+`canReconcileJournal`. It is never sent as a journal payload field or mapped to
+`autoClear`. Changing the method or destination account resets consent. If
+clearance cannot be confirmed after creation, report the saved payment and direct
+the user to Pending clearance; never retry journal creation. If only the
+reconciliation cannot be confirmed, report that it remains in Pending Reconciliation.
 
 Each clearable payment stores:
 

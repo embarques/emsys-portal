@@ -67,7 +67,7 @@ export function journalCreatedToastMessage(values: DailyIncomeJournalValues, t: 
 
 function isOutstandingCheckInvoicePayment(values: DailyIncomeJournalValues) {
   return (
-    !values.autoClear && isCheckPaymentMethod(values.paymentMethodName) &&
+    !values.clearPaymentOnSave && isCheckPaymentMethod(values.paymentMethodName) &&
     (values.transactionType === "PAYMENT" || values.transactionType === "INITIAL-PAYMENT") &&
     (Number(values.amount) || 0) > 0
   );

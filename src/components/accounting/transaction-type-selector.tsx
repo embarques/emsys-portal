@@ -16,10 +16,11 @@ type Props = {
   appearance?: "default" | "phone";
   inventoryPaymentEnabled?: boolean;
   loanIssueEnabled?: boolean;
+  loanIncreaseEnabled?: boolean;
   loanPaymentEnabled?: boolean;
 };
 
-export function TransactionTypeSelector({ value, onChange, children, onGroupChange, isBusy = false, appearance = "default", inventoryPaymentEnabled = true, loanIssueEnabled = true, loanPaymentEnabled = true }: Props) {
+export function TransactionTypeSelector({ value, onChange, children, onGroupChange, isBusy = false, appearance = "default", inventoryPaymentEnabled = true, loanIssueEnabled = true, loanIncreaseEnabled = true, loanPaymentEnabled = true }: Props) {
   const { t } = useTranslation();
   const groupId = useId();
   const groups = buildTransactionEntryGroups(t);
@@ -32,6 +33,7 @@ export function TransactionTypeSelector({ value, onChange, children, onGroupChan
   const disabled = (category: TransactionEntryCategory) =>
     isBusy || (category === "INVENTORY-PAYMENT" && !inventoryPaymentEnabled) ||
     (category === "LOAN-ISSUE" && !loanIssueEnabled) ||
+    (category === "LOAN-INCREASE" && !loanIncreaseEnabled) ||
     (category === "LOAN-PAYMENT" && !loanPaymentEnabled);
 
   if (children) {

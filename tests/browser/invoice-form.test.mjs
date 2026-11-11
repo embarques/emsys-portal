@@ -165,7 +165,7 @@ test("without manual number permission the locked invoice number mode still rece
   } finally { await page.close(); }
 });
 
-test("choosing Enter your own invoice number shows the number input below the full-width segments", async () => {
+test("choosing Enter your own invoice number shows the number input below the segments", async () => {
   const page = await fixture();
   try {
     assert.equal(await page.locator("#invoiceNumber-mode-system").getAttribute("aria-checked"), "true");
@@ -177,7 +177,6 @@ test("choosing Enter your own invoice number shows the number input below the fu
     const segments = await page.locator("#invoiceNumber-mode").boundingBox();
     const input = await page.locator("#invoiceNumber").boundingBox();
     assert.ok(input.y >= segments.y + segments.height, "input sits below the segments");
-    assert.ok(Math.abs(segments.width - input.width) <= 1, "segments span the field width");
 
     await page.locator("#invoiceNumber-mode-system").click();
     await page.locator("#invoiceNumber").waitFor({ state: "detached" });

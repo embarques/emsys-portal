@@ -17,6 +17,8 @@ const accounts = [
   { id: 2, name: "Expenses", displayName: "Expenses", type: "EXPENSE" },
   { id: 3, name: "Sales", displayName: "Sales", type: "REVENUE" },
   { id: 4, name: "Bank", displayName: "Bank", type: "BANK" },
+  { id: 5, name: "Settlement", displayName: "Settlement", type: "BANK" },
+  { id: 6, name: "Reserve", displayName: "Reserve", type: "BANK" },
 ] as ChartAccount[];
 const paymentMethods = [{ id: 1, name: "CASH" }, { id: 2, name: "CHECK" }, { id: 3, name: "ZELLE" }];
 const statementDefaults = { date: "2026-10-10", branchId: 1, branchCode: "NY", branchName: "New York", currency: "USD", rate: 1 };
@@ -67,7 +69,7 @@ export function DailyIncomeWizardFixture() {
   const [submitted, setSubmitted] = useState(0);
   return <QueryClientProvider client={client}>
     <AddTransactionWizard open presentation="tab" mode="add" employees={[{ ...createEmptyEmployeeForm(), id: 1, name: "Maria", department: "Office", title: "Clerk", active: true, branch: branches[0] } as Employee]}
-      statementBranchId={1} accounts={accounts} bankAccounts={[accounts[3]]} invoices={wizardInvoices} paymentMethods={wizardPaymentMethods} isSubmitting={false}
+      statementBranchId={1} accounts={accounts} bankAccounts={[accounts[3], accounts[4], accounts[5]]} invoices={wizardInvoices} paymentMethods={wizardPaymentMethods} isSubmitting={false}
       onSubmit={async () => { setSubmitted(n => n + 1); }} onCancel={() => {}} />
     <output id="submitted">{submitted}</output>
     <button type="button" onClick={() => setWizardPaymentMethods((methods) => methods.map((method) => ({ ...method })))}>Refresh payment methods</button>

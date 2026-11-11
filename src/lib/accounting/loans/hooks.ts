@@ -7,9 +7,10 @@ import {
   fetchLoan,
   fetchLoans,
   fetchLoanTransactions,
+  increaseLoan,
   recordLoanPayment,
 } from "@/lib/accounting/loans/api";
-import type { LoanCreateValues, LoanListParams, LoanPaymentValues } from "@/lib/accounting/loans/types";
+import type { LoanCreateValues, LoanIncreaseValues, LoanListParams, LoanPaymentValues } from "@/lib/accounting/loans/types";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
@@ -65,6 +66,14 @@ export function useCreateLoan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (values: LoanCreateValues) => createLoan(values),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
+  });
+}
+
+export function useIncreaseLoan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (values: LoanIncreaseValues) => increaseLoan(values),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
   });
 }

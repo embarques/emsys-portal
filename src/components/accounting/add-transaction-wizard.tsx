@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogFooter, DialogDescription, DialogHeader, D
 import type { OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
 import type { SubmitJournal } from "@/lib/accounting/daily-income/duplicate-payment";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
-import { findCashPaymentMethod, isCheckPaymentMethod, withDefaultCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, withDefaultCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournal, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
@@ -58,9 +58,13 @@ type AddModeProps = SharedProps & {
 type EditModeProps = SharedProps & {
   mode: "edit";
   initialValues: DailyIncomeJournalValues;
+  paymentClearanceStatus?: DailyIncomeJournal["clearanceStatus"];
 };
 
 type Props = AddModeProps | EditModeProps;
+
+/** Invoice entries stay unfocused after "save and add another"; they only autofocus when opened. */
+const NO_AUTOFOCUS_AFTER_SAVE_TYPES = new Set<JournalTransactionType>(["INITIAL-PAYMENT", "PAYMENT", "SURCHARGE", "DISCOUNT"]);
 
 function emptyTransaction(
   type: JournalTransactionType,
@@ -70,6 +74,8 @@ function emptyTransaction(
     transactionType: type,
     autoGenerateInvoiceNumber: type === "INITIAL-PAYMENT",
     amount: 0,
+    autoClear: false,
+    clearPaymentOnSave: false,
     refNumber: "",
     refNumberMode: "system",
     externalReferenceNumber: "",
@@ -104,6 +110,10 @@ function continueTransactionValues(
     paymentAccountName: values.paymentAccountName,
     paymentAccountType: values.paymentAccountType,
     refNumberMode: values.refNumberMode ?? "system",
+    autoClear: values.autoClear ?? false,
+    autoReconcile: values.autoReconcile,
+    includeSender: values.includeSender ?? false,
+    includeReceiver: values.includeReceiver ?? false,
     accountId: values.accountId,
     accountName: values.accountName,
     accountType: values.accountType,
@@ -152,7 +162,7 @@ export function AddTransactionWizard(props: Props) {
   const isPhone = appearance === "phone";
   const isEdit = props.mode === "edit";
   const [showTypePicker, setShowTypePicker] = useState(!isEdit);
-  const [specialType, setSpecialType] = useState<"INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-PAYMENT" | null>(null);
+  const [specialType, setSpecialType] = useState<"INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-INCREASE" | "LOAN-PAYMENT" | null>(null);
   const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(
     isEdit ? props.initialValues.transactionType : null,
   );
@@ -165,6 +175,7 @@ export function AddTransactionWizard(props: Props) {
   }, []);
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
+  const [skipAutofocusAfterSave, setSkipAutofocusAfterSave] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const footerError = stepError || props.error;
   const { onEntryActiveChange, onSelectedTypeChange, open } = props;
@@ -183,6 +194,10 @@ export function AddTransactionWizard(props: Props) {
   );
   const originalDiscount = originalAdjustmentType === "DISCOUNT" ? originalAdjustment : undefined;
   const originalSurcharge = originalAdjustmentType === "SURCHARGE" ? originalAdjustment : undefined;
+  const originalPayment = isEdit && originalAdjustmentType === "PAYMENT" && originalAdjustmentInvoiceId && originalAdjustmentAmount != null &&
+    (isCashPaymentMethod(editInitialValues?.paymentMethodName) || props.paymentClearanceStatus === "CLEARED")
+    ? { invoiceId: originalAdjustmentInvoiceId, amount: originalAdjustmentAmount }
+    : undefined;
   useEffect(() => {
     onEntryActiveChange?.(open && !showTypePicker);
   }, [onEntryActiveChange, open, showTypePicker]);
@@ -209,6 +224,7 @@ export function AddTransactionWizard(props: Props) {
     setDetailValues(emptyTransaction("INITIAL-PAYMENT", props.paymentMethods));
     setFormSessionKey(0);
     setFocusSecondFieldSignal(0);
+    setSkipAutofocusAfterSave(false);
     // Reset only on opening or changing the edited entry; lookup refetches must preserve the draft.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isEdit, editInitialValues]);
@@ -228,8 +244,9 @@ export function AddTransactionWizard(props: Props) {
         const continueType = selectedType === "PAYMENT" ? values.transactionType : selectedType;
         setDetailValues(continueTransactionValues(continueType, values, props.paymentMethods));
         setFormSessionKey((key) => key + 1);
-        setFocusSecondFieldSignal((signal) => signal + 1);
-
+        const skipAutofocus = NO_AUTOFOCUS_AFTER_SAVE_TYPES.has(continueType);
+        setSkipAutofocusAfterSave(skipAutofocus);
+        if (!skipAutofocus) setFocusSecondFieldSignal((signal) => signal + 1);
       }
     } catch {
       // Parent surfaces API/validation errors via props.error.
@@ -238,11 +255,14 @@ export function AddTransactionWizard(props: Props) {
 
   function handleTypeChange(type: TransactionEntryCategory) {
     if (isSubmitting) return;
-    if (type === "LOAN-ISSUE" || type === "LOAN-PAYMENT" || type === "INVENTORY-PAYMENT") {
+    setSkipAutofocusAfterSave(false);
+    if (type === "LOAN-ISSUE" || type === "LOAN-INCREASE" || type === "LOAN-PAYMENT" || type === "INVENTORY-PAYMENT") {
       if (type === "INVENTORY-PAYMENT" && !inventoryPaymentEnabled) return;
       if (type === "LOAN-ISSUE" && !loanEntry.openCreate) return;
+      if (type === "LOAN-INCREASE" && !loanEntry.openIncrease) return;
       if (type === "LOAN-PAYMENT" && !loanEntry.openPayment) return;
       if (type === "LOAN-ISSUE") loanEntry.openCreate?.();
+      if (type === "LOAN-INCREASE") loanEntry.openIncrease?.();
       if (type === "LOAN-PAYMENT") loanEntry.openPayment?.();
       setSpecialType(type);
       setShowTypePicker(false);
@@ -287,8 +307,8 @@ export function AddTransactionWizard(props: Props) {
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <PendingInventoryDispatchesPanel presentation="inline" onBusyChange={setInventoryBusy} />
         </div>
-      ) : specialType === "LOAN-ISSUE" || specialType === "LOAN-PAYMENT" ? (
-        <LoanEntryForm entry={loanEntry} employees={props.employees} accounts={props.accounts} onComplete={() => { setSpecialType(null); setShowTypePicker(true); }} />
+      ) : specialType === "LOAN-ISSUE" || specialType === "LOAN-INCREASE" || specialType === "LOAN-PAYMENT" ? (
+        <LoanEntryForm entry={loanEntry} employees={props.employees} accounts={props.accounts} summaryContainer={props.summaryContainer} onComplete={() => { setSpecialType(null); setShowTypePicker(true); }} />
       ) : null}
       {selectedType && !specialType ? (
         <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", !showTypePicker && !specialType ? "flex" : "hidden")}>
@@ -312,9 +332,11 @@ export function AddTransactionWizard(props: Props) {
               showSectionNavigation={!isEdit}
               appearance={appearance}
               focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
+              autoFocusOnMount={isEdit || !skipAutofocusAfterSave}
               allowAutoClear={!isEdit}
               originalDiscount={originalDiscount}
               originalSurcharge={originalSurcharge}
+              originalPayment={originalPayment}
               showInvoiceDetails={selectedType === "PAYMENT"}
               onValuesChange={rememberFormValues}
               onStepErrorChange={setStepError}
@@ -348,7 +370,7 @@ export function AddTransactionWizard(props: Props) {
           <div className={cn("flex min-h-0 flex-1 flex-col", showTypePicker ? "overflow-y-auto px-5 py-4" : "overflow-hidden")}>
             <TransactionTypeSelector value={specialType ?? selectedType} onChange={handleTypeChange} appearance={appearance}
               onGroupChange={chooseType} isBusy={isSubmitting}
-              inventoryPaymentEnabled={inventoryPaymentEnabled} loanIssueEnabled={Boolean(loanEntry.openCreate)} loanPaymentEnabled={Boolean(loanEntry.openPayment)}>
+              inventoryPaymentEnabled={inventoryPaymentEnabled} loanIssueEnabled={Boolean(loanEntry.openCreate)} loanIncreaseEnabled={Boolean(loanEntry.openIncrease)} loanPaymentEnabled={Boolean(loanEntry.openPayment)}>
               {!showTypePicker ? entryContent : null}
             </TransactionTypeSelector>
           </div>

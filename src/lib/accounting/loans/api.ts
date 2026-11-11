@@ -18,6 +18,7 @@ import {
   type LoanBranchRef,
   type LoanCreateValues,
   type LoanEmployeeRef,
+  type LoanIncreaseValues,
   type LoanListParams,
   type LoanListResult,
   type LoanPaymentValues,
@@ -124,7 +125,8 @@ function normalizeLoanStatus(value: unknown): LoanStatus {
 }
 
 function normalizeLoanTransactionType(value: unknown): LoanTransactionType {
-  return stringValue(value).toUpperCase() === "PAYMENT" ? "PAYMENT" : "ISSUE";
+  const type = stringValue(value).toUpperCase();
+  return type === "PAYMENT" || type === "INCREASE" ? type : "ISSUE";
 }
 
 export function normalizeLoan(value: unknown): Loan | null {
@@ -307,6 +309,26 @@ export async function createLoan(values: LoanCreateValues): Promise<Loan | null>
   assertMutation(payload, "Unable to create loan.");
   const data = objectValue(unwrap(payload));
   return normalizeLoan(firstDefined(data.loan, unwrapArray(payload)[0], data));
+}
+
+/** Proposed contract (docs/backend-api-gaps.md); the entry stays hidden until the API ships it. */
+export async function increaseLoan(values: LoanIncreaseValues): Promise<Loan | null> {
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_LOAN}/${encodeURIComponent(values.loanId)}/increases`,
+    {
+      employee: values.employeeId ? { id: values.employeeId, name: values.employeeName ?? "" } : undefined,
+      sourceAccount: values.sourceAccountId
+        ? { id: values.sourceAccountId, name: values.sourceAccountName ?? "", type: values.sourceAccountType }
+        : undefined,
+      amount: values.amount,
+      transactionDate: values.transactionDate,
+      referenceNumber: values.referenceNumber,
+      description: values.description,
+    },
+  );
+  assertMutation(payload, "Unable to add to the loan.");
+  const data = objectValue(unwrap(payload));
+  return normalizeLoan(firstDefined(data.loan, data));
 }
 
 export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan | null> {

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
@@ -57,8 +58,15 @@ export function TransactionReview({ values: v, onEdit, compact = false, currency
       invoiceSummary: registerInvoice ? { invoice: invoiceDetailRows[0], payment: amountRows } : undefined,
       rows: [
         ...(registerInvoice ? [] : [invoiceDetailRows[0]]),
-        ["accounting.dailyIncome.form.fields.account", v.accountName],
-        ["accounting.dailyIncome.form.fields.sourceAccount", expensePaidByMethod ? undefined : v.sourceAccountName],
+        ...(v.transactionType === "TRANSFER"
+          ? [
+            ["accounting.dailyIncome.form.fields.transferFrom", v.sourceAccountName],
+            ["accounting.dailyIncome.form.fields.transferTo", v.accountName],
+          ] as [string, string | undefined][]
+          : [
+            ["accounting.dailyIncome.form.fields.account", v.accountName],
+            ["accounting.dailyIncome.form.fields.sourceAccount", expensePaidByMethod ? undefined : v.sourceAccountName],
+          ] as [string, string | undefined][]),
         ...(registerInvoice ? [] : [...amountRows, ...invoiceDetailRows.slice(1)]),
         ["inventory.form.fields.item", inventory ? v.inventoryItemName : undefined],
         ["inventory.form.fields.quantity", inventory ? v.inventoryQuantity : undefined],
@@ -95,23 +103,7 @@ export function TransactionReview({ values: v, onEdit, compact = false, currency
     ]).filter(([, value]) => value != null && (typeof value !== "string" || value.trim() !== "") && (typeof value !== "number" || Number.isFinite(value)));
     // Sender/receiver can also occur in the parties section of the full review.
     const uniqueRows = rows.filter(([label], index) => rows.findIndex(([key]) => key === label) === index);
-    return (
-      <section aria-label={t("accounting.dailyIncome.sessionPanel.currentTitle")} className="border-b bg-muted/30 px-4 py-3">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold">{t("accounting.dailyIncome.sessionPanel.currentTitle")}</h3>
-          <span className="text-xs text-muted-foreground">{t("accounting.dailyIncome.sessionPanel.unsaved")}</span>
-        </div>
-        <p className="mb-3 text-xs font-medium text-muted-foreground">{transactionTypeLabel(v.transactionType, t)}</p>
-        <dl className="space-y-2">
-          {uniqueRows.map(([label, value]) => (
-            <div key={label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-3 text-xs">
-              <dt className="text-muted-foreground">{t(label)}</dt>
-              <dd className="min-w-0 break-words whitespace-pre-wrap text-right font-medium tabular-nums">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-    );
+    return <CurrentTransactionSummary typeLabel={transactionTypeLabel(v.transactionType, t)} rows={uniqueRows.map(([label, value]) => [t(label), value])} />;
   }
   return (
     <div className="space-y-4">
@@ -141,6 +133,28 @@ export function TransactionReview({ values: v, onEdit, compact = false, currency
         );
       })}
     </div>
+  );
+}
+
+/** Compact unsaved-transaction summary shown in the session side panel. */
+export function CurrentTransactionSummary({ typeLabel, rows }: { typeLabel: string; rows: [string, ReactNode][] }) {
+  const { t } = useTranslation();
+  return (
+    <section aria-label={t("accounting.dailyIncome.sessionPanel.currentTitle")} className="border-b bg-muted/30 px-4 py-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">{t("accounting.dailyIncome.sessionPanel.currentTitle")}</h3>
+        <span className="text-xs text-muted-foreground">{t("accounting.dailyIncome.sessionPanel.unsaved")}</span>
+      </div>
+      <p className="mb-3 text-xs font-medium text-muted-foreground">{typeLabel}</p>
+      <dl className="space-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-3 text-xs">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="min-w-0 break-words whitespace-pre-wrap text-right font-medium tabular-nums">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 

@@ -20,6 +20,23 @@ export function createLoanFormSchema(t: TranslateFn) {
   });
 }
 
+export function createLoanIncreaseSchema(t: TranslateFn) {
+  return z.object({
+    employeeId: z.number().positive(t("accounting.loans.validation.employeeRequired")),
+    employeeName: z.string().optional(),
+    loanId: z.string().min(1, t("accounting.loans.validation.loanRequired")),
+    sourceAccountId: z.number().positive(t("accounting.loans.validation.sourceAccountRequired")),
+    sourceAccountName: z.string().optional(),
+    sourceAccountType: z.string().optional(),
+    amount: z
+      .number({ error: t("accounting.loans.validation.increaseAmountRequired") })
+      .positive(t("accounting.loans.validation.increaseAmountPositive")),
+    transactionDate: z.string().min(1, t("accounting.loans.validation.dateRequired")),
+    referenceNumber: z.string().trim().max(40, t("accounting.loans.validation.referenceTooLong")),
+    description: z.string().trim().max(500, t("accounting.loans.validation.descriptionTooLong")),
+  });
+}
+
 export function createLoanPaymentSchema(t: TranslateFn) {
   return z
     .object({

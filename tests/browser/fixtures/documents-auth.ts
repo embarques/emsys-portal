@@ -1,7 +1,9 @@
 export function useAuth() {
   return {
-    hasPermission: () =>
-      !(window as unknown as { readOnly?: boolean }).readOnly,
+    hasPermission: (name?: string) => {
+      const fixture = window as unknown as { readOnly?: boolean; denyClearance?: boolean };
+      return !fixture.readOnly && !(name === "canClearJournal" && fixture.denyClearance);
+    },
   };
 }
 export function useAppSelector<T>(

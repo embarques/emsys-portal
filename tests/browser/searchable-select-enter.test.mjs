@@ -18,7 +18,7 @@ before(async () => {
   const compiler = webpackPackage.webpack({
     mode: "development", devtool: false,
     plugins: [
-      new webpackPackage.webpack.DefinePlugin({ "process.env": JSON.stringify({ NODE_ENV: "development" }) }),
+      new webpackPackage.webpack.DefinePlugin({ "process.env": JSON.stringify({ NODE_ENV: "development", NEXT_PUBLIC_PAYMENT_ACCOUNTS_ENABLED: process.env.NEXT_PUBLIC_PAYMENT_ACCOUNTS_ENABLED }) }),
       // The fixture is injected as one inline script, so lazy chunks cannot be fetched.
       new webpackPackage.webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
     ],
@@ -368,7 +368,7 @@ for (const width of [1280, 390]) {
       await page.getByRole("option", { name: /Maria/ }).click();
       await page.locator("#journal-employee").waitFor({ state: "hidden" });
       assert.equal(await page.locator("#journal-payment").isVisible(), false);
-      assert.equal(await page.locator("nav button").count(), 5);
+      assert.equal(await page.locator("nav button").count(), 4);
 
       assert.equal(await page.locator("#journal-invoice-mode").count(), 0);
       assert.equal(await page.locator("#journal-invoice-cost").count(), 0);
@@ -383,16 +383,18 @@ for (const width of [1280, 390]) {
         await page.locator("#journal-invoice").click();
       }
       await page.getByRole("option", { name: /80430/ }).click();
+      assert.equal(await valueOf("journal-selected-invoice-number"), "80430");
       assert.equal(await valueOf("journal-invoice-sender"), "Ana Sender");
       assert.equal(await valueOf("journal-invoice-receiver"), "Luis Receiver");
       assert.match(await valueOf("journal-invoice-total"), /200\.00/);
       assert.match(await valueOf("journal-invoice-discount"), /20\.00/);
       assert.match(await valueOf("journal-invoice-paid"), /50\.00/);
       assert.match(await valueOf("journal-invoice-balance"), /130\.00/);
-      for (const id of ["journal-invoice-sender", "journal-invoice-receiver"]) {
-        assert.equal(await page.locator(`#${id}`).evaluate(el => el.tagName), "P", id);
+      const invoiceSection = page.locator("[data-form-section]").filter({ has: page.locator("#journal-invoice") });
+      for (const id of ["journal-selected-invoice-number", "journal-invoice-sender", "journal-invoice-receiver", "journal-invoice-total", "journal-invoice-discount", "journal-invoice-paid", "journal-invoice-balance", "journal-amount"]) {
+        assert.equal(await invoiceSection.locator(`#${id}`).count(), 1, id);
       }
-      for (const id of ["journal-invoice-total", "journal-invoice-discount", "journal-invoice-paid", "journal-invoice-balance"]) {
+      for (const id of ["journal-selected-invoice-number", "journal-invoice-sender", "journal-invoice-receiver", "journal-invoice-total", "journal-invoice-discount", "journal-invoice-paid", "journal-invoice-balance"]) {
         assert.equal(await page.locator(`#${id}`).evaluate(el => el.tagName), "DD", id);
       }
       assert.equal(await page.locator("#journal-amount").isEditable(), true);
@@ -420,6 +422,8 @@ for (const width of [1280, 390]) {
       assert.equal(await page.locator("#journal-invoice-number-mode").isVisible(), true);
       assert.equal(await page.locator("#journal-invoice-number-mode-system").getAttribute("aria-checked"), "true");
       assert.equal(await page.locator("#journal-invoice-discount").isEditable(), true);
+      assert.equal(await page.locator("#journal-invoice-balance").count(), 0);
+      await page.locator("#journal-invoice-cost").fill("200");
       const costBox = await page.locator("#journal-invoice-cost").boundingBox();
       const discountBox = await page.locator("#journal-invoice-discount").boundingBox();
       const amountBox = await page.locator("#journal-amount").boundingBox();
@@ -433,7 +437,6 @@ for (const width of [1280, 390]) {
         assert.ok(Math.abs(box.x - costBox.x) < 1 && Math.abs(box.width - costBox.width) < 1);
       }
 
-      await page.locator("#journal-invoice-cost").fill("200");
       await page.locator("#journal-invoice-discount").fill("20");
       await page.locator("#journal-amount").fill("150");
       assert.match(await page.locator("#journal-invoice-balance").inputValue(), /30\.00/);
@@ -807,3 +810,230 @@ test("locked number mode stays focusable and cannot be changed by mouse or keybo
     } finally { await page.close(); }
   }
 });
+
+for (const kind of ["DISCOUNT", "SURCHARGE"]) {
+  for (const width of [1280, 390]) {
+    test(`invoice adjustment cards preserve ${kind} controls at ${width}px`, async () => {
+      const page = await fixture(width, "wizard", { styled: true });
+      try {
+        await page.getByRole("button", { name: `accounting.dailyIncome.wizard.typeSelector.options.${kind}`, exact: true }).click();
+        await page.locator("#journal-employee").click();
+        await page.getByRole("option", { name: /Maria/ }).click();
+        await page.locator("#journal-invoice").click();
+        await page.getByRole("option", { name: /80430/ }).click();
+        const section = page.locator("[data-form-section]").filter({ has: page.locator("#journal-invoice") });
+        assert.equal(await section.locator("#journal-invoice-sender").textContent(), "Ana Sender");
+        assert.equal(await section.locator("#journal-invoice-receiver").textContent(), "Luis Receiver");
+        assert.match(await section.locator("#journal-invoice-total").textContent(), /200\.00/);
+        assert.match(await section.locator("#journal-invoice-balance").textContent(), /130\.00/);
+        assert.equal(await section.locator("#journal-description").isEditable(), true);
+        const senderBox = await page.locator("#journal-invoice-sender").locator("../..").boundingBox();
+        const receiverBox = await page.locator("#journal-invoice-receiver").locator("../..").boundingBox();
+        const balanceBox = await page.locator("#journal-invoice-balance").boundingBox();
+        const balanceLabelBox = await page.locator("#journal-invoice-balance").locator("..").locator("dt").first().boundingBox();
+        const amountLabelBox = await page.locator('label[for="journal-amount"]').boundingBox();
+        const amountBox = await page.locator("#journal-amount").boundingBox();
+        assert.ok(Math.abs(senderBox.y - receiverBox.y) < 1);
+        assert.ok(receiverBox.x > senderBox.x);
+        assert.ok(amountBox.y > Math.max(senderBox.y + senderBox.height, receiverBox.y + receiverBox.height));
+        assert.ok(Math.abs(balanceLabelBox.y - amountLabelBox.y) < 1);
+        assert.ok(Math.abs((balanceBox.y + balanceBox.height / 2) - (amountBox.y + amountBox.height / 2)) < 1);
+        assert.ok(balanceBox.x + balanceBox.width <= amountBox.x);
+        const presets = section.getByRole("group", { name: `accounting.dailyIncome.form.adjustmentPresets.label.${kind}`, exact: true });
+        const customPercent = presets.getByRole("button", { name: "accounting.dailyIncome.form.adjustmentPresets.customPercent", exact: true });
+        await customPercent.click();
+        const percentId = await customPercent.getAttribute("aria-controls");
+        const percentInput = page.locator(`[id="${percentId}"]`);
+        const percentLabel = page.locator(`label[for="${percentId}"]`);
+        await percentInput.fill("10");
+        assert.equal(await page.locator("#journal-amount").inputValue(), "20");
+        const percentInputBox = await percentInput.boundingBox();
+        const percentLabelBox = await percentLabel.boundingBox();
+        assert.ok(percentInputBox.y >= percentLabelBox.y + percentLabelBox.height);
+        await presets.getByRole("button").first().click();
+        assert.equal(await page.locator("#journal-amount").inputValue(), kind === "DISCOUNT" ? "10" : "6");
+        if (kind === "DISCOUNT") assert.equal(await presets.getByRole("button").nth(5).isDisabled(), true);
+        await presets.getByRole("button", { name: "accounting.dailyIncome.form.adjustmentPresets.customAmount", exact: true }).click();
+        assert.equal(await page.evaluate(() => document.activeElement.id), "journal-amount");
+        await page.locator("#journal-amount").fill("140");
+        assert.equal(await page.locator("#journal-amount").getAttribute("aria-invalid"), String(kind === "DISCOUNT"));
+        if (kind === "DISCOUNT") {
+          assert.match(await page.locator("#journal-adjustment-amount-feedback").textContent(), /discountExceedsBalance/);
+        } else {
+          assert.equal(await page.locator("#journal-adjustment-amount-feedback").count(), 0);
+        }
+        await page.locator("#journal-amount").fill("20");
+        assert.equal(await page.locator("#journal-amount").getAttribute("aria-invalid"), "false");
+        assert.match(await page.locator("#journal-invoice-new-balance").textContent(), kind === "DISCOUNT" ? /110\.00/ : /150\.00/);
+        const newBalanceBox = await page.locator("#journal-invoice-new-balance").boundingBox();
+        const updatedAmountBox = await page.locator("#journal-amount").boundingBox();
+        const updatedBalanceBox = await page.locator("#journal-invoice-balance").boundingBox();
+        assert.ok(newBalanceBox.x >= updatedAmountBox.x + updatedAmountBox.width);
+        assert.ok(Math.abs((newBalanceBox.y + newBalanceBox.height / 2) - (updatedBalanceBox.y + updatedBalanceBox.height / 2)) < 1);
+        await page.locator("#journal-amount").press("Tab");
+        assert.equal(await page.evaluate(() => document.activeElement.id), "journal-description");
+        assert.equal(await page.locator("#journal-amount").count(), 1);
+        assert.equal(await page.locator("#journal-description").count(), 1);
+      } finally { await page.close(); }
+    });
+  }
+}
+
+for (const width of [1280, 390]) {
+  test(`new invoice shares compact amount layout at ${width}px`, async () => {
+    const page = await fixture(width, "wizard", { styled: true });
+    try {
+      await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.options.INITIAL-PAYMENT", exact: true }).click();
+      await page.locator("#journal-employee").click();
+      await page.getByRole("option", { name: /Maria/ }).click();
+      const section = page.locator("[data-form-section]").filter({ has: page.locator("#journal-invoice-cost") });
+      assert.equal(await section.locator("#journal-invoice-number-mode").count(), 1);
+      for (const side of ["sender", "receiver"]) {
+        assert.equal(await section.locator(`#journal-${side}-mode`).count(), 1);
+        assert.equal(await page.locator(`#journal-${side}-mode-skip`).getAttribute("aria-checked"), "true");
+        assert.equal(await page.locator(`#journal-${side}`).count(), 0);
+      }
+      const senderModeBox = await page.locator("#journal-sender-mode").boundingBox();
+      const receiverModeBox = await page.locator("#journal-receiver-mode").boundingBox();
+      assert.ok(Math.abs(senderModeBox.y - receiverModeBox.y) < 1);
+      assert.ok(receiverModeBox.x > senderModeBox.x);
+      await page.locator("#journal-sender-mode-include").click();
+      await page.locator("#journal-sender").click();
+      await page.getByRole("option", { name: /Test sender/ }).click();
+      await page.locator("#journal-sender-mode-skip").click();
+      assert.equal(await page.locator("#journal-sender").count(), 0);
+      await page.locator("#journal-sender-mode-include").click();
+      assert.doesNotMatch(await page.locator("#journal-sender").evaluate(el => el instanceof HTMLInputElement ? el.value : el.textContent), /Test sender/);
+      await page.locator("#journal-sender-mode-skip").click();
+      await page.locator("#journal-receiver-mode-include").click();
+      assert.equal(await section.locator("#journal-receiver").isVisible(), true);
+      await page.locator("#journal-receiver-mode-skip").click();
+      assert.equal(await page.locator("#journal-receiver").count(), 0);
+      await page.locator("#journal-invoice-cost").fill("200");
+      if (width >= 768) {
+        await page.locator("#journal-invoice-cost").press("Enter");
+        assert.equal(await page.evaluate(() => document.activeElement.id), "journal-invoice-discount");
+      }
+      await page.locator("#journal-invoice-discount").fill("20");
+      if (width >= 768) {
+        await page.locator("#journal-invoice-discount").press("Enter");
+        assert.equal(await page.evaluate(() => document.activeElement.id), "journal-amount");
+      }
+      await page.locator("#journal-amount").fill("150");
+      assert.match(await page.locator("#journal-invoice-balance").inputValue(), /30\.00/);
+      const boxes = await Promise.all(["journal-invoice-cost", "journal-invoice-discount", "journal-invoice-balance", "journal-amount"].map(id => page.locator(`#${id}`).boundingBox()));
+      assert.ok(Math.abs(boxes[0].y - boxes[1].y) < 1);
+      assert.ok(Math.abs(boxes[0].y - boxes[3].y) < 1);
+      assert.ok(boxes[0].x < boxes[1].x && boxes[1].x < boxes[3].x);
+      assert.ok(boxes[2].y > boxes[3].y + boxes[3].height);
+      assert.equal(await page.locator("#journal-invoice-balance").getAttribute("readonly"), "");
+      await page.locator("#journal-amount").fill("181");
+      await page.waitForFunction(() => document.getElementById("journal-amount").getAttribute("aria-invalid") === "true");
+      await page.locator("#journal-amount").fill("0");
+      await page.waitForFunction(() => document.getElementById("journal-amount").getAttribute("aria-invalid") === "false");
+      assert.match(await page.locator("#journal-invoice-balance").inputValue(), /180\.00/);
+      await page.locator("#journal-amount").fill("20");
+      await page.locator("#journal-payment").click();
+      await page.getByRole("option", { name: "ZELLE", exact: true }).click();
+      assert.equal(await page.locator("#journal-auto-clear").getAttribute("aria-checked"), "false");
+      assert.equal(await page.getByText("accounting.dailyIncome.form.fields.bankPaymentAutoClearHint", { exact: true }).isVisible(), true);
+      await page.locator("#journal-auto-clear").click();
+      assert.equal(await page.locator("#journal-auto-clear").getAttribute("aria-checked"), "true");
+      await page.locator("#journal-payment").click();
+      await page.getByRole("option", { name: "CHECK", exact: true }).click();
+      assert.equal(await page.locator("#journal-auto-clear").getAttribute("aria-checked"), "false");
+      assert.equal(await page.locator("#submitted").textContent(), "0");
+    } finally { await page.close(); }
+  });
+}
+
+for (const width of [1280, 390]) {
+  test(`invoice payment previews previous and new balances at ${width}px`, async () => {
+    const page = await fixture(width, "wizard", { styled: true });
+    try {
+      await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.options.PAYMENT", exact: true }).click();
+      await page.locator("#journal-employee").click();
+      await page.getByRole("option", { name: /Maria/ }).click();
+      await page.locator("#journal-invoice").click();
+      await page.getByRole("option", { name: /80430/ }).click();
+      await page.locator("#journal-amount").fill("20");
+      assert.match(await page.locator("#journal-invoice-balance").textContent(), /130\.00/);
+      assert.match(await page.locator("#journal-invoice-new-balance").textContent(), /110\.00/);
+      const beforeBox = await page.locator("#journal-invoice-balance").boundingBox();
+      const amountBox = await page.locator("#journal-amount").boundingBox();
+      const afterBox = await page.locator("#journal-invoice-new-balance").boundingBox();
+      assert.ok(beforeBox.x + beforeBox.width <= amountBox.x);
+      assert.ok(amountBox.x + amountBox.width <= afterBox.x);
+      assert.ok(Math.abs((beforeBox.y + beforeBox.height / 2) - (afterBox.y + afterBox.height / 2)) < 1);
+      await page.locator("#journal-payment").click();
+      await page.getByRole("option", { name: "ZELLE", exact: true }).click();
+      assert.equal(await page.getByText("accounting.dailyIncome.form.hints.balanceAfterClearance", { exact: true }).isVisible(), true);
+      assert.equal(await page.getByText("accounting.dailyIncome.form.fields.bankPaymentAutoClearHint", { exact: true }).isVisible(), true);
+      const autoClear = page.locator("#journal-auto-clear");
+      assert.equal(await autoClear.getAttribute("aria-checked"), "false");
+      await autoClear.click();
+      assert.equal(await autoClear.getAttribute("aria-checked"), "true");
+      await page.locator("#journal-bank-account").click();
+      await page.getByRole("option", { name: "Settlement", exact: true }).click();
+      assert.equal(await autoClear.getAttribute("aria-checked"), "false");
+      await page.locator("#journal-bank-account").click();
+      await page.getByRole("option", { name: "Reserve", exact: true }).click();
+      await autoClear.click();
+      assert.equal(await autoClear.getAttribute("aria-checked"), "true");
+      await page.locator("#journal-payment").click();
+      await page.getByRole("option", { name: "CHECK", exact: true }).click();
+      assert.equal(await autoClear.getAttribute("aria-checked"), "false");
+      assert.match(await page.locator("#journal-invoice-new-balance").textContent(), /110\.00/);
+      await page.locator("#journal-amount").fill("0");
+      assert.match(await page.locator("#journal-invoice-new-balance").textContent(), /130\.00/);
+      await page.locator("#journal-amount").fill("20");
+      await page.evaluate(() => { window.denyClearance = true; });
+      await page.locator("#journal-payment").click();
+      await page.getByRole("option", { name: "ZELLE", exact: true }).click();
+      assert.equal(await autoClear.count(), 0);
+      assert.equal(await page.getByText("accounting.dailyIncome.form.fields.bankPaymentClearanceHint", { exact: true }).isVisible(), true);
+      assert.equal(await page.locator("#submitted").textContent(), "0");
+    } finally { await page.close(); }
+  });
+}
+
+for (const transactionType of ["SALES", "EXPENSE"]) {
+  for (const width of [1280, 390]) {
+    test(`bank ${transactionType} offers clearance rather than reconciliation at ${width}px`, {
+      skip: transactionType === "EXPENSE" && process.env.NEXT_PUBLIC_PAYMENT_ACCOUNTS_ENABLED !== "true",
+    }, async () => {
+      const page = await fixture(width, "wizard", { styled: true });
+      try {
+        await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.incomeExpenses", exact: true }).click();
+        await page.getByRole("button", { name: `accounting.dailyIncome.wizard.typeSelector.options.${transactionType}`, exact: true }).click();
+        await page.locator("#journal-employee").click();
+        await page.getByRole("option", { name: /Maria/ }).click();
+        await page.locator("#journal-amount").fill("20");
+        await page.locator("#journal-payment").click();
+        await page.getByRole("option", { name: "ZELLE", exact: true }).click();
+        const autoClear = page.locator("#journal-auto-clear");
+        assert.equal(await autoClear.getAttribute("aria-checked"), "false");
+        assert.equal(await page.getByText("accounting.dailyIncome.form.fields.autoClearTransaction", { exact: true }).isVisible(), true);
+        assert.equal(await page.getByText("accounting.dailyIncome.form.fields.bankTransactionAutoClearHint", { exact: true }).isVisible(), true);
+        const account = page.locator(transactionType === "EXPENSE" ? "#journal-source" : "#journal-bank-account");
+        await account.click();
+        await page.getByRole("option", { name: "Settlement", exact: true }).click();
+        await autoClear.click();
+        assert.equal(await autoClear.getAttribute("aria-checked"), "true");
+        await account.click();
+        await page.getByRole("option", { name: "Reserve", exact: true }).click();
+        assert.equal(await autoClear.getAttribute("aria-checked"), "false");
+        await page.evaluate(() => { window.denyClearance = true; });
+        await page.locator("#journal-payment").click();
+        await page.getByRole("option", { name: "CHECK", exact: true }).click();
+        assert.equal(await autoClear.count(), 0);
+        assert.equal(await page.getByText("accounting.dailyIncome.form.fields.bankTransactionClearanceHint", { exact: true }).isVisible(), true);
+        await page.locator("#journal-payment").click();
+        await page.getByRole("option", { name: "CASH", exact: true }).click();
+        assert.equal(await autoClear.isVisible(), true);
+        assert.equal(await page.getByText("accounting.dailyIncome.form.fields.autoClear", { exact: true }).isVisible(), true);
+        assert.equal(await page.locator("#submitted").textContent(), "0");
+      } finally { await page.close(); }
+    });
+  }
+}

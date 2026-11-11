@@ -26,7 +26,9 @@ import type {
   DailyIncomeStatement,
   DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
-import { fetchIncomeStatementJournalCount } from "@/lib/accounting/daily-income/reconciliation-api";
+import { clearJournals, fetchIncomeStatementJournalCount, reconcileJournals } from "@/lib/accounting/daily-income/reconciliation-api";
+import { createJournalWithClearance } from "./create-journal-with-clearance";
+import { getAutoClearPermission, getPaymentClearancePermission } from "./auto-clear";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useAppSelector } from "@/lib/store/hooks";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -156,12 +158,21 @@ export function useCreateIncomeStatement() {
 
 export function useCreateDailyIncomeJournal(sessionId?: string) {
   const queryClient = useQueryClient();
-  const { companyId, user } = useAuth();
+  const { companyId, user, hasPermission } = useAuth();
+  const clearancePermission = getPaymentClearancePermission();
+  const reconciliationPermission = getAutoClearPermission();
   return useMutation({
     mutationKey: ["daily-income-created", companyId, user?.uid, ...(sessionId ? [sessionId] : [])],
     gcTime: Infinity,
     mutationFn: ({ statement, values, options }: { statement: DailyIncomeStatement; values: DailyIncomeJournalValues; options?: JournalWriteOptions }) =>
-      createDailyIncomeJournal(statement, values, options),
+      createJournalWithClearance({ statement, values, options }, {
+        canClear: hasPermission(clearancePermission.name, clearancePermission.resourceType),
+        canReconcile: hasPermission(reconciliationPermission.name, reconciliationPermission.resourceType),
+        create: (input) => createDailyIncomeJournal(input.statement, input.values, input.options),
+        clear: clearJournals,
+        reconcile: reconcileJournals,
+        newRequestId: () => crypto.randomUUID(),
+      }),
     retry: false,
     onSuccess: () => invalidateDailyIncome(queryClient),
   });

@@ -46,7 +46,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const [summaryContainer, setSummaryContainer] = useState<HTMLDivElement | null>(null);
   const [entryActive, setEntryActive] = useState(false);
   const [headerActionsContainer, setHeaderActionsContainer] = useState<HTMLDivElement | null>(null);
-  const { notifySuccess } = useFeedback();
+  const { notifySuccess, notifyError } = useFeedback();
   const { hasPermission } = useAuth();
   const canUpdateJournals = hasPermission(PERMISSIONS.journalsUpdate.name, PERMISSIONS.journalsUpdate.resourceType);
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -118,7 +118,13 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
 
       const journal = await createJournal.mutateAsync({ statement, values, options });
       if (journal?.incomeStatementId) setRecordingStatementId(journal.incomeStatementId);
-      notifySuccess(journalCreatedToastMessage({ ...values, invoiceNumber: journal?.invoice?.number || values.invoiceNumber }, t));
+      if (values.clearPaymentOnSave && journal?.clearanceStatus !== "CLEARED") {
+        notifyError(t("accounting.dailyIncome.toasts.paymentSavedClearanceUnconfirmed"));
+      } else if (values.clearPaymentOnSave && journal?.reconciliationStatus === "OUTSTANDING") {
+        notifyError(t("accounting.dailyIncome.toasts.paymentClearedReconciliationPending"));
+      } else {
+        notifySuccess(journalCreatedToastMessage({ ...values, invoiceNumber: journal?.invoice?.number || values.invoiceNumber }, t));
+      }
     } catch (error) {
       if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
       const message = normalizeApiError(error).message;

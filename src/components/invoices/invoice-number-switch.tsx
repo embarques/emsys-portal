@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,9 @@ type Props = {
   variant?: "switch" | "segmented";
   /** Segmented only: no visible labels; the custom input sits directly under the segments, which name it. */
   compact?: boolean;
+  /** Show the mode label while keeping the compact custom-input layout. */
+  showModeLabel?: boolean;
+  modeLabelIcon?: ReactNode;
   inputProps?: Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "disabled">;
   onModeChange: (autoGenerate: boolean) => void;
   onInvoiceNumberChange: (value: string) => void;
@@ -47,6 +50,8 @@ export function InvoiceNumberModeFields({
   className,
   variant = "switch",
   compact = false,
+  showModeLabel = !compact,
+  modeLabelIcon,
   inputProps,
   onModeChange,
   onInvoiceNumberChange,
@@ -92,7 +97,10 @@ export function InvoiceNumberModeFields({
     return (
       <div className={cn("space-y-2", className)}>
         <div className="space-y-2">
-          <Label id={`${id}-mode-label`} className={compact ? "sr-only" : undefined}>{t("invoices.form.fields.invoiceNumber")}</Label>
+          <Label id={`${id}-mode-label`} className={cn(!showModeLabel && "sr-only", modeLabelIcon && "gap-2")}>
+            {modeLabelIcon}
+            {t("invoices.form.fields.invoiceNumber")}
+          </Label>
           <div data-enter-navigation="field">
             <SegmentedControl<Mode>
               id={`${id}-mode`}

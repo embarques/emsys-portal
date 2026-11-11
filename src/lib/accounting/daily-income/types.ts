@@ -322,8 +322,10 @@ export type DailyIncomeJournalValues = {
   paymentMethodId?: number;
   paymentMethodName?: string;
   checkNumber?: string;
-  /** Create only: API clears the outstanding check / Zelle / deposit / card record and applies it to the invoice. */
+  /** Existing API flag for internal reconciliation; does not financially clear a payment. */
   autoClear?: boolean;
+  /** Frontend create-only option: clear the saved bank transaction through the journal clearance command. */
+  clearPaymentOnSave?: boolean;
   /** Create only: API completes the dispatch handoff and reconciles the full quantity as sold. */
   autoReconcile?: boolean;
   /** Inventory change recorded with this journal. Posted with the closeout, not as a separate stock write. */

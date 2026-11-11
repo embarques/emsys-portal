@@ -46,6 +46,34 @@ Unresolved defects, contract decisions and acceptance work, updated November 11,
 
 ## Pending verification and contract decisions
 
+- **Additional loan amount (increase an existing loan).** The API can create
+  loans and record payments but cannot add to an existing loan, and journal
+  `POST /journals` cannot reference a loan record. The portal has the entry built
+  behind `NEXT_PUBLIC_LOAN_INCREASE_ENABLED` (default off). Proposed contract:
+  `POST /loans/{id}/increases` with `{ employee: {id, name}, sourceAccount:
+  {id, name, type}, amount, transactionDate, referenceNumber, description }`.
+  Requirements: the loan is `ACTIVE` and belongs to that employee; `amount > 0`;
+  atomically post debit loan account / credit source asset account in the current
+  open closeout (`CLOSEOUT_REQUIRED` otherwise), raise `principalAmount` and
+  `balance`, and record a loan transaction of type `INCREASE`. Respond like
+  `POST /loans` (`{ loan, transaction, journal }`). Same grants as loan creation.
+  Once deployed, enable the flag.
+
+- **Bank transactions must reconcile through clearance only.** Business rule:
+  a journal with `clearanceStatus` `OUTSTANDING` stays unreconciled until it
+  clears, and clearing reconciles it. The current contract keeps them independent:
+  `POST /journals/clear` "never changes reconciliation status", and
+  `POST /journals/reconcile` accepts any `OUTSTANDING` journal. The portal
+  enforces the rule on its side: Pending Reconciliation blocks uncleared bank
+  journals; Pending Clearance and auto-clear on save call `/journals/reconcile`
+  for the cleared IDs right after `/journals/clear`; and bank invoice payments
+  never send `autoClear`. This is two requests, so a failed follow-up leaves a
+  cleared journal in Pending Reconciliation, and users without
+  `canReconcileJournal` cannot complete it. Backend: reconcile atomically inside
+  `/journals/clear` (with only `canClearJournal`), reject `/journals/reconcile`
+  and `autoClear` for uncleared bank journals, and document it. Once deployed,
+  remove the portal's follow-up reconcile call.
+
 - **Daily-route assignment edge cases.** Verify foreign-tenant batches,
   scoped delivery/invoice actors, concurrent membership-revocation races and
   server business-midnight behavior,

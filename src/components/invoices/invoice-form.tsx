@@ -831,7 +831,7 @@ export function InvoiceForm({
 
   function renderField(
     label: string,
-    htmlFor: string,
+    htmlFor: string | undefined,
     required: boolean | undefined,
     control: React.ReactNode,
     fieldClassName?: string,
@@ -907,27 +907,32 @@ export function InvoiceForm({
     )
   ) : (
     <div className={cn(isPhoneWizard ? undefined : isWizard ? "@2xl:col-span-2" : "sm:col-span-2")}>
-      <InvoiceNumberModeFields
-        id="invoiceNumber"
-        variant="segmented"
-        compact
-        autoGenerate={Boolean(values.autoGenerateNumber)}
-        invoiceNumber={values.invoiceNumber}
-        generatedInvoiceNumber={values.generatedInvoiceNumber}
-        canUseManualNumber={canUseManualNumber}
-        onModeChange={(nextAutoGenerate) => {
-          updateField("autoGenerateNumber", nextAutoGenerate);
-          if (nextAutoGenerate) {
-            updateField("invoiceNumber", "");
+      {renderField(
+        t("invoices.form.fields.invoiceNumber"),
+        values.autoGenerateNumber ? undefined : "invoiceNumber",
+        !values.autoGenerateNumber,
+        <InvoiceNumberModeFields
+          id="invoiceNumber"
+          variant="segmented"
+          compact
+          autoGenerate={Boolean(values.autoGenerateNumber)}
+          invoiceNumber={values.invoiceNumber}
+          generatedInvoiceNumber={values.generatedInvoiceNumber}
+          canUseManualNumber={canUseManualNumber}
+          onModeChange={(nextAutoGenerate) => {
+            updateField("autoGenerateNumber", nextAutoGenerate);
+            if (nextAutoGenerate) {
+              updateField("invoiceNumber", "");
+            }
+          }}
+          onInvoiceNumberChange={(next) => updateField("invoiceNumber", next)}
+          inputProps={
+            isWizard && !values.autoGenerateNumber
+              ? wizardInputFieldProps(values.invoiceNumber)
+              : undefined
           }
-        }}
-        onInvoiceNumberChange={(next) => updateField("invoiceNumber", next)}
-        inputProps={
-          isWizard && !values.autoGenerateNumber
-            ? wizardInputFieldProps(values.invoiceNumber)
-            : undefined
-        }
-      />
+        />,
+      )}
     </div>
   );
 

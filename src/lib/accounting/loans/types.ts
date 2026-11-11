@@ -5,7 +5,7 @@ import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type LoanStatus = "ACTIVE" | "PAID" | "VOID";
 
-export type LoanTransactionType = "ISSUE" | "PAYMENT";
+export type LoanTransactionType = "ISSUE" | "INCREASE" | "PAYMENT";
 
 export type LoanAccountRef = AccountingLookup & {
   type?: string;
@@ -104,6 +104,20 @@ export type LoanPaymentValues = {
   receivedAccountId: number;
   receivedAccountName?: string;
   receivedAccountType?: string;
+  amount: number;
+  transactionDate: string;
+  referenceNumber: string;
+  description: string;
+};
+
+/** Adds to an existing loan's principal: debit its loan account, credit the source asset account. */
+export type LoanIncreaseValues = {
+  employeeId: number;
+  employeeName?: string;
+  loanId: string;
+  sourceAccountId: number;
+  sourceAccountName?: string;
+  sourceAccountType?: string;
   amount: number;
   transactionDate: string;
   referenceNumber: string;

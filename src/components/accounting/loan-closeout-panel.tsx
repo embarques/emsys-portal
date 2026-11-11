@@ -20,12 +20,23 @@ type LoanCloseoutPanelProps = {
   onReadyChange?: (ready: boolean) => void;
 };
 
+function useLoanCloseoutStatus(branchId: number, date: string, onReadyChange?: (ready: boolean) => void) {
+  const query = useCurrentIncomeStatement(branchId);
+  const ready = Boolean(query.data?.status === "OPEN" && branchId && date && !query.isError);
+  useEffect(() => { onReadyChange?.(ready); }, [ready, onReadyChange]);
+  return query;
+}
+
+/** Keeps the open-closeout requirement without showing the card (transaction entry already set up the closeout). */
+export function LoanCloseoutGate({ branchId = 0, date, onReadyChange }: Pick<LoanCloseoutPanelProps, "branchId" | "date" | "onReadyChange">) {
+  useLoanCloseoutStatus(branchId, date, onReadyChange);
+  return null;
+}
+
 export function LoanCloseoutPanel({ branchId = 0, branchCode = "", branchName = "", date, onDateChange, onReadyChange }: LoanCloseoutPanelProps) {
   const { t } = useTranslation();
-  const query = useCurrentIncomeStatement(branchId);
+  const query = useLoanCloseoutStatus(branchId, date, onReadyChange);
   const statement = query.data;
-  const ready = Boolean(statement?.status === "OPEN" && branchId && date && !query.isError);
-  useEffect(() => { onReadyChange?.(ready); }, [ready, onReadyChange]);
   return <FormSection variant="card" title={t("accounting.dailyIncome.title")}>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="min-w-0 space-y-2">

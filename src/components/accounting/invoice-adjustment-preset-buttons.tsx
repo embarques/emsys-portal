@@ -136,11 +136,11 @@ export function InvoiceAdjustmentPresetButtons({
         </Button>
       </div>
       {customPercentOpen ? (
-        <div className={cn("flex flex-wrap items-center gap-2", inline && "sm:col-start-2")}>
-          <label htmlFor={customPercentId} className="text-xs text-muted-foreground">
+        <div className={cn("space-y-1", inline && "sm:col-start-2")}>
+          <label htmlFor={customPercentId} className="block text-xs text-muted-foreground">
             {t("accounting.dailyIncome.form.adjustmentPresets.customPercentLabel")}
           </label>
-          <div className="relative w-28">
+          <div className="relative w-full max-w-48">
             <Input
               ref={customPercentRef}
               id={customPercentId}
@@ -162,7 +162,7 @@ export function InvoiceAdjustmentPresetButtons({
             </span>
           </div>
           {parsedCustomPercent != null && hasTotal ? (
-            <span className="text-xs tabular-nums text-muted-foreground">
+            <span className="block text-xs tabular-nums text-muted-foreground">
               {t("accounting.dailyIncome.form.adjustmentPresets.percentOfTotal", {
                 percent: parsedCustomPercent,
                 amount: formatAccountingMoney(customPercentAmount),
