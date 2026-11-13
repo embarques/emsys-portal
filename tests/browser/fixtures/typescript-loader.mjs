@@ -4,7 +4,9 @@ export default function transpile(source) {
   return ts.transpileModule(source, {
     fileName: this.resourcePath,
     compilerOptions: {
-      module: ts.ModuleKind.ESNext,
+      // Fixtures are injected as one inline script; keep dynamic imports in that bundle.
+      module: ts.ModuleKind.CommonJS,
+      esModuleInterop: true,
       target: ts.ScriptTarget.ES2022,
       jsx: ts.JsxEmit.ReactJSX,
     },

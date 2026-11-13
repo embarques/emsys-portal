@@ -1,0 +1,14 @@
+{
+  "closeoutId": 32721,
+  "source": "API-generated isolated mock income PDF; text extracted locally with PDFKit",
+  "authorization": "User explicitly approved temporary public report generation/download",
+  "checks": {
+    "Facturado": true,
+    "Ingresos": true,
+    "Gastos": true,
+    "Efectivo": true,
+    "discount_separate": true
+  },
+  "allPassed": true,
+  "extractedText": "Embarque Tenares\nCuadre de ingresos\nFecha de Impresion: 11/12/2026 06:31:34 PM Impresa por: CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5\nFecha: 11-12-2026\nMoneda: USD\nIngresos por factura\nFecha Factura Usuario Pago Costo Monto Balance\n2026-11-12 CODEX-BANK-c631b\nd7e-2cf9-4e67-8460-4\n0eb7c041cd5-CASH\nCODEX-BANK-c631b\nd7e-2cf9-4e67-8460-4\n0eb7c041cd5\nCASH $100.00 $0.00 $100.00\nTotal Ingresos por factura $100.00 $0.00 $100.00\nPago por facturas\nFecha Factura Usuario Pago Costo Monto Balance\n2026-11-12 CODEX-BANK-c631b\nd7e-2cf9-4e67-8460-4\n0eb7c041cd5-CASH\nCODEX-BANK-c631b\nd7e-2cf9-4e67-8460-4\n0eb7c041cd5\nCASH $100.00 $80.00 $0.00\nTotal Pago por facturas $100.00 $80.00 $0.00\nDescuentos\nFecha Cuenta Usuario Pago Costo Monto Balance\n2026-11-12 CODEX-BANK-c631bd7e-2cf9-4e67-8\n460-40eb7c041cd5-CASH\nCODEX-BANK-\nc631bd7e-2cf9-\n4e67-8460-40e\nb7c041cd5\nCASH $20.00 $0.00 $0.00\nTotal Descuentos $20.00 $0.00 $0.00\nPreparado por Empleado\nPagina 1 / 2\nEmbarque Tenares\nCuadre de ingresos\nFecha de Impresion: 11/12/2026 06:31:34 PM Impresa por: CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5\nFecha: 11-12-2026\nMoneda: USD\nTotal\nFacturado $100.00\nDepositado $0.00\nIngresos $80.00\nGastos $0.00\nEfectivo $80.00\nZelle $0.00\nTransacciones 3\nPreparado por Empleado\nPagina 2 / 2\n"
+}

@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 /** Isolated assigned-pickup identity only. Never edits an existing role/user or financial record. */
 import { randomBytes, randomUUID } from "node:crypto";
+import fs from "node:fs";
+import {verifyApprovalMatrix} from "./lib/approval-matrix-fixtures.mjs";
+import {verifyReservationPermissions} from "./lib/reservation-permission-fixtures.mjs";
 import { createApiSuite } from "./lib/api-suite.mjs";
 const suite = createApiSuite({
   title: "Assigned-pickup permission isolation",
-  options: { writeProbes: { flag: "--write-probes" }, initialGrants: { flag: "--initial-grants", takesValue: true }, revokeGrant: { flag: "--revoke-grant" } },
+  options: { writeProbes: { flag: "--write-probes" }, initialGrants: { flag: "--initial-grants", takesValue: true }, revokeGrant: { flag: "--revoke-grant" }, approvals: {flag: "--approvals"}, output: {flag: "--output", takesValue: true} },
   usage: "  --write-probes    Create/delete one Firebase test user, tenant role/user/employee, two routes and two pickups\n  --initial-grants <view|assigned|update>    Initial temporary role grants (default: view)\n  --revoke-grant    Check removal of assigned update from the temporary role\n",
 });
 const { ok, note, pass, fail, rowsOf } = suite;
@@ -17,6 +20,7 @@ note(`Initial temporary grants: ${initialGrants}; grant revocation: ${suite.opts
 const prefix = `CODEX-SCOPE-${randomUUID()}`;
 const cleanup = [];
 const customers = new Set();
+const evidence = [];
 let firebaseUser;
 let firebaseApp;
 let deleteFirebaseUser;
@@ -30,6 +34,7 @@ async function request(method, path, body, token = suite.opts.token, headers = {
   return { status: response.status, json: await response.json() };
 }
 function verify(label, condition, response) {
+  evidence.push({label, passed: Boolean(condition), http: response?.status, message: response?.json?.message});
   if (condition) pass(label, response ? `HTTP ${response.status}` : "");
   else fail(label, response?.status ?? 0, String(response?.json?.error ?? response?.json?.message ?? "Persisted invariant failed"));
   return condition;
@@ -93,6 +98,8 @@ try {
     const initial = await request("GET", "/users/permissions", undefined, token);
     const initialNames = initial.json?.data?.permissions?.map(p => p.name) ?? [];
     if (!verify("Test identity has expected assigned grants and no broad grant", ok(initial) && initialPermissions.every(p => initialNames.includes(p.name)) && !initialNames.includes("canViewPickup") && !initialNames.includes("canUpdatePickup"), initial)) throw new Error("Unexpected fixture grants");
+    const businessDate = await request("GET", `/vehicle-routes/business-date?branchId=${sample.branch.id}`, undefined, token);
+    verify("Assigned-only actor reads branch business date without financial grants", ok(businessDate) && /^\d{4}-\d{2}-\d{2}$/.test(businessDate.json?.data?.businessDate ?? "") && Boolean(businessDate.json?.data?.timezone) && Date.parse(businessDate.json?.data?.nextMidnight) > Date.parse(businessDate.json?.data?.serverTime), businessDate);
     const ownRead = await request("GET", `/pickups/${owned.id}`, undefined, token);
     verify(initialGrants === "update" ? "Update-only identity cannot read owned fixture" : "Assigned view can read owned fixture", initialGrants === "update" ? denied(ownRead) : ok(ownRead), ownRead);
     const otherRead = await request("GET", `/pickups/${outsider.id}`, undefined, token);
@@ -102,7 +109,7 @@ try {
     const initialList = await request("POST", "/pickups/search?page=1&limit=10&offset=0", { operator: "or", filters: [{ field: "id", operator: "eq", value: owned.id }, { field: "id", operator: "eq", value: outsider.id }] }, token);
     verify(initialGrants === "update" ? "Update-only identity cannot list pickups" : "Initial assigned list isolates owned fixture", initialGrants === "update" ? denied(initialList) : ok(initialList) && rowsOf(initialList).length === 1 && rowsOf(initialList)[0].id === owned.id && initialList.json.total === 1, initialList);
     requireOk("Add assigned update only to the temporary role", await request("PUT", `/roles/${role.id}`, { name: prefix, active: true, permissions: [view, update] }));
-    token = await firebaseUser.getIdToken(true);
+    // Keep the same authenticated token to verify live grants rather than token refresh.
     const grants = await request("GET", "/users/permissions", undefined, token);
     const granted = grants.json?.data?.permissions?.some(p => p.name === update.name);
     verify("Temporary role update becomes effective", ok(grants) && granted, grants);
@@ -127,7 +134,6 @@ try {
     verify("Assigned list excludes outsider before pagination/count", ok(list) && rowsOf(list).length === 1 && rowsOf(list)[0].id === owned.id && list.json.total === 1, list);
     if (suite.opts.revokeGrant) {
       requireOk("Remove assigned update only from the temporary role", await request("PUT", `/roles/${role.id}`, { name: prefix, active: true, permissions: [view] }));
-      token = await firebaseUser.getIdToken(true);
       const removedGrant = await request("GET", "/users/permissions", undefined, token);
       verify("Effective permission list removes assigned update", ok(removedGrant) && !removedGrant.json?.data?.permissions?.some(p => p.name === update.name), removedGrant);
       const beforeRevokeWrite = (await read(`/pickups/${owned.id}`)).purpose;
@@ -142,6 +148,12 @@ try {
         verify("Fresh sign-in enforces revoked update grant", denied(afterLoginWrite) && (await read(`/pickups/${owned.id}`)).purpose === beforeLoginWrite, afterLoginWrite);
       }
     }
+    if (suite.opts.approvals) {
+      await verifyApprovalMatrix({request, token, role, prefix, view, update, owned, outsider, verify, requireOk, evidence});
+      await verifyReservationPermissions({request, token, role, user, prefix, view, update, verify, requireOk, evidence});
+    }
+    // Isolate crew membership from grant revocation with a positive write control.
+    if (suite.opts.revokeGrant) requireOk("Restore fixture update grant before crew control", await request("PUT", `/roles/${role.id}`, { name: prefix, active: true, permissions: [view, update] }));
     const beforeCrewWrite = await request("PUT", `/pickups/${owned.id}`, { purpose: `${prefix}-crew-write-control` }, token);
     const beforeCrewPurpose = (await read(`/pickups/${owned.id}`)).purpose;
     const beforeCrewRevocation = await request("GET", `/pickups/${owned.id}`, undefined, token);
@@ -175,4 +187,5 @@ finally {
   if (firebaseApp) await deleteFirebaseApp(firebaseApp);
 }
 note(`Fixture marker: ${prefix}; no existing user's grants were modified and no credentials are printed.`);
+if (suite.opts.output) fs.writeFileSync(suite.opts.output, JSON.stringify({checkedAt: new Date().toISOString(), marker: prefix, evidence}, null, 2));
 suite.finish("Scoped pickup tests complete; financial delivery permissions remain separate.");

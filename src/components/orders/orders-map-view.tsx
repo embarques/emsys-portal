@@ -66,6 +66,7 @@ import {
 } from "@/lib/orders/types";
 import { buildPickupMapStops, type PickupMapStop } from "@/lib/orders/utils/pickup-map";
 import { assignManualStopNumber } from "@/lib/route-optimizer/stop-numbers";
+import { isImeComposing } from "@/hooks/use-form-enter-navigation";
 import { buildPickupRouteColors, getPickupRouteColor } from "@/lib/orders/utils/pickup-map-colors";
 import {
   PICKUP_MARKER_BASE_SIZE,
@@ -954,6 +955,7 @@ export function OrdersMapView({
                             onKeyDown={(event) => {
                               if (event.key === "Enter") {
                                 event.preventDefault();
+                                if (isImeComposing(event)) return;
                                 event.currentTarget.blur();
                                 focusNextStopNumberInput(stop.orderRecordId);
                               }

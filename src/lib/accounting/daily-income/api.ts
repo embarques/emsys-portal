@@ -767,12 +767,16 @@ function createJournalPayload(statement: DailyIncomeStatement, values: DailyInco
   return { ...journalPayload(statement, writeValues, options), ...(refNumber ? { refNumber } : {}) };
 }
 
-export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
-  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, {
+export function buildDailyIncomeJournalCreatePayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
+  return {
     ...createJournalPayload(statement, values, options),
     ...(values.autoClear && isAutoClearEligible(values) ? { autoClear: true } : {}),
     ...(values.autoReconcile && isAutoReconcileEligible(values) ? { autoReconcile: true } : {}),
-  });
+  };
+}
+
+export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
+  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, buildDailyIncomeJournalCreatePayload(statement, values, options));
   assertMutation(payload, "Unable to create transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
 }
@@ -781,10 +785,12 @@ export async function createDailyIncomeJournal(statement: DailyIncomeStatement, 
 export async function createDailyIncomeJournalSync(requestId: string, statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
   const payload = await apiClient.post<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_JOURNAL}/sync`, {
     requestId,
-    entry: createJournalPayload(statement, values, options),
+    entry: buildDailyIncomeJournalCreatePayload(statement, values, options),
   });
   assertMutation(payload, "Unable to create transaction.");
-  return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
+  const journal = normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
+  if (!journal?.id) throw new Error("Transaction creation was not confirmed.");
+  return journal;
 }
 
 export async function updateDailyIncomeJournal(id: string, statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {

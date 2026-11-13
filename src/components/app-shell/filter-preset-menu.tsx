@@ -23,6 +23,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { isImeComposing } from "@/hooks/use-form-enter-navigation";
 import { createFilterRowId, countCompleteFilterRows } from "@/lib/table/filter-builder";
 import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-types";
 import { useFilterPresets } from "@/lib/filter-presets/hooks/use-filter-presets";
@@ -151,6 +152,7 @@ export function FilterPresetMenu({
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
+                  if (isImeComposing(event)) return;
                   handleSave();
                 } else if (event.key === "Escape") {
                   event.preventDefault();

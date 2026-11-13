@@ -10,8 +10,8 @@ export function isAssignableRouteDate(date: string, today = assignmentToday()): 
   return /^\d{4}-\d{2}-\d{2}$/.test(day) && day >= today;
 }
 
-export function assertAssignableRouteDate(date: string): void {
-  if (!isAssignableRouteDate(date)) {
+export function assertAssignableRouteDate(date: string, today = assignmentToday()): void {
+  if (!isAssignableRouteDate(date, today)) {
     throw new Error(translateCurrent("routes.errors.pastAssignment"));
   }
 }

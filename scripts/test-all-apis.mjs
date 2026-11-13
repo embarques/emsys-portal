@@ -172,7 +172,7 @@ function parseArgs(argv) {
     } else if (!opts.token) {
       opts.token = arg.trim();
     } else {
-      throw new Error(`Unexpected argument: ${arg}`);
+      throw new Error("Unexpected positional argument; supply the token once via EMSYS_TOKEN or the CLI.");
     }
   }
 
@@ -189,7 +189,8 @@ function formatDuration(ms) {
 }
 
 function buildChildArgs(opts) {
-  const args = [opts.token];
+  // Children read credentials from the environment, never argv (or parse-error logs).
+  const args = [];
   if (opts.companyId) {
     args.push("--company", opts.companyId);
   }
@@ -435,6 +436,14 @@ if (!suites.length) {
   process.exit(1);
 }
 
+process.env.EMSYS_TOKEN = opts.token;
+if (opts.skipCrud) {
+  // Invoice assignment/report probes and activity write-rejection probes are
+  // outside ordinary CRUD blocks but must stay disabled in a read-only sweep.
+  process.env.EMSYS_SKIP_ROUTE = "1";
+  process.env.EMSYS_SKIP_REPORT = "1";
+  process.env.EMSYS_SKIP_READONLY_CHECK = "1";
+}
 const childArgs = buildChildArgs(opts);
 const wallStarted = Date.now();
 

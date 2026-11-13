@@ -1,0 +1,2065 @@
+{
+  "checkedAt": "2026-11-12T23:39:21.950Z",
+  "marker": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+  "evidence": [
+    {
+      "label": "Bounded route prerequisites",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Create fixture /roles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful"
+    },
+    {
+      "label": "Create fixture /users",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful"
+    },
+    {
+      "label": "Create fixture /employees",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful"
+    },
+    {
+      "label": "Create fixture /vehicle-routes",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful"
+    },
+    {
+      "label": "Create fixture /vehicle-routes",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful"
+    },
+    {
+      "label": "Create fixture /pickups",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful"
+    },
+    {
+      "label": "Create fixture /pickups",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful"
+    },
+    {
+      "label": "Read fixture /pickups/21895",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Read fixture /pickups/21896",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Assign owned fixture",
+      "passed": true,
+      "http": 200,
+      "message": "pickups assigned to route"
+    },
+    {
+      "label": "Assign outsider fixture",
+      "passed": true,
+      "http": 200,
+      "message": "pickups assigned to route"
+    },
+    {
+      "label": "Test identity has expected assigned grants and no broad grant",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Assigned-only actor reads branch business date without financial grants",
+      "passed": true,
+      "http": 200,
+      "message": "Route business date"
+    },
+    {
+      "label": "Assigned view can read owned fixture",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Assigned view cannot read outsider fixture",
+      "passed": true,
+      "http": 404,
+      "message": "pickup not found"
+    },
+    {
+      "label": "Read fixture /pickups/21895",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Initial assigned update changes owned fixture",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Initial assigned list isolates owned fixture",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Add assigned update only to the temporary role",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Temporary role update becomes effective",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Read fixture /pickups/21895",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Assigned update changes owned fixture",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Read fixture /pickups/21896",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Assigned update cannot change outsider fixture",
+      "passed": true,
+      "http": 404,
+      "message": "pickup not found"
+    },
+    {
+      "label": "Read fixture /pickups/21895",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Assigned-only update cannot clear its route",
+      "passed": true,
+      "http": 403,
+      "message": "Access denied"
+    },
+    {
+      "label": "Assigned list excludes outsider before pagination/count",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Remove assigned update only from the temporary role",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Effective permission list removes assigned update",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Read fixture /pickups/21895",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Read fixture /pickups/21895",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Revoked update grant rejects write without changing fixture",
+      "passed": true,
+      "http": 403,
+      "message": "Access denied"
+    },
+    {
+      "label": "Approval grants",
+      "method": "GET",
+      "path": "/permissions?page=1&limit=500",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": 1,
+            "name": "canCreateInvoice",
+            "resourceType": "invoice",
+            "create": true
+          },
+          {
+            "id": 2,
+            "name": "canViewInvoice",
+            "resourceType": "invoice",
+            "view": true
+          },
+          {
+            "id": 3,
+            "name": "canUpdateInvoice",
+            "resourceType": "invoice",
+            "update": true
+          },
+          {
+            "id": 4,
+            "name": "canDeleteInvoice",
+            "resourceType": "invoice",
+            "delete": true
+          },
+          {
+            "id": 5,
+            "name": "canPrintInvoice",
+            "resourceType": "invoice",
+            "print": true
+          },
+          {
+            "id": 6,
+            "name": "canCreateContainer",
+            "resourceType": "container",
+            "create": true
+          },
+          {
+            "id": 7,
+            "name": "canViewContainer",
+            "resourceType": "container",
+            "view": true
+          },
+          {
+            "id": 8,
+            "name": "canUpdateContainer",
+            "resourceType": "container",
+            "update": true
+          },
+          {
+            "id": 9,
+            "name": "canDeleteContainer",
+            "resourceType": "container",
+            "delete": true
+          },
+          {
+            "id": 10,
+            "name": "canPrintContainer",
+            "resourceType": "container",
+            "print": true
+          },
+          {
+            "id": 11,
+            "name": "canCreateLabels",
+            "resourceType": "labels",
+            "create": true
+          },
+          {
+            "id": 12,
+            "name": "canViewLabels",
+            "resourceType": "labels",
+            "view": true
+          },
+          {
+            "id": 13,
+            "name": "canUpdateLabels",
+            "resourceType": "labels",
+            "update": true
+          },
+          {
+            "id": 14,
+            "name": "canDeleteLabels",
+            "resourceType": "labels",
+            "delete": true
+          },
+          {
+            "id": 15,
+            "name": "canPrintLabels",
+            "resourceType": "labels",
+            "print": true
+          },
+          {
+            "id": 16,
+            "name": "canCreateReport",
+            "resourceType": "report",
+            "create": true
+          },
+          {
+            "id": 17,
+            "name": "canViewReport",
+            "resourceType": "report",
+            "view": true
+          },
+          {
+            "id": 18,
+            "name": "canUpdateReport",
+            "resourceType": "report",
+            "update": true
+          },
+          {
+            "id": 19,
+            "name": "canDeleteReport",
+            "resourceType": "report",
+            "delete": true
+          },
+          {
+            "id": 20,
+            "name": "canPrintReport",
+            "resourceType": "report",
+            "print": true
+          },
+          {
+            "id": 21,
+            "name": "canCreateUser",
+            "resourceType": "user",
+            "create": true
+          },
+          {
+            "id": 22,
+            "name": "canViewUser",
+            "resourceType": "user",
+            "view": true
+          },
+          {
+            "id": 23,
+            "name": "canUpdateUser",
+            "resourceType": "user",
+            "update": true
+          },
+          {
+            "id": 24,
+            "name": "canDeleteUser",
+            "resourceType": "user",
+            "delete": true
+          },
+          {
+            "id": 25,
+            "name": "canPrintUser",
+            "resourceType": "user",
+            "print": true
+          },
+          {
+            "id": 26,
+            "name": "canCreateCustomer",
+            "resourceType": "customer",
+            "create": true
+          },
+          {
+            "id": 27,
+            "name": "canViewCustomer",
+            "resourceType": "customer",
+            "view": true
+          },
+          {
+            "id": 28,
+            "name": "canUpdateCustomer",
+            "resourceType": "customer",
+            "update": true
+          },
+          {
+            "id": 29,
+            "name": "canDeleteCustomer",
+            "resourceType": "customer",
+            "delete": true
+          },
+          {
+            "id": 30,
+            "name": "canPrintCustomer",
+            "resourceType": "customer",
+            "print": true
+          },
+          {
+            "id": 31,
+            "name": "canCreateDelivery",
+            "resourceType": "delivery",
+            "create": true
+          },
+          {
+            "id": 32,
+            "name": "canViewDelivery",
+            "resourceType": "delivery",
+            "view": true
+          },
+          {
+            "id": 33,
+            "name": "canUpdateDelivery",
+            "resourceType": "delivery",
+            "update": true
+          },
+          {
+            "id": 34,
+            "name": "canDeleteDelivery",
+            "resourceType": "delivery",
+            "delete": true
+          },
+          {
+            "id": 35,
+            "name": "canPrintDelivery",
+            "resourceType": "delivery",
+            "print": true
+          },
+          {
+            "id": 36,
+            "name": "canCreatePickup",
+            "resourceType": "pickup",
+            "create": true
+          },
+          {
+            "id": 37,
+            "name": "canViewPickup",
+            "resourceType": "pickup",
+            "view": true
+          },
+          {
+            "id": 38,
+            "name": "canUpdatePickup",
+            "resourceType": "pickup",
+            "update": true
+          },
+          {
+            "id": 39,
+            "name": "canDeletePickup",
+            "resourceType": "pickup",
+            "delete": true
+          },
+          {
+            "id": 40,
+            "name": "canPrintPickup",
+            "resourceType": "pickup",
+            "print": true
+          },
+          {
+            "id": 41,
+            "name": "canCreateSettings",
+            "resourceType": "settings",
+            "create": true
+          },
+          {
+            "id": 42,
+            "name": "canViewSettings",
+            "resourceType": "settings",
+            "view": true
+          },
+          {
+            "id": 43,
+            "name": "canUpdateSettings",
+            "resourceType": "settings",
+            "update": true
+          },
+          {
+            "id": 44,
+            "name": "canDeleteSettings",
+            "resourceType": "settings",
+            "delete": true
+          },
+          {
+            "id": 45,
+            "name": "canPrintSettings",
+            "resourceType": "settings",
+            "print": true
+          },
+          {
+            "id": 46,
+            "name": "canCreateEmployee",
+            "resourceType": "employee",
+            "create": true
+          },
+          {
+            "id": 47,
+            "name": "canViewEmployee",
+            "resourceType": "employee",
+            "view": true
+          },
+          {
+            "id": 48,
+            "name": "canUpdateEmployee",
+            "resourceType": "employee",
+            "update": true
+          },
+          {
+            "id": 49,
+            "name": "canDeleteEmployee",
+            "resourceType": "employee",
+            "delete": true
+          },
+          {
+            "id": 50,
+            "name": "canPrintEmployee",
+            "resourceType": "employee",
+            "print": true
+          },
+          {
+            "id": 51,
+            "name": "canCreateJournal",
+            "resourceType": "journal",
+            "create": true
+          },
+          {
+            "id": 52,
+            "name": "canViewJournal",
+            "resourceType": "journal",
+            "view": true
+          },
+          {
+            "id": 53,
+            "name": "canUpdateJournal",
+            "resourceType": "journal",
+            "update": true
+          },
+          {
+            "id": 54,
+            "name": "canDeleteJournal",
+            "resourceType": "journal",
+            "delete": true
+          },
+          {
+            "id": 55,
+            "name": "canPrintJournal",
+            "resourceType": "journal",
+            "print": true
+          },
+          {
+            "id": 56,
+            "name": "canCreateIncomeStatement",
+            "resourceType": "income_statement",
+            "create": true
+          },
+          {
+            "id": 57,
+            "name": "canViewIncomeStatement",
+            "resourceType": "income_statement",
+            "view": true
+          },
+          {
+            "id": 58,
+            "name": "canUpdateIncomeStatement",
+            "resourceType": "income_statement",
+            "update": true
+          },
+          {
+            "id": 59,
+            "name": "canDeleteIncomeStatement",
+            "resourceType": "income_statement",
+            "delete": true
+          },
+          {
+            "id": 60,
+            "name": "canPrintIncomeStatement",
+            "resourceType": "income_statement",
+            "print": true
+          },
+          {
+            "id": 61,
+            "name": "canCreateChartAccount",
+            "resourceType": "chart_account",
+            "create": true
+          },
+          {
+            "id": 62,
+            "name": "canViewChartAccount",
+            "resourceType": "chart_account",
+            "view": true
+          },
+          {
+            "id": 63,
+            "name": "canUpdateChartAccount",
+            "resourceType": "chart_account",
+            "update": true
+          },
+          {
+            "id": 64,
+            "name": "canDeleteChartAccount",
+            "resourceType": "chart_account",
+            "delete": true
+          },
+          {
+            "id": 65,
+            "name": "canPrintChartAccount",
+            "resourceType": "chart_account",
+            "print": true
+          },
+          {
+            "id": 66,
+            "name": "canCreateDashboard",
+            "resourceType": "dashboard",
+            "create": true
+          },
+          {
+            "id": 67,
+            "name": "canViewDashboard",
+            "resourceType": "dashboard",
+            "view": true
+          },
+          {
+            "id": 68,
+            "name": "canUpdateDashboard",
+            "resourceType": "dashboard",
+            "update": true
+          },
+          {
+            "id": 69,
+            "name": "canDeleteDashboard",
+            "resourceType": "dashboard",
+            "delete": true
+          },
+          {
+            "id": 70,
+            "name": "canPrintDashboard",
+            "resourceType": "dashboard",
+            "print": true
+          },
+          {
+            "id": 71,
+            "name": "canCreateEmployeeGroup",
+            "resourceType": "employee_group",
+            "create": true
+          },
+          {
+            "id": 72,
+            "name": "canViewEmployeeGroup",
+            "resourceType": "employee_group",
+            "view": true
+          },
+          {
+            "id": 73,
+            "name": "canUpdateEmployeeGroup",
+            "resourceType": "employee_group",
+            "update": true
+          },
+          {
+            "id": 74,
+            "name": "canDeleteEmployeeGroup",
+            "resourceType": "employee_group",
+            "delete": true
+          },
+          {
+            "id": 75,
+            "name": "canPrintEmployeeGroup",
+            "resourceType": "employee_group",
+            "print": true
+          },
+          {
+            "id": 76,
+            "name": "canCreateVehicle",
+            "resourceType": "vehicle",
+            "create": true
+          },
+          {
+            "id": 77,
+            "name": "canViewVehicle",
+            "resourceType": "vehicle",
+            "view": true
+          },
+          {
+            "id": 78,
+            "name": "canUpdateVehicle",
+            "resourceType": "vehicle",
+            "update": true
+          },
+          {
+            "id": 79,
+            "name": "canDeleteVehicle",
+            "resourceType": "vehicle",
+            "delete": true
+          },
+          {
+            "id": 80,
+            "name": "canPrintVehicle",
+            "resourceType": "vehicle",
+            "print": true
+          },
+          {
+            "id": 86,
+            "name": "canPrintDeliveryReport",
+            "resourceType": "delivery_report",
+            "print": true
+          },
+          {
+            "id": 81,
+            "name": "canCreateRoute",
+            "resourceType": "route",
+            "create": true
+          },
+          {
+            "id": 82,
+            "name": "canViewRoute",
+            "resourceType": "route",
+            "view": true
+          },
+          {
+            "id": 83,
+            "name": "canUpdateRoute",
+            "resourceType": "route",
+            "update": true
+          },
+          {
+            "id": 84,
+            "name": "canDeleteRoute",
+            "resourceType": "route",
+            "delete": true
+          },
+          {
+            "id": 85,
+            "name": "canPrintRoute",
+            "resourceType": "route",
+            "print": true
+          },
+          {
+            "id": 87,
+            "name": "canOpenIncomeStatementAfterClose",
+            "resourceType": "income_statement",
+            "open": true
+          },
+          {
+            "id": 89,
+            "name": "canSyncLegacyPickups",
+            "resourceType": "pickup",
+            "open": true
+          },
+          {
+            "id": 90,
+            "name": "canSyncLegacyInvoices",
+            "resourceType": "invoice",
+            "open": true
+          },
+          {
+            "id": 91,
+            "name": "canCreateBarcodeStatus",
+            "resourceType": "barcode_status",
+            "create": true
+          },
+          {
+            "id": 92,
+            "name": "canViewBarcodeStatus",
+            "resourceType": "barcode_status",
+            "view": true
+          },
+          {
+            "id": 93,
+            "name": "canUpdateBarcodeStatus",
+            "resourceType": "barcode_status",
+            "update": true
+          },
+          {
+            "id": 94,
+            "name": "canDeleteBarcodeStatus",
+            "resourceType": "barcode_status",
+            "delete": true
+          },
+          {
+            "id": 95,
+            "name": "canCreateCheck",
+            "resourceType": "check",
+            "create": true
+          },
+          {
+            "id": 96,
+            "name": "canViewCheck",
+            "resourceType": "check",
+            "view": true
+          },
+          {
+            "id": 97,
+            "name": "canUpdateCheck",
+            "resourceType": "check",
+            "update": true
+          },
+          {
+            "id": 98,
+            "name": "canDeleteCheck",
+            "resourceType": "check",
+            "delete": true
+          },
+          {
+            "id": 99,
+            "name": "canListInventoryItem",
+            "resourceType": "inventory_item",
+            "view": true
+          },
+          {
+            "id": 100,
+            "name": "canViewInventoryItem",
+            "resourceType": "inventory_item",
+            "view": true
+          },
+          {
+            "id": 101,
+            "name": "canCreateInventoryItem",
+            "resourceType": "inventory_item",
+            "create": true
+          },
+          {
+            "id": 102,
+            "name": "canUpdateInventoryItem",
+            "resourceType": "inventory_item",
+            "update": true
+          },
+          {
+            "id": 103,
+            "name": "canDeleteInventoryItem",
+            "resourceType": "inventory_item",
+            "delete": true
+          },
+          {
+            "id": 104,
+            "name": "canListInventoryStock",
+            "resourceType": "inventory_stock",
+            "view": true
+          },
+          {
+            "id": 105,
+            "name": "canViewInventoryStock",
+            "resourceType": "inventory_stock",
+            "view": true
+          },
+          {
+            "id": 106,
+            "name": "canCreateInventoryStock",
+            "resourceType": "inventory_stock",
+            "create": true
+          },
+          {
+            "id": 107,
+            "name": "canUpdateInventoryStock",
+            "resourceType": "inventory_stock",
+            "update": true
+          },
+          {
+            "id": 108,
+            "name": "canDeleteInventoryStock",
+            "resourceType": "inventory_stock",
+            "delete": true
+          },
+          {
+            "id": 109,
+            "name": "canListInventoryReceipt",
+            "resourceType": "inventory_receipt",
+            "view": true
+          },
+          {
+            "id": 110,
+            "name": "canViewInventoryReceipt",
+            "resourceType": "inventory_receipt",
+            "view": true
+          },
+          {
+            "id": 111,
+            "name": "canCreateInventoryReceipt",
+            "resourceType": "inventory_receipt",
+            "create": true
+          },
+          {
+            "id": 112,
+            "name": "canUpdateInventoryReceipt",
+            "resourceType": "inventory_receipt",
+            "update": true
+          },
+          {
+            "id": 113,
+            "name": "canDeleteInventoryReceipt",
+            "resourceType": "inventory_receipt",
+            "delete": true
+          },
+          {
+            "id": 114,
+            "name": "canListInventoryDispatch",
+            "resourceType": "inventory_dispatch",
+            "view": true
+          },
+          {
+            "id": 115,
+            "name": "canViewInventoryDispatch",
+            "resourceType": "inventory_dispatch",
+            "view": true
+          },
+          {
+            "id": 116,
+            "name": "canCreateInventoryDispatch",
+            "resourceType": "inventory_dispatch",
+            "create": true
+          },
+          {
+            "id": 117,
+            "name": "canUpdateInventoryDispatch",
+            "resourceType": "inventory_dispatch",
+            "update": true
+          },
+          {
+            "id": 118,
+            "name": "canDeleteInventoryDispatch",
+            "resourceType": "inventory_dispatch",
+            "delete": true
+          },
+          {
+            "id": 119,
+            "name": "canListInventorySupplier",
+            "resourceType": "inventory_supplier",
+            "view": true
+          },
+          {
+            "id": 120,
+            "name": "canViewInventorySupplier",
+            "resourceType": "inventory_supplier",
+            "view": true
+          },
+          {
+            "id": 121,
+            "name": "canCreateInventorySupplier",
+            "resourceType": "inventory_supplier",
+            "create": true
+          },
+          {
+            "id": 122,
+            "name": "canUpdateInventorySupplier",
+            "resourceType": "inventory_supplier",
+            "update": true
+          },
+          {
+            "id": 123,
+            "name": "canDeleteInventorySupplier",
+            "resourceType": "inventory_supplier",
+            "delete": true
+          },
+          {
+            "id": 124,
+            "name": "canViewUserActivity",
+            "resourceType": "user_activity",
+            "view": true
+          },
+          {
+            "id": 125,
+            "name": "canViewEmployeeDepartment",
+            "resourceType": "employee_department",
+            "view": true
+          },
+          {
+            "id": 126,
+            "name": "canCreateEmployeeDepartment",
+            "resourceType": "employee_department",
+            "create": true
+          },
+          {
+            "id": 127,
+            "name": "canUpdateEmployeeDepartment",
+            "resourceType": "employee_department",
+            "update": true
+          },
+          {
+            "id": 128,
+            "name": "canDeleteEmployeeDepartment",
+            "resourceType": "employee_department",
+            "delete": true
+          },
+          {
+            "id": 129,
+            "name": "canViewEmployeeTitle",
+            "resourceType": "employee_title",
+            "view": true
+          },
+          {
+            "id": 130,
+            "name": "canCreateEmployeeTitle",
+            "resourceType": "employee_title",
+            "create": true
+          },
+          {
+            "id": 131,
+            "name": "canUpdateEmployeeTitle",
+            "resourceType": "employee_title",
+            "update": true
+          },
+          {
+            "id": 132,
+            "name": "canDeleteEmployeeTitle",
+            "resourceType": "employee_title",
+            "delete": true
+          },
+          {
+            "id": 133,
+            "name": "canViewBranch",
+            "resourceType": "branch",
+            "view": true
+          },
+          {
+            "id": 134,
+            "name": "canCreateBranch",
+            "resourceType": "branch",
+            "create": true
+          },
+          {
+            "id": 135,
+            "name": "canUpdateBranch",
+            "resourceType": "branch",
+            "update": true
+          },
+          {
+            "id": 136,
+            "name": "canDeleteBranch",
+            "resourceType": "branch",
+            "delete": true
+          },
+          {
+            "id": 137,
+            "name": "canApplyInvoiceDiscount",
+            "resourceType": "invoice_discount",
+            "create": true
+          },
+          {
+            "id": 167,
+            "name": "canDisableAutomaticInvoiceNumber",
+            "resourceType": "invoice_manual_number",
+            "create": true
+          },
+          {
+            "id": 138,
+            "name": "inventory.read",
+            "resourceType": "inventory_cap_inventory_read",
+            "view": true
+          },
+          {
+            "id": 139,
+            "name": "inventory.create",
+            "resourceType": "inventory_cap_inventory_create",
+            "view": true
+          },
+          {
+            "id": 140,
+            "name": "inventory.post",
+            "resourceType": "inventory_cap_inventory_post",
+            "view": true
+          },
+          {
+            "id": 141,
+            "name": "inventory.count",
+            "resourceType": "inventory_cap_inventory_count",
+            "view": true
+          },
+          {
+            "id": 142,
+            "name": "inventory.adjust",
+            "resourceType": "inventory_cap_inventory_adjust",
+            "view": true
+          },
+          {
+            "id": 143,
+            "name": "inventory.reassign",
+            "resourceType": "inventory_cap_inventory_reassign",
+            "view": true
+          },
+          {
+            "id": 144,
+            "name": "inventory.holder.manage",
+            "resourceType": "inventory_cap_inventory_holder_manage",
+            "view": true
+          },
+          {
+            "id": 145,
+            "name": "inventory.scope.all",
+            "resourceType": "inventory_cap_inventory_scope_all",
+            "view": true
+          },
+          {
+            "id": 146,
+            "name": "catalog.manage",
+            "resourceType": "inventory_cap_catalog_manage",
+            "view": true
+          },
+          {
+            "id": 147,
+            "name": "routes.read",
+            "resourceType": "inventory_cap_routes_read",
+            "view": true
+          },
+          {
+            "id": 148,
+            "name": "routes.manage",
+            "resourceType": "inventory_cap_routes_manage",
+            "view": true
+          },
+          {
+            "id": 149,
+            "name": "sales.read",
+            "resourceType": "inventory_cap_sales_read",
+            "view": true
+          },
+          {
+            "id": 150,
+            "name": "sales.record",
+            "resourceType": "inventory_cap_sales_record",
+            "view": true
+          },
+          {
+            "id": 151,
+            "name": "sales.post",
+            "resourceType": "inventory_cap_sales_post",
+            "view": true
+          },
+          {
+            "id": 152,
+            "name": "payments.read",
+            "resourceType": "inventory_cap_payments_read",
+            "view": true
+          },
+          {
+            "id": 153,
+            "name": "payments.record",
+            "resourceType": "inventory_cap_payments_record",
+            "view": true
+          },
+          {
+            "id": 154,
+            "name": "payments.verify",
+            "resourceType": "inventory_cap_payments_verify",
+            "view": true
+          },
+          {
+            "id": 155,
+            "name": "payments.manage",
+            "resourceType": "inventory_cap_payments_manage",
+            "view": true
+          },
+          {
+            "id": 156,
+            "name": "payments.allocate",
+            "resourceType": "inventory_cap_payments_allocate",
+            "view": true
+          },
+          {
+            "id": 157,
+            "name": "payments.handover",
+            "resourceType": "inventory_cap_payments_handover",
+            "view": true
+          },
+          {
+            "id": 158,
+            "name": "payments.handover.receive",
+            "resourceType": "inventory_cap_payments_handover_receive",
+            "view": true
+          },
+          {
+            "id": 159,
+            "name": "collections.read",
+            "resourceType": "inventory_cap_collections_read",
+            "view": true
+          },
+          {
+            "id": 160,
+            "name": "collections.settle",
+            "resourceType": "inventory_cap_collections_settle",
+            "view": true
+          },
+          {
+            "id": 161,
+            "name": "closeout.read",
+            "resourceType": "inventory_cap_closeout_read",
+            "view": true
+          },
+          {
+            "id": 162,
+            "name": "closeout.record",
+            "resourceType": "inventory_cap_closeout_record",
+            "view": true
+          },
+          {
+            "id": 163,
+            "name": "closeout.finalize",
+            "resourceType": "inventory_cap_closeout_finalize",
+            "view": true
+          },
+          {
+            "id": 164,
+            "name": "closeout.reopen",
+            "resourceType": "inventory_cap_closeout_reopen",
+            "view": true
+          },
+          {
+            "id": 165,
+            "name": "reports.read",
+            "resourceType": "inventory_cap_reports_read",
+            "view": true
+          },
+          {
+            "id": 166,
+            "name": "audit.read",
+            "resourceType": "inventory_cap_audit_read",
+            "view": true
+          },
+          {
+            "id": 168,
+            "name": "sales.approve-unpaid",
+            "resourceType": "inventory_cap_sales_approve_unpaid",
+            "view": true
+          },
+          {
+            "id": 169,
+            "name": "canViewZellePayment",
+            "resourceType": "zelle_payment",
+            "view": true
+          },
+          {
+            "id": 170,
+            "name": "canCreateZellePayment",
+            "resourceType": "zelle_payment",
+            "create": true
+          },
+          {
+            "id": 171,
+            "name": "canUpdateZellePayment",
+            "resourceType": "zelle_payment",
+            "update": true
+          },
+          {
+            "id": 172,
+            "name": "canDeleteZellePayment",
+            "resourceType": "zelle_payment",
+            "delete": true
+          },
+          {
+            "id": 173,
+            "name": "canViewDeposit",
+            "resourceType": "deposit",
+            "view": true
+          },
+          {
+            "id": 174,
+            "name": "canCreateDeposit",
+            "resourceType": "deposit",
+            "create": true
+          },
+          {
+            "id": 175,
+            "name": "canUpdateDeposit",
+            "resourceType": "deposit",
+            "update": true
+          },
+          {
+            "id": 176,
+            "name": "canDeleteDeposit",
+            "resourceType": "deposit",
+            "delete": true
+          },
+          {
+            "id": 177,
+            "name": "canViewCreditCardPayment",
+            "resourceType": "credit_card_payment",
+            "view": true
+          },
+          {
+            "id": 178,
+            "name": "canCreateCreditCardPayment",
+            "resourceType": "credit_card_payment",
+            "create": true
+          },
+          {
+            "id": 179,
+            "name": "canUpdateCreditCardPayment",
+            "resourceType": "credit_card_payment",
+            "update": true
+          },
+          {
+            "id": 180,
+            "name": "canDeleteCreditCardPayment",
+            "resourceType": "credit_card_payment",
+            "delete": true
+          },
+          {
+            "id": 181,
+            "name": "canListInvoicePolicy",
+            "resourceType": "invoice_policy",
+            "view": true
+          },
+          {
+            "id": 182,
+            "name": "canViewInvoicePolicy",
+            "resourceType": "invoice_policy",
+            "view": true
+          },
+          {
+            "id": 183,
+            "name": "canCreateInvoicePolicy",
+            "resourceType": "invoice_policy",
+            "create": true
+          },
+          {
+            "id": 184,
+            "name": "canUpdateInvoicePolicy",
+            "resourceType": "invoice_policy",
+            "update": true
+          },
+          {
+            "id": 185,
+            "name": "canDeleteInvoicePolicy",
+            "resourceType": "invoice_policy",
+            "delete": true
+          },
+          {
+            "id": 186,
+            "name": "canListCheck",
+            "resourceType": "check",
+            "view": true
+          },
+          {
+            "id": 187,
+            "name": "canListZellePayment",
+            "resourceType": "zelle_payment",
+            "view": true
+          },
+          {
+            "id": 188,
+            "name": "canListDeposit",
+            "resourceType": "deposit",
+            "view": true
+          },
+          {
+            "id": 189,
+            "name": "canListCreditCardPayment",
+            "resourceType": "credit_card_payment",
+            "view": true
+          },
+          {
+            "id": 190,
+            "name": "canViewPredefinedRoute",
+            "resourceType": "predefined_route",
+            "view": true
+          },
+          {
+            "id": 191,
+            "name": "canCreatePredefinedRoute",
+            "resourceType": "predefined_route",
+            "create": true
+          },
+          {
+            "id": 192,
+            "name": "canUpdatePredefinedRoute",
+            "resourceType": "predefined_route",
+            "update": true
+          },
+          {
+            "id": 193,
+            "name": "canDeletePredefinedRoute",
+            "resourceType": "predefined_route",
+            "delete": true
+          },
+          {
+            "id": 197,
+            "name": "canViewAssignedAppointments",
+            "resourceType": "pickup",
+            "view": true
+          },
+          {
+            "id": 196,
+            "name": "canUpdateAssignedAppointments",
+            "resourceType": "pickup",
+            "update": true
+          },
+          {
+            "id": 195,
+            "name": "canViewAssignedDeliveries",
+            "resourceType": "delivery",
+            "view": true
+          },
+          {
+            "id": 194,
+            "name": "canUpdateAssignedDeliveries",
+            "resourceType": "delivery",
+            "update": true
+          },
+          {
+            "id": 198,
+            "name": "canUpdateFinancialActivity",
+            "resourceType": "financial_activity",
+            "update": true
+          },
+          {
+            "id": 200,
+            "name": "canCreateFinancialAdjustment",
+            "resourceType": "financial_adjustment",
+            "create": true
+          },
+          {
+            "id": 199,
+            "name": "canViewFinancialActivity",
+            "resourceType": "financial_activity",
+            "view": true
+          },
+          {
+            "id": 201,
+            "name": "canGenerateInvoicePool",
+            "resourceType": "invoice_pool",
+            "create": true
+          },
+          {
+            "id": 202,
+            "name": "canAssignInvoicePool",
+            "resourceType": "invoice_pool",
+            "update": true
+          },
+          {
+            "id": 203,
+            "name": "canViewInvoicePool",
+            "resourceType": "invoice_pool",
+            "view": true
+          },
+          {
+            "id": 204,
+            "name": "canGenerateOwnInvoicePool",
+            "resourceType": "invoice_pool_self",
+            "create": true
+          },
+          {
+            "id": 205,
+            "name": "canReconcileInventoryDispatch",
+            "resourceType": "inventory_dispatch"
+          },
+          {
+            "id": 206,
+            "name": "canReconcileJournal",
+            "resourceType": "journal"
+          },
+          {
+            "id": 207,
+            "name": "canCreateAssignedInvoice",
+            "resourceType": "invoice",
+            "create": true
+          },
+          {
+            "id": 211,
+            "name": "canManageDailyRouteRecords",
+            "resourceType": "daily_route_work",
+            "update": true
+          },
+          {
+            "id": 210,
+            "name": "canViewChangeRequest",
+            "resourceType": "change_request",
+            "view": true
+          },
+          {
+            "id": 209,
+            "name": "canApproveChangeRequest",
+            "resourceType": "change_request",
+            "update": true
+          },
+          {
+            "id": 213,
+            "name": "canConfirmInventoryCustodian",
+            "resourceType": "inventory_confirmation",
+            "update": true
+          },
+          {
+            "id": 215,
+            "name": "canVoidJournal",
+            "resourceType": "journal",
+            "delete": true
+          },
+          {
+            "id": 218,
+            "name": "canListJournal",
+            "resourceType": "journal",
+            "view": true
+          },
+          {
+            "id": 217,
+            "name": "canClearJournal",
+            "resourceType": "journal",
+            "update": true
+          },
+          {
+            "id": 216,
+            "name": "canAnnotateJournal",
+            "resourceType": "journal",
+            "update": true
+          },
+          {
+            "id": 214,
+            "name": "canConfirmInventoryWarehouse",
+            "resourceType": "inventory_confirmation",
+            "update": true
+          },
+          {
+            "id": 208,
+            "name": "canCreateChangeRequest",
+            "resourceType": "change_request",
+            "create": true
+          },
+          {
+            "id": 212,
+            "name": "canOperateDailyRoute",
+            "resourceType": "daily_route_work",
+            "view": true
+          },
+          {
+            "id": 219,
+            "name": "canUnlockInvoiceRange",
+            "resourceType": "invoice_numbering",
+            "update": true
+          }
+        ],
+        "error": "",
+        "duration": 0.0472635,
+        "page": 1,
+        "resultsPerPage": 500,
+        "total": 218,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read approval grant catalog",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Set only temporary approval role grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Read owned approval source",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Other-route approval target denied",
+      "method": "GET",
+      "path": "/change-requests/target?resourceType=pickup&resourceId=21896",
+      "http": 403,
+      "response": {
+        "success": false,
+        "message": "change request permission or assigned scope required",
+        "error": "change request permission or assigned scope required. Suggested solution: Ask an administrator to grant the required permission, then try again."
+      }
+    },
+    {
+      "label": "Requester cannot access another route's target",
+      "passed": true,
+      "http": 403,
+      "message": "change request permission or assigned scope required"
+    },
+    {
+      "label": "Requester target",
+      "method": "GET",
+      "path": "/change-requests/target?resourceType=pickup&resourceId=21895",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change target context",
+        "data": {
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "version": "v1:c406fae66f5c6a3000d3d961c753d24ee6550e551f729d1923841ec89c308397",
+          "allowedActions": {
+            "approve_change": false,
+            "request_update": true,
+            "request_void": true
+          }
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read requester target context",
+      "passed": true,
+      "http": 200,
+      "message": "Change target context"
+    },
+    {
+      "label": "Create own UPDATE request",
+      "method": "POST",
+      "path": "/change-requests",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Change requested",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-assigned-update"
+          },
+          "id": "163ec3be-1aff-4103-98b1-214e33edb7ef",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-REQUEST-REJECT"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:fdff4602fb9c8618505658eb566c2419ccc40552b09d07976afb108d86376915",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "status": "PENDING",
+          "createdAt": "2026-11-12T23:39:16.202960262Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Create own protected change request",
+      "passed": true,
+      "http": 201,
+      "message": "Change requested"
+    },
+    {
+      "label": "Read owned approval source",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Submitting change leaves source unchanged",
+      "passed": true
+    },
+    {
+      "label": "Create request replay",
+      "method": "POST",
+      "path": "/change-requests",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Change requested",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-assigned-update"
+          },
+          "id": "163ec3be-1aff-4103-98b1-214e33edb7ef",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-REQUEST-REJECT"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:fdff4602fb9c8618505658eb566c2419ccc40552b09d07976afb108d86376915",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "status": "PENDING",
+          "createdAt": "2026-11-12T23:39:16.202Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Identical change creation replays same request ID",
+      "passed": true,
+      "http": 201,
+      "message": "Change requested"
+    },
+    {
+      "label": "Reviewer grant missing",
+      "method": "POST",
+      "path": "/change-requests/163ec3be-1aff-4103-98b1-214e33edb7ef/approve",
+      "http": 403,
+      "response": {
+        "success": false,
+        "message": "change request permission or assigned scope required",
+        "error": "change request permission or assigned scope required. Suggested solution: Ask an administrator to grant the required permission, then try again."
+      }
+    },
+    {
+      "label": "Requester without reviewer grant cannot approve",
+      "passed": true,
+      "http": 403,
+      "message": "change request permission or assigned scope required"
+    },
+    {
+      "label": "Admin rejects own fixture request",
+      "method": "POST",
+      "path": "/change-requests/163ec3be-1aff-4103-98b1-214e33edb7ef/reject",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change reviewed",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-assigned-update"
+          },
+          "id": "163ec3be-1aff-4103-98b1-214e33edb7ef",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-REQUEST-REJECT"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:fdff4602fb9c8618505658eb566c2419ccc40552b09d07976afb108d86376915",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "reviewedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "status": "REJECTED",
+          "reviewReason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06 rejection control",
+          "createdAt": "2026-11-12T23:39:16.202Z",
+          "reviewedAt": "2026-11-12T23:39:16.990118846Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read owned approval source",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Authorized rejection succeeds without changing source",
+      "passed": true,
+      "http": 200,
+      "message": "Change reviewed"
+    },
+    {
+      "label": "Requester target",
+      "method": "GET",
+      "path": "/change-requests/target?resourceType=pickup&resourceId=21895",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change target context",
+        "data": {
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "version": "v1:fdff4602fb9c8618505658eb566c2419ccc40552b09d07976afb108d86376915",
+          "allowedActions": {
+            "approve_change": false,
+            "request_update": true,
+            "request_void": true
+          }
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read requester target context",
+      "passed": true,
+      "http": 200,
+      "message": "Change target context"
+    },
+    {
+      "label": "Create own UPDATE request",
+      "method": "POST",
+      "path": "/change-requests",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Change requested",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-assigned-update"
+          },
+          "id": "52daa3a5-0699-4008-88e0-72b472d4421e",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-SELF-APPROVED"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:a2d4362f8d8ff257096e81995be8514d0a4e516a2ffb599e116728f4464aa695",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "status": "PENDING",
+          "createdAt": "2026-11-12T23:39:17.570810638Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Create own protected change request",
+      "passed": true,
+      "http": 201,
+      "message": "Change requested"
+    },
+    {
+      "label": "Set only temporary approval role grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Authorized self-approval",
+      "method": "POST",
+      "path": "/change-requests/52daa3a5-0699-4008-88e0-72b472d4421e/approve",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change reviewed",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-assigned-update"
+          },
+          "id": "52daa3a5-0699-4008-88e0-72b472d4421e",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-SELF-APPROVED"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:a2d4362f8d8ff257096e81995be8514d0a4e516a2ffb599e116728f4464aa695",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "reviewedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "status": "APPROVED",
+          "reviewReason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06 self approval",
+          "createdAt": "2026-11-12T23:39:17.57Z",
+          "reviewedAt": "2026-11-12T23:39:18.043274096Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read owned approval source",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Explicit authorized reviewer may approve own request",
+      "passed": true,
+      "http": 200,
+      "message": "Change reviewed"
+    },
+    {
+      "label": "Repeated approval",
+      "method": "POST",
+      "path": "/change-requests/52daa3a5-0699-4008-88e0-72b472d4421e/approve",
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "change request or source record changed; refresh before retrying",
+        "error": "change request or source record changed; refresh before retrying. Suggested solution: Resolve the reported conflict and try again."
+      }
+    },
+    {
+      "label": "Read owned approval source",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Repeated review leaves one applied change",
+      "passed": true,
+      "http": 409,
+      "message": "change request or source record changed; refresh before retrying"
+    },
+    {
+      "label": "Requester target",
+      "method": "GET",
+      "path": "/change-requests/target?resourceType=pickup&resourceId=21895",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change target context",
+        "data": {
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "version": "v1:2dd40c2bc663da53486795fd185323825ae07beca5890ec5cde8a2959b06f63e",
+          "allowedActions": {
+            "approve_change": true,
+            "request_update": true,
+            "request_void": true
+          }
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read requester target context",
+      "passed": true,
+      "http": 200,
+      "message": "Change target context"
+    },
+    {
+      "label": "Create own UPDATE request",
+      "method": "POST",
+      "path": "/change-requests",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Change requested",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-SELF-APPROVED"
+          },
+          "id": "6224fb33-f0f0-4a2b-89c2-1e567c9ea41d",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-STALE-PROPOSED"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:4c182c26df17194ac37c8d6d39c873a280f6e9f3c41e2a87404e546bf9a25a97",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "status": "PENDING",
+          "createdAt": "2026-11-12T23:39:18.753094597Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Create own protected change request",
+      "passed": true,
+      "http": 201,
+      "message": "Change requested"
+    },
+    {
+      "label": "Admin changes only owned source after request",
+      "passed": false,
+      "http": 409,
+      "message": "a protected change is awaiting approval"
+    },
+    {
+      "label": "Set only temporary approval role grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Retained fixture change-request audit IDs",
+      "ids": [
+        "163ec3be-1aff-4103-98b1-214e33edb7ef",
+        "52daa3a5-0699-4008-88e0-72b472d4421e",
+        "6224fb33-f0f0-4a2b-89c2-1e567c9ea41d"
+      ]
+    },
+    {
+      "label": "Cleanup /pickups/21896",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Cleanup /pickups/21895",
+      "passed": false,
+      "http": 409,
+      "message": "a protected change is awaiting approval"
+    },
+    {
+      "label": "Cleanup /vehicle-routes/6af64e1eaf602e5fa9536739",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Cleanup /vehicle-routes/6af64e1eaf602e5fa9536738",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Cleanup /employees/252",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Cleanup /users/141",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Cleanup /roles/69",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Cleanup customer 6af64e1eaf602e5fa953673a",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    },
+    {
+      "label": "Cleanup customer 6af64e1eaf602e5fa953673d",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful"
+    }
+  ]
+}

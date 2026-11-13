@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 import { SessionTransactionsLayout } from "@/components/accounting/session-transactions-panel";
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
@@ -45,7 +45,6 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const transactionSessionId = useId();
   const [summaryContainer, setSummaryContainer] = useState<HTMLDivElement | null>(null);
   const [entryActive, setEntryActive] = useState(false);
-  const [headerActionsContainer, setHeaderActionsContainer] = useState<HTMLDivElement | null>(null);
   const { notifySuccess, notifyError } = useFeedback();
   const { hasPermission } = useAuth();
   const canUpdateJournals = hasPermission(PERMISSIONS.journalsUpdate.name, PERMISSIONS.journalsUpdate.resourceType);
@@ -80,6 +79,12 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
   const paymentMethodsQuery = useAccountingPaymentMethods(true);
+  const entryLookups = [employeesQuery, dailyRoutesQuery, invoicesQuery, accountsQuery, bankAccountsQuery, paymentMethodsQuery];
+  const lookupLoading = entryLookups.some((query) => query.isLoading);
+  const failedLookups = entryLookups.filter((query) => query.isError);
+  const lookupError = failedLookups.length ? normalizeApiError(failedLookups[0].error).message : null;
+  const retryLookups = () => { for (const query of failedLookups) void query.refetch(); };
+
   const createJournal = useCreateDailyIncomeJournal(transactionSessionId);
   const updateJournal = useUpdateDailyIncomeJournal();
 
@@ -136,7 +141,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   if (isEditing && journalQuery.isLoading) {
     return (
       <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
-        <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
+        <div role="status" className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {t("accounting.dailyIncome.loading.transaction")}
         </div>
@@ -151,7 +156,8 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
     return (
       <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
-          <p className="text-sm text-destructive">{message}</p>
+          <p role="alert" className="text-sm text-destructive">{message}</p>
+          {journalQuery.isError ? <Button variant="outline" disabled={journalQuery.isFetching} onClick={() => void journalQuery.refetch()}>{t("common.actions.retry")}</Button> : null}
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
             {t("common.actions.close")}
           </Button>
@@ -163,7 +169,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   if (statementQuery.isLoading || currentStatementQuery.isLoading) {
     return (
       <FormTabShell title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}>
-        <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
+        <div role="status" className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {t("accounting.dailyIncome.loading.closeout")}
         </div>
@@ -178,7 +184,11 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
     return (
       <FormTabShell title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
-          <p className="text-sm text-destructive">{message}</p>
+          <p role="alert" className="text-sm text-destructive">{message}</p>
+          {statementQuery.isError || currentStatementQuery.isError ? <Button variant="outline" disabled={statementQuery.isFetching || currentStatementQuery.isFetching} onClick={() => {
+            if (statementQuery.isError) void statementQuery.refetch();
+            if (currentStatementQuery.isError) void currentStatementQuery.refetch();
+          }}>{t("common.actions.retry")}</Button> : null}
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
             {t("common.actions.close")}
           </Button>
@@ -216,7 +226,11 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       compactHeader
       title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}
       description={description}
-      actions={!isEditing ? <div ref={setHeaderActionsContainer} className="empty:hidden" /> : null}
+      actions={!isEditing && !entryActive ? (
+        <Button type="button" variant="ghost" size="icon" aria-label={t("common.actions.close")} disabled={isSubmitting} onClick={() => closeFormTabAndReturn(tabId)}>
+          <X className="size-4" />
+        </Button>
+      ) : undefined}
       className="min-w-0 max-w-5xl"
     >
       {isEditing && initialValues ? (
@@ -233,6 +247,9 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}
           paymentMethods={paymentMethodsQuery.data ?? []}
+          lookupLoading={lookupLoading}
+          lookupError={lookupError}
+          onRetryLookups={retryLookups}
           isSubmitting={isSubmitting}
           error={formError}
           onSubmit={saveJournal}
@@ -245,7 +262,6 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           mode="add"
           summaryContainer={summaryContainer}
           summaryCurrency={statement.currency}
-          headerActionsContainer={headerActionsContainer}
           onEntryActiveChange={setEntryActive}
           employees={employees}
           dailyRoutes={dailyRoutes}
@@ -255,6 +271,9 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}
           paymentMethods={paymentMethodsQuery.data ?? []}
+          lookupLoading={lookupLoading}
+          lookupError={lookupError}
+          onRetryLookups={retryLookups}
           isSubmitting={isSubmitting}
           error={formError}
           onSubmit={saveJournal}

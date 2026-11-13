@@ -1,5 +1,9 @@
 {
   "errors": {
+    "pieceBatchSize": "Select between 1 and 200 distinct numeric piece IDs.",
+    "pieceIdInvalid": "Each piece ID must be a positive 32-bit integer.",
+    "pieceIdsDuplicate": "Select distinct piece IDs; duplicate IDs are not allowed.",
+
     "deliveredRouteLocked": "Delivered barcodes must keep the daily route that delivered them. They cannot be reassigned or unassigned.",
     "createFailed": "Unable to create barcode.",
     "updateFailed": "Unable to update barcode.",

@@ -186,10 +186,10 @@ test("financial clearance stays off by default and follows creation only when ex
  const result=await createJournalWithClearance({...input,values:{...input.values,clearPaymentOnSave:true}},dependencies);
  assert.equal(result.clearanceStatus,"CLEARED");
  assert.equal(result.reconciliationStatus,"RECONCILED");
- assert.deepEqual(commands,["create",["clear",{requestId:"fixed-request",ids:["new-entry"]}],["reconcile",{requestId:"fixed-request",ids:["new-entry"]}]]);
+ assert.deepEqual(commands,["create",["clear",{requestId:"fixed-request",ids:["new-entry"]}]]);
 });
 
-test("bank payments reconcile only after a confirmed clearance", async () => {
+test("confirmed bank clearance reconciles without a standalone grant or request", async () => {
  const {createJournalWithClearance}=loader()("src/lib/accounting/daily-income/create-journal-with-clearance.ts");
  const journal={id:"entry",clearanceStatus:"OUTSTANDING",reconciliationStatus:"OUTSTANDING"};
  const input={statement:{id:1},values:{transactionType:"PAYMENT",paymentMethodName:"ZELLE",amount:20,clearPaymentOnSave:true}};
@@ -200,11 +200,12 @@ test("bank payments reconcile only after a confirmed clearance", async () => {
  assert.equal(reconciles,0);
  const withoutGrant=await createJournalWithClearance(input,{...base,canReconcile:false,clear:async()=>({data:{cleared:["entry"],clearedAt:"t"}})});
  assert.equal(withoutGrant.clearanceStatus,"CLEARED");
- assert.equal(withoutGrant.reconciliationStatus,"OUTSTANDING");
+ assert.equal(withoutGrant.reconciliationStatus,"RECONCILED");
  assert.equal(reconciles,0);
  const failed=await createJournalWithClearance(input,{...base,clear:async()=>({data:{cleared:["entry"],clearedAt:"t"}}),reconcile:async()=>{throw new Error("Network failure");}});
  assert.equal(failed.clearanceStatus,"CLEARED");
- assert.equal(failed.reconciliationStatus,"OUTSTANDING");
+ assert.equal(failed.reconciliationStatus,"RECONCILED");
+ assert.equal(reconciles,0);
 });
 
 test("clearance failure keeps the saved journal and never retries creation", async () => {
@@ -239,7 +240,7 @@ test("bank income and expenses clear instead of auto-reconciling on creation", a
   assert.deepEqual(calls,["create"]);
   calls.length=0;
   const cleared=await createJournalWithClearance({...input,values:{...input.values,clearPaymentOnSave:true}},dependencies);
-  assert.deepEqual(calls,["create","clear","reconcile"]);
+  assert.deepEqual(calls,["create","clear"]);
   assert.equal(cleared.clearanceStatus,"CLEARED");
  }
 });

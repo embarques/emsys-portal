@@ -151,7 +151,7 @@ test("phone formats have download fallback and multiple uploads show progress", 
         "This format cannot be previewed here. Download the original file to open it.",
       )
       .waitFor();
-    await page.locator('input[type="file"]').setInputFiles([
+    await page.locator('input[type="file"][multiple]').setInputFiles([
       {
         name: "new-photo.heic",
         mimeType: "image/heic",
@@ -322,7 +322,7 @@ for (const failOnce of [false, true]) {
         await page.getByRole("button", { name: "Retry", exact: true }).click();
       }
       await page.waitForFunction(() => window.completedUploads === 1);
-      assert.equal(await page.getByText("Uploaded", { exact: true }).count(), 2);
+      assert.equal(await page.locator('[aria-live="polite"]').getByText("Uploaded", { exact: true }).count(), 2);
       assert.equal(await page.getByRole("button", { name: "agreement.png", exact: true }).count(), 1);
     } finally {
       await page.close();

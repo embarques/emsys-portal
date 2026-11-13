@@ -8,6 +8,7 @@ import { PaymentPendingInvoicesDialog } from "@/components/orders/payment-pendin
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { isImeComposing } from "@/hooks/use-form-enter-navigation";
 import { useSenderPendingInvoices } from "@/lib/invoices/hooks/use-sender-pending-invoices";
 import { appendCommentText, formatPendingInvoicesComment } from "@/lib/invoices/sender-pending-invoices";
 import type { Invoice } from "@/lib/invoices/types";
@@ -572,6 +573,7 @@ export function OrderCommentsEditor({
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
+                    if (isImeComposing(event)) return;
                     if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
                   }
                 }} />
@@ -585,6 +587,7 @@ export function OrderCommentsEditor({
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
+                    if (isImeComposing(event)) return;
                     if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
                   }
                 }} />

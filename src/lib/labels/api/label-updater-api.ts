@@ -3,7 +3,7 @@ import { createRecordId } from "@/lib/customers/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 import { formatUserErrorMessage } from "@/lib/errors/format-user-error";
 import { assertBarcodeRouteChangeAllowed } from "@/lib/labels/route-assignment-policy";
-import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
+import { fetchRouteDateGuard } from "@/lib/pickup-delivery-routes/api/route-business-date-api";
 import { translateCurrent } from "@/lib/i18n/translate-current";
 import { fetchBarcodeStatusOptions } from "@/lib/barcodes/api/barcode-status-options-api";
 import {
@@ -388,7 +388,8 @@ async function performBarcodeScanUpdate(
   let updated: Barcode;
   assertBarcodeRouteChangeAllowed(existing.status, existing.route, payload.route);
   if (payload.route && payload.route.id !== existing.route?.id) {
-    assertAssignableRouteDate(options.newRouteDate ?? "");
+    const assertRouteDate = await fetchRouteDateGuard(options.newRouteBranchId);
+    assertRouteDate(options.newRouteDate ?? "");
   }
   if (embedded) {
     const status =

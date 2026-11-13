@@ -21,6 +21,7 @@ type InventoryDocumentMobileListProps<T extends { id: string }> = {
   query: string;
   pageRows: T[];
   isLoading: boolean;
+  isSearching?: boolean;
   page: number;
   totalPages: number;
   onQueryChange: (query: string) => void;
@@ -42,6 +43,7 @@ export function InventoryDocumentMobileList<T extends { id: string }>({
   query,
   pageRows,
   isLoading,
+  isSearching = false,
   page,
   totalPages,
   onQueryChange,
@@ -66,7 +68,7 @@ export function InventoryDocumentMobileList<T extends { id: string }>({
         ) : null}
       </div>
 
-      <TableSearchInput
+      <TableSearchInput isLoading={isSearching}
         value={query}
         onChange={(value) => {
           onQueryChange(value);

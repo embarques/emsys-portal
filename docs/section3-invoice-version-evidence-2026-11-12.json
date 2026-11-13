@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-11-12T18:38:08.360Z",
+  "invoiceId": "6af5febebdc3aed480bf8152",
+  "evidence": [
+    {
+      "label": "missing version",
+      "http": 428,
+      "response": {
+        "success": false,
+        "message": "VERSION_REQUIRED",
+        "error": "VERSION_REQUIRED. Suggested solution: Review the request method, headers, path, and payload before trying again."
+      },
+      "afterHttp": 200,
+      "versionUnchanged": true
+    },
+    {
+      "label": "stale version",
+      "http": 412,
+      "response": {
+        "success": false,
+        "message": "STALE_VERSION",
+        "error": "STALE_VERSION. Suggested solution: Review the request method, headers, path, and payload before trying again."
+      },
+      "afterHttp": 200,
+      "versionUnchanged": true
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import {
 } from "@/components/app-shell/floating-utility-panel-styles";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { isImeComposing } from "@/hooks/use-form-enter-navigation";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -186,6 +187,7 @@ export function FloatingCalculator() {
 
       if (event.key === "Enter" || event.key === "=") {
         event.preventDefault();
+        if (isImeComposing(event)) return;
         setState((current) => reduceState(current, { type: "equals" }));
         return;
       }

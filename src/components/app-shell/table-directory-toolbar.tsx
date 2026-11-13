@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Filter } from "lucide-react";
+import { ChevronDown, Filter, Loader2 } from "lucide-react";
 
 import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { FilterPresetMenu } from "@/components/app-shell/filter-preset-menu";
@@ -191,6 +191,8 @@ function TableFilterDropdown({ open, onOpenChange, activeCount = 0, children }: 
 
 type TableDirectoryToolbarProps = {
   search: ReactNode;
+  /** Waiting for debounce or fetching fresh results, including cached-data refetches. */
+  isLoading?: boolean;
   /** Compact count/summary shown inline beside search (keeps toolbar one row tall). */
   searchSummary?: string;
   filtersOpen?: boolean;
@@ -205,6 +207,7 @@ type TableDirectoryToolbarProps = {
 
 export function TableDirectoryToolbar({
   search,
+  isLoading = false,
   searchSummary,
   filtersOpen = false,
   onFiltersOpenChange,
@@ -214,6 +217,7 @@ export function TableDirectoryToolbar({
   columnLayout,
   actions,
 }: TableDirectoryToolbarProps) {
+  const { t } = useTranslation();
   const showFilter = showFilterToggle && onFiltersOpenChange;
   const showRightCluster = searchSummary || columnLayout || actions;
 
@@ -230,11 +234,17 @@ export function TableDirectoryToolbar({
             {filterPanel}
           </TableFilterDropdown>
         ) : null}
+        {isLoading ? (
+          <span role="progressbar" aria-label={t("common.ui.searching")} className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
+            <span className="hidden sm:inline">{t("common.ui.searching")}</span>
+          </span>
+        ) : null}
       </div>
 
       {showRightCluster ? (
         <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
-          {searchSummary ? (
+          {searchSummary && !isLoading ? (
             <span
               className="hidden shrink-0 items-center rounded-full border border-border/70 bg-muted/50 px-2.5 py-1 text-xs font-medium tabular-nums text-muted-foreground sm:inline-flex"
               aria-live="polite"
@@ -263,6 +273,7 @@ type TableFilterPanelPresets = {
 
 type TableFilterPanelProps = {
   title?: string;
+  isLoading?: boolean;
   resultSummary?: string;
   onClearAll?: () => void;
   presets?: TableFilterPanelPresets;
@@ -272,6 +283,7 @@ type TableFilterPanelProps = {
 
 export function TableFilterPanel({
   title,
+  isLoading = false,
   resultSummary,
   onClearAll,
   presets,
@@ -291,8 +303,8 @@ export function TableFilterPanel({
       <div className="flex items-start justify-between gap-3 border-b px-4 py-3">
         <div className="min-w-0 space-y-0.5">
           <h3 className="text-sm font-semibold leading-none">{panelTitle}</h3>
-          {resultSummary ? (
-            <p className="text-xs text-muted-foreground">{resultSummary}</p>
+          {isLoading || resultSummary ? (
+            <p className="text-xs text-muted-foreground">{isLoading ? t("common.ui.searching") : resultSummary}</p>
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-3">

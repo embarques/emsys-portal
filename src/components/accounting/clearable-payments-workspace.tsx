@@ -261,12 +261,12 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
             <CardTitle>{t(`${i18n}.title`)}</CardTitle>
             <CardDescription>{t(`${i18n}.description`)}</CardDescription>
           </div>
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel
+              <TableAdvancedFilterPanel isLoading={isFetching || isSearchPending}
                 presetScope={`accounting-${config.queryKeySegment}`}
                 open={filtersOpen}
                 rows={filterRows}
@@ -342,7 +342,7 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
             columns={columnLayout.columns}
             rows={payments}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(payment) => payment.id}
             rowLabel={(payment) => payment.paymentReference || payment.invoice.number}
             columnLayout={columnLayout}

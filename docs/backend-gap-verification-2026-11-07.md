@@ -1,5 +1,7 @@
 # Backend verification — pending and unverified findings
 
+Historical snapshot. Latest recheck: [November 12, 2026](backend-gap-test-sweep-2026-11-12.md).
+
 Open findings from the November 7, 2026 checks against
 `https://api.embarqueros.com/v1`, company `64d5c0b0d1eab2aaf30b1819`.
 

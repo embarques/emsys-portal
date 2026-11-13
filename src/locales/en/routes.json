@@ -1,5 +1,7 @@
 {
   "errors": {
+    "businessDateChanged": "The route business date changed. Refresh the route selection and try again.",
+    "businessDateUnavailable": "Unable to verify the route business date. Reopen this form to try again.",
     "pastAssignment": "Choose a daily route dated today or later. Past daily routes cannot receive new assignments.",
     "notFound": "Route not found.",
     "crewMinimum": "Select at least two crew members.",

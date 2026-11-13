@@ -1,13 +1,14 @@
 "use client";
 
 import type { JournalWriteOptions } from "./duplicate-payment";
+import { useRef } from "react";
+import { createJournalCreateSession } from "./journal-create-session";
 
 import { keepPreviousData, useMutation, useMutationState, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
-  createDailyIncomeJournal,
   createIncomeStatement,
   fetchAccountingPaymentMethods,
   fetchDailyIncomeJournal,
@@ -26,9 +27,9 @@ import type {
   DailyIncomeStatement,
   DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
-import { clearJournals, fetchIncomeStatementJournalCount, reconcileJournals } from "@/lib/accounting/daily-income/reconciliation-api";
+import { clearJournals, fetchIncomeStatementJournalCount } from "@/lib/accounting/daily-income/reconciliation-api";
 import { createJournalWithClearance } from "./create-journal-with-clearance";
-import { getAutoClearPermission, getPaymentClearancePermission } from "./auto-clear";
+import { getPaymentClearancePermission } from "./auto-clear";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useAppSelector } from "@/lib/store/hooks";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -160,17 +161,16 @@ export function useCreateDailyIncomeJournal(sessionId?: string) {
   const queryClient = useQueryClient();
   const { companyId, user, hasPermission } = useAuth();
   const clearancePermission = getPaymentClearancePermission();
-  const reconciliationPermission = getAutoClearPermission();
+  const create = useRef<ReturnType<typeof createJournalCreateSession> | null>(null);
+  if (create.current === null) { create.current = createJournalCreateSession(); }
   return useMutation({
     mutationKey: ["daily-income-created", companyId, user?.uid, ...(sessionId ? [sessionId] : [])],
     gcTime: Infinity,
     mutationFn: ({ statement, values, options }: { statement: DailyIncomeStatement; values: DailyIncomeJournalValues; options?: JournalWriteOptions }) =>
       createJournalWithClearance({ statement, values, options }, {
         canClear: hasPermission(clearancePermission.name, clearancePermission.resourceType),
-        canReconcile: hasPermission(reconciliationPermission.name, reconciliationPermission.resourceType),
-        create: (input) => createDailyIncomeJournal(input.statement, input.values, input.options),
+        create: (input) => create.current!(`${companyId}:${user?.uid}`, input.statement, input.values, input.options),
         clear: clearJournals,
-        reconcile: reconcileJournals,
         newRequestId: () => crypto.randomUUID(),
       }),
     retry: false,

@@ -78,7 +78,8 @@ function parseArgs(argv) {
     } else if (arg === "--bearer") {
       opts.useBearer = true;
     } else if (arg === "--skip-crud") {
-      // Forwarded by test-all-apis; this suite is read-only already.
+      // A read-only sweep must not attempt writes, even to test their rejection.
+      opts.skipReadonlyCheck = true;
     } else if (arg === "--skip-readonly-check") {
       opts.skipReadonlyCheck = true;
     } else if (arg.startsWith("-")) {

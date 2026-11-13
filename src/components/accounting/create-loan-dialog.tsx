@@ -13,7 +13,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useCreateLoanForm } from "@/lib/accounting/loans/use-create-loan-form";
 import { formatLoanMoney } from "@/lib/accounting/loans/display";
@@ -44,10 +44,11 @@ export function CreateLoanDialog(props: Props) {
   </Dialog>;
 }
 
-export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange, continuous = false, summaryContainer }: Props & { continuous?: boolean; summaryContainer?: HTMLElement | null }) {
+export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange, continuous = false, guided = false, summaryContainer }: Props & { continuous?: boolean; guided?: boolean; summaryContainer?: HTMLElement | null }) {
   const { t } = useTranslation();
   const text = (key: string) => t(`accounting.loans.createForm.${key}`);
-  const state = useCreateLoanForm(onSubmit, pending, continuous);
+  const singlePage = continuous && !guided;
+  const state = useCreateLoanForm(onSubmit, pending, singlePage);
   const { form, step, busy, closeoutReady, setCloseoutReady } = state;
   const { register, setValue, watch, formState: { errors } } = form;
   const values = watch();
@@ -62,32 +63,35 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
     {rows.map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words whitespace-pre-wrap text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}
   </dl>;
   return <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={event => { event.preventDefault(); void state.advance(); }}>
-    {!continuous ? <div className="shrink-0 border-b px-5 py-4"><TransactionWizardStepper step={step} labels={stepLabels} disabled={busy} onSelectStep={state.setStep} /></div> : null}
+    {!singlePage ? <div className="shrink-0 border-b px-5 py-4"><TransactionWizardStepper step={step} labels={stepLabels} disabled={busy} onSelectStep={state.setStep} /></div> : null}
     <FormBody workflow isBusy={busy}>
-      {!continuous ? <h2 ref={heading} tabIndex={-1} className="text-base font-semibold outline-none">{stepLabels[step - 1]}</h2> : null}
+      {!singlePage ? <header className="max-w-2xl space-y-2"><h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{stepLabels[step - 1]}</h2>{guided ? <p className="text-sm leading-relaxed text-muted-foreground">{t(`accounting.dailyIncome.wizard.stepHints.${["loanAssignment", "loanDetails", "loanReview"][step - 1]}`)}</p> : null}</header> : null}
       <fieldset disabled={busy} className="min-w-0 space-y-4">
-        <div className={continuous || step === 1 ? "space-y-4" : "hidden"}>
+        <div className={singlePage || step === 1 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={User} title={text("steps.employee")} description={text("employeeHint")}>
             <div className="space-y-2">{requiredLabel("loan-employee", text("employee"))}
-              <SearchableSelect id="loan-employee" aria-label={text("employee")} aria-invalid={Boolean(errors.employeeId)} value={values.employeeId ? String(values.employeeId) : ""}
+              <SearchableSelect
+                inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="loan-employee" aria-label={text("employee")} aria-invalid={Boolean(errors.employeeId)} value={values.employeeId ? String(values.employeeId) : ""}
                 onValueChange={next => { const employee = employees.find(item => item.id === Number(next)); setValue("employeeId", employee?.id ?? 0, { shouldValidate: true }); setValue("employeeName", employee?.name ?? ""); }}
                 options={employees.map(employee => ({ value: String(employee.id), label: employee.name }))} placeholder={text("selectEmployee")} searchPlaceholder={text("searchEmployees")} mobileSheet />
               {fieldError("employeeId")}
             </div>
           </FormSection>
         </div>
-        <div className={continuous || step === 2 ? "space-y-4" : "hidden"}>
+        <div className={singlePage || step === 2 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={Banknote} title={text("accounts")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">{requiredLabel("loan-account", text("loanAccount"))}
-                <SearchableSelect id="loan-account" aria-label={text("loanAccount")} aria-invalid={Boolean(errors.loanAccountId)} value={values.loanAccountId ? String(values.loanAccountId) : ""}
+                <SearchableSelect
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="loan-account" aria-label={text("loanAccount")} aria-invalid={Boolean(errors.loanAccountId)} value={values.loanAccountId ? String(values.loanAccountId) : ""}
                   onValueChange={next => { const account = loanAccounts.find(item => item.id === Number(next)); if (account?.id !== values.loanAccountId) setCloseoutReady(false); setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("loanAccountName", account?.displayName ?? account?.name ?? ""); setValue("loanAccountType", account?.type); }}
                   options={loanAccounts.map(account => ({ value: String(account.id), label: `${account.displayName ?? account.name}${account.branch?.name ? ` (${account.branch.name})` : ""}`, keywords: [account.name, account.displayName ?? "", account.branch?.name ?? ""] }))}
                   placeholder={text("selectLoanAccount")} searchPlaceholder={text("searchLoanAccounts")} mobileSheet />
                 {fieldError("loanAccountId")}
               </div>
               <div className="space-y-2">{requiredLabel("loan-source-account", text("sourceAccount"))}
-                <SearchableSelect id="loan-source-account" aria-label={text("sourceAccount")} aria-invalid={Boolean(errors.sourceAccountId)} value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
+                <SearchableSelect
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="loan-source-account" aria-label={text("sourceAccount")} aria-invalid={Boolean(errors.sourceAccountId)} value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
                   onValueChange={next => { const account = assetAccounts.find(item => item.id === Number(next)); setValue("sourceAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("sourceAccountName", account?.displayName ?? account?.name ?? ""); setValue("sourceAccountType", account?.type); }}
                   options={assetAccounts.map(account => ({ value: String(account.id), label: account.displayName ?? account.name, keywords: [account.name, account.displayName ?? ""] }))}
                   placeholder={text("selectSourceAccount")} searchPlaceholder={text("searchAssetAccounts")} mobileSheet />
@@ -140,12 +144,12 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
       ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
     ]} />, summaryContainer) : null}
     <div className="shrink-0 space-y-3 border-t bg-card px-5 py-4">
-      {errors.root?.server?.message ? <FormFooterNoticeMessage tone="error" message={errors.root.server.message} /> : (continuous || step > 1) && !closeoutReady ? <FormFooterNoticeMessage tone="warning" message={text("closeoutRequired")} /> : null}
+      {errors.root?.server?.message ? <FormFooterNoticeMessage tone="error" message={errors.root.server.message} /> : (singlePage || step > 1) && !closeoutReady ? <FormFooterNoticeMessage tone="warning" message={text("closeoutRequired")} /> : null}
       <div className="flex items-center justify-between gap-3">
-        <div>{!continuous && step > 1 ? <Button type="button" variant="outline" disabled={busy} onClick={() => state.setStep(step - 1)}><ArrowLeft className="size-4" />{t("common.actions.previous")}</Button> : null}</div>
-        <div className="flex items-center gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>{t("common.actions.cancel")}</Button><Button type="submit" disabled={busy || ((continuous || step > 1) && !closeoutReady)}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : continuous || step === 3 ? <Save className="size-4" /> : <ArrowRight className="size-4" />}
-          {busy ? t("common.actions.saving") : continuous || step === 3 ? text("title") : t("common.actions.next")}
+        <div>{!singlePage && step > 1 ? <Button type="button" variant="outline" disabled={busy} onClick={() => state.setStep(step - 1)}><ArrowLeft className="size-4" />{t("common.actions.previous")}</Button> : null}</div>
+        <div className="flex items-center gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>{t("common.actions.cancel")}</Button><Button type="submit" disabled={busy || ((singlePage || step > 1) && !closeoutReady)}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : singlePage || step === 3 ? <Save className="size-4" /> : <ArrowRight className="size-4" />}
+          {busy ? t("common.actions.saving") : singlePage || step === 3 ? text("title") : t("common.actions.next")}
         </Button></div>
       </div>
     </div>

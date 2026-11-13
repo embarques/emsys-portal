@@ -1,0 +1,1777 @@
+{
+  "checkedAt": "2026-11-12T18:25:06.939Z",
+  "marker": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e",
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/branches?page=1&limit=100&offset=0&sort=name%3Aasc",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": 14,
+            "name": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+            "code": "ZB98f160",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:50:23.401Z",
+            "updatedAt": "2026-11-12T17:50:23.401Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 22,
+            "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:10:32.879Z",
+            "updatedAt": "2026-11-12T18:10:32.879Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 19,
+            "name": "CODEX-BANK-638b9714-12da-4001-bab3-d060f4653dd7",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:58:09.041Z",
+            "updatedAt": "2026-11-12T17:58:09.041Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 18,
+            "name": "CODEX-BANK-7ef3cb6c-1153-49b9-bd90-31bb71c2ac26",
+            "code": "ZB8a285c",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:57:16.148Z",
+            "updatedAt": "2026-11-12T17:57:16.148Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 20,
+            "name": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:59:16.958Z",
+            "updatedAt": "2026-11-12T17:59:16.958Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 17,
+            "name": "CODEX-BANK-9451de66-d039-4ece-8181-642767eeda74",
+            "code": "ZB84cc4a",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:56:03.014Z",
+            "updatedAt": "2026-11-12T17:56:03.014Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 12,
+            "name": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+            "code": "ZB1599e1",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T01:15:49.586Z",
+            "updatedAt": "2026-11-12T01:15:49.586Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 21,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:00:27.807Z",
+            "updatedAt": "2026-11-12T18:00:27.807Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 13,
+            "name": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+            "code": "ZB41df6a",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T01:16:38.64Z",
+            "updatedAt": "2026-11-12T01:16:38.64Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 15,
+            "name": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+            "code": "ZB419e69",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:53:52.85Z",
+            "updatedAt": "2026-11-12T17:53:52.85Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 23,
+            "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:19:13.214Z",
+            "updatedAt": "2026-11-12T18:19:13.214Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "phones": [
+              {
+                "type": "business",
+                "number": "+17185621300",
+                "displayNumber": "(718) 562-1300",
+                "isPrimary": true
+              }
+            ],
+            "logo": "media/logo/tenareslogo.png",
+            "settings": {
+              "labelPrefix": "ET",
+              "printLabelCount": true,
+              "roundDecimalPlaces": 2,
+              "defaultLabelStatus": 1
+            },
+            "createdAt": "2026-09-11T00:13:27.767Z",
+            "updatedAt": "2026-10-20T15:56:53.971Z",
+            "createdBy": {
+              "id": 1,
+              "name": "jpAdmin"
+            },
+            "updatedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 2,
+            "name": "Embarque Tenares (RD)",
+            "code": "RD",
+            "address": {
+              "id": "000000000000000000000000",
+              "city": "Puerto Plata",
+              "country": "DO"
+            },
+            "logo": "media/logo/tenareslogo.png",
+            "settings": {
+              "labelPrefix": "ET",
+              "printLabelCount": true,
+              "roundDecimalPlaces": 2,
+              "defaultLabelStatus": 1
+            },
+            "createdAt": "2026-09-11T00:13:27.767Z",
+            "updatedAt": "2026-09-11T00:13:27.767Z",
+            "createdBy": {
+              "id": 1,
+              "name": "jpAdmin"
+            }
+          },
+          {
+            "id": 11,
+            "name": "ZZ_REMAINING_1794016013612_ISOLATED_CLOSEOUT",
+            "type": "office",
+            "code": "ZZ13612",
+            "address": {
+              "id": "000000000000000000000000",
+              "city": "New York",
+              "state": "NY",
+              "country": "US"
+            },
+            "createdAt": "2026-11-07T01:46:53.922Z",
+            "updatedAt": "2026-11-07T01:46:53.922Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        ],
+        "error": "",
+        "duration": 0.038861875,
+        "page": 1,
+        "resultsPerPage": 100,
+        "total": 14,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/customers",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:fffa9e453c72ae5dbfc0fdcdbca152f443f6df1c7b24e052f9dc753d724bb274",
+          "id": "6af6047ebdc3aed480bf81a5",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-0",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550101",
+              "displayNumber": "(202) 555-0101",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:02.730664967Z",
+          "updatedAt": "2026-11-12T18:25:02.730664967Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047ebdc3aed480bf81a4",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.505439958,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047ebdc3aed480bf81a5",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:fffa9e453c72ae5dbfc0fdcdbca152f443f6df1c7b24e052f9dc753d724bb274",
+          "id": "6af6047ebdc3aed480bf81a5",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-0",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550101",
+              "displayNumber": "(202) 555-0101",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:02.73Z",
+          "updatedAt": "2026-11-12T18:25:02.73Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047ebdc3aed480bf81a4",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.016630709,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/branches?page=1&limit=100&offset=0&sort=name%3Aasc",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": 14,
+            "name": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+            "code": "ZB98f160",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:50:23.401Z",
+            "updatedAt": "2026-11-12T17:50:23.401Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 22,
+            "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:10:32.879Z",
+            "updatedAt": "2026-11-12T18:10:32.879Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 19,
+            "name": "CODEX-BANK-638b9714-12da-4001-bab3-d060f4653dd7",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:58:09.041Z",
+            "updatedAt": "2026-11-12T17:58:09.041Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 18,
+            "name": "CODEX-BANK-7ef3cb6c-1153-49b9-bd90-31bb71c2ac26",
+            "code": "ZB8a285c",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:57:16.148Z",
+            "updatedAt": "2026-11-12T17:57:16.148Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 20,
+            "name": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:59:16.958Z",
+            "updatedAt": "2026-11-12T17:59:16.958Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 17,
+            "name": "CODEX-BANK-9451de66-d039-4ece-8181-642767eeda74",
+            "code": "ZB84cc4a",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:56:03.014Z",
+            "updatedAt": "2026-11-12T17:56:03.014Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 12,
+            "name": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+            "code": "ZB1599e1",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T01:15:49.586Z",
+            "updatedAt": "2026-11-12T01:15:49.586Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 21,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:00:27.807Z",
+            "updatedAt": "2026-11-12T18:00:27.807Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 13,
+            "name": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+            "code": "ZB41df6a",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T01:16:38.64Z",
+            "updatedAt": "2026-11-12T01:16:38.64Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 15,
+            "name": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+            "code": "ZB419e69",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:53:52.85Z",
+            "updatedAt": "2026-11-12T17:53:52.85Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 23,
+            "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:19:13.214Z",
+            "updatedAt": "2026-11-12T18:19:13.214Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "phones": [
+              {
+                "type": "business",
+                "number": "+17185621300",
+                "displayNumber": "(718) 562-1300",
+                "isPrimary": true
+              }
+            ],
+            "logo": "media/logo/tenareslogo.png",
+            "settings": {
+              "labelPrefix": "ET",
+              "printLabelCount": true,
+              "roundDecimalPlaces": 2,
+              "defaultLabelStatus": 1
+            },
+            "createdAt": "2026-09-11T00:13:27.767Z",
+            "updatedAt": "2026-10-20T15:56:53.971Z",
+            "createdBy": {
+              "id": 1,
+              "name": "jpAdmin"
+            },
+            "updatedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 2,
+            "name": "Embarque Tenares (RD)",
+            "code": "RD",
+            "address": {
+              "id": "000000000000000000000000",
+              "city": "Puerto Plata",
+              "country": "DO"
+            },
+            "logo": "media/logo/tenareslogo.png",
+            "settings": {
+              "labelPrefix": "ET",
+              "printLabelCount": true,
+              "roundDecimalPlaces": 2,
+              "defaultLabelStatus": 1
+            },
+            "createdAt": "2026-09-11T00:13:27.767Z",
+            "updatedAt": "2026-09-11T00:13:27.767Z",
+            "createdBy": {
+              "id": 1,
+              "name": "jpAdmin"
+            }
+          },
+          {
+            "id": 11,
+            "name": "ZZ_REMAINING_1794016013612_ISOLATED_CLOSEOUT",
+            "type": "office",
+            "code": "ZZ13612",
+            "address": {
+              "id": "000000000000000000000000",
+              "city": "New York",
+              "state": "NY",
+              "country": "US"
+            },
+            "createdAt": "2026-11-07T01:46:53.922Z",
+            "updatedAt": "2026-11-07T01:46:53.922Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        ],
+        "error": "",
+        "duration": 0.035113208,
+        "page": 1,
+        "resultsPerPage": 100,
+        "total": 14,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/customers",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:e94ae31b62780c08eadbee901316ea436f1b2bd91cd35078d0eda765b8cda1f2",
+          "id": "6af6047fbdc3aed480bf81a8",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-1",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550102",
+              "displayNumber": "(202) 555-0102",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:03.809657926Z",
+          "updatedAt": "2026-11-12T18:25:03.809657926Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047fbdc3aed480bf81a7",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.422361667,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047fbdc3aed480bf81a8",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:e94ae31b62780c08eadbee901316ea436f1b2bd91cd35078d0eda765b8cda1f2",
+          "id": "6af6047fbdc3aed480bf81a8",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-1",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550102",
+              "displayNumber": "(202) 555-0102",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:03.809Z",
+          "updatedAt": "2026-11-12T18:25:03.809Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047fbdc3aed480bf81a7",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.015526792,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/customers/6af6047ebdc3aed480bf81a5",
+      "body": {
+        "id": "6af6047ebdc3aed480bf81a5",
+        "addresses": [
+          {
+            "id": "6af6047ebdc3aed480bf81a4",
+            "address1": "1 Fixture St",
+            "city": "Brooklyn",
+            "state": "NY",
+            "zipcode": "10451",
+            "country": "US",
+            "isPrimary": true
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:0a82a6d163098fceea6bf4bed1cd5e5028caa37d96b340539afb71799de16e8d",
+          "id": "6af6047ebdc3aed480bf81a5",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-0",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550101",
+              "displayNumber": "(202) 555-0101",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:02.73Z",
+          "updatedAt": "2026-11-12T18:25:04.523Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047ebdc3aed480bf81a4",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Brooklyn",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.460225875,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047ebdc3aed480bf81a5",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:0a82a6d163098fceea6bf4bed1cd5e5028caa37d96b340539afb71799de16e8d",
+          "id": "6af6047ebdc3aed480bf81a5",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-0",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550101",
+              "displayNumber": "(202) 555-0101",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:02.73Z",
+          "updatedAt": "2026-11-12T18:25:04.523Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047ebdc3aed480bf81a4",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Brooklyn",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.01627925,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/branches?page=1&limit=100&offset=0&sort=name%3Aasc",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": 14,
+            "name": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+            "code": "ZB98f160",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:50:23.401Z",
+            "updatedAt": "2026-11-12T17:50:23.401Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 22,
+            "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:10:32.879Z",
+            "updatedAt": "2026-11-12T18:10:32.879Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 19,
+            "name": "CODEX-BANK-638b9714-12da-4001-bab3-d060f4653dd7",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:58:09.041Z",
+            "updatedAt": "2026-11-12T17:58:09.041Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 18,
+            "name": "CODEX-BANK-7ef3cb6c-1153-49b9-bd90-31bb71c2ac26",
+            "code": "ZB8a285c",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:57:16.148Z",
+            "updatedAt": "2026-11-12T17:57:16.148Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 20,
+            "name": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:59:16.958Z",
+            "updatedAt": "2026-11-12T17:59:16.958Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 17,
+            "name": "CODEX-BANK-9451de66-d039-4ece-8181-642767eeda74",
+            "code": "ZB84cc4a",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:56:03.014Z",
+            "updatedAt": "2026-11-12T17:56:03.014Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 12,
+            "name": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+            "code": "ZB1599e1",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T01:15:49.586Z",
+            "updatedAt": "2026-11-12T01:15:49.586Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 21,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:00:27.807Z",
+            "updatedAt": "2026-11-12T18:00:27.807Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 13,
+            "name": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+            "code": "ZB41df6a",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T01:16:38.64Z",
+            "updatedAt": "2026-11-12T01:16:38.64Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 15,
+            "name": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+            "code": "ZB419e69",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T17:53:52.85Z",
+            "updatedAt": "2026-11-12T17:53:52.85Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 23,
+            "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "createdAt": "2026-11-12T18:19:13.214Z",
+            "updatedAt": "2026-11-12T18:19:13.214Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY",
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "2249 Washington Avenue",
+              "city": "The Bronx",
+              "state": "NY",
+              "zipcode": "10457",
+              "country": "US",
+              "location": {
+                "type": "Point",
+                "coordinates": [
+                  -73.8939588,
+                  40.854537799999996
+                ]
+              }
+            },
+            "phones": [
+              {
+                "type": "business",
+                "number": "+17185621300",
+                "displayNumber": "(718) 562-1300",
+                "isPrimary": true
+              }
+            ],
+            "logo": "media/logo/tenareslogo.png",
+            "settings": {
+              "labelPrefix": "ET",
+              "printLabelCount": true,
+              "roundDecimalPlaces": 2,
+              "defaultLabelStatus": 1
+            },
+            "createdAt": "2026-09-11T00:13:27.767Z",
+            "updatedAt": "2026-10-20T15:56:53.971Z",
+            "createdBy": {
+              "id": 1,
+              "name": "jpAdmin"
+            },
+            "updatedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 2,
+            "name": "Embarque Tenares (RD)",
+            "code": "RD",
+            "address": {
+              "id": "000000000000000000000000",
+              "city": "Puerto Plata",
+              "country": "DO"
+            },
+            "logo": "media/logo/tenareslogo.png",
+            "settings": {
+              "labelPrefix": "ET",
+              "printLabelCount": true,
+              "roundDecimalPlaces": 2,
+              "defaultLabelStatus": 1
+            },
+            "createdAt": "2026-09-11T00:13:27.767Z",
+            "updatedAt": "2026-09-11T00:13:27.767Z",
+            "createdBy": {
+              "id": 1,
+              "name": "jpAdmin"
+            }
+          },
+          {
+            "id": 11,
+            "name": "ZZ_REMAINING_1794016013612_ISOLATED_CLOSEOUT",
+            "type": "office",
+            "code": "ZZ13612",
+            "address": {
+              "id": "000000000000000000000000",
+              "city": "New York",
+              "state": "NY",
+              "country": "US"
+            },
+            "createdAt": "2026-11-07T01:46:53.922Z",
+            "updatedAt": "2026-11-07T01:46:53.922Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        ],
+        "error": "",
+        "duration": 0.035850125,
+        "page": 1,
+        "resultsPerPage": 100,
+        "total": 14,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/customers/6af6047fbdc3aed480bf81a8",
+      "body": {
+        "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-0",
+        "customerType": 1,
+        "phone1": "2025550101",
+        "phones": [
+          {
+            "type": "mobile",
+            "number": "2025550101",
+            "isPrimary": true
+          }
+        ],
+        "active": true,
+        "branch": {
+          "id": 1,
+          "code": "NY",
+          "name": "Embarque Tenares"
+        },
+        "accountBalance": 0,
+        "addresses": [
+          {
+            "id": "6af6047fbdc3aed480bf81a7",
+            "address1": "1 Fixture St",
+            "city": "Bronx",
+            "state": "NY",
+            "zipcode": "10451",
+            "country": "US",
+            "isPrimary": true
+          }
+        ],
+        "id": "6af6047fbdc3aed480bf81a8",
+        "createdAt": "2026-11-12T18:25:03.809Z",
+        "updatedAt": "2026-11-12T18:25:03.809Z"
+      },
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "customer already exists",
+        "error": "customer already exists: matched by name, phone (customer id 6af6047ebdc3aed480bf81a5). Suggested solution: Use the existing customer or change the name or phone.",
+        "matchedBy": [
+          "name",
+          "phone"
+        ],
+        "existingCustomerId": "6af6047ebdc3aed480bf81a5"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047fbdc3aed480bf81a8",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:e94ae31b62780c08eadbee901316ea436f1b2bd91cd35078d0eda765b8cda1f2",
+          "id": "6af6047fbdc3aed480bf81a8",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-1",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550102",
+              "displayNumber": "(202) 555-0102",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:03.809Z",
+          "updatedAt": "2026-11-12T18:25:03.809Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047fbdc3aed480bf81a7",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.015282125,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/loans/000000000000000000000000/increases",
+      "http": 404,
+      "response": {
+        "success": false,
+        "message": "Route not found",
+        "error": "No API route matches POST /v1/loans/000000000000000000000000/increases. Suggested solution: Verify the request method and path against the API documentation."
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047ebdc3aed480bf81a5",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:0a82a6d163098fceea6bf4bed1cd5e5028caa37d96b340539afb71799de16e8d",
+          "id": "6af6047ebdc3aed480bf81a5",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-0",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550101",
+              "displayNumber": "(202) 555-0101",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:02.73Z",
+          "updatedAt": "2026-11-12T18:25:04.523Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047ebdc3aed480bf81a4",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Brooklyn",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.015850209,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/customers/6af6047ebdc3aed480bf81a5",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": null,
+        "error": "",
+        "duration": 0.323099708,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047ebdc3aed480bf81a5",
+      "http": 404,
+      "response": {
+        "success": false,
+        "message": "customer not found",
+        "error": "customer not found. Suggested solution: Verify the resource identifier and try again."
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047fbdc3aed480bf81a8",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "version": "v1:e94ae31b62780c08eadbee901316ea436f1b2bd91cd35078d0eda765b8cda1f2",
+          "id": "6af6047fbdc3aed480bf81a8",
+          "name": "CODEX-PORTAL-e1772384-b650-4d0e-85b3-78ae2ec3556e-1",
+          "customerType": 1,
+          "phones": [
+            {
+              "type": "mobile",
+              "number": "+12025550102",
+              "displayNumber": "(202) 555-0102",
+              "isPrimary": true
+            }
+          ],
+          "active": true,
+          "createdAt": "2026-11-12T18:25:03.809Z",
+          "updatedAt": "2026-11-12T18:25:03.809Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "addresses": [
+            {
+              "id": "6af6047fbdc3aed480bf81a7",
+              "isPrimary": true,
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.015117,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/customers/6af6047fbdc3aed480bf81a8",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": null,
+        "error": "",
+        "duration": 0.342828834,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/customers/6af6047fbdc3aed480bf81a8",
+      "http": 404,
+      "response": {
+        "success": false,
+        "message": "customer not found",
+        "error": "customer not found. Suggested solution: Verify the resource identifier and try again."
+      }
+    }
+  ]
+}

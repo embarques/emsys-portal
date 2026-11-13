@@ -26,6 +26,8 @@ before(async () => {
       "@/lib/api/axios$": hooks,
       "@/components/app-shell/feedback-provider$": hooks,
       "@/lib/inventory/hooks/use-inventory$": hooks,
+      "@/lib/accounting/daily-income/hooks$": hooks,
+      "@/lib/accounting/chart-accounts/hooks/use-chart-accounts$": hooks,
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/print-signatures-i18n.ts"),
       "@": path.resolve("src"),
     } },
@@ -69,7 +71,7 @@ test("lists dispatches awaiting reconciliation with their pending items", async 
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
     await page.getByRole("button", { name: "Reconcile", exact: true }).first().click();
-    await page.getByRole("dialog").getByRole("button", { name: "Save reconciliation" }).waitFor();
+    await page.getByRole("dialog").getByRole("button", { name: "Submit reconciliation" }).waitFor();
     await page.screenshot({ path: "/tmp/emsys-pending-inventory-mobile.png" });
   } finally { await page.close(); }
 });
@@ -80,10 +82,13 @@ test("reconciling validates, then posts one idempotent command per submit", asyn
     const dialog = page.getByRole("dialog");
     await dialog.getByText("Sold 5 × Small box · $60.00").waitFor();
     await dialog.getByLabel("Sold").first().fill("10");
-    await dialog.getByRole("button", { name: "Save reconciliation" }).click();
+    await dialog.getByRole("button", { name: "Submit reconciliation" }).click();
     await dialog.getByText("Enter the sale revenue in USD, for example 120.00.").waitFor();
     assert.equal(await page.evaluate(() => window.reconciliations?.length ?? 0), 0);
     await dialog.getByLabel("Sale revenue (USD)").fill("120.10");
+    await dialog.locator("#reconcile-income-employee").click();
+    await page.getByRole("option", {name: /Ana Pérez/}).click();
+    await dialog.locator("#reconcile-notes").fill("Customer will pay the outstanding sale balance.");
     await dialog.getByRole("button", { name: "Mark remaining as returned" }).first().click();
     assert.equal(await dialog.getByLabel("Returned").first().inputValue(), "15");
     await page.screenshot({ path: "/tmp/emsys-pending-inventory-dialog.png" });
@@ -105,11 +110,12 @@ test("a failed save keeps the entries and retries with the same request id", asy
     await page.getByRole("button", { name: "Reconcile", exact: true }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Lost").first().fill("2");
-    await dialog.getByRole("button", { name: "Save reconciliation" }).click();
+    await dialog.locator("#reconcile-notes").fill("Two items missing during custody count.");
+    await dialog.getByRole("button", { name: "Submit reconciliation" }).click();
     await dialog.getByText("Reconciliation failed").waitFor();
     assert.equal(await dialog.getByLabel("Lost").first().inputValue(), "2");
     await page.evaluate(() => { window.failReconcile = false; });
-    await dialog.getByRole("button", { name: "Save reconciliation" }).click();
+    await dialog.getByRole("button", { name: "Submit reconciliation" }).click();
     await dialog.waitFor({ state: "detached" });
     const ids = await page.evaluate(() => window.reconciliations.map((call) => call.body.requestId));
     assert.equal(ids.length, 2);

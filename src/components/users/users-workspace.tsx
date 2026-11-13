@@ -414,7 +414,7 @@ export function UsersWorkspace() {
 
   const deactivateMany = Array.isArray(deactivateTarget) && deactivateTarget.length > 1;
   const filtersPanel = (
-    <TableFilterPanel
+    <TableFilterPanel isLoading={isFetching || isSearchPending}
       resultSummary={listSummary}
       presets={{
         storageKey: "users",
@@ -466,7 +466,7 @@ export function UsersWorkspace() {
         <StatCards items={statCards} />
       </div>
 
-      <UserMobileList
+      <UserMobileList isSearching={isFetching || isSearchPending}
         query={filters.query}
         users={pageUsers}
         selectedIds={selectedIds}
@@ -492,7 +492,7 @@ export function UsersWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -539,7 +539,7 @@ export function UsersWorkspace() {
             columns={columnVisibility.columns}
             rows={pageUsers}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(user) => String(user.id)}
             rowLabel={(user) => user.name}
             columnLayout={columnVisibility}

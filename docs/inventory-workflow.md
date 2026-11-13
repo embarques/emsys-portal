@@ -4,6 +4,13 @@ Inventory means internal supplies, not customer merchandise. Wire models and
 commands are defined in [api-docs.json](../api-docs.json); business meaning is in
 [APP_CONTEXT.md](../APP_CONTEXT.md).
 
+Latest live fixture results: [mock-company follow-up](backend-gap-follow-up-2026-11-12.md).
+Two confirmed 10-unit receipts at $0.50/$1.00 produce 20 units valued at $15.00.
+Negative counts preserve closeout version/status; matching close, identical
+replay, reason-required reopen and reclose pass, with the prior revision snapshots
+unchanged. These 15 passing checks narrow V12; injected failures and the broader
+permission/autoReconcile and stock-disposition matrix remain open.
+
 ## Backend contract and acceptance
 
 - Verify broader concurrency and injected-failure atomicity across stock,

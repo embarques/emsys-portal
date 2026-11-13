@@ -1105,6 +1105,7 @@ function InvoiceLineItemsWizardEditor({
           </h3>
 
           <LineItemEntryFields
+            key={activeDraft.id}
             item={activeDraft}
             catalogItems={catalogItems}
             inputClass={wizardInputProps}

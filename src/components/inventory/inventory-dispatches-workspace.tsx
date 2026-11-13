@@ -282,7 +282,7 @@ export function InventoryDispatchesWorkspace() {
         />
       </div>
 
-      <InventoryDocumentMobileList
+      <InventoryDocumentMobileList isSearching={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
         title={t("inventory.submenus.dispatches")}
         description={t("inventory.pages.dispatches")}
         addLabel={t("inventory.actions.newDispatch")}
@@ -322,12 +322,12 @@ export function InventoryDispatchesWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel
+              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
                 presetScope="inventory-dispatches"
                 dynamicOptions={dynamicOptions}
                 open={filtersOpen}
@@ -383,7 +383,7 @@ export function InventoryDispatchesWorkspace() {
             columns={[t("inventory.form.fields.toHolder"), t("inventory.columns.lines"), t("inventory.columns.status")]}
           />
         ) : (
-          <DataTable
+          <DataTable isPageDataPending={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
             columns={columnVisibility.columns}
             rows={pageRows}
             page={currentPage}

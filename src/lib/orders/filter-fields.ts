@@ -21,6 +21,8 @@ const RECEIVER_ADDRESS_QUERY_FIELDS = [
   "receivers.address.zipcode",
 ];
 
+// The live API rejects routeNumber, completedBy.name, legacySyncError and legacySyncedAt.
+// Re-enable their filter controls only after API allow-list support is verified.
 export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "sender.name",
@@ -100,13 +102,6 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter route name…",
-  },
-  {
-    field: "routeNumber",
-    label: "Route number",
-    operators: [...NUMBER_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter route number…",
   },
   {
     field: "id",
@@ -269,13 +264,6 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "2026-01-01 to 2026-06-30",
   },
   {
-    field: "completedBy.name",
-    label: "Completed by",
-    operators: [...TEXT_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter user name…",
-  },
-  {
     field: "completedAt",
     label: "Completed at",
     operators: [...DATE_OPERATORS],
@@ -295,19 +283,5 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter legacy sync status…",
-  },
-  {
-    field: "legacySyncError",
-    label: "Legacy sync error",
-    operators: [...TEXT_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter legacy sync error…",
-  },
-  {
-    field: "legacySyncedAt",
-    label: "Legacy synced at",
-    operators: [...DATE_OPERATORS],
-    valueType: "text",
-    placeholder: "YYYY-MM-DD",
   },
 ];

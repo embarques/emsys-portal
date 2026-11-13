@@ -8,7 +8,7 @@ import { ReconcileDispatchDialog } from "@/components/accounting/reconcile-dispa
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -62,7 +62,7 @@ export function PendingInventoryDispatchesPanel({ presentation = "page", onBusyC
   return <div className={presentation === "inline" ? "space-y-4" : "space-y-6"}>
     {/* Flex, not grid: SearchableSelect's full-height wrapper overflows bottom-aligned grid cells. */}
     <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4">
-      <div className="min-w-0 flex-[2_1_14rem] space-y-2"><Label htmlFor="pending-inventory-holder">{text("holder")}</Label><SearchableSelect id="pending-inventory-holder" value={filters.holder || ALL_VALUE} onValueChange={(value) => filter("holder", value === ALL_VALUE ? "" : value)} options={holderOptions} loading={holdersQuery.isLoading} placeholder={text("selectHolder")} searchPlaceholder={text("searchHolders")} emptyMessage={text("noHoldersFound")} mobileSheet /></div>
+      <div className="min-w-0 flex-[2_1_14rem] space-y-2"><Label htmlFor="pending-inventory-holder">{text("holder")}</Label><SearchableSelect inlineOptionsLimit={presentation === "inline" ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="pending-inventory-holder" value={filters.holder || ALL_VALUE} onValueChange={(value) => filter("holder", value === ALL_VALUE ? "" : value)} options={holderOptions} loading={holdersQuery.isLoading} placeholder={text("selectHolder")} searchPlaceholder={text("searchHolders")} emptyMessage={text("noHoldersFound")} mobileSheet /></div>
       {DATE_FILTERS.map((name) => <div key={name} className="min-w-0 flex-[1_1_10rem] space-y-2"><Label htmlFor={`pending-inventory-${name}`}>{text(name)}</Label><Input id={`pending-inventory-${name}`} type="date" value={filters[name]} onChange={(event) => filter(name, event.target.value)} /></div>)}
       <div className="min-w-0 flex-[1_1_10rem] space-y-2"><Label htmlFor="pending-inventory-age">{text("age")}</Label><Input id="pending-inventory-age" type="number" min={0} value={filters.age} onChange={(event) => filter("age", event.target.value)} /></div>
       <Button variant="outline" onClick={() => { setFilters(initialFilters); setPage(1); }}>{text("reset")}</Button>
@@ -87,6 +87,6 @@ export function PendingInventoryDispatchesPanel({ presentation = "page", onBusyC
       {query.isFetching ? <p role="status" className="text-sm text-muted-foreground">{text("loading")}</p> : null}
       <div className="flex items-center justify-end gap-3"><Button variant="outline" disabled={page <= 1 || query.isFetching} onClick={() => setPage((value) => value - 1)}>{text("previous")}</Button><span>{page}</span><Button variant="outline" disabled={page * PENDING_DISPATCHES_PAGE_SIZE >= (query.data?.total ?? 0) || query.isFetching} onClick={() => setPage((value) => value + 1)}>{text("next")}</Button></div>
     </> : null}
-    {selected ? <ReconcileDispatchDialog key={`${companyId}:${selected.id}`} dispatch={selected} canReconcile={canReconcile} onClose={() => setSelection(null)} onBusyChange={onBusyChange} /> : null}
+    {selected ? <ReconcileDispatchDialog guided={presentation === "inline"} key={`${companyId}:${selected.id}`} dispatch={selected} canReconcile={canReconcile} onClose={() => setSelection(null)} onBusyChange={onBusyChange} /> : null}
   </div>;
 }

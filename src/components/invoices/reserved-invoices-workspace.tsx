@@ -217,7 +217,7 @@ function ReservedInvoicePoolPanel() {
               )))}
             </select>
           </label>
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={model.query.isFetching || model.searchPending}
             search={<TableSearchInput value={model.numberSearch} onChange={model.setNumberSearch} maxLength={100} placeholder={text("search")} disabled={busy || model.pending} />}
             searchSummary={remaining}
             columnLayout={columnLayout}
@@ -225,7 +225,7 @@ function ReservedInvoicePoolPanel() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableFilterPanel resultSummary={remaining}
+              <TableFilterPanel isLoading={model.query.isFetching || model.searchPending} resultSummary={remaining}
                 presets={{ storageKey: "reserved-invoices", rows: model.filterRows, fields: filterFields, onApply: model.setFilterRows }}
                 onClearAll={hasFilters ? () => { model.setFilterRows([]); model.setNumberSearch(""); } : undefined}>
                 <TableAdvancedFilterBuilder
@@ -264,7 +264,7 @@ function ReservedInvoicePoolPanel() {
               rowLabel={item => item.number}
               columnLayout={columnLayout}
               minWidth={560}
-              isPageDataPending={model.query.isFetching}
+              isPageDataPending={model.query.isFetching || model.searchPending}
               sortUnavailable
               selectable
               isRowSelectable={item => !model.selectionLocked && !item.claimed}

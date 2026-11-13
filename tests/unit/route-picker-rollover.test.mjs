@@ -17,99 +17,38 @@ function load(relative, replacements) {
   return loadedModule.exports;
 }
 
-function clockFixture(instant) {
-  const RealDate = globalThis.Date;
-  const oldWindow = globalThis.window;
-  const oldDocument = globalThis.document;
-  const oldTimezone = process.env.TZ;
-  process.env.TZ = "America/New_York";
-  let current = new RealDate(instant).getTime();
-  let next = 0;
-  const timers = new Map();
-  const listeners = new Map();
-  function target(prefix) {
-    return {
-      addEventListener: (name, callback) => listeners.set(`${prefix}:${name}`, callback),
-      removeEventListener: name => listeners.delete(`${prefix}:${name}`),
-    };
-  }
-  globalThis.Date = class extends RealDate {
-    constructor(...args) { super(...(args.length ? args : [current])); }
-  };
-  globalThis.window = {
-    ...target("window"),
-    setTimeout: (callback, delay) => { timers.set(++next, { callback, delay }); return next; },
-    clearTimeout: id => timers.delete(id),
-  };
-  globalThis.document = { ...target("document"), visibilityState: "visible" };
-  const clock = load("src/lib/pickup-delivery-routes/hooks/use-assignment-today.ts", {
-    react: { useSyncExternalStore: (subscribe, snapshot, serverSnapshot) => ({ subscribe, snapshot, serverSnapshot }) },
-    "@/lib/pickup-delivery-routes/assignment-policy": {
-      assignmentToday: () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; },
-    },
+test("assignment business clock scopes cached state, honors server midnight, and fails closed", () => {
+  let auth = { companyId: "company-1", user: {uid: "actor-1"}, roleId: 1, permissions: [], isAuthenticated: true, permissionsLoading: false };
+  let options;
+  let state = {data: {businessDate: "2026-11-11", serverTime: "2026-11-12T04:59:30Z", nextMidnight: "2026-11-12T05:00:00Z"}, dataUpdatedAt: Date.now(), isError: false, isFetching: false};
+  const hooks = load("src/lib/pickup-delivery-routes/hooks/use-assignment-today.ts", {
+    "@/lib/auth/hooks/use-auth": {useAuth: () => auth},
+    "@/lib/auth/permissions": {permissionKey: p => p.name},
+    "@/lib/query/use-workspace-query": {useWorkspaceQuery: input => {options = input; return state;}},
+    "@/lib/query/query-keys": {queryKeys: {routeBusinessDate: {detail: scope => ["route-business-date", scope]}}},
+    "@/lib/pickup-delivery-routes/api/route-business-date-api": {fetchRouteBusinessDate: () => {}, routeBusinessDateLifetime: clock => Date.parse(clock.nextMidnight) - Date.parse(clock.serverTime)},
   });
-  return {
-    clock, timers, listeners,
-    advanceTo: value => { current = new RealDate(value).getTime(); },
-    restore: () => {
-      globalThis.Date = RealDate;
-      if (oldWindow === undefined) delete globalThis.window; else globalThis.window = oldWindow;
-      if (oldDocument === undefined) delete globalThis.document; else globalThis.document = oldDocument;
-      if (oldTimezone === undefined) delete process.env.TZ; else process.env.TZ = oldTimezone;
-    },
-  };
-}
-
-for (const [instant, expectedHours] of [["2026-03-08T00:00:00", 23], ["2026-11-01T00:00:00", 25]]) {
-  test(`assignment clock schedules the actual next midnight across ${expectedHours}-hour DST day`, () => {
-    const f = clockFixture(instant);
-    try {
-      const unsubscribe = f.clock.subscribeToAssignmentDay(() => {});
-      assert.equal(f.timers.size, 1);
-      assert.equal([...f.timers.values()][0].delay, expectedHours * 60 * 60 * 1000);
-      unsubscribe();
-      assert.equal(f.timers.size, 0);
-      assert.equal(f.listeners.size, 0);
-    } finally { f.restore(); }
-  });
-}
-
-test("open assignment UI updates at midnight and recovers from background throttling without polling", () => {
-  const f = clockFixture("2026-11-10T23:59:30");
-  try {
-    const hook = f.clock.useAssignmentToday(true);
-    const observed = [];
-    const unsubscribe = hook.subscribe(() => observed.push(hook.snapshot()));
-    assert.equal(hook.snapshot(), "2026-11-10");
-    assert.equal([...f.timers.values()][0].delay, 30_000);
-    f.advanceTo("2026-11-11T00:00:00");
-    [...f.timers.values()][0].callback();
-    assert.deepEqual(observed, ["2026-11-11"]);
-    assert.equal(f.timers.size, 1, "Only the next midnight is scheduled");
-    f.advanceTo("2026-11-13T09:00:00");
-    f.listeners.get("window:focus")();
-    assert.equal(observed.at(-1), "2026-11-13");
-    f.advanceTo("2026-11-14T09:00:00");
-    f.listeners.get("document:visibilitychange")();
-    assert.equal(observed.at(-1), "2026-11-14");
-    assert.equal(f.timers.size, 1);
-    unsubscribe();
-    assert.equal(f.timers.size, 0);
-    assert.equal(f.listeners.size, 0);
-  } finally { f.restore(); }
-});
-
-test("closed assignment UI installs no timer or event listener and SSR supplies no guessed day", () => {
-  const f = clockFixture("2026-11-10T12:00:00");
-  try {
-    const hook = f.clock.useAssignmentToday(false);
-    const unsubscribe = hook.subscribe(() => {});
-    assert.equal(hook.snapshot(), "2026-11-10");
-    assert.equal(hook.serverSnapshot(), "");
-    assert.equal(f.timers.size, 0);
-    assert.equal(f.listeners.size, 0);
-    unsubscribe();
-  } finally { f.restore(); }
+  assert.equal(hooks.useAssignmentToday(true, 2), "2026-11-11", "Uses API day even though UTC day is November 12");
+  assert.equal(options.enabled, true);
+  assert.ok(options.refetchInterval({state}) > 25_000 && options.refetchInterval({state}) <= 30_000);
+  const key = options.queryKey;
+  hooks.useAssignmentToday(true, 1);
+  assert.notDeepEqual(options.queryKey, key);
+  auth = {...auth, companyId: "company-2"};
+  hooks.useAssignmentToday(true, 2);
+  assert.notDeepEqual(options.queryKey, key);
+  auth = {...auth, permissions: [{name: "canViewAssignedAppointments"}]};
+  hooks.useAssignmentToday(true, 2);
+  assert.deepEqual(options.queryKey[1].permissions, ["canViewAssignedAppointments"]);
+  state = {...state, dataUpdatedAt: Date.now() - 31_000, isFetching: true};
+  assert.equal(hooks.useAssignmentToday(true), "", "Expired day is hidden until refreshed");
+  state = {...state, dataUpdatedAt: Date.now(), isError: true};
+  assert.equal(hooks.useAssignmentToday(true), "", "Does not fall back to browser date on error");
+  assert.equal(hooks.useAssignmentToday(false), "");
+  assert.equal(options.enabled, false);
+  auth = {...auth, isAuthenticated: false};
+  hooks.useAssignmentToday(true);
+  assert.equal(options.enabled, false);
 });
 
 test("route pickers isolate company, actor and effective grants; rollover changes server filters", async () => {
@@ -125,6 +64,7 @@ test("route pickers isolate company, actor and effective grants; rollover change
     "@/lib/auth/hooks/use-auth": { useAuth: () => auth },
     "@/lib/auth/permissions": { permissionKey: p => `${p.resourceType}:${p.name}` },
     "@/lib/pickup-delivery-routes/hooks/use-assignment-today": { useAssignmentToday: () => today },
+    "@/lib/pickup-delivery-routes/api/route-business-date-api": {},
     "@/lib/query/use-workspace-query": { useWorkspaceQuery: options => options },
     "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-api": { fetchActiveRoutes: async params => { requests.push(params); return { items: [], total: 0 }; } },
     "@/lib/pickup-delivery-routes/types": { DEFAULT_ACTIVE_ROUTE_LIST_PARAMS: { page: 1, limit: 50, sort: "date:desc" } },
@@ -166,4 +106,36 @@ test("route pickers isolate company, actor and effective grants; rollover change
   today = "";
   assert.equal(hooks.useDailyRoutePicker(50, { assignable: true }).enabled, false);
   client.clear();
+});
+
+test("route-date guard uses the server calendar, passes branch/cancellation, and expires at server midnight", async () => {
+  const {z} = await import("zod");
+  let clock = {businessDate: "2026-11-11", timezone: "America/New_York", serverTime: "2026-11-12T04:59:59Z", nextMidnight: "2026-11-12T05:00:00Z"};
+  let failure;
+  const calls = [];
+  const api = load("src/lib/pickup-delivery-routes/api/route-business-date-api.ts", {
+    zod: {z},
+    "@/lib/i18n/translate-current": {translateCurrent: () => "The route business date changed"},
+    "@/lib/api/client": {apiClient: {get: async (...args) => {calls.push(args); if(failure) throw failure; return {data: clock};}}},
+    "@/lib/api/endpoints": {API_ENDPOINTS: {VEHICLE_ROUTE_BUSINESS_DATE: "/vehicle-routes/business-date"}},
+    "@/lib/pickup-delivery-routes/assignment-policy": {assertAssignableRouteDate: (date, today) => {if(date < today) throw new Error("past route");}},
+  });
+  const signal = new AbortController().signal;
+  await api.fetchRouteBusinessDate(2, signal);
+  assert.deepEqual(calls[0], ["/vehicle-routes/business-date", {params: {branchId: 2}, signal}]);
+  const previous = globalThis.performance;
+  let elapsed = 0;
+  globalThis.performance = {now: () => elapsed};
+  try {
+    const guard = await api.fetchRouteDateGuard(2);
+    guard("2026-11-11");
+    assert.throws(() => guard("2026-11-10"), /past route/);
+    elapsed = 1000;
+    assert.throws(() => guard("2026-11-11"), /business date changed/);
+    assert.equal(calls.length, 2, "Guard rechecks do not add N+1 requests");
+  } finally {globalThis.performance = previous;}
+  clock = {...clock, nextMidnight: clock.serverTime};
+  await assert.rejects(api.fetchRouteDateGuard(), /Expired route business date/);
+  failure = new Error("HTTP 403");
+  await assert.rejects(api.fetchRouteDateGuard(), /HTTP 403/);
 });

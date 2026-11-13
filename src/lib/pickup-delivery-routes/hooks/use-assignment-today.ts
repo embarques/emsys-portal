@@ -1,43 +1,36 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { assignmentToday } from "@/lib/pickup-delivery-routes/assignment-policy";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { permissionKey } from "@/lib/auth/permissions";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
+import { queryKeys } from "@/lib/query/query-keys";
+import { fetchRouteBusinessDate, routeBusinessDateLifetime } from "@/lib/pickup-delivery-routes/api/route-business-date-api";
 
-const serverDay = () => "";
-const noSubscription = () => () => {};
-
-/** Browser calendar only; API commit-time business-date validation is authoritative. */
-export function subscribeToAssignmentDay(onChange: () => void): () => void {
-  let timer: number;
-
-  function schedule() {
-    const now = new Date();
-    // Calendar construction handles both 23-hour and 25-hour DST days.
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    timer = window.setTimeout(refresh, Math.max(1, midnight.getTime() - now.getTime()));
-  }
-
-  function refresh() {
-    window.clearTimeout(timer);
-    onChange();
-    schedule();
-  }
-
-  function onVisibilityChange() {
-    if (document.visibilityState === "visible") refresh();
-  }
-
-  schedule();
-  window.addEventListener("focus", refresh);
-  document.addEventListener("visibilitychange", onVisibilityChange);
-  return () => {
-    window.clearTimeout(timer);
-    window.removeEventListener("focus", refresh);
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-  };
+/** Shared across open pickers; no polling while disabled or in a hidden workspace. */
+export function useAssignmentBusinessDate(enabled = true, branchId?: number) {
+  const { companyId, user, email, roleId, permissions, isAuthenticated, permissionsLoading } = useAuth();
+  const ready = enabled && isAuthenticated && Boolean(companyId) && !permissionsLoading;
+  const query = useWorkspaceQuery({
+    queryKey: queryKeys.routeBusinessDate.detail({
+      companyId, actorId: user?.uid || email || "", roleId,
+      permissions: permissions.map(permissionKey).sort(), authenticated: isAuthenticated, branchId: branchId ?? null,
+    }),
+    queryFn: ({ signal }) => fetchRouteBusinessDate(branchId, signal),
+    enabled: ready,
+    staleTime: 60_000,
+    refetchOnWindowFocus: "always",
+    refetchInterval: query => query.state.data
+      ? Math.max(1_000, routeBusinessDateLifetime(query.state.data) - (Date.now() - query.state.dataUpdatedAt))
+      : false,
+    retry: false,
+  });
+  // Hide the previous day during a midnight/focus refresh rather than guess its validity.
+  return { ...query, today: ready && !query.isError && !query.isFetching
+    ? query.data?.businessDate ?? "" : "" };
 }
 
-/** No polling or timers while the assignment UI is closed. */
-export function useAssignmentToday(enabled = true): string {
-  return useSyncExternalStore(enabled ? subscribeToAssignmentDay : noSubscription, assignmentToday, serverDay);
+/** Empty until the API supplies the company's business day; never guesses from the browser. */
+export function useAssignmentToday(enabled = true, branchId?: number): string {
+  const clock = useAssignmentBusinessDate(enabled, branchId);
+  return clock.today;
 }

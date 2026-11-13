@@ -20,10 +20,11 @@ type ReconcileDispatchPaymentsProps = {
   paymentMethods: AccountingLookup[];
   bankAccounts: ChartAccount[];
   loading: boolean;
+  inlineOptionsLimit?: number;
 };
 
 /** Splits the sale revenue by payment method, with the fields each method needs. */
-export function ReconcileDispatchPayments({ form, paymentMethods, bankAccounts, loading }: ReconcileDispatchPaymentsProps) {
+export function ReconcileDispatchPayments({ form, paymentMethods, bankAccounts, loading, inlineOptionsLimit }: ReconcileDispatchPaymentsProps) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.pendingInventory.dialog.${key}`, values);
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "payments", keyName: "fieldKey" });
@@ -67,6 +68,7 @@ export function ReconcileDispatchPayments({ form, paymentMethods, bankAccounts, 
                 <Label htmlFor={`reconcile-payment-${index}-method`} className="text-xs">{text("paymentMethod")}</Label>
                 <Controller control={form.control} name={`payments.${index}.paymentMethodId`} render={({ field: methodField }) => (
                   <SearchableSelect
+                    inlineOptionsLimit={inlineOptionsLimit}
                     id={`reconcile-payment-${index}-method`}
                     options={methodOptions}
                     value={methodField.value}
@@ -94,6 +96,7 @@ export function ReconcileDispatchPayments({ form, paymentMethods, bankAccounts, 
                   <Label htmlFor={`reconcile-payment-${index}-account`} className="text-xs">{text("bankAccount")}</Label>
                   <Controller control={form.control} name={`payments.${index}.paymentAccountId`} render={({ field: accountField }) => (
                     <SearchableSelect
+                      inlineOptionsLimit={inlineOptionsLimit}
                       id={`reconcile-payment-${index}-account`}
                       options={accountOptions}
                       value={accountField.value}

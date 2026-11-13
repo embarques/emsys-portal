@@ -20,6 +20,9 @@ function loadFeature(relative, apiClient, invoices) {
     function localRequire(specifier) {
       if (specifier === "@/lib/invoices/api/invoices-api") return invoices;
       if (specifier === "@/lib/api/client") return { apiClient };
+      if (specifier === "@/lib/pickup-delivery-routes/api/route-business-date-api") return {
+        fetchRouteDateGuard: async () => load(path.join(root, "src/lib/pickup-delivery-routes/assignment-policy.ts")).assertAssignableRouteDate,
+      };
       if (specifier.startsWith("@/") || specifier.startsWith(".")) {
         const target = specifier.startsWith("@/") ? path.join(root, "src", specifier.slice(2)) : path.resolve(path.dirname(filename), specifier);
         if (target.endsWith(".json")) return JSON.parse(fs.readFileSync(target, "utf8"));
@@ -246,4 +249,62 @@ test("unfinished catalog route null is sent explicitly; omitted route stays omit
   assert.equal(Object.hasOwn(sent[1], "route"), false);
   await assert.rejects(api.updateBarcode(1, { number: "A", status: { id: 7, name: "ENTREGADO" }, route: null }, { ...existing, status: { id: 7, name: "ENTREGADO" } }), /cannot be reassigned or unassigned/);
   assert.equal(sent.length, 2);
+});
+
+for (const route of [null, undefined]) {
+  test(`embedded barcode patch ${route === null ? "clears" : "preserves"} route without changing delivery identity`, async () => {
+    const invoice = { id: 42, version: `v1:${"a".repeat(64)}`, invoiceDetails: [{ barcodes: [{
+      id: 123, barcodeId: "piece", number: "A", status: { id: 6, name: "CONDUCE" },
+      route: { id: "old", name: "Old", tripNumber: 4 }, delivery: { id: 987 },
+    }] }] };
+    const writes = [];
+    const api = loadFeature("src/lib/invoices/api/invoices-api.ts", {
+      get: async () => ({ data: structuredClone(invoice) }),
+      put: async (url, body, config) => { writes.push({ url, body, config }); return { success: true }; },
+    });
+    await api.patchInvoiceEmbeddedBarcodes("42", [{ barcodeId: "piece", number: "A", status: { id: 6, name: "CONDUCE" }, ...(route === null ? { route } : {}) }]);
+    const saved = writes[0].body.invoiceDetails[0].barcodes[0];
+    assert.deepEqual(saved.route, route === null ? null : invoice.invoiceDetails[0].barcodes[0].route);
+    assert.deepEqual(saved.delivery, { id: 987 });
+    assert.deepEqual(saved.status, { id: 6, name: "CONDUCE" });
+    assert.equal(writes[0].config.headers["If-Match"], JSON.stringify(invoice.version));
+  });
+}
+
+test("delivered embedded barcode route removal is rejected before PUT", async () => {
+  let writes = 0;
+  const api = loadFeature("src/lib/invoices/api/invoices-api.ts", {
+    get: async () => ({ data: { id: 42, version: `v1:${"a".repeat(64)}`, invoiceDetails: [{ barcodes: [{ id: 123, number: "A", status: { id: 7, name: "ENTREGADO" }, route: { id: "old" } }] }] } }),
+    put: async () => { writes++; },
+  });
+  await assert.rejects(api.patchInvoiceEmbeddedBarcodes("42", [{ barcodeId: "123", number: "A", status: { id: 7, name: "ENTREGADO" }, route: null }]), /cannot be reassigned or unassigned/);
+  assert.equal(writes, 0);
+});
+
+test("atomic invoice batch validates all IDs before transport and preserves numeric IDs", async () => {
+  const writes = [];
+  const api = loadFeature(feature, { put: async (url, body) => { writes.push({url, body}); return {success: true, data: {}}; } }, {});
+  for (const invalid of [[], [1, "1"], [1, 0], [1, -1], [1, 1.5], [1, "abc"], [1, 4294967296], Array.from({length: 201}, (_, i) => i + 1)]) {
+    await assert.rejects(api.assignInvoiceItemBarcodesToRoute("route", invalid, "2099-01-01"));
+  }
+  assert.equal(writes.length, 0);
+  await api.assignInvoiceItemBarcodesToRoute("route", [1, "2", 4294967295], "2099-01-01");
+  assert.deepEqual(writes[0].body, {barcodeIds: [1, 2, 4294967295]});
+  assert.equal(writes.length, 1);
+});
+
+test("embedded update adapter forwards null and preserves omission without a catalog fallback", async () => {
+  const calls = [];
+  const api = loadFeature(feature, {
+    get: async () => {throw new Error("Unexpected catalog read");},
+    post: async () => {throw new Error("Unexpected catalog search");},
+  }, {patchInvoiceEmbeddedBarcodes: async (id, patches) => {calls.push({id, patches});}});
+  for (const route of [null, undefined]) {
+    await api.updateBarcodes([{id: 123, barcodeId: "piece", invoiceId: "42", writeTarget: "invoice-embedded", payload: {
+      number: "A", status: {id: 6, name: "CONDUCE"}, ...(route === null ? {route} : {}),
+    }}]);
+  }
+  assert.equal(calls[0].id, "42");
+  assert.equal(calls[0].patches[0].route, null);
+  assert.equal(Object.hasOwn(calls[1].patches[0], "route"), false);
 });

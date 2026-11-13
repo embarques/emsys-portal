@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
@@ -9,10 +9,11 @@ import { fetchCurrentUser } from "@/lib/users/api/users-api";
 import { fetchEmployees } from "@/lib/employees/api/employees-api";
 import { fetchActiveRoutes } from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-api";
 import { fetchChartAccounts } from "@/lib/accounting/chart-accounts/api/chart-accounts-api";
-import { createDailyIncomeJournal, fetchAccountingPaymentMethods, fetchCurrentIncomeStatement } from "@/lib/accounting/daily-income/api";
+import { fetchAccountingPaymentMethods, fetchCurrentIncomeStatement } from "@/lib/accounting/daily-income/api";
+import { createJournalCreateSession } from "@/lib/accounting/daily-income/journal-create-session";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
 import { DuplicatePaymentCancelledError, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
-import { type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { queryKeys } from "@/lib/query/query-keys";
 import { store } from "@/lib/store/store";
@@ -65,6 +66,8 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
   });
   const methods = useWorkspaceQuery({ queryKey: [...scope, "methods"], queryFn: fetchAccountingPaymentMethods, enabled });
   const confirmation = useDuplicatePaymentConfirmation(active);
+  const create = useRef<ReturnType<typeof createJournalCreateSession> | null>(null);
+  if (create.current === null) { create.current = createJournalCreateSession(); }
 
 
 
@@ -78,7 +81,7 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
       if (values.amount == null || !Number.isFinite(values.amount) || values.amount <= 0 || values.amount > fresh.data.balance) throw new Error(t("accounting.dailyIncome.form.validation.amountExceedsBalance"));
       const current = store.getState().auth;
       if (current.companyId !== session.companyId || current.idToken !== session.idToken) throw new Error(t("deliveries.wizard.balance.paymentUnavailable"));
-      return createDailyIncomeJournal(statement.data, {
+      return create.current!(`${access.companyId}:${access.actorId}`, statement.data, {
         ...values,
         transactionType: "PAYMENT",
         invoiceId: target.invoiceId!,
@@ -86,11 +89,11 @@ export function useDeliveryBalance(target: DeliverTarget, access: ReturnType<typ
         invoiceBalance: fresh.data.balance,
       }, options);
     },
-    onSuccess: async (_journal, { values }) => {
+    onSuccess: async (journal, { values }) => {
       if (store.getState().auth.companyId !== access.companyId) return;
       const clearingSegment = ({ CHECK: "checks", CHEQUE: "checks", ZELLE: "zelle-payments", DEPOSIT: "deposits", "CREDIT-CARD": "credit-card-payments" } as Record<string, string>)[values.paymentMethodName ?? ""];
 
-      setRecorded("cleared");
+      setRecorded(requiresBankAccount(values.paymentMethodName) && journal?.clearanceStatus !== "CLEARED" ? "pending" : "cleared");
       await Promise.all([
         invoice.refetch(),
         ...(clearingSegment ? [

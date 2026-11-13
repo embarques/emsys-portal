@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-11-12T23:44:19.842343+00:00",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "apiBaseUrl": "https://api.embarqueros.com/v1",
+  "apiSmoke": {
+    "passed": 20,
+    "failed": 0,
+    "wallSeconds": 764.2,
+    "retries": 0
+  },
+  "unitTests": {
+    "passed": 555,
+    "failed": 0
+  },
+  "cashConcurrencyAccountMatrix": {
+    "passed": 94,
+    "failed": 5,
+    "failureOwnership": "B10"
+  },
+  "inventoryLifecycle": {
+    "passed": 15,
+    "failed": 0
+  },
+  "scopedApprovalAndPoolGrants": {
+    "passed": 91,
+    "failed": 0
+  },
+  "reservations": {
+    "passed": 4,
+    "failed": 1,
+    "failureOwnership": "B14"
+  },
+  "capabilityProbes": {
+    "accepted": 173,
+    "unsupported": 65,
+    "loanHttp500": 4,
+    "routeProbes": 3
+  },
+  "pdfTotalsVerified": true,
+  "resolved": [
+    "B02",
+    "V01 isolated CASH scenario"
+  ],
+  "runtimeFrontendChanged": false,
+  "backendChanged": false,
+  "committed": false,
+  "evidence": [
+    "docs/backend-gap-accounts-recheck-2026-11-12.json",
+    "docs/backend-gap-readiness-recheck-2026-11-12.json",
+    "docs/backend-gap-readback-recheck-2026-11-12.json",
+    "docs/section3-bank-recheck-2026-11-12.json",
+    "docs/section3-invoice-recheck-2026-11-12.json",
+    "docs/section3-customer-loan-recheck-2026-11-12.json",
+    "docs/section3-matrix-initial-evidence-2026-11-12.json",
+    "docs/section3-matrix-evidence-2026-11-12.json",
+    "docs/section3-matrix-final-evidence-2026-11-12.json",
+    "docs/section3-cash-report-evidence-2026-11-12.json",
+    "docs/section3-reservation-evidence-2026-11-12.json",
+    "docs/section3-inventory-evidence-2026-11-12.json",
+    "docs/section3-approval-initial-evidence-2026-11-12.json",
+    "docs/section3-approval-cleanup-evidence-2026-11-12.json",
+    "docs/section3-approval-first-complete-evidence-2026-11-12.json",
+    "docs/section3-approval-evidence-2026-11-12.json"
+  ],
+  "documentationChecks": {
+    "jsonParsed": 17,
+    "markdownFiles": 9,
+    "brokenLinks": [],
+    "jwtFindings": []
+  }
+}

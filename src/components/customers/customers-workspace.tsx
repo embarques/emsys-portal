@@ -513,7 +513,7 @@ export function CustomersWorkspace() {
         ))}
       </StatCardsCarousel>
 
-      <CustomerMobileList
+      <CustomerMobileList isSearching={isFetching || isSearchPending}
         customers={customers}
         title={t("customers.title")}
         listSummary={listSummary}
@@ -560,7 +560,7 @@ export function CustomersWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -577,7 +577,7 @@ export function CustomersWorkspace() {
               />
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={listSummary}
                 presets={{
                   storageKey: "customers",
@@ -650,7 +650,7 @@ export function CustomersWorkspace() {
             columns={columnVisibility.columns}
             rows={customers}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(customer) => customer.id}
             rowLabel={(customer) => customer.name}
             columnLayout={columnVisibility}

@@ -15,6 +15,7 @@ type UserMobileListProps = {
   users: User[];
   selectedIds: string[];
   isLoading: boolean;
+  isSearching?: boolean;
   isFetching: boolean;
   isSaving: boolean;
   listErrorMessage: string | null;
@@ -39,6 +40,7 @@ export function UserMobileList({
   users,
   selectedIds,
   isLoading,
+  isSearching = false,
   isFetching,
   isSaving,
   listErrorMessage,
@@ -78,7 +80,7 @@ export function UserMobileList({
       </div>
 
       <div className="flex items-center gap-3">
-        <TableSearchInput
+        <TableSearchInput isLoading={isSearching}
           value={query}
           onChange={(value) => {
             onQueryChange(value);

@@ -1,0 +1,2323 @@
+{
+  "checkedAt": "2026-11-12T17:30:19.248718+00:00",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "apiBaseUrl": "https://api.embarqueros.com/v1",
+  "scope": {
+    "liveApiMutations": false,
+    "financialBehaviorRetested": false,
+    "authenticatedDashboardRetested": false,
+    "mockedFrontendRetested": true,
+    "notes": "Financial writes remain paused; live probes accept only GET/HEAD/OPTIONS and POST search/summary paths."
+  },
+  "apiSmoke": {
+    "passed": 20,
+    "total": 20,
+    "failed": 0,
+    "wallSeconds": 835.0
+  },
+  "tableFilters": {
+    "passed": 1364,
+    "warnings": 3,
+    "failed": 0
+  },
+  "fieldProbes": {
+    "counts": {
+      "accepted": 173,
+      "unsupported": 65,
+      "needs-review": 5,
+      "available": 1,
+      "method-not-allowed": 1
+    },
+    "results": [
+      {
+        "kind": "filter",
+        "path": "/chart-accounts",
+        "field": "createdBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/receipts",
+        "field": "notes",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/receipts",
+        "field": "lines.itemId",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/chart-accounts",
+        "field": "description",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/receipts",
+        "field": "supplierName",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"supplierName\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\""
+      },
+      {
+        "kind": "filter",
+        "path": "/chart-accounts",
+        "field": "parentAccount.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/receipts",
+        "field": "postedAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"ex"
+      },
+      {
+        "kind": "filter",
+        "path": "/chart-accounts",
+        "field": "systemAccount",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/receipts",
+        "field": "postedBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"postedBy.name\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value"
+      },
+      {
+        "kind": "filter",
+        "path": "/chart-accounts",
+        "field": "default",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/receipts",
+        "field": "supplierName",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"supplierName\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pa"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/receipts",
+        "field": "toHolderName",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"toHolderName\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pa"
+      },
+      {
+        "kind": "filter",
+        "path": "/chart-accounts",
+        "field": "branchAccount",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/receipts",
+        "field": "postedAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagina"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/receipts",
+        "field": "postedBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"postedBy.name\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"p"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "type",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "displayName",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/dispatches",
+        "field": "notes",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/dispatches",
+        "field": "lines.itemId",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/dispatches",
+        "field": "supplierName",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"supplierName\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"statu"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "branch.code",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/dispatches",
+        "field": "postedAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\""
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "parentAccount.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/dispatches",
+        "field": "postedBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"postedBy.name\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"stat"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/dispatches",
+        "field": "supplierName",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"supplierName\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "description",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/dispatches",
+        "field": "fromHolderName",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"fromHolderName\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "systemAccount",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/dispatches",
+        "field": "postedAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\""
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "default",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/dispatches",
+        "field": "postedBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"postedBy.name\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\""
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "branchAccount",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "createdAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/suppliers",
+        "field": "addresses",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/chart-accounts",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/items",
+        "field": "unitOfMeasure",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/items",
+        "field": "currency",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/items",
+        "field": "defaultSellingPriceMinor",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/suppliers",
+        "field": "contacts.email",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/items",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/pickups",
+        "field": "routeNumber",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"routeNumber\" is not allowed. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRout"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/suppliers",
+        "field": "contacts.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/pickups",
+        "field": "legacySyncError",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"legacySyncError\" is not allowed. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, daily"
+      },
+      {
+        "kind": "filter",
+        "path": "/pickups",
+        "field": "legacySyncedAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"legacySyncedAt\" is not allowed. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyR"
+      },
+      {
+        "kind": "filter",
+        "path": "/inventory/suppliers",
+        "field": "contacts.phone",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/pickups",
+        "field": "completedBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"completedBy.name\" is not allowed. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dail"
+      },
+      {
+        "kind": "sort",
+        "path": "/inventory/suppliers",
+        "field": "name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"name\" is not allowed. Allowed fields: addresses, audit.createdAt, companyName, contacts.email, contacts.name, contacts.phone, id, isActive. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"addresses\",\"operator\":\"eq\",\"value\":\"e"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/user-activities",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "date",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/user-activities",
+        "field": "timestamp",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/user-activities",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "completed",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "createdAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/user-activities",
+        "field": "activityId",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/user-activities",
+        "field": "quantity",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "sender.phone1",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/checks",
+        "field": "datePosted",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "sender.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/checks",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "sender.address.address1",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/checks",
+        "field": "clearedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "sender.address.city",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "sender.address.state",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/checks",
+        "field": "invoice.balance",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "sender.address.zipcode",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/checks",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "sector.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/checks",
+        "field": "datePosted",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "createdBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "surcharge",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "updatedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "comments.description",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "registration",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "branch.code",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "receivedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "employee.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "pickupEmployee.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "route.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "completedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "route.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "completedBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"completedBy.name\" is not allowed for sorting. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "purpose",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "officeBranch.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "routeNumber",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"routeNumber\" is not allowed for sorting. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, "
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "pickupSource",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "legacySyncStatus",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "legacySyncError",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"legacySyncError\" is not allowed for sorting. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers."
+      },
+      {
+        "kind": "sort",
+        "path": "/pickups",
+        "field": "legacySyncedAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"legacySyncedAt\" is not allowed for sorting. Allowed fields: branch.code, branch.id, branch.name, comments.description, comments.purpose, comments.quantity, comments.unit, completed, completedAt, completedBy.id, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.i"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "updatedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "invoiceDetails",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"invoiceDetails\" is not allowed. Allowed fields: address, balance, branch.id, container.containerNumber, container.id, container.name, cost, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, d"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "itemCount",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"itemCount\" is not allowed. Allowed fields: address, balance, branch.id, container.containerNumber, container.id, container.name, cost, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyR"
+      },
+      {
+        "kind": "filter",
+        "path": "/barcodes",
+        "field": "route.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "legacySyncedAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"legacySyncedAt\" is not allowed. Allowed fields: address, balance, branch.id, container.containerNumber, container.id, container.name, cost, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, d"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "branch.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"branch.name\" is not allowed. Allowed fields: address, balance, branch.id, container.containerNumber, container.id, container.name, cost, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dail"
+      },
+      {
+        "kind": "filter",
+        "path": "/barcodes",
+        "field": "delivery.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoices",
+        "field": "branch.code",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"branch.code\" is not allowed. Allowed fields: address, balance, branch.id, container.containerNumber, container.id, container.name, cost, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dail"
+      },
+      {
+        "kind": "filter",
+        "path": "/barcodes",
+        "field": "tripNumber",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/invoices",
+        "field": "number",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/barcodes",
+        "field": "barcodeId",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/invoices",
+        "field": "receivedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/barcodes",
+        "field": "number",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/barcode-statuses",
+        "field": "prevStatus",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/barcode-statuses",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/barcodes",
+        "field": "tripNumber",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/barcode-statuses",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/customers",
+        "field": "accountBalance",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/customers",
+        "field": "active",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/containers",
+        "field": "createdAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/customers",
+        "field": "notes",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"notes\" is not allowed. Allowed fields: IDNumber, accountBalance, active, addresses.active, addresses.address1, addresses.address2, addresses.apartment, addresses.city, addresses.country, addresses.isPrimary, addresses.label, addresses.phone, addresses.state, addresses.zipCode, address"
+      },
+      {
+        "kind": "filter",
+        "path": "/containers",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/customers",
+        "field": "receivers",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"receivers\" is not allowed. Allowed fields: IDNumber, accountBalance, active, addresses.active, addresses.address1, addresses.address2, addresses.apartment, addresses.city, addresses.country, addresses.isPrimary, addresses.label, addresses.phone, addresses.state, addresses.zipCode, add"
+      },
+      {
+        "kind": "filter",
+        "path": "/containers",
+        "field": "createdBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/customers",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/containers",
+        "field": "updatedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/containers",
+        "field": "barcodeSequence",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed "
+      },
+      {
+        "kind": "filter",
+        "path": "/containers",
+        "field": "deliverySequence",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "startDate",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/containers",
+        "field": "number",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"number\" is not allowed for sorting. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, con"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "endDate",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/users",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "totalLoanGiven",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/users",
+        "field": "startTime",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/users",
+        "field": "endTime",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "totalPaymentReceived",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/users",
+        "field": "createdBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "loanAmountOwed",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/users",
+        "field": "updatedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "user.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/users",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/roles",
+        "field": "systemRole",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "loanBalanceUpdated",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"loanBalanceUpdated\" is not allowed. Allowed fields: active, address.address1, address.address2, address.apartment, address.city, address.country, address.state, address.zipcode, branch.code, branch.id, branch.name, cost, createdAt, createdBy.id, createdBy.name, department, email, endD"
+      },
+      {
+        "kind": "filter",
+        "path": "/roles",
+        "field": "permissions",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"permissions\" is not allowed. Allowed fields: active, createdAt, createdBy.id, createdBy.name, id, name, systemRole, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq"
+      },
+      {
+        "kind": "filter",
+        "path": "/employees",
+        "field": "branch.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/roles",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/employees",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicles",
+        "field": "createdAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicles",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "createdAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicles",
+        "field": "updatedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicles",
+        "field": "inspectionDate",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"inspectionDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id, licensePlate, name, updatedAt, updatedBy.id, updatedBy.name, vehicleId, vin, year. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gt"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicles",
+        "field": "registrationDate",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"registrationDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id, licensePlate, name, updatedAt, updatedBy.id, updatedBy.name, vehicleId, vin, year. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, "
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "createdBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/vehicles",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicle-routes",
+        "field": "vehicle.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "updatedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicle-routes",
+        "field": "createdAt",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"createdAt\" is not allowed. Allowed fields: active, branch.code, branch.id, branch.name, container.id, container.number, date, employees.id, employees.name, employees.role, employees.roles, id, name, rate, routeType, tripNumber, vehicle.id, vehicle.name. Allowed operators: eq, neq, con"
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "address.address1",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"address.address1\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, s"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicle-routes",
+        "field": "driver.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"driver.name\" is not allowed. Allowed fields: active, branch.code, branch.id, branch.name, container.id, container.number, date, employees.id, employees.name, employees.role, employees.roles, id, name, rate, routeType, tripNumber, vehicle.id, vehicle.name. Allowed operators: eq, neq, c"
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "address.country",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"address.country\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, st"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicle-routes",
+        "field": "supervisor.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"supervisor.name\" is not allowed. Allowed fields: active, branch.code, branch.id, branch.name, container.id, container.number, date, employees.id, employees.name, employees.role, employees.roles, id, name, rate, routeType, tripNumber, vehicle.id, vehicle.name. Allowed operators: eq, ne"
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "settings.labelPrefix",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contain"
+      },
+      {
+        "kind": "filter",
+        "path": "/vehicle-routes",
+        "field": "helpers.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"helpers.name\" is not allowed. Allowed fields: active, branch.code, branch.id, branch.name, container.id, container.number, date, employees.id, employees.name, employees.role, employees.roles, id, name, rate, routeType, tripNumber, vehicle.id, vehicle.name. Allowed operators: eq, neq, "
+      },
+      {
+        "kind": "filter",
+        "path": "/branches",
+        "field": "disclaimer",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"disclaimer\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsW"
+      },
+      {
+        "kind": "sort",
+        "path": "/vehicle-routes",
+        "field": "vehicle.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/branches",
+        "field": "address.address1",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"address.address1\" is not allowed for sorting. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in,"
+      },
+      {
+        "kind": "sort",
+        "path": "/vehicle-routes",
+        "field": "driver.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"driver.name\" is not allowed for sorting. Allowed fields: active, branch.code, branch.id, branch.name, container.id, container.number, date, employees.id, employees.name, employees.role, employees.roles, id, name, rate, routeType, tripNumber, vehicle.id, vehicle.name. Allowed operators: eq, neq, contains, start"
+      },
+      {
+        "kind": "sort",
+        "path": "/branches",
+        "field": "address.country",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"address.country\" is not allowed for sorting. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, "
+      },
+      {
+        "kind": "sort",
+        "path": "/vehicle-routes",
+        "field": "supervisor.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"supervisor.name\" is not allowed for sorting. Allowed fields: active, branch.code, branch.id, branch.name, container.id, container.number, date, employees.id, employees.name, employees.role, employees.roles, id, name, rate, routeType, tripNumber, vehicle.id, vehicle.name. Allowed operators: eq, neq, contains, s"
+      },
+      {
+        "kind": "sort",
+        "path": "/vehicle-routes",
+        "field": "helpers.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"helpers.name\" is not allowed for sorting. Allowed fields: active, branch.code, branch.id, branch.name, container.id, container.number, date, employees.id, employees.name, employees.role, employees.roles, id, name, rate, routeType, tripNumber, vehicle.id, vehicle.name. Allowed operators: eq, neq, contains, star"
+      },
+      {
+        "kind": "sort",
+        "path": "/branches",
+        "field": "settings.labelPrefix",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"settings.labelPrefix\" is not allowed for sorting. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith,"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoice-descriptions",
+        "field": "createdBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"createdBy.name\" is not allowed. Allowed fields: createdAt, id, name, price, updatedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested sol"
+      },
+      {
+        "kind": "filter",
+        "path": "/employee-titles",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoice-descriptions",
+        "field": "updatedBy.name",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"updatedBy.name\" is not allowed. Allowed fields: createdAt, id, name, price, updatedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested sol"
+      },
+      {
+        "kind": "sort",
+        "path": "/employee-titles",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/invoice-descriptions",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/employee-titles",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/invoice-policies",
+        "field": "title",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/employee-departments",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/employee-departments",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/invoice-policies",
+        "field": "title",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/invoice-policies",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/employee-departments",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/invoice-policies",
+        "field": "sortOrder",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/predefined-routes",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/zelle-payments",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/zelle-payments",
+        "field": "clearedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/predefined-routes",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/predefined-routes",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/zelle-payments",
+        "field": "invoice.balance",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/deposits",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/zelle-payments",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/zelle-payments",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/deposits",
+        "field": "clearedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/deposits",
+        "field": "invoice.balance",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/credit-card-payments",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/deposits",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/credit-card-payments",
+        "field": "clearedBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deposits",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/credit-card-payments",
+        "field": "invoice.balance",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/loans",
+        "field": "description",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/credit-card-payments",
+        "field": "id",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/loans",
+        "field": "referenceNumber",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/credit-card-payments",
+        "field": "updatedAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/loans",
+        "field": "branch.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/loans",
+        "field": "paidAmount",
+        "http": 500,
+        "status": "needs-review",
+        "message": "An unexpected error occurred while processing the request. Suggested solution: Retry the request; if the problem continues, contact support."
+      },
+      {
+        "kind": "filter",
+        "path": "/loans",
+        "field": "balance",
+        "http": 500,
+        "status": "needs-review",
+        "message": "An unexpected error occurred while processing the request. Suggested solution: Retry the request; if the problem continues, contact support."
+      },
+      {
+        "kind": "filter",
+        "path": "/journals",
+        "field": "description",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "filter",
+        "path": "/journals",
+        "field": "invoice.discount",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"invoice.discount\" is not allowed. Allowed fields: accounts.name, branch.id, clearanceStatus, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyRoute.vehicle.id, date, description, employ"
+      },
+      {
+        "kind": "sort",
+        "path": "/loans",
+        "field": "balance",
+        "http": 500,
+        "status": "needs-review",
+        "message": "An unexpected error occurred while processing the request. Suggested solution: Retry the request; if the problem continues, contact support."
+      },
+      {
+        "kind": "filter",
+        "path": "/journals",
+        "field": "accounts.type",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"accounts.type\" is not allowed. Allowed fields: accounts.name, branch.id, clearanceStatus, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyRoute.vehicle.id, date, description, employee."
+      },
+      {
+        "kind": "sort",
+        "path": "/loans",
+        "field": "paidAmount",
+        "http": 500,
+        "status": "needs-review",
+        "message": "An unexpected error occurred while processing the request. Suggested solution: Retry the request; if the problem continues, contact support."
+      },
+      {
+        "kind": "filter",
+        "path": "/journals",
+        "field": "transactionBalance",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"transactionBalance\" is not allowed. Allowed fields: accounts.name, branch.id, clearanceStatus, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyRoute.vehicle.id, date, description, empl"
+      },
+      {
+        "kind": "filter",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "route.rate",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"route.rate\" is not allowed. Allowed fields: barcodeId, container.name, delivery.id, delivery.name, description, id, invoice.balance, invoice.id, invoice.number, name, number, receiver.address.city, receiver.address.state, receiver.name, route.id, route.name, sender.name, sender.phones"
+      },
+      {
+        "kind": "filter",
+        "path": "/journals",
+        "field": "currency",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"currency\" is not allowed. Allowed fields: accounts.name, branch.id, clearanceStatus, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyRoute.vehicle.id, date, description, employee.id, e"
+      },
+      {
+        "kind": "filter",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "receiver.address.address1",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"receiver.address.address1\" is not allowed. Allowed fields: barcodeId, container.name, delivery.id, delivery.name, description, id, invoice.balance, invoice.id, invoice.number, name, number, receiver.address.city, receiver.address.state, receiver.name, route.id, route.name, sender.name"
+      },
+      {
+        "kind": "filter",
+        "path": "/journals",
+        "field": "customer",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"customer\" is not allowed. Allowed fields: accounts.name, branch.id, clearanceStatus, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyRoute.vehicle.id, date, description, employee.id, e"
+      },
+      {
+        "kind": "filter",
+        "path": "/journals",
+        "field": "loan",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"loan\" is not allowed. Allowed fields: accounts.name, branch.id, clearanceStatus, createdAt, createdBy.id, createdBy.name, dailyRoute.date, dailyRoute.driver.id, dailyRoute.helpers.id, dailyRoute.id, dailyRoute.supervisor.id, dailyRoute.vehicle.id, date, description, employee.id, emplo"
+      },
+      {
+        "kind": "filter",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "receiver.phones.number",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: condition 1 in and group: field \"receiver.phones.number\" is not allowed. Allowed fields: barcodeId, container.name, delivery.id, delivery.name, description, id, invoice.balance, invoice.id, invoice.number, name, number, receiver.address.city, receiver.address.state, receiver.name, route.id, route.name, sender.name, s"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "date",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "number",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "createdAt",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "invoice.number",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "invoice.number",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "refNumber",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "accounts.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "invoice.balance",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "transactionAmount",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "route.rate",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"route.rate\" is not allowed for sorting. Allowed fields: barcodeId, container.name, delivery.id, delivery.name, description, id, invoice.balance, invoice.id, invoice.number, name, number, receiver.address.city, receiver.address.state, receiver.name, route.id, route.name, sender.name, sender.phones.isPrimary, se"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "invoice.balance",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "employee.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "transactionType",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "container.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "paymentMethod.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "route.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "createdBy.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "sender.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "reconciliationStatus",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/journals",
+        "field": "clearanceStatus",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "sender.phones.number",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "receiver.name",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "receiver.address.address1",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"receiver.address.address1\" is not allowed for sorting. Allowed fields: barcodeId, container.name, delivery.id, delivery.name, description, id, invoice.balance, invoice.id, invoice.number, name, number, receiver.address.city, receiver.address.state, receiver.name, route.id, route.name, sender.name, sender.phone"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "receiver.address.city",
+        "http": 200,
+        "status": "accepted"
+      },
+      {
+        "kind": "sort",
+        "path": "/deliveries/assigned-barcodes",
+        "field": "receiver.phones.number",
+        "http": 400,
+        "status": "unsupported",
+        "message": "search query validation failed: field \"receiver.phones.number\" is not allowed for sorting. Allowed fields: barcodeId, container.name, delivery.id, delivery.name, description, id, invoice.balance, invoice.id, invoice.number, name, number, receiver.address.city, receiver.address.state, receiver.name, route.id, route.name, sender.name, sender.phones.i"
+      },
+      {
+        "kind": "route",
+        "path": "/vehicle-routes/business-date",
+        "http": 200,
+        "status": "available"
+      },
+      {
+        "kind": "route",
+        "path": "/change-requests/search",
+        "http": 405,
+        "status": "method-not-allowed"
+      },
+      {
+        "kind": "route",
+        "path": "/loans/000000000000000000000000/increases",
+        "http": 404,
+        "status": "needs-review"
+      }
+    ],
+    "changesFromNovember11": []
+  },
+  "readback": [
+    {
+      "path": "/invoices/reserved/search",
+      "check": "Real portal reserved-invoice adapter parses live search response",
+      "status": "verified",
+      "sampleCount": 36
+    },
+    {
+      "path": "/invoices/reserved/search",
+      "check": "Reserved search honors ascending versus descending number sort",
+      "status": "verified",
+      "reason": "Comparison tests direction changes, not every collation or stable-tie case"
+    },
+    {
+      "path": "/invoices/reserved",
+      "check": "Real portal reserved-invoice summary adapter parses live response",
+      "status": "verified",
+      "remaining": 0,
+      "lowThreshold": 10
+    },
+    {
+      "path": "/invoices/reserved",
+      "check": "User-specific reserved threshold matches persisted preference",
+      "status": "verified",
+      "expected": 10,
+      "actual": 10
+    },
+    {
+      "path": "/invoices/reserved",
+      "check": "Reserved GET changes number sort direction",
+      "status": "failed",
+      "sampleCount": 5
+    },
+    {
+      "path": "/user-activities",
+      "check": "timestamp range finds a date from a stored record",
+      "status": "verified",
+      "http": 200,
+      "total": 33
+    },
+    {
+      "path": "/checks",
+      "check": "datePosted range finds a date from a stored record",
+      "status": "verified",
+      "http": 200,
+      "total": 1
+    },
+    {
+      "path": "/journals/search",
+      "check": "Stored payment reconciliation statuses cover all payment rows",
+      "status": "failed",
+      "total": 24134,
+      "classified": 3
+    },
+    {
+      "path": "/pickups",
+      "check": "Populated route-ID predicate is accepted and sample IDs are populated",
+      "status": "verified",
+      "http": 200,
+      "sampleCount": 3
+    },
+    {
+      "path": "/deliveries/assigned-barcodes",
+      "check": "Populated route-ID predicate is accepted and sample IDs are populated",
+      "status": "verified",
+      "http": 200,
+      "sampleCount": 3
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Business-date endpoint is published",
+      "status": "failed"
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Journal reconciliation enum documents NOT_REQUIRED",
+      "status": "failed"
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Clearance documentation reflects atomic reconciliation",
+      "status": "failed"
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Loan increase endpoint is published",
+      "status": "inconclusive",
+      "reason": "Schema absence alone does not prove the live POST route is absent"
+    }
+  ],
+  "readbackChangesFromNovember11": [],
+  "cashAndRetainedFinancialState": {
+    "checkedAt": "2026-11-12T17:16:08.874Z",
+    "companyId": "64d5c0b0d1eab2aaf30b1819",
+    "cashHierarchy": {
+      "http": 200,
+      "total": 11,
+      "sampled": 11,
+      "complete": true,
+      "rootId": null,
+      "eligibleHierarchyIds": [],
+      "postingHierarchyIds": [],
+      "orphanAsset4": true
+    },
+    "financialRecords": [
+      {
+        "id": "6af51348c3c7aee9f998b252",
+        "http": 200,
+        "branchId": 12,
+        "closeoutId": 32699,
+        "status": "REVERSED",
+        "clearanceStatus": "NOT_REQUIRED",
+        "reconciliationStatus": "NOT_REQUIRED",
+        "amount": 0.01
+      },
+      {
+        "id": "6af5134ac3c7aee9f998b255",
+        "http": 200,
+        "branchId": 1,
+        "closeoutId": 32698,
+        "status": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reversalOf": "6af51348c3c7aee9f998b252",
+        "amount": -0.01
+      },
+      {
+        "id": "6af51378c3c7aee9f998b259",
+        "http": 200,
+        "branchId": 13,
+        "closeoutId": 32700,
+        "status": "REVERSED",
+        "clearanceStatus": "NOT_REQUIRED",
+        "reconciliationStatus": "NOT_REQUIRED",
+        "amount": 0.01
+      },
+      {
+        "id": "6af5137cc3c7aee9f998b261",
+        "http": 200,
+        "branchId": 1,
+        "closeoutId": 32698,
+        "status": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reversalOf": "6af51378c3c7aee9f998b259",
+        "amount": -0.01
+      },
+      {
+        "id": "6af5137ac3c7aee9f998b25c",
+        "http": 200,
+        "branchId": 13,
+        "closeoutId": 32700,
+        "status": "REVERSED",
+        "clearanceStatus": "NOT_REQUIRED",
+        "reconciliationStatus": "NOT_REQUIRED",
+        "amount": 0.01
+      },
+      {
+        "id": "6af5137bc3c7aee9f998b25e",
+        "http": 200,
+        "branchId": 1,
+        "closeoutId": 32698,
+        "status": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reversalOf": "6af5137ac3c7aee9f998b25c",
+        "amount": -0.01
+      }
+    ],
+    "retainedResources": [
+      {
+        "path": "/branches/12",
+        "http": 200
+      },
+      {
+        "path": "/branches/13",
+        "http": 200
+      },
+      {
+        "path": "/chart-accounts/21",
+        "http": 200
+      },
+      {
+        "path": "/chart-accounts/22",
+        "http": 200
+      },
+      {
+        "path": "/income-statements/32699",
+        "http": 200,
+        "status": "open"
+      },
+      {
+        "path": "/income-statements/32700",
+        "http": 200,
+        "status": "open"
+      }
+    ]
+  },
+  "localOriginChecks": {
+    "checkedAt": "2026-11-12T17:17:53.890Z",
+    "results": [
+      {
+        "origin": "(absent)",
+        "http": 200,
+        "emptyResponse": false
+      },
+      {
+        "origin": "http://localhost:3000",
+        "http": 200,
+        "emptyResponse": false
+      },
+      {
+        "origin": "http://localhost:3100",
+        "http": 403,
+        "emptyResponse": true
+      },
+      {
+        "origin": "http://127.0.0.1:3000",
+        "http": 403,
+        "emptyResponse": true
+      },
+      {
+        "origin": "http://127.0.0.1:3100",
+        "http": 403,
+        "emptyResponse": true
+      }
+    ]
+  },
+  "unit": {
+    "tests": 546,
+    "pass": 546,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "browser": {
+    "defaultRun": {
+      "tests": 238,
+      "pass": 199,
+      "fail": 37,
+      "skipped": 2,
+      "cancelled": 0
+    },
+    "featureGatedExpenseRun": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "failingCases": [
+      {
+        "file": "tests/browser/appointment-form.test.mjs",
+        "line": 71,
+        "test": "appointment form shows every section on one page and saves without receivers on desktop and mobile"
+      },
+      {
+        "file": "tests/browser/appointment-form.test.mjs",
+        "line": 102,
+        "test": "take/pickup items ask only for quantity and Enter saves; the Other item asks only for a comment"
+      },
+      {
+        "file": "tests/browser/appointment-form.test.mjs",
+        "line": 127,
+        "test": "empty receivers show only the add action and an empty draft row blocks save until removed"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 500,
+        "test": "disabled delivery actions show the missing assignment reason without hover"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 619,
+        "test": "driver can record a cash payment from balance review"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 637,
+        "test": "an uncleared driver payment leaves delivery blocked"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 657,
+        "test": "balance review cannot be skipped while a balance is owed"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 674,
+        "test": "uncleared payments covering the balance allow delivery only after accepting liability"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 690,
+        "test": "completion returns to balance review when the pending payment no longer covers the balance"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 705,
+        "test": "pending payments short of the balance offer no override"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 714,
+        "test": "payment, Cuadre and override require delivery view, Cuadre create and journal create"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 725,
+        "test": "driver opens today's Cuadre at the route rate when none exists"
+      },
+      {
+        "file": "tests/browser/deliver-dialog.test.mjs",
+        "line": 738,
+        "test": "a route without a rate cannot open a Cuadre from the wizard"
+      },
+      {
+        "file": "tests/browser/invoice-documents.test.mjs",
+        "line": 143,
+        "test": "phone formats have download fallback and multiple uploads show progress"
+      },
+      {
+        "file": "tests/browser/invoice-documents.test.mjs",
+        "line": 316,
+        "test": "wizard documents complete automatically after all uploads succeed (retry=false)"
+      },
+      {
+        "file": "tests/browser/invoice-documents.test.mjs",
+        "line": 316,
+        "test": "wizard documents complete automatically after all uploads succeed (retry=true)"
+      },
+      {
+        "file": "tests/browser/invoice-form.test.mjs",
+        "line": 230,
+        "test": "Enter on a line item total adds the item and starts a new line instead of moving to Next"
+      },
+      {
+        "file": "tests/browser/pending-inventory.test.mjs",
+        "line": 62,
+        "test": "lists dispatches awaiting reconciliation with their pending items"
+      },
+      {
+        "file": "tests/browser/pending-inventory.test.mjs",
+        "line": 77,
+        "test": "reconciling validates, then posts one idempotent command per submit"
+      },
+      {
+        "file": "tests/browser/pending-inventory.test.mjs",
+        "line": 103,
+        "test": "a failed save keeps the entries and retries with the same request id"
+      },
+      {
+        "file": "tests/browser/pending-inventory.test.mjs",
+        "line": 120,
+        "test": "users without the reconcile permission can only view history"
+      },
+      {
+        "file": "tests/browser/pending-transactions.test.mjs",
+        "line": 63,
+        "test": "cross-page selection uses one method, summarizes and retries with a stable request id"
+      },
+      {
+        "file": "tests/browser/pending-transactions.test.mjs",
+        "line": 89,
+        "test": "view permission allows selection and totals without reconciliation"
+      },
+      {
+        "file": "tests/browser/print-signatures.test.mjs",
+        "line": 220,
+        "test": "mobile picker is a full-screen panel with a back action"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 199,
+        "test": "pickup starts with one draft without stealing focus and Enter completes an item comment"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 224,
+        "test": "pickup comment purpose advances to text and Enter retains the completed note"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 359,
+        "test": "separate invoice categories preserve payment entry at 1280px"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 359,
+        "test": "separate invoice categories preserve payment entry at 390px"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 489,
+        "test": "assigned to switches between employee and daily route segments"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 513,
+        "test": "transaction step errors show in the footer between Previous and Cancel"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 535,
+        "test": "changing transaction type in step 1 preserves the selected employee and payment method"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 622,
+        "test": "appointment quick comments use clicks, preserve notes, and prevent duplicate items on desktop and mobile"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 762,
+        "test": "payment-method refetch preserves the transaction step and typed draft"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 816,
+        "test": "invoice adjustment cards preserve DISCOUNT controls at 1280px"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 816,
+        "test": "invoice adjustment cards preserve DISCOUNT controls at 390px"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 816,
+        "test": "invoice adjustment cards preserve SURCHARGE controls at 1280px"
+      },
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 816,
+        "test": "invoice adjustment cards preserve SURCHARGE controls at 390px"
+      }
+    ],
+    "failuresByFile": {
+      "appointment-form.test.mjs": 3,
+      "deliver-dialog.test.mjs": 10,
+      "invoice-documents.test.mjs": 3,
+      "invoice-form.test.mjs": 1,
+      "pending-inventory.test.mjs": 4,
+      "pending-transactions.test.mjs": 2,
+      "print-signatures.test.mjs": 1,
+      "searchable-select-enter.test.mjs": 13
+    },
+    "previousFailuresNotReproduced": [
+      {
+        "file": "tests/browser/searchable-select-enter.test.mjs",
+        "line": 951,
+        "test": "invoice payment previews previous and new balances at 1280px"
+      }
+    ],
+    "newFailures": [],
+    "note": "Passing an earlier intermittent case without a source change does not establish a fix."
+  },
+  "schemaAudit": {
+    "issues": [
+      "barcode.Barcode: missing [voidReason, voidedAt, voidedBy], extra []",
+      "container.Container: missing [receiverDocType, senderDocType], extra []",
+      "customer.Customer: missing [version], extra []",
+      "invoice.Invoice: missing [dailyRoute, dailyRouteId, version], extra []",
+      "pickup.Pickup: missing [dailyRoute, orderNumber, voidReason, voidedAt, voidedBy], extra [routeNumber]",
+      "route.Route: missing [], extra [vehicle]",
+      "chartaccount.ChartAccount: missing [classification, code, codeRange, customizationPolicy, nonPosting, subType, templateLayer, templateVersion], extra []",
+      "check.Check: missing [clearedBy, reversedAt], extra [checkNumber]",
+      "src/lib/accounting/clearable-payments/table-fields.ts: missing API schema reference",
+      "journal.Journal: missing [allowedActions, autoReconcile, branch, dailyRoute, dailyRouteId, inventoryDirection, inventoryDispatchId, inventoryHolders, inventoryItemId, inventoryQuantity, inventoryReceiptId, inventoryReconciliationId, inventorySupplierId, inventoryTotal, inventoryUnitPrice, inventoryWarehouseHolderId, paymentAccount, paymentReference, pendingChange, restrictionReason, reversalOf, reversedAt, reversedTransactionType, sourceAccount, transactionStatus, version, voidedAt], extra [checkNumber]",
+      "inventory.Dispatch: missing [allowedActions, audit, confirmations, dailyRoute, incomeRecipients, lineProgress, pendingReconciliationCount, reconciliation, rejection, responsibleHolderIds, salesRecordedAtDispatch, submittedAt, submittedBy], extra []",
+      "inventory.Item: missing [audit], extra []",
+      "inventory.Receipt: missing [allowedActions, audit, confirmations, dailyRoute, dailyRouteId, rejection, submittedAt, submittedBy], extra []",
+      "inventory.Supplier: missing [audit], extra []",
+      "employeetitle.EmployeeTitle: missing [translations], extra []",
+      "employeedepartment.EmployeeDepartment: missing [translations], extra []",
+      "report.ReportDefinition: missing [outputs], extra []",
+      "src/components/reports/reports-workspace.tsx: missing enabled",
+      "src/components/reports/reports-workspace.tsx: missing sortOrder",
+      "src/components/reports/reports-workspace.tsx: missing createdAt",
+      "src/components/reports/reports-workspace.tsx: missing updatedAt"
+    ],
+    "unchangedFromNovember11": true
+  },
+  "schemas": {
+    "local": {
+      "format": "3.0.3",
+      "pathCount": 297,
+      "sha256": "22ca1dcc4cabf4fca557b2cce162756906b918e776af070944661e066de43fac",
+      "modifiedByThisRerun": false
+    },
+    "published": {
+      "format": "2.0",
+      "pathCount": 297,
+      "sha256": "37b0b5644b603c609cdd05ae3359abf091082216278d3cb0fcc79c43455449ab"
+    }
+  },
+  "validation": {
+    "applicationBuildAndLintRerun": false,
+    "reason": "Only Markdown and evidence JSON updated; application source was preserved."
+  },
+  "laterSection3FollowUp": {
+    "report": "section3-ownership-2026-11-12.md",
+    "financialEvidence": "section3-financial-evidence-2026-11-12.json",
+    "receiptEvidence": "section3-receipt-evidence-2026-11-12.json",
+    "savedStateEvidence": "section3-readback-evidence-2026-11-12.json",
+    "note": "Original fields describe the earlier read-only sweep. Later authorized isolated mutations verified atomic bank settlement and deferred invoice receipts, identified bank-account validation and journal sort-capacity defects, and prompted a frontend clearance follow-up fix."
+  }
+}

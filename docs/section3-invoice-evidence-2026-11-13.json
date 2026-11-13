@@ -1,0 +1,166 @@
+{
+  "checkedAt": "2026-11-13T17:10:22.527Z",
+  "marker": "CODEX-BANK-5a1a56d7-ab8c-4593-8b81-83441adc3e14",
+  "branchId": 35,
+  "closeoutId": 32722,
+  "journals": [],
+  "evidence": [
+    {
+      "label": "Read branch configuration",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /branches",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read complete fixture branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /roles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /users",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /employees",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read fixture grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /chart-accounts",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read new branch current closeout",
+      "passed": true,
+      "http": 200,
+      "message": "Current daily closeout",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /income-statements",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Closeout belongs exclusively to fixture branch",
+      "passed": true
+    },
+    {
+      "label": "Create fixture /containers",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Portal invoice create boundary",
+      "branch": {
+        "id": 35,
+        "code": "NY",
+        "name": "CODEX-BANK-5a1a56d7-ab8c-4593-8b81-83441adc3e14"
+      },
+      "date": "2026-11-13",
+      "actorBranch": {
+        "id": 35,
+        "name": "CODEX-BANK-5a1a56d7-ab8c-4593-8b81-83441adc3e14",
+        "code": "NY",
+        "address": {
+          "id": "000000000000000000000000",
+          "address1": "2249 Washington Avenue",
+          "city": "The Bronx",
+          "state": "NY",
+          "zipcode": "10457",
+          "country": "US",
+          "location": {
+            "type": "Point",
+            "coordinates": [
+              -73.8939588,
+              40.854537799999996
+            ]
+          }
+        },
+        "createdAt": "2026-11-13T17:10:17.67Z",
+        "updatedAt": "2026-11-13T17:10:17.67Z",
+        "createdBy": {
+          "id": 73,
+          "name": "elk@elk.com"
+        }
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Invoice container name is invalid",
+        "error": "The container name must follow the expected format for invoice numbering. Suggested solution: Use a valid container reference and try again."
+      }
+    },
+    {
+      "label": "Cleanup /containers/1406",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /chart-accounts/45",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /employees/255",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /users/144",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /roles/72",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    }
+  ]
+}

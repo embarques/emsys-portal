@@ -36,18 +36,18 @@ export function LoanEntryForm({ entry, employees, accounts, onComplete, summaryC
   if (entry.kind === "increase") {
     return (
       <LoanIncreaseForm key={`${entry.scope}:increase`} employees={employees} assetAccounts={assetAccounts}
-        pending={entry.pending} summaryContainer={summaryContainer} onCancel={() => onOpenChange(false)}
+        pending={entry.pending} guided summaryContainer={summaryContainer} onCancel={() => onOpenChange(false)}
         onSubmit={async (values) => { await entry.submitIncrease(values); onComplete(); }} />
     );
   }
   return entry.kind === "issue" ? (
-    <CreateLoanForm key={`${entry.scope}:issue`} open continuous onOpenChange={onOpenChange}
+    <CreateLoanForm key={`${entry.scope}:issue`} open continuous guided onOpenChange={onOpenChange}
       employees={employees} loanAccounts={accounts.filter((account) => account.type === "LOAN")}
       assetAccounts={assetAccounts} pending={entry.pending} summaryContainer={summaryContainer}
       onSubmit={async (values) => { await entry.submitCreate(values); onComplete(); }} />
   ) : (
     <RecordLoanPaymentForm key={`${entry.scope}:payment`} open onOpenChange={onOpenChange}
-      employees={employees} loans={[]} initialLoan={null} assetAccounts={assetAccounts} summaryContainer={summaryContainer}
+      employees={employees} loans={[]} initialLoan={null} assetAccounts={assetAccounts} guided summaryContainer={summaryContainer}
       pending={entry.pending} onSubmit={async (values) => { await entry.submitPayment(values); onComplete(); }} />
   );
 }

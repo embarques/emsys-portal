@@ -1,0 +1,732 @@
+{
+  "checkedAt": "2026-11-13T17:27:39.171Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "evidence": [
+    {
+      "label": "Posted fixture 6af744c831a295cf38083b92 is reversed and excluded from pending queues",
+      "path": "/journals/6af744c831a295cf38083b92",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744c831a295cf38083b90 is reversed and excluded from pending queues",
+      "path": "/journals/6af744c831a295cf38083b90",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744c631a295cf38083b8e is reversed and excluded from pending queues",
+      "path": "/journals/6af744c631a295cf38083b8e",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744c531a295cf38083b8c is reversed and excluded from pending queues",
+      "path": "/journals/6af744c531a295cf38083b8c",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744c531a295cf38083b8a is reversed and excluded from pending queues",
+      "path": "/journals/6af744c531a295cf38083b8a",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744c331a295cf38083b86 is reversed and excluded from pending queues",
+      "path": "/journals/6af744c331a295cf38083b86",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744bf31a295cf38083b81 is reversed and excluded from pending queues",
+      "path": "/journals/6af744bf31a295cf38083b81",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744bf31a295cf38083b7e is reversed and excluded from pending queues",
+      "path": "/journals/6af744bf31a295cf38083b7e",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744be31a295cf38083b7b is reversed and excluded from pending queues",
+      "path": "/journals/6af744be31a295cf38083b7b",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744bb31a295cf38083b6b is reversed and excluded from pending queues",
+      "path": "/journals/6af744bb31a295cf38083b6b",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af744bb31a295cf38083b6f is reversed and excluded from pending queues",
+      "path": "/journals/6af744bb31a295cf38083b6f",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 37,
+      "closeoutId": 32723
+    },
+    {
+      "label": "Posted fixture 6af747fc31a295cf38084291 is reversed and excluded from pending queues",
+      "path": "/journals/6af747fc31a295cf38084291",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747fb31a295cf3808428f is reversed and excluded from pending queues",
+      "path": "/journals/6af747fb31a295cf3808428f",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f931a295cf3808428d is reversed and excluded from pending queues",
+      "path": "/journals/6af747f931a295cf3808428d",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f831a295cf3808428b is reversed and excluded from pending queues",
+      "path": "/journals/6af747f831a295cf3808428b",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f831a295cf38084289 is reversed and excluded from pending queues",
+      "path": "/journals/6af747f831a295cf38084289",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f731a295cf38084287 is reversed and excluded from pending queues",
+      "path": "/journals/6af747f731a295cf38084287",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f731a295cf38084285 is reversed and excluded from pending queues",
+      "path": "/journals/6af747f731a295cf38084285",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f531a295cf38084281 is reversed and excluded from pending queues",
+      "path": "/journals/6af747f531a295cf38084281",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f231a295cf3808427c is reversed and excluded from pending queues",
+      "path": "/journals/6af747f231a295cf3808427c",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f131a295cf38084279 is reversed and excluded from pending queues",
+      "path": "/journals/6af747f131a295cf38084279",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747f131a295cf38084276 is reversed and excluded from pending queues",
+      "path": "/journals/6af747f131a295cf38084276",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747ed31a295cf3808426c is reversed and excluded from pending queues",
+      "path": "/journals/6af747ed31a295cf3808426c",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Posted fixture 6af747ee31a295cf3808426e is reversed and excluded from pending queues",
+      "path": "/journals/6af747ee31a295cf3808426e",
+      "http": 200,
+      "passed": true,
+      "transactionStatus": "REVERSED",
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "branchId": 49,
+      "closeoutId": 32735
+    },
+    {
+      "label": "Fixture invoice 6af747bd31a295cf38084194 is deleted",
+      "path": "/invoices/6af747bd31a295cf38084194",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Fixture invoice 6af744d031a295cf38083ba6 is deleted",
+      "path": "/invoices/6af744d031a295cf38083ba6",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Fixture invoice 6af7473c31a295cf380840c4 is deleted",
+      "path": "/invoices/6af7473c31a295cf380840c4",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Fixture invoice 6af746a731a295cf38083fd6 is deleted",
+      "path": "/invoices/6af746a731a295cf38083fd6",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Fixture invoice 6af7464831a295cf38083f06 is deleted",
+      "path": "/invoices/6af7464831a295cf38083f06",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Fixture invoice 6af745c431a295cf38083e34 is deleted",
+      "path": "/invoices/6af745c431a295cf38083e34",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Fixture invoice 6af7451d31a295cf38083c93 is deleted",
+      "path": "/invoices/6af7451d31a295cf38083c93",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Fixture invoice 6af7458531a295cf38083d64 is deleted",
+      "path": "/invoices/6af7458531a295cf38083d64",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af744e931a295cf38083c81",
+      "path": "/vehicle-routes/6af744e931a295cf38083c81",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af744e931a295cf38083c80",
+      "path": "/vehicle-routes/6af744e931a295cf38083c80",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/258",
+      "path": "/employees/258",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/147",
+      "path": "/users/147",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/75",
+      "path": "/roles/75",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af746ff31a295cf380840aa",
+      "path": "/vehicle-routes/6af746ff31a295cf380840aa",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af746ff31a295cf380840a9",
+      "path": "/vehicle-routes/6af746ff31a295cf380840a9",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/267",
+      "path": "/employees/267",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/156",
+      "path": "/users/156",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/84",
+      "path": "/roles/84",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1406",
+      "path": "/containers/1406",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/255",
+      "path": "/employees/255",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/144",
+      "path": "/users/144",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/72",
+      "path": "/roles/72",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af747c731a295cf38084261",
+      "path": "/vehicle-routes/6af747c731a295cf38084261",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1414",
+      "path": "/containers/1414",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/269",
+      "path": "/employees/269",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/158",
+      "path": "/users/158",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/86",
+      "path": "/roles/86",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1407",
+      "path": "/containers/1407",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/257",
+      "path": "/employees/257",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/146",
+      "path": "/users/146",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/74",
+      "path": "/roles/74",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af7474631a295cf38084191",
+      "path": "/vehicle-routes/6af7474631a295cf38084191",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1413",
+      "path": "/containers/1413",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/268",
+      "path": "/employees/268",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/157",
+      "path": "/users/157",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/85",
+      "path": "/roles/85",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af746c131a295cf380840a3",
+      "path": "/vehicle-routes/6af746c131a295cf380840a3",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1412",
+      "path": "/containers/1412",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/266",
+      "path": "/employees/266",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/155",
+      "path": "/users/155",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/83",
+      "path": "/roles/83",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af7465231a295cf38083fd3",
+      "path": "/vehicle-routes/6af7465231a295cf38083fd3",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1411",
+      "path": "/containers/1411",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/265",
+      "path": "/employees/265",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/154",
+      "path": "/users/154",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/82",
+      "path": "/roles/82",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af745ce31a295cf38083f02",
+      "path": "/vehicle-routes/6af745ce31a295cf38083f02",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1410",
+      "path": "/containers/1410",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/262",
+      "path": "/employees/262",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/151",
+      "path": "/users/151",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/79",
+      "path": "/roles/79",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af7452731a295cf38083d60",
+      "path": "/vehicle-routes/6af7452731a295cf38083d60",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1408",
+      "path": "/containers/1408",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/259",
+      "path": "/employees/259",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/148",
+      "path": "/users/148",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/76",
+      "path": "/roles/76",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /vehicle-routes/6af7458f31a295cf38083e31",
+      "path": "/vehicle-routes/6af7458f31a295cf38083e31",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /containers/1409",
+      "path": "/containers/1409",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/261",
+      "path": "/employees/261",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/150",
+      "path": "/users/150",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/78",
+      "path": "/roles/78",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/264",
+      "path": "/employees/264",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/153",
+      "path": "/users/153",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/81",
+      "path": "/roles/81",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/260",
+      "path": "/employees/260",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/149",
+      "path": "/users/149",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/77",
+      "path": "/roles/77",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/263",
+      "path": "/employees/263",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/152",
+      "path": "/users/152",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/80",
+      "path": "/roles/80",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/256",
+      "path": "/employees/256",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/145",
+      "path": "/users/145",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/73",
+      "path": "/roles/73",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /employees/270",
+      "path": "/employees/270",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /users/159",
+      "path": "/users/159",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Temporary resource remains deleted /roles/87",
+      "path": "/roles/87",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Existing loan-account branch period readiness",
+      "path": "/income-statements/current?branchId=1",
+      "http": 200,
+      "data": null
+    }
+  ]
+}

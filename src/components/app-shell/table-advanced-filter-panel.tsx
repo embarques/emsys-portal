@@ -12,6 +12,7 @@ type TableAdvancedFilterPanelProps = {
   /** Saved-preset scope, typically the feature/table name. */
   presetScope: string;
   open: boolean;
+  isLoading?: boolean;
   rows: TableFilterRowState[];
   fields: TableFilterFieldDefinition[];
   dynamicOptions?: Record<string, TableFilterFieldOption[]>;
@@ -24,6 +25,7 @@ type TableAdvancedFilterPanelProps = {
 export function TableAdvancedFilterPanel({
   presetScope,
   open,
+  isLoading,
   rows,
   fields,
   dynamicOptions,
@@ -33,6 +35,7 @@ export function TableAdvancedFilterPanel({
 }: TableAdvancedFilterPanelProps) {
   return (
     <TableFilterPanel
+      isLoading={isLoading}
       resultSummary={resultSummary}
       presets={{ storageKey: presetScope, rows, fields, onApply: onRowsChange }}
       onClearAll={onClearAll}

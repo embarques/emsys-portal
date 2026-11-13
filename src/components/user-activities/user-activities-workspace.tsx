@@ -228,12 +228,12 @@ export function UserActivitiesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel
+              <TableAdvancedFilterPanel isLoading={isFetching || isSearchPending}
                 presetScope="user-activities"
                 open={filtersOpen}
                 rows={filterRows}
@@ -285,7 +285,7 @@ export function UserActivitiesWorkspace() {
             columns={columnLayout.columns}
             rows={activities}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(row) => row.activityId}
             rowLabel={(row) => row.description || row.entityId || row.activityId}
             columnLayout={columnLayout}

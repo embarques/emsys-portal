@@ -447,7 +447,7 @@ export function LoansWorkspace() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentInitialLoan, setPaymentInitialLoan] = useState<Loan | null>(null);
   const [paymentHistoryLoan, setPaymentHistoryLoan] = useState<Loan | null>(null);
-  const debouncedQuery = useDebouncedValue(filters.query, 250);
+  const debouncedQuery = useDebouncedValue(filters.query);
   const { sort, onSortChange } = useTableSort(DEFAULT_LOAN_LIST_PARAMS.sort, () => setPage(1));
   const loanFilterFields = useLocalizedFilterFields(
     LOAN_TABLE_FILTER_FIELDS,
@@ -786,7 +786,7 @@ export function LoansWorkspace() {
             ) : (
               <>
             <CardHeader className="gap-3 border-b py-4 pb-3">
-              <TableDirectoryToolbar
+              <TableDirectoryToolbar isLoading={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
                 filtersOpen={filtersOpen}
                 onFiltersOpenChange={setFiltersOpen}
                 activeFilterCount={activeFilterCount}
@@ -803,7 +803,7 @@ export function LoansWorkspace() {
                   />
                 }
                 filterPanel={
-                  <TableFilterPanel
+                  <TableFilterPanel isLoading={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
                     resultSummary={listSummary}
                     presets={{
                       storageKey: "accounting-loans",
@@ -890,7 +890,7 @@ export function LoansWorkspace() {
                 columns={columnVisibility.columns}
                 rows={loans}
                 page={page}
-                isPageDataPending={loansQuery.isFetching}
+                isPageDataPending={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
                 rowKey={(loan) => loan.id}
                 rowLabel={(loan) => loan.employee.name}
                 columnLayout={columnVisibility}
@@ -1066,7 +1066,7 @@ export function LoansWorkspace() {
         ) : (
           <>
             <div className="px-4">
-              <TableSearchInput
+              <TableSearchInput isLoading={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
                 value={filters.query}
                 onChange={(query) => {
                   setFilters((current) => ({ ...current, query }));
@@ -1076,13 +1076,13 @@ export function LoansWorkspace() {
                 inputClassName="h-12 rounded-2xl border-border bg-background text-base text-foreground shadow-none"
               />
               <div className="mt-3">
-                <TableDirectoryToolbar
+                <TableDirectoryToolbar isLoading={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
                   search={<div />}
                   filtersOpen={filtersOpen}
                   onFiltersOpenChange={setFiltersOpen}
                   activeFilterCount={activeFilterCount}
                   filterPanel={
-                    <TableFilterPanel resultSummary={listSummary} onClearAll={hasActiveFilters ? resetFilters : undefined}>
+                    <TableFilterPanel isLoading={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()} resultSummary={listSummary} onClearAll={hasActiveFilters ? resetFilters : undefined}>
                       <TableAdvancedFilterBuilder
                         open={filtersOpen}
                         rows={filters.rows}

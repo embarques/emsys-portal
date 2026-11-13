@@ -217,7 +217,10 @@
       "changerequest.ChangeRequest": {
         "properties": {
           "action": {
-            "enum": ["UPDATE", "VOID"],
+            "enum": [
+              "UPDATE",
+              "VOID"
+            ],
             "type": "string"
           },
           "createdAt": {
@@ -246,7 +249,13 @@
             "type": "string"
           },
           "resourceType": {
-            "enum": ["pickup", "invoice", "journal", "labels", "inventory"],
+            "enum": [
+              "pickup",
+              "invoice",
+              "journal",
+              "labels",
+              "inventory"
+            ],
             "type": "string"
           },
           "reviewReason": {
@@ -259,7 +268,11 @@
             "$ref": "#/components/schemas/core.User"
           },
           "status": {
-            "enum": ["PENDING", "APPROVED", "REJECTED"],
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
             "type": "string"
           }
         },
@@ -268,7 +281,10 @@
       "changerequest.CreateRequest": {
         "properties": {
           "action": {
-            "enum": ["UPDATE", "VOID"],
+            "enum": [
+              "UPDATE",
+              "VOID"
+            ],
             "type": "string"
           },
           "expectedVersion": {
@@ -429,7 +445,10 @@
             "$ref": "#/components/schemas/core.User"
           }
         },
-        "required": ["displayName", "type"],
+        "required": [
+          "displayName",
+          "type"
+        ],
         "type": "object"
       },
       "check.Check": {
@@ -594,7 +613,13 @@
             "type": "array"
           },
           "channel": {
-            "enum": ["phone", "email", "web_form", "in_person", "other"],
+            "enum": [
+              "phone",
+              "email",
+              "web_form",
+              "in_person",
+              "other"
+            ],
             "type": "string"
           },
           "clientRef": {
@@ -647,7 +672,12 @@
             "type": "array"
           },
           "priority": {
-            "enum": ["low", "medium", "high", "critical"],
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
             "type": "string"
           },
           "rejectionReason": {
@@ -764,7 +794,10 @@
             "type": "string"
           },
           "visibility": {
-            "enum": ["internal", "client_visible"],
+            "enum": [
+              "internal",
+              "client_visible"
+            ],
             "type": "string"
           }
         },
@@ -794,7 +827,11 @@
             "type": "string"
           },
           "type": {
-            "enum": ["appointment", "invoice", "delivery"],
+            "enum": [
+              "appointment",
+              "invoice",
+              "delivery"
+            ],
             "type": "string"
           }
         },
@@ -1309,7 +1346,10 @@
             "$ref": "#/components/schemas/core.Address"
           },
           "customerType": {
-            "enum": [1, 2],
+            "enum": [
+              1,
+              2
+            ],
             "type": "integer"
           },
           "email": {
@@ -1394,7 +1434,9 @@
             "type": "array"
           },
           "type": {
-            "enum": ["Point"],
+            "enum": [
+              "Point"
+            ],
             "type": "string"
           }
         },
@@ -1655,7 +1697,10 @@
             "type": "string"
           },
           "status": {
-            "enum": ["OUTSTANDING", "CLEARED"],
+            "enum": [
+              "OUTSTANDING",
+              "CLEARED"
+            ],
             "type": "string"
           },
           "updatedAt": {
@@ -1726,7 +1771,10 @@
           },
           "customerType": {
             "description": "1=sender, 2=receiver",
-            "enum": [1, 2],
+            "enum": [
+              1,
+              2
+            ],
             "type": "integer"
           },
           "email": {
@@ -1838,7 +1886,10 @@
             "$ref": "#/components/schemas/core.BranchDTO"
           },
           "customerType": {
-            "enum": [1, 2],
+            "enum": [
+              1,
+              2
+            ],
             "type": "integer"
           },
           "email": {
@@ -2024,7 +2075,10 @@
             "type": "string"
           }
         },
-        "required": ["receiverSignature", "requestId"],
+        "required": [
+          "receiverSignature",
+          "requestId"
+        ],
         "type": "object"
       },
       "delivery.CompleteResult": {
@@ -2120,7 +2174,10 @@
       "delivery.ReceiverSignatureInput": {
         "properties": {
           "contentType": {
-            "enum": ["image/png", "image/jpeg"],
+            "enum": [
+              "image/png",
+              "image/jpeg"
+            ],
             "type": "string"
           },
           "data": {
@@ -2139,7 +2196,12 @@
             "type": "string"
           }
         },
-        "required": ["contentType", "data", "idNumber", "signerName"],
+        "required": [
+          "contentType",
+          "data",
+          "idNumber",
+          "signerName"
+        ],
         "type": "object"
       },
       "delivery.ReceiverSignatureRequest": {
@@ -2151,7 +2213,9 @@
             "$ref": "#/components/schemas/delivery.ReceiverSignatureInput"
           }
         },
-        "required": ["receiverSignature"],
+        "required": [
+          "receiverSignature"
+        ],
         "type": "object"
       },
       "delivery.ReceiverSignatureResult": {
@@ -2221,7 +2285,10 @@
             "type": "string"
           },
           "status": {
-            "enum": ["OUTSTANDING", "CLEARED"],
+            "enum": [
+              "OUTSTANDING",
+              "CLEARED"
+            ],
             "type": "string"
           },
           "updatedAt": {
@@ -2541,7 +2608,10 @@
             "type": "string"
           }
         },
-        "required": ["requestId", "type"],
+        "required": [
+          "requestId",
+          "type"
+        ],
         "type": "object"
       },
       "financialactivity.PendingActivity": {
@@ -2629,7 +2699,9 @@
             "type": "string"
           }
         },
-        "required": ["policyUrl"],
+        "required": [
+          "policyUrl"
+        ],
         "type": "object"
       },
       "handlers.CurrentCompanyResponse": {
@@ -3064,15 +3136,24 @@
                 "$ref": "#/components/schemas/inventory.AllocationTarget"
               }
             ],
-            "enum": ["SALES_REPORT", "COLLECTION_OBLIGATION"]
+            "enum": [
+              "SALES_REPORT",
+              "COLLECTION_OBLIGATION"
+            ]
           }
         },
         "type": "object"
       },
       "inventory.AllocationTarget": {
-        "enum": ["SALES_REPORT", "COLLECTION_OBLIGATION"],
+        "enum": [
+          "SALES_REPORT",
+          "COLLECTION_OBLIGATION"
+        ],
         "type": "string",
-        "x-enum-varnames": ["AllocationSalesReport", "AllocationObligation"]
+        "x-enum-varnames": [
+          "AllocationSalesReport",
+          "AllocationObligation"
+        ]
       },
       "inventory.AssignmentReconciliationLine": {
         "properties": {
@@ -3357,7 +3438,11 @@
         "type": "object"
       },
       "inventory.CloseoutStatus": {
-        "enum": ["OPEN", "CLOSED", "REOPENED"],
+        "enum": [
+          "OPEN",
+          "CLOSED",
+          "REOPENED"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "CloseoutOpen",
@@ -3455,7 +3540,10 @@
             "type": "string"
           },
           "party": {
-            "enum": ["WAREHOUSE", "CUSTODIAN"],
+            "enum": [
+              "WAREHOUSE",
+              "CUSTODIAN"
+            ],
             "type": "string"
           },
           "reason": {
@@ -3476,9 +3564,15 @@
         "type": "object"
       },
       "inventory.CountStatus": {
-        "enum": ["DRAFT", "SUBMITTED"],
+        "enum": [
+          "DRAFT",
+          "SUBMITTED"
+        ],
         "type": "string",
-        "x-enum-varnames": ["CountDraft", "CountSubmitted"]
+        "x-enum-varnames": [
+          "CountDraft",
+          "CountSubmitted"
+        ]
       },
       "inventory.CountSubmission": {
         "properties": {
@@ -3665,9 +3759,15 @@
         "type": "object"
       },
       "inventory.DamageResolution": {
-        "enum": ["QUARANTINE", "WRITE_OFF"],
+        "enum": [
+          "QUARANTINE",
+          "WRITE_OFF"
+        ],
         "type": "string",
-        "x-enum-varnames": ["DamageQuarantine", "DamageWriteOff"]
+        "x-enum-varnames": [
+          "DamageQuarantine",
+          "DamageWriteOff"
+        ]
       },
       "inventory.DiscrepancySummary": {
         "properties": {
@@ -3868,7 +3968,13 @@
         "type": "object"
       },
       "inventory.DispositionType": {
-        "enum": ["SOLD", "LOST", "MISSING", "STOLEN", "DAMAGED"],
+        "enum": [
+          "SOLD",
+          "LOST",
+          "MISSING",
+          "STOLEN",
+          "DAMAGED"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "DispositionSold",
@@ -3879,7 +3985,12 @@
         ]
       },
       "inventory.DocumentStatus": {
-        "enum": ["DRAFT", "PENDING_CONFIRMATION", "POSTED", "CANCELLED"],
+        "enum": [
+          "DRAFT",
+          "PENDING_CONFIRMATION",
+          "POSTED",
+          "CANCELLED"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "StatusDraft",
@@ -3889,12 +4000,23 @@
         ]
       },
       "inventory.HandoverStatus": {
-        "enum": ["PENDING", "RECEIVED"],
+        "enum": [
+          "PENDING",
+          "RECEIVED"
+        ],
         "type": "string",
-        "x-enum-varnames": ["HandoverPending", "HandoverReceived"]
+        "x-enum-varnames": [
+          "HandoverPending",
+          "HandoverReceived"
+        ]
       },
       "inventory.HolderType": {
-        "enum": ["WAREHOUSE", "EMPLOYEE", "VEHICLE", "ROUTE_CREW"],
+        "enum": [
+          "WAREHOUSE",
+          "EMPLOYEE",
+          "VEHICLE",
+          "ROUTE_CREW"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "HolderWarehouse",
@@ -4363,7 +4485,10 @@
         ]
       },
       "inventory.ObligationKind": {
-        "enum": ["UNPAID_SALE", "UNREMITTED_COLLECTION"],
+        "enum": [
+          "UNPAID_SALE",
+          "UNREMITTED_COLLECTION"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "ObligationUnpaidSale",
@@ -4411,7 +4536,12 @@
         "type": "object"
       },
       "inventory.ObligationStatus": {
-        "enum": ["OPEN", "PARTIALLY_SETTLED", "SETTLED", "VOIDED"],
+        "enum": [
+          "OPEN",
+          "PARTIALLY_SETTLED",
+          "SETTLED",
+          "VOIDED"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "ObligationOpen",
@@ -4537,7 +4667,13 @@
         "type": "object"
       },
       "inventory.PaymentMethod": {
-        "enum": ["CASH", "CHECK", "BANK_DEPOSIT", "ZELLE", "CREDIT_CARD"],
+        "enum": [
+          "CASH",
+          "CHECK",
+          "BANK_DEPOSIT",
+          "ZELLE",
+          "CREDIT_CARD"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "PaymentCash",
@@ -4548,7 +4684,12 @@
         ]
       },
       "inventory.PaymentStatus": {
-        "enum": ["RECORDED", "VERIFIED", "REJECTED", "VOIDED"],
+        "enum": [
+          "RECORDED",
+          "VERIFIED",
+          "REJECTED",
+          "VOIDED"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "PaymentRecorded",
@@ -4565,7 +4706,11 @@
                 "$ref": "#/components/schemas/inventory.PaymentStatus"
               }
             ],
-            "enum": ["VERIFIED", "REJECTED", "VOIDED"]
+            "enum": [
+              "VERIFIED",
+              "REJECTED",
+              "VOIDED"
+            ]
           }
         },
         "type": "object"
@@ -4699,9 +4844,15 @@
         "type": "object"
       },
       "inventory.PricingMode": {
-        "enum": ["TOTAL_PER_ITEM", "PRICE_GROUPS"],
+        "enum": [
+          "TOTAL_PER_ITEM",
+          "PRICE_GROUPS"
+        ],
         "type": "string",
-        "x-enum-varnames": ["PricingTotalPerItem", "PricingPriceGroups"]
+        "x-enum-varnames": [
+          "PricingTotalPerItem",
+          "PricingPriceGroups"
+        ]
       },
       "inventory.ReassignmentRequest": {
         "properties": {
@@ -4886,7 +5037,11 @@
             "$ref": "#/components/schemas/inventory.Rejection"
           },
           "status": {
-            "enum": ["PENDING_CONFIRMATION", "CONFIRMED", "REJECTED"],
+            "enum": [
+              "PENDING_CONFIRMATION",
+              "CONFIRMED",
+              "REJECTED"
+            ],
             "type": "string"
           },
           "version": {
@@ -5211,9 +5366,15 @@
         "type": "object"
       },
       "inventory.StockCondition": {
-        "enum": ["AVAILABLE", "QUARANTINED"],
+        "enum": [
+          "AVAILABLE",
+          "QUARANTINED"
+        ],
         "type": "string",
-        "x-enum-varnames": ["ConditionAvailable", "ConditionQuarantined"]
+        "x-enum-varnames": [
+          "ConditionAvailable",
+          "ConditionQuarantined"
+        ]
       },
       "inventory.StockCount": {
         "properties": {
@@ -5733,7 +5894,10 @@
                 "$ref": "#/components/schemas/invoice.ReceivedByType"
               }
             ],
-            "enum": ["route", "employee"]
+            "enum": [
+              "route",
+              "employee"
+            ]
           }
         },
         "type": "object"
@@ -5830,7 +5994,9 @@
             "type": "number"
           }
         },
-        "required": ["sender"],
+        "required": [
+          "sender"
+        ],
         "type": "object"
       },
       "invoice.Invoice": {
@@ -6025,7 +6191,13 @@
       "invoice.InvoicePoolAction": {
         "properties": {
           "action": {
-            "enum": ["generate", "generate-self", "assign", "claim", "return"],
+            "enum": [
+              "generate",
+              "generate-self",
+              "assign",
+              "claim",
+              "return"
+            ],
             "type": "string"
           },
           "count": {
@@ -6047,7 +6219,10 @@
             "type": "integer"
           }
         },
-        "required": ["action", "requestId"],
+        "required": [
+          "action",
+          "requestId"
+        ],
         "type": "object"
       },
       "invoice.InvoicePoolPage": {
@@ -6168,15 +6343,24 @@
                 "$ref": "#/components/schemas/invoice.ReceivedByType"
               }
             ],
-            "enum": ["route", "employee"]
+            "enum": [
+              "route",
+              "employee"
+            ]
           }
         },
         "type": "object"
       },
       "invoice.ReceivedByType": {
-        "enum": ["route", "employee"],
+        "enum": [
+          "route",
+          "employee"
+        ],
         "type": "string",
-        "x-enum-varnames": ["ReceivedByTypeRoute", "ReceivedByTypeEmployee"]
+        "x-enum-varnames": [
+          "ReceivedByTypeRoute",
+          "ReceivedByTypeEmployee"
+        ]
       },
       "invoice.ReceiverSignatureOption": {
         "properties": {
@@ -6269,7 +6453,10 @@
             "type": "string"
           }
         },
-        "required": ["invoice", "requestId"],
+        "required": [
+          "invoice",
+          "requestId"
+        ],
         "type": "object"
       },
       "invoice.SyncInvoiceSnapshot": {
@@ -6295,7 +6482,11 @@
             "type": "string"
           }
         },
-        "required": ["invoice", "requestId", "revision"],
+        "required": [
+          "invoice",
+          "requestId",
+          "revision"
+        ],
         "type": "object"
       },
       "invoice.UpdateInvoiceRequest": {
@@ -6546,7 +6737,9 @@
             "type": "string"
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "type": "object"
       },
       "invoicepolicy.InvoicePolicy": {
@@ -6590,7 +6783,10 @@
             "type": "string"
           }
         },
-        "required": ["body", "title"],
+        "required": [
+          "body",
+          "title"
+        ],
         "type": "object"
       },
       "journal.Account": {
@@ -6663,7 +6859,9 @@
             "type": "integer"
           }
         },
-        "required": ["expectedVersion"],
+        "required": [
+          "expectedVersion"
+        ],
         "type": "object"
       },
       "journal.BranchDTO": {
@@ -6709,7 +6907,12 @@
             "type": "string"
           }
         },
-        "required": ["expectedVersion", "reason", "replacement", "requestId"],
+        "required": [
+          "expectedVersion",
+          "reason",
+          "replacement",
+          "requestId"
+        ],
         "type": "object"
       },
       "journal.CorrectionResult": {
@@ -6954,7 +7157,11 @@
             "readOnly": true
           },
           "clearanceStatus": {
-            "enum": ["NOT_REQUIRED", "OUTSTANDING", "CLEARED"],
+            "enum": [
+              "NOT_REQUIRED",
+              "OUTSTANDING",
+              "CLEARED"
+            ],
             "readOnly": true,
             "type": "string"
           },
@@ -7091,7 +7298,10 @@
             "readOnly": true
           },
           "reconciliationStatus": {
-            "enum": ["OUTSTANDING", "RECONCILED"],
+            "enum": [
+              "OUTSTANDING",
+              "RECONCILED"
+            ],
             "readOnly": true,
             "type": "string"
           },
@@ -7181,7 +7391,11 @@
             "type": "integer"
           },
           "transactionStatus": {
-            "enum": ["ACTIVE", "VOIDED", "REVERSED"],
+            "enum": [
+              "ACTIVE",
+              "VOIDED",
+              "REVERSED"
+            ],
             "readOnly": true,
             "type": "string"
           },
@@ -7293,7 +7507,9 @@
             "type": "integer"
           }
         },
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "type": "object"
       },
       "journal.PostEntryInvoice": {
@@ -7471,7 +7687,9 @@
             "$ref": "#/components/schemas/journal.PostEntryRouteAssignee"
           }
         },
-        "required": ["transactionType"],
+        "required": [
+          "transactionType"
+        ],
         "type": "object"
       },
       "journal.PostEntryResult": {
@@ -7501,7 +7719,11 @@
             "readOnly": true
           },
           "clearanceStatus": {
-            "enum": ["NOT_REQUIRED", "OUTSTANDING", "CLEARED"],
+            "enum": [
+              "NOT_REQUIRED",
+              "OUTSTANDING",
+              "CLEARED"
+            ],
             "readOnly": true,
             "type": "string"
           },
@@ -7641,7 +7863,10 @@
             "readOnly": true
           },
           "reconciliationStatus": {
-            "enum": ["OUTSTANDING", "RECONCILED"],
+            "enum": [
+              "OUTSTANDING",
+              "RECONCILED"
+            ],
             "readOnly": true,
             "type": "string"
           },
@@ -7731,7 +7956,11 @@
             "type": "integer"
           },
           "transactionStatus": {
-            "enum": ["ACTIVE", "VOIDED", "REVERSED"],
+            "enum": [
+              "ACTIVE",
+              "VOIDED",
+              "REVERSED"
+            ],
             "readOnly": true,
             "type": "string"
           },
@@ -7823,7 +8052,10 @@
             "type": "string"
           }
         },
-        "required": ["reason", "requestId"],
+        "required": [
+          "reason",
+          "requestId"
+        ],
         "type": "object"
       },
       "journal.RouteDTO": {
@@ -7846,7 +8078,10 @@
             "type": "string"
           }
         },
-        "required": ["entry", "requestId"],
+        "required": [
+          "entry",
+          "requestId"
+        ],
         "type": "object"
       },
       "journal.VehicleRouteDTO": {
@@ -8478,7 +8713,10 @@
             "type": "string"
           }
         },
-        "required": ["requestId", "revision"],
+        "required": [
+          "requestId",
+          "revision"
+        ],
         "type": "object"
       },
       "pickup.SyncPickupSnapshot": {
@@ -8650,7 +8888,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["1001"],
+            "example": [
+              "1001"
+            ],
             "items": {
               "type": "string"
             },
@@ -8683,7 +8923,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["1001"],
+            "example": [
+              "1001"
+            ],
             "items": {
               "type": "string"
             },
@@ -8712,7 +8954,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["6aa44f19b2ff4651db4a3dee"],
+            "example": [
+              "6aa44f19b2ff4651db4a3dee"
+            ],
             "items": {
               "type": "string"
             },
@@ -8750,7 +8994,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["1001"],
+            "example": [
+              "1001"
+            ],
             "items": {
               "type": "string"
             },
@@ -8788,7 +9034,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["6a322b46a08ce327600a0051"],
+            "example": [
+              "6a322b46a08ce327600a0051"
+            ],
             "items": {
               "type": "string"
             },
@@ -8810,7 +9058,10 @@
           "language": {
             "default": "es",
             "description": "Language selects the authorization notice language. Omitted/unsupported values default to Spanish.",
-            "enum": ["en", "es"],
+            "enum": [
+              "en",
+              "es"
+            ],
             "example": "es",
             "type": "string"
           },
@@ -8830,7 +9081,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["6a322b46a08ce327600a0051"],
+            "example": [
+              "6a322b46a08ce327600a0051"
+            ],
             "items": {
               "type": "string"
             },
@@ -8850,7 +9103,9 @@
             "type": "array"
           }
         },
-        "required": ["invoiceIds"],
+        "required": [
+          "invoiceIds"
+        ],
         "type": "object"
       },
       "report.JournalReportRequest": {
@@ -8873,7 +9128,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["JRNL-1001"],
+            "example": [
+              "JRNL-1001"
+            ],
             "items": {
               "type": "string"
             },
@@ -8902,7 +9159,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["674a1b2c3d4e5f6789012345"],
+            "example": [
+              "674a1b2c3d4e5f6789012345"
+            ],
             "items": {
               "type": "string"
             },
@@ -8968,7 +9227,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["1001"],
+            "example": [
+              "1001"
+            ],
             "items": {
               "type": "string"
             },
@@ -9074,7 +9335,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["1001"],
+            "example": [
+              "1001"
+            ],
             "items": {
               "type": "string"
             },
@@ -9103,7 +9366,9 @@
             "type": "string"
           },
           "values": {
-            "example": ["674a1b2c3d4e5f6789012345"],
+            "example": [
+              "674a1b2c3d4e5f6789012345"
+            ],
             "items": {
               "type": "string"
             },
@@ -9237,7 +9502,11 @@
                 "$ref": "#/components/schemas/route.EmployeeRole"
               }
             ],
-            "enum": ["driver", "supervisor", "helper"]
+            "enum": [
+              "driver",
+              "supervisor",
+              "helper"
+            ]
           },
           "roles": {
             "items": {
@@ -9249,7 +9518,11 @@
         "type": "object"
       },
       "route.EmployeeRole": {
-        "enum": ["driver", "supervisor", "helper"],
+        "enum": [
+          "driver",
+          "supervisor",
+          "helper"
+        ],
         "type": "string",
         "x-enum-varnames": [
           "EmployeeRoleDriver",
@@ -9405,7 +9678,11 @@
             "type": "array"
           }
         },
-        "required": ["end", "start", "stops"],
+        "required": [
+          "end",
+          "start",
+          "stops"
+        ],
         "type": "object"
       },
       "routeoptimizer.OptimizeResponse": {
@@ -9653,7 +9930,9 @@
             "type": "integer"
           }
         },
-        "required": ["invoicePoolThreshold"],
+        "required": [
+          "invoicePoolThreshold"
+        ],
         "type": "object"
       },
       "userpreference.UpdateRequest": {
@@ -9834,7 +10113,10 @@
                 "$ref": "#/components/schemas/vehicle_route.RouteType"
               }
             ],
-            "enum": ["pickup", "delivery"]
+            "enum": [
+              "pickup",
+              "delivery"
+            ]
           },
           "supervisor": {
             "$ref": "#/components/schemas/route.EmployeeRef"
@@ -9846,9 +10128,15 @@
         "type": "object"
       },
       "vehicle_route.RouteType": {
-        "enum": ["pickup", "delivery"],
+        "enum": [
+          "pickup",
+          "delivery"
+        ],
         "type": "string",
-        "x-enum-varnames": ["RouteTypePickup", "RouteTypeDelivery"]
+        "x-enum-varnames": [
+          "RouteTypePickup",
+          "RouteTypeDelivery"
+        ]
       },
       "vehicle_route.VehicleRoute": {
         "properties": {
@@ -9895,7 +10183,10 @@
                 "$ref": "#/components/schemas/vehicle_route.RouteType"
               }
             ],
-            "enum": ["pickup", "delivery"]
+            "enum": [
+              "pickup",
+              "delivery"
+            ]
           },
           "supervisor": {
             "$ref": "#/components/schemas/route.EmployeeRef"
@@ -9979,7 +10270,10 @@
             "type": "string"
           },
           "status": {
-            "enum": ["OUTSTANDING", "CLEARED"],
+            "enum": [
+              "OUTSTANDING",
+              "CLEARED"
+            ],
             "type": "string"
           },
           "updatedAt": {
@@ -10067,7 +10361,9 @@
           }
         ],
         "summary": "Accounting payment methods",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/audit-events": {
@@ -10147,7 +10443,9 @@
           }
         ],
         "summary": "ListAuditEvents",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/audit-events/search": {
@@ -10239,7 +10537,9 @@
           }
         ],
         "summary": "SearchAuditEvents",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/audit-events/{id}": {
@@ -10327,7 +10627,9 @@
           }
         ],
         "summary": "GetAuditEvent",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/auth/token": {
@@ -10399,7 +10701,9 @@
           }
         },
         "summary": "Mint Firebase ID token (dev only)",
-        "tags": ["Authentication"]
+        "tags": [
+          "Authentication"
+        ]
       }
     },
     "/barcode-statuses": {
@@ -10522,7 +10826,9 @@
           }
         ],
         "summary": "List barcode statuses",
-        "tags": ["barcode_status"]
+        "tags": [
+          "barcode_status"
+        ]
       },
       "post": {
         "description": "Requires barcode_status create permission.",
@@ -10591,7 +10897,9 @@
           }
         ],
         "summary": "Create a barcode status",
-        "tags": ["barcode_status"]
+        "tags": [
+          "barcode_status"
+        ]
       }
     },
     "/barcode-statuses/search": {
@@ -10693,7 +11001,9 @@
           }
         ],
         "summary": "Search barcode statuses",
-        "tags": ["barcode_status"]
+        "tags": [
+          "barcode_status"
+        ]
       }
     },
     "/barcode-statuses/{id}": {
@@ -10751,7 +11061,9 @@
           }
         ],
         "summary": "Delete a barcode status",
-        "tags": ["barcode_status"]
+        "tags": [
+          "barcode_status"
+        ]
       },
       "get": {
         "description": "Requires barcode_status view permission.",
@@ -10819,7 +11131,9 @@
           }
         ],
         "summary": "Retrieve a barcode status",
-        "tags": ["barcode_status"]
+        "tags": [
+          "barcode_status"
+        ]
       },
       "put": {
         "description": "Requires barcode_status update permission.",
@@ -10909,7 +11223,9 @@
           }
         ],
         "summary": "Update a barcode status",
-        "tags": ["barcode_status"]
+        "tags": [
+          "barcode_status"
+        ]
       }
     },
     "/barcodes": {
@@ -11032,7 +11348,9 @@
           }
         ],
         "summary": "List all barcodes",
-        "tags": ["barcode"]
+        "tags": [
+          "barcode"
+        ]
       },
       "post": {
         "description": "Requires labels create permission.",
@@ -11091,7 +11409,9 @@
           }
         ],
         "summary": "Create a barcode",
-        "tags": ["barcode"]
+        "tags": [
+          "barcode"
+        ]
       }
     },
     "/barcodes/search": {
@@ -11193,7 +11513,9 @@
           }
         ],
         "summary": "Search barcodes",
-        "tags": ["barcode"]
+        "tags": [
+          "barcode"
+        ]
       }
     },
     "/barcodes/status-options": {
@@ -11245,7 +11567,9 @@
           }
         ],
         "summary": "List barcode status options",
-        "tags": ["barcode"]
+        "tags": [
+          "barcode"
+        ]
       }
     },
     "/barcodes/{id}": {
@@ -11293,7 +11617,9 @@
           }
         ],
         "summary": "Delete a barcode",
-        "tags": ["barcode"]
+        "tags": [
+          "barcode"
+        ]
       },
       "get": {
         "description": "Requires labels view permission.",
@@ -11361,7 +11687,9 @@
           }
         ],
         "summary": "Retrieve a barcode",
-        "tags": ["barcode"]
+        "tags": [
+          "barcode"
+        ]
       },
       "put": {
         "description": "Requires labels update permission.",
@@ -11441,7 +11769,9 @@
           }
         ],
         "summary": "Update a barcode",
-        "tags": ["barcode"]
+        "tags": [
+          "barcode"
+        ]
       }
     },
     "/branches": {
@@ -11564,7 +11894,9 @@
           }
         ],
         "summary": "List all branches",
-        "tags": ["branch"]
+        "tags": [
+          "branch"
+        ]
       },
       "post": {
         "description": "Requires branch create permission.",
@@ -11623,7 +11955,9 @@
           }
         ],
         "summary": "Create a branch",
-        "tags": ["branch"]
+        "tags": [
+          "branch"
+        ]
       }
     },
     "/branches/search": {
@@ -11725,7 +12059,9 @@
           }
         ],
         "summary": "Search branches",
-        "tags": ["branch"]
+        "tags": [
+          "branch"
+        ]
       }
     },
     "/branches/{id}": {
@@ -11773,7 +12109,9 @@
           }
         ],
         "summary": "Delete a branch",
-        "tags": ["branch"]
+        "tags": [
+          "branch"
+        ]
       },
       "get": {
         "description": "Requires branch view permission.",
@@ -11841,7 +12179,9 @@
           }
         ],
         "summary": "Retrieve a branch",
-        "tags": ["branch"]
+        "tags": [
+          "branch"
+        ]
       },
       "put": {
         "description": "Requires branch update permission.",
@@ -11921,7 +12261,9 @@
           }
         ],
         "summary": "Update a branch",
-        "tags": ["branch"]
+        "tags": [
+          "branch"
+        ]
       }
     },
     "/change-requests": {
@@ -11981,7 +12323,9 @@
           }
         ],
         "summary": "List change requests",
-        "tags": ["change-requests"]
+        "tags": [
+          "change-requests"
+        ]
       },
       "post": {
         "description": "Requires canCreateChangeRequest and assigned record scope. UUID requestId is durable, actor/payload-bound. expectedVersion comes from GET /change-requests/target. Only one pending request per resource. Original remains unchanged. UPDATE uses the existing domain request shape; VOID never hard-deletes financial records. Approval revalidates the source and permissions atomically. Authorized self-approval is allowed.",
@@ -12058,7 +12402,9 @@
           }
         ],
         "summary": "Submit a daily-route change request",
-        "tags": ["change-requests"]
+        "tags": [
+          "change-requests"
+        ]
       }
     },
     "/change-requests/target": {
@@ -12144,7 +12490,9 @@
           }
         ],
         "summary": "Read change-request target context",
-        "tags": ["change-requests"]
+        "tags": [
+          "change-requests"
+        ]
       }
     },
     "/change-requests/{id}": {
@@ -12211,7 +12559,9 @@
           }
         ],
         "summary": "Read a change request",
-        "tags": ["change-requests"]
+        "tags": [
+          "change-requests"
+        ]
       }
     },
     "/change-requests/{id}/approve": {
@@ -12311,7 +12661,9 @@
           }
         ],
         "summary": "Approve a protected change",
-        "tags": ["change-requests"]
+        "tags": [
+          "change-requests"
+        ]
       }
     },
     "/change-requests/{id}/reject": {
@@ -12410,7 +12762,9 @@
           }
         ],
         "summary": "Reject a protected change",
-        "tags": ["change-requests"]
+        "tags": [
+          "change-requests"
+        ]
       }
     },
     "/chart-accounts": {
@@ -12523,7 +12877,9 @@
           }
         ],
         "summary": "List all chart accounts",
-        "tags": ["chart_account"]
+        "tags": [
+          "chart_account"
+        ]
       },
       "post": {
         "requestBody": {
@@ -12581,7 +12937,9 @@
           }
         ],
         "summary": "Create a chart account",
-        "tags": ["chart_account"]
+        "tags": [
+          "chart_account"
+        ]
       }
     },
     "/chart-accounts/search": {
@@ -12654,7 +13012,9 @@
           }
         ],
         "summary": "Search chart accounts",
-        "tags": ["chart_account"]
+        "tags": [
+          "chart_account"
+        ]
       }
     },
     "/chart-accounts/{id}": {
@@ -12701,7 +13061,9 @@
           }
         ],
         "summary": "Delete a chart account",
-        "tags": ["chart_account"]
+        "tags": [
+          "chart_account"
+        ]
       },
       "get": {
         "parameters": [
@@ -12758,7 +13120,9 @@
           }
         ],
         "summary": "Retrieve a chart account",
-        "tags": ["chart_account"]
+        "tags": [
+          "chart_account"
+        ]
       },
       "put": {
         "parameters": [
@@ -12827,7 +13191,9 @@
           }
         ],
         "summary": "Update a chart account",
-        "tags": ["chart_account"]
+        "tags": [
+          "chart_account"
+        ]
       }
     },
     "/checks": {
@@ -12867,7 +13233,9 @@
           }
         ],
         "summary": "List checks",
-        "tags": ["check"]
+        "tags": [
+          "check"
+        ]
       },
       "post": {
         "deprecated": true,
@@ -12903,7 +13271,9 @@
           }
         ],
         "summary": "Create a check",
-        "tags": ["check"]
+        "tags": [
+          "check"
+        ]
       }
     },
     "/checks/search": {
@@ -12954,7 +13324,9 @@
           }
         ],
         "summary": "Search checks",
-        "tags": ["check"]
+        "tags": [
+          "check"
+        ]
       }
     },
     "/checks/{id}": {
@@ -12991,7 +13363,9 @@
           }
         ],
         "summary": "Delete a check",
-        "tags": ["check"]
+        "tags": [
+          "check"
+        ]
       },
       "get": {
         "description": "Requires canViewCheck; a list grant alone does not authorize detail reads.",
@@ -13037,7 +13411,9 @@
           }
         ],
         "summary": "Retrieve a check",
-        "tags": ["check"]
+        "tags": [
+          "check"
+        ]
       },
       "put": {
         "deprecated": true,
@@ -13084,7 +13460,9 @@
           }
         ],
         "summary": "Update a check",
-        "tags": ["check"]
+        "tags": [
+          "check"
+        ]
       }
     },
     "/cities": {
@@ -13207,7 +13585,9 @@
           }
         ],
         "summary": "List all cities",
-        "tags": ["city"]
+        "tags": [
+          "city"
+        ]
       },
       "post": {
         "description": "Requires settings create permission.",
@@ -13266,7 +13646,9 @@
           }
         ],
         "summary": "Create a city",
-        "tags": ["city"]
+        "tags": [
+          "city"
+        ]
       }
     },
     "/cities/search": {
@@ -13368,7 +13750,9 @@
           }
         ],
         "summary": "Search cities",
-        "tags": ["city"]
+        "tags": [
+          "city"
+        ]
       }
     },
     "/cities/{id}": {
@@ -13416,7 +13800,9 @@
           }
         ],
         "summary": "Delete a city",
-        "tags": ["city"]
+        "tags": [
+          "city"
+        ]
       },
       "get": {
         "description": "Requires settings view permission.",
@@ -13484,7 +13870,9 @@
           }
         ],
         "summary": "Retrieve a city",
-        "tags": ["city"]
+        "tags": [
+          "city"
+        ]
       },
       "put": {
         "description": "Requires settings update permission.",
@@ -13564,7 +13952,9 @@
           }
         ],
         "summary": "Update a city",
-        "tags": ["city"]
+        "tags": [
+          "city"
+        ]
       }
     },
     "/companies/current": {
@@ -13600,7 +13990,9 @@
           }
         ],
         "summary": "Get current company",
-        "tags": ["company"]
+        "tags": [
+          "company"
+        ]
       }
     },
     "/companies/current/policy": {
@@ -13681,7 +14073,9 @@
           }
         ],
         "summary": "Update company policy URL",
-        "tags": ["company"]
+        "tags": [
+          "company"
+        ]
       }
     },
     "/complaints": {
@@ -13802,7 +14196,9 @@
           }
         ],
         "summary": "List all complaints",
-        "tags": ["complaint"]
+        "tags": [
+          "complaint"
+        ]
       },
       "post": {
         "description": "Creates a complaint in the current tenant in the current company tenant.",
@@ -13869,7 +14265,9 @@
           }
         ],
         "summary": "Create a complaint",
-        "tags": ["complaint"]
+        "tags": [
+          "complaint"
+        ]
       }
     },
     "/complaints/search": {
@@ -13969,7 +14367,9 @@
           }
         ],
         "summary": "Search complaints",
-        "tags": ["complaint"]
+        "tags": [
+          "complaint"
+        ]
       }
     },
     "/complaints/{id}": {
@@ -14025,7 +14425,9 @@
           }
         ],
         "summary": "Delete a complaint",
-        "tags": ["complaint"]
+        "tags": [
+          "complaint"
+        ]
       },
       "get": {
         "description": "Returns one complaint in the current tenant.",
@@ -14091,7 +14493,9 @@
           }
         ],
         "summary": "Retrieve a complaint",
-        "tags": ["complaint"]
+        "tags": [
+          "complaint"
+        ]
       },
       "put": {
         "description": "Replaces a complaint in the current tenant.",
@@ -14179,7 +14583,9 @@
           }
         ],
         "summary": "Update a complaint",
-        "tags": ["complaint"]
+        "tags": [
+          "complaint"
+        ]
       }
     },
     "/containers": {
@@ -14302,7 +14708,9 @@
           }
         ],
         "summary": "List all containers",
-        "tags": ["container"]
+        "tags": [
+          "container"
+        ]
       },
       "post": {
         "description": "Requires container create permission.",
@@ -14361,7 +14769,9 @@
           }
         ],
         "summary": "Create a container",
-        "tags": ["container"]
+        "tags": [
+          "container"
+        ]
       }
     },
     "/containers/search": {
@@ -14463,7 +14873,9 @@
           }
         ],
         "summary": "Search containers",
-        "tags": ["container"]
+        "tags": [
+          "container"
+        ]
       }
     },
     "/containers/stats/average-value": {
@@ -14533,7 +14945,9 @@
           }
         ],
         "summary": "Retrieve average merchandise value per container",
-        "tags": ["container"]
+        "tags": [
+          "container"
+        ]
       }
     },
     "/containers/{id}": {
@@ -14581,7 +14995,9 @@
           }
         ],
         "summary": "Delete a container",
-        "tags": ["container"]
+        "tags": [
+          "container"
+        ]
       },
       "get": {
         "description": "Requires container view permission.",
@@ -14649,7 +15065,9 @@
           }
         ],
         "summary": "Retrieve a container",
-        "tags": ["container"]
+        "tags": [
+          "container"
+        ]
       },
       "put": {
         "description": "Requires container update permission.",
@@ -14729,7 +15147,9 @@
           }
         ],
         "summary": "Update a container",
-        "tags": ["container"]
+        "tags": [
+          "container"
+        ]
       }
     },
     "/credit-card-payments": {
@@ -14769,7 +15189,9 @@
           }
         ],
         "summary": "List credit-card-payments",
-        "tags": ["credit_card_payment"]
+        "tags": [
+          "credit_card_payment"
+        ]
       },
       "post": {
         "deprecated": true,
@@ -14805,7 +15227,9 @@
           }
         ],
         "summary": "Create a credit_card_payment",
-        "tags": ["credit_card_payment"]
+        "tags": [
+          "credit_card_payment"
+        ]
       }
     },
     "/credit-card-payments/search": {
@@ -14856,7 +15280,9 @@
           }
         ],
         "summary": "Search credit-card-payments",
-        "tags": ["credit_card_payment"]
+        "tags": [
+          "credit_card_payment"
+        ]
       }
     },
     "/credit-card-payments/{id}": {
@@ -14893,7 +15319,9 @@
           }
         ],
         "summary": "Delete a credit_card_payment",
-        "tags": ["credit_card_payment"]
+        "tags": [
+          "credit_card_payment"
+        ]
       },
       "get": {
         "description": "Requires canViewCreditCardPayment; a list grant alone does not authorize detail reads.",
@@ -14939,7 +15367,9 @@
           }
         ],
         "summary": "Retrieve a credit_card_payment",
-        "tags": ["credit_card_payment"]
+        "tags": [
+          "credit_card_payment"
+        ]
       },
       "put": {
         "deprecated": true,
@@ -14986,7 +15416,9 @@
           }
         ],
         "summary": "Update a credit card payment",
-        "tags": ["credit_card_payment"]
+        "tags": [
+          "credit_card_payment"
+        ]
       }
     },
     "/customers": {
@@ -15109,7 +15541,9 @@
           }
         ],
         "summary": "List all customers",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       },
       "post": {
         "description": "Requires customer create permission. Rejects a duplicate when name and any phone match an existing customer. Accepts legacy client shapes: branch as string code (e.g. \"NYC\") or BranchDTO object; idNumber as alias for IDNumber; omit id on create (do not send empty id). customerType: 1=sender, 2=receiver.",
@@ -15178,7 +15612,9 @@
           }
         ],
         "summary": "Create a customer",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       }
     },
     "/customers/autocomplete": {
@@ -15268,7 +15704,9 @@
           }
         ],
         "summary": "Autocomplete customers",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       }
     },
     "/customers/search": {
@@ -15370,7 +15808,9 @@
           }
         ],
         "summary": "Search customers",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       }
     },
     "/customers/{id}": {
@@ -15467,7 +15907,9 @@
           }
         ],
         "summary": "Delete a customer",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       },
       "get": {
         "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires customer view permission.",
@@ -15543,7 +15985,9 @@
           }
         ],
         "summary": "Retrieve a customer",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       },
       "put": {
         "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nRequires customer update permission. Rejects a duplicate name plus any matching normalized phone on create and edit, excluding the edited customer. Omitted fields remain unchanged. Same legacy binding as create (branch string or object, idNumber alias). customerType: 1=sender, 2=receiver.",
@@ -15680,7 +16124,9 @@
           }
         ],
         "summary": "Update a customer",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       }
     },
     "/customers/{id}/address/google-verification": {
@@ -15809,7 +16255,9 @@
           }
         ],
         "summary": "Set customer address Google verification",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       }
     },
     "/customers/{id}/address/location": {
@@ -15938,7 +16386,9 @@
           }
         ],
         "summary": "Set customer address location",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       }
     },
     "/customers/{id}/phones/primary": {
@@ -16077,7 +16527,9 @@
           }
         ],
         "summary": "Set a customer's primary phone",
-        "tags": ["customer"]
+        "tags": [
+          "customer"
+        ]
       }
     },
     "/daily-routes": {
@@ -16157,7 +16609,9 @@
           }
         ],
         "summary": "ListDailyRoutes",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -16244,7 +16698,9 @@
           }
         ],
         "summary": "CreateDailyRoute",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/daily-routes/search": {
@@ -16336,7 +16792,9 @@
           }
         ],
         "summary": "SearchDailyRoutes",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/daily-routes/{id}": {
@@ -16424,7 +16882,9 @@
           }
         ],
         "summary": "GetDailyRoute",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "put": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -16531,7 +16991,9 @@
           }
         ],
         "summary": "UpdateDailyRoute",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/deliveries": {
@@ -16654,7 +17116,9 @@
           }
         ],
         "summary": "List all deliveries",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       },
       "post": {
         "description": "Requires delivery create permission. ID and name are generated server-side from the container. Provide the assigned crew as an employees list.",
@@ -16713,7 +17177,9 @@
           }
         ],
         "summary": "Create a delivery",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deliveries/assigned-barcodes": {
@@ -16801,7 +17267,9 @@
           }
         ],
         "summary": "List assigned CONDUCE barcodes",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deliveries/assigned-barcodes/search": {
@@ -16872,7 +17340,9 @@
           }
         ],
         "summary": "Search assigned CONDUCE barcodes",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deliveries/search": {
@@ -16974,7 +17444,9 @@
           }
         ],
         "summary": "Search deliveries",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deliveries/{id}": {
@@ -17022,7 +17494,9 @@
           }
         ],
         "summary": "Delete a delivery",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       },
       "get": {
         "description": "Requires delivery view permission.",
@@ -17090,7 +17564,9 @@
           }
         ],
         "summary": "Retrieve a delivery",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       },
       "put": {
         "description": "Requires delivery update permission. Provide the assigned crew as an employees list.",
@@ -17170,7 +17646,9 @@
           }
         ],
         "summary": "Update a delivery",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deliveries/{id}/invoices/{invoiceId}/complete": {
@@ -17289,7 +17767,9 @@
           }
         ],
         "summary": "Complete a partial invoice delivery",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deliveries/{id}/invoices/{invoiceId}/items": {
@@ -17376,7 +17856,9 @@
           }
         ],
         "summary": "Review invoice delivery items",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deliveries/{id}/invoices/{invoiceId}/receiver/signature": {
@@ -17495,7 +17977,9 @@
           }
         ],
         "summary": "Collect an invoice receiver signature at delivery",
-        "tags": ["delivery"]
+        "tags": [
+          "delivery"
+        ]
       }
     },
     "/deposits": {
@@ -17535,7 +18019,9 @@
           }
         ],
         "summary": "List deposits",
-        "tags": ["deposit"]
+        "tags": [
+          "deposit"
+        ]
       },
       "post": {
         "deprecated": true,
@@ -17571,7 +18057,9 @@
           }
         ],
         "summary": "Create a deposit",
-        "tags": ["deposit"]
+        "tags": [
+          "deposit"
+        ]
       }
     },
     "/deposits/search": {
@@ -17622,7 +18110,9 @@
           }
         ],
         "summary": "Search deposits",
-        "tags": ["deposit"]
+        "tags": [
+          "deposit"
+        ]
       }
     },
     "/deposits/{id}": {
@@ -17659,7 +18149,9 @@
           }
         ],
         "summary": "Delete a deposit",
-        "tags": ["deposit"]
+        "tags": [
+          "deposit"
+        ]
       },
       "get": {
         "description": "Requires canViewDeposit; a list grant alone does not authorize detail reads.",
@@ -17705,7 +18197,9 @@
           }
         ],
         "summary": "Retrieve a deposit",
-        "tags": ["deposit"]
+        "tags": [
+          "deposit"
+        ]
       },
       "put": {
         "deprecated": true,
@@ -17752,7 +18246,9 @@
           }
         ],
         "summary": "Update a deposit",
-        "tags": ["deposit"]
+        "tags": [
+          "deposit"
+        ]
       }
     },
     "/employee-departments": {
@@ -17875,7 +18371,9 @@
           }
         ],
         "summary": "List employee departments",
-        "tags": ["employee_department"]
+        "tags": [
+          "employee_department"
+        ]
       },
       "post": {
         "description": "Requires employee_department create permission.",
@@ -17944,7 +18442,9 @@
           }
         ],
         "summary": "Create an employee department",
-        "tags": ["employee_department"]
+        "tags": [
+          "employee_department"
+        ]
       }
     },
     "/employee-departments/search": {
@@ -18046,7 +18546,9 @@
           }
         ],
         "summary": "Search employee departments",
-        "tags": ["employee_department"]
+        "tags": [
+          "employee_department"
+        ]
       }
     },
     "/employee-departments/{id}": {
@@ -18104,7 +18606,9 @@
           }
         ],
         "summary": "Delete an employee department",
-        "tags": ["employee_department"]
+        "tags": [
+          "employee_department"
+        ]
       },
       "get": {
         "description": "Requires employee_department view permission.",
@@ -18172,7 +18676,9 @@
           }
         ],
         "summary": "Retrieve an employee department",
-        "tags": ["employee_department"]
+        "tags": [
+          "employee_department"
+        ]
       },
       "put": {
         "description": "Requires employee_department update permission.",
@@ -18262,7 +18768,9 @@
           }
         ],
         "summary": "Update an employee department",
-        "tags": ["employee_department"]
+        "tags": [
+          "employee_department"
+        ]
       }
     },
     "/employee-titles": {
@@ -18385,7 +18893,9 @@
           }
         ],
         "summary": "List employee titles",
-        "tags": ["employee_title"]
+        "tags": [
+          "employee_title"
+        ]
       },
       "post": {
         "description": "Requires employee_title create permission.",
@@ -18454,7 +18964,9 @@
           }
         ],
         "summary": "Create an employee title",
-        "tags": ["employee_title"]
+        "tags": [
+          "employee_title"
+        ]
       }
     },
     "/employee-titles/search": {
@@ -18556,7 +19068,9 @@
           }
         ],
         "summary": "Search employee titles",
-        "tags": ["employee_title"]
+        "tags": [
+          "employee_title"
+        ]
       }
     },
     "/employee-titles/{id}": {
@@ -18614,7 +19128,9 @@
           }
         ],
         "summary": "Delete an employee title",
-        "tags": ["employee_title"]
+        "tags": [
+          "employee_title"
+        ]
       },
       "get": {
         "description": "Requires employee_title view permission.",
@@ -18682,7 +19198,9 @@
           }
         ],
         "summary": "Retrieve an employee title",
-        "tags": ["employee_title"]
+        "tags": [
+          "employee_title"
+        ]
       },
       "put": {
         "description": "Requires employee_title update permission.",
@@ -18772,7 +19290,9 @@
           }
         ],
         "summary": "Update an employee title",
-        "tags": ["employee_title"]
+        "tags": [
+          "employee_title"
+        ]
       }
     },
     "/employees": {
@@ -18895,7 +19415,9 @@
           }
         ],
         "summary": "List all employees",
-        "tags": ["employee"]
+        "tags": [
+          "employee"
+        ]
       },
       "post": {
         "description": "Requires employee create permission.",
@@ -18954,7 +19476,9 @@
           }
         ],
         "summary": "Create a employee",
-        "tags": ["employee"]
+        "tags": [
+          "employee"
+        ]
       }
     },
     "/employees/search": {
@@ -19056,7 +19580,9 @@
           }
         ],
         "summary": "Search employees",
-        "tags": ["employee"]
+        "tags": [
+          "employee"
+        ]
       }
     },
     "/employees/{id}": {
@@ -19104,7 +19630,9 @@
           }
         ],
         "summary": "Delete a employee",
-        "tags": ["employee"]
+        "tags": [
+          "employee"
+        ]
       },
       "get": {
         "description": "Requires employee view permission.",
@@ -19172,7 +19700,9 @@
           }
         ],
         "summary": "Retrieve a employee",
-        "tags": ["employee"]
+        "tags": [
+          "employee"
+        ]
       },
       "put": {
         "description": "Requires employee update permission.",
@@ -19252,7 +19782,9 @@
           }
         ],
         "summary": "Update a employee",
-        "tags": ["employee"]
+        "tags": [
+          "employee"
+        ]
       }
     },
     "/filter-presets": {
@@ -19383,7 +19915,9 @@
           }
         ],
         "summary": "List all filter presets",
-        "tags": ["filter_preset"]
+        "tags": [
+          "filter_preset"
+        ]
       },
       "post": {
         "description": "Creates a saved filter preset for the authenticated user in the current company tenant.",
@@ -19452,7 +19986,9 @@
           }
         ],
         "summary": "Create a filter preset",
-        "tags": ["filter_preset"]
+        "tags": [
+          "filter_preset"
+        ]
       }
     },
     "/filter-presets/search": {
@@ -19554,7 +20090,9 @@
           }
         ],
         "summary": "Search filter presets",
-        "tags": ["filter_preset"]
+        "tags": [
+          "filter_preset"
+        ]
       }
     },
     "/filter-presets/{id}": {
@@ -19612,7 +20150,9 @@
           }
         ],
         "summary": "Delete a filter preset",
-        "tags": ["filter_preset"]
+        "tags": [
+          "filter_preset"
+        ]
       },
       "get": {
         "description": "Returns one saved filter preset owned by the authenticated user.",
@@ -19680,7 +20220,9 @@
           }
         ],
         "summary": "Retrieve a filter preset",
-        "tags": ["filter_preset"]
+        "tags": [
+          "filter_preset"
+        ]
       },
       "put": {
         "description": "Replaces a saved filter preset owned by the authenticated user.",
@@ -19770,7 +20312,9 @@
           }
         ],
         "summary": "Update a filter preset",
-        "tags": ["filter_preset"]
+        "tags": [
+          "filter_preset"
+        ]
       }
     },
     "/financial-activity": {
@@ -19985,7 +20529,9 @@
           }
         ],
         "summary": "Pending financial activity",
-        "tags": ["financial_activity"],
+        "tags": [
+          "financial_activity"
+        ],
         "x-examples": {
           "response": {
             "data": [
@@ -20200,7 +20746,9 @@
           }
         ],
         "summary": "Payment reconciliation history",
-        "tags": ["financial_activity"],
+        "tags": [
+          "financial_activity"
+        ],
         "x-examples": {
           "response": {
             "data": null,
@@ -20435,7 +20983,9 @@
           }
         ],
         "summary": "Search pending financial activity",
-        "tags": ["financial_activity"],
+        "tags": [
+          "financial_activity"
+        ],
         "x-examples": {
           "request": {
             "filters": [
@@ -20710,7 +21260,9 @@
           }
         ],
         "summary": "Financial activity history",
-        "tags": ["financial_activity"],
+        "tags": [
+          "financial_activity"
+        ],
         "x-examples": {
           "response": {
             "data": [
@@ -20838,7 +21390,9 @@
           }
         ],
         "summary": "Record financial reconciliation activity",
-        "tags": ["financial_activity"],
+        "tags": [
+          "financial_activity"
+        ],
         "x-examples": {
           "request": {
             "amount": 25,
@@ -20869,7 +21423,9 @@
           }
         },
         "summary": "Health check",
-        "tags": ["system"]
+        "tags": [
+          "system"
+        ]
       }
     },
     "/health/db": {
@@ -20897,7 +21453,9 @@
           }
         },
         "summary": "Database health",
-        "tags": ["system"]
+        "tags": [
+          "system"
+        ]
       }
     },
     "/income-statements": {
@@ -21020,7 +21578,9 @@
           }
         ],
         "summary": "List all income statements",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       },
       "post": {
         "description": "Requires income statement create permission. Server clock and location timezone set the date; only currency and a positive finite rate are accepted. Serializes location closeouts, returns today’s existing open row unchanged, closes every other open row atomically, and inserts today’s open row only if absent. closedCloseouts lists the rows closed by this request. A previously closed row for today returns 409; no duplicate is opened.",
@@ -21079,7 +21639,9 @@
           }
         ],
         "summary": "Create an income statement",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       }
     },
     "/income-statements/automation": {
@@ -21180,7 +21742,9 @@
           }
         ],
         "summary": "Get daily closeout calendar settings",
-        "tags": ["income_statement"],
+        "tags": [
+          "income_statement"
+        ],
         "x-examples": {
           "response": {
             "data": {
@@ -21342,7 +21906,9 @@
           }
         ],
         "summary": "Update daily closeout calendar settings",
-        "tags": ["income_statement"],
+        "tags": [
+          "income_statement"
+        ],
         "x-examples": {
           "request": {
             "branches": [
@@ -21461,7 +22027,9 @@
           }
         ],
         "summary": "Get closeout calendar and navigation",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       }
     },
     "/income-statements/current": {
@@ -21708,7 +22276,9 @@
           }
         ],
         "summary": "Get current daily closeout",
-        "tags": ["income_statement"],
+        "tags": [
+          "income_statement"
+        ],
         "x-examples": {
           "response": {
             "data": null,
@@ -21825,7 +22395,9 @@
           }
         ],
         "summary": "Search income statements",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       }
     },
     "/income-statements/{id}": {
@@ -21883,7 +22455,9 @@
           }
         ],
         "summary": "Delete an income statement",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       },
       "get": {
         "description": "Requires income statement view permission.",
@@ -21951,7 +22525,9 @@
           }
         ],
         "summary": "Retrieve an income statement",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       },
       "put": {
         "description": "Requires income statement update permission. Retired operation; returns 409. Closeout metadata cannot be manually replaced. Transactions require the current server-dated period.",
@@ -22031,7 +22607,9 @@
           }
         ],
         "summary": "Update an income statement",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       }
     },
     "/income-statements/{id}/close": {
@@ -22111,7 +22689,9 @@
           }
         ],
         "summary": "Close an income statement",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       }
     },
     "/income-statements/{id}/open": {
@@ -22192,7 +22772,9 @@
           }
         ],
         "summary": "Reopen an income statement",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       }
     },
     "/income-statements/{id}/summary-total": {
@@ -22262,7 +22844,9 @@
           }
         ],
         "summary": "Retrieve income statement summary totals",
-        "tags": ["income_statement"]
+        "tags": [
+          "income_statement"
+        ]
       }
     },
     "/insights/histograms/{resource}": {
@@ -22332,7 +22916,9 @@
           }
         ],
         "summary": "Retrieve dashboard histogram aggregates",
-        "tags": ["insights"]
+        "tags": [
+          "insights"
+        ]
       }
     },
     "/insights/kpis": {
@@ -22402,7 +22988,9 @@
           }
         ],
         "summary": "Retrieve dashboard KPI aggregates",
-        "tags": ["insights"]
+        "tags": [
+          "insights"
+        ]
       }
     },
     "/inventory/adjustments": {
@@ -22482,7 +23070,9 @@
           }
         ],
         "summary": "ListAdjustments",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -22569,7 +23159,9 @@
           }
         ],
         "summary": "CreateAdjustment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/adjustments/search": {
@@ -22661,7 +23253,9 @@
           }
         ],
         "summary": "SearchAdjustments",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/adjustments/{id}": {
@@ -22749,7 +23343,9 @@
           }
         ],
         "summary": "GetAdjustment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/adjustments/{id}/cancel": {
@@ -22844,7 +23440,9 @@
           }
         ],
         "summary": "CancelAdjustment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/adjustments/{id}/post": {
@@ -22950,7 +23548,9 @@
           }
         ],
         "summary": "PostAdjustment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/cash-handovers": {
@@ -23030,7 +23630,9 @@
           }
         ],
         "summary": "ListHandovers",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires payments.handover. Creates PENDING handover of complete linked verified CASH or CHECK payments. Each payment can belong to one handover; amount must match their sum.",
@@ -23128,7 +23730,9 @@
           }
         ],
         "summary": "CreateHandover",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/cash-handovers/search": {
@@ -23220,7 +23824,9 @@
           }
         ],
         "summary": "SearchHandovers",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/cash-handovers/{id}": {
@@ -23308,7 +23914,9 @@
           }
         ],
         "summary": "GetHandover",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/cash-handovers/{id}/receive": {
@@ -23414,7 +24022,9 @@
           }
         ],
         "summary": "ReceiveHandover",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/closeouts": {
@@ -23494,7 +24104,9 @@
           }
         ],
         "summary": "ListCloseouts",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -23581,7 +24193,9 @@
           }
         ],
         "summary": "CreateCloseout",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/closeouts/search": {
@@ -23673,7 +24287,9 @@
           }
         ],
         "summary": "SearchCloseouts",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/closeouts/{id}": {
@@ -23761,7 +24377,9 @@
           }
         ],
         "summary": "GetCloseout",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/closeouts/{id}/close": {
@@ -23879,7 +24497,9 @@
           }
         ],
         "summary": "CloseCloseout",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/closeouts/{id}/preview": {
@@ -23967,7 +24587,9 @@
           }
         ],
         "summary": "PreviewCloseout",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/closeouts/{id}/reopen": {
@@ -24085,7 +24707,9 @@
           }
         ],
         "summary": "ReopenCloseout",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/closeouts/{id}/revisions": {
@@ -24176,7 +24800,9 @@
           }
         ],
         "summary": "CloseoutRevisions",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/collection-obligations": {
@@ -24256,7 +24882,9 @@
           }
         ],
         "summary": "ListObligations",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -24354,7 +24982,9 @@
           }
         ],
         "summary": "CreateObligation",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/collection-obligations/search": {
@@ -24446,7 +25076,9 @@
           }
         ],
         "summary": "SearchObligations",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/collection-obligations/{id}": {
@@ -24534,7 +25166,9 @@
           }
         ],
         "summary": "GetObligation",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/collection-obligations/{id}/settlements": {
@@ -24625,7 +25259,9 @@
           }
         ],
         "summary": "ObligationSettlements",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -24741,7 +25377,9 @@
           }
         ],
         "summary": "SettleObligation",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/counts": {
@@ -24821,7 +25459,9 @@
           }
         ],
         "summary": "ListCounts",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -24908,7 +25548,9 @@
           }
         ],
         "summary": "CreateCount",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/counts/search": {
@@ -25000,7 +25642,9 @@
           }
         ],
         "summary": "SearchCounts",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/counts/{id}": {
@@ -25088,7 +25732,9 @@
           }
         ],
         "summary": "GetCount",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/counts/{id}/submit": {
@@ -25206,7 +25852,9 @@
           }
         ],
         "summary": "SubmitCount",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches": {
@@ -25245,7 +25893,9 @@
           }
         ],
         "summary": "ListDispatches",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Assign one physical batch to toHolderId and 1-100 responsibleHolderIds (employees and at most one vehicle). dailyRouteId is analytics attribution, independent of holders. Reconciliation is server-owned.",
@@ -25292,7 +25942,9 @@
           }
         ],
         "summary": "CreateDispatch",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/search": {
@@ -25343,7 +25995,9 @@
           }
         ],
         "summary": "SearchDispatches",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}": {
@@ -25390,7 +26044,9 @@
           }
         ],
         "summary": "Get dispatch",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "patch": {
         "parameters": [
@@ -25456,7 +26112,9 @@
           }
         ],
         "summary": "UpdateDispatch",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "put": {
         "parameters": [
@@ -25522,7 +26180,9 @@
           }
         ],
         "summary": "UpdateDispatch",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}/cancel": {
@@ -25566,7 +26226,9 @@
           }
         ],
         "summary": "Cancel dispatch",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}/confirm": {
@@ -25683,7 +26345,9 @@
           }
         ],
         "summary": "Confirm dispatch handoff",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}/post": {
@@ -25736,7 +26400,9 @@
           }
         ],
         "summary": "Post dispatch",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}/reconciliations": {
@@ -25807,7 +26473,9 @@
           }
         ],
         "summary": "Inventory reconciliation history",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires explicit standalone canReconcileInventoryDispatch; inventory dispatch CRUD grants do not imply it. Claims reserve outstanding units until both parties confirm or one rejects.",
@@ -25904,7 +26572,9 @@
           }
         ],
         "summary": "Submit inventory reconciliation",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}/reconciliations/{reconciliationId}/confirm": {
@@ -26030,7 +26700,9 @@
           }
         ],
         "summary": "Confirm inventory reconciliation",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}/reconciliations/{reconciliationId}/reject": {
@@ -26147,7 +26819,9 @@
           }
         ],
         "summary": "Reject inventory reconciliation",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispatches/{id}/reject": {
@@ -26255,7 +26929,9 @@
           }
         ],
         "summary": "Reject dispatch handoff",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispositions": {
@@ -26335,7 +27011,9 @@
           }
         ],
         "summary": "ListDispositions",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "assignmentId links a posted dispatch for shared accountability; its dailyRouteId is inherited and conflicting route attribution is rejected. Reconciliation updates the shared assignment once, independently of the number of responsible holders.\nRequires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -26422,7 +27100,9 @@
           }
         ],
         "summary": "CreateDisposition",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispositions/search": {
@@ -26514,7 +27194,9 @@
           }
         ],
         "summary": "SearchDispositions",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispositions/{id}": {
@@ -26602,7 +27284,9 @@
           }
         ],
         "summary": "GetDisposition",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispositions/{id}/cancel": {
@@ -26697,7 +27381,9 @@
           }
         ],
         "summary": "CancelDisposition",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/dispositions/{id}/post": {
@@ -26803,7 +27489,9 @@
           }
         ],
         "summary": "PostDisposition",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders": {
@@ -26842,7 +27530,9 @@
           }
         ],
         "summary": "ListHolders",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "requestBody": {
@@ -26888,7 +27578,9 @@
           }
         ],
         "summary": "CreateHolder",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders/search": {
@@ -26939,7 +27631,9 @@
           }
         ],
         "summary": "SearchHolders",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders/{id}": {
@@ -26986,7 +27680,9 @@
           }
         ],
         "summary": "Get holder",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders/{id}/custody-assignments": {
@@ -27077,7 +27773,9 @@
           }
         ],
         "summary": "HolderCustody",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -27175,7 +27873,9 @@
           }
         ],
         "summary": "CreateCustody",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders/{id}/custody-assignments/{assignmentId}": {
@@ -27293,7 +27993,9 @@
           }
         ],
         "summary": "UpdateCustody",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders/{id}/movements": {
@@ -27384,7 +28086,9 @@
           }
         ],
         "summary": "HolderMovements",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders/{id}/reassign": {
@@ -27493,7 +28197,9 @@
           }
         ],
         "summary": "ReassignStock",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/holders/{id}/stock": {
@@ -27584,7 +28290,9 @@
           }
         ],
         "summary": "HolderStock",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/items": {
@@ -27623,7 +28331,9 @@
           }
         ],
         "summary": "ListItems",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "requestBody": {
@@ -27669,7 +28379,9 @@
           }
         ],
         "summary": "CreateItem",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/items/search": {
@@ -27720,7 +28432,9 @@
           }
         ],
         "summary": "SearchItems",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/items/{id}": {
@@ -27767,7 +28481,9 @@
           }
         ],
         "summary": "Get item",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "patch": {
         "description": "Omitted fields are preserved. False and zero are applied. Null and unknown fields are rejected. If-Match remains required.",
@@ -27834,7 +28550,9 @@
           }
         ],
         "summary": "Partially update an inventory item",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "put": {
         "parameters": [
@@ -27900,7 +28618,9 @@
           }
         ],
         "summary": "UpdateItem",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/items/{id}/prices": {
@@ -27991,7 +28711,9 @@
           }
         ],
         "summary": "ItemPrices",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -28089,7 +28811,9 @@
           }
         ],
         "summary": "CreateItemPrice",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/items/{id}/prices/{priceId}": {
@@ -28207,7 +28931,9 @@
           }
         ],
         "summary": "UpdateItemPrice",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/payments": {
@@ -28287,7 +29013,9 @@
           }
         ],
         "summary": "ListPayments",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -28385,7 +29113,9 @@
           }
         ],
         "summary": "RecordPayment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/payments/search": {
@@ -28477,7 +29207,9 @@
           }
         ],
         "summary": "SearchPayments",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/payments/{id}": {
@@ -28565,7 +29297,9 @@
           }
         ],
         "summary": "GetPayment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/payments/{id}/allocations": {
@@ -28656,7 +29390,9 @@
           }
         ],
         "summary": "PaymentAllocations",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires payments.allocate. targetType is SALES_REPORT or COLLECTION_OBLIGATION. Whole-command idempotency and optimistic payment version prevent double allocation.",
@@ -28772,7 +29508,9 @@
           }
         ],
         "summary": "AllocatePayment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/payments/{id}/allocations/{allocationId}": {
@@ -28847,7 +29585,9 @@
           }
         ],
         "summary": "Release unused payment allocation",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/payments/{id}/status": {
@@ -28965,7 +29705,9 @@
           }
         ],
         "summary": "TransitionPayment",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/pending-dispatches/search": {
@@ -29036,7 +29778,9 @@
           }
         ],
         "summary": "Search pending inventory assignments",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/receipts": {
@@ -29075,7 +29819,9 @@
           }
         ],
         "summary": "ListReceipts",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "requestBody": {
@@ -29121,7 +29867,9 @@
           }
         ],
         "summary": "CreateReceipt",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/receipts/search": {
@@ -29172,7 +29920,9 @@
           }
         ],
         "summary": "SearchReceipts",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/receipts/{id}": {
@@ -29219,7 +29969,9 @@
           }
         ],
         "summary": "Get receipt",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "patch": {
         "parameters": [
@@ -29285,7 +30037,9 @@
           }
         ],
         "summary": "UpdateReceipt",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "put": {
         "parameters": [
@@ -29351,7 +30105,9 @@
           }
         ],
         "summary": "UpdateReceipt",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/receipts/{id}/cancel": {
@@ -29395,7 +30151,9 @@
           }
         ],
         "summary": "Cancel receipt",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/receipts/{id}/confirm": {
@@ -29512,7 +30270,9 @@
           }
         ],
         "summary": "Confirm receipt as warehouse",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/receipts/{id}/post": {
@@ -29565,7 +30325,9 @@
           }
         ],
         "summary": "Post receipt",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/receipts/{id}/reject": {
@@ -29673,7 +30435,9 @@
           }
         ],
         "summary": "Reject receipt",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/discrepancies": {
@@ -29713,7 +30477,9 @@
           }
         ],
         "summary": "DiscrepancyReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/discrepancies/search": {
@@ -29764,7 +30530,9 @@
           }
         ],
         "summary": "SearchDiscrepancyReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/obligations": {
@@ -29804,7 +30572,9 @@
           }
         ],
         "summary": "ObligationReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/obligations/search": {
@@ -29855,7 +30625,9 @@
           }
         ],
         "summary": "SearchObligationReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/sales": {
@@ -29895,7 +30667,9 @@
           }
         ],
         "summary": "SalesSummaryReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/sales/search": {
@@ -29946,7 +30720,9 @@
           }
         ],
         "summary": "SearchSalesSummaryReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/stock-valuation": {
@@ -29986,7 +30762,9 @@
           }
         ],
         "summary": "StockValuationReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/reports/stock-valuation/search": {
@@ -30037,7 +30815,9 @@
           }
         ],
         "summary": "SearchStockValuationReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/returns": {
@@ -30117,7 +30897,9 @@
           }
         ],
         "summary": "ListReturns",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "assignmentId links a posted dispatch for shared accountability; its dailyRouteId is inherited and conflicting route attribution is rejected. Reconciliation updates the shared assignment once, independently of the number of responsible holders.\nRequires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -30204,7 +30986,9 @@
           }
         ],
         "summary": "CreateReturn",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/returns/search": {
@@ -30296,7 +31080,9 @@
           }
         ],
         "summary": "SearchReturns",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/returns/{id}": {
@@ -30384,7 +31170,9 @@
           }
         ],
         "summary": "GetReturn",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/returns/{id}/cancel": {
@@ -30479,7 +31267,9 @@
           }
         ],
         "summary": "CancelReturn",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/returns/{id}/post": {
@@ -30585,7 +31375,9 @@
           }
         ],
         "summary": "PostReturn",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/sales-reports": {
@@ -30665,7 +31457,9 @@
           }
         ],
         "summary": "ListSalesReports",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "assignmentId links a posted dispatch for shared accountability; its dailyRouteId is inherited and conflicting route attribution is rejected. Reconciliation updates the shared assignment once, independently of the number of responsible holders.\nRequires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -30752,7 +31546,9 @@
           }
         ],
         "summary": "CreateSalesReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/sales-reports/search": {
@@ -30844,7 +31640,9 @@
           }
         ],
         "summary": "SearchSalesReports",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/sales-reports/{id}": {
@@ -30932,7 +31730,9 @@
           }
         ],
         "summary": "GetSalesReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/sales-reports/{id}/cancel": {
@@ -31027,7 +31827,9 @@
           }
         ],
         "summary": "CancelSalesReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/sales-reports/{id}/post": {
@@ -31133,7 +31935,9 @@
           }
         ],
         "summary": "PostSalesReport",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/stock": {
@@ -31172,7 +31976,9 @@
           }
         ],
         "summary": "ListStock",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/stock/search": {
@@ -31223,7 +32029,9 @@
           }
         ],
         "summary": "SearchStock",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/stock/{id}": {
@@ -31270,7 +32078,9 @@
           }
         ],
         "summary": "Get stock",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/suppliers": {
@@ -31309,7 +32119,9 @@
           }
         ],
         "summary": "ListSuppliers",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "requestBody": {
@@ -31355,7 +32167,9 @@
           }
         ],
         "summary": "CreateSupplier",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/suppliers/search": {
@@ -31406,7 +32220,9 @@
           }
         ],
         "summary": "SearchSuppliers",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/inventory/suppliers/{id}": {
@@ -31453,7 +32269,9 @@
           }
         ],
         "summary": "Get supplier",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "patch": {
         "description": "Omitted fields are preserved. False is applied and empty arrays clear contacts/addresses. Null and unknown fields are rejected. If-Match remains required.",
@@ -31520,7 +32338,9 @@
           }
         ],
         "summary": "Partially update an inventory supplier",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "put": {
         "parameters": [
@@ -31586,7 +32406,9 @@
           }
         ],
         "summary": "UpdateSupplier",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/invoice-descriptions": {
@@ -31709,7 +32531,9 @@
           }
         ],
         "summary": "List all invoice descriptions",
-        "tags": ["invoice_description"]
+        "tags": [
+          "invoice_description"
+        ]
       },
       "post": {
         "description": "Requires settings create permission.",
@@ -31768,7 +32592,9 @@
           }
         ],
         "summary": "Create an invoice description",
-        "tags": ["invoice_description"]
+        "tags": [
+          "invoice_description"
+        ]
       }
     },
     "/invoice-descriptions/search": {
@@ -31870,7 +32696,9 @@
           }
         ],
         "summary": "Search invoice descriptions",
-        "tags": ["invoice_description"]
+        "tags": [
+          "invoice_description"
+        ]
       }
     },
     "/invoice-descriptions/{id}": {
@@ -31918,7 +32746,9 @@
           }
         ],
         "summary": "Delete an invoice description",
-        "tags": ["invoice_description"]
+        "tags": [
+          "invoice_description"
+        ]
       },
       "get": {
         "description": "Requires settings view permission.",
@@ -31986,7 +32816,9 @@
           }
         ],
         "summary": "Retrieve an invoice description",
-        "tags": ["invoice_description"]
+        "tags": [
+          "invoice_description"
+        ]
       },
       "put": {
         "description": "Requires settings update permission.",
@@ -32066,7 +32898,9 @@
           }
         ],
         "summary": "Update an invoice description",
-        "tags": ["invoice_description"]
+        "tags": [
+          "invoice_description"
+        ]
       }
     },
     "/invoice-policies": {
@@ -32189,7 +33023,9 @@
           }
         ],
         "summary": "List invoice policies",
-        "tags": ["invoice_policy"]
+        "tags": [
+          "invoice_policy"
+        ]
       },
       "post": {
         "description": "Requires invoice_policy create permission.",
@@ -32258,7 +33094,9 @@
           }
         ],
         "summary": "Create an invoice policy",
-        "tags": ["invoice_policy"]
+        "tags": [
+          "invoice_policy"
+        ]
       }
     },
     "/invoice-policies/active": {
@@ -32328,7 +33166,9 @@
           }
         ],
         "summary": "List active invoice policies",
-        "tags": ["invoice_policy"]
+        "tags": [
+          "invoice_policy"
+        ]
       }
     },
     "/invoice-policies/search": {
@@ -32430,7 +33270,9 @@
           }
         ],
         "summary": "Search invoice policies",
-        "tags": ["invoice_policy"]
+        "tags": [
+          "invoice_policy"
+        ]
       }
     },
     "/invoice-policies/{id}": {
@@ -32488,7 +33330,9 @@
           }
         ],
         "summary": "Delete an invoice policy",
-        "tags": ["invoice_policy"]
+        "tags": [
+          "invoice_policy"
+        ]
       },
       "get": {
         "description": "Requires invoice_policy view permission.",
@@ -32556,7 +33400,9 @@
           }
         ],
         "summary": "Retrieve an invoice policy",
-        "tags": ["invoice_policy"]
+        "tags": [
+          "invoice_policy"
+        ]
       },
       "put": {
         "description": "Requires invoice_policy update permission.",
@@ -32646,7 +33492,9 @@
           }
         ],
         "summary": "Update an invoice policy",
-        "tags": ["invoice_policy"]
+        "tags": [
+          "invoice_policy"
+        ]
       }
     },
     "/invoices": {
@@ -32767,7 +33615,9 @@
           }
         ],
         "summary": "List all invoices",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       },
       "post": {
         "description": "Accepts write-only senderSignature or the customerSignature compatibility alias (not both). Validates PNG/JPEG data before saving; invalid signatures return 400. Responses omit signatures.\nRequires invoice create permission. Container and pickup assignment may be omitted and filled later. Optional pickup accepts a numeric id reference object or a legacy string id; the API resolves the pickup within the tenant and preserves its snapshot without marking it completed. Requested labels are saved without generated barcodes until a container is assigned. Returns 409 unless an open daily income statement is available. When incomeStatement.id is omitted, the API resolves the open statement for the invoice date and branch; an explicitly selected missing or closed statement also returns 409.",
@@ -32844,7 +33694,9 @@
           }
         ],
         "summary": "Create a invoice",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       }
     },
     "/invoices/item/barcode/route/{routeId}": {
@@ -32934,7 +33786,9 @@
           }
         ],
         "summary": "Assign invoice-item barcodes to a route",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       }
     },
     "/invoices/legacy-sync": {
@@ -33001,7 +33855,9 @@
           }
         ],
         "summary": "Sync legacy invoices",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       }
     },
     "/invoices/legacy-sync/preview": {
@@ -33048,7 +33904,9 @@
           }
         ],
         "summary": "Preview legacy invoice sync",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       }
     },
     "/invoices/reserved": {
@@ -33140,7 +33998,9 @@
           }
         ],
         "summary": "List reserved invoice numbers",
-        "tags": ["invoices"]
+        "tags": [
+          "invoices"
+        ]
       }
     },
     "/invoices/reserved/actions": {
@@ -33232,7 +34092,9 @@
           }
         ],
         "summary": "Manage reserved invoice numbers",
-        "tags": ["invoices"]
+        "tags": [
+          "invoices"
+        ]
       }
     },
     "/invoices/reserved/mine": {
@@ -33335,7 +34197,9 @@
           }
         ],
         "summary": "Download this device's reserved invoice numbers",
-        "tags": ["invoices"]
+        "tags": [
+          "invoices"
+        ]
       }
     },
     "/invoices/search": {
@@ -33435,7 +34299,9 @@
           }
         ],
         "summary": "Search invoices",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       }
     },
     "/invoices/sync/create": {
@@ -33554,7 +34420,9 @@
           }
         ],
         "summary": "Create an invoice with safe retry identity",
-        "tags": ["invoices"]
+        "tags": [
+          "invoices"
+        ]
       }
     },
     "/invoices/sync/create-assigned": {
@@ -33653,7 +34521,9 @@
           }
         ],
         "summary": "Synchronize an assigned pickup invoice",
-        "tags": ["invoices"]
+        "tags": [
+          "invoices"
+        ]
       }
     },
     "/invoices/sync/{id}": {
@@ -33761,7 +34631,9 @@
           }
         ],
         "summary": "Read an invoice synchronization snapshot",
-        "tags": ["invoices"]
+        "tags": [
+          "invoices"
+        ]
       },
       "put": {
         "description": "Requires invoice update permission and existing manual-number rules. Preserve requestId, revision and payload on retries. A committed identical replay acknowledges the original operation and returns the current snapshot. A stale revision or changed-payload UUID reuse returns 409 without overwriting server changes. Ordinary PUT /invoices/{id} remains unchanged.",
@@ -33889,7 +34761,9 @@
           }
         ],
         "summary": "Update an invoice using its downloaded revision",
-        "tags": ["invoices"]
+        "tags": [
+          "invoices"
+        ]
       }
     },
     "/invoices/{id}": {
@@ -33984,7 +34858,9 @@
           }
         ],
         "summary": "Delete a invoice",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       },
       "get": {
         "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires invoice view permission.",
@@ -34068,7 +34944,9 @@
           }
         ],
         "summary": "Retrieve a invoice",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       },
       "put": {
         "description": "Returns read-only body version and strongly quoted ETag for the same read.\nRequires If-Match from the original read, strongly quoted as \"v1:<64 lowercase hex>\". Missing=428, malformed=400, stale=412; rejection changes nothing. Body version is read-only.\nRequires invoice update permission. Unassigned invoices preserve label counts without generating barcodes; assigning a container generates missing labels. Merchandise labels are owned by invoice details: increasing labels mints missing barcodes, decreasing labels requires removeBarcodeIds (ObjectID barcodeId values), deleted line items remove their barcodes, and description changes update embed + catalog descriptions.",
@@ -34193,7 +35071,9 @@
           }
         ],
         "summary": "Update a invoice",
-        "tags": ["invoice"]
+        "tags": [
+          "invoice"
+        ]
       }
     },
     "/invoices/{id}/documents": {
@@ -34249,7 +35129,9 @@
           }
         ],
         "summary": "List invoice documents",
-        "tags": ["invoice-documents"]
+        "tags": [
+          "invoice-documents"
+        ]
       },
       "post": {
         "description": "Requires canUpdateInvoice (invoice/update), a nonzero container ID with a resolved name/number, and an invoice number. One file up to 25 MiB. Signature-validated PDF and raster images only; video, audio, Office, SVG and HTML are rejected. No asynchronous malware scanning or transcoding.",
@@ -34281,7 +35163,9 @@
                     "x-formData-name": "uploadId"
                   }
                 },
-                "required": ["file"],
+                "required": [
+                  "file"
+                ],
                 "type": "object"
               }
             }
@@ -34358,7 +35242,9 @@
           }
         ],
         "summary": "Upload invoice document",
-        "tags": ["invoice-documents"]
+        "tags": [
+          "invoice-documents"
+        ]
       }
     },
     "/invoices/{id}/documents/{documentId}": {
@@ -34412,7 +35298,9 @@
           }
         ],
         "summary": "Delete invoice document",
-        "tags": ["invoice-documents"]
+        "tags": [
+          "invoice-documents"
+        ]
       },
       "patch": {
         "description": "Requires canUpdateInvoice (invoice/update). Filename must preserve its extension, use at most 200 Unicode characters, and contain no slashes or control characters. Missing/invalid If-Match is 400; stale version or deleting state is 409 (not 412).",
@@ -34488,7 +35376,9 @@
           }
         ],
         "summary": "Rename invoice document",
-        "tags": ["invoice-documents"]
+        "tags": [
+          "invoice-documents"
+        ]
       }
     },
     "/invoices/{id}/documents/{documentId}/link": {
@@ -34553,7 +35443,9 @@
           }
         ],
         "summary": "Get invoice document link",
-        "tags": ["invoice-documents"]
+        "tags": [
+          "invoice-documents"
+        ]
       }
     },
     "/journal-entries": {
@@ -34633,7 +35525,9 @@
           }
         ],
         "summary": "ListJournalEntries",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/journal-entries/search": {
@@ -34725,7 +35619,9 @@
           }
         ],
         "summary": "SearchJournalEntries",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/journal-entries/{id}": {
@@ -34813,7 +35709,9 @@
           }
         ],
         "summary": "GetJournalEntry",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/journals": {
@@ -34934,7 +35832,9 @@
           }
         ],
         "summary": "List all journals",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       },
       "post": {
         "description": "Records a balanced double-entry journal. Receipt/refund entries require paymentMethod.name: CASH posts to CASH ON HAND or a scoped posting ASSET under CASH ON HAND supplied as paymentAccount; ZELLE, DEPOSIT, DEBIT-CARD and WIRE require a BANK paymentAccount; CHECK posts to CHECKS TO DEPOSIT unless a BANK paymentAccount is supplied; CREDIT-CARD posts to CARD PROCESSOR RECEIVABLE. PAYMENT and INITIAL-PAYMENT accept account as a backward-compatible Zelle/deposit destination alias. ZELLE, DEPOSIT, CHECK and CREDIT-CARD invoice receipts create outstanding directory records; DEBIT-CARD and WIRE use journal-only clearance; cash invoice receipts apply immediately; bank receipts defer invoice payment/balance until POST /journals/clear with canClearJournal. Ledger entries are recorded independently of internal reconciliation. Server recording time and the authenticated user location select the latest closeout. It must be open and dated today in that location timezone; otherwise returns 409 CLOSEOUT_REQUIRED with reason NONE_EXISTS, STALE_OPEN_CLOSEOUT, or LATEST_CLOSED plus date/timezone metadata. This operation never opens or closes closeouts. When neither an employee nor daily route is selected, employee defaults to the creator linked employee. INITIAL-PAYMENT without invoice.id creates a PENDING invoice and accepts either employee or vehicleRoute/route/employeeGroup assignees, including zero-amount registrations. Employee financial responsibility is independent of route attribution; route-attributed finances belong to the captured supervisor. Response data is PostEntryResult with current statement totals. Optional autoClear (default false) is the compatibility alias for internal auto-reconciliation for every transaction/method and requires explicit canReconcileJournal. It never verifies bank settlement. Otherwise the journal is OUTSTANDING. ReconciledAt is API approval time, independent of journal date. Journal PUT cannot change reconciliation fields. Later approval uses POST /journals/reconcile; method-directory clearing is retired. EXPENSE uses sourceAccount: cash defaults to CASH ON HAND; non-cash requires a BANK source, and CHECK requires paymentReference or checkNumber. INITIAL-PAYMENT defaults an omitted refNumber to the allocated invoice number. Duplicate payments return 409 with data.code DUPLICATE_PAYMENT. Inventory receipts require warehouse confirmation before stock becomes available.",
@@ -35043,7 +35943,9 @@
           }
         ],
         "summary": "Post a journal entry",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/clear": {
@@ -35122,7 +36024,9 @@
           }
         ],
         "summary": "Clear outstanding bank journals",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/reconcile": {
@@ -35211,7 +36115,9 @@
           }
         ],
         "summary": "Reconcile Outstanding journals",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/search": {
@@ -35311,7 +36217,9 @@
           }
         ],
         "summary": "Search journals",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/summary": {
@@ -35393,7 +36301,9 @@
           }
         ],
         "summary": "Summarize journals by currency",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/sync": {
@@ -35492,7 +36402,9 @@
           }
         ],
         "summary": "Post a retry-safe journal entry",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/sync/assigned/{pickupID}": {
@@ -35592,7 +36504,9 @@
           }
         ],
         "summary": "Synchronize an assigned pickup initial payment",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/{id}": {
@@ -35649,7 +36563,9 @@
           }
         ],
         "summary": "Reject hard deletion of a journal entry",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       },
       "get": {
         "description": "Requires journal view permission.",
@@ -35715,7 +36631,9 @@
           }
         ],
         "summary": "Retrieve a journal",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       },
       "put": {
         "deprecated": true,
@@ -35814,7 +36732,9 @@
           }
         ],
         "summary": "Update a journal entry",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/{id}/actions": {
@@ -35881,7 +36801,9 @@
           }
         ],
         "summary": "Read effective journal actions",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/{id}/correct": {
@@ -35981,7 +36903,9 @@
           }
         ],
         "summary": "Correct a journal atomically",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/{id}/note": {
@@ -36081,7 +37005,9 @@
           }
         ],
         "summary": "Annotate a journal",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/journals/{id}/reverse": {
@@ -36225,7 +37151,9 @@
           }
         ],
         "summary": "Reverse a posted journal",
-        "tags": ["journal"],
+        "tags": [
+          "journal"
+        ],
         "x-examples": {
           "request": {
             "reason": "Duplicate collection",
@@ -36352,7 +37280,9 @@
           }
         ],
         "summary": "Soft-void an unrestricted journal",
-        "tags": ["journal"]
+        "tags": [
+          "journal"
+        ]
       }
     },
     "/loans": {
@@ -36478,7 +37408,9 @@
           }
         ],
         "summary": "List loans",
-        "tags": ["loan"]
+        "tags": [
+          "loan"
+        ]
       },
       "post": {
         "requestBody": {
@@ -36564,7 +37496,9 @@
           }
         ],
         "summary": "Create a loan",
-        "tags": ["loan"]
+        "tags": [
+          "loan"
+        ]
       }
     },
     "/loans/payments": {
@@ -36652,7 +37586,9 @@
           }
         ],
         "summary": "Pay employee loans",
-        "tags": ["loan"]
+        "tags": [
+          "loan"
+        ]
       }
     },
     "/loans/search": {
@@ -36741,7 +37677,9 @@
           }
         ],
         "summary": "Search loans",
-        "tags": ["loan"]
+        "tags": [
+          "loan"
+        ]
       }
     },
     "/loans/{id}": {
@@ -36828,7 +37766,9 @@
           }
         ],
         "summary": "Retrieve a loan",
-        "tags": ["loan"]
+        "tags": [
+          "loan"
+        ]
       }
     },
     "/loans/{id}/payments": {
@@ -36927,7 +37867,9 @@
           }
         ],
         "summary": "Pay a loan",
-        "tags": ["loan"]
+        "tags": [
+          "loan"
+        ]
       }
     },
     "/loans/{id}/transactions": {
@@ -37017,7 +37959,9 @@
           }
         ],
         "summary": "List loan transactions",
-        "tags": ["loan"]
+        "tags": [
+          "loan"
+        ]
       }
     },
     "/memo-pads": {
@@ -37140,7 +38084,9 @@
           }
         ],
         "summary": "List all memo pads",
-        "tags": ["memo_pad"]
+        "tags": [
+          "memo_pad"
+        ]
       },
       "post": {
         "description": "Creates a memo pad for the authenticated user in the current company tenant.",
@@ -37209,7 +38155,9 @@
           }
         ],
         "summary": "Create a memo pad",
-        "tags": ["memo_pad"]
+        "tags": [
+          "memo_pad"
+        ]
       }
     },
     "/memo-pads/search": {
@@ -37311,7 +38259,9 @@
           }
         ],
         "summary": "Search memo pads",
-        "tags": ["memo_pad"]
+        "tags": [
+          "memo_pad"
+        ]
       }
     },
     "/memo-pads/{id}": {
@@ -37369,7 +38319,9 @@
           }
         ],
         "summary": "Delete a memo pad",
-        "tags": ["memo_pad"]
+        "tags": [
+          "memo_pad"
+        ]
       },
       "get": {
         "description": "Returns one memo pad owned by the authenticated user.",
@@ -37437,7 +38389,9 @@
           }
         ],
         "summary": "Retrieve a memo pad",
-        "tags": ["memo_pad"]
+        "tags": [
+          "memo_pad"
+        ]
       },
       "put": {
         "description": "Replaces a memo pad owned by the authenticated user.",
@@ -37527,7 +38481,9 @@
           }
         ],
         "summary": "Update a memo pad",
-        "tags": ["memo_pad"]
+        "tags": [
+          "memo_pad"
+        ]
       }
     },
     "/permissions": {
@@ -37650,7 +38606,9 @@
           }
         ],
         "summary": "List all permissions",
-        "tags": ["permission"]
+        "tags": [
+          "permission"
+        ]
       },
       "post": {
         "description": "Requires settings create permission. Sets createdAt, updatedAt, and createdBy from the authenticated user.",
@@ -37709,7 +38667,9 @@
           }
         ],
         "summary": "Create a permission",
-        "tags": ["permission"]
+        "tags": [
+          "permission"
+        ]
       }
     },
     "/permissions/reload": {
@@ -37758,7 +38718,9 @@
           }
         ],
         "summary": "Reload tenant permissions cache",
-        "tags": ["permission"]
+        "tags": [
+          "permission"
+        ]
       }
     },
     "/permissions/search": {
@@ -37860,7 +38822,9 @@
           }
         ],
         "summary": "Search permissions",
-        "tags": ["permission"]
+        "tags": [
+          "permission"
+        ]
       }
     },
     "/permissions/{id}": {
@@ -37908,7 +38872,9 @@
           }
         ],
         "summary": "Delete a permission",
-        "tags": ["permission"]
+        "tags": [
+          "permission"
+        ]
       },
       "get": {
         "description": "Requires settings view permission.",
@@ -37976,7 +38942,9 @@
           }
         ],
         "summary": "Retrieve a permission",
-        "tags": ["permission"]
+        "tags": [
+          "permission"
+        ]
       },
       "put": {
         "description": "Requires settings update permission. Preserves createdAt and createdBy; updates updatedAt.",
@@ -38056,7 +39024,9 @@
           }
         ],
         "summary": "Update a permission",
-        "tags": ["permission"]
+        "tags": [
+          "permission"
+        ]
       }
     },
     "/pickups": {
@@ -38195,7 +39165,9 @@
           }
         ],
         "summary": "List all pickups",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       },
       "post": {
         "description": "Requires pickup create permission. Required: sender.name. A pickup may include multiple receivers; customerType is 1 for sender and 2 for receivers.",
@@ -38264,7 +39236,9 @@
           }
         ],
         "summary": "Create a pickup",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/legacy-sync": {
@@ -38313,7 +39287,9 @@
           }
         ],
         "summary": "Sync legacy pickups",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/legacy-sync/preview": {
@@ -38362,7 +39338,9 @@
           }
         ],
         "summary": "Preview legacy pickup sync",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/route/{routeId}": {
@@ -38442,7 +39420,9 @@
           }
         ],
         "summary": "Assign pickup appointments",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/search": {
@@ -38544,7 +39524,9 @@
           }
         ],
         "summary": "Search pickups",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/sync/search": {
@@ -38625,7 +39607,9 @@
           }
         ],
         "summary": "Download pickups for offline work",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/sync/{id}": {
@@ -38693,7 +39677,9 @@
           }
         ],
         "summary": "Download a pickup for offline completion",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/sync/{id}/complete": {
@@ -38803,7 +39789,9 @@
           }
         ],
         "summary": "Synchronize pickup completion safely",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/{id}": {
@@ -38851,7 +39839,9 @@
           }
         ],
         "summary": "Delete a pickup",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       },
       "get": {
         "description": "canViewPickup permits any pickup in the current tenant; canViewAssignedAppointments permits only pickups on the authenticated employee's assigned pickup routes.",
@@ -38919,7 +39909,9 @@
           }
         ],
         "summary": "Retrieve a pickup",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       },
       "put": {
         "description": "Requires pickup update permission. PUT merges supplied fields: omitting completed preserves its stored true/false value; explicitly sending completed:false reopens the pickup. Omitted fields keep their existing values; nullable nested references sent as null are cleared. Send route:null to unassign the scheduled vehicle route.\ncanUpdatePickup permits ordinary updates. canUpdateAssignedAppointments permits updates only on the authenticated employee pickup routes and cannot change or clear route assignment.",
@@ -38999,7 +39991,9 @@
           }
         ],
         "summary": "Update a pickup",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/{id}/invoice-context": {
@@ -39085,7 +40079,9 @@
           }
         ],
         "summary": "Download pickup invoice customer context",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/{id}/legacy-sync/retry": {
@@ -39155,7 +40151,9 @@
           }
         ],
         "summary": "Retry legacy pickup sync",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/pickups/{id}/route": {
@@ -39213,7 +40211,9 @@
           }
         ],
         "summary": "Unassign pickup route",
-        "tags": ["pickup"]
+        "tags": [
+          "pickup"
+        ]
       }
     },
     "/predefined-routes": {
@@ -39336,7 +40336,9 @@
           }
         ],
         "summary": "List predefined routes",
-        "tags": ["predefined_route"]
+        "tags": [
+          "predefined_route"
+        ]
       },
       "post": {
         "description": "Requires predefined_route create permission. Send name and comma-separated content; the API preserves mixed entry order and derives read-only cities and zipcodes arrays.",
@@ -39405,7 +40407,9 @@
           }
         ],
         "summary": "Create an predefined route",
-        "tags": ["predefined_route"]
+        "tags": [
+          "predefined_route"
+        ]
       }
     },
     "/predefined-routes/search": {
@@ -39507,7 +40511,9 @@
           }
         ],
         "summary": "Search predefined routes",
-        "tags": ["predefined_route"]
+        "tags": [
+          "predefined_route"
+        ]
       }
     },
     "/predefined-routes/{id}": {
@@ -39565,7 +40571,9 @@
           }
         ],
         "summary": "Delete an predefined route",
-        "tags": ["predefined_route"]
+        "tags": [
+          "predefined_route"
+        ]
       },
       "get": {
         "description": "Requires predefined_route view permission.",
@@ -39633,7 +40641,9 @@
           }
         ],
         "summary": "Retrieve an predefined route",
-        "tags": ["predefined_route"]
+        "tags": [
+          "predefined_route"
+        ]
       },
       "put": {
         "description": "Requires predefined_route update permission. Send name and mixed city/ZIP content; cities and zipcodes are derived by the API.",
@@ -39723,7 +40733,9 @@
           }
         ],
         "summary": "Update an predefined route",
-        "tags": ["predefined_route"]
+        "tags": [
+          "predefined_route"
+        ]
       }
     },
     "/public/reports/{token}": {
@@ -39790,7 +40802,9 @@
           }
         },
         "summary": "Download public report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       },
       "servers": [
         {
@@ -39857,7 +40871,9 @@
           }
         ],
         "summary": "List report definitions",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/company-policies": {
@@ -39948,7 +40964,9 @@
           }
         ],
         "summary": "Generate company policies PDF",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/custom/form": {
@@ -40027,7 +41045,9 @@
           }
         ],
         "summary": "Generate customs form report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/custom/relation": {
@@ -40106,7 +41126,9 @@
           }
         ],
         "summary": "Generate shipment relation report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/custom/sender": {
@@ -40185,7 +41207,9 @@
           }
         ],
         "summary": "Generate customs sender report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/deliveries": {
@@ -40264,7 +41288,9 @@
           }
         ],
         "summary": "Generate delivery manifest",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/income": {
@@ -40333,7 +41359,9 @@
           }
         ],
         "summary": "Generate income statement report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/invoice-details": {
@@ -40402,7 +41430,9 @@
           }
         ],
         "summary": "Generate invoice details report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/invoices": {
@@ -40471,7 +41501,9 @@
           }
         ],
         "summary": "Generate invoice report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/invoices/signature-options": {
@@ -40553,7 +41585,9 @@
           }
         ],
         "summary": "List invoice signature choices",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/journals": {
@@ -40622,7 +41656,9 @@
           }
         ],
         "summary": "Generate journal report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/labels": {
@@ -40691,7 +41727,9 @@
           }
         ],
         "summary": "Generate invoice labels",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/loans": {
@@ -40770,7 +41808,9 @@
           }
         ],
         "summary": "Generate employee loan statement report",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/pickups": {
@@ -40839,7 +41879,9 @@
           }
         ],
         "summary": "Generate pickup manifest",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/reports/transactions": {
@@ -40898,7 +41940,9 @@
           }
         ],
         "summary": "Generate transaction receipt",
-        "tags": ["reports"]
+        "tags": [
+          "reports"
+        ]
       }
     },
     "/roles": {
@@ -41021,7 +42065,9 @@
           }
         ],
         "summary": "List all roles",
-        "tags": ["role"]
+        "tags": [
+          "role"
+        ]
       },
       "post": {
         "description": "Requires user create permission. Omit id on create; the server assigns the next numeric role id and sets createdAt, updatedAt, and createdBy from the authenticated user.",
@@ -41080,7 +42126,9 @@
           }
         ],
         "summary": "Create a role",
-        "tags": ["role"]
+        "tags": [
+          "role"
+        ]
       }
     },
     "/roles/search": {
@@ -41182,7 +42230,9 @@
           }
         ],
         "summary": "Search roles",
-        "tags": ["role"]
+        "tags": [
+          "role"
+        ]
       }
     },
     "/roles/{id}": {
@@ -41240,7 +42290,9 @@
           }
         ],
         "summary": "Delete a role",
-        "tags": ["role"]
+        "tags": [
+          "role"
+        ]
       },
       "get": {
         "description": "Requires user view permission.",
@@ -41308,7 +42360,9 @@
           }
         ],
         "summary": "Retrieve a role",
-        "tags": ["role"]
+        "tags": [
+          "role"
+        ]
       },
       "put": {
         "description": "Requires user update permission. Audit fields createdAt and createdBy are preserved; updatedAt and updatedBy are set from the authenticated user.",
@@ -41388,7 +42442,9 @@
           }
         ],
         "summary": "Update a role",
-        "tags": ["role"]
+        "tags": [
+          "role"
+        ]
       }
     },
     "/route-crews": {
@@ -41468,7 +42524,9 @@
           }
         ],
         "summary": "ListCrews",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -41555,7 +42613,9 @@
           }
         ],
         "summary": "CreateCrew",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/route-crews/search": {
@@ -41647,7 +42707,9 @@
           }
         ],
         "summary": "SearchCrews",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/route-crews/{id}": {
@@ -41735,7 +42797,9 @@
           }
         ],
         "summary": "GetCrew",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "put": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -41842,7 +42906,9 @@
           }
         ],
         "summary": "UpdateCrew",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/route-crews/{id}/members": {
@@ -41933,7 +42999,9 @@
           }
         ],
         "summary": "CrewMembers",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       },
       "post": {
         "description": "Requires the documented named capability and tenant/holder or employee scope. Server-owned identities, audit fields, statuses and derived totals are never accepted as authoritative.",
@@ -42031,7 +43099,9 @@
           }
         ],
         "summary": "AddCrewMember",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/route-crews/{id}/members/{memberId}": {
@@ -42149,7 +43219,9 @@
           }
         ],
         "summary": "UpdateCrewMember",
-        "tags": ["inventory"]
+        "tags": [
+          "inventory"
+        ]
       }
     },
     "/route-optimizer/balance": {
@@ -42199,7 +43271,9 @@
           }
         ],
         "summary": "Optimize balanced routes",
-        "tags": ["route_optimizer"]
+        "tags": [
+          "route_optimizer"
+        ]
       }
     },
     "/route-optimizer/single": {
@@ -42249,7 +43323,9 @@
           }
         ],
         "summary": "Optimize one route",
-        "tags": ["route_optimizer"]
+        "tags": [
+          "route_optimizer"
+        ]
       }
     },
     "/routes": {
@@ -42372,7 +43448,9 @@
           }
         ],
         "summary": "List all routes",
-        "tags": ["route"]
+        "tags": [
+          "route"
+        ]
       },
       "post": {
         "description": "Requires route create permission. Reusable crews do not contain a vehicle; only daily routes do. Employee sets must be unique throughout the tenant, ignoring order and roles (409 on duplicate). A route belongs to a branch and requires 2 to 100 distinct active employees from this tenant. For a single employee use the employee field on the assignment. Crews do not store a name; derive the display label from employees.",
@@ -42451,7 +43529,9 @@
           }
         ],
         "summary": "Create a route",
-        "tags": ["route"]
+        "tags": [
+          "route"
+        ]
       }
     },
     "/routes/search": {
@@ -42553,7 +43633,9 @@
           }
         ],
         "summary": "Search routes",
-        "tags": ["route"]
+        "tags": [
+          "route"
+        ]
       }
     },
     "/routes/{id}": {
@@ -42601,7 +43683,9 @@
           }
         ],
         "summary": "Delete a route",
-        "tags": ["route"]
+        "tags": [
+          "route"
+        ]
       },
       "get": {
         "description": "Requires route view permission.",
@@ -42669,7 +43753,9 @@
           }
         ],
         "summary": "Retrieve a route",
-        "tags": ["route"]
+        "tags": [
+          "route"
+        ]
       },
       "put": {
         "description": "Requires route update permission. Rejects another crew with the exact same employee ID set, excluding this crew. Crew templates are used only to prefill creation forms. Editing or deleting a crew never changes saved daily routes.",
@@ -42759,7 +43845,9 @@
           }
         ],
         "summary": "Update a route",
-        "tags": ["route"]
+        "tags": [
+          "route"
+        ]
       }
     },
     "/user-activities": {
@@ -42882,7 +43970,9 @@
           }
         ],
         "summary": "List user activities",
-        "tags": ["user_activity"]
+        "tags": [
+          "user_activity"
+        ]
       }
     },
     "/user-activities/search": {
@@ -42984,7 +44074,9 @@
           }
         ],
         "summary": "Search user activities",
-        "tags": ["user_activity"]
+        "tags": [
+          "user_activity"
+        ]
       }
     },
     "/users": {
@@ -43107,7 +44199,9 @@
           }
         ],
         "summary": "List all tenant users",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       },
       "post": {
         "description": "Requires user create permission.",
@@ -43166,7 +44260,9 @@
           }
         ],
         "summary": "Create a tenant user",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       }
     },
     "/users/current": {
@@ -43225,7 +44321,9 @@
           }
         ],
         "summary": "Current tenant user",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       }
     },
     "/users/me": {
@@ -43259,7 +44357,9 @@
           }
         ],
         "summary": "Current user",
-        "tags": ["Authentication"]
+        "tags": [
+          "Authentication"
+        ]
       }
     },
     "/users/me/preferences": {
@@ -43318,7 +44418,9 @@
           }
         ],
         "summary": "Current user preferences",
-        "tags": ["user_preference"]
+        "tags": [
+          "user_preference"
+        ]
       },
       "patch": {
         "description": "Sets the warning threshold (0–10000, default 10) for the authenticated tenant user; other preferences are preserved. The mobile count is low at or below this value.",
@@ -43397,7 +44499,9 @@
           }
         ],
         "summary": "Update current user invoice pool threshold",
-        "tags": ["user_preference"]
+        "tags": [
+          "user_preference"
+        ]
       },
       "put": {
         "description": "Stores UI preferences for the authenticated tenant user.",
@@ -43476,7 +44580,9 @@
           }
         ],
         "summary": "Update current user preferences",
-        "tags": ["user_preference"]
+        "tags": [
+          "user_preference"
+        ]
       }
     },
     "/users/permissions": {
@@ -43545,7 +44651,9 @@
           }
         ],
         "summary": "Current user permissions",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       }
     },
     "/users/search": {
@@ -43647,7 +44755,9 @@
           }
         ],
         "summary": "Search tenant users",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       }
     },
     "/users/uid/{uid}": {
@@ -43717,7 +44827,9 @@
           }
         ],
         "summary": "Retrieve a tenant user by Firebase UID",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       }
     },
     "/users/{id}": {
@@ -43765,7 +44877,9 @@
           }
         ],
         "summary": "Delete a tenant user",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       },
       "get": {
         "description": "Requires user view permission.",
@@ -43833,7 +44947,9 @@
           }
         ],
         "summary": "Retrieve a tenant user",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       },
       "put": {
         "description": "Requires user update permission.",
@@ -43913,7 +45029,9 @@
           }
         ],
         "summary": "Update a tenant user",
-        "tags": ["user"]
+        "tags": [
+          "user"
+        ]
       }
     },
     "/users/{id}/preferences": {
@@ -43983,7 +45101,9 @@
           }
         ],
         "summary": "Retrieve user preferences",
-        "tags": ["user_preference"]
+        "tags": [
+          "user_preference"
+        ]
       },
       "put": {
         "description": "Requires user update permission.",
@@ -44073,7 +45193,9 @@
           }
         ],
         "summary": "Update user preferences",
-        "tags": ["user_preference"]
+        "tags": [
+          "user_preference"
+        ]
       }
     },
     "/vehicle-routes": {
@@ -44196,7 +45318,9 @@
           }
         ],
         "summary": "List all vehicle routes",
-        "tags": ["vehicle-route"]
+        "tags": [
+          "vehicle-route"
+        ]
       },
       "post": {
         "description": "Requires route create permission. Creates a new vehicle route unless date, vehicle, and the exact employee set match another dated route (409). Employee order does not distinguish duplicates. Create and edit enforce this rule. Use this endpoint when adding entries, including another delivery conduce for the same container on the same date; do not use PUT for new conduces. Crew templates are creation shortcuts only; no crew reference is stored. A date, vehicle, active employees, one supervisor and one driver are required; supervisor and driver may be the same employee. Helpers cannot hold another role. Names are read-only and generated as YYYY-MM-DD_Vehicle_Supervisor+Driver+Helpers.",
@@ -44265,7 +45389,9 @@
           }
         ],
         "summary": "Create a vehicle route",
-        "tags": ["vehicle-route"]
+        "tags": [
+          "vehicle-route"
+        ]
       }
     },
     "/vehicle-routes/search": {
@@ -44367,7 +45493,9 @@
           }
         ],
         "summary": "Search vehicle routes",
-        "tags": ["vehicle-route"]
+        "tags": [
+          "vehicle-route"
+        ]
       }
     },
     "/vehicle-routes/{id}": {
@@ -44415,7 +45543,9 @@
           }
         ],
         "summary": "Delete a vehicle route",
-        "tags": ["vehicle-route"]
+        "tags": [
+          "vehicle-route"
+        ]
       },
       "get": {
         "description": "Requires route view permission.",
@@ -44483,7 +45613,9 @@
           }
         ],
         "summary": "Retrieve a vehicle route",
-        "tags": ["vehicle-route"]
+        "tags": [
+          "vehicle-route"
+        ]
       },
       "put": {
         "description": "Requires route update permission. Edits one existing vehicle route by id. Do not use this endpoint to add a new delivery conduce; use POST /vehicle-routes instead. A date is required. Names are always regenerated from date, vehicle and assigned employees. Delivery tripNumber is preserved.",
@@ -44573,7 +45705,9 @@
           }
         ],
         "summary": "Update a vehicle route",
-        "tags": ["vehicle-route"]
+        "tags": [
+          "vehicle-route"
+        ]
       }
     },
     "/vehicles": {
@@ -44696,7 +45830,9 @@
           }
         ],
         "summary": "List all vehicles",
-        "tags": ["vehicle"]
+        "tags": [
+          "vehicle"
+        ]
       },
       "post": {
         "description": "Requires vehicle create permission. Branch snapshots contain only id and code. Active defaults to true.",
@@ -44755,7 +45891,9 @@
           }
         ],
         "summary": "Create a vehicle",
-        "tags": ["vehicle"]
+        "tags": [
+          "vehicle"
+        ]
       }
     },
     "/vehicles/search": {
@@ -44857,7 +45995,9 @@
           }
         ],
         "summary": "Search vehicles",
-        "tags": ["vehicle"]
+        "tags": [
+          "vehicle"
+        ]
       }
     },
     "/vehicles/{id}": {
@@ -44905,7 +46045,9 @@
           }
         ],
         "summary": "Delete a vehicle",
-        "tags": ["vehicle"]
+        "tags": [
+          "vehicle"
+        ]
       },
       "get": {
         "description": "Requires vehicle view permission.",
@@ -44973,7 +46115,9 @@
           }
         ],
         "summary": "Retrieve a vehicle",
-        "tags": ["vehicle"]
+        "tags": [
+          "vehicle"
+        ]
       },
       "put": {
         "description": "Requires vehicle update permission.",
@@ -45053,7 +46197,9 @@
           }
         ],
         "summary": "Update a vehicle",
-        "tags": ["vehicle"]
+        "tags": [
+          "vehicle"
+        ]
       }
     },
     "/version": {
@@ -45071,7 +46217,9 @@
           }
         },
         "summary": "API version",
-        "tags": ["system"]
+        "tags": [
+          "system"
+        ]
       }
     },
     "/zelle-payments": {
@@ -45111,7 +46259,9 @@
           }
         ],
         "summary": "List zelle-payments",
-        "tags": ["zelle_payment"]
+        "tags": [
+          "zelle_payment"
+        ]
       },
       "post": {
         "deprecated": true,
@@ -45147,7 +46297,9 @@
           }
         ],
         "summary": "Create a zelle_payment",
-        "tags": ["zelle_payment"]
+        "tags": [
+          "zelle_payment"
+        ]
       }
     },
     "/zelle-payments/search": {
@@ -45198,7 +46350,9 @@
           }
         ],
         "summary": "Search zelle-payments",
-        "tags": ["zelle_payment"]
+        "tags": [
+          "zelle_payment"
+        ]
       }
     },
     "/zelle-payments/{id}": {
@@ -45235,7 +46389,9 @@
           }
         ],
         "summary": "Delete a zelle_payment",
-        "tags": ["zelle_payment"]
+        "tags": [
+          "zelle_payment"
+        ]
       },
       "get": {
         "description": "Requires canViewZellePayment; a list grant alone does not authorize detail reads.",
@@ -45281,7 +46437,9 @@
           }
         ],
         "summary": "Retrieve a zelle_payment",
-        "tags": ["zelle_payment"]
+        "tags": [
+          "zelle_payment"
+        ]
       },
       "put": {
         "deprecated": true,
@@ -45328,7 +46486,9 @@
           }
         ],
         "summary": "Update a zelle payment",
-        "tags": ["zelle_payment"]
+        "tags": [
+          "zelle_payment"
+        ]
       }
     }
   },

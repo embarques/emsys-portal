@@ -1,0 +1,84 @@
+{
+  "checkedAt": "2026-11-13T17:29:32.042Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "evidence": [
+    {
+      "label": "Deleted shipment catalog prefix 9004826 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Deleted shipment catalog prefix 9003826 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Deleted shipment catalog prefix 9004726 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Deleted shipment catalog prefix 9004626 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Deleted shipment catalog prefix 9004526 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Deleted shipment catalog prefix 9004326 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Deleted shipment catalog prefix 9003926 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Deleted shipment catalog prefix 9004126 has no remaining pieces",
+      "http": 200,
+      "passed": true,
+      "total": 0
+    },
+    {
+      "label": "Inventory fixture remains retired /inventory/items/edd3fe64-dcad-41cb-88ed-0e6b012caeb7",
+      "path": "/inventory/items/edd3fe64-dcad-41cb-88ed-0e6b012caeb7",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "label": "Inventory fixture remains retired /inventory/suppliers/4db5a9f2-d8b5-4626-b31a-2447dcbf1b58",
+      "path": "/inventory/suppliers/4db5a9f2-d8b5-4626-b31a-2447dcbf1b58",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "label": "Generated reservation P-01009 is unclaimed and unassigned",
+      "http": 200,
+      "passed": true,
+      "id": "6af7471031a295cf380840b9"
+    },
+    {
+      "label": "Generated reservation P-01010 is unclaimed and unassigned",
+      "http": 200,
+      "passed": true,
+      "id": "6af7471031a295cf380840ba"
+    },
+    {
+      "label": "Existing loan-account branch period readiness",
+      "path": "/income-statements/current?branchId=1",
+      "http": 200,
+      "data": null
+    }
+  ]
+}

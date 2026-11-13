@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-11-12T18:48:07.131Z",
+  "marker": "CODEX-PORTAL-d84d9b10-42f6-4bd0-bf41-4045214cda05",
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/loans/2147483646",
+      "http": 404,
+      "response": {
+        "success": false,
+        "message": "loan not found",
+        "error": "loan not found. Suggested solution: Verify the resource identifier and try again."
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/loans/2147483646/increases",
+      "http": 404,
+      "response": {
+        "success": false,
+        "message": "Route not found",
+        "error": "No API route matches POST /v1/loans/2147483646/increases. Suggested solution: Verify the request method and path against the API documentation."
+      }
+    }
+  ]
+}

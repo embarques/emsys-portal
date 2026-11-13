@@ -12,7 +12,7 @@ export async function reconcileJournals(input: {requestId: string; ids: string[]
   return apiClient.post<{data: {reconciled: string[]; reconciledAt: string}}>(`${endpoint}/reconcile`, input);
 }
 
-/** Independent atomic bank settlement; never changes reconciliation state. */
+/** Bank settlement atomically clears and reconciles the selected journals. */
 export async function clearJournals(input: {requestId: string; ids: string[]}) {
   return apiClient.post<{data: {cleared: string[]; clearedAt: string}}>(API_ENDPOINTS.ACCOUNTING_JOURNAL_CLEARANCE, input);
 }

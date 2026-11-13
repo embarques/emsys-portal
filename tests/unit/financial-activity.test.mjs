@@ -146,5 +146,5 @@ test("handover and reversal forms reject missing recipients, nonpositive amounts
 test("pending transaction routes require their own section permissions", () => {
  const { permissionForPath } = loadFeature("src/lib/auth/page-permissions.ts", {});
  assert.deepEqual(permissionForPath("/inventory/pending-transactions"), { name: "canListInventoryDispatch", resourceType: "inventory_dispatch" });
- assert.deepEqual(permissionForPath("/accounting/pending-financial-activity"), { name: "canViewFinancialActivity", resourceType: "financial_activity" });
+ assert.deepEqual(permissionForPath("/accounting/pending-financial-activity"), { name: "canViewJournal", resourceType: "journal" });
 });

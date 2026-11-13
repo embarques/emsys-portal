@@ -326,6 +326,7 @@ function DataTableContent<T>({
     <ScrollableTable minWidth={tableWidth}>
       <table
         ref={tableRef}
+        aria-busy={isPageDataPending}
         className="w-full table-fixed text-sm"
         style={{ width: tableWidth, minWidth: tableWidth }}
       >
@@ -563,7 +564,7 @@ function DataTableContent<T>({
                   className="sticky left-0 flex flex-col items-center justify-center px-6 py-12 text-center"
                   style={viewportWidth ? { width: viewportWidth } : undefined}
                 >
-                  {emptyState}
+                  {isPageDataPending ? <p className="text-sm text-muted-foreground">{t("common.loading")}</p> : emptyState}
                 </div>
               </td>
             </tr>

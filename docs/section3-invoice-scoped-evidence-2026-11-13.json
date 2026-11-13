@@ -1,0 +1,507 @@
+{
+  "checkedAt": "2026-11-13T17:15:01.754Z",
+  "marker": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83",
+  "branchId": 41,
+  "closeoutId": 32727,
+  "journals": [],
+  "evidence": [
+    {
+      "label": "Read branch configuration",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /branches",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read complete fixture branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /roles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /users",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /employees",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read fixture grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /chart-accounts",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read new branch current closeout",
+      "passed": true,
+      "http": 200,
+      "message": "Current daily closeout",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /income-statements",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Closeout belongs exclusively to fixture branch",
+      "passed": true
+    },
+    {
+      "label": "Create fixture /containers",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Portal invoice create boundary",
+      "branch": {
+        "id": 41,
+        "code": "NY",
+        "name": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83"
+      },
+      "date": "2026-11-13",
+      "actorBranch": {
+        "id": 41,
+        "name": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83",
+        "code": "NY",
+        "address": {
+          "id": "000000000000000000000000",
+          "address1": "2249 Washington Avenue",
+          "city": "The Bronx",
+          "state": "NY",
+          "zipcode": "10457",
+          "country": "US",
+          "location": {
+            "type": "Point",
+            "coordinates": [
+              -73.8939588,
+              40.854537799999996
+            ]
+          }
+        },
+        "createdAt": "2026-11-13T17:14:41.386Z",
+        "updatedAt": "2026-11-13T17:14:41.386Z",
+        "createdBy": {
+          "id": 73,
+          "name": "elk@elk.com"
+        }
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "invoice created",
+        "data": {
+          "id": "6af7458531a295cf38083d64",
+          "number": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83",
+          "createdAt": "2026-11-13T17:14:45.093807377Z",
+          "updatedAt": "2026-11-13T17:14:45.093807377Z",
+          "createdBy": {
+            "id": 150,
+            "name": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83"
+          },
+          "date": "2026-11-13T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 200,
+          "branch": {
+            "id": 41,
+            "name": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "container": {
+            "id": 1409,
+            "name": "90041-26"
+          },
+          "sender": {
+            "id": "6af7458531a295cf38083d65",
+            "name": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83-SENDER",
+            "customerType": 1,
+            "phones": [
+              {
+                "type": "mobile",
+                "number": "+12025550103",
+                "displayNumber": "(202) 555-0103",
+                "isPrimary": true
+              }
+            ],
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af7458531a295cf38083d66",
+              "createdAt": "0001-01-01T00:00:00Z",
+              "updatedAt": "0001-01-01T00:00:00Z"
+            }
+          ],
+          "cost": 2,
+          "discount": 0,
+          "payment": 0,
+          "balance": 2
+        },
+        "error": "",
+        "duration": 9.194011713,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Created invoice through real portal adapter",
+      "invoiceId": "6af7458531a295cf38083d64"
+    },
+    {
+      "label": "Real portal invoice create succeeds in its own current branch",
+      "passed": true
+    },
+    {
+      "label": "Generated invoice piece shape",
+      "count": 200,
+      "sample": {
+        "id": 1,
+        "barcodeId": "6af7458531a295cf38083d67",
+        "number": "90041260001",
+        "invoice": {
+          "id": "6af7458531a295cf38083d64",
+          "number": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83"
+        },
+        "description": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83",
+        "container": {
+          "id": 1409,
+          "name": "90041-26"
+        },
+        "createdAt": "2026-11-13T17:14:45.192Z",
+        "updatedAt": "2026-11-13T17:14:45.192Z",
+        "createdBy": {
+          "id": 150,
+          "name": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83"
+        },
+        "scanDate": "0001-01-01T00:00:00Z"
+      },
+      "version": "v1:ea2ca7e26bb4e828b5ba0925ba81b7b7e6c2a38daf3d12601b6ac12cec6d9735"
+    },
+    {
+      "label": "Invoice generates 200 distinct numeric piece IDs",
+      "passed": true
+    },
+    {
+      "label": "Owned invoice route request",
+      "body": {
+        "date": "2029-12-24T00:00:00Z",
+        "branch": {
+          "id": 41,
+          "name": "CODEX-BANK-b9e34bf7-058b-4eee-a50c-e455903bff83",
+          "code": "NY",
+          "address": {
+            "id": "000000000000000000000000",
+            "address1": "2249 Washington Avenue",
+            "city": "The Bronx",
+            "state": "NY",
+            "zipcode": "10457",
+            "country": "US",
+            "location": {
+              "type": "Point",
+              "coordinates": [
+                -73.8939588,
+                40.854537799999996
+              ]
+            }
+          },
+          "createdAt": "2026-11-13T17:14:41.386Z",
+          "updatedAt": "2026-11-13T17:14:41.386Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          }
+        },
+        "vehicle": {
+          "id": "6a412d23b2f8ec04b0ee78ec",
+          "name": "Camion 6",
+          "branch": "RD"
+        },
+        "employees": [
+          {
+            "id": 99,
+            "name": "ADOLFO",
+            "role": "driver",
+            "roles": [
+              "driver"
+            ]
+          },
+          {
+            "id": 21,
+            "name": "AFA",
+            "role": "supervisor",
+            "roles": [
+              "supervisor"
+            ]
+          },
+          {
+            "id": 132,
+            "name": "ALBERTO",
+            "role": "helper",
+            "roles": [
+              "helper"
+            ]
+          }
+        ],
+        "driver": {
+          "id": 99,
+          "name": "ADOLFO",
+          "role": "driver",
+          "roles": [
+            "driver"
+          ]
+        },
+        "helpers": [
+          {
+            "id": 132,
+            "name": "ALBERTO",
+            "role": "helper",
+            "roles": [
+              "helper"
+            ]
+          }
+        ],
+        "supervisor": {
+          "id": 21,
+          "name": "AFA",
+          "role": "supervisor",
+          "roles": [
+            "supervisor"
+          ]
+        },
+        "routeType": "delivery",
+        "rate": 32,
+        "container": {
+          "id": 1409,
+          "number": "90041-26"
+        },
+        "tripNumber": 1,
+        "active": true
+      }
+    },
+    {
+      "label": "Create fixture /vehicle-routes",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Invoice bulk empty",
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Barcode ids are required",
+        "error": "At least one barcode id must be provided for route assignment. Suggested solution: Provide one or more positive numeric barcode ids in barcodeIds."
+      }
+    },
+    {
+      "label": "Invoice bulk rejects empty",
+      "passed": true,
+      "http": 400,
+      "message": "Barcode ids are required",
+      "error": "At least one barcode id must be provided for route assignment. Suggested solution: Provide one or more positive numeric barcode ids in barcodeIds."
+    },
+    {
+      "label": "Rejected empty leaves every piece unchanged",
+      "passed": true
+    },
+    {
+      "label": "Invoice bulk duplicate",
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "barcode assignment requires at most 200 distinct IDs",
+        "error": "barcode assignment requires at most 200 distinct IDs. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Invoice bulk rejects duplicate",
+      "passed": true,
+      "http": 400,
+      "message": "barcode assignment requires at most 200 distinct IDs",
+      "error": "barcode assignment requires at most 200 distinct IDs. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "Rejected duplicate leaves every piece unchanged",
+      "passed": true
+    },
+    {
+      "label": "Invoice bulk 201 pieces",
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "barcode assignment requires at most 200 distinct IDs",
+        "error": "barcode assignment requires at most 200 distinct IDs. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Invoice bulk rejects 201 pieces",
+      "passed": true,
+      "http": 400,
+      "message": "barcode assignment requires at most 200 distinct IDs",
+      "error": "barcode assignment requires at most 200 distinct IDs. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "Rejected 201 pieces leaves every piece unchanged",
+      "passed": true
+    },
+    {
+      "label": "Invoice bulk missing numeric ID mixed with valid",
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "one or more barcodes have an ineligible branch or container",
+        "error": "one or more barcodes have an ineligible branch or container. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Invoice bulk rejects missing numeric ID mixed with valid",
+      "passed": false,
+      "http": 400,
+      "message": "one or more barcodes have an ineligible branch or container",
+      "error": "one or more barcodes have an ineligible branch or container. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "Rejected missing numeric ID mixed with valid leaves every piece unchanged",
+      "passed": true
+    },
+    {
+      "label": "API assigns 200 invoice pieces",
+      "passed": false,
+      "http": 400,
+      "message": "one or more barcodes have an ineligible branch or container",
+      "error": "one or more barcodes have an ineligible branch or container. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "All selected invoice pieces persist target route",
+      "passed": false
+    },
+    {
+      "label": "Successful invoice bulk replay is accepted",
+      "passed": false,
+      "http": 400,
+      "message": "one or more barcodes have an ineligible branch or container",
+      "error": "one or more barcodes have an ineligible branch or container. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "Invoice bulk replay response",
+      "response": {
+        "success": false,
+        "message": "one or more barcodes have an ineligible branch or container",
+        "error": "one or more barcodes have an ineligible branch or container. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Invoice delete rejects a missing version",
+      "passed": true,
+      "http": 428,
+      "message": "VERSION_REQUIRED",
+      "error": "VERSION_REQUIRED. Suggested solution: Review the request method, headers, path, and payload before trying again."
+    },
+    {
+      "label": "Invoice delete rejects stale version",
+      "passed": true,
+      "http": 412,
+      "message": "STALE_VERSION",
+      "error": "STALE_VERSION. Suggested solution: Review the request method, headers, path, and payload before trying again."
+    },
+    {
+      "label": "Own invoice deletes with current version",
+      "passed": true,
+      "http": 200,
+      "message": "invoice deleted",
+      "error": ""
+    },
+    {
+      "label": "Cleanup invoice customer 6af7458531a295cf38083d65",
+      "passed": true
+    },
+    {
+      "label": "Cleanup /vehicle-routes/6af7458f31a295cf38083e31",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /containers/1409",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /chart-accounts/50",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /employees/261",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /users/150",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /roles/78",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    }
+  ]
+}

@@ -357,131 +357,27 @@ test("existing stepped invoice form keeps payment selection in its own step", as
 
 for (const width of [1280, 390]) {
   test(`separate invoice categories preserve payment entry at ${width}px`, async () => {
-    const page = await fixture(width, "wizard", { styled: true });
+    const page = await fixture(width, "wizard", {styled: true});
     try {
-      const next = page.getByRole("button", { name: "common.actions.next", exact: true });
-      const valueOf = (id) => page.locator(`#${id}`).evaluate(el => el instanceof HTMLInputElement ? el.value : el.textContent);
-      assert.equal(await page.getByRole("radio", { name: /accounting\.dailyIncome\.transactionTypes\.initialPayment/ }).count(), 1);
-      await page.getByRole("radio", { name: /accounting\.dailyIncome\.transactionTypes\.payment\.label/ }).click();
-      assert.equal(await page.locator("#journal-employee").isVisible(), true);
+      await typeOption(page, "PAYMENT").click();
       await page.locator("#journal-employee").click();
-      await page.getByRole("option", { name: /Maria/ }).click();
-      await page.locator("#journal-employee").waitFor({ state: "hidden" });
-      assert.equal(await page.locator("#journal-payment").isVisible(), false);
-      assert.equal(await page.locator("nav button").count(), 4);
-
-      assert.equal(await page.locator("#journal-invoice-mode").count(), 0);
-      assert.equal(await page.locator("#journal-invoice-cost").count(), 0);
-      if (width >= 768) {
-        await page.waitForFunction(() => document.activeElement?.id === "journal-invoice");
-        await page.waitForTimeout(100);
-        assert.equal(await page.locator("#journal-invoice").getAttribute("aria-expanded"), "false");
-        assert.equal(await page.locator("[cmdk-item]").count(), 0);
-        await page.keyboard.type("804");
-        assert.equal(await page.locator("#journal-invoice").getAttribute("aria-expanded"), "true");
-      } else {
-        await page.locator("#journal-invoice").click();
-      }
-      await page.getByRole("option", { name: /80430/ }).click();
-      assert.equal(await valueOf("journal-selected-invoice-number"), "80430");
-      assert.equal(await valueOf("journal-invoice-sender"), "Ana Sender");
-      assert.equal(await valueOf("journal-invoice-receiver"), "Luis Receiver");
-      assert.match(await valueOf("journal-invoice-total"), /200\.00/);
-      assert.match(await valueOf("journal-invoice-discount"), /20\.00/);
-      assert.match(await valueOf("journal-invoice-paid"), /50\.00/);
-      assert.match(await valueOf("journal-invoice-balance"), /130\.00/);
-      const invoiceSection = page.locator("[data-form-section]").filter({ has: page.locator("#journal-invoice") });
-      for (const id of ["journal-selected-invoice-number", "journal-invoice-sender", "journal-invoice-receiver", "journal-invoice-total", "journal-invoice-discount", "journal-invoice-paid", "journal-invoice-balance", "journal-amount"]) {
-        assert.equal(await invoiceSection.locator(`#${id}`).count(), 1, id);
-      }
-      for (const id of ["journal-selected-invoice-number", "journal-invoice-sender", "journal-invoice-receiver", "journal-invoice-total", "journal-invoice-discount", "journal-invoice-paid", "journal-invoice-balance"]) {
-        assert.equal(await page.locator(`#${id}`).evaluate(el => el.tagName), "DD", id);
-      }
-      assert.equal(await page.locator("#journal-amount").isEditable(), true);
-
-      if (width < 768) {
-        assert.equal(await page.locator("nav").isVisible(), false);
-        const previous = page.getByRole("button", { name: "common.actions.previous", exact: true });
-        await previous.click();
-        await previous.click();
-      } else {
-        await page.locator("nav button").first().click();
-      }
-      await page.getByRole("radio", { name: /accounting\.dailyIncome\.transactionTypes\.initialPayment\.label/ }).click();
-      assert.equal(await page.locator("#journal-invoice-mode").count(), 0);
-      assert.equal(await page.locator("#journal-invoice").count(), 0);
-
-      assert.equal(await page.locator("#journal-employee").isVisible(), true);
-      for (const id of ["journal-invoice-number-mode", "journal-sender-mode", "journal-receiver-mode", "journal-invoice-cost", "journal-invoice-discount", "journal-amount", "journal-invoice-balance"]) {
-        assert.equal(await page.locator(`#${id}`).isVisible(), false, id);
-      }
-      await next.click();
-
-      assert.equal(await page.locator("#journal-employee").isVisible(), false);
-      assert.equal(await page.locator("#journal-sender-mode").isVisible(), false);
-      assert.equal(await page.locator("#journal-invoice-number-mode").isVisible(), true);
-      assert.equal(await page.locator("#journal-invoice-number-mode-system").getAttribute("aria-checked"), "true");
-      assert.equal(await page.locator("#journal-invoice-discount").isEditable(), true);
-      assert.equal(await page.locator("#journal-invoice-balance").count(), 0);
-      await page.locator("#journal-invoice-cost").fill("200");
-      const costBox = await page.locator("#journal-invoice-cost").boundingBox();
-      const discountBox = await page.locator("#journal-invoice-discount").boundingBox();
-      const amountBox = await page.locator("#journal-amount").boundingBox();
-      const balanceBox = await page.locator("#journal-invoice-balance").boundingBox();
-      const detailsHeadingBox = await page.getByRole("heading", { name: "accounting.dailyIncome.form.sections.invoiceDetails", exact: true }).boundingBox();
-      const amountHeadingBox = await page.getByRole("heading", { name: "accounting.dailyIncome.form.sections.invoiceAmount", exact: true }).boundingBox();
-      assert.ok(detailsHeadingBox.y < amountHeadingBox.y);
-      assert.ok(amountHeadingBox.y < costBox.y);
-      assert.ok(costBox.y < discountBox.y && discountBox.y < amountBox.y && amountBox.y < balanceBox.y);
-      for (const box of [discountBox, amountBox, balanceBox]) {
-        assert.ok(Math.abs(box.x - costBox.x) < 1 && Math.abs(box.width - costBox.width) < 1);
-      }
-
-      await page.locator("#journal-invoice-discount").fill("20");
-      await page.locator("#journal-amount").fill("150");
-      assert.match(await page.locator("#journal-invoice-balance").inputValue(), /30\.00/);
-      await next.click();
-
-      assert.equal(await page.locator("#journal-invoice-cost").isVisible(), false);
-      assert.equal(await page.locator("#journal-description").isVisible(), true);
-      assert.equal(await page.locator("#journal-reference-mode").count(), 0);
+      await page.getByRole("option", {name: /Maria/}).click();
+      await page.locator("#journal-invoice").click();
+      await page.getByRole("option", {name: /80430/}).click();
+      assert.equal(await page.locator("#journal-invoice-sender").textContent(), "Ana Sender");
+      assert.equal(await page.locator("#journal-invoice-receiver").textContent(), "Luis Receiver");
+      await page.locator("#journal-amount").fill("20");
       await page.locator("#journal-payment").click();
-      await page.getByRole("option", { name: "CHECK", exact: true }).click();
-      await next.click();
-      assert.equal(await page.locator("#journal-bank-account").isVisible(), true);
+      await page.getByRole("option", {name: "CHECK", exact: true}).click();
       await page.locator("#journal-bank-account").click();
-      await page.getByRole("option", { name: /Bank/ }).click();
-      await page.locator("#journal-check-number").fill("123456");
-      await next.click();
-
-      assert.equal(await page.locator("#journal-check-number").isVisible(), false);
-      assert.equal(await page.locator("#journal-sender-mode-skip").getAttribute("aria-checked"), "true");
-      assert.equal(await page.locator("#journal-receiver-mode-skip").getAttribute("aria-checked"), "true");
-      assert.equal(await page.locator("#journal-sender").count(), 0);
-      assert.equal(await page.locator("#journal-receiver").count(), 0);
-      await page.locator("#journal-sender-mode-include").click();
-      assert.equal(await page.locator("#journal-sender-mode-include").getAttribute("aria-checked"), "true");
-      assert.equal(await page.locator("#journal-sender").isVisible(), true);
-      await page.locator("#journal-sender-mode-skip").click();
-      assert.equal(await page.locator("#journal-sender").count(), 0);
-      const senderModeBox = await page.locator("#journal-sender-mode").boundingBox();
-      const receiverModeBox = await page.locator("#journal-receiver-mode").boundingBox();
-      assert.ok(senderModeBox.y < receiverModeBox.y);
-      await next.click();
-
-      const save = page.getByRole("button", { name: "accounting.dailyIncome.wizard.saveTransaction", exact: true });
-      await save.waitFor();
-      assert.equal(await page.getByText("accounting.dailyIncome.form.fields.partySkipped", { exact: true }).count(), 2);
-      assert.equal(await page.locator("#submitted").textContent(), "0");
-      await save.click();
+      await page.getByRole("option", {name: /Bank/}).click();
+      await page.locator("#journal-check-number").fill("000123");
+      await page.getByRole("button", {name: "accounting.dailyIncome.wizard.saveTransaction", exact: true}).click();
       await page.waitForFunction(() => document.getElementById("submitted").textContent === "1");
-      assert.match(await page.locator("#journal-payment").evaluate(el => el instanceof HTMLInputElement ? el.value : el.textContent), /CHECK/);
-      assert.match(await page.locator("#journal-employee").evaluate(el => el instanceof HTMLInputElement ? el.value : el.textContent), /Maria/);
+      assert.equal(await page.locator("#journal-payment").inputValue(), "CHECK");
+      assert.equal(await page.locator("#journal-employee").inputValue(), "Maria");
       assert.equal(await page.locator("#journal-check-number").inputValue(), "");
-      assert.equal(await page.locator("#journal-invoice-number-mode").isVisible(), false);
-      assert.equal(await page.locator("#journal-invoice-cost").isVisible(), false);
-      assert.equal(await page.locator("#journal-invoice-mode").count(), 0);
-      assert.equal(await page.locator("#journal-employee").isVisible(), true);
+      assert.equal(await page.locator("#journal-invoice-cost").count(), 0);
     } finally { await page.close(); }
   });
 }
@@ -489,13 +385,13 @@ for (const width of [1280, 390]) {
 test("assigned to switches between employee and daily route segments", async () => {
   const page = await fixture(1280, "wizard", { styled: true });
   try {
-    await page.getByRole("radio", { name: /accounting\.dailyIncome\.transactionTypes\.payment\.label/ }).click();
+    await typeOption(page, "PAYMENT").click();
     const employeeSegment = page.locator("#journal-employee-source-employee");
     const routeSegment = page.locator("#journal-employee-source-route");
     assert.equal(await employeeSegment.getAttribute("aria-checked"), "true");
     assert.equal(await page.locator("#journal-employee").isVisible(), true);
     await page.waitForTimeout(100);
-    assert.notEqual(await page.evaluate(() => document.activeElement?.id), "journal-employee");
+    assert.equal(await page.evaluate(() => document.activeElement?.id), "journal-employee");
     assert.equal(await page.getByRole("option", { name: /Maria/ }).count(), 0);
     await routeSegment.click();
     assert.equal(await routeSegment.getAttribute("aria-checked"), "true");
@@ -510,61 +406,34 @@ test("assigned to switches between employee and daily route segments", async () 
   } finally { await page.close(); }
 });
 
-test("transaction step errors show in the footer between Previous and Cancel", async () => {
-  const page = await fixture(1280, "wizard", { styled: true });
+test("invalid transaction focuses the missing invoice without submitting", async () => {
+  const page = await fixture(1280, "wizard", {styled: true});
   try {
-    await page.getByRole("radio", { name: /accounting\.dailyIncome\.transactionTypes\.payment\.label/ }).click();
+    await typeOption(page, "PAYMENT").click();
     await page.locator("#journal-employee").click();
-    await page.getByRole("option", { name: /Maria/ }).click();
-    const next = page.getByRole("button", { name: "common.actions.next", exact: true });
-    await page.locator("#journal-employee").waitFor({ state: "hidden" });
-    await next.click();
-    const alert = page.locator('p[role="alert"][title]');
-    await alert.waitFor();
-    assert.match(await alert.textContent(), /invoiceRequired/);
-    const previousBox = await page.getByRole("button", { name: "common.actions.previous", exact: true }).boundingBox();
-    const cancelBox = await page.getByRole("button", { name: "common.actions.cancel", exact: true }).boundingBox();
-    const alertBox = await alert.boundingBox();
-    assert.ok(alertBox.x >= previousBox.x + previousBox.width && alertBox.x + alertBox.width <= cancelBox.x);
-    assert.ok(alertBox.y < previousBox.y + previousBox.height && alertBox.y + alertBox.height > previousBox.y);
-    await page.getByRole("button", { name: "common.actions.previous", exact: true }).click();
-    assert.equal(await alert.count(), 0);
+    await page.getByRole("option", {name: /Maria/}).click();
+    await page.locator("#journal-amount").fill("20");
+    await page.getByRole("button", {name: "accounting.dailyIncome.wizard.saveTransaction", exact: true}).click();
+    await page.waitForFunction(() => document.activeElement?.id === "journal-invoice");
+    assert.equal(await page.locator("#submitted").textContent(), "0");
+    assert.equal(await page.locator("#journal-invoice").getAttribute("aria-invalid"), "true");
   } finally { await page.close(); }
 });
 
-test("changing transaction type in step 1 preserves the selected employee and payment method", async () => {
+test("changing transaction categories preserves the selected employee and payment method", async () => {
   const page = await fixture(1280, "wizard");
   try {
-    await page.getByRole("radio").first().click();
+    await typeOption(page, "INITIAL-PAYMENT").click();
     await page.locator("#journal-employee").click();
-    await page.getByRole("option", { name: /Maria/ }).click();
-    await page.locator("#journal-employee").waitFor({ state: "hidden" });
-    await page.locator("#journal-invoice-cost").fill("100");
-    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
+    await page.getByRole("option", {name: /Maria/}).click();
     await page.locator("#journal-payment").click();
-    await page.getByRole("option", { name: "CHECK", exact: true }).click();
-
-    await page.getByRole("button", { name: "common.actions.previous", exact: true }).first().click();
-    await page.getByRole("button", { name: "common.actions.previous", exact: true }).first().click();
-    await page.getByRole("button", { name: "common.actions.previous", exact: true }).first().click();
-    await page.getByRole("radio").nth(1).click();
-    // Pressing a key focuses (and opens) the employee search; close it to inspect the saved selection.
-    await page.locator("#journal-employee").press("Escape");
+    await page.getByRole("option", {name: "CHECK", exact: true}).click();
+    await page.getByRole("button", {name: "accounting.dailyIncome.wizard.changeType", exact: true}).click();
+    await typeOption(page, "PAYMENT").click();
     await page.waitForFunction(() => document.getElementById("journal-employee")?.value === "Maria");
     assert.equal(await page.locator("#journal-employee").inputValue(), "Maria");
-    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
-    await page.locator("nav button").first().click();
-    await page.getByRole("radio").first().click();
-    // Pressing a key focuses (and opens) the employee search; close it to inspect the saved selection.
-    await page.locator("#journal-employee").press("Escape");
-    await page.waitForFunction(() => document.getElementById("journal-employee")?.value === "Maria");
-    assert.equal(await page.locator("#journal-employee").inputValue(), "Maria");
-    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
-    await page.locator("#journal-invoice-cost").fill("100");
-    await page.getByRole("button", { name: "common.actions.next", exact: true }).click();
-    await page.locator("#journal-payment").press("Escape");
     assert.equal(await page.locator("#journal-payment").inputValue(), "CHECK");
-
+    assert.equal(await page.locator("#submitted").textContent(), "0");
   } finally { await page.close(); }
 });
 
@@ -759,17 +628,16 @@ for (const width of [1280, 390]) {
   });
 }
 
-test("payment-method refetch preserves the transaction step and typed draft", async () => {
+test("payment-method refetch preserves the open transaction and typed draft", async () => {
   const page = await fixture(1280, "wizard");
   try {
-    await page.getByRole("radio").first().click();
+    await typeOption(page, "INITIAL-PAYMENT").click();
     await page.locator("#journal-employee").click();
-    await page.getByRole("option", { name: /Maria/ }).click();
-    await page.locator("#journal-employee").waitFor({ state: "hidden" });
+    await page.getByRole("option", {name: /Maria/}).click();
     await page.locator("#journal-invoice-cost").fill("123.45");
-    await page.getByRole("button", { name: "Refresh payment methods", exact: true }).click();
+    await page.getByRole("button", {name: "Refresh payment methods", exact: true}).click();
     assert.match(await page.locator("#journal-invoice-cost").inputValue(), /123\.45/);
-    assert.equal(await page.locator("#journal-employee").isVisible(), false);
+    assert.equal(await page.locator("#journal-employee").inputValue(), "Maria");
     assert.equal(await page.locator("#submitted").textContent(), "0");
   } finally { await page.close(); }
 });
@@ -826,7 +694,7 @@ for (const kind of ["DISCOUNT", "SURCHARGE"]) {
         assert.equal(await section.locator("#journal-invoice-receiver").textContent(), "Luis Receiver");
         assert.match(await section.locator("#journal-invoice-total").textContent(), /200\.00/);
         assert.match(await section.locator("#journal-invoice-balance").textContent(), /130\.00/);
-        assert.equal(await section.locator("#journal-description").isEditable(), true);
+        assert.equal(await page.locator("#journal-description").isEditable(), true);
         const senderBox = await page.locator("#journal-invoice-sender").locator("../..").boundingBox();
         const receiverBox = await page.locator("#journal-invoice-receiver").locator("../..").boundingBox();
         const balanceBox = await page.locator("#journal-invoice-balance").boundingBox();

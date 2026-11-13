@@ -1,5 +1,7 @@
 {
   "errors": {
+    "businessDateChanged": "La fecha operativa de la ruta cambió. Actualice la selección de ruta e inténtelo de nuevo.",
+    "businessDateUnavailable": "No se pudo verificar la fecha operativa de la ruta. Vuelva a abrir este formulario para intentarlo de nuevo.",
     "pastAssignment": "Seleccione una ruta diaria de hoy o de una fecha posterior. No se puede asignar a rutas diarias pasadas.",
     "notFound": "No se encontró la ruta.",
     "crewMinimum": "Seleccione al menos dos miembros de la cuadrilla.",

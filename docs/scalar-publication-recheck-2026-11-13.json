@@ -1,0 +1,60 @@
+{
+  "checkedAt": "2026-11-13T17:39:27.830Z",
+  "pageUrl": "https://api.embarqueros.com/scalar/",
+  "specUrl": "https://api.embarqueros.com/scalar/openapi.json",
+  "localFile": "API-Docs.json",
+  "localSemanticHash": "9e04f7693191ff99ce76155f6b79e89827b28ed92d03177b757ea1a0faeb3b34",
+  "publishedSemanticHash": "9e04f7693191ff99ce76155f6b79e89827b28ed92d03177b757ea1a0faeb3b34",
+  "sameContent": true,
+  "pathCount": 297,
+  "swagger": {
+    "url": "https://api.embarqueros.com/swagger/doc.json",
+    "format": "2.0",
+    "pathCount": 297
+  },
+  "missingOperations": [
+    "/vehicle-routes/business-date",
+    "/invoices/reserved/search",
+    "/change-requests/search",
+    "/loans/{id}/increases"
+  ],
+  "invoiceUpdateIfMatchPublished": true,
+  "barcodeRouteNullable": false,
+  "reconciliationStatusEnum": [
+    "OUTSTANDING",
+    "RECONCILED"
+  ],
+  "clearanceDescription": "Requires explicit canClearJournal. Atomic 1-200 distinct journal IDs of one bank payment method; all must have clearanceStatus OUTSTANDING and remain active. May settle after closeout closure, before or after reconciliation. Applies deferred invoice receipts exactly once. Never changes reconciliation status or historical ledger lines. UUID requestId is actor/payload-bound; identical retries return the original complete result. No partial success or per-ID failure results. A ledger reversal does not initiate a bank refund.",
+  "bulkIdSchema": {
+    "properties": {
+      "barcodeIds": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "reservedInvoiceSchema": {
+    "properties": {
+      "allocation": {
+        "$ref": "#/components/schemas/invoice.InvoiceAllocation"
+      },
+      "claimed": {
+        "type": "boolean"
+      },
+      "createdAt": {
+        "type": "string"
+      },
+      "id": {
+        "type": "string"
+      },
+      "number": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "loanSearchDescription": "Accepted filter fields: branch.code, branch.id, branch.name, createdAt, createdBy.id, createdBy.name, description, employee.id, employee.name, id, incomeStatement.id, lastActivityAt, loanAccount.id, loanAccount.name, openedAt, principalAmount, referenceNumber, status, updatedAt."
+}

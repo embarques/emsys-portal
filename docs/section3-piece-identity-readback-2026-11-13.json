@@ -1,0 +1,62 @@
+[
+  {
+    "prefix": "9004326",
+    "http": 200,
+    "response": {
+      "success": true,
+      "message": "Request successful",
+      "data": null,
+      "error": "",
+      "duration": 0.037898125,
+      "page": 1,
+      "resultsPerPage": 2,
+      "total": 0,
+      "subtotal": 0
+    }
+  },
+  {
+    "prefix": "9004126",
+    "http": 200,
+    "response": {
+      "success": true,
+      "message": "Request successful",
+      "data": null,
+      "error": "",
+      "duration": 0.03494475,
+      "page": 1,
+      "resultsPerPage": 2,
+      "total": 0,
+      "subtotal": 0
+    }
+  },
+  {
+    "prefix": "9003926",
+    "http": 200,
+    "response": {
+      "success": true,
+      "message": "Request successful",
+      "data": null,
+      "error": "",
+      "duration": 0.035584042,
+      "page": 1,
+      "resultsPerPage": 2,
+      "total": 0,
+      "subtotal": 0
+    }
+  },
+  {
+    "prefix": "9003826",
+    "http": 200,
+    "response": {
+      "success": true,
+      "message": "Request successful",
+      "data": null,
+      "error": "",
+      "duration": 0.035270917,
+      "page": 1,
+      "resultsPerPage": 2,
+      "total": 0,
+      "subtotal": 0
+    }
+  }
+]

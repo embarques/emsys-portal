@@ -1,0 +1,4941 @@
+{
+  "checkedAt": "2026-11-13T17:11:51.968Z",
+  "marker": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+  "branchId": 37,
+  "closeoutId": 32723,
+  "journals": [
+    "6af744c831a295cf38083b92",
+    "6af744c831a295cf38083b90",
+    "6af744c631a295cf38083b8e",
+    "6af744c531a295cf38083b8c",
+    "6af744c531a295cf38083b8a",
+    "6af744c331a295cf38083b86",
+    "6af744bf31a295cf38083b81",
+    "6af744bf31a295cf38083b7e",
+    "6af744be31a295cf38083b7b"
+  ],
+  "evidence": [
+    {
+      "label": "Read branch configuration",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /branches",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read complete fixture branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /roles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /users",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /employees",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read fixture grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /chart-accounts",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read new branch current closeout",
+      "passed": true,
+      "http": 200,
+      "message": "Current daily closeout",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /income-statements",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Closeout belongs exclusively to fixture branch",
+      "passed": true
+    },
+    {
+      "label": "Persisted account catalog",
+      "method": "GET",
+      "path": "/chart-accounts?page=1&limit=100",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "nonPosting": false,
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET",
+            "displayName": "Cash on Hand",
+            "description": "Physical cash held by the business.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "displayName": "Accounts Receivable",
+            "description": "Amounts owed by customers.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 3,
+            "name": "SALES DISCOUNTS",
+            "type": "CONTRA-REVENUE",
+            "displayName": "Sales Discounts",
+            "description": "Discounts that reduce recognized sales revenue.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 4,
+            "name": "SALES",
+            "type": "REVENUE",
+            "displayName": "Sales",
+            "description": "Revenue recognized from invoice sales.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 5,
+            "name": "LOAN RECEIVABLE",
+            "type": "ASSET",
+            "displayName": "Loan Receivable",
+            "description": "Outstanding employee or business loans.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 6,
+            "name": "VENTA DE CAJAS",
+            "type": "REVENUE",
+            "displayName": "VENTA DE CAJAS",
+            "createdAt": "2026-07-26T07:23:27.149Z",
+            "updatedAt": "2026-07-26T07:23:27.149Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 7,
+            "name": "Cuenta Préstamos",
+            "type": "LOAN",
+            "displayName": "Cuenta Préstamos",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "createdAt": "2026-09-04T21:40:59.285Z",
+            "updatedAt": "2026-09-04T21:40:59.285Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 8,
+            "name": "TRABAJADORES EXTRAS",
+            "type": "EXPENSE",
+            "displayName": "TRABAJADORES EXTRAS",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "createdAt": "2026-10-15T04:24:04.321Z",
+            "updatedAt": "2026-10-15T04:24:04.321Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 4000000004,
+            "name": "BANK",
+            "type": "BANK",
+            "displayName": "Bank",
+            "description": "Default bank account.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1100",
+            "nonPosting": false,
+            "id": 21,
+            "name": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+            "branch": {
+              "id": 12,
+              "name": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+              "code": "ZB1599e1"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T01:15:51.486Z",
+            "updatedAt": "2026-11-12T01:15:51.486Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1101",
+            "nonPosting": false,
+            "id": 22,
+            "name": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+            "branch": {
+              "id": 13,
+              "name": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+              "code": "ZB41df6a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T01:16:40.238Z",
+            "updatedAt": "2026-11-12T01:16:40.238Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1102",
+            "nonPosting": false,
+            "id": 23,
+            "name": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+            "branch": {
+              "id": 14,
+              "name": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+              "code": "ZB98f160"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T17:50:25.931Z",
+            "updatedAt": "2026-11-12T17:50:25.931Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1103",
+            "nonPosting": false,
+            "id": 24,
+            "name": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+            "branch": {
+              "id": 15,
+              "name": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+              "code": "ZB419e69"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T17:53:54.573Z",
+            "updatedAt": "2026-11-12T17:53:54.573Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1104",
+            "nonPosting": false,
+            "id": 29,
+            "name": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+            "branch": {
+              "id": 20,
+              "name": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T17:59:18.671Z",
+            "updatedAt": "2026-11-12T17:59:18.671Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1105",
+            "nonPosting": false,
+            "id": 30,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "branch": {
+              "id": 21,
+              "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:00:29.343Z",
+            "updatedAt": "2026-11-12T18:00:29.343Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1106",
+            "nonPosting": false,
+            "id": 31,
+            "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+            "branch": {
+              "id": 22,
+              "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:10:34.446Z",
+            "updatedAt": "2026-11-12T18:10:34.446Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1107",
+            "nonPosting": false,
+            "id": 32,
+            "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb-CORRECTION",
+            "branch": {
+              "id": 22,
+              "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:10:37.281Z",
+            "updatedAt": "2026-11-12T18:10:37.281Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1108",
+            "nonPosting": false,
+            "id": 33,
+            "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+            "branch": {
+              "id": 23,
+              "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:19:15.302Z",
+            "updatedAt": "2026-11-12T18:19:15.302Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1109",
+            "nonPosting": false,
+            "id": 34,
+            "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff-CORRECTION",
+            "branch": {
+              "id": 23,
+              "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:19:19.507Z",
+            "updatedAt": "2026-11-12T18:19:19.507Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1110",
+            "nonPosting": false,
+            "id": 39,
+            "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+            "branch": {
+              "id": 28,
+              "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:41:01.253Z",
+            "updatedAt": "2026-11-12T18:41:01.253Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1111",
+            "nonPosting": false,
+            "id": 40,
+            "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab-CORRECTION",
+            "branch": {
+              "id": 28,
+              "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:41:06.195Z",
+            "updatedAt": "2026-11-12T18:41:06.195Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1112",
+            "nonPosting": false,
+            "id": 10005,
+            "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+            "branch": {
+              "id": 29,
+              "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+              "code": "ZB34628a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:23:03.077Z",
+            "updatedAt": "2026-11-12T23:23:03.077Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1113",
+            "nonPosting": false,
+            "id": 10006,
+            "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df-CORRECTION",
+            "branch": {
+              "id": 29,
+              "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+              "code": "ZB34628a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:23:13.629Z",
+            "updatedAt": "2026-11-12T23:23:13.629Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1114",
+            "nonPosting": false,
+            "id": 10009,
+            "name": "CODEX-BANK-1766e59a-be63-4693-a01a-c611285b45e2",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-1766e59a-be63-4693-a01a-c611285b45e2",
+            "branch": {
+              "id": 32,
+              "name": "CODEX-BANK-1766e59a-be63-4693-a01a-c611285b45e2",
+              "code": "ZBef9809"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:27:27.002Z",
+            "updatedAt": "2026-11-12T23:27:27.002Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1115",
+            "nonPosting": false,
+            "id": 10010,
+            "name": "CODEX-BANK-b078bec7-6a12-476b-8a1e-f1745f1e9d17",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-b078bec7-6a12-476b-8a1e-f1745f1e9d17",
+            "branch": {
+              "id": 33,
+              "name": "CODEX-BANK-b078bec7-6a12-476b-8a1e-f1745f1e9d17",
+              "code": "ZBbdb4be"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:29:35.429Z",
+            "updatedAt": "2026-11-12T23:29:35.429Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1116",
+            "nonPosting": false,
+            "id": 10011,
+            "name": "CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5",
+            "branch": {
+              "id": 34,
+              "name": "CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5",
+              "code": "ZBf8fb5a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:31:31.263Z",
+            "updatedAt": "2026-11-12T23:31:31.263Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 41,
+            "name": "TD Bank",
+            "type": "BANK",
+            "displayName": "TD Bank",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-07-01T16:53:51.939Z",
+            "updatedAt": "2026-07-01T16:53:51.939Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 42,
+            "name": "M&T Bank",
+            "type": "BANK",
+            "displayName": "M&T Bank",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-07-01T16:54:03.397Z",
+            "updatedAt": "2026-07-01T16:54:03.397Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 43,
+            "name": "Gasolina",
+            "type": "EXPENSE",
+            "displayName": "Gasolina",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "createdAt": "2026-07-26T04:31:23.641Z",
+            "updatedAt": "2026-07-26T04:31:23.641Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 44,
+            "name": "Wells Fargo",
+            "type": "BANK",
+            "displayName": "Wells Fargo",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-07-01T16:53:39.451Z",
+            "updatedAt": "2026-07-01T16:53:39.451Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 9,
+            "name": "Cash Account",
+            "type": "ASSET",
+            "displayName": "Cash Account",
+            "systemAccount": true,
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 1,
+              "name": "CASH ON HAND"
+            },
+            "createdAt": "2026-07-01T16:54:20.904Z",
+            "updatedAt": "2026-07-01T16:54:20.904Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1117",
+            "nonPosting": false,
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "code": "ZB9b9f93"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-13T17:11:20.605Z",
+            "updatedAt": "2026-11-13T17:11:20.605Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        ],
+        "error": "",
+        "duration": 0.036101167,
+        "page": 1,
+        "resultsPerPage": 100,
+        "total": 32,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Absent payment-account control",
+      "method": "GET",
+      "path": "/chart-accounts/2147483646",
+      "http": 404,
+      "response": {
+        "success": false,
+        "message": "chart account not found",
+        "error": "chart account not found. Suggested solution: Verify the resource identifier and try again."
+      }
+    },
+    {
+      "label": "Retained matrix registration",
+      "registrationId": "6af744ba31a295cf38083b67",
+      "invoiceId": "6af744ba31a295cf38083b65"
+    },
+    {
+      "label": "Cash scenario discount",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744bb31a295cf38083b6b",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:22.944018256Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-DISCOUNT",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "DISCOUNT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "balance": 80,
+            "discount": 20
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:22.998416339Z",
+          "updatedAt": "2026-11-13T17:11:22.998416339Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 3,
+              "name": "SALES DISCOUNTS",
+              "type": "CONTRA-REVENUE",
+              "debit": 20
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 20
+            }
+          ],
+          "transactionAmount": 20,
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "accountReceivables": 80,
+            "discounts": 20,
+            "totalGeneral": 180
+          }
+        },
+        "error": "",
+        "duration": 0.284683167,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Cash scenario collection",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744bb31a295cf38083b6f",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:23.336781548Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH-PAYMENT",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "payment": 80,
+            "discount": 20
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:23.392989298Z",
+          "updatedAt": "2026-11-13T17:11:23.392989298Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "debit": 80
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 80
+            }
+          ],
+          "transactionAmount": 80,
+          "sourceSystem": "account:1",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "cash": 80,
+            "discounts": 20,
+            "totalIncome": 80,
+            "totalGeneral": 100,
+            "totalCash": 80,
+            "netIncome": 80
+          }
+        },
+        "error": "",
+        "duration": 0.333826667,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744bb31a295cf38083b6f",
+      "method": "GET",
+      "path": "/journals/6af744bb31a295cf38083b6f",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": false
+          },
+          "paymentAccount": {
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744bb31a295cf38083b6f",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:23.336Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH-PAYMENT",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "payment": 80,
+            "discount": 20
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:23.392Z",
+          "updatedAt": "2026-11-13T17:11:23.392Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "debit": 80
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 80
+            }
+          ],
+          "transactionAmount": 80,
+          "sourceSystem": "account:1"
+        },
+        "error": "",
+        "duration": 0.022019708,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /invoices/6af744ba31a295cf38083b65",
+      "method": "GET",
+      "path": "/invoices/6af744ba31a295cf38083b65",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:027d9dc535344f2d12224a564588f76d01ca9c6546e115c59cc42c249a9de1d4",
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "createdAt": "2026-11-13T17:11:22.486Z",
+          "updatedAt": "2026-11-13T17:11:22.486Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "date": "2026-11-13T17:11:22.402Z",
+          "paidStatus": "CLOSED",
+          "itemCount": 0,
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "code": "ZB9b9f93"
+          },
+          "registration": "PENDING",
+          "cost": 100,
+          "discount": 20,
+          "payment": 80,
+          "balance": 0
+        },
+        "error": "",
+        "duration": 0.018520584,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Selected persisted cash account receives the $80 debit",
+      "passed": true
+    },
+    {
+      "label": "Cash $100 invoice / $20 discount / $80 receipt leaves zero balance",
+      "passed": true
+    },
+    {
+      "label": "Cash closeout full summary",
+      "method": "POST",
+      "path": "/journals/summary",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Journal totals",
+        "data": [
+          {
+            "currency": "USD",
+            "income": 80,
+            "expenses": 0,
+            "net": 80,
+            "count": 3
+          }
+        ],
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Cash closeout full summary reports income/net $80 and no expense",
+      "passed": true,
+      "http": 200,
+      "message": "Journal totals",
+      "error": ""
+    },
+    {
+      "label": "Read /income-statements/32723",
+      "method": "GET",
+      "path": "/income-statements/32723",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "businessDate": "2026-11-13",
+          "timezone": "America/New_York",
+          "periodStart": "2026-11-13T05:00:00Z",
+          "periodEnd": "2026-11-14T05:00:00Z",
+          "id": 32723,
+          "date": "2026-11-13T05:00:00Z",
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "code": "ZB9b9f93"
+          },
+          "rate": 1,
+          "currency": "USD",
+          "status": "open",
+          "createdAt": "2026-11-13T17:11:21.059Z",
+          "updatedAt": "2026-11-13T17:11:21.059Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          }
+        },
+        "error": "",
+        "duration": 0.016585334,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /income-statements/32723/summary-total",
+      "method": "GET",
+      "path": "/income-statements/32723/summary-total",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "currency": "USD",
+          "rate": 1,
+          "totals": [
+            {
+              "header": "Total General",
+              "value": 100,
+              "order": 1,
+              "details": [
+                {
+                  "header": "Total Facturado",
+                  "value": 100,
+                  "order": 1
+                },
+                {
+                  "header": "Cuentas por Cobrar",
+                  "value": 0,
+                  "order": 2
+                },
+                {
+                  "header": "Recibos",
+                  "value": 0,
+                  "order": 3
+                },
+                {
+                  "header": "Abonos a Facturas",
+                  "value": 0,
+                  "order": 4
+                },
+                {
+                  "header": "Abonos a Recibos",
+                  "value": 0,
+                  "order": 5
+                }
+              ]
+            },
+            {
+              "header": "Total Ingresos",
+              "value": 80,
+              "order": 2,
+              "details": [
+                {
+                  "header": "Efectivo",
+                  "value": 80,
+                  "order": 1
+                },
+                {
+                  "header": "Cheque",
+                  "value": 0,
+                  "order": 2
+                },
+                {
+                  "header": "Depósito",
+                  "value": 0,
+                  "order": 3
+                },
+                {
+                  "header": "Zelle",
+                  "value": 0,
+                  "order": 4
+                },
+                {
+                  "header": "Tarjeta de Crédito",
+                  "value": 0,
+                  "order": 5
+                }
+              ]
+            },
+            {
+              "header": "Zelle",
+              "value": 0,
+              "order": 4
+            },
+            {
+              "header": "Otros Ingresos",
+              "value": 0,
+              "order": 3
+            },
+            {
+              "header": "Gastos",
+              "value": 0,
+              "order": 4,
+              "details": [
+                {
+                  "header": "Descuentos",
+                  "value": 20,
+                  "order": 1
+                }
+              ]
+            },
+            {
+              "header": "Préstamos",
+              "value": 0,
+              "order": 5
+            },
+            {
+              "header": "Transferencias de Cuenta",
+              "value": 0,
+              "order": 6
+            },
+            {
+              "header": "Total Efectivo",
+              "value": 80,
+              "order": 7
+            },
+            {
+              "header": "Ingresos Neto",
+              "value": 80,
+              "order": 8
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.077402917,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Closeout totals preserve $80 cash/net, zero expense and separate $20 discount",
+      "passed": true
+    },
+    {
+      "label": "Reverse matrix journal 6af744bb31a295cf38083b6f",
+      "method": "POST",
+      "path": "/journals/6af744bb31a295cf38083b6f/reverse",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Reversing adjustment recorded",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET"
+          },
+          "reconciliationStatus": "NOT_REQUIRED",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "reversedTransactionType": "PAYMENT",
+          "reversalOf": "6af744bb31a295cf38083b6f",
+          "id": "6af744bd31a295cf38083b73",
+          "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc matrix cleanup",
+          "date": "2026-11-13T17:11:24.834975423Z",
+          "refNumber": "REV-6af744bb31a295cf38083b6f",
+          "idempotencyKey": "reversal:6af744bb31a295cf38083b6f",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "REVERSAL",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "payment": 80,
+            "discount": 20
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:24.834975423Z",
+          "updatedAt": "2026-11-13T17:11:24.834975423Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "updatedBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "credit": 80
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "debit": 80
+            }
+          ],
+          "transactionAmount": -80,
+          "sourceSystem": "audited-adjustment",
+          "sourceId": "6af744bb31a295cf38083b6f"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744bb31a295cf38083b6f",
+      "method": "GET",
+      "path": "/journals/6af744bb31a295cf38083b6f",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 2,
+          "transactionStatus": "REVERSED",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": false,
+            "void": false,
+            "reverse": false,
+            "correct": false,
+            "note": true,
+            "clear": false
+          },
+          "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+          "paymentAccount": {
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "NOT_REQUIRED",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "reversedAt": "2026-11-13T17:11:24.834Z",
+          "id": "6af744bb31a295cf38083b6f",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:23.336Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH-PAYMENT",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "balance": 80,
+            "discount": 20
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:23.392Z",
+          "updatedAt": "2026-11-13T17:11:23.392Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "debit": 80
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 80
+            }
+          ],
+          "transactionAmount": 80,
+          "sourceSystem": "account:1"
+        },
+        "error": "",
+        "duration": 0.018778583,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Matrix reversal 6af744bb31a295cf38083b6f leaves both pending queues",
+      "passed": true
+    },
+    {
+      "label": "Reverse matrix journal 6af744bb31a295cf38083b6b",
+      "method": "POST",
+      "path": "/journals/6af744bb31a295cf38083b6b/reverse",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Reversing adjustment recorded",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "reconciliationStatus": "NOT_REQUIRED",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "reversedTransactionType": "DISCOUNT",
+          "reversalOf": "6af744bb31a295cf38083b6b",
+          "id": "6af744be31a295cf38083b77",
+          "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc matrix cleanup",
+          "date": "2026-11-13T17:11:25.817854132Z",
+          "refNumber": "REV-6af744bb31a295cf38083b6b",
+          "idempotencyKey": "reversal:6af744bb31a295cf38083b6b",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "REVERSAL",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "balance": 80,
+            "discount": 20
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:25.817854132Z",
+          "updatedAt": "2026-11-13T17:11:25.817854132Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "updatedBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 3,
+              "name": "SALES DISCOUNTS",
+              "type": "CONTRA-REVENUE",
+              "credit": 20
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "debit": 20
+            }
+          ],
+          "transactionAmount": -20,
+          "sourceSystem": "audited-adjustment",
+          "sourceId": "6af744bb31a295cf38083b6b"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744bb31a295cf38083b6b",
+      "method": "GET",
+      "path": "/journals/6af744bb31a295cf38083b6b",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 2,
+          "transactionStatus": "REVERSED",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": false,
+            "void": false,
+            "reverse": false,
+            "correct": false,
+            "note": true,
+            "clear": false
+          },
+          "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "NOT_REQUIRED",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "reversedAt": "2026-11-13T17:11:25.817Z",
+          "id": "6af744bb31a295cf38083b6b",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:22.944Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-DISCOUNT",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "DISCOUNT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "balance": 100
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:22.998Z",
+          "updatedAt": "2026-11-13T17:11:22.998Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 3,
+              "name": "SALES DISCOUNTS",
+              "type": "CONTRA-REVENUE",
+              "debit": 20
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 20
+            }
+          ],
+          "transactionAmount": 20
+        },
+        "error": "",
+        "duration": 0.018861167,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Matrix reversal 6af744bb31a295cf38083b6b leaves both pending queues",
+      "passed": true
+    },
+    {
+      "label": "Concurrent receipt $30",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744be31a295cf38083b7b",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:26.634611591Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-P30",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65"
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:26.690473299Z",
+          "updatedAt": "2026-11-13T17:11:26.690473299Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 30
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 30
+            }
+          ],
+          "transactionAmount": 30,
+          "sourceSystem": "account:46",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "zelle": 30,
+            "accountReceivables": 70,
+            "totalIncome": 30,
+            "totalGeneral": 170,
+            "netIncome": 30
+          }
+        },
+        "error": "",
+        "duration": 0.326394833,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Concurrent receipt $50",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744bf31a295cf38083b7e",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:27.128136508Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-P50",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65"
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:27.183365466Z",
+          "updatedAt": "2026-11-13T17:11:27.183365466Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 50
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 50
+            }
+          ],
+          "transactionAmount": 50,
+          "sourceSystem": "account:46",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "zelle": 80,
+            "accountReceivables": 20,
+            "totalIncome": 80,
+            "totalGeneral": 120,
+            "netIncome": 80
+          }
+        },
+        "error": "",
+        "duration": 0.334141459,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Mixed-method receipt $10",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "paymentReference": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CHECK",
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744bf31a295cf38083b81",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:27.659591883Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-P10",
+          "external_reference_number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CHECK",
+          "paymentMethod": {
+            "id": 2,
+            "name": "CHECK"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65"
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:27.714949841Z",
+          "updatedAt": "2026-11-13T17:11:27.714949841Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 10
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 10
+            }
+          ],
+          "transactionAmount": 10,
+          "sourceSystem": "account:46",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "check": 10,
+            "zelle": 80,
+            "accountReceivables": 10,
+            "totalIncome": 90,
+            "totalGeneral": 110,
+            "netIncome": 90
+          }
+        },
+        "error": "",
+        "duration": 0.393279333,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Clearance rejects missing journal",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "invalid reconciliation request",
+        "error": "invalid reconciliation request. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Clearance rejects missing journal",
+      "passed": true,
+      "http": 400,
+      "message": "invalid reconciliation request",
+      "error": "invalid reconciliation request. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "Read /journals/6af744be31a295cf38083b7b",
+      "method": "GET",
+      "path": "/journals/6af744be31a295cf38083b7b",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": true
+          },
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744be31a295cf38083b7b",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:26.634Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-P30",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "balance": 100
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:26.69Z",
+          "updatedAt": "2026-11-13T17:11:26.69Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 30
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 30
+            }
+          ],
+          "transactionAmount": 30,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.017207625,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /invoices/6af744ba31a295cf38083b65",
+      "method": "GET",
+      "path": "/invoices/6af744ba31a295cf38083b65",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:de15c7bd124c028fc33b1b6ed9e214e4d89136a9a7aad8b0853f55e24a6a8c15",
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "createdAt": "2026-11-13T17:11:22.486Z",
+          "updatedAt": "2026-11-13T17:11:22.486Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "date": "2026-11-13T17:11:22.402Z",
+          "paidStatus": "OPEN",
+          "itemCount": 0,
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "code": "ZB9b9f93"
+          },
+          "registration": "PENDING",
+          "cost": 100,
+          "discount": 0,
+          "payment": 0,
+          "balance": 100
+        },
+        "error": "",
+        "duration": 0.018863,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Rejected missing journal leaves receipt and invoice unchanged",
+      "passed": true
+    },
+    {
+      "label": "Clearance rejects mixed bank methods",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "journal reconciliation conflicts with current state",
+        "error": "journal reconciliation conflicts with current state. Suggested solution: Resolve the reported conflict and try again."
+      }
+    },
+    {
+      "label": "Clearance rejects mixed bank methods",
+      "passed": true,
+      "http": 409,
+      "message": "journal reconciliation conflicts with current state",
+      "error": "journal reconciliation conflicts with current state. Suggested solution: Resolve the reported conflict and try again."
+    },
+    {
+      "label": "Read /journals/6af744be31a295cf38083b7b",
+      "method": "GET",
+      "path": "/journals/6af744be31a295cf38083b7b",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": true
+          },
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744be31a295cf38083b7b",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:26.634Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-P30",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "balance": 100
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:26.69Z",
+          "updatedAt": "2026-11-13T17:11:26.69Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 30
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 30
+            }
+          ],
+          "transactionAmount": 30,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.017958916,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /invoices/6af744ba31a295cf38083b65",
+      "method": "GET",
+      "path": "/invoices/6af744ba31a295cf38083b65",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:de15c7bd124c028fc33b1b6ed9e214e4d89136a9a7aad8b0853f55e24a6a8c15",
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "createdAt": "2026-11-13T17:11:22.486Z",
+          "updatedAt": "2026-11-13T17:11:22.486Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "date": "2026-11-13T17:11:22.402Z",
+          "paidStatus": "OPEN",
+          "itemCount": 0,
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "code": "ZB9b9f93"
+          },
+          "registration": "PENDING",
+          "cost": 100,
+          "discount": 0,
+          "payment": 0,
+          "balance": 100
+        },
+        "error": "",
+        "duration": 0.017190583,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Rejected mixed bank methods leaves receipt and invoice unchanged",
+      "passed": true
+    },
+    {
+      "label": "Concurrent same-command B",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Bank journals cleared",
+        "data": {
+          "cleared": [
+            "6af744be31a295cf38083b7b"
+          ],
+          "clearedAt": "2026-11-13T17:11:29.071Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Concurrent same-command A",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Bank journals cleared",
+        "data": {
+          "cleared": [
+            "6af744be31a295cf38083b7b"
+          ],
+          "clearedAt": "2026-11-13T17:11:29.071Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Concurrent identical clear commands both return confirmed results",
+      "passed": true
+    },
+    {
+      "label": "Read /invoices/6af744ba31a295cf38083b65",
+      "method": "GET",
+      "path": "/invoices/6af744ba31a295cf38083b65",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:77d858ccad74393395b425ddbf9f8b5e584dd885f0d453a36f1c3b755b18b9fa",
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "createdAt": "2026-11-13T17:11:22.486Z",
+          "updatedAt": "2026-11-13T17:11:22.486Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "date": "2026-11-13T17:11:22.402Z",
+          "paidStatus": "OPEN",
+          "itemCount": 0,
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "code": "ZB9b9f93"
+          },
+          "registration": "PENDING",
+          "cost": 100,
+          "discount": 0,
+          "payment": 30,
+          "balance": 70
+        },
+        "error": "",
+        "duration": 0.018836583,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Concurrent identical clearance applies exactly $30 once",
+      "passed": true
+    },
+    {
+      "label": "Concurrent fresh command already-cleared journal",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "journal reconciliation conflicts with current state",
+        "error": "journal reconciliation conflicts with current state. Suggested solution: Resolve the reported conflict and try again."
+      }
+    },
+    {
+      "label": "Concurrent fresh command pending journal",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Bank journals cleared",
+        "data": {
+          "cleared": [
+            "6af744bf31a295cf38083b7e"
+          ],
+          "clearedAt": "2026-11-13T17:11:30.036Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Fresh clear command rejects settled input while pending command succeeds",
+      "passed": true
+    },
+    {
+      "label": "Read /invoices/6af744ba31a295cf38083b65",
+      "method": "GET",
+      "path": "/invoices/6af744ba31a295cf38083b65",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:a6ef71e20e386f201dc45e6d4825e1d4e38c25b55ad87be368e0196f14f7d293",
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "createdAt": "2026-11-13T17:11:22.486Z",
+          "updatedAt": "2026-11-13T17:11:22.486Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "date": "2026-11-13T17:11:22.402Z",
+          "paidStatus": "OPEN",
+          "itemCount": 0,
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "code": "ZB9b9f93"
+          },
+          "registration": "PENDING",
+          "cost": 100,
+          "discount": 0,
+          "payment": 80,
+          "balance": 20
+        },
+        "error": "",
+        "duration": 0.017756,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Concurrent distinct commands leave total payment $80 / balance $20",
+      "passed": true
+    },
+    {
+      "label": "Reject reused UUID with changed payload",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "journal reconciliation conflicts with current state",
+        "error": "journal reconciliation conflicts with current state. Suggested solution: Resolve the reported conflict and try again."
+      }
+    },
+    {
+      "label": "Clearance command UUID is payload-bound",
+      "passed": true,
+      "http": 409,
+      "message": "journal reconciliation conflicts with current state",
+      "error": "journal reconciliation conflicts with current state. Suggested solution: Resolve the reported conflict and try again."
+    },
+    {
+      "label": "Independent-command race receipt $5",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c331a295cf38083b86",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:31.103785343Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-RACE",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65"
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:31.158815176Z",
+          "updatedAt": "2026-11-13T17:11:31.158815176Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 5
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 5
+            }
+          ],
+          "transactionAmount": 5,
+          "sourceSystem": "account:46",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "check": 10,
+            "zelle": 85,
+            "accountReceivables": 5,
+            "totalIncome": 95,
+            "totalGeneral": 105,
+            "netIncome": 95
+          }
+        },
+        "error": "",
+        "duration": 0.383857667,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Independent-command same-receipt race A",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Bank journals cleared",
+        "data": {
+          "cleared": [
+            "6af744c331a295cf38083b86"
+          ],
+          "clearedAt": "2026-11-13T17:11:31.729Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Independent-command same-receipt race B",
+      "method": "POST",
+      "path": "/journals/clear",
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "journal reconciliation conflicts with current state",
+        "error": "journal reconciliation conflicts with current state. Suggested solution: Resolve the reported conflict and try again."
+      }
+    },
+    {
+      "label": "Independent commands for one pending receipt have one success and one conflict",
+      "passed": true
+    },
+    {
+      "label": "Read /invoices/6af744ba31a295cf38083b65",
+      "method": "GET",
+      "path": "/invoices/6af744ba31a295cf38083b65",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:b684aac3fc98106e412b83a80c9d62d9123ce94614b6039f49866cef5ade38c5",
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "createdAt": "2026-11-13T17:11:22.486Z",
+          "updatedAt": "2026-11-13T17:11:22.486Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "date": "2026-11-13T17:11:22.402Z",
+          "paidStatus": "OPEN",
+          "itemCount": 0,
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "code": "ZB9b9f93"
+          },
+          "registration": "PENDING",
+          "cost": 100,
+          "discount": 0,
+          "payment": 85,
+          "balance": 15
+        },
+        "error": "",
+        "duration": 0.018384542,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744c331a295cf38083b86",
+      "method": "GET",
+      "path": "/journals/6af744c331a295cf38083b86",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 2,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "CLEARED",
+          "clearedAt": "2026-11-13T17:11:31.729Z",
+          "clearedBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "allowedActions": {
+            "edit": false,
+            "void": false,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": false
+          },
+          "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "RECONCILED",
+          "reconciledAt": "2026-11-13T17:11:31.729Z",
+          "reconciledBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "autoReconciled": true,
+          "id": "6af744c331a295cf38083b86",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:31.103Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-RACE",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "PAYMENT",
+          "invoice": {
+            "id": "6af744ba31a295cf38083b65",
+            "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+            "cost": 100,
+            "payment": 85,
+            "balance": 15
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:31.158Z",
+          "updatedAt": "2026-11-13T17:11:31.158Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 5
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "credit": 5
+            }
+          ],
+          "transactionAmount": 5,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.018834416,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Independent-command race applies exactly $5 once",
+      "passed": true
+    },
+    {
+      "label": "Valid bank EXPENSE source control",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "sourceAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c531a295cf38083b8a",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:32.895727927Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-EXPENSE-CONTROL",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "EXPENSE",
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:32.930279344Z",
+          "updatedAt": "2026-11-13T17:11:32.930279344Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 5,
+              "name": "Gasolina",
+              "type": "EXPENSE",
+              "debit": 0.01
+            },
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:5",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "check": 10,
+            "zelle": 85,
+            "expenses": 0.01,
+            "accountReceivables": 5,
+            "totalIncome": 95,
+            "totalGeneral": 105,
+            "totalCash": -0.01,
+            "netIncome": 94.99
+          }
+        },
+        "error": "",
+        "duration": 0.255143791,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Valid bank EXPENSE source succeeds",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "CASH default create",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c531a295cf38083b8c",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:33.269375594Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH-DEFAULT-false",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:33.305221136Z",
+          "updatedAt": "2026-11-13T17:11:33.305221136Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:6",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "otherIncomes": 0.01,
+            "cash": 0.01,
+            "check": 10,
+            "zelle": 85,
+            "expenses": 0.01,
+            "accountReceivables": 5,
+            "totalIncome": 95.01,
+            "totalGeneral": 105,
+            "netIncome": 95
+          }
+        },
+        "error": "",
+        "duration": 0.335800459,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744c531a295cf38083b8c",
+      "method": "GET",
+      "path": "/journals/6af744c531a295cf38083b8c",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": false
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c531a295cf38083b8c",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:33.269Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH-DEFAULT-false",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:33.305Z",
+          "updatedAt": "2026-11-13T17:11:33.305Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:6"
+        },
+        "error": "",
+        "duration": 0.018062041,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Omitted CASH account defaults to persisted CASH ON HAND on create",
+      "passed": true
+    },
+    {
+      "label": "CASH default sync",
+      "method": "POST",
+      "path": "/journals/sync",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c631a295cf38083b8e",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:33.850742428Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH-DEFAULT-true",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:33.925407594Z",
+          "updatedAt": "2026-11-13T17:11:33.925407594Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:6",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "otherIncomes": 0.02,
+            "cash": 0.02,
+            "check": 10,
+            "zelle": 85,
+            "expenses": 0.01,
+            "accountReceivables": 5,
+            "totalIncome": 95.02,
+            "totalGeneral": 105,
+            "totalCash": 0.01,
+            "netIncome": 95.01
+          }
+        },
+        "error": "",
+        "duration": 0.296014959,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744c631a295cf38083b8e",
+      "method": "GET",
+      "path": "/journals/6af744c631a295cf38083b8e",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": false
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c631a295cf38083b8e",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:33.85Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH-DEFAULT-true",
+          "paymentMethod": {
+            "id": 1,
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:33.925Z",
+          "updatedAt": "2026-11-13T17:11:33.925Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:6"
+        },
+        "error": "",
+        "duration": 0.019363709,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Omitted CASH account defaults to persisted CASH ON HAND on sync",
+      "passed": true
+    },
+    {
+      "label": "nonexistent SALES create",
+      "method": "POST",
+      "path": "/journals",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "Payment account is invalid",
+        "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+      }
+    },
+    {
+      "label": "nonexistent bank rejected on SALES create",
+      "passed": true,
+      "http": 422,
+      "message": "Payment account is invalid",
+      "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+    },
+    {
+      "label": "nonexistent SALES sync",
+      "method": "POST",
+      "path": "/journals/sync",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "Payment account is invalid",
+        "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+      }
+    },
+    {
+      "label": "nonexistent bank rejected on SALES sync",
+      "passed": true,
+      "http": 422,
+      "message": "Payment account is invalid",
+      "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+    },
+    {
+      "label": "nonexistent EXPENSE source",
+      "method": "POST",
+      "path": "/journals",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "Payment account is invalid",
+        "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+      }
+    },
+    {
+      "label": "nonexistent bank rejected on EXPENSE",
+      "passed": true,
+      "http": 422,
+      "message": "Payment account is invalid",
+      "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+    },
+    {
+      "label": "wrong-branch SALES create",
+      "method": "POST",
+      "path": "/journals",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "Payment account is invalid",
+        "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+      }
+    },
+    {
+      "label": "wrong-branch bank rejected on SALES create",
+      "passed": true,
+      "http": 422,
+      "message": "Payment account is invalid",
+      "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+    },
+    {
+      "label": "wrong-branch SALES sync",
+      "method": "POST",
+      "path": "/journals/sync",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "Payment account is invalid",
+        "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+      }
+    },
+    {
+      "label": "wrong-branch bank rejected on SALES sync",
+      "passed": true,
+      "http": 422,
+      "message": "Payment account is invalid",
+      "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+    },
+    {
+      "label": "wrong-branch EXPENSE source",
+      "method": "POST",
+      "path": "/journals",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "Payment account is invalid",
+        "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+      }
+    },
+    {
+      "label": "wrong-branch bank rejected on EXPENSE",
+      "passed": true,
+      "http": 422,
+      "message": "Payment account is invalid",
+      "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+    },
+    {
+      "label": "Spoofed account name/type",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c831a295cf38083b90",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:36.065693262Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-SPOOF",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:36.100725304Z",
+          "updatedAt": "2026-11-13T17:11:36.100725304Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:46",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "otherIncomes": 0.03,
+            "cash": 0.02,
+            "check": 10,
+            "zelle": 85.01,
+            "expenses": 0.01,
+            "accountReceivables": 5,
+            "totalIncome": 95.03,
+            "totalGeneral": 105,
+            "totalCash": 0.01,
+            "netIncome": 95.02
+          }
+        },
+        "error": "",
+        "duration": 0.248587167,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744c831a295cf38083b90",
+      "method": "GET",
+      "path": "/journals/6af744c831a295cf38083b90",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": true
+          },
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c831a295cf38083b90",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:36.065Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-SPOOF",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:36.1Z",
+          "updatedAt": "2026-11-13T17:11:36.1Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.019333958,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Persisted account overrides spoofed name/type",
+      "passed": true
+    },
+    {
+      "label": "Account-update positive control",
+      "method": "POST",
+      "path": "/journals",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c831a295cf38083b92",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:36.557503887Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-UPDATE",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:36.593199137Z",
+          "updatedAt": "2026-11-13T17:11:36.593199137Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:46",
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "otherIncomes": 0.04,
+            "cash": 0.02,
+            "check": 10,
+            "zelle": 85.02000000000001,
+            "expenses": 0.01,
+            "accountReceivables": 5,
+            "totalIncome": 95.04,
+            "totalGeneral": 105,
+            "totalCash": 0.01,
+            "netIncome": 95.03
+          }
+        },
+        "error": "",
+        "duration": 0.235437625,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Read /journals/6af744c831a295cf38083b92",
+      "method": "GET",
+      "path": "/journals/6af744c831a295cf38083b92",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": true
+          },
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c831a295cf38083b92",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "date": "2026-11-13T17:11:36.557Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-UPDATE",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:36.593Z",
+          "updatedAt": "2026-11-13T17:11:36.593Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.033289792,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Account-update valid control",
+      "method": "PUT",
+      "path": "/journals/6af744c831a295cf38083b92",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 2,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c831a295cf38083b92",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc valid update",
+          "date": "2026-11-13T17:11:36.557Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-UPDATE",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "branch": {
+              "id": 37
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:36.593Z",
+          "updatedAt": "2026-11-13T17:11:37.292140304Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "updatedBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.367454208,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Valid persisted bank update succeeds",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read /journals/6af744c831a295cf38083b92",
+      "method": "GET",
+      "path": "/journals/6af744c831a295cf38083b92",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 2,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": true
+          },
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c831a295cf38083b92",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc valid update",
+          "date": "2026-11-13T17:11:36.557Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-UPDATE",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:36.593Z",
+          "updatedAt": "2026-11-13T17:11:37.292Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "updatedBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.017923792,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Account-update nonexistent bank",
+      "method": "PUT",
+      "path": "/journals/6af744c831a295cf38083b92",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "Payment account is invalid",
+        "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+      }
+    },
+    {
+      "label": "Nonexistent bank rejected on journal update",
+      "passed": true,
+      "http": 422,
+      "message": "Payment account is invalid",
+      "error": "The account must be an eligible posting account in the journal branch and match the payment method. Suggested solution: Select a cash account under CASH ON HAND for cash, or a BANK account for non-cash."
+    },
+    {
+      "label": "Read /journals/6af744c831a295cf38083b92",
+      "method": "GET",
+      "path": "/journals/6af744c831a295cf38083b92",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 2,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "OUTSTANDING",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": true,
+            "void": true,
+            "reverse": true,
+            "correct": true,
+            "note": true,
+            "clear": true
+          },
+          "paymentAccount": {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK"
+          },
+          "branch": {
+            "id": 37,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af744c831a295cf38083b92",
+          "description": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc valid update",
+          "date": "2026-11-13T17:11:36.557Z",
+          "refNumber": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-UPDATE",
+          "paymentMethod": {
+            "id": 4,
+            "name": "ZELLE"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "SALES",
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "id": 32723
+          },
+          "employee": {
+            "id": 256,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "createdAt": "2026-11-13T17:11:36.593Z",
+          "updatedAt": "2026-11-13T17:11:37.292Z",
+          "createdBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "updatedBy": {
+            "id": 145,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+          },
+          "accounts": [
+            {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK",
+              "debit": 0.01
+            },
+            {
+              "id": 6,
+              "name": "VENTA DE CAJAS",
+              "type": "REVENUE",
+              "credit": 0.01
+            }
+          ],
+          "transactionAmount": 0.01,
+          "sourceSystem": "account:46"
+        },
+        "error": "",
+        "duration": 0.018722333,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Manual close disabled control",
+      "method": "POST",
+      "path": "/income-statements/32723/close",
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "closeout lifecycle is server-managed; open today’s closeout with currency and exchange rate when required",
+        "error": "closeout lifecycle is server-managed; open today’s closeout with currency and exchange rate when required. Suggested solution: Resolve the reported conflict and try again."
+      }
+    },
+    {
+      "label": "Manual closeout closure remains disabled",
+      "passed": true,
+      "http": 409,
+      "message": "closeout lifecycle is server-managed; open today’s closeout with currency and exchange rate when required",
+      "error": "closeout lifecycle is server-managed; open today’s closeout with currency and exchange rate when required. Suggested solution: Resolve the reported conflict and try again."
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744c831a295cf38083b92",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744c831a295cf38083b92",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 46,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "type": "BANK"
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "SALES",
+        "reversalOf": "6af744c831a295cf38083b92",
+        "id": "6af744cb31a295cf38083b96",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:38.675242347Z",
+        "refNumber": "REV-6af744c831a295cf38083b92",
+        "idempotencyKey": "reversal:6af744c831a295cf38083b92",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:38.675242347Z",
+        "updatedAt": "2026-11-13T17:11:38.675242347Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "credit": 0.01
+          },
+          {
+            "id": 6,
+            "name": "VENTA DE CAJAS",
+            "type": "REVENUE",
+            "debit": 0.01
+          }
+        ],
+        "transactionAmount": -0.01,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744c831a295cf38083b92"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744c831a295cf38083b92 leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744c831a295cf38083b90",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744c831a295cf38083b90",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 46,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "type": "BANK"
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "SALES",
+        "reversalOf": "6af744c831a295cf38083b90",
+        "id": "6af744cc31a295cf38083b99",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:39.845000875Z",
+        "refNumber": "REV-6af744c831a295cf38083b90",
+        "idempotencyKey": "reversal:6af744c831a295cf38083b90",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:39.845000875Z",
+        "updatedAt": "2026-11-13T17:11:39.845000875Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "credit": 0.01
+          },
+          {
+            "id": 6,
+            "name": "VENTA DE CAJAS",
+            "type": "REVENUE",
+            "debit": 0.01
+          }
+        ],
+        "transactionAmount": -0.01,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744c831a295cf38083b90"
+      }
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744c631a295cf38083b8e",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744c631a295cf38083b8e",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "SALES",
+        "reversalOf": "6af744c631a295cf38083b8e",
+        "id": "6af744cd31a295cf38083b9c",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:40.880987542Z",
+        "refNumber": "REV-6af744c631a295cf38083b8e",
+        "idempotencyKey": "reversal:6af744c631a295cf38083b8e",
+        "paymentMethod": {
+          "id": 1,
+          "name": "CASH"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:40.880987542Z",
+        "updatedAt": "2026-11-13T17:11:40.880987542Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET",
+            "credit": 0.01
+          },
+          {
+            "id": 6,
+            "name": "VENTA DE CAJAS",
+            "type": "REVENUE",
+            "debit": 0.01
+          }
+        ],
+        "transactionAmount": -0.01,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744c631a295cf38083b8e"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744c631a295cf38083b8e leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744c531a295cf38083b8c",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744c531a295cf38083b8c",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "SALES",
+        "reversalOf": "6af744c531a295cf38083b8c",
+        "id": "6af744ce31a295cf38083b9f",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:42.247756959Z",
+        "refNumber": "REV-6af744c531a295cf38083b8c",
+        "idempotencyKey": "reversal:6af744c531a295cf38083b8c",
+        "paymentMethod": {
+          "id": 1,
+          "name": "CASH"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:42.247756959Z",
+        "updatedAt": "2026-11-13T17:11:42.247756959Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET",
+            "credit": 0.01
+          },
+          {
+            "id": 6,
+            "name": "VENTA DE CAJAS",
+            "type": "REVENUE",
+            "debit": 0.01
+          }
+        ],
+        "transactionAmount": -0.01,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744c531a295cf38083b8c"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744c531a295cf38083b8c leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744c531a295cf38083b8a",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744c531a295cf38083b8a",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "sourceAccount": {
+          "id": 46,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "type": "BANK"
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "EXPENSE",
+        "reversalOf": "6af744c531a295cf38083b8a",
+        "id": "6af744cf31a295cf38083ba3",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:43.509329085Z",
+        "refNumber": "REV-6af744c531a295cf38083b8a",
+        "idempotencyKey": "reversal:6af744c531a295cf38083b8a",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:43.509329085Z",
+        "updatedAt": "2026-11-13T17:11:43.509329085Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 5,
+            "name": "Gasolina",
+            "type": "EXPENSE",
+            "credit": 0.01
+          },
+          {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "debit": 0.01
+          }
+        ],
+        "transactionAmount": -0.01,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744c531a295cf38083b8a"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744c531a295cf38083b8a leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744c331a295cf38083b86",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744c331a295cf38083b86",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 46,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "type": "BANK"
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "PAYMENT",
+        "reversalOf": "6af744c331a295cf38083b86",
+        "id": "6af744d131a295cf38083c71",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:44.694442627Z",
+        "refNumber": "REV-6af744c331a295cf38083b86",
+        "idempotencyKey": "reversal:6af744c331a295cf38083b86",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "invoice": {
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "cost": 100,
+          "payment": 85,
+          "balance": 15
+        },
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:44.694442627Z",
+        "updatedAt": "2026-11-13T17:11:44.694442627Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "credit": 5
+          },
+          {
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "debit": 5
+          }
+        ],
+        "transactionAmount": -5,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744c331a295cf38083b86"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744c331a295cf38083b86 leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744bf31a295cf38083b81",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744bf31a295cf38083b81",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 46,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "type": "BANK"
+        },
+        "paymentReference": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CHECK",
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "PAYMENT",
+        "reversalOf": "6af744bf31a295cf38083b81",
+        "id": "6af744d231a295cf38083c74",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:46.122886586Z",
+        "refNumber": "REV-6af744bf31a295cf38083b81",
+        "idempotencyKey": "reversal:6af744bf31a295cf38083b81",
+        "external_reference_number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CHECK",
+        "paymentMethod": {
+          "id": 2,
+          "name": "CHECK"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "invoice": {
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "cost": 100,
+          "payment": 80,
+          "balance": 20
+        },
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:46.122886586Z",
+        "updatedAt": "2026-11-13T17:11:46.122886586Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "credit": 10
+          },
+          {
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "debit": 10
+          }
+        ],
+        "transactionAmount": -10,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744bf31a295cf38083b81"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744bf31a295cf38083b81 leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744bf31a295cf38083b7e",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744bf31a295cf38083b7e",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 46,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "type": "BANK"
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "PAYMENT",
+        "reversalOf": "6af744bf31a295cf38083b7e",
+        "id": "6af744d431a295cf38083c77",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:48.084454587Z",
+        "refNumber": "REV-6af744bf31a295cf38083b7e",
+        "idempotencyKey": "reversal:6af744bf31a295cf38083b7e",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "invoice": {
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "cost": 100,
+          "payment": 80,
+          "balance": 20
+        },
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:48.084454587Z",
+        "updatedAt": "2026-11-13T17:11:48.084454587Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "credit": 50
+          },
+          {
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "debit": 50
+          }
+        ],
+        "transactionAmount": -50,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744bf31a295cf38083b7e"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744bf31a295cf38083b7e leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af744be31a295cf38083b7b",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af744be31a295cf38083b7b",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 46,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+          "type": "BANK"
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "PAYMENT",
+        "reversalOf": "6af744be31a295cf38083b7b",
+        "id": "6af744d631a295cf38083c7a",
+        "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+        "date": "2026-11-13T17:11:49.656911213Z",
+        "refNumber": "REV-6af744be31a295cf38083b7b",
+        "idempotencyKey": "reversal:6af744be31a295cf38083b7b",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "invoice": {
+          "id": "6af744ba31a295cf38083b65",
+          "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+          "cost": 100,
+          "payment": 30,
+          "balance": 70
+        },
+        "incomeStatement": {
+          "branch": {
+            "id": 37
+          },
+          "id": 32723
+        },
+        "employee": {
+          "id": 256,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "createdAt": "2026-11-13T17:11:49.656911213Z",
+        "updatedAt": "2026-11-13T17:11:49.656911213Z",
+        "createdBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "updatedBy": {
+          "id": 145,
+          "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+        },
+        "accounts": [
+          {
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "credit": 30
+          },
+          {
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "debit": 30
+          }
+        ],
+        "transactionAmount": -30,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af744be31a295cf38083b7b"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 37",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af744be31a295cf38083b7b leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /employees/256",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /users/145",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /roles/73",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    }
+  ]
+}

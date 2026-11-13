@@ -31,22 +31,16 @@
  */
 
 import { createSeeder } from "./lib/seed-records.mjs";
+import { createPortalLoader } from "./lib/portal-modules.mjs";
 
 const DEFAULT_COMPANY_ID = "64d5c0b0d1eab2aaf30b1819";
 const DEFAULT_BASE_URL = "https://api.embarqueros.com/v1";
 
-/** Portal route-crew bar search (ROUTE_BAR_OR_SEARCH_FIELDS); `routeId` is not searchable. */
-const CREW_BAR_FIELDS = ["name", "branch.code", "employees.name"];
-
-/** Portal daily-route directory bar search. */
-const DAILY_BAR_FIELDS = [
-  "name",
-  "route.name",
-  "employees.name",
-  "container.number",
-  "date",
-  "tripNumber",
-];
+// Reuse the real portal constants so smoke probes cannot drift into rejected fields.
+const loadPortal = createPortalLoader({apiClient: {}});
+const {ROUTE_BAR_OR_SEARCH_FIELDS: CREW_BAR_FIELDS, DEFAULT_ROUTE_DIRECTORY_SORT} = loadPortal("src/lib/route-manager/types.ts");
+const {ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS: DAILY_BAR_FIELDS} = loadPortal("src/lib/pickup-delivery-routes/types.ts");
+const CREW_SORT_FIELD = DEFAULT_ROUTE_DIRECTORY_SORT.split(":")[0];
 
 function printHelp() {
   console.log(`Usage:
@@ -340,7 +334,7 @@ if (!opts.skipCrud) {
 // ---------------------------------------------------------------------------
 if (!opts.skipCrews) {
   console.log("=== Route crews (/routes) ===");
-  const list = await request("GET", "/routes?page=1&offset=0&limit=40&sort=name:asc");
+  const list = await request("GET", `/routes?page=1&offset=0&limit=40&sort=${DEFAULT_ROUTE_DIRECTORY_SORT}`);
   if (!ok(list)) {
     fail("GET /routes", list.status, errDetail(list));
   } else {
@@ -378,14 +372,14 @@ if (!opts.skipCrews) {
         })),
       },
     ],
-    "name",
+    CREW_SORT_FIELD,
     `POST /routes/search bar OR ("${barTerm}")`,
   );
 
   await search(
     "/routes/search",
     [{ field: "active", operator: "eq", value: true }],
-    "name",
+    CREW_SORT_FIELD,
     "search active eq true",
   );
 
@@ -393,7 +387,7 @@ if (!opts.skipCrews) {
     await search(
       "/routes/search",
       [{ field: "branch.code", operator: "eq", value: existingCrew.branch.code }],
-      "name",
+      CREW_SORT_FIELD,
       `search branch.code eq ${existingCrew.branch.code}`,
     );
   }
@@ -402,7 +396,7 @@ if (!opts.skipCrews) {
     await search(
       "/routes/search",
       [{ field: "employees.name", operator: "contains", value: existingCrew.employees[0].name }],
-      "name",
+      CREW_SORT_FIELD,
       `search employees.name contains ${existingCrew.employees[0].name}`,
     );
   }
@@ -528,7 +522,7 @@ if (!opts.skipCrud && (!opts.skipCrews || !opts.skipDaily)) {
   }
 
   if (!existingCrew && !opts.skipDaily) {
-    const crewRes = await request("GET", "/routes?page=1&limit=5&sort=name:asc");
+    const crewRes = await request("GET", `/routes?page=1&limit=5&sort=${DEFAULT_ROUTE_DIRECTORY_SORT}`);
     existingCrew = firstOf(crewRes);
     if (ok(crewRes) && existingCrew?.id) {
       pass("GET /routes (prereq)", `id=${existingCrew.id}`);

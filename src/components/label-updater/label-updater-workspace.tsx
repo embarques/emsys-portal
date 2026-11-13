@@ -117,6 +117,7 @@ export function LabelUpdaterWorkspace() {
       changeRoute,
       newRouteRecordId: changeRoute ? newRouteRecordId : undefined,
       newRouteDate: changeRoute ? routes.find(route => route.id === newRouteRecordId)?.date : undefined,
+      newRouteBranchId: changeRoute ? routes.find(route => route.id === newRouteRecordId)?.branch?.id : undefined,
       statusOptions: barcodeStatusOptions,
       resolveRouteLabel,
       resolveContainerLabel,

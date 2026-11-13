@@ -43,6 +43,7 @@ export type BarcodeScannerOptions = {
   newRouteRecordId?: string;
   /** Date captured with the selected daily route, checked again on submission. */
   newRouteDate?: string;
+  newRouteBranchId?: number;
   /** Live tenant catalog; fetched from status-options when omitted. */
   statusOptions?: readonly BarcodeStatusOption[];
   resolveRouteLabel?: (routeRecordId: string) => string;

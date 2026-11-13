@@ -25,6 +25,9 @@ import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOpera
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
 export const queryKeys = {
+  routeBusinessDate: {
+    detail: (scope: { companyId: string | null; actorId: string; roleId: number | string | null; permissions: string[]; authenticated: boolean; branchId: number | null }) => ["route-business-date", scope] as const,
+  },
   sessionVersion: {
     all: ["session-version"] as const,
     detail: (companyId: string | null) => ["session-version", companyId] as const,

@@ -28,6 +28,7 @@ export function CatalogTableToolbar<T>({ state, presetScope, searchPlaceholder, 
 
   return (
     <TableDirectoryToolbar
+      isLoading={state.isSearching}
       filtersOpen={state.open}
       onFiltersOpenChange={state.setOpen}
       activeFilterCount={state.activeFilterCount}
@@ -35,6 +36,7 @@ export function CatalogTableToolbar<T>({ state, presetScope, searchPlaceholder, 
       columnLayout={columnLayout}
       filterPanel={
         <TableAdvancedFilterPanel
+          isLoading={state.isSearching}
           presetScope={presetScope}
           open={state.open}
           rows={state.rows}
@@ -102,6 +104,7 @@ export function CatalogDataTable<T>({
       rows={state.items}
       rowKey={rowKey}
       rowLabel={rowLabel}
+      isPageDataPending={state.isSearching}
       columnLayout={columnLayout}
       page={state.pagination.page}
       sort={state.sort}

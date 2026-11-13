@@ -11,6 +11,7 @@ import type { ChartAccount } from "@/lib/accounting/daily-income/types";
 import { useTranslation } from "@/lib/i18n";
 
 type Props = {
+  inlineOptionsLimit?: number;
   id: string;
   kind: "bank" | "cash";
   /** Accounts offered in the picker. */
@@ -28,7 +29,7 @@ type Props = {
   onChange: (account: ChartAccount | undefined) => void;
 };
 
-export function PaymentAccountSelect({ id, kind, accounts, pathSource, value, valueName, label, required = false, error, hint, className, onChange }: Props) {
+export function PaymentAccountSelect({ id, kind, accounts, pathSource, value, valueName, label, required = false, error, hint, className, onChange, inlineOptionsLimit }: Props) {
   const { t } = useTranslation();
   const fields = "accounting.dailyIncome.form.fields";
   const placeholders = "accounting.dailyIncome.form.placeholders";
@@ -54,6 +55,7 @@ export function PaymentAccountSelect({ id, kind, accounts, pathSource, value, va
         {required ? <span className="text-destructive"> *</span> : null}
       </Label>
       <SearchableSelect
+        inlineOptionsLimit={inlineOptionsLimit}
         id={id}
         value={value != null ? String(value) : ""}
         onValueChange={(next) => onChange(next ? accounts.find((account) => account.id === Number(next)) : undefined)}

@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
   ROUTE_OPTIMIZER_SINGLE: "/route-optimizer/single",
   /** Scheduled pickup/delivery route (unified endpoint; `routeType` in payload). */
   VEHICLE_ROUTES: "/vehicle-routes",
+  VEHICLE_ROUTE_BUSINESS_DATE: "/vehicle-routes/business-date",
   /** @deprecated Use VEHICLE_ROUTES. */
   PICKUP_ROUTE_SCHEDULES: "/vehicle-routes",
   /** @deprecated Use VEHICLE_ROUTES. */

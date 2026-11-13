@@ -14,7 +14,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useEmployeeActiveLoans } from "@/lib/accounting/loans/hooks";
@@ -25,6 +25,9 @@ import type { Loan, LoanPaymentAllocationMode, LoanPaymentValues } from "@/lib/a
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
+import { useLoanEntrySteps } from "@/lib/accounting/loans/use-loan-entry-steps";
+import { LoanEntryStepNavigation, LoanEntryStepFooter } from "@/components/accounting/loan-entry-step-navigation";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -64,7 +67,7 @@ export function RecordLoanPaymentDialog(props: Props) {
   );
 }
 
-export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange, summaryContainer }: Props & { summaryContainer?: HTMLElement | null }) {
+export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange, summaryContainer, guided = false }: Props & { summaryContainer?: HTMLElement | null; guided?: boolean }) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.paymentForm.${key}`, values);
   const schema = useMemo(() => createLoanPaymentSchema(t), [t]);
@@ -88,6 +91,8 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
   });
   const { register, setValue, watch, formState: { errors } } = form;
   const busy = pending || form.formState.isSubmitting;
+  const flow = useLoanEntrySteps(form, ["employeeId", "allocationMode", "loanId"], guided);
+  const stageClass = (stage: number) => guided && flow.step !== stage ? "hidden" : undefined;
   const allocationMode = watch("allocationMode");
   const selectedEmployeeId = watch("employeeId");
   const selectedLoanId = watch("loanId");
@@ -136,11 +141,12 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
   });
 
   return (
-    <form ref={formRef} className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={submit}>
-      <TransactionSectionNavigation formRef={formRef} title={text("title")} />
+    <form ref={formRef} className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={(event) => flow.advance(event, submit)}>
+      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} /> : <TransactionSectionNavigation formRef={formRef} title={text("title")} />}
       <FormBody workflow isBusy={busy}>
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           <FormSection
+            className={stageClass(1)}
             variant="card"
             icon={User}
             title={text("sections.employee")}
@@ -150,6 +156,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
               <div className="space-y-2">
                 {requiredLabel("loan-payment-employee", text("employee"))}
                 <SearchableSelect
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                   id="loan-payment-employee"
                   aria-label={text("employee")}
                   aria-invalid={Boolean(errors.employeeId)}
@@ -189,6 +196,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                 <div className="space-y-2 sm:col-span-2">
                   {requiredLabel("loan-payment-loan", text("loan"))}
                   <SearchableSelect
+                    inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                     id="loan-payment-loan"
                     aria-label={text("loan")}
                     aria-invalid={Boolean(errors.loanId)}
@@ -221,7 +229,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             </div>
           </FormSection>
 
-          <FormSection variant="card" icon={Landmark} title={text("sections.balances")}>
+          <FormSection className={guided && flow.step === 1 ? "hidden" : undefined} variant="card" icon={Landmark} title={text("sections.balances")}>
             <LoanBalancesSummary
               allocation={allocation}
               mode={allocationMode}
@@ -232,11 +240,12 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             />
           </FormSection>
 
-          <FormSection variant="card" className="p-4 [&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground" icon={ReceiptText} title={text("sections.payment")}>
+          <FormSection variant="card" className={cn("p-4 [&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground", stageClass(2))} icon={ReceiptText} title={text("sections.payment")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 {requiredLabel("loan-payment-received-account", text("receivedAccount"))}
                 <SearchableSelect
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                   id="loan-payment-received-account"
                   aria-label={text("receivedAccount")}
                   aria-invalid={Boolean(errors.receivedAccountId)}
@@ -287,11 +296,12 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                 className="col-start-2 row-start-2 h-10 text-center text-lg font-semibold tabular-nums md:text-lg [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 {...register("amount", { setValueAs: (value) => (value === "" ? undefined : Number(value)) })}
               />
+              {previewReady && allocation.totals.balance > 0 ? <div className="col-span-3 flex justify-center pt-2"><Button type="button" size="sm" variant="outline" onClick={() => setValue("amount", allocation.totals.balance, { shouldDirty: true, shouldValidate: true })}>{t("accounting.dailyIncome.wizard.quickFlow.fullBalance", { amount: formatLoanMoney(allocation.totals.balance) })}</Button></div> : null}
               {errors.amount ? <div className="col-start-2 row-start-3 text-center">{fieldError("amount")}</div> : null}
             </div>
           </FormSection>
 
-          <FormSection variant="card" title={text("sections.notes")}>
+          <FormSection className={stageClass(2)} variant="card" title={text("sections.notes")}>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="loan-payment-reference">{text("reference")}</Label>
@@ -312,7 +322,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             </div>
           </FormSection>
 
-          {summaryContainer ? null : (
+          {summaryContainer && (!guided || flow.step !== 3) ? null : (
             <FormSection variant="card" icon={Banknote} title={text("sections.journal")}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <JournalLine label={text("journalDebit")} account={receivedAccountName} amount={amount} />
@@ -320,6 +330,14 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
               </div>
             </FormSection>
           )}
+          {guided && flow.step === 3 ? <FormSection variant="card" title={t("accounting.dailyIncome.wizard.quickFlow.review")} action={<Button type="button" variant="ghost" onClick={() => flow.setStep(2)}>{t("common.actions.edit")}</Button>}>
+            <dl className="grid gap-4 sm:grid-cols-2">{[
+              [text("employee"), watch("employeeName")],
+              [text("allocationMode"), allocationMode === "specific-loan" ? selectedLoan?.description || text("specificLoan") : text("oldestFirst")],
+              [text("receivedAccount"), receivedAccountName], [text("amount"), formatLoanMoney(amount)],
+              [text("date"), watch("transactionDate")], [text("reference"), watch("referenceNumber")], [text("notes"), watch("description")],
+            ].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}</dl>
+          </FormSection> : null}
         </fieldset>
       </FormBody>
       {summaryContainer ? createPortal(<CurrentTransactionSummary typeLabel={t("accounting.dailyIncome.wizard.typeSelector.options.LOAN-PAYMENT")} rows={[
@@ -332,6 +350,9 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
         [text("date"), watch("transactionDate") || t("common.empty.dash")],
         ...(watch("referenceNumber")?.trim() ? [[text("reference"), watch("referenceNumber")] as [string, string]] : []),
       ]} />, summaryContainer) : null}
+      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy}
+        onCancel={() => onOpenChange(false)} submitLabel={text("submit")} error={errors.root?.server?.message}
+        warning={noActiveLoans ? text("balances.empty") : null} /> : (
       <FormFooter
         error={errors.root?.server?.message}
         warning={noActiveLoans ? text("balances.empty") : null}
@@ -339,6 +360,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
         submitLabel={text("submit")}
         onCancel={() => onOpenChange(false)}
       />
+      )}
     </form>
   );
 }

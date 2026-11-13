@@ -1,0 +1,93 @@
+{
+  "checkedAt": "2026-11-13T17:31:28.001548+00:00",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "suites": [
+    {
+      "suite": "financial-final",
+      "artifact": "section3-matrix-final-evidence-2026-11-13.json",
+      "passed": 103,
+      "failed": 1,
+      "failures": [
+        "EXPENSE rejects an ASSET classification account with forged name/type \u2014 HTTP 201 Request successful"
+      ]
+    },
+    {
+      "suite": "invoice-lifecycle-final",
+      "artifact": "section3-invoice-final-lifecycle-evidence-2026-11-13.json",
+      "passed": 33,
+      "failed": 2,
+      "failures": [
+        "New invoice pieces receive the documented ALM-NY default status \u2014 HTTP 0 Invariant failed",
+        "Embedded update persists requested CONDUCE status \u2014 HTTP 0 Invariant failed"
+      ]
+    },
+    {
+      "suite": "approval-pool-final",
+      "artifact": "section3-approval-pool-evidence-2026-11-13.json",
+      "passed": 105,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "suite": "inventory",
+      "artifact": "section3-inventory-evidence-2026-11-13.json",
+      "passed": 15,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "suite": "customer",
+      "artifact": "section3-customer-loan-evidence-2026-11-13.json",
+      "passed": 8,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "suite": "contract-controls",
+      "artifact": "backend-gap-contract-controls-2026-11-13.json",
+      "passed": 23,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "suite": "reservation-readback",
+      "artifact": "section3-reservation-evidence-2026-11-13.json",
+      "passed": 5,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "suite": "adapter-schema-history",
+      "artifact": "backend-gap-readback-recheck-2026-11-13.json",
+      "passed": 9,
+      "failed": 4,
+      "failures": [
+        "Stored payment reconciliation statuses cover all payment rows \u2014 HTTP 0 Invariant failed",
+        "Business-date endpoint is published \u2014 HTTP 0 Invariant failed",
+        "Journal reconciliation enum documents NOT_REQUIRED \u2014 HTTP 0 Invariant failed",
+        "Clearance documentation reflects atomic reconciliation \u2014 HTTP 0 Invariant failed"
+      ]
+    },
+    {
+      "suite": "cleanup",
+      "artifact": "backend-gap-cleanup-readback-2026-11-13.json",
+      "passed": 100,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "suite": "retention",
+      "artifact": "backend-gap-retention-readback-2026-11-13.json",
+      "passed": 12,
+      "failed": 0,
+      "failures": []
+    }
+  ],
+  "candidateMatrix": {
+    "accepted": 185,
+    "unsupported": 57,
+    "available": 2,
+    "method-not-allowed": 1
+  },
+  "scope": "Mock-company API verification; assertion counts include setup and cleanup; no production sign-off."
+}

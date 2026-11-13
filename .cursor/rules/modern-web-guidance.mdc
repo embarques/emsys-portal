@@ -1,0 +1,42 @@
+---
+description: Apply modern-web-guidance, but escalate conflicts with project rules to the user case by case
+alwaysApply: true
+---
+
+# Modern Web Guidance — Conflicts Are Decided Case by Case
+
+The `modern-web-guidance` skill (`.agents/skills/modern-web-guidance/`) is
+installed. Its guides are input, not the project standard. `AGENTS.md` and
+`.cursor/rules/` remain the project standard until the user decides otherwise.
+
+## Apply freely
+
+Use the guidance directly when it does not conflict with an existing project
+rule or shared component — for example CSS layout, form validation timing,
+`autocomplete` values, accessibility, performance, and security patterns
+applied inside or around existing components.
+
+## Stop and ask when a guide would
+
+- replace or bypass a shared component (`SearchableSelect`, shadcn/Radix
+  `Dialog`, `Popover`, `Tooltip`, `Select`, `Sheet`, `DropdownMenu`,
+  `DataTable`, or anything else in `src/components/ui`),
+- contradict a rule in `AGENTS.md` or `.cursor/rules/` (e.g. searchable
+  dropdowns, localization, table header spacing, change scope discipline),
+- change working behavior outside the requested scope, or
+- add a polyfill, dependency, or fallback code for a non-Baseline feature.
+
+Do not pick a side. Pause and use `AskQuestion` with:
+
+1. What the guide recommends and why (benefit, Baseline/browser support).
+2. What the current project pattern is.
+3. The files affected and the risk of changing them.
+
+Offer these options:
+
+- Follow the guide in this case only.
+- Keep the project pattern.
+- Follow the guide and update the relevant project rule going forward.
+
+If the user chooses to update a rule, edit that rule (or `AGENTS.md`) in the
+same change so the decision is not asked again.

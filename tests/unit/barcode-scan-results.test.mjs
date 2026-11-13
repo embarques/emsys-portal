@@ -20,6 +20,7 @@ function loadScanner(invoices, catalog) {
     function localRequire(id) {
       if (id === "@/lib/invoices/api/invoices-api") return invoices;
       if (id === "@/lib/labels/api/barcodes-api") return catalog;
+      if (id === "@/lib/pickup-delivery-routes/api/route-business-date-api") return {fetchRouteDateGuard: async () => load(path.join(root, "src/lib/pickup-delivery-routes/assignment-policy.ts")).assertAssignableRouteDate};
       if (id.startsWith("@/") || id.startsWith(".")) {
         const target = id.startsWith("@/") ? path.join(root, "src", id.slice(2)) : path.resolve(path.dirname(filename), id);
         if (target.endsWith(".json")) return JSON.parse(fs.readFileSync(target, "utf8"));

@@ -1,0 +1,916 @@
+{
+  "checkedAt": "2026-11-13T17:18:02.852Z",
+  "marker": "CODEX-BANK-0df104b8-77ff-4a3a-bd4f-f0cceb6075ec",
+  "branchId": 44,
+  "closeoutId": 32730,
+  "journals": [],
+  "evidence": [
+    {
+      "label": "Read branch configuration",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /branches",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read complete fixture branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /roles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /users",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /employees",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read fixture grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /chart-accounts",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read new branch current closeout",
+      "passed": true,
+      "http": 200,
+      "message": "Current daily closeout",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /income-statements",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Closeout belongs exclusively to fixture branch",
+      "passed": true
+    },
+    {
+      "label": "Loan lifecycle HTTP",
+      "method": "GET",
+      "path": "/chart-accounts?page=1&limit=100",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "nonPosting": false,
+            "id": 1,
+            "name": "CASH ON HAND",
+            "type": "ASSET",
+            "displayName": "Cash on Hand",
+            "description": "Physical cash held by the business.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "displayName": "Accounts Receivable",
+            "description": "Amounts owed by customers.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 3,
+            "name": "SALES DISCOUNTS",
+            "type": "CONTRA-REVENUE",
+            "displayName": "Sales Discounts",
+            "description": "Discounts that reduce recognized sales revenue.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 4,
+            "name": "SALES",
+            "type": "REVENUE",
+            "displayName": "Sales",
+            "description": "Revenue recognized from invoice sales.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 5,
+            "name": "LOAN RECEIVABLE",
+            "type": "ASSET",
+            "displayName": "Loan Receivable",
+            "description": "Outstanding employee or business loans.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "nonPosting": false,
+            "id": 6,
+            "name": "VENTA DE CAJAS",
+            "type": "REVENUE",
+            "displayName": "VENTA DE CAJAS",
+            "createdAt": "2026-07-26T07:23:27.149Z",
+            "updatedAt": "2026-07-26T07:23:27.149Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 7,
+            "name": "Cuenta Préstamos",
+            "type": "LOAN",
+            "displayName": "Cuenta Préstamos",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "createdAt": "2026-09-04T21:40:59.285Z",
+            "updatedAt": "2026-09-04T21:40:59.285Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 8,
+            "name": "TRABAJADORES EXTRAS",
+            "type": "EXPENSE",
+            "displayName": "TRABAJADORES EXTRAS",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "createdAt": "2026-10-15T04:24:04.321Z",
+            "updatedAt": "2026-10-15T04:24:04.321Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 4000000004,
+            "name": "BANK",
+            "type": "BANK",
+            "displayName": "Bank",
+            "description": "Default bank account.",
+            "default": true,
+            "systemAccount": true
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1100",
+            "nonPosting": false,
+            "id": 21,
+            "name": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+            "branch": {
+              "id": 12,
+              "name": "CODEX-BANK-c423863e-0a0b-4fac-9983-c98142126db7",
+              "code": "ZB1599e1"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T01:15:51.486Z",
+            "updatedAt": "2026-11-12T01:15:51.486Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1101",
+            "nonPosting": false,
+            "id": 22,
+            "name": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+            "branch": {
+              "id": 13,
+              "name": "CODEX-BANK-cce034fb-4d06-4cb8-9867-b1279749ec37",
+              "code": "ZB41df6a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T01:16:40.238Z",
+            "updatedAt": "2026-11-12T01:16:40.238Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1102",
+            "nonPosting": false,
+            "id": 23,
+            "name": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+            "branch": {
+              "id": 14,
+              "name": "CODEX-BANK-23049a2f-026e-4875-9b7c-1268f6ec9d75",
+              "code": "ZB98f160"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T17:50:25.931Z",
+            "updatedAt": "2026-11-12T17:50:25.931Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1103",
+            "nonPosting": false,
+            "id": 24,
+            "name": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+            "branch": {
+              "id": 15,
+              "name": "CODEX-BANK-d5022682-f060-402e-8208-445c533157d4",
+              "code": "ZB419e69"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T17:53:54.573Z",
+            "updatedAt": "2026-11-12T17:53:54.573Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1104",
+            "nonPosting": false,
+            "id": 29,
+            "name": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+            "branch": {
+              "id": 20,
+              "name": "CODEX-BANK-82b51745-5c7e-4971-b20c-62563e4ad192",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T17:59:18.671Z",
+            "updatedAt": "2026-11-12T17:59:18.671Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1105",
+            "nonPosting": false,
+            "id": 30,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "branch": {
+              "id": 21,
+              "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:00:29.343Z",
+            "updatedAt": "2026-11-12T18:00:29.343Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1106",
+            "nonPosting": false,
+            "id": 31,
+            "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+            "branch": {
+              "id": 22,
+              "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:10:34.446Z",
+            "updatedAt": "2026-11-12T18:10:34.446Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1107",
+            "nonPosting": false,
+            "id": 32,
+            "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb-CORRECTION",
+            "branch": {
+              "id": 22,
+              "name": "CODEX-BANK-4bbfe8bc-c8c6-410f-a9ce-5fefe4c4f4fb",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:10:37.281Z",
+            "updatedAt": "2026-11-12T18:10:37.281Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1108",
+            "nonPosting": false,
+            "id": 33,
+            "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+            "branch": {
+              "id": 23,
+              "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:19:15.302Z",
+            "updatedAt": "2026-11-12T18:19:15.302Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1109",
+            "nonPosting": false,
+            "id": 34,
+            "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff-CORRECTION",
+            "branch": {
+              "id": 23,
+              "name": "CODEX-BANK-faa1683c-1575-402d-9990-e5534a05abff",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:19:19.507Z",
+            "updatedAt": "2026-11-12T18:19:19.507Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1110",
+            "nonPosting": false,
+            "id": 39,
+            "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+            "branch": {
+              "id": 28,
+              "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:41:01.253Z",
+            "updatedAt": "2026-11-12T18:41:01.253Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1111",
+            "nonPosting": false,
+            "id": 40,
+            "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab-CORRECTION",
+            "branch": {
+              "id": 28,
+              "name": "CODEX-BANK-c98e1ecd-4371-4b08-84c1-5d40786be1ab",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T18:41:06.195Z",
+            "updatedAt": "2026-11-12T18:41:06.195Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1112",
+            "nonPosting": false,
+            "id": 10005,
+            "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+            "branch": {
+              "id": 29,
+              "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+              "code": "ZB34628a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:23:03.077Z",
+            "updatedAt": "2026-11-12T23:23:03.077Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1113",
+            "nonPosting": false,
+            "id": 10006,
+            "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df-CORRECTION",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df-CORRECTION",
+            "branch": {
+              "id": 29,
+              "name": "CODEX-BANK-1b165522-bfdb-4a7c-8d3f-59cbb56673df",
+              "code": "ZB34628a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:23:13.629Z",
+            "updatedAt": "2026-11-12T23:23:13.629Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1114",
+            "nonPosting": false,
+            "id": 10009,
+            "name": "CODEX-BANK-1766e59a-be63-4693-a01a-c611285b45e2",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-1766e59a-be63-4693-a01a-c611285b45e2",
+            "branch": {
+              "id": 32,
+              "name": "CODEX-BANK-1766e59a-be63-4693-a01a-c611285b45e2",
+              "code": "ZBef9809"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:27:27.002Z",
+            "updatedAt": "2026-11-12T23:27:27.002Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1115",
+            "nonPosting": false,
+            "id": 10010,
+            "name": "CODEX-BANK-b078bec7-6a12-476b-8a1e-f1745f1e9d17",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-b078bec7-6a12-476b-8a1e-f1745f1e9d17",
+            "branch": {
+              "id": 33,
+              "name": "CODEX-BANK-b078bec7-6a12-476b-8a1e-f1745f1e9d17",
+              "code": "ZBbdb4be"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:29:35.429Z",
+            "updatedAt": "2026-11-12T23:29:35.429Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1116",
+            "nonPosting": false,
+            "id": 10011,
+            "name": "CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5",
+            "branch": {
+              "id": 34,
+              "name": "CODEX-BANK-c631bd7e-2cf9-4e67-8460-40eb7c041cd5",
+              "code": "ZBf8fb5a"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-12T23:31:31.263Z",
+            "updatedAt": "2026-11-12T23:31:31.263Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 41,
+            "name": "TD Bank",
+            "type": "BANK",
+            "displayName": "TD Bank",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-07-01T16:53:51.939Z",
+            "updatedAt": "2026-07-01T16:53:51.939Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 42,
+            "name": "M&T Bank",
+            "type": "BANK",
+            "displayName": "M&T Bank",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-07-01T16:54:03.397Z",
+            "updatedAt": "2026-07-01T16:54:03.397Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 43,
+            "name": "Gasolina",
+            "type": "EXPENSE",
+            "displayName": "Gasolina",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "createdAt": "2026-07-26T04:31:23.641Z",
+            "updatedAt": "2026-07-26T04:31:23.641Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 44,
+            "name": "Wells Fargo",
+            "type": "BANK",
+            "displayName": "Wells Fargo",
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-07-01T16:53:39.451Z",
+            "updatedAt": "2026-07-01T16:53:39.451Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "nonPosting": false,
+            "id": 9,
+            "name": "Cash Account",
+            "type": "ASSET",
+            "displayName": "Cash Account",
+            "systemAccount": true,
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "parentAccount": {
+              "id": 1,
+              "name": "CASH ON HAND"
+            },
+            "createdAt": "2026-07-01T16:54:20.904Z",
+            "updatedAt": "2026-07-01T16:54:20.904Z",
+            "createdBy": {
+              "id": 1,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1117",
+            "nonPosting": false,
+            "id": 46,
+            "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "code": "ZB9b9f93"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-13T17:11:20.605Z",
+            "updatedAt": "2026-11-13T17:11:20.605Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1118",
+            "nonPosting": false,
+            "id": 53,
+            "name": "CODEX-BANK-0df104b8-77ff-4a3a-bd4f-f0cceb6075ec",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-0df104b8-77ff-4a3a-bd4f-f0cceb6075ec",
+            "branch": {
+              "id": 44,
+              "name": "CODEX-BANK-0df104b8-77ff-4a3a-bd4f-f0cceb6075ec",
+              "code": "ZB19226e"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-13T17:17:57.509Z",
+            "updatedAt": "2026-11-13T17:17:57.509Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "templateVersion": "1.0.0",
+            "templateLayer": 4,
+            "classification": "Assets",
+            "subType": "Current Assets",
+            "code": "1119",
+            "nonPosting": false,
+            "id": 54,
+            "name": "CODEX-BANK-f5079e63-af7c-4f2f-b1dd-cb195d8ab924",
+            "type": "BANK",
+            "displayName": "CODEX-BANK-f5079e63-af7c-4f2f-b1dd-cb195d8ab924",
+            "branch": {
+              "id": 45,
+              "name": "CODEX-BANK-f5079e63-af7c-4f2f-b1dd-cb195d8ab924",
+              "code": "RD"
+            },
+            "parentAccount": {
+              "id": 4000000004,
+              "name": "BANK"
+            },
+            "createdAt": "2026-11-13T17:17:58.805Z",
+            "updatedAt": "2026-11-13T17:17:58.805Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        ],
+        "error": "",
+        "duration": 0.036648208,
+        "page": 1,
+        "resultsPerPage": 100,
+        "total": 34,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Loan lifecycle HTTP",
+      "method": "POST",
+      "path": "/loans",
+      "body": {
+        "employee": {
+          "id": 264,
+          "name": "CODEX-BANK-0df104b8-77ff-4a3a-bd4f-f0cceb6075ec"
+        },
+        "loanAccount": {
+          "id": 5,
+          "name": "LOAN RECEIVABLE",
+          "type": "ASSET"
+        },
+        "sourceAccount": {
+          "id": 1,
+          "name": "CASH ON HAND",
+          "type": "ASSET"
+        },
+        "principalAmount": 1,
+        "transactionDate": "2026-11-13",
+        "referenceNumber": "120fcf82-fc2a-42b1-8b41-c99888c7503e",
+        "description": "CODEX-BANK-0df104b8-77ff-4a3a-bd4f-f0cceb6075ec"
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "loan account must be type LOAN",
+        "error": "loan account must be type LOAN. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Cleanup /chart-accounts/53",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /employees/264",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /users/153",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /roles/81",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    }
+  ]
+}

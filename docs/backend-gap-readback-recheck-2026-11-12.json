@@ -1,0 +1,94 @@
+{
+  "checkedAt": "2026-11-12T23:23:00.419Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "results": [
+    {
+      "path": "/invoices/reserved/search",
+      "check": "Real portal reserved-invoice adapter parses live search response",
+      "status": "verified",
+      "sampleCount": 36
+    },
+    {
+      "path": "/invoices/reserved/search",
+      "check": "Reserved search honors ascending versus descending number sort",
+      "status": "verified",
+      "reason": "Comparison tests direction changes, not every collation or stable-tie case"
+    },
+    {
+      "path": "/invoices/reserved",
+      "check": "Real portal reserved-invoice summary adapter parses live response",
+      "status": "verified",
+      "remaining": 0,
+      "lowThreshold": 10
+    },
+    {
+      "path": "/invoices/reserved",
+      "check": "User-specific reserved threshold matches persisted preference",
+      "status": "verified",
+      "expected": 10,
+      "actual": 10
+    },
+    {
+      "path": "/invoices/reserved",
+      "check": "Reserved GET changes number sort direction",
+      "status": "failed",
+      "sampleCount": 5
+    },
+    {
+      "path": "/user-activities",
+      "check": "timestamp range finds a date from a stored record",
+      "status": "verified",
+      "http": 200,
+      "total": 171
+    },
+    {
+      "path": "/checks",
+      "check": "datePosted range finds a date from a stored record",
+      "status": "verified",
+      "http": 200,
+      "total": 3
+    },
+    {
+      "path": "/journals/search",
+      "check": "Stored payment reconciliation statuses cover all payment rows",
+      "status": "failed",
+      "total": 24143,
+      "classified": 12
+    },
+    {
+      "path": "/pickups",
+      "check": "Populated route-ID predicate is accepted and sample IDs are populated",
+      "status": "verified",
+      "http": 200,
+      "sampleCount": 3
+    },
+    {
+      "path": "/deliveries/assigned-barcodes",
+      "check": "Populated route-ID predicate is accepted and sample IDs are populated",
+      "status": "verified",
+      "http": 200,
+      "sampleCount": 3
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Business-date endpoint is published",
+      "status": "failed"
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Journal reconciliation enum documents NOT_REQUIRED",
+      "status": "failed"
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Clearance documentation reflects atomic reconciliation",
+      "status": "failed"
+    },
+    {
+      "path": "/swagger/doc.json",
+      "check": "Loan increase endpoint is published",
+      "status": "inconclusive",
+      "reason": "Schema absence alone does not prove the live POST route is absent"
+    }
+  ]
+}

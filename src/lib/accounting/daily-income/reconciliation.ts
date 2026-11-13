@@ -6,8 +6,6 @@ import { useAccountingQueryEnabled } from "@/lib/accounting/daily-income/hooks";
 import { fetchDailyIncomeJournals } from "./api";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { DailyIncomeJournalListParams } from "./types";
-import { PERMISSIONS } from "@/lib/auth/permissions";
-import { createRandomId } from "@/lib/utils/id";
 
 import {clearJournals, fetchJournalSummary, reconcileJournals, type JournalSummaryInput} from "./reconciliation-api";
 export type {JournalCurrencySummary} from "./reconciliation-api";
@@ -34,29 +32,34 @@ export function useReconcileJournals() {
     onSuccess: () => client.invalidateQueries({queryKey: queryKeys.accounting.all})});
 }
 
-/** Bank transactions reconcile only through clearance, so cleared IDs are reconciled right after. */
+/** Clearance atomically reconciles and applies any deferred invoice receipt. */
 export function useClearJournals() {
   const client = useQueryClient();
-  const {companyId, hasPermission} = useAuth();
-  const canReconcile = hasPermission(PERMISSIONS.journalsReconcile.name, PERMISSIONS.journalsReconcile.resourceType);
+  const {companyId} = useAuth();
   return useMutation({
-    mutationFn: async ({reconcileIds = [], ...command}: {requestId: string; ids: string[]; reconcileIds?: string[]}) => {
-      const response = await clearJournals(command);
-      const ids = response.data.cleared.filter(id => reconcileIds.includes(id));
-      if (!canReconcile || ids.length === 0) return {...response, reconciliationPending: ids};
-      try {
-        const reconciled = await reconcileJournals({requestId: createRandomId(), ids});
-        return {...response, reconciliationPending: ids.filter(id => !reconciled.data.reconciled.includes(id))};
-      } catch {
-        return {...response, reconciliationPending: ids};
-      }
-    },
+    mutationFn: ({requestId, ids}: {requestId: string; ids: string[]; invoices?: {id: string; number?: string}[]; incomeStatementIds?: number[]}) => clearJournals({requestId, ids}),
     retry: false,
-    onSuccess: (_result, command) => client.invalidateQueries({predicate: query =>
+    onSuccess: (_result, command) => Promise.all([
+      client.invalidateQueries({predicate: query =>
       query.queryKey[0] === "accounting" &&
       ((["journals", "journal-summary", "outstanding-journal-count"].includes(String(query.queryKey[1])) &&
         query.queryKey.includes(companyId)) ||
        (query.queryKey[1] === "journal" && command.ids.includes(String(query.queryKey[2])))),
-    }),
+      }),
+      ...(command.invoices?.length ? [
+        client.invalidateQueries({queryKey: queryKeys.invoices.lists()}),
+        client.invalidateQueries({queryKey: queryKeys.invoices.stats("outstanding")}),
+        client.invalidateQueries({queryKey: queryKeys.invoices.stats("outstanding-balance")}),
+        ...command.invoices.flatMap(invoice => [
+          client.invalidateQueries({queryKey: queryKeys.invoices.detail(invoice.id)}),
+          client.invalidateQueries({queryKey: queryKeys.invoices.journals(invoice.id, invoice.number)}),
+        ]),
+        client.invalidateQueries({predicate: query => query.queryKey[0] === "delivery-balance" && query.queryKey[1] === companyId && command.invoices!.some(invoice => invoice.id === query.queryKey[3])}),
+      ] : []),
+      ...(command.incomeStatementIds ?? []).flatMap(id => [
+        client.invalidateQueries({queryKey: queryKeys.accounting.summaryTotals(id)}),
+        client.invalidateQueries({queryKey: queryKeys.accounting.incomeStatementById(id)}),
+      ]),
+    ]),
   });
 }

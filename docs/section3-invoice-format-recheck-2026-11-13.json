@@ -1,0 +1,283 @@
+{
+  "checkedAt": "2026-11-13T17:11:58.364Z",
+  "marker": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198",
+  "branchId": 38,
+  "closeoutId": 32724,
+  "journals": [],
+  "evidence": [
+    {
+      "label": "Read branch configuration",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /branches",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read complete fixture branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /roles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /users",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /employees",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read fixture grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /chart-accounts",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read new branch current closeout",
+      "passed": true,
+      "http": 200,
+      "message": "Current daily closeout",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /income-statements",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Closeout belongs exclusively to fixture branch",
+      "passed": true
+    },
+    {
+      "label": "Create fixture /containers",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Portal invoice create boundary",
+      "branch": {
+        "id": 38,
+        "code": "NY",
+        "name": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198"
+      },
+      "date": "2026-11-13",
+      "actorBranch": {
+        "id": 38,
+        "name": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198",
+        "code": "NY",
+        "address": {
+          "id": "000000000000000000000000",
+          "address1": "2249 Washington Avenue",
+          "city": "The Bronx",
+          "state": "NY",
+          "zipcode": "10457",
+          "country": "US",
+          "location": {
+            "type": "Point",
+            "coordinates": [
+              -73.8939588,
+              40.854537799999996
+            ]
+          }
+        },
+        "createdAt": "2026-11-13T17:11:40.374Z",
+        "updatedAt": "2026-11-13T17:11:40.374Z",
+        "createdBy": {
+          "id": 73,
+          "name": "elk@elk.com"
+        }
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "invoice created",
+        "data": {
+          "id": "6af744d031a295cf38083ba6",
+          "number": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198",
+          "createdAt": "2026-11-13T17:11:44.351885668Z",
+          "updatedAt": "2026-11-13T17:11:44.351885668Z",
+          "createdBy": {
+            "id": 146,
+            "name": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198"
+          },
+          "date": "2026-11-13T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 200,
+          "branch": {
+            "id": 38,
+            "name": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "container": {
+            "id": 1407,
+            "name": "90038-26"
+          },
+          "sender": {
+            "id": "6af744d031a295cf38083ba7",
+            "name": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198-SENDER",
+            "customerType": 1,
+            "phones": [
+              {
+                "type": "mobile",
+                "number": "+12025550103",
+                "displayNumber": "(202) 555-0103",
+                "isPrimary": true
+              }
+            ],
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af744d031a295cf38083ba8",
+              "createdAt": "0001-01-01T00:00:00Z",
+              "updatedAt": "0001-01-01T00:00:00Z"
+            }
+          ],
+          "cost": 2,
+          "discount": 0,
+          "payment": 0,
+          "balance": 2
+        },
+        "error": "",
+        "duration": 9.681794463,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Created invoice through real portal adapter",
+      "invoiceId": "6af744d031a295cf38083ba6"
+    },
+    {
+      "label": "Real portal invoice create succeeds in its own current branch",
+      "passed": true
+    },
+    {
+      "label": "Generated invoice piece shape",
+      "count": 200,
+      "sample": {
+        "id": 1,
+        "barcodeId": "6af744d031a295cf38083ba9",
+        "number": "90038260001",
+        "invoice": {
+          "id": "6af744d031a295cf38083ba6",
+          "number": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198"
+        },
+        "description": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198",
+        "container": {
+          "id": 1407,
+          "name": "90038-26"
+        },
+        "createdAt": "2026-11-13T17:11:44.451Z",
+        "updatedAt": "2026-11-13T17:11:44.451Z",
+        "createdBy": {
+          "id": 146,
+          "name": "CODEX-BANK-bcd3f0ee-2d08-43d8-ad1e-cc6d8e0c0198"
+        },
+        "scanDate": "0001-01-01T00:00:00Z"
+      },
+      "version": "v1:73a8240e36042fdfe2bbcc72e26e0a4778b9d7945d590132a4a29d13dfd18592"
+    },
+    {
+      "label": "Invoice generates 200 distinct numeric piece IDs",
+      "passed": true
+    },
+    {
+      "label": "Create fixture /vehicle-routes",
+      "passed": false,
+      "http": 400,
+      "message": "delivery vehicle route container is required",
+      "error": "delivery vehicle route container is required. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "Own invoice deletes with current version",
+      "passed": true,
+      "http": 200,
+      "message": "invoice deleted",
+      "error": ""
+    },
+    {
+      "label": "Cleanup invoice customer 6af744d031a295cf38083ba7",
+      "passed": true
+    },
+    {
+      "label": "Cleanup /containers/1407",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /chart-accounts/47",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /employees/257",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /users/146",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /roles/74",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    }
+  ]
+}

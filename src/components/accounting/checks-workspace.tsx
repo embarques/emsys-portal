@@ -245,12 +245,12 @@ export function ChecksWorkspace() {
             <CardTitle>{t("accounting.checks.title")}</CardTitle>
             <CardDescription>{t("accounting.checks.description")}</CardDescription>
           </div>
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel
+              <TableAdvancedFilterPanel isLoading={isFetching || isSearchPending}
                 presetScope="accounting-checks"
                 open={filtersOpen}
                 rows={filterRows}
@@ -324,7 +324,7 @@ export function ChecksWorkspace() {
             columns={columnLayout.columns}
             rows={checks}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(check) => check.id}
             rowLabel={(check) => check.checkNumber || check.invoice.number}
             columnLayout={columnLayout}

@@ -1,0 +1,370 @@
+{
+  "checkedAt": "2026-11-12T23:34:52.743Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "evidence": [
+    {
+      "label": "Company pool page one",
+      "method": "GET",
+      "path": "/invoices/reserved?limit=3",
+      "http": 200,
+      "message": "reserved invoice numbers",
+      "error": "",
+      "rows": [
+        {
+          "id": "6aeb5e02b14be9cb043287a6",
+          "number": "INV-26-001455",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a7",
+          "number": "INV-26-001456",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a8",
+          "number": "INV-26-001457",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        }
+      ],
+      "remaining": 36,
+      "hasNextCursor": true
+    },
+    {
+      "label": "Company pool repeat",
+      "method": "GET",
+      "path": "/invoices/reserved?limit=3",
+      "http": 200,
+      "message": "reserved invoice numbers",
+      "error": "",
+      "rows": [
+        {
+          "id": "6aeb5e02b14be9cb043287a6",
+          "number": "INV-26-001455",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a7",
+          "number": "INV-26-001456",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a8",
+          "number": "INV-26-001457",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        }
+      ],
+      "remaining": 36,
+      "hasNextCursor": true
+    },
+    {
+      "label": "Unchanged reservation page returns stable IDs",
+      "passed": true
+    },
+    {
+      "label": "Company pool next cursor",
+      "method": "GET",
+      "path": "/invoices/reserved?limit=3&after=6aeb5e02b14be9cb043287a8",
+      "http": 200,
+      "message": "reserved invoice numbers",
+      "error": "",
+      "rows": [
+        {
+          "id": "6aeb5e02b14be9cb043287a9",
+          "number": "INV-26-001458",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287aa",
+          "number": "INV-26-001459",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287ab",
+          "number": "INV-26-001460",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        }
+      ],
+      "remaining": 36,
+      "hasNextCursor": true
+    },
+    {
+      "label": "Valid company-pool cursor advances without repeating IDs",
+      "passed": true
+    },
+    {
+      "label": "Cursor reused with changed text filter",
+      "method": "GET",
+      "path": "/invoices/reserved?limit=3&q=CODEX-NO-MATCH-1794526491935&after=6aeb5e02b14be9cb043287a8",
+      "http": 200,
+      "message": "reserved invoice numbers",
+      "error": "",
+      "rows": [],
+      "remaining": 0,
+      "hasNextCursor": false
+    },
+    {
+      "label": "Timestamp-sorted reservation search",
+      "method": "POST",
+      "path": "/invoices/reserved/search?page=1&limit=20",
+      "http": 200,
+      "message": "reserved invoice numbers",
+      "error": "",
+      "rows": [
+        {
+          "id": "6aef8c4f25aee8b238568f99",
+          "number": "INV-26-001501",
+          "createdAt": "2026-11-07T20:38:39.554Z",
+          "reservedAt": "2026-11-07T20:38:39.554Z"
+        },
+        {
+          "id": "6aef8c4f25aee8b238568f9a",
+          "number": "INV-26-001502",
+          "createdAt": "2026-11-07T20:38:39.554Z",
+          "reservedAt": "2026-11-07T20:38:39.554Z"
+        },
+        {
+          "id": "6aef8b3125aee8b238568f7b",
+          "number": "INV-26-001500",
+          "createdAt": "2026-11-07T20:33:53.627Z",
+          "reservedAt": "2026-11-07T20:33:53.627Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cad",
+          "number": "INV-26-001495",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cae",
+          "number": "INV-26-001496",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017caf",
+          "number": "INV-26-001497",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cb0",
+          "number": "INV-26-001498",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cb1",
+          "number": "INV-26-001499",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca3",
+          "number": "INV-26-001490",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca4",
+          "number": "INV-26-001491",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca5",
+          "number": "INV-26-001492",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca6",
+          "number": "INV-26-001493",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca7",
+          "number": "INV-26-001494",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aee7f529025bfbf23017c0f",
+          "number": "INV-26-001487",
+          "createdAt": "2026-11-07T01:30:58.667Z"
+        },
+        {
+          "id": "6aee7dae9025bfbf23017bd4",
+          "number": "INV-26-001486",
+          "createdAt": "2026-11-07T01:23:58.094Z"
+        },
+        {
+          "id": "6aee13ded037620215133ab6",
+          "number": "INV-26-001484",
+          "createdAt": "2026-11-06T17:52:30.978Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a6",
+          "number": "INV-26-001455",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a7",
+          "number": "INV-26-001456",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a8",
+          "number": "INV-26-001457",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a9",
+          "number": "INV-26-001458",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        }
+      ],
+      "hasNextCursor": false
+    },
+    {
+      "label": "Repeated timestamp-sorted reservation search",
+      "method": "POST",
+      "path": "/invoices/reserved/search?page=1&limit=20",
+      "http": 200,
+      "message": "reserved invoice numbers",
+      "error": "",
+      "rows": [
+        {
+          "id": "6aef8c4f25aee8b238568f99",
+          "number": "INV-26-001501",
+          "createdAt": "2026-11-07T20:38:39.554Z",
+          "reservedAt": "2026-11-07T20:38:39.554Z"
+        },
+        {
+          "id": "6aef8c4f25aee8b238568f9a",
+          "number": "INV-26-001502",
+          "createdAt": "2026-11-07T20:38:39.554Z",
+          "reservedAt": "2026-11-07T20:38:39.554Z"
+        },
+        {
+          "id": "6aef8b3125aee8b238568f7b",
+          "number": "INV-26-001500",
+          "createdAt": "2026-11-07T20:33:53.627Z",
+          "reservedAt": "2026-11-07T20:33:53.627Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cad",
+          "number": "INV-26-001495",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cae",
+          "number": "INV-26-001496",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017caf",
+          "number": "INV-26-001497",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cb0",
+          "number": "INV-26-001498",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58cd9025bfbf23017cb1",
+          "number": "INV-26-001499",
+          "createdAt": "2026-11-07T16:58:53.371Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca3",
+          "number": "INV-26-001490",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca4",
+          "number": "INV-26-001491",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca5",
+          "number": "INV-26-001492",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca6",
+          "number": "INV-26-001493",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aef58c29025bfbf23017ca7",
+          "number": "INV-26-001494",
+          "createdAt": "2026-11-07T16:58:42.803Z"
+        },
+        {
+          "id": "6aee7f529025bfbf23017c0f",
+          "number": "INV-26-001487",
+          "createdAt": "2026-11-07T01:30:58.667Z"
+        },
+        {
+          "id": "6aee7dae9025bfbf23017bd4",
+          "number": "INV-26-001486",
+          "createdAt": "2026-11-07T01:23:58.094Z"
+        },
+        {
+          "id": "6aee13ded037620215133ab6",
+          "number": "INV-26-001484",
+          "createdAt": "2026-11-06T17:52:30.978Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a6",
+          "number": "INV-26-001455",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a7",
+          "number": "INV-26-001456",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a8",
+          "number": "INV-26-001457",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        },
+        {
+          "id": "6aeb5e02b14be9cb043287a9",
+          "number": "INV-26-001458",
+          "createdAt": "2026-11-04T16:32:02.244Z"
+        }
+      ],
+      "hasNextCursor": false
+    },
+    {
+      "label": "Timestamp-sorted reservation search is stable in repeated bounded sample",
+      "passed": true
+    },
+    {
+      "label": "Stored timestamp ties present in sample",
+      "present": true
+    },
+    {
+      "label": "Invalid reservedAt date",
+      "method": "POST",
+      "path": "/invoices/reserved/search?page=1&limit=1",
+      "http": 400,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: invalid date value \"invalid-date\". Allowed fields: allocation.userId, claimed, createdAt, id, number, reservedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"number\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "rows": [],
+      "hasNextCursor": false
+    },
+    {
+      "label": "Invalid reservedAt date receives validation error",
+      "passed": true
+    },
+    {
+      "label": "Valid receivedAt field probe",
+      "method": "POST",
+      "path": "/invoices/reserved/search?page=1&limit=1",
+      "http": 400,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"receivedAt\" is not allowed. Allowed fields: allocation.userId, claimed, createdAt, id, number, reservedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"number\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "rows": [],
+      "hasNextCursor": false
+    },
+    {
+      "label": "receivedAt filter is supported",
+      "passed": false
+    }
+  ]
+}

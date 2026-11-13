@@ -56,7 +56,6 @@ import {
   type RouteEmployeeRef,
 } from "@/lib/route-manager/types";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
-import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 
 export type AssignRouteCrewDialogProps = {
   open: boolean;
@@ -301,7 +300,6 @@ export function AssignRouteCrewDialog({
     }
 
     try {
-      assertAssignableRouteDate(date);
       const saved = await upsertMutation.mutateAsync({
         values: buildScheduledRouteFormValues({
           routeType,
@@ -312,12 +310,14 @@ export function AssignRouteCrewDialog({
           container,
         }),
         existingId: existingRouteQuery.data?.id,
+        forAssignment: true,
       });
 
       if (isDelivery) {
         const result = await assignBarcodesMutation.mutateAsync({
           routeId: saved.id,
           routeDate: saved.date,
+          branchId: branch.id,
           barcodeIds: deliveryBarcodeIds,
         });
         const routeName =
@@ -332,7 +332,7 @@ export function AssignRouteCrewDialog({
           }),
         );
       } else {
-        await assignPickupsMutation.mutateAsync({ routeId: saved.id, routeDate: saved.date, pickupIds: pickupItemIds });
+        await assignPickupsMutation.mutateAsync({ routeId: saved.id, routeDate: saved.date, branchId: branch.id, pickupIds: pickupItemIds });
         const routeName = formatOrderRouteName({ routeId: saved.id }, saved, t);
         const routeSuffix = routeName
           ? t("orders.toasts.assignedToRouteNamed", { routeName })

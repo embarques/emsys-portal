@@ -398,8 +398,9 @@ export function useAssignPickupsToRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ routeId, pickupIds, routeDate }: { routeId: string; pickupIds: number[]; routeDate: string }) =>
-      assignPickupsToRoute(routeId, pickupIds, routeDate),
+    retry: false,
+    mutationFn: ({ routeId, pickupIds, routeDate, branchId }: { routeId: string; pickupIds: number[]; routeDate: string; branchId?: number }) =>
+      assignPickupsToRoute(routeId, pickupIds, routeDate, branchId),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }

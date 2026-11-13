@@ -5,6 +5,7 @@ import { Command as CommandPrimitive, defaultFilter } from "cmdk";
 import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { SelectOptionButtons } from "@/components/ui/select-option-buttons";
 import { useTranslation } from "@/lib/i18n";
 import { focusNextFormField, isAutomaticSelectionFocus, isDesktopFormNavigation } from "@/hooks/use-form-enter-navigation";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
@@ -27,6 +28,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
+export const QUICK_SELECT_OPTIONS_LIMIT = 5;
+
 export type SearchableSelectOption = {
   value: string;
   label: string;
@@ -37,7 +40,9 @@ export type SearchableSelectOption = {
   disabled?: boolean;
 };
 
-type SearchableSelectProps = {
+export type SearchableSelectProps = {
+  /** Opt-in: expose small, complete option sets as buttons. Remote search always keeps its dropdown. */
+  inlineOptionsLimit?: number;
   options: SearchableSelectOption[];
   value: string;
   onValueChange: (value: string) => void;
@@ -258,7 +263,18 @@ function useScrollIsolation() {
   }, []);
 }
 
-export function SearchableSelect({
+export function SearchableSelect(props: SearchableSelectProps) {
+  if (!props.inlineOptionsLimit) return <SearchableSelectDropdown {...props} />;
+  const options = props.options.filter((option) => !isPseudoPlaceholderOption(option, props.placeholder));
+  if (props.inlineOptionsLimit && options.length > 0 && options.length <= props.inlineOptionsLimit &&
+    !props.loading && !props.manualFiltering && !props.onSearchChange &&
+    (!props.value || options.some((option) => option.value === props.value))) {
+    return <SelectOptionButtons {...props} options={options} />;
+  }
+  return <SearchableSelectDropdown {...props} />;
+}
+
+function SearchableSelectDropdown({
   options,
   value,
   onValueChange,

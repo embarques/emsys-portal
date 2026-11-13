@@ -10,6 +10,8 @@ import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from 
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { PaymentAccountSelect } from "@/components/accounting/payment-account-select";
+import { PaymentChannelFields } from "@/components/accounting/payment-channel-fields";
+import { Button } from "@/components/ui/button";
 import { applyMoneyAccount, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listSelectableBankAccounts, resolveDefaultBankAccount } from "@/lib/accounting/daily-income/payment-accounts";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { selectFormFieldTextOnFocus, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
@@ -18,7 +20,7 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { InvoiceNumberModeFields } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useCustomerPicker, useCustomerSearch } from "@/lib/customers/hooks/use-customers";
 import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
@@ -122,6 +124,10 @@ type Props = {
   showDescription?: boolean;
   /** Grouped layout: tighter cards with payment method and account fields on one row. */
   compact?: boolean;
+  /** Grouped layout in workflow order: cash or bank, invoice, then who handled it. */
+  guided?: boolean;
+  /** Guided layout: reference fields shown with the payment (bank payments). */
+  paymentReferenceFields?: React.ReactNode;
   onAssigneeComplete?: () => void;
 };
 
@@ -151,6 +157,8 @@ export function RegisterInvoiceTransactionFields({
   manualInvoiceTotals = false,
   showDescription = false,
   compact = false,
+  guided = false,
+  paymentReferenceFields,
   onAssigneeComplete,
 }: Props) {
   const { t } = useTranslation();
@@ -394,6 +402,7 @@ export function RegisterInvoiceTransactionFields({
       {showEmployee ? (
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
+            inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
             singleColumn
             employees={employees}
             dailyRoutes={dailyRoutes}
@@ -417,6 +426,51 @@ export function RegisterInvoiceTransactionFields({
     </>
   );
 
+  function changePaymentMethod(method: AccountingLookup | undefined) {
+    setValue("autoClear", false, { shouldDirty: true });
+    setValue("clearPaymentOnSave", false, { shouldDirty: true });
+    setValue("paymentMethodId", method?.id, { shouldValidate: true, shouldDirty: true });
+    setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true, shouldDirty: true });
+    if (!requiresBankAccount(method?.name)) {
+      setValue("paymentAccountId", undefined, { shouldValidate: true });
+      setValue("paymentAccountName", undefined, { shouldValidate: true });
+      setValue("paymentAccountType", undefined, { shouldValidate: true });
+    }
+    if (isCheckPaymentMethod(method?.name) || isCashPaymentMethod(method?.name)) {
+      setValue("externalReferenceNumber", "", { shouldValidate: true });
+    }
+    if (!isCheckPaymentMethod(method?.name)) {
+      setValue("checkNumber", undefined, { shouldValidate: true });
+    }
+  }
+
+  const cashAccountField = showCashAccount ? (
+    <PaymentAccountSelect
+      inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+      id="journal-cash-account"
+      kind="cash"
+      accounts={cashAccounts}
+      pathSource={accounts}
+      value={paymentAccountId}
+      valueName={paymentAccountName}
+      hint={t("accounting.dailyIncome.form.hints.cashAccount")}
+      onChange={(account) => applyMoneyAccount(setValue, "paymentAccount", account)}
+    />
+  ) : null;
+
+  const channelFields = (
+    <PaymentChannelFields
+      inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+      paymentMethods={paymentMethods}
+      paymentMethodId={paymentMethodId}
+      paymentMethodName={paymentMethodName}
+      required={paymentDetailsRequired}
+      error={errors.paymentMethodId?.message}
+      cashField={needsBankAccount ? null : cashAccountField}
+      onMethodChange={changePaymentMethod}
+    />
+  );
+
   const methodFields = (
     <>
       <div className={cn("space-y-2 min-w-0", !compact && "sm:col-span-2")}>
@@ -428,26 +482,10 @@ export function RegisterInvoiceTransactionFields({
           <Label htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</Label>
         )}
         <SearchableSelect
+          inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
           id="journal-payment"
           value={paymentMethodId != null ? String(paymentMethodId) : ""}
-          onValueChange={(next) => {
-            const method = paymentMethods.find((item) => item.id === Number(next));
-            setValue("autoClear", false, { shouldDirty: true });
-            setValue("clearPaymentOnSave", false, { shouldDirty: true });
-            setValue("paymentMethodId", method?.id, { shouldValidate: true, shouldDirty: true });
-            setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true, shouldDirty: true });
-            if (!requiresBankAccount(method?.name)) {
-              setValue("paymentAccountId", undefined, { shouldValidate: true });
-              setValue("paymentAccountName", undefined, { shouldValidate: true });
-              setValue("paymentAccountType", undefined, { shouldValidate: true });
-            }
-            if (isCheckPaymentMethod(method?.name) || isCashPaymentMethod(method?.name)) {
-              setValue("externalReferenceNumber", "", { shouldValidate: true });
-            }
-            if (!isCheckPaymentMethod(method?.name)) {
-              setValue("checkNumber", undefined, { shouldValidate: true });
-            }
-          }}
+          onValueChange={(next) => changePaymentMethod(paymentMethods.find((item) => item.id === Number(next)))}
           placeholder={t("accounting.dailyIncome.form.placeholders.selectPaymentMethod")}
           searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
           mobileSheet
@@ -463,6 +501,7 @@ export function RegisterInvoiceTransactionFields({
     <>
       {needsBankAccount ? (
         <PaymentAccountSelect
+          inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
           id="journal-bank-account"
           kind="bank"
           accounts={selectableBankAccounts}
@@ -477,18 +516,7 @@ export function RegisterInvoiceTransactionFields({
             setValue("clearPaymentOnSave", false, { shouldDirty: true });
           }}
         />
-      ) : showCashAccount ? (
-        <PaymentAccountSelect
-          id="journal-cash-account"
-          kind="cash"
-          accounts={cashAccounts}
-          pathSource={accounts}
-          value={paymentAccountId}
-          valueName={paymentAccountName}
-          hint={t("accounting.dailyIncome.form.hints.cashAccount")}
-          onChange={(account) => applyMoneyAccount(setValue, "paymentAccount", account)}
-        />
-      ) : null}
+      ) : guided ? null : cashAccountField}
     </>
   );
 
@@ -731,6 +759,7 @@ export function RegisterInvoiceTransactionFields({
           {partyModeField("sender", Boolean(includeSender), (
             <>
               <SearchableSelect
+                inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                 id="journal-sender"
                 aria-label={t("accounting.dailyIncome.form.fields.senderClient")}
                 value={senderId ?? ""}
@@ -749,6 +778,7 @@ export function RegisterInvoiceTransactionFields({
           {partyModeField("receiver", Boolean(includeReceiver), (
             <>
               <SearchableSelect
+                inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                 id="journal-receiver"
                 aria-label={t("accounting.dailyIncome.form.fields.receiverClient")}
                 value={receiverId ?? ""}
@@ -790,6 +820,14 @@ export function RegisterInvoiceTransactionFields({
               {amountFields}
             </div>
             {balanceFields ? <div className="border-t border-border px-4 py-3">{balanceFields}</div> : null}
+            {activeStep === "amounts" ? <div className="flex flex-wrap gap-2 border-t px-4 py-3">
+              <Button type="button" size="sm" variant="outline" onClick={() => { setAmountDraft(null); setInvoiceAmountValue("amount", 0); }}>
+                {t("accounting.dailyIncome.wizard.quickFlow.noPayment")}
+              </Button>
+              <Button type="button" size="sm" variant="outline" disabled={!invoiceCost || invoiceCost - (invoiceDiscount ?? 0) <= 0} onClick={() => { setAmountDraft(null); setInvoiceAmountValue("amount", Math.max(0, (invoiceCost ?? 0) - (invoiceDiscount ?? 0))); }}>
+                {t("accounting.dailyIncome.wizard.quickFlow.paidInFull")}
+              </Button>
+            </div> : null}
           </div>
         </div>
       </FormSection>
@@ -813,32 +851,39 @@ export function RegisterInvoiceTransactionFields({
       </FormSection>
     ) : null;
 
+    const assignmentSection = showEmployee ? (
+      <FormSection className={assignmentStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.assignment")}>
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+          {assigneeFields}
+        </div>
+      </FormSection>
+    ) : null;
+    const paymentFirst = guided || paymentSectionFirst;
+
     return (
       <div className="space-y-5">
-        {showEmployee ? (
-          <FormSection className={assignmentStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.assignment")}>
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-              {assigneeFields}
-            </div>
-          </FormSection>
-        ) : null}
-        {paymentSectionFirst ? null : invoiceDetailsSection}
+        {guided ? null : assignmentSection}
+        {paymentFirst ? null : invoiceDetailsSection}
         <FormSection className={!quickEntry && activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-            <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">
-              {methodFields}
-            </div>
+            {guided ? channelFields : (
+              <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">
+                {methodFields}
+              </div>
+            )}
             <div className="grid min-w-0 gap-4 empty:hidden sm:col-span-2 sm:grid-cols-2">
               {bankFields}
               {checkFields}
               {!quickEntry && externalReferenceFields}
             </div>
+            {guided && !quickEntry ? paymentReferenceFields : null}
             {!quickEntry && autoClearFields}
             {!quickEntry && descriptionFields}
           </div>
         </FormSection>
-        {paymentSectionFirst ? invoiceDetailsSection : null}
+        {paymentFirst ? invoiceDetailsSection : null}
         {partiesSection}
+        {guided ? assignmentSection : null}
       </div>
     );
   }

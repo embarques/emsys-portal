@@ -1,0 +1,1803 @@
+{
+  "checkedAt": "2026-11-13T17:16:24.258Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "evidence": [
+    {
+      "label": "Authentication control",
+      "method": "GET",
+      "path": "/users/current",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 73,
+          "uid": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "email": "elk@elk.com",
+          "name": "elk@elk.com",
+          "active": true,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares"
+          },
+          "role": {
+            "id": 1,
+            "name": "Administrador"
+          }
+        },
+        "error": "",
+        "duration": 0.021344417,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Bounded journal indexed-sort control",
+      "method": "GET",
+      "path": "/journals?page=1&limit=6&sort=createdAt:desc",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "pendingChange": false,
+            "version": 1,
+            "transactionStatus": "ACTIVE",
+            "clearanceStatus": "NOT_REQUIRED",
+            "clearedAt": null,
+            "clearedBy": null,
+            "allowedActions": {
+              "edit": false,
+              "void": false,
+              "reverse": false,
+              "correct": false,
+              "note": true,
+              "clear": false
+            },
+            "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+            "paymentAccount": {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK"
+            },
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "reconciliationStatus": "NOT_REQUIRED",
+            "reconciledAt": null,
+            "reconciledBy": null,
+            "autoReconciled": false,
+            "reversedTransactionType": "PAYMENT",
+            "reversalOf": "6af744be31a295cf38083b7b",
+            "id": "6af744d631a295cf38083c7a",
+            "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+            "date": "2026-11-13T17:11:49.656Z",
+            "refNumber": "REV-6af744be31a295cf38083b7b",
+            "idempotencyKey": "reversal:6af744be31a295cf38083b7b",
+            "paymentMethod": {
+              "id": 4,
+              "name": "ZELLE"
+            },
+            "currency": "USD",
+            "rate": 1,
+            "transactionType": "REVERSAL",
+            "invoice": {
+              "id": "6af744ba31a295cf38083b65",
+              "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+              "cost": 100,
+              "balance": 100
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 37,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+              },
+              "id": 32723
+            },
+            "employee": {
+              "id": 256,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "createdAt": "2026-11-13T17:11:49.656Z",
+            "updatedAt": "2026-11-13T17:11:49.656Z",
+            "createdBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "updatedBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "accounts": [
+              {
+                "id": 46,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+                "type": "BANK",
+                "credit": 30
+              },
+              {
+                "id": 2,
+                "name": "ACCOUNTS RECEIVABLE",
+                "type": "ASSET",
+                "debit": 30
+              }
+            ],
+            "transactionAmount": -30,
+            "sourceSystem": "audited-adjustment",
+            "sourceId": "6af744be31a295cf38083b7b"
+          },
+          {
+            "pendingChange": false,
+            "version": 1,
+            "transactionStatus": "ACTIVE",
+            "clearanceStatus": "NOT_REQUIRED",
+            "clearedAt": null,
+            "clearedBy": null,
+            "allowedActions": {
+              "edit": false,
+              "void": false,
+              "reverse": false,
+              "correct": false,
+              "note": true,
+              "clear": false
+            },
+            "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+            "paymentAccount": {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK"
+            },
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "reconciliationStatus": "NOT_REQUIRED",
+            "reconciledAt": null,
+            "reconciledBy": null,
+            "autoReconciled": false,
+            "reversedTransactionType": "PAYMENT",
+            "reversalOf": "6af744bf31a295cf38083b7e",
+            "id": "6af744d431a295cf38083c77",
+            "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+            "date": "2026-11-13T17:11:48.084Z",
+            "refNumber": "REV-6af744bf31a295cf38083b7e",
+            "idempotencyKey": "reversal:6af744bf31a295cf38083b7e",
+            "paymentMethod": {
+              "id": 4,
+              "name": "ZELLE"
+            },
+            "currency": "USD",
+            "rate": 1,
+            "transactionType": "REVERSAL",
+            "invoice": {
+              "id": "6af744ba31a295cf38083b65",
+              "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+              "cost": 100,
+              "balance": 100
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 37,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+              },
+              "id": 32723
+            },
+            "employee": {
+              "id": 256,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "createdAt": "2026-11-13T17:11:48.084Z",
+            "updatedAt": "2026-11-13T17:11:48.084Z",
+            "createdBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "updatedBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "accounts": [
+              {
+                "id": 46,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+                "type": "BANK",
+                "credit": 50
+              },
+              {
+                "id": 2,
+                "name": "ACCOUNTS RECEIVABLE",
+                "type": "ASSET",
+                "debit": 50
+              }
+            ],
+            "transactionAmount": -50,
+            "sourceSystem": "audited-adjustment",
+            "sourceId": "6af744bf31a295cf38083b7e"
+          },
+          {
+            "pendingChange": false,
+            "version": 1,
+            "transactionStatus": "ACTIVE",
+            "clearanceStatus": "NOT_REQUIRED",
+            "clearedAt": null,
+            "clearedBy": null,
+            "allowedActions": {
+              "edit": false,
+              "void": false,
+              "reverse": false,
+              "correct": false,
+              "note": true,
+              "clear": false
+            },
+            "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+            "paymentAccount": {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK"
+            },
+            "paymentReference": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CHECK",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "reconciliationStatus": "NOT_REQUIRED",
+            "reconciledAt": null,
+            "reconciledBy": null,
+            "autoReconciled": false,
+            "reversedTransactionType": "PAYMENT",
+            "reversalOf": "6af744bf31a295cf38083b81",
+            "id": "6af744d231a295cf38083c74",
+            "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+            "date": "2026-11-13T17:11:46.122Z",
+            "refNumber": "REV-6af744bf31a295cf38083b81",
+            "idempotencyKey": "reversal:6af744bf31a295cf38083b81",
+            "external_reference_number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CHECK",
+            "paymentMethod": {
+              "id": 2,
+              "name": "CHECK"
+            },
+            "currency": "USD",
+            "rate": 1,
+            "transactionType": "REVERSAL",
+            "invoice": {
+              "id": "6af744ba31a295cf38083b65",
+              "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+              "cost": 100,
+              "balance": 100
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 37,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+              },
+              "id": 32723
+            },
+            "employee": {
+              "id": 256,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "createdAt": "2026-11-13T17:11:46.122Z",
+            "updatedAt": "2026-11-13T17:11:46.122Z",
+            "createdBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "updatedBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "accounts": [
+              {
+                "id": 46,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+                "type": "BANK",
+                "credit": 10
+              },
+              {
+                "id": 2,
+                "name": "ACCOUNTS RECEIVABLE",
+                "type": "ASSET",
+                "debit": 10
+              }
+            ],
+            "transactionAmount": -10,
+            "sourceSystem": "audited-adjustment",
+            "sourceId": "6af744bf31a295cf38083b81"
+          },
+          {
+            "pendingChange": false,
+            "version": 1,
+            "transactionStatus": "ACTIVE",
+            "clearanceStatus": "NOT_REQUIRED",
+            "clearedAt": null,
+            "clearedBy": null,
+            "allowedActions": {
+              "edit": false,
+              "void": false,
+              "reverse": false,
+              "correct": false,
+              "note": true,
+              "clear": false
+            },
+            "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+            "paymentAccount": {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK"
+            },
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "reconciliationStatus": "NOT_REQUIRED",
+            "reconciledAt": null,
+            "reconciledBy": null,
+            "autoReconciled": false,
+            "reversedTransactionType": "PAYMENT",
+            "reversalOf": "6af744c331a295cf38083b86",
+            "id": "6af744d131a295cf38083c71",
+            "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+            "date": "2026-11-13T17:11:44.694Z",
+            "refNumber": "REV-6af744c331a295cf38083b86",
+            "idempotencyKey": "reversal:6af744c331a295cf38083b86",
+            "paymentMethod": {
+              "id": 4,
+              "name": "ZELLE"
+            },
+            "currency": "USD",
+            "rate": 1,
+            "transactionType": "REVERSAL",
+            "invoice": {
+              "id": "6af744ba31a295cf38083b65",
+              "number": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc-CASH",
+              "cost": 100,
+              "balance": 100
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 37,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+              },
+              "id": 32723
+            },
+            "employee": {
+              "id": 256,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "createdAt": "2026-11-13T17:11:44.694Z",
+            "updatedAt": "2026-11-13T17:11:44.694Z",
+            "createdBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "updatedBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "accounts": [
+              {
+                "id": 46,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+                "type": "BANK",
+                "credit": 5
+              },
+              {
+                "id": 2,
+                "name": "ACCOUNTS RECEIVABLE",
+                "type": "ASSET",
+                "debit": 5
+              }
+            ],
+            "transactionAmount": -5,
+            "sourceSystem": "audited-adjustment",
+            "sourceId": "6af744c331a295cf38083b86"
+          },
+          {
+            "pendingChange": false,
+            "version": 1,
+            "transactionStatus": "ACTIVE",
+            "clearanceStatus": "NOT_REQUIRED",
+            "clearedAt": null,
+            "clearedBy": null,
+            "allowedActions": {
+              "edit": false,
+              "void": false,
+              "reverse": false,
+              "correct": false,
+              "note": true,
+              "clear": false
+            },
+            "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+            "sourceAccount": {
+              "id": 46,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+              "type": "BANK"
+            },
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "reconciliationStatus": "NOT_REQUIRED",
+            "reconciledAt": null,
+            "reconciledBy": null,
+            "autoReconciled": false,
+            "reversedTransactionType": "EXPENSE",
+            "reversalOf": "6af744c531a295cf38083b8a",
+            "id": "6af744cf31a295cf38083ba3",
+            "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+            "date": "2026-11-13T17:11:43.509Z",
+            "refNumber": "REV-6af744c531a295cf38083b8a",
+            "idempotencyKey": "reversal:6af744c531a295cf38083b8a",
+            "paymentMethod": {
+              "id": 4,
+              "name": "ZELLE"
+            },
+            "currency": "USD",
+            "rate": 1,
+            "transactionType": "REVERSAL",
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 37,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+              },
+              "id": 32723
+            },
+            "employee": {
+              "id": 256,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "createdAt": "2026-11-13T17:11:43.509Z",
+            "updatedAt": "2026-11-13T17:11:43.509Z",
+            "createdBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "updatedBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "accounts": [
+              {
+                "id": 5,
+                "name": "Gasolina",
+                "type": "EXPENSE",
+                "credit": 0.01
+              },
+              {
+                "id": 46,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc",
+                "type": "BANK",
+                "debit": 0.01
+              }
+            ],
+            "transactionAmount": -0.01,
+            "sourceSystem": "audited-adjustment",
+            "sourceId": "6af744c531a295cf38083b8a"
+          },
+          {
+            "pendingChange": false,
+            "version": 1,
+            "transactionStatus": "ACTIVE",
+            "clearanceStatus": "NOT_REQUIRED",
+            "clearedAt": null,
+            "clearedBy": null,
+            "allowedActions": {
+              "edit": false,
+              "void": false,
+              "reverse": false,
+              "correct": false,
+              "note": true,
+              "clear": false
+            },
+            "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+            "branch": {
+              "id": 37,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "reconciliationStatus": "NOT_REQUIRED",
+            "reconciledAt": null,
+            "reconciledBy": null,
+            "autoReconciled": false,
+            "reversedTransactionType": "SALES",
+            "reversalOf": "6af744c531a295cf38083b8c",
+            "id": "6af744ce31a295cf38083b9f",
+            "description": "Reversal: CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc cleanup",
+            "date": "2026-11-13T17:11:42.247Z",
+            "refNumber": "REV-6af744c531a295cf38083b8c",
+            "idempotencyKey": "reversal:6af744c531a295cf38083b8c",
+            "paymentMethod": {
+              "id": 1,
+              "name": "CASH"
+            },
+            "currency": "USD",
+            "rate": 1,
+            "transactionType": "REVERSAL",
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 37,
+                "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+              },
+              "id": 32723
+            },
+            "employee": {
+              "id": 256,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "createdAt": "2026-11-13T17:11:42.247Z",
+            "updatedAt": "2026-11-13T17:11:42.247Z",
+            "createdBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "updatedBy": {
+              "id": 145,
+              "name": "CODEX-BANK-34cd837b-d7ec-4023-b1ee-d4e3bc0e99cc"
+            },
+            "accounts": [
+              {
+                "id": 1,
+                "name": "CASH ON HAND",
+                "type": "ASSET",
+                "credit": 0.01
+              },
+              {
+                "id": 6,
+                "name": "VENTA DE CAJAS",
+                "type": "REVENUE",
+                "debit": 0.01
+              }
+            ],
+            "transactionAmount": -0.01,
+            "sourceSystem": "audited-adjustment",
+            "sourceId": "6af744c531a295cf38083b8c"
+          }
+        ],
+        "error": "",
+        "duration": 0.16143375,
+        "page": 1,
+        "resultsPerPage": 6,
+        "total": 48722,
+        "subtotal": 48716
+      }
+    },
+    {
+      "label": "Bounded journal list returns at most six rows in descending createdAt order",
+      "passed": true
+    },
+    {
+      "label": "Loan filter paidAmount",
+      "method": "POST",
+      "path": "/loans/search",
+      "body": {
+        "filters": [
+          {
+            "field": "status",
+            "operator": "eq",
+            "value": "ACTIVE"
+          },
+          {
+            "field": "paidAmount",
+            "operator": "eq",
+            "value": 1
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        }
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Search query validation failed",
+        "error": "search query validation failed: condition 2 in and group: field \"paidAmount\" is not allowed. Allowed fields: branch.code, branch.id, branch.name, createdAt, createdBy.id, createdBy.name, description, employee.id, employee.name, id, incomeStatement.id, lastActivityAt, loanAccount.id, loanAccount.name, openedAt, principalAmount, referenceNumber, status, updatedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+        "data": {
+          "code": "QUERY_FIELD_NOT_ALLOWED",
+          "resource": "loan",
+          "issues": [
+            {
+              "field": "paidAmount",
+              "reason": "field \"paidAmount\" is not allowed"
+            }
+          ],
+          "rejectedFields": [
+            "paidAmount"
+          ],
+          "allowedFields": [
+            "branch.code",
+            "branch.id",
+            "branch.name",
+            "createdAt",
+            "createdBy.id",
+            "createdBy.name",
+            "description",
+            "employee.id",
+            "employee.name",
+            "id",
+            "incomeStatement.id",
+            "lastActivityAt",
+            "loanAccount.id",
+            "loanAccount.name",
+            "openedAt",
+            "principalAmount",
+            "referenceNumber",
+            "status",
+            "updatedAt"
+          ],
+          "allowedOperators": [
+            "eq",
+            "neq",
+            "contains",
+            "startsWith",
+            "in",
+            "notIn",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ],
+          "hint": "Add the rejected fields to the resource query allowlist only if the query implementation supports them."
+        }
+      }
+    },
+    {
+      "label": "Loan paidAmount filter succeeds or explicitly rejects unsupported input without 500",
+      "passed": true
+    },
+    {
+      "label": "Loan sort paidAmount",
+      "method": "POST",
+      "path": "/loans/search",
+      "body": {
+        "filters": [
+          {
+            "field": "status",
+            "operator": "eq",
+            "value": "ACTIVE"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        },
+        "sort": [
+          {
+            "field": "paidAmount",
+            "direction": "asc"
+          }
+        ]
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Search query validation failed",
+        "error": "search query validation failed: field \"paidAmount\" is not allowed for sorting. Allowed fields: branch.code, branch.id, branch.name, createdAt, createdBy.id, createdBy.name, description, employee.id, employee.name, id, incomeStatement.id, lastActivityAt, loanAccount.id, loanAccount.name, openedAt, principalAmount, referenceNumber, status, updatedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+        "data": {
+          "code": "QUERY_FIELD_NOT_ALLOWED",
+          "resource": "loan",
+          "issues": [
+            {
+              "field": "paidAmount",
+              "reason": "field \"paidAmount\" is not allowed for sorting"
+            }
+          ],
+          "rejectedFields": [
+            "paidAmount"
+          ],
+          "allowedFields": [
+            "branch.code",
+            "branch.id",
+            "branch.name",
+            "createdAt",
+            "createdBy.id",
+            "createdBy.name",
+            "description",
+            "employee.id",
+            "employee.name",
+            "id",
+            "incomeStatement.id",
+            "lastActivityAt",
+            "loanAccount.id",
+            "loanAccount.name",
+            "openedAt",
+            "principalAmount",
+            "referenceNumber",
+            "status",
+            "updatedAt"
+          ],
+          "allowedOperators": [
+            "eq",
+            "neq",
+            "contains",
+            "startsWith",
+            "in",
+            "notIn",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ],
+          "hint": "Add the rejected fields to the resource query allowlist only if the query implementation supports them."
+        }
+      }
+    },
+    {
+      "label": "Loan paidAmount sort succeeds or explicitly rejects unsupported input without 500",
+      "passed": true
+    },
+    {
+      "label": "Loan filter balance",
+      "method": "POST",
+      "path": "/loans/search",
+      "body": {
+        "filters": [
+          {
+            "field": "status",
+            "operator": "eq",
+            "value": "ACTIVE"
+          },
+          {
+            "field": "balance",
+            "operator": "eq",
+            "value": 1
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        }
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Search query validation failed",
+        "error": "search query validation failed: condition 2 in and group: field \"balance\" is not allowed. Allowed fields: branch.code, branch.id, branch.name, createdAt, createdBy.id, createdBy.name, description, employee.id, employee.name, id, incomeStatement.id, lastActivityAt, loanAccount.id, loanAccount.name, openedAt, principalAmount, referenceNumber, status, updatedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+        "data": {
+          "code": "QUERY_FIELD_NOT_ALLOWED",
+          "resource": "loan",
+          "issues": [
+            {
+              "field": "balance",
+              "reason": "field \"balance\" is not allowed"
+            }
+          ],
+          "rejectedFields": [
+            "balance"
+          ],
+          "allowedFields": [
+            "branch.code",
+            "branch.id",
+            "branch.name",
+            "createdAt",
+            "createdBy.id",
+            "createdBy.name",
+            "description",
+            "employee.id",
+            "employee.name",
+            "id",
+            "incomeStatement.id",
+            "lastActivityAt",
+            "loanAccount.id",
+            "loanAccount.name",
+            "openedAt",
+            "principalAmount",
+            "referenceNumber",
+            "status",
+            "updatedAt"
+          ],
+          "allowedOperators": [
+            "eq",
+            "neq",
+            "contains",
+            "startsWith",
+            "in",
+            "notIn",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ],
+          "hint": "Add the rejected fields to the resource query allowlist only if the query implementation supports them."
+        }
+      }
+    },
+    {
+      "label": "Loan balance filter succeeds or explicitly rejects unsupported input without 500",
+      "passed": true
+    },
+    {
+      "label": "Loan sort balance",
+      "method": "POST",
+      "path": "/loans/search",
+      "body": {
+        "filters": [
+          {
+            "field": "status",
+            "operator": "eq",
+            "value": "ACTIVE"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        },
+        "sort": [
+          {
+            "field": "balance",
+            "direction": "asc"
+          }
+        ]
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Search query validation failed",
+        "error": "search query validation failed: field \"balance\" is not allowed for sorting. Allowed fields: branch.code, branch.id, branch.name, createdAt, createdBy.id, createdBy.name, description, employee.id, employee.name, id, incomeStatement.id, lastActivityAt, loanAccount.id, loanAccount.name, openedAt, principalAmount, referenceNumber, status, updatedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+        "data": {
+          "code": "QUERY_FIELD_NOT_ALLOWED",
+          "resource": "loan",
+          "issues": [
+            {
+              "field": "balance",
+              "reason": "field \"balance\" is not allowed for sorting"
+            }
+          ],
+          "rejectedFields": [
+            "balance"
+          ],
+          "allowedFields": [
+            "branch.code",
+            "branch.id",
+            "branch.name",
+            "createdAt",
+            "createdBy.id",
+            "createdBy.name",
+            "description",
+            "employee.id",
+            "employee.name",
+            "id",
+            "incomeStatement.id",
+            "lastActivityAt",
+            "loanAccount.id",
+            "loanAccount.name",
+            "openedAt",
+            "principalAmount",
+            "referenceNumber",
+            "status",
+            "updatedAt"
+          ],
+          "allowedOperators": [
+            "eq",
+            "neq",
+            "contains",
+            "startsWith",
+            "in",
+            "notIn",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ],
+          "hint": "Add the rejected fields to the resource query allowlist only if the query implementation supports them."
+        }
+      }
+    },
+    {
+      "label": "Loan balance sort succeeds or explicitly rejects unsupported input without 500",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter status",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "status",
+            "operator": "eq",
+            "value": "APPROVED"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-assigned-update"
+            },
+            "id": "2a45f525-9353-4e43-b170-04305f207714",
+            "resourceType": "pickup",
+            "resourceId": "21901",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-SELF-APPROVED"
+            },
+            "reason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "expectedVersion": "v1:568d22d61e06ea8fc72e347d0b018f9d4f9de5eac84d61fe06d5e2b0df4fbc98",
+            "requestedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "reviewedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "status": "APPROVED",
+            "reviewReason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c self approval",
+            "createdAt": "2026-11-13T17:12:17.669Z",
+            "reviewedAt": "2026-11-13T17:12:18.17Z"
+          },
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-7f0f5b9f-835e-4503-ba33-5ebff75fa295-assigned-update"
+            },
+            "id": "83c164ee-7f57-456f-a5fd-9da9669a1cb1",
+            "resourceType": "pickup",
+            "resourceId": "21899",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-7f0f5b9f-835e-4503-ba33-5ebff75fa295-SELF-APPROVED"
+            },
+            "reason": "CODEX-SCOPE-7f0f5b9f-835e-4503-ba33-5ebff75fa295",
+            "expectedVersion": "v1:2523f14aa788f9892e82eb4b0010b9bbf3fcd36d3b0699628f43ae5d8c0830a6",
+            "requestedBy": {
+              "id": 143,
+              "name": "CODEX-SCOPE-7f0f5b9f-835e-4503-ba33-5ebff75fa295"
+            },
+            "reviewedBy": {
+              "id": 143,
+              "name": "CODEX-SCOPE-7f0f5b9f-835e-4503-ba33-5ebff75fa295"
+            },
+            "status": "APPROVED",
+            "reviewReason": "CODEX-SCOPE-7f0f5b9f-835e-4503-ba33-5ebff75fa295 self approval",
+            "createdAt": "2026-11-12T23:41:36.992Z",
+            "reviewedAt": "2026-11-12T23:41:37.523Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.035288417,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 4,
+        "subtotal": 2
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate status",
+      "passed": true
+    },
+    {
+      "label": "Change-request status matches stored rows",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter resourceType",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "resourceType",
+            "operator": "eq",
+            "value": "pickup"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-SELF-APPROVED"
+            },
+            "id": "a3efb287-d195-40cf-8b73-82197e4ace2d",
+            "resourceType": "pickup",
+            "resourceId": "21901",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-REVOKED"
+            },
+            "reason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "expectedVersion": "v1:f3992a6aeedb8ab0c80d62433d5458d4f3fe489c7edcf5ab85043af95866c0a8",
+            "requestedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "reviewedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "status": "REJECTED",
+            "reviewReason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "createdAt": "2026-11-13T17:12:19.842Z",
+            "reviewedAt": "2026-11-13T17:12:20.362Z"
+          },
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-SELF-APPROVED"
+            },
+            "id": "11ea3d03-077f-4eac-b6c4-9dfe1371f643",
+            "resourceType": "pickup",
+            "resourceId": "21901",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-STALE-PROPOSED"
+            },
+            "reason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "expectedVersion": "v1:54b6a1e206b6972be65ec76dff2615e1b18414b3c7bd7a3d6d34e47249bf91ba",
+            "requestedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "reviewedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "status": "REJECTED",
+            "reviewReason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "createdAt": "2026-11-13T17:12:18.916Z",
+            "reviewedAt": "2026-11-13T17:12:19.261Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.034645416,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 15,
+        "subtotal": 13
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate resourceType",
+      "passed": true
+    },
+    {
+      "label": "Change-request resourceType matches stored rows",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter action",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "action",
+            "operator": "eq",
+            "value": "UPDATE"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-SELF-APPROVED"
+            },
+            "id": "a3efb287-d195-40cf-8b73-82197e4ace2d",
+            "resourceType": "pickup",
+            "resourceId": "21901",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-REVOKED"
+            },
+            "reason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "expectedVersion": "v1:f3992a6aeedb8ab0c80d62433d5458d4f3fe489c7edcf5ab85043af95866c0a8",
+            "requestedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "reviewedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "status": "REJECTED",
+            "reviewReason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "createdAt": "2026-11-13T17:12:19.842Z",
+            "reviewedAt": "2026-11-13T17:12:20.362Z"
+          },
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-SELF-APPROVED"
+            },
+            "id": "11ea3d03-077f-4eac-b6c4-9dfe1371f643",
+            "resourceType": "pickup",
+            "resourceId": "21901",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-STALE-PROPOSED"
+            },
+            "reason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "expectedVersion": "v1:54b6a1e206b6972be65ec76dff2615e1b18414b3c7bd7a3d6d34e47249bf91ba",
+            "requestedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "reviewedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "status": "REJECTED",
+            "reviewReason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "createdAt": "2026-11-13T17:12:18.916Z",
+            "reviewedAt": "2026-11-13T17:12:19.261Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.034500291,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 15,
+        "subtotal": 13
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate action",
+      "passed": true
+    },
+    {
+      "label": "Change-request action matches stored rows",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter requestedBy.id",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "requestedBy.id",
+            "operator": "eq",
+            "value": 73
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [],
+        "error": "",
+        "duration": 0.035290708,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate requestedBy.id",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter requestedBy.name",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "requestedBy.name",
+            "operator": "eq",
+            "value": "CODEX-NO-MATCH"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [],
+        "error": "",
+        "duration": 0.033669417,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate requestedBy.name",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter reviewedBy.id",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "reviewedBy.id",
+            "operator": "eq",
+            "value": 73
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-SELF-APPROVED"
+            },
+            "id": "a3efb287-d195-40cf-8b73-82197e4ace2d",
+            "resourceType": "pickup",
+            "resourceId": "21901",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-REVOKED"
+            },
+            "reason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "expectedVersion": "v1:f3992a6aeedb8ab0c80d62433d5458d4f3fe489c7edcf5ab85043af95866c0a8",
+            "requestedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "reviewedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "status": "REJECTED",
+            "reviewReason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "createdAt": "2026-11-13T17:12:19.842Z",
+            "reviewedAt": "2026-11-13T17:12:20.362Z"
+          },
+          {
+            "originalValues": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-SELF-APPROVED"
+            },
+            "id": "11ea3d03-077f-4eac-b6c4-9dfe1371f643",
+            "resourceType": "pickup",
+            "resourceId": "21901",
+            "action": "UPDATE",
+            "proposedChanges": {
+              "purpose": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c-STALE-PROPOSED"
+            },
+            "reason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "expectedVersion": "v1:54b6a1e206b6972be65ec76dff2615e1b18414b3c7bd7a3d6d34e47249bf91ba",
+            "requestedBy": {
+              "id": 147,
+              "name": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c"
+            },
+            "reviewedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "status": "REJECTED",
+            "reviewReason": "CODEX-SCOPE-a05e3271-5584-46b0-8a06-17fb897b906c",
+            "createdAt": "2026-11-13T17:12:18.916Z",
+            "reviewedAt": "2026-11-13T17:12:19.261Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.03560775,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 11,
+        "subtotal": 9
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate reviewedBy.id",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter reviewedBy.name",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "reviewedBy.name",
+            "operator": "eq",
+            "value": "CODEX-NO-MATCH"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [],
+        "error": "",
+        "duration": 0.034112792,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate reviewedBy.name",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter createdAt",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "createdAt",
+            "operator": "eq",
+            "value": "2026-11-01"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [],
+        "error": "",
+        "duration": 0.034405083,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate createdAt",
+      "passed": true
+    },
+    {
+      "label": "Change-request filter reviewedAt",
+      "method": "POST",
+      "path": "/change-requests/search",
+      "body": {
+        "filters": [
+          {
+            "field": "reviewedAt",
+            "operator": "eq",
+            "value": "2026-11-01"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change requests",
+        "data": [],
+        "error": "",
+        "duration": 0.034990833,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Change-request search accepts documented candidate reviewedAt",
+      "passed": true
+    },
+    {
+      "label": "Reservation nullable timestamp control",
+      "method": "GET",
+      "path": "/invoices/reserved?limit=1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": {
+          "items": [
+            {
+              "claimed": true,
+              "id": "6aeb5e02b14be9cb043287a6",
+              "number": "INV-26-001455",
+              "allocation": {
+                "userId": 73,
+                "token": "5b0f6a31-66bf-4e26-9ad1-436a3b107f44"
+              },
+              "receivedAt": null,
+              "createdAt": "2026-11-04T16:32:02.244Z"
+            }
+          ],
+          "remaining": 36,
+          "lowThreshold": 10,
+          "nextCursor": "6aeb5e02b14be9cb043287a6"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Null receivedAt eq",
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "field": "number",
+            "operator": "eq",
+            "value": "INV-26-001455"
+          },
+          {
+            "field": "receivedAt",
+            "operator": "eq",
+            "value": "2026-11-13"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [],
+        "error": "",
+        "duration": 0.023044375,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Null receivedAt eq has documented inclusion behavior",
+      "passed": true
+    },
+    {
+      "label": "Null receivedAt neq",
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "field": "number",
+            "operator": "eq",
+            "value": "INV-26-001455"
+          },
+          {
+            "field": "receivedAt",
+            "operator": "neq",
+            "value": "2026-11-13"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [
+          {
+            "claimed": true,
+            "id": "6aeb5e02b14be9cb043287a6",
+            "number": "INV-26-001455",
+            "allocation": {
+              "userId": 73
+            },
+            "receivedAt": null,
+            "createdAt": "2026-11-04T16:32:02.244Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.02106825,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Null receivedAt neq has documented inclusion behavior",
+      "passed": true
+    },
+    {
+      "label": "Null receivedAt gte",
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "field": "number",
+            "operator": "eq",
+            "value": "INV-26-001455"
+          },
+          {
+            "field": "receivedAt",
+            "operator": "gte",
+            "value": "2026-11-13"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [],
+        "error": "",
+        "duration": 0.021301834,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Null receivedAt gte has documented inclusion behavior",
+      "passed": true
+    },
+    {
+      "label": "Null receivedAt lte",
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "field": "number",
+            "operator": "eq",
+            "value": "INV-26-001455"
+          },
+          {
+            "field": "receivedAt",
+            "operator": "lte",
+            "value": "2026-11-13"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [],
+        "error": "",
+        "duration": 0.021895791,
+        "page": 1,
+        "resultsPerPage": 2,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Null receivedAt lte has documented inclusion behavior",
+      "passed": true
+    },
+    {
+      "label": "Invalid receivedAt invalid-date",
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "field": "receivedAt",
+            "operator": "gte",
+            "value": "invalid-date"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        }
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Search query validation failed",
+        "error": "search query validation failed: receivedAt requires eq, neq, gt, gte, lt or lte and a YYYY-MM-DD or RFC3339 value. Allowed fields: allocation.userId, claimed, createdAt, id, number, receivedAt, reservedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"number\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+        "data": {
+          "code": "SEARCH_QUERY_VALIDATION_FAILED",
+          "resource": "invoice",
+          "issues": [
+            {
+              "reason": "receivedAt requires eq, neq, gt, gte, lt or lte and a YYYY-MM-DD or RFC3339 value"
+            }
+          ],
+          "rejectedFields": [],
+          "allowedFields": [
+            "allocation.userId",
+            "claimed",
+            "createdAt",
+            "id",
+            "number",
+            "receivedAt",
+            "reservedAt"
+          ],
+          "allowedOperators": [
+            "eq",
+            "neq",
+            "contains",
+            "startsWith",
+            "in",
+            "notIn",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ]
+        }
+      }
+    },
+    {
+      "label": "receivedAt rejects invalid-date",
+      "passed": true
+    },
+    {
+      "label": "Invalid receivedAt 2026-02-30",
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "field": "receivedAt",
+            "operator": "gte",
+            "value": "2026-02-30"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        }
+      },
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "Search query validation failed",
+        "error": "search query validation failed: receivedAt requires eq, neq, gt, gte, lt or lte and a YYYY-MM-DD or RFC3339 value. Allowed fields: allocation.userId, claimed, createdAt, id, number, receivedAt, reservedAt. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"number\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+        "data": {
+          "code": "SEARCH_QUERY_VALIDATION_FAILED",
+          "resource": "invoice",
+          "issues": [
+            {
+              "reason": "receivedAt requires eq, neq, gt, gte, lt or lte and a YYYY-MM-DD or RFC3339 value"
+            }
+          ],
+          "rejectedFields": [],
+          "allowedFields": [
+            "allocation.userId",
+            "claimed",
+            "createdAt",
+            "id",
+            "number",
+            "receivedAt",
+            "reservedAt"
+          ],
+          "allowedOperators": [
+            "eq",
+            "neq",
+            "contains",
+            "startsWith",
+            "in",
+            "notIn",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ]
+        }
+      }
+    },
+    {
+      "label": "receivedAt rejects 2026-02-30",
+      "passed": true
+    }
+  ]
+}

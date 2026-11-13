@@ -175,13 +175,16 @@ test("completed appointments keep their routes; unfinished appointments can leav
 test("appointment destination date is rechecked before assignment and old source routes do not block reassignment", async () => {
  let writes = 0;
  const load = loader({
-  get: async () => {throw new Error("Assignment must not require separate route-view permission");},
+  get: async url => {
+   assert.equal(url, "/vehicle-routes/business-date", "Assignment needs no route detail or financial read permission");
+   return {data: {businessDate: "2026-11-11", serverTime: "2026-11-12T01:00:00Z", nextMidnight: "2026-11-12T05:00:00Z", timezone: "America/New_York"}};
+  },
   put: async () => {writes++; return {success: true};},
  });
  const api = load("src/lib/orders/api/orders-api.ts");
  await assert.rejects(api.assignPickupsToRoute("route", [1], "2000-01-01"), /today or later/);
  assert.equal(writes, 0);
- const routeDate = load("src/lib/pickup-delivery-routes/assignment-policy.ts").assignmentToday();
+ const routeDate = "2026-11-11";
  await api.assignPickupsToRoute("route", [1], routeDate);
  assert.equal(writes, 1);
 });

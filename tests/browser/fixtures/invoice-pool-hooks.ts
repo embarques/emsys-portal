@@ -17,8 +17,8 @@ export async function fetchUsers(params: {search?: {value: string}} = {}) {
  return {items:[user],total:1};
 }
 const rows=[
- {id:"68f800000000000000000001",number:"INV-100",receivedAt:"2026-11-07T15:30:00Z",claimed:false,allocation:{userId:0,token:"available-v1"}},
- {id:"68f800000000000000000002",number:"INV-101",receivedAt:null,claimed:false,allocation:{userId:3,token:"assigned-v1"}},
+ {id:"68f800000000000000000001",number:"INV-100",reservedAt:"2026-11-07T15:30:00Z",claimed:false,allocation:{userId:0,token:"available-v1"}},
+ {id:"68f800000000000000000002",number:"INV-101",reservedAt:null,claimed:false,allocation:{userId:3,token:"assigned-v1"}},
  {id:"68f800000000000000000003",number:"INV-102",claimed:true,allocation:{userId:3,token:"claimed-v1"}},
 ];
 export const apiClient={
@@ -32,7 +32,8 @@ export const apiClient={
  post:async(url:string,request:unknown)=>{
  if (url === "/invoices/reserved/search") {
   window.poolSearches ??= []; window.poolSearches.push(request);
-  return {success:true,data:{items:rows.filter(row => matches(row, request as FilterNode)),remaining:rows.filter(row => matches(row, request as FilterNode)).length,lowThreshold:10}};
+  const items=rows.filter(row => matches(row, request as FilterNode));
+  return {success:true,data:items,total:items.length};
  }
  if (!url.includes("/invoices/reserved")) return {success:true,data:[]};
  window.poolWrites??=[];window.poolWrites.push(request);if(window.poolLoseAck&&window.poolWrites.length===1)throw Error("Connection lost");return {success:true,data:rows};
@@ -40,8 +41,9 @@ export const apiClient={
 };
 type FilterNode = {operator:string;filters?:FilterNode[];field?:string;value?:unknown};
 function matches(row: typeof rows[number], node: FilterNode): boolean {
+ if (!node.field && !node.filters) return true;
  if (node.filters) return node.operator === "or" ? node.filters.some(child => matches(row, child)) : node.filters.every(child => matches(row, child));
- const actual = node.field === "number" ? row.number : node.field === "receivedAt" ? ("receivedAt" in row ? row.receivedAt : undefined) : node.field === "claimed" ? row.claimed : row.allocation.userId;
+ const actual = node.field === "number" ? row.number : node.field === "reservedAt" ? ("reservedAt" in row ? row.reservedAt : undefined) : node.field === "claimed" ? row.claimed : row.allocation.userId;
  if (node.operator === "eq") return actual === node.value;
  if (node.operator === "neq") return actual !== node.value;
  if (node.operator === "contains") return String(actual).toLowerCase().includes(String(node.value).toLowerCase());

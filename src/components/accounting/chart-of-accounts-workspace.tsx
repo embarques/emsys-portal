@@ -1,8 +1,11 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+import { useMemo, useState } from "react";
 import {
   Edit,
+  Loader2,
   Plus,
   Search,
   Trash2,
@@ -221,9 +224,9 @@ export function ChartOfAccountsWorkspace() {
   const [mobileTypeFilter, setMobileTypeFilter] = useState<
     ChartAccountType | ""
   >("");
-  const deferredQuery = useDeferredValue(query);
+  const debouncedQuery = useDebouncedValue(query);
   const hasActiveSearch = Boolean(query.trim());
-  const isSearchPending = query.trim() !== deferredQuery.trim();
+  const isSearchPending = query.trim() !== debouncedQuery.trim();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ChartAccount | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChartAccount | null>(null);
@@ -244,7 +247,7 @@ export function ChartOfAccountsWorkspace() {
     page,
     limit: pageLimit,
     sort,
-    query: deferredQuery,
+    query: debouncedQuery,
     type: activeTypeFilter || undefined,
     ...(activeFilterRows.length ? { filterRows: activeFilterRows } : {}),
   });
@@ -274,7 +277,7 @@ export function ChartOfAccountsWorkspace() {
   );
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(deferredQuery, activeTypeFilter, activeFilterRows, page),
+    buildTableSelectionResetKey(debouncedQuery, activeTypeFilter, activeFilterRows, page),
     setSelectedIds,
   );
 
@@ -465,8 +468,11 @@ export function ChartOfAccountsWorkspace() {
         <div className="rounded-3xl border bg-card p-4 shadow-sm">
         <div className="grid gap-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/80" />
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/80" role={accountsQuery.isFetching || isSearchPending ? "progressbar" : undefined} aria-label={accountsQuery.isFetching || isSearchPending ? t("common.ui.searching") : undefined}>
+              {accountsQuery.isFetching || isSearchPending ? <Loader2 aria-hidden="true" className="size-5 animate-spin motion-reduce:animate-none" /> : <Search aria-hidden="true" className="size-5" />}
+            </span>
             <input
+              aria-busy={accountsQuery.isFetching || isSearchPending}
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -574,12 +580,12 @@ export function ChartOfAccountsWorkspace() {
                 {t("accounting.chartOfAccounts.card.description")}
               </CardDescription>
             </div>
-            <TableDirectoryToolbar
+            <TableDirectoryToolbar isLoading={accountsQuery.isFetching || isSearchPending}
               filtersOpen={filtersOpen}
               onFiltersOpenChange={setFiltersOpen}
               activeFilterCount={activeFilterCount}
               filterPanel={
-                <TableAdvancedFilterPanel
+                <TableAdvancedFilterPanel isLoading={accountsQuery.isFetching || isSearchPending}
                   presetScope="chart-of-accounts"
                   open={filtersOpen}
                   rows={filterRows}
@@ -647,7 +653,7 @@ export function ChartOfAccountsWorkspace() {
                 columns={columnLayout.columns}
                 rows={rows}
                 page={page}
-                isPageDataPending={accountsQuery.isFetching}
+                isPageDataPending={accountsQuery.isFetching || isSearchPending}
                 rowKey={(account) => String(account.id)}
                 rowLabel={(account) => account.displayName}
                 columnLayout={columnLayout}

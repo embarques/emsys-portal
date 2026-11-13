@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Search, X } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
@@ -14,6 +14,7 @@ type TableSearchInputProps = {
   className?: string;
   inputClassName?: string;
   disabled?: boolean;
+  isLoading?: boolean;
   maxLength?: number;
 };
 
@@ -24,6 +25,7 @@ export function TableSearchInput({
   className,
   inputClassName,
   disabled,
+  isLoading = false,
   maxLength,
 }: TableSearchInputProps) {
   const { t } = useTranslation();
@@ -32,7 +34,9 @@ export function TableSearchInput({
 
   return (
     <div className={cn("relative w-full min-w-[10rem]", className)}>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/80" role={isLoading ? "progressbar" : undefined} aria-label={isLoading ? t("common.ui.searching") : undefined}>
+        {isLoading ? <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : <Search aria-hidden="true" className="size-4" />}
+      </span>
       <Input
         ref={inputRef}
         disabled={disabled}
@@ -45,6 +49,7 @@ export function TableSearchInput({
         )}
         placeholder={placeholder}
         aria-label={placeholder}
+        aria-busy={isLoading}
       />
       {value ? (
         <button

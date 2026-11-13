@@ -506,6 +506,7 @@ export function EmployeeForm({
                   </Label>
                   <Input
                     id="address-zipcode"
+                    autoComplete="postal-code"
                     value={values.address.zipcode}
                     onChange={(event) => updateAddressField("zipcode", event.target.value)}
                     placeholder={t("employees.form.placeholders.zipcode")}

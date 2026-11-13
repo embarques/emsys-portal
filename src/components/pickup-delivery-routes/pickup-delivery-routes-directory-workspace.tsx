@@ -398,7 +398,7 @@ export function ActiveRoutesDirectoryWorkspace({
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={activeRoutesQuery.isFetching || activeRouteFilters.query.trim() !== debouncedActiveRouteQuery.trim()}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={advancedFilterCount}
@@ -435,7 +435,7 @@ export function ActiveRoutesDirectoryWorkspace({
               </div>
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={activeRoutesQuery.isFetching || activeRouteFilters.query.trim() !== debouncedActiveRouteQuery.trim()}
                 resultSummary={activeRouteListSummary}
                 presets={{
                   storageKey: variant.columnVisibilityKey,
@@ -498,7 +498,7 @@ export function ActiveRoutesDirectoryWorkspace({
             columns={activeRouteColumnVisibility.columns}
             rows={activeRoutes}
             page={currentActiveRoutePage}
-            isPageDataPending={activeRoutesQuery.isFetching || !isBranchFilterReady}
+            isPageDataPending={activeRoutesQuery.isFetching || !isBranchFilterReady || activeRouteFilters.query.trim() !== debouncedActiveRouteQuery.trim()}
             rowKey={(record) => record.id}
             rowLabel={(record) => formatActiveRouteRowLabel(record, dash, t)}
             columnLayout={activeRouteColumnVisibility}

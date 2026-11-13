@@ -63,21 +63,22 @@ async function fixture(flags = {}) {
 test("cross-page selection uses one method, summarizes and retries with a stable request id", async () => {
   const page = await fixture({ failReconcile: true });
   try {
-    assert.equal(await page.evaluate(() => window.calls.length), 1);
+    assert.equal(await page.evaluate(() => window.calls.filter(call => call.url.endsWith("/search")).length), 1);
     await page.getByRole("checkbox", { name: "Select R1", exact: true }).check();
-    await page.getByRole("checkbox", { name: "Select R3", exact: true }).click();
+    assert.equal(await page.getByRole("checkbox", { name: "Select R3", exact: true }).isDisabled(), true);
     assert.equal(await page.getByRole("checkbox", { name: "Select R3", exact: true }).isChecked(), false);
     await page.getByRole("button", { name: "Next", exact: true }).click();
     await page.getByRole("checkbox", { name: "Select R2", exact: true }).check();
-    const selected = page.getByRole("region", { name: "Selected transactions", exact: true });
-    await selected.getByText("$75.00", { exact: true }).waitFor();
-    assert.equal(await selected.locator("tbody tr").count(), 2);
-    await selected.getByRole("button", { name: "Reconcile selected", exact: true }).click();
+    const selected = page.getByText("Selected transactions", {exact: true}).locator("..");
+    await selected.getByText("75.00", { exact: true }).waitFor();
+    assert.ok(await page.evaluate(() => window.calls.some(call => call.url.endsWith("/summary") && call.body.ids?.length === 2)));
+    await page.getByRole("button", { name: "Reconcile selected", exact: true }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByRole("button", { name: "Reconcile all selected", exact: true }).click();
+    await dialog.getByRole("button", { name: "Reconcile selected", exact: true }).click();
     await dialog.getByText("Temporary reconciliation failure").waitFor();
-    await dialog.getByRole("button", { name: "Reconcile all selected", exact: true }).click();
-    await dialog.waitFor({ state: "detached" });
+    await dialog.getByRole("button", { name: "Reconcile selected", exact: true }).click();
+    await dialog.getByText("All selected transactions are confirmed.", {exact: true}).waitFor();
+    await dialog.getByRole("button", {name: "Cancel", exact: true}).click();
     const calls = await page.evaluate(() => window.calls.filter(call => call.url.endsWith("/reconcile")));
     assert.equal(calls.length, 2);
     assert.deepEqual(calls[0].body.ids, ["j1", "j2"]);
@@ -90,7 +91,7 @@ test("view permission allows selection and totals without reconciliation", async
   const page = await fixture({ readOnly: true });
   try {
     await page.getByRole("checkbox", { name: "Select R1", exact: true }).check();
-    await page.getByRole("region", { name: "Selected transactions", exact: true }).getByText("$100.00", { exact: true }).first().waitFor();
+    await page.getByText("Selected transactions", {exact: true}).locator("..").getByText("100.00", {exact: true}).first().waitFor();
     assert.equal(await page.getByRole("button", { name: "Reconcile selected", exact: true }).count(), 0);
     assert.equal(await page.evaluate(() => window.calls.some(call => call.url.endsWith("/reconcile"))), false);
   } finally { await page.close(); }

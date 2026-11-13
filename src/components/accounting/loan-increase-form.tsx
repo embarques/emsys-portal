@@ -12,7 +12,7 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useEmployeeActiveLoans } from "@/lib/accounting/loans/hooks";
 import { formatLoanDate, formatLoanMoney } from "@/lib/accounting/loans/display";
@@ -21,6 +21,9 @@ import type { LoanIncreaseValues } from "@/lib/accounting/loans/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
+import { useLoanEntrySteps } from "@/lib/accounting/loans/use-loan-entry-steps";
+import { LoanEntryStepNavigation, LoanEntryStepFooter } from "@/components/accounting/loan-entry-step-navigation";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   employees: Array<{ id: number; name: string }>;
@@ -29,6 +32,7 @@ type Props = {
   onSubmit: (values: LoanIncreaseValues) => Promise<void>;
   onCancel: () => void;
   summaryContainer?: HTMLElement | null;
+  guided?: boolean;
 };
 
 const textareaClassName =
@@ -39,7 +43,7 @@ function accountLabel(account?: { displayName?: string; name: string }) {
 }
 
 /** Adds an amount to an employee's existing active loan (debit loan account, credit source asset). */
-export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, onCancel, summaryContainer }: Props) {
+export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, onCancel, summaryContainer, guided = false }: Props) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.increaseForm.${key}`, values);
   const schema = useMemo(() => createLoanIncreaseSchema(t), [t]);
@@ -59,6 +63,8 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
   });
   const { register, setValue, watch, formState: { errors } } = form;
   const busy = pending || form.formState.isSubmitting;
+  const flow = useLoanEntrySteps(form, ["employeeId", "loanId"], guided);
+  const stageClass = (stage: number) => guided && flow.step !== stage ? "hidden" : undefined;
   const values = watch();
   const amount = Number(values.amount) || 0;
   const loansQuery = useEmployeeActiveLoans(values.employeeId);
@@ -100,14 +106,16 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
   );
 
   return (
-    <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={submit}>
+    <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={(event) => flow.advance(event, submit)}>
+      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} /> : null}
       <FormBody workflow isBusy={busy}>
         <fieldset disabled={busy} className="min-w-0 space-y-4">
-          <FormSection variant="card" icon={User} title={text("sections.loan")} description={text("loanHint")}>
+          <FormSection className={stageClass(1)} variant="card" icon={User} title={text("sections.loan")} description={text("loanHint")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 {requiredLabel("loan-increase-employee", text("employee"))}
                 <SearchableSelect
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                   id="loan-increase-employee"
                   aria-label={text("employee")}
                   aria-invalid={Boolean(errors.employeeId)}
@@ -128,6 +136,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
               <div className="space-y-2">
                 {requiredLabel("loan-increase-loan", text("loan"))}
                 <SearchableSelect
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                   id="loan-increase-loan"
                   aria-label={text("loan")}
                   aria-invalid={Boolean(errors.loanId)}
@@ -155,7 +164,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
           </FormSection>
 
           {selectedLoan ? (
-            <FormSection variant="card" icon={Landmark} title={text("sections.balance")}>
+            <FormSection className={guided && flow.step === 1 ? "hidden" : undefined} variant="card" icon={Landmark} title={text("sections.balance")}>
               <div className="grid gap-3 sm:grid-cols-3">
                 <BalanceTile label={text("originalAmount")} value={selectedLoan.principalAmount} />
                 <BalanceTile label={text("currentBalance")} value={selectedLoan.balance} />
@@ -164,11 +173,12 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
             </FormSection>
           ) : null}
 
-          <FormSection variant="card" icon={ReceiptText} title={text("sections.amount")}>
+          <FormSection className={stageClass(2)} variant="card" icon={ReceiptText} title={text("sections.amount")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 {requiredLabel("loan-increase-source-account", text("sourceAccount"))}
                 <SearchableSelect
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                   id="loan-increase-source-account"
                   aria-label={text("sourceAccount")}
                   aria-invalid={Boolean(errors.sourceAccountId)}
@@ -206,7 +216,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
             </div>
           </FormSection>
 
-          <FormSection variant="card" title={text("sections.notes")}>
+          <FormSection className={stageClass(2)} variant="card" title={text("sections.notes")}>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="loan-increase-reference">{text("reference")}</Label>
@@ -221,9 +231,16 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
             </div>
           </FormSection>
 
-          {summaryContainer ? null : (
+          {summaryContainer && (!guided || flow.step !== 3) ? null : (
             <FormSection variant="card" icon={Banknote} title={text("sections.journal")}>{journalSummary}</FormSection>
           )}
+          {guided && flow.step === 3 ? <FormSection variant="card" title={t("accounting.dailyIncome.wizard.quickFlow.review")} action={<Button type="button" variant="ghost" onClick={() => flow.setStep(2)}>{t("common.actions.edit")}</Button>}>
+            <dl className="grid gap-4 sm:grid-cols-2">{[
+              [text("employee"), values.employeeName], [text("loan"), selectedLoan?.description || t("accounting.loans.fallbackDescription")],
+              [text("sourceAccount"), values.sourceAccountName], [text("amount"), formatLoanMoney(amount)],
+              [text("date"), values.transactionDate], [text("reference"), values.referenceNumber], [text("notes"), values.description],
+            ].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}</dl>
+          </FormSection> : null}
         </fieldset>
       </FormBody>
       {summaryContainer ? createPortal(<CurrentTransactionSummary typeLabel={t("accounting.dailyIncome.wizard.typeSelector.options.LOAN-INCREASE")} rows={[
@@ -235,6 +252,9 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
         [text("date"), values.transactionDate || t("common.empty.dash")],
         ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
       ]} />, summaryContainer) : null}
+      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy}
+        onCancel={onCancel} submitLabel={text("submit")} error={errors.root?.server?.message}
+        warning={noActiveLoans ? text("noActiveLoans") : null} /> : (
       <FormFooter
         error={errors.root?.server?.message}
         warning={noActiveLoans ? text("noActiveLoans") : null}
@@ -242,6 +262,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
         submitLabel={text("submit")}
         onCancel={onCancel}
       />
+      )}
     </form>
   );
 }

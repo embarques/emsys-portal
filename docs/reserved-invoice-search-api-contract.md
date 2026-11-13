@@ -3,8 +3,8 @@
 ## Response and pagination
 
 `POST /v1/invoices/reserved/search` returns a flat `data` array with page
-metadata, incompatible with the Portal's cursor-page schema. Align the response
-with the required shape:
+metadata. The portal now parses that response and uses page pagination; this is
+verified live. `GET /v1/invoices/reserved` separately returns a cursor page:
 
 ```json
 {
@@ -18,8 +18,9 @@ with the required shape:
 }
 ```
 
-- Define and verify `limit` and `after` behavior. `remaining` must count matching
-  unused reservations across all pages, not just the current page.
+- GET cursor advancement across a bounded three-item page has been verified
+  without overlapping IDs. `remaining` stayed 36 on both pages in that fixture
+  sample; unassigned `userId=0` was empty. Verify broader boundary/count cases.
 - Bind cursors to company, filter expression and sort; verify cursor boundaries,
   stable tie handling and cancellation without loading the full pool in memory.
 - Keep response failures visible in the Portal; do not silently display
@@ -27,9 +28,12 @@ with the required shape:
 
 ## Sorting and schema documentation
 
-- Correct GET sort handling: `number:asc` and `number:desc` returned identical
-  ascending pages. Align GET/search ordering and document the accepted fields.
+- November 13 GET `number:asc` and `number:desc` now return different bounded
+  samples; POST sort-direction checks also pass. Document accepted fields and
+  preserve this behavior across cursor pages.
 - Verify additional sort fields, sort ties and cursor binding.
+- Repeated `createdAt:desc` search returned stable IDs with actual timestamp
+  ties in the bounded sample. Concurrent mutations and page-spanning ties remain.
 - Document search, timestamp fields, request filters/operators, sorts and
   response pagination in OpenAPI.
 
@@ -39,6 +43,10 @@ Add/document `receivedAt` as a nullable RFC 3339 timestamp for when the invoice
 was received. It is distinct from `reservedAt`, generation, assignment, download
 and record creation. Define the authoritative application/business timezone;
 older missing values must remain null/absent rather than use another timestamp.
+The November 13 `receivedAt >= 2026-11-01` probe is accepted. Returned missing
+values are null; null eq/gte/lte exclusion, neq inclusion and invalid/impossible
+date rejection pass. Non-null timestamp/day-boundary fixtures and the authoritative
+business timezone remain to be established. Invalid reservedAt dates also reject.
 
 Verify these `receivedAt` filter semantics:
 
@@ -56,9 +64,16 @@ Verify these `receivedAt` filter semantics:
   left-to-right mixed AND/OR expressions with cursor pagination.
 - Verify invoice-pool view permission, denied callers, company/tenant isolation,
   bounded expression size and cancellation. Searches must never mutate a pool.
+- GET/search deny callers lacking `canViewInvoicePool`, accept the explicit
+  grant and deny its removal with the identical Firebase token in the disposable
+  actor suite. November 13 generate/assign/return missing-grant and same-token
+  grant-removal/restoration checks pass on two newly generated numbers. Return
+  invalidates old assignment tokens; both numbers remain unclaimed under userId 0.
+  Device claims, other permission combinations and tenant isolation remain separate.
 - Verify representative query plans and request/payload budgets.
-- Correct the user-specific threshold mismatch: `userId=73` returned 10 while
-  the requester's configured threshold was 0.
+- The current-user threshold readback now matches the persisted preference.
+  Broader multi-user/permission/context behavior remains to be exercised.
 
 See [remaining live findings](backend-gap-verification-2026-11-07.md) and
 [backend/API gaps](backend-api-gaps.md).
+Latest execution: [November 13 verification](backend-gap-follow-up-2026-11-13.md).

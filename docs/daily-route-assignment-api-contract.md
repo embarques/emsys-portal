@@ -1,30 +1,38 @@
 # Daily-route assignment — pending fixes and verification
 
-## Pending fixes and contracts
+## Latest readback and portal implementation
 
-- Publish the backend unfinished-barcode removal contract, including
-  invoice-embedded removal payloads, eligible statuses, delivered-route locks,
-  omission versus explicit null, and numeric delivery/trip effects.
-- Implement invoice-embedded route removal after verifying the backend contract.
-  `patchInvoiceEmbeddedBarcodes` currently accepts only a non-null route and
-  applies it only when truthy.
-- Define an authoritative route business-date/timezone contract accessible to
-  assigned-only crews. The portal uses browser-local dates; the closeout calendar
-  requires financial permissions and cannot supply this contract for all crews.
-- Define invoice bulk-assignment atomicity, duplicate handling, failure responses
-  and replay behavior in the API contract.
-- Fix role-change enforcement in pickup authorization. Adding
-  `canUpdateAssignedAppointments` appears in `/users/permissions` but owned
-  updates still return 403 after token refresh and a fresh sign-in. Removing
-  that grant disappears from `/users/permissions` but owned updates still return
-  200 and persist changes, including after a fresh sign-in. Adding assigned view
-  to an update-only role also leaves list requests returning 403. Determine
-  whether cached permissions or persisted role snapshots are stale, invalidate
-  all affected authorization state, and verify grant additions/removals agree
-  across permission reads and mutation/list gates. Reproduce with
-  [the scoped probe](../scripts/test-daily-route-assignment-scoped-api.mjs)
-  using `--initial-grants view`, `--initial-grants update`, and
-  `--initial-grants assigned --revoke-grant`.
+See the [November 12 read-only recheck](backend-gap-test-sweep-2026-11-12.md)
+and [November 11 fixture audit](current-company-api-audit-2026-11-11.md) for
+executed tests, retained fixtures and limitations. Catalog unfinished removal,
+appointment mixed-batch rollback and same-token assigned grant propagation passed.
+The [November 12 Section 3 follow-up](section3-ownership-2026-11-12.md) reran
+catalog removal and scoped pickup grants, and established a successful write
+control before revoking crew membership. Both read and write access were then
+denied. This does not establish in-flight commit-window behavior.
+The later [mock-company follow-up](backend-gap-follow-up-2026-11-12.md) passes
+91 combined scoped-pickup, protected UPDATE approval and reservation-grant checks.
+It verifies rejection, authorized self-approval, stale submission and ordinary
+same-token reviewer revocation. The [November 13 pass](backend-gap-follow-up-2026-11-13.md)
+now creates completed ordinary invoices through the real branch DTO. Bulk numeric
+identity/eligibility remains unresolved despite matched branch/container readback
+and an RD-code control. Embedded route removal/catalog synchronization pass, but
+missing default/requested statuses block actual CONDUCE/delivered-state coverage
+(B16). Pickup results do not certify invoice/delivery authorization or atomicity.
+The non-financial `/vehicle-routes/business-date` endpoint works for assigned-only
+crews, with optional `branchId`, `businessDate`, `timezone`, `serverTime` and
+`nextMidnight`. The portal now consumes it and forwards explicit null through
+invoice-embedded patches. The November 12 published Swagger still omits this route.
+
+The backend reports invoice bulk assignment accepts 1–200 distinct positive uint32
+piece IDs and is atomic (duplicates 400, missing 404, delivered/conflicts 409).
+Successful replay may allocate another trip. The portal validates IDs and disables
+assignment mutation retry; the full live invoice matrix remains to be verified.
+
+Remaining acceptance includes live CONDUCE/invoice-only removal and numeric delivery
+identity/trip preservation, foreign-tenant batches, delivery completion races,
+commit-time midnight/authorization/crew revocation and deployed legacy replay.
+Do not treat the older evidence below as a current grant-cache failure.
 
 ## Remaining verification
 
@@ -40,8 +48,8 @@
   pieces, route membership and trip numbers after rejected requests.
 - Complete scoped delivery/invoice authorization and cross-tenant/branch checks.
   Verify concurrent membership-revocation races and permission changes between
-  authorization reads and commit. Recheck pickup scopes after the role-change
-  enforcement defect is fixed, including grant removal during active requests.
+  authorization reads and commit, including grant removal during active requests.
+  Separate these races from ordinary same-token grant propagation already verified.
 - Verify status-6 CONDUCE and legacy invoice-only pieces can leave old source
   routes through the documented lifecycle. Check catalog/embed synchronization,
   numeric delivery/trip references, old/new manifests, analytics and historical

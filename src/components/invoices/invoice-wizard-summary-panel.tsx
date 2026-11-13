@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Minus, Pencil, Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
+import { isImeComposing, selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import { formatInvoiceItemCount, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -164,6 +164,7 @@ function SummaryDiscountControl({
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
+              if (isImeComposing(event)) return;
               commitDiscount(discountValue);
             }
             if (event.key === "Escape") {

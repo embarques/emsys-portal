@@ -5,6 +5,16 @@ import {TooltipProvider} from "@/components/ui/tooltip";
 const client = new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});
 const dailyIncome = (window as unknown as {dailyIncome?: boolean}).dailyIncome;
 const clearance = (window as unknown as {pendingClearance?: boolean}).pendingClearance;
+if (clearance) {
+ client.setQueryData(["invoices", "detail", "invoice-1"], {balance: 55});
+ client.setQueryData(["invoices", "detail", "unrelated-invoice"], {balance: 15});
+ client.setQueryData(["accounting", "income-statement-summary-total", 32600], {});
+ Object.assign(window, {clearanceCacheState: () => ({
+  affected: client.getQueryState(["invoices", "detail", "invoice-1"])?.isInvalidated,
+  unrelated: client.getQueryState(["invoices", "detail", "unrelated-invoice"])?.isInvalidated,
+  summary: client.getQueryState(["accounting", "income-statement-summary-total", 32600])?.isInvalidated,
+ })});
+}
 createRoot(document.getElementById("root")!).render(<QueryClientProvider client={client}><TooltipProvider><JournalTransactionsTable
  pending={!dailyIncome && !clearance}
  clearance={clearance}

@@ -1,0 +1,738 @@
+{
+  "checkedAt": "2026-11-12T18:00:38.413Z",
+  "marker": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+  "branchId": 21,
+  "closeoutId": 32708,
+  "journals": [
+    "6af5fec2bdc3aed480bf815f",
+    "6af5febfbdc3aed480bf8158",
+    "6af5febfbdc3aed480bf8156"
+  ],
+  "evidence": [
+    {
+      "label": "Read branch configuration",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /branches",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read complete fixture branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /roles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /users",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /employees",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read fixture grants",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /chart-accounts",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read new branch current closeout",
+      "passed": true,
+      "http": 200,
+      "message": "Current daily closeout",
+      "error": ""
+    },
+    {
+      "label": "Create fixture /income-statements",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Closeout belongs exclusively to fixture branch",
+      "passed": true
+    },
+    {
+      "label": "Portal zero-payment registration",
+      "http": 201,
+      "data": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af5febebdc3aed480bf8153",
+          "description": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "date": "2026-11-12T18:00:30.566472049Z",
+          "refNumber": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "paymentMethod": {
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "INITIAL-PAYMENT",
+          "invoice": {
+            "id": "6af5febebdc3aed480bf8152",
+            "number": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "cost": 100,
+            "balance": 100
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 21
+            },
+            "id": 32708
+          },
+          "employee": {
+            "id": 237,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+          },
+          "createdAt": "2026-11-12T18:00:30.722083216Z",
+          "updatedAt": "2026-11-12T18:00:30.722083216Z",
+          "createdBy": {
+            "id": 126,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "debit": 100
+            },
+            {
+              "id": 4,
+              "name": "SALES",
+              "type": "REVENUE",
+              "credit": 100
+            }
+          ],
+          "incomeStatementSummary": {
+            "invoices": 100,
+            "accountReceivables": 100,
+            "totalGeneral": 200
+          }
+        },
+        "error": "",
+        "duration": 0.336281459,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Create contra-revenue discount",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Discount ledger",
+      "accounts": [
+        {
+          "id": 3,
+          "name": "SALES DISCOUNTS",
+          "type": "CONTRA-REVENUE",
+          "debit": 20
+        },
+        {
+          "id": 2,
+          "name": "ACCOUNTS RECEIVABLE",
+          "type": "ASSET",
+          "credit": 20
+        }
+      ]
+    },
+    {
+      "label": "Discount debits contra-revenue and credits receivables",
+      "passed": true
+    },
+    {
+      "label": "Create deferred invoice payment",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read invoice before clearance",
+      "passed": true,
+      "http": 200,
+      "message": "invoice retrieved",
+      "error": ""
+    },
+    {
+      "label": "Invoice before clearance",
+      "data": {
+        "version": "v1:43e273d37bde4c0005581a63cf5a698793b47b963cadf48559cf471b0ffd92f2",
+        "id": "6af5febebdc3aed480bf8152",
+        "number": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+        "createdAt": "2026-11-12T18:00:30.623Z",
+        "updatedAt": "2026-11-12T18:00:30.623Z",
+        "createdBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "date": "2026-11-12T18:00:30.566Z",
+        "paidStatus": "OPEN",
+        "itemCount": 0,
+        "branch": {
+          "id": 21,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "code": "NY"
+        },
+        "cost": 100,
+        "registration": "PENDING",
+        "discount": 20,
+        "balance": 80
+      }
+    },
+    {
+      "label": "Uncleared bank payment leaves invoice balance unchanged",
+      "passed": true
+    },
+    {
+      "label": "Clear deferred invoice payment",
+      "passed": true,
+      "http": 200,
+      "message": "Bank journals cleared",
+      "error": ""
+    },
+    {
+      "label": "Read settled invoice",
+      "passed": true,
+      "http": 200,
+      "message": "invoice retrieved",
+      "error": ""
+    },
+    {
+      "label": "Invoice after clearance",
+      "data": {
+        "version": "v1:3f121d6533730715d594edc4c08af61a5c9bedb513375653f871dea02290bd46",
+        "id": "6af5febebdc3aed480bf8152",
+        "number": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+        "createdAt": "2026-11-12T18:00:30.623Z",
+        "updatedAt": "2026-11-12T18:00:30.623Z",
+        "createdBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "date": "2026-11-12T18:00:30.566Z",
+        "paidStatus": "CLOSED",
+        "itemCount": 0,
+        "branch": {
+          "id": 21,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "code": "NY"
+        },
+        "registration": "PENDING",
+        "cost": 100,
+        "discount": 20,
+        "payment": 80,
+        "balance": 0
+      }
+    },
+    {
+      "label": "Clearance applies invoice payment once",
+      "passed": true
+    },
+    {
+      "label": "Replay invoice clearance",
+      "passed": true,
+      "http": 200,
+      "message": "Bank journals cleared",
+      "error": ""
+    },
+    {
+      "label": "Read replayed invoice",
+      "passed": true,
+      "http": 200,
+      "message": "invoice retrieved",
+      "error": ""
+    },
+    {
+      "label": "Replayed clearance does not apply payment twice",
+      "passed": true
+    },
+    {
+      "label": "Discount and bank collection summary",
+      "http": 200,
+      "data": [
+        {
+          "currency": "USD",
+          "income": 80,
+          "expenses": 0,
+          "net": 80,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "label": "New PAYMENT OUTSTANDING filter agrees with settled detail",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "New PAYMENT RECONCILED filter agrees with settled detail",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "New PAYMENT NOT_REQUIRED filter agrees with settled detail",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture payment before automatic settlement control",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Automatic invoice settlement clears and reconciles",
+      "passed": true,
+      "http": 201,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Read automatically settled invoice",
+      "passed": true,
+      "http": 200,
+      "message": "invoice retrieved",
+      "error": ""
+    },
+    {
+      "label": "Invoice after automatic clearance",
+      "data": {
+        "version": "v1:3f121d6533730715d594edc4c08af61a5c9bedb513375653f871dea02290bd46",
+        "id": "6af5febebdc3aed480bf8152",
+        "number": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+        "createdAt": "2026-11-12T18:00:30.623Z",
+        "updatedAt": "2026-11-12T18:00:30.623Z",
+        "createdBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "date": "2026-11-12T18:00:30.566Z",
+        "paidStatus": "CLOSED",
+        "itemCount": 0,
+        "branch": {
+          "id": 21,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "code": "NY"
+        },
+        "registration": "PENDING",
+        "cost": 100,
+        "discount": 20,
+        "payment": 80,
+        "balance": 0
+      }
+    },
+    {
+      "label": "Automatic clearance applies invoice receipt once",
+      "passed": true
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af5fec2bdc3aed480bf815f",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af5fec2bdc3aed480bf815f",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 30,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "type": "BANK"
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "PAYMENT",
+        "reversalOf": "6af5fec2bdc3aed480bf815f",
+        "id": "6af5fec3bdc3aed480bf8163",
+        "description": "Reversal: CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783 cleanup",
+        "date": "2026-11-12T18:00:35.151114927Z",
+        "refNumber": "REV-6af5fec2bdc3aed480bf815f",
+        "idempotencyKey": "reversal:6af5fec2bdc3aed480bf815f",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "invoice": {
+          "id": "6af5febebdc3aed480bf8152",
+          "number": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "cost": 100,
+          "payment": 80,
+          "discount": 20
+        },
+        "incomeStatement": {
+          "branch": {
+            "id": 21
+          },
+          "id": 32708
+        },
+        "employee": {
+          "id": 237,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "createdAt": "2026-11-12T18:00:35.151114927Z",
+        "updatedAt": "2026-11-12T18:00:35.151114927Z",
+        "createdBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "updatedBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "accounts": [
+          {
+            "id": 30,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "type": "BANK",
+            "credit": 80
+          },
+          {
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "debit": 80
+          }
+        ],
+        "transactionAmount": -80,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af5fec2bdc3aed480bf815f"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 21",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af5fec2bdc3aed480bf815f leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af5febfbdc3aed480bf8158",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af5febfbdc3aed480bf8158",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "paymentAccount": {
+          "id": 30,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "type": "BANK"
+        },
+        "branch": {
+          "id": 21
+        },
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "PAYMENT",
+        "reversalOf": "6af5febfbdc3aed480bf8158",
+        "id": "6af5fec2bdc3aed480bf815c",
+        "description": "Reversal: CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783 cleanup",
+        "date": "2026-11-12T18:00:33.629Z",
+        "refNumber": "REV-6af5febfbdc3aed480bf8158",
+        "idempotencyKey": "reversal:6af5febfbdc3aed480bf8158",
+        "paymentMethod": {
+          "id": 4,
+          "name": "ZELLE"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "invoice": {
+          "id": "6af5febebdc3aed480bf8152",
+          "number": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "cost": 100,
+          "payment": 80,
+          "discount": 20
+        },
+        "incomeStatement": {
+          "branch": {
+            "id": 21
+          },
+          "id": 32708
+        },
+        "employee": {
+          "id": 237,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "createdAt": "2026-11-12T18:00:33.629Z",
+        "updatedAt": "2026-11-12T18:00:33.629Z",
+        "createdBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "updatedBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "accounts": [
+          {
+            "id": 30,
+            "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+            "type": "BANK",
+            "credit": 80
+          },
+          {
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "debit": 80
+          }
+        ],
+        "transactionAmount": -80,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af5febfbdc3aed480bf8158"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 21",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af5febfbdc3aed480bf8158 leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Confirm cleanup actor branch",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reverse fixture 6af5febfbdc3aed480bf8156",
+      "passed": true,
+      "http": 201,
+      "message": "Reversing adjustment recorded",
+      "error": ""
+    },
+    {
+      "label": "Reversal response 6af5febfbdc3aed480bf8156",
+      "data": {
+        "pendingChange": false,
+        "version": 1,
+        "transactionStatus": "ACTIVE",
+        "clearanceStatus": "NOT_REQUIRED",
+        "clearedAt": null,
+        "clearedBy": null,
+        "reconciliationStatus": "NOT_REQUIRED",
+        "reconciledAt": null,
+        "reconciledBy": null,
+        "autoReconciled": false,
+        "reversedTransactionType": "DISCOUNT",
+        "reversalOf": "6af5febfbdc3aed480bf8156",
+        "id": "6af5fec5bdc3aed480bf8166",
+        "description": "Reversal: CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783 cleanup",
+        "date": "2026-11-12T18:00:36.780574886Z",
+        "refNumber": "REV-6af5febfbdc3aed480bf8156",
+        "idempotencyKey": "reversal:6af5febfbdc3aed480bf8156",
+        "paymentMethod": {
+          "name": "CASH"
+        },
+        "currency": "USD",
+        "rate": 1,
+        "transactionType": "REVERSAL",
+        "invoice": {
+          "id": "6af5febebdc3aed480bf8152",
+          "number": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783",
+          "cost": 100,
+          "balance": 80,
+          "discount": 20
+        },
+        "incomeStatement": {
+          "branch": {
+            "id": 21
+          },
+          "id": 32708
+        },
+        "employee": {
+          "id": 237,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "createdAt": "2026-11-12T18:00:36.780574886Z",
+        "updatedAt": "2026-11-12T18:00:36.780574886Z",
+        "createdBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "updatedBy": {
+          "id": 126,
+          "name": "CODEX-BANK-c85e2619-848d-4185-b6bc-be6262859783"
+        },
+        "accounts": [
+          {
+            "id": 3,
+            "name": "SALES DISCOUNTS",
+            "type": "CONTRA-REVENUE",
+            "credit": 20
+          },
+          {
+            "id": 2,
+            "name": "ACCOUNTS RECEIVABLE",
+            "type": "ASSET",
+            "debit": 20
+          }
+        ],
+        "transactionAmount": -20,
+        "sourceSystem": "audited-adjustment",
+        "sourceId": "6af5febfbdc3aed480bf8156"
+      }
+    },
+    {
+      "label": "Read saved reversal",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Reversal stays in fixture branch 21",
+      "passed": true
+    },
+    {
+      "label": "Reversed original 6af5febfbdc3aed480bf8156 leaves both pending queues",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /employees/237",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /users/126",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    },
+    {
+      "label": "Cleanup /roles/54",
+      "passed": true,
+      "http": 200,
+      "message": "Request successful",
+      "error": ""
+    }
+  ]
+}

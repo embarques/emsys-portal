@@ -28,7 +28,7 @@ import {
 } from "@/lib/pickup-delivery-routes/display";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { isAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
-import { useAssignmentToday } from "@/lib/pickup-delivery-routes/hooks/use-assignment-today";
+import { useAssignmentBusinessDate } from "@/lib/pickup-delivery-routes/hooks/use-assignment-today";
 
 export type AssignBarcodeRouteResult = {
   success: boolean;
@@ -55,7 +55,8 @@ export function AssignBarcodeRouteDialog({
   const [progress, setProgress] = useState<RouteAssignmentProgress | null>(null);
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const today = useAssignmentToday(open);
+  const businessDate = useAssignmentBusinessDate(open);
+  const today = businessDate.today;
 
   const dailyRoutesQuery = useDailyRoutePicker(200, {
     enabled: open,
@@ -64,7 +65,7 @@ export function AssignBarcodeRouteDialog({
   });
   const assignBarcodesMutation = useAssignBarcodesToRoute();
 
-  const dailyRoutes = useMemo(() => (dailyRoutesQuery.data?.items ?? []).filter(route => isAssignableRouteDate(route.date, today)), [dailyRoutesQuery.data?.items, today]);
+  const dailyRoutes = useMemo(() => (dailyRoutesQuery.data?.items ?? []).filter(route => Boolean(today) && isAssignableRouteDate(route.date, today)), [dailyRoutesQuery.data?.items, today]);
   const routeOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(dailyRoutes, t),
     [dailyRoutes, t],
@@ -79,7 +80,7 @@ export function AssignBarcodeRouteDialog({
   }, [open]);
 
   const isSaving = assignBarcodesMutation.isPending;
-  const canSubmit = barcodes.length > 0 && Boolean(selectedRoute) && !isSaving;
+  const canSubmit = Boolean(today) && barcodes.length > 0 && Boolean(selectedRoute) && !isSaving;
 
   function handleOpenChange(nextOpen: boolean) {
     if (isSaving) return;
@@ -129,6 +130,7 @@ export function AssignBarcodeRouteDialog({
         routeId,
         routeName,
         routeDate: selectedRoute.date,
+        branchId: selectedRoute.branch?.id,
         barcodes: needsUpdate,
         onProgress: setProgress,
       });
@@ -193,7 +195,7 @@ export function AssignBarcodeRouteDialog({
               }}
               placeholder={t("labels.staging.routeDialog.selectRoute")}
               searchPlaceholder={t("labels.staging.routeDialog.searchRoutes")}
-              loading={dailyRoutesQuery.isLoading}
+              loading={businessDate.isFetching || dailyRoutesQuery.isLoading}
               loadingMessage={t("labels.staging.routeDialog.loadingRoutes")}
               emptyMessage={
                 dailyRoutesQuery.isLoading
@@ -204,6 +206,7 @@ export function AssignBarcodeRouteDialog({
               contentClassName="z-[80]"
               mobileSheet
             />
+            {businessDate.isError ? <p role="alert" className="text-xs text-destructive">{t("routes.errors.businessDateUnavailable")}</p> : null}
           </div>
 
           {isSaving ? (

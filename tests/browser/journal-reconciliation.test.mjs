@@ -120,7 +120,7 @@ test("journal selection spans pages, restricts methods, and retries approval wit
   await clearance.getByRole("checkbox",{name:"Select TXN-A1",exact:true}).check();
   assert.equal(await clearance.getByRole("checkbox",{name:"Select TXN-B1",exact:true}).isDisabled(),true);
   assert.equal(await clearance.getByRole("button",{name:"accounting.journalClearance.blocked.notAuthorized",exact:true}).count(),1);
-  // TXN-A1 is already reconciled and belongs to a closed closeout, but can still settle.
+  // TXN-A1 is unreconciled and belongs to a closed closeout; settlement handles both statuses.
   await clearance.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
   const clearanceDialog=clearance.getByRole("dialog");
   const confirmList=clearanceDialog.getByRole("table",{name:"accounting.journalClearance.confirmList.caption"});
@@ -138,6 +138,7 @@ test("journal selection spans pages, restricts methods, and retries approval wit
   assert.equal(settlements.length,2);
   assert.equal(settlements[0].body.requestId,settlements[1].body.requestId);
   assert.deepEqual(settlements[0].body.ids,["650000000000000000000001"]);
+  assert.deepEqual(await clearance.evaluate(() => window.clearanceCacheState()), {affected: true, unrelated: false, summary: true});
   assert.ok(clearanceCalls.filter(call=>call.url==="/journals/search").every(call=>JSON.stringify(call.body.filters).includes("clearanceStatus")&&!JSON.stringify(call.body.filters).includes("reconciliationStatus")));
   assert.ok(!clearanceCalls.some(call=>call.url==="/journals/reconcile"||call.url.startsWith("/checks")||call.url.startsWith("/invoices")));
   await clearance.close();

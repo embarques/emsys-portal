@@ -417,7 +417,7 @@ export function VehiclesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -434,7 +434,7 @@ export function VehiclesWorkspace() {
               />
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={listSummary}
                 presets={{
                   storageKey: "vehicles",
@@ -487,7 +487,7 @@ export function VehiclesWorkspace() {
             columns={columnVisibility.columns}
             rows={vehicles}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(vehicle) => vehicle.id}
             rowLabel={(vehicle) => vehicle.name}
             columnLayout={columnVisibility}

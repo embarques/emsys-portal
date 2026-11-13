@@ -1,6 +1,6 @@
 import { ORDER_API_TABLE_FIELDS } from "@/lib/orders/table-fields";
 import { translateCurrent } from "@/lib/i18n/translate-current";
-import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
+import { fetchRouteDateGuard } from "@/lib/pickup-delivery-routes/api/route-business-date-api";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -655,6 +655,7 @@ export async function assignPickupsToRoute(
   vehicleRouteId: string,
   pickupIds: number[],
   routeDate: string,
+  branchId?: number,
 ): Promise<void> {
   const id = vehicleRouteId.trim();
   if (!id) {
@@ -665,7 +666,8 @@ export async function assignPickupsToRoute(
     throw new Error("Select at least one appointment to assign.");
   }
 
-  assertAssignableRouteDate(routeDate);
+  const assertRouteDate = await fetchRouteDateGuard(branchId);
+  assertRouteDate(routeDate);
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.PICKUP_ROUTES}/${id}`,

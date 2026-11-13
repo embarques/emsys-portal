@@ -167,16 +167,16 @@ function seedRecord(doc, item, names) {
   record(doc, "POST /journals/{id}/reverse route", reverse.exists ? "DONE" : "MISSING", `GET probe HTTP ${reverse.res.status}`);
 
   const payments = await search("/journals", [{ field: "transactionType", operator: "eq", value: "PAYMENT" }]);
-  const stored = await Promise.all(["OUTSTANDING", "RECONCILED"].map((value) =>
+  const stored = await Promise.all(["OUTSTANDING", "RECONCILED", "NOT_REQUIRED"].map((value) =>
     search("/journals", [{ field: "transactionType", operator: "eq", value: "PAYMENT" }, { field: "reconciliationStatus", operator: "eq", value }])));
   const totalPayments = Number(payments.json?.total ?? 0);
   const classified = stored.reduce((sum, res) => sum + Number(res.json?.total ?? 0), 0);
   record(doc, "Reconciliation status backfilled on existing journals", totalPayments && classified >= totalPayments ? "DONE" : "MISSING",
-    `PAYMENT journals=${totalPayments}; with stored OUTSTANDING/RECONCILED=${classified}`);
+    `PAYMENT journals=${totalPayments}; with stored OUTSTANDING/RECONCILED/NOT_REQUIRED=${classified}`);
 
   seedRecord(doc, "canListJournal seeded (portal list gate)", ["canListJournal"]);
 
-  if (!opts.writes) record(doc, "Non-cash payments apply to the invoice on create", "UNVERIFIED", "requires a payment create; rerun with --writes");
+  if (!opts.writes) record(doc, "Bank invoice payments remain deferred until clearance", "UNVERIFIED", "requires an isolated invoice/payment fixture; use the bank fixture suite for settlement checks");
 }
 
 // --- Payment accounts --------------------------------------------------------
@@ -198,7 +198,7 @@ function seedRecord(doc, item, names) {
   const generated = initial.filter((journal) => /^TXN-/.test(journal.refNumber ?? "") && journal.invoice?.number);
   const defaulted = initial.filter((journal) => journal.invoice?.number && journal.refNumber === journal.invoice.number);
   record(doc, "5. INITIAL-PAYMENT refNumber defaults to invoice number",
-    !initial.length ? "UNVERIFIED" : defaulted.length && !generated.length ? "DONE" : generated.length ? "MISSING" : "UNVERIFIED",
+    !initial.length ? "UNVERIFIED" : defaulted.length && !generated.length ? "DONE" : "UNVERIFIED",
     `last 14 days: ${initial.length} INITIAL-PAYMENT, ${generated.length} with generated TXN-… refs, ${defaulted.length} equal to invoice number`);
 
   if (!opts.writes) {

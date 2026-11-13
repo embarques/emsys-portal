@@ -49,6 +49,7 @@ type CustomerMobileListProps = {
   currentPage: number;
   totalPages: number;
   isLoading: boolean;
+  isSearching?: boolean;
   isSaving: boolean;
   showInitialLoading: boolean;
   listErrorMessage: string | null;
@@ -203,6 +204,7 @@ export function CustomerMobileList({
   currentPage,
   totalPages,
   isLoading,
+  isSearching = false,
   isSaving,
   showInitialLoading,
   listErrorMessage,
@@ -256,7 +258,7 @@ export function CustomerMobileList({
 
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
-          <TableSearchInput
+          <TableSearchInput isLoading={isSearching}
             value={filters.query}
             onChange={onSearchChange}
             placeholder={t("customers.search.placeholder")}

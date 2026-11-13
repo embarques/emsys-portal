@@ -26,6 +26,7 @@ import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 type Props = {
+  inlineOptionsLimit?: number;
   id?: string;
   singleColumn?: boolean;
   employees: Employee[];
@@ -99,6 +100,7 @@ function clearRoute(setValue: TransactionAssigneeSetValue) {
 export function TransactionAssigneeSelect({
   id = "journal-employee",
   singleColumn = false,
+  inlineOptionsLimit,
   employees,
   dailyRoutes = [],
   statementDate,
@@ -292,6 +294,7 @@ export function TransactionAssigneeSelect({
             </div>
           ) : null}
           <SearchableSelect
+            inlineOptionsLimit={inlineOptionsLimit}
             id="journal-route"
             aria-label={t("accounting.dailyIncome.form.fields.route")}
             value={routeId ?? ""}
@@ -311,6 +314,7 @@ export function TransactionAssigneeSelect({
             {t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
           </Label>
           <SearchableSelect
+            inlineOptionsLimit={inlineOptionsLimit}
             id={`${id}-supervisor`}
             value={supervisorId ? String(supervisorId) : ""}
             onValueChange={handleSupervisorChange}
@@ -343,6 +347,7 @@ export function TransactionAssigneeSelect({
             </div>
           ) : null}
           <SearchableSelect
+            inlineOptionsLimit={inlineOptionsLimit}
             id={id}
             aria-label={t("accounting.dailyIncome.form.fields.employee")}
             value={employeeValue}

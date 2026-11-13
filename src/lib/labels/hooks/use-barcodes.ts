@@ -49,10 +49,12 @@ export function useAssignBarcodesToRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: false,
     mutationFn: ({
       routeId,
       routeName,
       routeDate,
+      branchId,
       barcodes,
       barcodeIds,
       onProgress,
@@ -60,15 +62,16 @@ export function useAssignBarcodesToRoute() {
       routeId: string;
       routeName?: string;
       routeDate: string;
+      branchId?: number;
       onProgress?: (progress: RouteAssignmentProgress) => void;
       barcodes?: AssignBarcodeToRouteTarget[];
       /** @deprecated Prefer `barcodes` — numeric/uint32 ids for the invoice-embedded endpoint. */
       barcodeIds?: Array<string | number>;
     }) => {
       if (barcodes && barcodes.length > 0) {
-        return assignBarcodesToDailyRoute(routeId, routeName ?? routeId, barcodes, onProgress, routeDate);
+        return assignBarcodesToDailyRoute(routeId, routeName ?? routeId, barcodes, onProgress, routeDate, branchId);
       }
-      return assignInvoiceItemBarcodesToRoute(routeId, barcodeIds ?? [], routeDate);
+      return assignInvoiceItemBarcodesToRoute(routeId, barcodeIds ?? [], routeDate, branchId);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });

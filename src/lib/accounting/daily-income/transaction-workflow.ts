@@ -3,6 +3,14 @@ import type { DailyIncomeJournalValues, JournalTransactionType } from "./types";
 
 export type TransactionFormStep = "assignment" | "amounts" | "payment" | "parties" | "review";
 
+/** Copy follows the active task, including types that share the same form step. */
+export function getTransactionStepHintKey(step: TransactionFormStep, type: JournalTransactionType): string {
+  const task = type === "INVENTORY" && step !== "review"
+    ? step === "assignment" ? "inventoryAssignment" : "inventoryAmounts"
+    : step === "amounts" ? type === "LOAN" ? "loanDetails" : type : step;
+  return `accounting.dailyIncome.wizard.stepHints.${task}`;
+}
+
 export const TRANSACTION_FIELD_IDS: Partial<Record<keyof DailyIncomeJournalValues, string>> = {
   employeeId: "journal-employee", routeId: "journal-route", supervisorId: "journal-employee-supervisor",
   inventoryHolderVehicleId: "journal-inventory-holder-vehicle",

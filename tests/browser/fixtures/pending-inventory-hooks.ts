@@ -13,6 +13,7 @@ const rows = [
     id: "disp-1", dispatchedAt: "2026-10-26T13:00:00Z", ageDays: 2,
     holder: { id: "truck_3", type: "VEHICLE", displayName: "Truck 3" },
     assigneeEmployee: { id: "12", name: "Ana Pérez" }, dailyRoute: { id: "r1", name: "2026-10-26_Truck_Ana" },
+    incomeRecipients: [{id: "12", name: "Ana Pérez", role: "RESPONSIBLE"}],
     dispatchedQuantity: 40, reconciledQuantity: 5, outstandingQuantity: 35,
     lines: [
       { id: "line-1", item: { id: "box", name: "Small box" }, dispatchedQuantity: 30, reconciledQuantity: 5, outstandingQuantity: 25 },
@@ -49,6 +50,8 @@ export const apiClient = {
   }] }),
 };
 export function normalizeApiError(error: unknown) { return { message: error instanceof Error ? error.message : "Error" }; }
+export function useAccountingPaymentMethods() { return {data: [{id: 1, name: "CASH"}]}; }
+export function useChartAccounts() { return {data: {items: []}}; }
 export function useAuth() {
   return {
     companyId: "company-1", loading: false, roleLoading: false,

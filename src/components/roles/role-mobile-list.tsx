@@ -15,6 +15,7 @@ type RoleMobileListProps = {
   roles: Role[];
   selectedIds: string[];
   isLoading: boolean;
+  isSearching?: boolean;
   isFetching: boolean;
   addDisabled: boolean;
   pageError: string | null;
@@ -39,6 +40,7 @@ export function RoleMobileList({
   roles,
   selectedIds,
   isLoading,
+  isSearching = false,
   isFetching,
   addDisabled,
   pageError,
@@ -79,7 +81,7 @@ export function RoleMobileList({
       </div>
 
       <div className="flex items-center gap-3">
-        <TableSearchInput
+        <TableSearchInput isLoading={isSearching}
           value={query}
           onChange={(value) => {
             onQueryChange(value);

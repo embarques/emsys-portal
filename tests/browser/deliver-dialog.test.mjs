@@ -504,7 +504,7 @@ test("disabled delivery actions show the missing assignment reason without hover
    await page.setViewportSize({width:390,height:844});
    await page.getByText(reason,{exact:true}).waitFor();
    assert.equal(await page.getByRole("button",{name:"Deliver",exact:true}).isDisabled(),true);
-   assert.equal(await page.getByRole("button",{name:/^(Print invoice|invoices\.printSignatures\.action)$/,exact:true}).isDisabled(),true);
+   assert.equal(await page.getByRole("button",{name:/^(Print invoice|invoices\.printSignatures\.action)$/,exact:true}).isDisabled(),state === "missing-invoice");
   } finally { await page.close(); }
  }
  const page=await fixture({deliveryNotice:"valid",wizardVisual:true});
@@ -634,8 +634,8 @@ test("driver can record a cash payment from balance review", async () => {
   } finally { await page.close(); }
 });
 
-test("an uncleared driver payment leaves delivery blocked", async () => {
-  const page = await fixture({ wizardBalance: 50 });
+for (const loseResponse of [false, true]) test(`an uncleared driver payment leaves delivery blocked (lost response=${loseResponse})`, async () => {
+  const page = await fixture({ wizardBalance: 50, wizardLosePaymentResponse: loseResponse });
   try {
     await page.locator("#journal-amount").waitFor();
     await page.locator("#journal-employee").click();
@@ -646,8 +646,16 @@ test("an uncleared driver payment leaves delivery blocked", async () => {
     await page.locator("#journal-bank-account").click();
     await page.getByRole("option", { name: /Delivery bank/ }).click();
     await page.getByRole("button", { name: "deliveries.wizard.balance.recordPayment", exact: true }).click();
+    if (loseResponse) {
+      await page.getByText("Response lost after payment committed", {exact: true}).waitFor();
+      assert.equal(await page.locator("#journal-check-number").inputValue(), "000123");
+      await page.getByRole("button", {name: "deliveries.wizard.balance.recordPayment", exact: true}).click();
+      const ids = await page.evaluate(() => window.wizardPaymentRequestIds);
+      assert.equal(ids.length, 2);
+      assert.equal(ids[0], ids[1]);
+    }
     await page.getByText("deliveries.wizard.balance.recordedPending", { exact: true }).waitFor();
-    await page.getByText("deliveries.wizard.balance.pendingTitle", { exact: true }).waitFor();
+    assert.equal(await page.getByLabel("deliveries.wizard.balance.overrideAccept", {exact: true}).count(), 0);
     assert.equal(await page.getByRole("button", { name: "deliveries.wizard.continue", exact: true }).isDisabled(), true);
     assert.equal(await page.evaluate(() => window.wizardPayments.length), 1);
     assert.equal(await page.locator("#journal-check-number").inputValue(), "000123");
@@ -671,33 +679,27 @@ test("balance review cannot be skipped while a balance is owed", async () => {
 const acceptLiability = (page) =>
   page.getByLabel("deliveries.wizard.balance.overrideAccept", { exact: true });
 
-test("uncleared payments covering the balance allow delivery only after accepting liability", async () => {
+test("uncleared payments covering the balance never offer a delivery override", async () => {
   const page = await fixture({ wizardBalance: 50, wizardPendingChecks: [{ id: "check-1", amount: 50 }] });
   try {
-    await page.getByText("deliveries.wizard.balance.overrideWarning", { exact: true }).waitFor();
-    const continueButton = page.getByRole("button", { name: "deliveries.wizard.continue", exact: true });
-    assert.equal(await continueButton.isDisabled(), true);
-    await acceptLiability(page).check();
+    await page.locator("#journal-amount").waitFor();
+    assert.equal(await acceptLiability(page).count(), 0);
+    assert.equal(await page.getByRole("button", {name: "deliveries.wizard.continue", exact: true}).isDisabled(), true);
+    assert.equal(await page.evaluate(() => window.wizardRequests?.length ?? 0), 0);
+    await page.evaluate(() => { window.wizardBalance = 0; });
+    await page.getByRole("button", {name: "deliveries.wizard.balance.refresh", exact: true}).click();
     await review(page);
-    await next(page);
-    await next(page);
-    await sign(page);
-    await finish(page);
-    assert.equal(await page.evaluate(() => window.wizardRequests.length), 1);
   } finally { await page.close(); }
 });
 
-test("completion returns to balance review when the pending payment no longer covers the balance", async () => {
-  const page = await fixture({ wizardBalance: 50, wizardPendingChecks: [{ id: "check-1", amount: 50 }] });
+test("completion rechecks a previously paid balance even when pending receipts exist", async () => {
+  const page = await fixture({ wizardBalance: 0, wizardPendingChecks: [{ id: "check-1", amount: 50 }] });
   try {
-    await acceptLiability(page).check();
-    await review(page);
-    await next(page);
-    await next(page);
-    await sign(page);
-    await page.evaluate(() => { window.wizardPendingChecks = []; });
-    await page.getByRole("button", { name: "deliveries.deliver.submit", exact: true }).click();
-    await page.getByText("deliveries.wizard.headings.balance", { exact: true }).waitFor();
+    await toSignature(page); await sign(page);
+    await page.evaluate(() => { window.wizardBalance = 50; });
+    await page.getByRole("button", {name: "deliveries.deliver.submit", exact: true}).click();
+    await page.getByText("deliveries.wizard.headings.balance", {exact: true}).waitFor();
+    assert.equal(await acceptLiability(page).count(), 0);
     assert.equal(await page.evaluate(() => window.wizardRequests?.length ?? 0), 0);
   } finally { await page.close(); }
 });
@@ -705,41 +707,42 @@ test("completion returns to balance review when the pending payment no longer co
 test("pending payments short of the balance offer no override", async () => {
   const page = await fixture({ wizardBalance: 50, wizardPendingChecks: [{ id: "check-1", amount: 20 }] });
   try {
-    await page.getByText("deliveries.wizard.balance.pendingShort", { exact: true }).waitFor();
+    await page.locator("#journal-amount").waitFor();
     assert.equal(await acceptLiability(page).count(), 0);
     assert.equal(await page.getByRole("button", { name: "deliveries.wizard.continue", exact: true }).isDisabled(), true);
   } finally { await page.close(); }
 });
 
-test("payment, Cuadre and override require delivery view, Cuadre create and journal create", async () => {
-  for (const denied of ["canViewDelivery", "canCreateIncomeStatement", "canCreateJournal"]) {
-    const page = await fixture({ wizardBalance: 50, wizardPendingChecks: [{ id: "check-1", amount: 50 }], wizardDenied: [denied] });
+test("payment requires income view and journal create, but does not require creating a closeout", async () => {
+  for (const denied of ["canViewIncomeStatement", "canCreateJournal"]) {
+    const page = await fixture({wizardBalance: 50, wizardDenied: [denied]});
     try {
-      await page.getByText("deliveries.wizard.balance.paymentUnavailable", { exact: true }).waitFor();
-      assert.equal(await acceptLiability(page).count(), 0, denied);
-      assert.equal(await page.locator("#journal-amount").count(), 0, denied);
+      await page.getByText("deliveries.wizard.balance.paymentUnavailable", {exact: true}).waitFor();
+      assert.equal(await acceptLiability(page).count(), 0);
+      assert.equal(await page.locator("#journal-amount").count(), 0);
     } finally { await page.close(); }
   }
+  const page = await fixture({wizardBalance: 50, wizardDenied: ["canCreateIncomeStatement"]});
+  try { await page.locator("#journal-amount").waitFor(); }
+  finally { await page.close(); }
 });
 
-test("driver opens today's Cuadre at the route rate when none exists", async () => {
-  const page = await fixture({ wizardBalance: 50, wizardNoStatement: true, wizardRowRate: 60 });
+test("missing current closeout requires explicit setup without automatic period creation", async () => {
+  const page = await fixture({wizardBalance: 50, wizardNoStatement: true, wizardRowRate: 60});
   try {
-    await page.getByText("deliveries.wizard.balance.noStatementCreate", { exact: true }).waitFor();
-    await page.getByRole("button", { name: "deliveries.wizard.balance.createStatement", exact: true }).click();
-    await page.locator("#journal-amount").waitFor();
-    const [created] = await page.evaluate(() => window.wizardStatements);
-    assert.equal(created.branchId, 1);
-    assert.equal(created.currency, "USD");
-    assert.equal(created.rate, 60);
+    await page.getByText("deliveries.wizard.balance.noStatementCreate", {exact: true}).waitFor();
+    assert.equal(await page.getByRole("button", {name: "deliveries.wizard.balance.createStatement", exact: true}).isEnabled(), true);
+    assert.equal(await page.evaluate(() => window.wizardStatements?.length ?? 0), 0);
+    assert.equal(await page.locator("#journal-amount").count(), 0);
   } finally { await page.close(); }
 });
 
-test("a route without a rate cannot open a Cuadre from the wizard", async () => {
-  const page = await fixture({ wizardBalance: 50, wizardNoStatement: true });
+test("missing route rate does not auto-create a closeout or guess financial settings", async () => {
+  const page = await fixture({wizardBalance: 50, wizardNoStatement: true});
   try {
-    await page.getByText("deliveries.wizard.balance.noStatementNoRate", { exact: true }).waitFor();
-    assert.equal(await page.getByRole("button", { name: "deliveries.wizard.balance.createStatement", exact: true }).count(), 0);
+    await page.getByText("deliveries.wizard.balance.noStatementCreate", {exact: true}).waitFor();
+    assert.equal(await page.evaluate(() => window.wizardStatements?.length ?? 0), 0);
+    assert.equal(await page.locator("#journal-amount").count(), 0);
   } finally { await page.close(); }
 });
 

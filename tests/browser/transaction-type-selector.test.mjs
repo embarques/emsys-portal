@@ -34,18 +34,15 @@ async function fixture(hash = "", width = 1200) {
   await page.goto(`about:blank#${hash}`);
   await page.setContent(`<style>${css}</style><div id="root"></div>`);
   await page.addScriptTag({ content: script });
-  await page.getByRole("button", { name: /Invoices|Facturas/, exact: true }).waitFor();
+  await page.locator("[data-type-option]").first().waitFor();
   return page;
 }
 
-test("desktop shows one category, keeps each description under its type, and dispatches each action unchanged", async () => {
+test("desktop groups every action, keeps descriptions readable, and dispatches each action unchanged", async () => {
   const page = await fixture();
   try {
-    assert.equal(await page.locator('[role="region"]:visible').count(), 1);
-    assert.equal(await page.locator('[role="region"]:visible').getByRole("button").count(), 4);
-    const invoices = await page.getByRole("button", { name: "Invoices", exact: true }).boundingBox();
-    const actions = await page.locator('[role="region"]:visible').boundingBox();
-    assert.ok(actions.x > invoices.x + invoices.width);
+    assert.equal(await page.getByRole("region").count(), 6);
+    assert.equal(await page.getByRole("region", { name: "Invoices", exact: true }).getByRole("button").count(), 4);
     const newInvoice = page.getByRole("button", { name: "New invoice", exact: true });
     const description = newInvoice.getByText("Register a new invoice and its initial payment", { exact: true });
     assert.equal(await description.isVisible(), true);
@@ -63,14 +60,12 @@ test("desktop shows one category, keeps each description under its type, and dis
       "Account transfers": { "Transfer between accounts": "TRANSFER" },
     };
     for (const [category, options] of Object.entries(categories)) {
-      await page.getByRole("button", { name: category, exact: true }).click();
-      assert.equal(await page.locator('[role="region"]:visible').count(), 1);
+      assert.equal(await page.getByRole("region", { name: category, exact: true }).count(), 1);
       for (const [label, value] of Object.entries(options)) {
         await page.getByRole("button", { name: label, exact: true }).click();
         assert.equal(await page.locator("#selection").textContent(), value);
       }
     }
-    await page.getByRole("button", { name: "Invoices", exact: true }).click();
     await page.screenshot({ path: path.join(tmpdir(), "emsys-transaction-picker-desktop.png") });
   } finally { await page.close(); }
 });
@@ -78,38 +73,31 @@ test("desktop shows one category, keeps each description under its type, and dis
 test("restricted inventory and loan actions remain disabled", async () => {
   const page = await fixture("restricted");
   try {
-    await page.getByRole("button", { name: "Inventory", exact: true }).click();
     assert.equal(await page.getByRole("button", { name: "Inventory payment", exact: true }).isDisabled(), true);
     assert.equal(await page.getByRole("button", { name: "Inventory movement", exact: true }).isEnabled(), true);
-    await page.getByRole("button", { name: "Loans", exact: true }).click();
     for (const name of ["New loan", "Loan payment"]) assert.equal(await page.getByRole("button", { name, exact: true }).isDisabled(), true);
     assert.equal(await page.locator("#selection").textContent(), "");
   } finally { await page.close(); }
 });
 
-test("mobile and phone layouts keep descriptions visible, switch categories, and fit Spanish text", async () => {
+test("mobile and phone layouts show grouped actions with readable Spanish descriptions and no horizontal overflow", async () => {
   for (const hash of ["es", "es-phone"]) {
     const page = await fixture(hash, 390);
     try {
-      assert.equal(await page.locator('[role="region"]:visible').count(), 1);
-      assert.equal(await page.getByText("Registrar una nueva factura y su pago inicial", { exact: true }).first().isVisible(), true);
-      await page.getByRole("button", { name: "Préstamos", exact: true }).click();
-      assert.equal(await page.locator('[role="region"]:visible').count(), 1);
-      const loans = page.getByRole("button", { name: "Préstamos", exact: true });
-      assert.equal(await loans.getAttribute("aria-expanded"), "true");
-      assert.equal(await page.getByRole("button", { name: "Facturas", exact: true }).getAttribute("aria-expanded"), "false");
-      const header = await loans.boundingBox();
-      const panel = await page.locator('[role="region"]:visible').boundingBox();
-      assert.ok(panel.y >= header.y + header.height);
+      assert.equal(await page.getByRole("region").count(), 6);
+      const invoice = page.getByRole("button", { name: "Nueva factura", exact: true });
+      const description = invoice.getByText("Registrar una nueva factura y su pago inicial", { exact: true });
+      assert.equal(await description.isVisible(), true);
+      assert.ok(await description.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)) >= 14);
       await page.getByRole("button", { name: "Pago de préstamo", exact: true }).click();
       assert.equal(await page.locator("#selection").textContent(), "LOAN-PAYMENT");
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-      await page.screenshot({ path: path.join(tmpdir(), `emsys-transaction-picker-${hash}.png`) });
+      await page.screenshot({ path: path.join(tmpdir(), `emsys-transaction-picker-${hash}.png`), fullPage: true });
     } finally { await page.close(); }
   }
 });
 
-test("returning from a transaction opens its category", async () => {
+test("returning from a transaction keeps its group visible", async () => {
   const page = await fixture("expense");
   try {
     assert.equal(await page.getByRole("region", { name: "Income & expenses" }).count(), 1);
@@ -117,26 +105,28 @@ test("returning from a transaction opens its category", async () => {
   } finally { await page.close(); }
 });
 
-test("changing categories clears the previously selected transaction highlight", async () => {
-  const page = await fixture("expense");
+test("picker focuses the current choice and arrow navigation skips restricted actions", async () => {
+  const page = await fixture("restricted-expense");
   try {
     const expense = page.getByRole("button", { name: "Expense", exact: true });
     assert.equal(await expense.locator(".lucide-check").count(), 1);
-    await page.getByRole("button", { name: "Invoices", exact: true }).click();
-    assert.equal(await page.locator('[role="region"]:visible .lucide-check').count(), 0);
-    await page.getByRole("button", { name: "Income & expenses", exact: true }).click();
-    assert.equal(await expense.locator(".lucide-check").count(), 0);
-    assert.equal(await expense.evaluate((element) => element.classList.contains("bg-primary/5")), false);
+    assert.equal(await expense.evaluate((element) => document.activeElement === element), true);
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await page.getByRole("button", { name: "Inventory movement", exact: true }).evaluate((element) => document.activeElement === element), true);
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await page.getByRole("button", { name: "Transfer between accounts", exact: true }).evaluate((element) => document.activeElement === element), true);
+    await page.keyboard.press("Enter");
+    assert.equal(await page.locator("#selection").textContent(), "TRANSFER");
   } finally { await page.close(); }
 });
 
 
-test("selected form replaces options inside its category and section links scroll only its body", async () => {
+test("selected form replaces the picker and section links scroll only its body", async () => {
   for (const width of [1200, 390]) {
     const page = await fixture("inline", width);
     try {
       await page.getByRole("button", { name: "New invoice", exact: true }).click();
-      const panel = page.getByRole("region", { name: "Invoices", exact: true });
+      const panel = page.getByRole("region", { name: "Transaction type", exact: true });
       const nav = panel.getByRole("navigation", { name: "New invoice" });
       await nav.getByRole("button", { name: "Payment & references", exact: true }).waitFor();
       assert.equal(await panel.getByRole("button", { name: "Invoice payment", exact: true }).count(), 0);
@@ -157,8 +147,7 @@ test("selected form replaces options inside its category and section links scrol
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await page.screenshot({ path: path.join(tmpdir(), `emsys-transaction-inline-${width}.png`) });
       await page.getByRole("button", { name: "Change transaction", exact: true }).click();
-      assert.equal(await panel.getByRole("button", { name: "Invoice payment", exact: true }).isVisible(), true);
-      await page.getByRole("button", { name: "Income & expenses", exact: true }).click();
+      assert.equal(await page.getByRole("button", { name: "Invoice payment", exact: true }).isVisible(), true);
       assert.equal(await page.getByRole("region", { name: "Income & expenses", exact: true }).getByRole("button", { name: "Expense", exact: true }).isVisible(), true);
     } finally { await page.close(); }
   }

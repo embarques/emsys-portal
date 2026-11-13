@@ -32,15 +32,15 @@ function render(canStart=true){
  },loaded,loaded.exports);
  return renderToStaticMarkup(React.createElement(loaded.exports.DailyIncomeWorkspace));
 }
-test("desktop and mobile Add transaction buttons remain available without a closeout",()=>{
+test("Add transaction remains available without a closeout",()=>{
  const html=render();
  const buttons=(html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? []).filter((button)=>button.includes("accounting.dailyIncome.actions.addTransaction"));
- assert.equal(buttons.length,2);
+ assert.equal(buttons.length,1);
  for(const button of buttons)assert.doesNotMatch(button,/disabled/);
 });
 test("Add transaction respects permission gating without a closeout",()=>{
  const html=render(false);
  const buttons=(html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? []).filter((button)=>button.includes("accounting.dailyIncome.actions.addTransaction"));
- assert.equal(buttons.length,2);
+ assert.equal(buttons.length,1);
  for(const button of buttons)assert.match(button,/disabled/);
 });

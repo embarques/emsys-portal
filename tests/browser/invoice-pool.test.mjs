@@ -61,6 +61,7 @@ async function fixture(flags = {}) {
 
 async function generateNumbers(page) {
   await page.getByRole("button",{name:"Generate numbers",exact:true}).click();
+  await page.locator("#pool-count").fill("50");
   await page.getByRole("dialog").getByRole("button",{name:"Generate numbers",exact:true}).click();
 }
 
@@ -161,9 +162,9 @@ test("reserved numbers filter as typed and clear stale selection",async()=>{
  await page.getByRole("checkbox",{name:"Select INV-100",exact:true}).check();
  await page.getByRole("toolbar").waitFor();
  await page.getByLabel("Search reserved numbers",{exact:true}).pressSequentially("101",{delay:30});
- await page.waitForFunction(()=>window.poolQueries?.at(-1)?.q==="101");
+ await page.waitForFunction(()=>JSON.stringify(window.poolSearches?.at(-1)).includes('"value":"101"'));
  await page.getByText("INV-101",{exact:true}).waitFor();
- assert.equal(await page.evaluate(()=>window.poolQueries.filter(query=>query.q).length),1);
+ assert.equal(await page.evaluate(()=>window.poolSearches.filter(body=>JSON.stringify(body).includes('"value":"101"')).length),1);
  assert.equal(await page.getByText("INV-100",{exact:true}).count(),0);
  assert.equal(await page.getByRole("toolbar").count(),0);
  assert.equal(await page.getByRole("checkbox",{name:"Select INV-101",exact:true}).isChecked(),false);
@@ -267,7 +268,7 @@ test("advanced user values search remotely and share the initial user lookup", a
  } finally { await page.close(); }
 });
 
-test("received at displays the API timestamp and leaves missing dates blank", async () => {
+test("reserved at displays the API timestamp and leaves missing dates blank", async () => {
  const page = await fixture();
  try {
   const row = page.getByRole("row").filter({hasText:"INV-100"});
@@ -277,11 +278,11 @@ test("received at displays the API timestamp and leaves missing dates blank", as
   }
   await page.getByRole("button",{name:"Filter",exact:true}).click();
   await page.getByLabel("Filter field 1",{exact:true}).click();
-  await page.getByRole("option",{name:"Received at",exact:true}).click();
+  await page.getByRole("option",{name:"Reserved at",exact:true}).click();
   await page.getByLabel("Filter condition 1",{exact:true}).click();
   await page.getByRole("option",{name:"Equals",exact:true}).click();
   await page.getByLabel("Filter value 1",{exact:true}).fill("2026-11-07T15:30:00Z");
-  await page.waitForFunction(()=>window.poolSearches?.length === 1);
+  await page.waitForFunction(()=>window.poolSearches?.some(body=>JSON.stringify(body).includes("reservedAt")));
   await page.getByText("INV-100",{exact:true}).waitFor();
   assert.equal(await page.getByText("INV-101",{exact:true}).count(),0);
  } finally { await page.close(); }

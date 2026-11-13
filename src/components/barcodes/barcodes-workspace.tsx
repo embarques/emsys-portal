@@ -563,7 +563,7 @@ export function BarcodesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -580,7 +580,7 @@ export function BarcodesWorkspace() {
               />
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={t("common.pagination.showingOf", {
                   count: barcodes.length,
                   total: totalBarcodes,
@@ -751,7 +751,7 @@ export function BarcodesWorkspace() {
             columns={columnVisibility.columns}
             rows={barcodes}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={barcodeSelectionKey}
             rowLabel={(barcode) => barcode.number}
             columnLayout={columnVisibility}

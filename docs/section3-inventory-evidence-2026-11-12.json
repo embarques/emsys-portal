@@ -1,0 +1,1990 @@
+{
+  "checkedAt": "2026-11-12T23:34:06.527Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "marker": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+  "retained": {
+    "holder": {
+      "createdAt": "2026-11-12T23:33:56.737361586Z",
+      "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+      "updatedAt": "2026-11-12T23:33:56.737361586Z",
+      "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+      "id": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+      "type": "WAREHOUSE",
+      "displayName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+      "entityId": "",
+      "isActive": true,
+      "version": 1
+    },
+    "supplier": {
+      "apiTableValues": {
+        "addresses": [],
+        "companyName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+        "contacts": [],
+        "id": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+        "isActive": true,
+        "version": 1
+      },
+      "createdAt": "2026-11-12T23:33:57.316745086Z",
+      "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+      "updatedAt": "2026-11-12T23:33:57.316745086Z",
+      "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+      "id": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+      "companyName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+      "contacts": [],
+      "addresses": [],
+      "isActive": true,
+      "version": 1
+    },
+    "item": {
+      "apiTableValues": {
+        "category": "audit fixture",
+        "currency": "USD",
+        "defaultSellingPriceMinor": 100,
+        "id": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+        "isActive": true,
+        "name": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+        "reorderThreshold": 0,
+        "sku": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+        "unitOfMeasure": "unit",
+        "version": 1
+      },
+      "createdAt": "2026-11-12T23:33:57.573835712Z",
+      "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+      "updatedAt": "2026-11-12T23:33:57.573835712Z",
+      "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+      "id": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+      "sku": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+      "name": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+      "unitOfMeasure": "unit",
+      "category": "audit fixture",
+      "defaultSellingPriceMinor": 100,
+      "currency": "USD",
+      "reorderThreshold": 0,
+      "isActive": true,
+      "version": 1
+    },
+    "receipts": [
+      "6505970c-253b-4856-bbf7-70a3ce07e458",
+      "58426549-caa2-4361-99eb-a9d805f947a2"
+    ],
+    "closeoutId": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57"
+  },
+  "evidence": [
+    {
+      "method": "POST",
+      "path": "/inventory/holders",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:56.737361586Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:56.737361586Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "type": "WAREHOUSE",
+          "displayName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "isActive": true
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/suppliers",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.316745086Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:57.316745086Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "companyName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "contacts": [],
+          "addresses": [],
+          "isActive": true
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/items",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.573835712Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:57.573835712Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "sku": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "name": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "unitOfMeasure": "unit",
+          "category": "audit fixture",
+          "defaultSellingPriceMinor": 100,
+          "currency": "USD",
+          "reorderThreshold": 0,
+          "isActive": true
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "confirmations": {
+            "warehouse": null,
+            "custodian": null
+          },
+          "rejection": null,
+          "allowedActions": null,
+          "id": "6505970c-253b-4856-bbf7-70a3ce07e458",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.820070253Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:57.820070253Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "status": "DRAFT",
+          "postingRevision": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "receivedAt": "2026-11-12T23:33:57.682Z",
+          "lines": [
+            {
+              "id": "8cb1ca40-9974-4956-8bf0-cd011168a4f2",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 50
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts/6505970c-253b-4856-bbf7-70a3ce07e458/post",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "scopeHolderIds": [
+            "d8a682ce-2733-4b2d-b5b2-5d76767dd090"
+          ],
+          "data": {
+            "submittedAt": "2026-11-12T23:33:58.24426442Z",
+            "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "confirmations": {
+              "warehouse": null,
+              "custodian": null
+            },
+            "rejection": null,
+            "allowedActions": [
+              "CONFIRM_WAREHOUSE",
+              "REJECT"
+            ],
+            "id": "6505970c-253b-4856-bbf7-70a3ce07e458",
+            "version": 2,
+            "audit": {
+              "createdAt": "2026-11-12T23:33:57.82Z",
+              "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "updatedAt": "2026-11-12T23:33:58.244371295Z",
+              "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+            },
+            "status": "PENDING_CONFIRMATION",
+            "postingRevision": 0,
+            "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+            "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+            "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+            "receivedAt": "2026-11-12T23:33:57.682Z",
+            "lines": [
+              {
+                "id": "8cb1ca40-9974-4956-8bf0-cd011168a4f2",
+                "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                "quantity": 10,
+                "unitCostMinor": 50
+              }
+            ]
+          },
+          "postedMovements": [],
+          "version": 2
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/receipts/6505970c-253b-4856-bbf7-70a3ce07e458",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "submittedAt": "2026-11-12T23:33:58.244Z",
+          "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "confirmations": {
+            "warehouse": null,
+            "custodian": null
+          },
+          "rejection": null,
+          "allowedActions": [
+            "CONFIRM_WAREHOUSE",
+            "REJECT"
+          ],
+          "id": "6505970c-253b-4856-bbf7-70a3ce07e458",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.82Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:58.244Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "status": "PENDING_CONFIRMATION",
+          "postingRevision": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "receivedAt": "2026-11-12T23:33:57.682Z",
+          "lines": [
+            {
+              "id": "8cb1ca40-9974-4956-8bf0-cd011168a4f2",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 50
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts/6505970c-253b-4856-bbf7-70a3ce07e458/confirm",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "allowedActions": [],
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.82Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:59.150292087Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "confirmations": {
+            "custodian": null,
+            "warehouse": {
+              "confirmedAt": "2026-11-12T23:33:58.873254254Z",
+              "confirmedBy": {
+                "id": 73,
+                "name": "elk@elk.com"
+              },
+              "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2 counted"
+            }
+          },
+          "id": "6505970c-253b-4856-bbf7-70a3ce07e458",
+          "lines": [
+            {
+              "id": "8cb1ca40-9974-4956-8bf0-cd011168a4f2",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 50
+            }
+          ],
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "postedAt": "2026-11-12T23:33:58.971495171Z",
+          "postedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "postingRevision": 1,
+          "receivedAt": "2026-11-12T23:33:57.682Z",
+          "rejection": null,
+          "status": "POSTED",
+          "submittedAt": "2026-11-12T23:33:58.244Z",
+          "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "version": 3
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/receipts/6505970c-253b-4856-bbf7-70a3ce07e458",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "submittedAt": "2026-11-12T23:33:58.244Z",
+          "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "confirmations": {
+            "warehouse": {
+              "confirmedAt": "2026-11-12T23:33:58.873Z",
+              "confirmedBy": {
+                "id": 73,
+                "name": "elk@elk.com"
+              },
+              "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2 counted"
+            },
+            "custodian": null
+          },
+          "rejection": null,
+          "allowedActions": [],
+          "id": "6505970c-253b-4856-bbf7-70a3ce07e458",
+          "version": 3,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.82Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:59.15Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "status": "POSTED",
+          "postedAt": "2026-11-12T23:33:58.971Z",
+          "postedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "postingRevision": 1,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "receivedAt": "2026-11-12T23:33:57.682Z",
+          "lines": [
+            {
+              "id": "8cb1ca40-9974-4956-8bf0-cd011168a4f2",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 50
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Receipt 10 @ 0.50 reaches POSTED",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts",
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "confirmations": {
+            "warehouse": null,
+            "custodian": null
+          },
+          "rejection": null,
+          "allowedActions": null,
+          "id": "58426549-caa2-4361-99eb-a9d805f947a2",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:59.926721463Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:59.926721463Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "status": "DRAFT",
+          "postingRevision": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "receivedAt": "2026-11-12T23:33:59.787Z",
+          "lines": [
+            {
+              "id": "de0545e9-9e24-4601-a119-34025469bcf9",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 100
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts/58426549-caa2-4361-99eb-a9d805f947a2/post",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "scopeHolderIds": [
+            "d8a682ce-2733-4b2d-b5b2-5d76767dd090"
+          ],
+          "data": {
+            "submittedAt": "2026-11-12T23:34:00.291224463Z",
+            "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "confirmations": {
+              "warehouse": null,
+              "custodian": null
+            },
+            "rejection": null,
+            "allowedActions": [
+              "CONFIRM_WAREHOUSE",
+              "REJECT"
+            ],
+            "id": "58426549-caa2-4361-99eb-a9d805f947a2",
+            "version": 2,
+            "audit": {
+              "createdAt": "2026-11-12T23:33:59.926Z",
+              "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "updatedAt": "2026-11-12T23:34:00.291226338Z",
+              "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+            },
+            "status": "PENDING_CONFIRMATION",
+            "postingRevision": 0,
+            "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+            "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+            "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+            "receivedAt": "2026-11-12T23:33:59.787Z",
+            "lines": [
+              {
+                "id": "de0545e9-9e24-4601-a119-34025469bcf9",
+                "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                "quantity": 10,
+                "unitCostMinor": 100
+              }
+            ]
+          },
+          "postedMovements": [],
+          "version": 2
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/receipts/58426549-caa2-4361-99eb-a9d805f947a2",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "submittedAt": "2026-11-12T23:34:00.291Z",
+          "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "confirmations": {
+            "warehouse": null,
+            "custodian": null
+          },
+          "rejection": null,
+          "allowedActions": [
+            "CONFIRM_WAREHOUSE",
+            "REJECT"
+          ],
+          "id": "58426549-caa2-4361-99eb-a9d805f947a2",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:59.926Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:00.291Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "status": "PENDING_CONFIRMATION",
+          "postingRevision": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "receivedAt": "2026-11-12T23:33:59.787Z",
+          "lines": [
+            {
+              "id": "de0545e9-9e24-4601-a119-34025469bcf9",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 100
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts/58426549-caa2-4361-99eb-a9d805f947a2/confirm",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "allowedActions": [],
+          "audit": {
+            "createdAt": "2026-11-12T23:33:59.926Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:01.010229755Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "confirmations": {
+            "custodian": null,
+            "warehouse": {
+              "confirmedAt": "2026-11-12T23:34:00.842030088Z",
+              "confirmedBy": {
+                "id": 73,
+                "name": "elk@elk.com"
+              },
+              "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2 counted"
+            }
+          },
+          "id": "58426549-caa2-4361-99eb-a9d805f947a2",
+          "lines": [
+            {
+              "id": "de0545e9-9e24-4601-a119-34025469bcf9",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 100
+            }
+          ],
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "postedAt": "2026-11-12T23:34:00.941062171Z",
+          "postedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "postingRevision": 1,
+          "receivedAt": "2026-11-12T23:33:59.787Z",
+          "rejection": null,
+          "status": "POSTED",
+          "submittedAt": "2026-11-12T23:34:00.291Z",
+          "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "version": 3
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/receipts/58426549-caa2-4361-99eb-a9d805f947a2",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "submittedAt": "2026-11-12T23:34:00.291Z",
+          "submittedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "confirmations": {
+            "warehouse": {
+              "confirmedAt": "2026-11-12T23:34:00.842Z",
+              "confirmedBy": {
+                "id": 73,
+                "name": "elk@elk.com"
+              },
+              "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2 counted"
+            },
+            "custodian": null
+          },
+          "rejection": null,
+          "allowedActions": [],
+          "id": "58426549-caa2-4361-99eb-a9d805f947a2",
+          "version": 3,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:59.926Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:01.01Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "status": "POSTED",
+          "postedAt": "2026-11-12T23:34:00.941Z",
+          "postedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "postingRevision": 1,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "supplierId": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "toHolderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "receivedAt": "2026-11-12T23:33:59.787Z",
+          "lines": [
+            {
+              "id": "de0545e9-9e24-4601-a119-34025469bcf9",
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "quantity": 10,
+              "unitCostMinor": 100
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Receipt 10 @ 1.00 reaches POSTED",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/stock/search?page=1&limit=10&offset=0",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": "a5d629d2-2710-5f27-8d5f-26c87dbbadb3",
+            "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+            "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+            "condition": "AVAILABLE",
+            "quantityOnHand": 20,
+            "quantityReserved": 0,
+            "version": 2,
+            "updatedAt": "2026-11-12T23:34:00.941Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.039583583,
+        "page": 1,
+        "resultsPerPage": 10,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Two confirmed receipts leave exactly 20 fixture units",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/reports/stock-valuation/search?page=1&limit=10",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+            "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+            "condition": "AVAILABLE",
+            "quantity": 20,
+            "valueMinor": 1500
+          }
+        ],
+        "error": "",
+        "duration": 0.02002375,
+        "page": 1,
+        "resultsPerPage": 10,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Weighted receipt carrying value is 1500 cents for 20 units",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/users/current",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 73,
+          "uid": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "email": "elk@elk.com",
+          "name": "elk@elk.com",
+          "active": true,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares"
+          },
+          "role": {
+            "id": 1,
+            "name": "Administrador"
+          }
+        },
+        "error": "",
+        "duration": 0.016854,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/vehicle-routes/business-date?branchId=1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Route business date",
+        "data": {
+          "businessDate": "2026-11-12",
+          "timezone": "America/New_York",
+          "serverTime": "2026-11-12T23:34:02.023627964Z",
+          "nextMidnight": "2026-11-13T05:00:00Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/closeouts",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.16293913Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:02.16293913Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023627964Z",
+          "timezone": "America/New_York",
+          "status": "OPEN",
+          "revision": 1,
+          "inventoryLines": [],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "needsReconciliation": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Create isolated holder closeout",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:02.162Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "OPEN",
+          "revision": 1,
+          "inventoryLines": [],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "needsReconciliation": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/close",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "positive integer inventory quantity required",
+        "error": "positive integer inventory quantity required. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Negative physical count rejected",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:02.162Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "OPEN",
+          "revision": 1,
+          "inventoryLines": [],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "needsReconciliation": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Rejected negative count preserves closeout version/status",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/close",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:03.353788923Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "CLOSED",
+          "revision": 1,
+          "inventoryLines": [
+            {
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "openingQuantity": 0,
+              "openingQuarantinedQuantity": 0,
+              "receivedQuantity": 20,
+              "soldQuantity": 0,
+              "returnedQuantity": 0,
+              "lostQuantity": 0,
+              "missingQuantity": 0,
+              "stolenQuantity": 0,
+              "damagedQuarantinedQuantity": 0,
+              "damagedWrittenOffQuantity": 0,
+              "otherNetMovementQuantity": 0,
+              "expectedAvailableEnding": 20,
+              "expectedQuarantinedEnding": 0,
+              "countedAvailableEnding": 20,
+              "countedQuarantinedEnding": 0
+            }
+          ],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "closedAt": "2026-11-12T23:34:03.353782923Z",
+          "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "needsReconciliation": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Matching physical count closes fixture period",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/close",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:03.353788923Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "CLOSED",
+          "revision": 1,
+          "inventoryLines": [
+            {
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "openingQuantity": 0,
+              "openingQuarantinedQuantity": 0,
+              "receivedQuantity": 20,
+              "soldQuantity": 0,
+              "returnedQuantity": 0,
+              "lostQuantity": 0,
+              "missingQuantity": 0,
+              "stolenQuantity": 0,
+              "damagedQuarantinedQuantity": 0,
+              "damagedWrittenOffQuantity": 0,
+              "otherNetMovementQuantity": 0,
+              "expectedAvailableEnding": 20,
+              "expectedQuarantinedEnding": 0,
+              "countedAvailableEnding": 20,
+              "countedQuarantinedEnding": 0
+            }
+          ],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "closedAt": "2026-11-12T23:34:03.353782923Z",
+          "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "needsReconciliation": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Same closeout command replays without duplicate revision",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:03.353Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "CLOSED",
+          "revision": 1,
+          "inventoryLines": [
+            {
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "openingQuantity": 0,
+              "openingQuarantinedQuantity": 0,
+              "receivedQuantity": 20,
+              "soldQuantity": 0,
+              "returnedQuantity": 0,
+              "lostQuantity": 0,
+              "missingQuantity": 0,
+              "stolenQuantity": 0,
+              "damagedQuarantinedQuantity": 0,
+              "damagedWrittenOffQuantity": 0,
+              "otherNetMovementQuantity": 0,
+              "expectedAvailableEnding": 20,
+              "expectedQuarantinedEnding": 0,
+              "countedAvailableEnding": 20,
+              "countedQuarantinedEnding": 0
+            }
+          ],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "closedAt": "2026-11-12T23:34:03.353Z",
+          "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "needsReconciliation": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/revisions",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": "4513bfb5-52fd-4f05-9b8d-25541921d031",
+            "closeoutId": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+            "revision": 1,
+            "closedAt": "2026-11-12T23:34:03.353Z",
+            "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "snapshot": {
+              "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+              "version": 2,
+              "audit": {
+                "createdAt": "2026-11-12T23:34:02.162Z",
+                "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+                "updatedAt": "2026-11-12T23:34:03.353Z",
+                "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+              },
+              "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+              "businessDate": "2026-11-12",
+              "periodStart": "2026-11-12T05:00:00Z",
+              "cutoffAt": "2026-11-12T23:34:02.023Z",
+              "timezone": "America/New_York",
+              "status": "CLOSED",
+              "revision": 1,
+              "inventoryLines": [
+                {
+                  "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                  "openingQuantity": 0,
+                  "openingQuarantinedQuantity": 0,
+                  "receivedQuantity": 20,
+                  "soldQuantity": 0,
+                  "returnedQuantity": 0,
+                  "lostQuantity": 0,
+                  "missingQuantity": 0,
+                  "stolenQuantity": 0,
+                  "damagedQuarantinedQuantity": 0,
+                  "damagedWrittenOffQuantity": 0,
+                  "otherNetMovementQuantity": 0,
+                  "expectedAvailableEnding": 20,
+                  "expectedQuarantinedEnding": 0,
+                  "countedAvailableEnding": 20,
+                  "countedQuarantinedEnding": 0
+                }
+              ],
+              "paymentIds": [],
+              "obligationIds": [],
+              "expectedRevenueMinor": 0,
+              "collectionsRecordedMinor": 0,
+              "collectionsVerifiedMinor": 0,
+              "collectionsRemittedMinor": 0,
+              "moneyHeldMinor": 0,
+              "outstandingMinor": 0,
+              "financialDifferenceMinor": 0,
+              "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+              "closedAt": "2026-11-12T23:34:03.353Z",
+              "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "needsReconciliation": false
+            },
+            "correctionSourceIds": []
+          }
+        ],
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/reopen",
+      "http": 422,
+      "response": {
+        "success": false,
+        "message": "inventory validation failed",
+        "error": "inventory validation failed: reopen reason required. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "Reopen requires an explanation",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/reopen",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 3,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:04.435959881Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "REOPENED",
+          "revision": 2,
+          "inventoryLines": [
+            {
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "openingQuantity": 0,
+              "openingQuarantinedQuantity": 0,
+              "receivedQuantity": 20,
+              "soldQuantity": 0,
+              "returnedQuantity": 0,
+              "lostQuantity": 0,
+              "missingQuantity": 0,
+              "stolenQuantity": 0,
+              "damagedQuarantinedQuantity": 0,
+              "damagedWrittenOffQuantity": 0,
+              "otherNetMovementQuantity": 0,
+              "expectedAvailableEnding": 20,
+              "expectedQuarantinedEnding": 0,
+              "countedAvailableEnding": 20,
+              "countedQuarantinedEnding": 0
+            }
+          ],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "needsReconciliation": true
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Authorized reopen with reason succeeds",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 3,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:04.435Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "REOPENED",
+          "revision": 2,
+          "inventoryLines": [
+            {
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "openingQuantity": 0,
+              "openingQuarantinedQuantity": 0,
+              "receivedQuantity": 20,
+              "soldQuantity": 0,
+              "returnedQuantity": 0,
+              "lostQuantity": 0,
+              "missingQuantity": 0,
+              "stolenQuantity": 0,
+              "damagedQuarantinedQuantity": 0,
+              "damagedWrittenOffQuantity": 0,
+              "otherNetMovementQuantity": 0,
+              "expectedAvailableEnding": 20,
+              "expectedQuarantinedEnding": 0,
+              "countedAvailableEnding": 20,
+              "countedQuarantinedEnding": 0
+            }
+          ],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "needsReconciliation": true
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/close",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "version": 4,
+          "audit": {
+            "createdAt": "2026-11-12T23:34:02.162Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:05.046251048Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+          "businessDate": "2026-11-12",
+          "periodStart": "2026-11-12T05:00:00Z",
+          "cutoffAt": "2026-11-12T23:34:02.023Z",
+          "timezone": "America/New_York",
+          "status": "CLOSED",
+          "revision": 2,
+          "inventoryLines": [
+            {
+              "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+              "openingQuantity": 0,
+              "openingQuarantinedQuantity": 0,
+              "receivedQuantity": 20,
+              "soldQuantity": 0,
+              "returnedQuantity": 0,
+              "lostQuantity": 0,
+              "missingQuantity": 0,
+              "stolenQuantity": 0,
+              "damagedQuarantinedQuantity": 0,
+              "damagedWrittenOffQuantity": 0,
+              "otherNetMovementQuantity": 0,
+              "expectedAvailableEnding": 20,
+              "expectedQuarantinedEnding": 0,
+              "countedAvailableEnding": 20,
+              "countedQuarantinedEnding": 0
+            }
+          ],
+          "paymentIds": [],
+          "obligationIds": [],
+          "expectedRevenueMinor": 0,
+          "collectionsRecordedMinor": 0,
+          "collectionsVerifiedMinor": 0,
+          "collectionsRemittedMinor": 0,
+          "moneyHeldMinor": 0,
+          "outstandingMinor": 0,
+          "financialDifferenceMinor": 0,
+          "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "closedAt": "2026-11-12T23:34:05.04624959Z",
+          "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "needsReconciliation": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Reopened period closes as another revision",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/closeouts/0d8bdb3b-c8fa-4331-9232-d14b546a7c57/revisions",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": "4513bfb5-52fd-4f05-9b8d-25541921d031",
+            "closeoutId": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+            "revision": 1,
+            "closedAt": "2026-11-12T23:34:03.353Z",
+            "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "snapshot": {
+              "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+              "version": 2,
+              "audit": {
+                "createdAt": "2026-11-12T23:34:02.162Z",
+                "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+                "updatedAt": "2026-11-12T23:34:03.353Z",
+                "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+              },
+              "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+              "businessDate": "2026-11-12",
+              "periodStart": "2026-11-12T05:00:00Z",
+              "cutoffAt": "2026-11-12T23:34:02.023Z",
+              "timezone": "America/New_York",
+              "status": "CLOSED",
+              "revision": 1,
+              "inventoryLines": [
+                {
+                  "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                  "openingQuantity": 0,
+                  "openingQuarantinedQuantity": 0,
+                  "receivedQuantity": 20,
+                  "soldQuantity": 0,
+                  "returnedQuantity": 0,
+                  "lostQuantity": 0,
+                  "missingQuantity": 0,
+                  "stolenQuantity": 0,
+                  "damagedQuarantinedQuantity": 0,
+                  "damagedWrittenOffQuantity": 0,
+                  "otherNetMovementQuantity": 0,
+                  "expectedAvailableEnding": 20,
+                  "expectedQuarantinedEnding": 0,
+                  "countedAvailableEnding": 20,
+                  "countedQuarantinedEnding": 0
+                }
+              ],
+              "paymentIds": [],
+              "obligationIds": [],
+              "expectedRevenueMinor": 0,
+              "collectionsRecordedMinor": 0,
+              "collectionsVerifiedMinor": 0,
+              "collectionsRemittedMinor": 0,
+              "moneyHeldMinor": 0,
+              "outstandingMinor": 0,
+              "financialDifferenceMinor": 0,
+              "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+              "closedAt": "2026-11-12T23:34:03.353Z",
+              "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "needsReconciliation": false
+            },
+            "correctionSourceIds": []
+          },
+          {
+            "id": "c5512a48-4f7f-4d7b-8e87-97fbcdc9b55d",
+            "closeoutId": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+            "revision": 2,
+            "previousRevision": 1,
+            "reopenedAt": "2026-11-12T23:34:04.456Z",
+            "reopenedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "reopenReason": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2 revision verification",
+            "closedAt": "2026-11-12T23:34:05.046Z",
+            "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "snapshot": {
+              "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+              "version": 4,
+              "audit": {
+                "createdAt": "2026-11-12T23:34:02.162Z",
+                "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+                "updatedAt": "2026-11-12T23:34:05.046Z",
+                "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+              },
+              "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+              "businessDate": "2026-11-12",
+              "periodStart": "2026-11-12T05:00:00Z",
+              "cutoffAt": "2026-11-12T23:34:02.023Z",
+              "timezone": "America/New_York",
+              "status": "CLOSED",
+              "revision": 2,
+              "inventoryLines": [
+                {
+                  "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                  "openingQuantity": 0,
+                  "openingQuarantinedQuantity": 0,
+                  "receivedQuantity": 20,
+                  "soldQuantity": 0,
+                  "returnedQuantity": 0,
+                  "lostQuantity": 0,
+                  "missingQuantity": 0,
+                  "stolenQuantity": 0,
+                  "damagedQuarantinedQuantity": 0,
+                  "damagedWrittenOffQuantity": 0,
+                  "otherNetMovementQuantity": 0,
+                  "expectedAvailableEnding": 20,
+                  "expectedQuarantinedEnding": 0,
+                  "countedAvailableEnding": 20,
+                  "countedQuarantinedEnding": 0
+                }
+              ],
+              "paymentIds": [],
+              "obligationIds": [],
+              "expectedRevenueMinor": 0,
+              "collectionsRecordedMinor": 0,
+              "collectionsVerifiedMinor": 0,
+              "collectionsRemittedMinor": 0,
+              "moneyHeldMinor": 0,
+              "outstandingMinor": 0,
+              "financialDifferenceMinor": 0,
+              "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+              "closedAt": "2026-11-12T23:34:05.046Z",
+              "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "needsReconciliation": false
+            },
+            "correctionSourceIds": []
+          }
+        ],
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Immutable revision comparison",
+      "before": [
+        {
+          "id": "4513bfb5-52fd-4f05-9b8d-25541921d031",
+          "closeoutId": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "revision": 1,
+          "closedAt": "2026-11-12T23:34:03.353Z",
+          "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "snapshot": {
+            "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+            "version": 2,
+            "audit": {
+              "createdAt": "2026-11-12T23:34:02.162Z",
+              "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "updatedAt": "2026-11-12T23:34:03.353Z",
+              "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+            },
+            "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+            "businessDate": "2026-11-12",
+            "periodStart": "2026-11-12T05:00:00Z",
+            "cutoffAt": "2026-11-12T23:34:02.023Z",
+            "timezone": "America/New_York",
+            "status": "CLOSED",
+            "revision": 1,
+            "inventoryLines": [
+              {
+                "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                "openingQuantity": 0,
+                "openingQuarantinedQuantity": 0,
+                "receivedQuantity": 20,
+                "soldQuantity": 0,
+                "returnedQuantity": 0,
+                "lostQuantity": 0,
+                "missingQuantity": 0,
+                "stolenQuantity": 0,
+                "damagedQuarantinedQuantity": 0,
+                "damagedWrittenOffQuantity": 0,
+                "otherNetMovementQuantity": 0,
+                "expectedAvailableEnding": 20,
+                "expectedQuarantinedEnding": 0,
+                "countedAvailableEnding": 20,
+                "countedQuarantinedEnding": 0
+              }
+            ],
+            "paymentIds": [],
+            "obligationIds": [],
+            "expectedRevenueMinor": 0,
+            "collectionsRecordedMinor": 0,
+            "collectionsVerifiedMinor": 0,
+            "collectionsRemittedMinor": 0,
+            "moneyHeldMinor": 0,
+            "outstandingMinor": 0,
+            "financialDifferenceMinor": 0,
+            "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+            "closedAt": "2026-11-12T23:34:03.353Z",
+            "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "needsReconciliation": false
+          },
+          "correctionSourceIds": []
+        }
+      ],
+      "after": [
+        {
+          "id": "4513bfb5-52fd-4f05-9b8d-25541921d031",
+          "closeoutId": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "revision": 1,
+          "closedAt": "2026-11-12T23:34:03.353Z",
+          "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "snapshot": {
+            "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+            "version": 2,
+            "audit": {
+              "createdAt": "2026-11-12T23:34:02.162Z",
+              "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "updatedAt": "2026-11-12T23:34:03.353Z",
+              "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+            },
+            "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+            "businessDate": "2026-11-12",
+            "periodStart": "2026-11-12T05:00:00Z",
+            "cutoffAt": "2026-11-12T23:34:02.023Z",
+            "timezone": "America/New_York",
+            "status": "CLOSED",
+            "revision": 1,
+            "inventoryLines": [
+              {
+                "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                "openingQuantity": 0,
+                "openingQuarantinedQuantity": 0,
+                "receivedQuantity": 20,
+                "soldQuantity": 0,
+                "returnedQuantity": 0,
+                "lostQuantity": 0,
+                "missingQuantity": 0,
+                "stolenQuantity": 0,
+                "damagedQuarantinedQuantity": 0,
+                "damagedWrittenOffQuantity": 0,
+                "otherNetMovementQuantity": 0,
+                "expectedAvailableEnding": 20,
+                "expectedQuarantinedEnding": 0,
+                "countedAvailableEnding": 20,
+                "countedQuarantinedEnding": 0
+              }
+            ],
+            "paymentIds": [],
+            "obligationIds": [],
+            "expectedRevenueMinor": 0,
+            "collectionsRecordedMinor": 0,
+            "collectionsVerifiedMinor": 0,
+            "collectionsRemittedMinor": 0,
+            "moneyHeldMinor": 0,
+            "outstandingMinor": 0,
+            "financialDifferenceMinor": 0,
+            "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+            "closedAt": "2026-11-12T23:34:03.353Z",
+            "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "needsReconciliation": false
+          },
+          "correctionSourceIds": []
+        },
+        {
+          "id": "c5512a48-4f7f-4d7b-8e87-97fbcdc9b55d",
+          "closeoutId": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+          "revision": 2,
+          "previousRevision": 1,
+          "reopenedAt": "2026-11-12T23:34:04.456Z",
+          "reopenedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "reopenReason": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2 revision verification",
+          "closedAt": "2026-11-12T23:34:05.046Z",
+          "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "snapshot": {
+            "id": "0d8bdb3b-c8fa-4331-9232-d14b546a7c57",
+            "version": 4,
+            "audit": {
+              "createdAt": "2026-11-12T23:34:02.162Z",
+              "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "updatedAt": "2026-11-12T23:34:05.046Z",
+              "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+            },
+            "holderId": "d8a682ce-2733-4b2d-b5b2-5d76767dd090",
+            "businessDate": "2026-11-12",
+            "periodStart": "2026-11-12T05:00:00Z",
+            "cutoffAt": "2026-11-12T23:34:02.023Z",
+            "timezone": "America/New_York",
+            "status": "CLOSED",
+            "revision": 2,
+            "inventoryLines": [
+              {
+                "itemId": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+                "openingQuantity": 0,
+                "openingQuarantinedQuantity": 0,
+                "receivedQuantity": 20,
+                "soldQuantity": 0,
+                "returnedQuantity": 0,
+                "lostQuantity": 0,
+                "missingQuantity": 0,
+                "stolenQuantity": 0,
+                "damagedQuarantinedQuantity": 0,
+                "damagedWrittenOffQuantity": 0,
+                "otherNetMovementQuantity": 0,
+                "expectedAvailableEnding": 20,
+                "expectedQuarantinedEnding": 0,
+                "countedAvailableEnding": 20,
+                "countedQuarantinedEnding": 0
+              }
+            ],
+            "paymentIds": [],
+            "obligationIds": [],
+            "expectedRevenueMinor": 0,
+            "collectionsRecordedMinor": 0,
+            "collectionsVerifiedMinor": 0,
+            "collectionsRemittedMinor": 0,
+            "moneyHeldMinor": 0,
+            "outstandingMinor": 0,
+            "financialDifferenceMinor": 0,
+            "notes": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+            "closedAt": "2026-11-12T23:34:05.046Z",
+            "closedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "needsReconciliation": false
+          },
+          "correctionSourceIds": []
+        }
+      ]
+    },
+    {
+      "label": "Reclose adds a revision and preserves prior snapshots",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/items/f56ff6b8-5b48-4f53-9ed5-124836183afe",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.573Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:57.573Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "sku": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "name": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "unitOfMeasure": "unit",
+          "category": "audit fixture",
+          "defaultSellingPriceMinor": 100,
+          "currency": "USD",
+          "reorderThreshold": 0,
+          "isActive": true
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/inventory/items/f56ff6b8-5b48-4f53-9ed5-124836183afe",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.573Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:05.736285965Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "sku": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "name": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "unitOfMeasure": "unit",
+          "category": "audit fixture",
+          "defaultSellingPriceMinor": 100,
+          "currency": "USD",
+          "reorderThreshold": 0,
+          "isActive": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Item retirement",
+      "result": {
+        "succeededIds": [
+          "f56ff6b8-5b48-4f53-9ed5-124836183afe"
+        ],
+        "failedIds": []
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/items/f56ff6b8-5b48-4f53-9ed5-124836183afe",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "f56ff6b8-5b48-4f53-9ed5-124836183afe",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.573Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:05.736Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "sku": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "name": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "unitOfMeasure": "unit",
+          "category": "audit fixture",
+          "defaultSellingPriceMinor": 100,
+          "currency": "USD",
+          "reorderThreshold": 0,
+          "isActive": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Fixture item retired",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/suppliers/af677c38-fec0-4a04-b6fd-599aa1e7f709",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "version": 1,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.316Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:33:57.316Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "companyName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "contacts": [],
+          "addresses": [],
+          "isActive": true
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/inventory/suppliers/af677c38-fec0-4a04-b6fd-599aa1e7f709",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.316Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:06.297222591Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "companyName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "contacts": [],
+          "addresses": [],
+          "isActive": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Supplier retirement",
+      "result": {
+        "succeededIds": [
+          "af677c38-fec0-4a04-b6fd-599aa1e7f709"
+        ],
+        "failedIds": []
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/inventory/suppliers/af677c38-fec0-4a04-b6fd-599aa1e7f709",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "af677c38-fec0-4a04-b6fd-599aa1e7f709",
+          "version": 2,
+          "audit": {
+            "createdAt": "2026-11-12T23:33:57.316Z",
+            "createdBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+            "updatedAt": "2026-11-12T23:34:06.297Z",
+            "updatedBy": "O2uwARbv6jV5mwMwWg6DICs0aGC2"
+          },
+          "companyName": "CODEX-INVENTORY-f3bad88e-3185-4a21-a407-21da4bb00ce2",
+          "contacts": [],
+          "addresses": [],
+          "isActive": false
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Fixture supplier retired",
+      "passed": true
+    }
+  ]
+}

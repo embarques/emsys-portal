@@ -1,0 +1,289 @@
+{
+  "checkedAt": "2026-11-12T23:40:14.227Z",
+  "marker": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/change-requests/163ec3be-1aff-4103-98b1-214e33edb7ef",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change request",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-assigned-update"
+          },
+          "id": "163ec3be-1aff-4103-98b1-214e33edb7ef",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-REQUEST-REJECT"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:fdff4602fb9c8618505658eb566c2419ccc40552b09d07976afb108d86376915",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "reviewedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "status": "REJECTED",
+          "reviewReason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06 rejection control",
+          "createdAt": "2026-11-12T23:39:16.202Z",
+          "reviewedAt": "2026-11-12T23:39:16.99Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/change-requests/52daa3a5-0699-4008-88e0-72b472d4421e",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change request",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-assigned-update"
+          },
+          "id": "52daa3a5-0699-4008-88e0-72b472d4421e",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-SELF-APPROVED"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:a2d4362f8d8ff257096e81995be8514d0a4e516a2ffb599e116728f4464aa695",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "reviewedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "status": "APPROVED",
+          "reviewReason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06 self approval",
+          "createdAt": "2026-11-12T23:39:17.57Z",
+          "reviewedAt": "2026-11-12T23:39:18.043Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/change-requests/6224fb33-f0f0-4a2b-89c2-1e567c9ea41d",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change request",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-SELF-APPROVED"
+          },
+          "id": "6224fb33-f0f0-4a2b-89c2-1e567c9ea41d",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-STALE-PROPOSED"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:4c182c26df17194ac37c8d6d39c873a280f6e9f3c41e2a87404e546bf9a25a97",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "status": "PENDING",
+          "createdAt": "2026-11-12T23:39:18.753Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/change-requests/6224fb33-f0f0-4a2b-89c2-1e567c9ea41d/reject",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Change reviewed",
+        "data": {
+          "originalValues": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-SELF-APPROVED"
+          },
+          "id": "6224fb33-f0f0-4a2b-89c2-1e567c9ea41d",
+          "resourceType": "pickup",
+          "resourceId": "21895",
+          "action": "UPDATE",
+          "proposedChanges": {
+            "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-STALE-PROPOSED"
+          },
+          "reason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+          "expectedVersion": "v1:4c182c26df17194ac37c8d6d39c873a280f6e9f3c41e2a87404e546bf9a25a97",
+          "requestedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "reviewedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "status": "REJECTED",
+          "reviewReason": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06 cleanup after pending-lock control",
+          "createdAt": "2026-11-12T23:39:18.753Z",
+          "reviewedAt": "2026-11-12T23:40:13.762362219Z"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/pickups/21895",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "dailyRoute": {
+            "id": "6af64e1eaf602e5fa9536738",
+            "name": "2029-01-10_Camion 1_CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+            "date": "2029-01-10T00:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "vehicle": {
+              "id": "6a412d0fb2f8ec04b0ee78eb",
+              "name": "Camion 1"
+            },
+            "supervisor": {
+              "id": "252",
+              "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+            },
+            "driver": {
+              "id": "252",
+              "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+            },
+            "helpers": []
+          },
+          "id": 21895,
+          "legacySyncStatus": "disabled",
+          "date": "2029-01-10T00:00:00Z",
+          "createdAt": "2026-11-12T23:39:10.58Z",
+          "updatedAt": "2026-11-12T23:39:18.004Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 141,
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+          },
+          "completed": false,
+          "route": {
+            "dailyRoute": {
+              "id": "6af64e1eaf602e5fa9536738",
+              "name": "2029-01-10_Camion 1_CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+              "date": "2029-01-10T00:00:00Z",
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "vehicle": {
+                "id": "6a412d0fb2f8ec04b0ee78eb",
+                "name": "Camion 1"
+              },
+              "supervisor": {
+                "id": "252",
+                "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+              },
+              "driver": {
+                "id": "252",
+                "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06"
+              },
+              "helpers": []
+            },
+            "name": "2029-01-10_Camion 1_CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+            "id": "6af64e1eaf602e5fa9536738"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "sender": {
+            "id": "6af64e1eaf602e5fa953673a",
+            "name": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06",
+            "customerType": 1,
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Scoped Fixture St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451"
+            }
+          },
+          "purpose": "CODEX-SCOPE-17182d7f-4995-49e7-8b76-c82c87e73f06-SELF-APPROVED"
+        },
+        "error": "",
+        "duration": 0.01565775,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/pickups/21895",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": null,
+        "error": "",
+        "duration": 0.032784375,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/pickups/21895",
+      "http": 404,
+      "response": {
+        "success": false,
+        "message": "pickup not found",
+        "error": "pickup not found. Suggested solution: Verify the resource identifier and try again."
+      }
+    }
+  ]
+}

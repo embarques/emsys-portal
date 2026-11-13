@@ -108,21 +108,31 @@ export function buildTransactionEntryOptions(t: TranslateFn): TransactionEntryOp
   return options;
 }
 
-const ENTRY_GROUPS: Array<{ id: string; categories: TransactionEntryCategory[] }> = [
-  { id: "invoices", categories: ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"] },
-  { id: "incomeExpenses", categories: ["SALES", "EXPENSE"] },
-  { id: "inventory", categories: ["INVENTORY", "INVENTORY-PAYMENT"] },
-  { id: "loans", categories: ["LOAN-ISSUE", "LOAN-INCREASE", "LOAN-PAYMENT"] },
-  { id: "transfers", categories: ["TRANSFER"] },
+/** Discounts and surcharges are chosen inside the existing-invoice (PAYMENT) form, not in the picker. */
+const ENTRY_GROUPS: Array<{ id: string; icon: LucideIcon; categories: TransactionEntryCategory[] }> = [
+  { id: "invoices", icon: FileText, categories: ["INITIAL-PAYMENT", "PAYMENT"] },
+  { id: "income", icon: ArrowUpCircle, categories: ["SALES"] },
+  { id: "expenses", icon: Wallet, categories: ["EXPENSE"] },
+  { id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"] },
+  { id: "loans", icon: Landmark, categories: ["LOAN-ISSUE", "LOAN-INCREASE", "LOAN-PAYMENT"] },
+  { id: "transfers", icon: ArrowLeftRight, categories: ["TRANSFER"] },
 ];
 
 export function buildTransactionEntryGroups(t: TranslateFn) {
   const options = buildTransactionEntryOptions(t);
   return ENTRY_GROUPS.map((group) => ({
     id: group.id,
+    icon: group.icon,
     label: t(`accounting.dailyIncome.wizard.typeSelector.groups.${group.id}`),
     options: group.categories.flatMap((category) => options.filter((option) => option.value === category)),
   }));
+}
+
+export const INVOICE_ACTION_TYPES = ["PAYMENT", "DISCOUNT", "SURCHARGE"] as const satisfies readonly JournalTransactionType[];
+export type InvoiceActionType = (typeof INVOICE_ACTION_TYPES)[number];
+
+export function isInvoiceActionType(type: string | null | undefined): type is InvoiceActionType {
+  return INVOICE_ACTION_TYPES.includes(type as InvoiceActionType);
 }
 
 export function getTransactionTypeOption(type: JournalTransactionType, t: TranslateFn): TransactionTypeOption {

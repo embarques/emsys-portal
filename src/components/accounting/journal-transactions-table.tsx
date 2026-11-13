@@ -1,6 +1,8 @@
 "use client";
 
-import {useDeferredValue, useMemo, useState, type ReactNode} from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+import {useMemo, useState, type ReactNode} from "react";
 import {CheckCircle2, Info, Printer} from "lucide-react";
 import {DataTable} from "@/components/app-shell/data-table";
 import {useApiTableColumns} from "@/components/app-shell/use-api-table-columns";
@@ -61,7 +63,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const actionLabel = text(clearance ? "clearSelected" : "reconcileSelected");
   const {page, setPage, pageSize, pageLimit, changePageSize} = useTablePageSize();
   const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
+  const debouncedQuery = useDebouncedValue(query);
   const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sort, setSort] = useState("createdAt:desc");
@@ -70,7 +72,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const [commandRows, setCommandRows] = useState<DailyIncomeJournal[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [outcome, setOutcome] = useState<ReturnType<typeof atomicBatchOutcome> | null>(null);
-  const params = {incomeStatementId, pending: pending && !clearance, pendingClearance: clearance, page, limit: pageLimit, query: deferredQuery, filterRows, sort};
+  const params = {incomeStatementId, pending: pending && !clearance, pendingClearance: clearance, page, limit: pageLimit, query: debouncedQuery, filterRows, sort};
   const rowsQuery = useJournalRows(params);
   const rows = rowsQuery.data?.items ?? [];
   const total = rowsQuery.data?.total ?? 0;
@@ -85,7 +87,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const hasActiveSearch = Boolean(query.trim()) || activeFilterCount > 0;
   const noun = t("accounting.dailyIncome.noun");
   const listSummary = formatPaginatedListSummary({itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun, isFiltered: hasActiveSearch, isLoading: rowsQuery.isFetching}, t);
-  const searchSummary = buildToolbarSearchSummary({isFiltered: hasActiveSearch, query, isSearchPending: query.trim() !== deferredQuery.trim(), matched: total, noun, isLoading: rowsQuery.isFetching && rows.length === 0}, t);
+  const searchSummary = buildToolbarSearchSummary({isFiltered: hasActiveSearch, query, isSearchPending: query.trim() !== debouncedQuery.trim(), matched: total, noun, isLoading: rowsQuery.isFetching && rows.length === 0}, t);
   const chartAccountsQuery = useChartAccounts({page: 1, limit: 500}, hasPermission("canViewChartAccount", "chart_account"));
   const chartAccountsById = useMemo(() => buildChartAccountsById(chartAccountsQuery.data?.items ?? []), [chartAccountsQuery.data]);
   const columns = useMemo(() => journalTableColumns(t, chartAccountsById).map(column => ({...column, sortable: column.id === "date" || column.id === "createdAt"})), [t, chartAccountsById]);
@@ -141,10 +143,10 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       <CardTitle>{isQueue ? text("title") : t("accounting.dailyIncome.transactions.title")}</CardTitle>
       {headerActions}
     </div>
-    <TableDirectoryToolbar columnLayout={layout}
+    <TableDirectoryToolbar isLoading={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} columnLayout={layout}
       filtersOpen={filtersOpen} onFiltersOpenChange={setFiltersOpen}
       activeFilterCount={activeFilterCount} searchSummary={searchSummary}
-      filterPanel={<TableAdvancedFilterPanel presetScope={clearance ? "pending-clearance" : pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} resultSummary={listSummary} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}
+      filterPanel={<TableAdvancedFilterPanel isLoading={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} presetScope={clearance ? "pending-clearance" : pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} resultSummary={listSummary} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}
       search={<TableSearchInput value={query} onChange={value => {setQuery(value); setPage(1); setSelected({}); setCommand(null); setOutcome(null);}} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}/>}
     />
     </CardHeader>
@@ -167,7 +169,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
     {canProcess ? <p className="border-b px-6 py-3 text-sm text-muted-foreground">{text("sameMethod")}</p> : null}
     {rowsQuery.isError ? <p role="alert" className="px-6 py-3 text-sm text-destructive">{normalizeApiError(rowsQuery.error).message}</p> : <DataTable
       columns={layout.columns} columnLayout={layout} rows={rows} rowKey={row => row.id} rowLabel={row => row.refNumber || row.id}
-      page={page} isPageDataPending={rowsQuery.isFetching} selectable selectedIds={ids}
+      page={page} isPageDataPending={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} selectable selectedIds={ids}
       isRowSelectable={row => !processMutation.isPending && canSelect(row)}
       renderSelectCellActions={isQueue ? renderBlockedHint : undefined}
       allPageSelected={rows.length > 0 && rows.every(row => ids.includes(row.id))}
@@ -185,7 +187,6 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
         <p>{text(outcome.complete ? "batchComplete" : "batchUnconfirmed")}</p>
         {outcome.confirmed.map(id => <p key={id}>{id} — {text("confirmed")}</p>)}
         {outcome.unconfirmed.map(id => <p key={id}>{id} — {text("unconfirmed")}</p>)}
-        {clearance && clearanceMutation.data?.reconciliationPending.length ? <p>{text("reconciliationPending")}</p> : null}
       </div> : null}
       <DialogFooter><Button variant="outline" disabled={processMutation.isPending} onClick={() => setConfirmOpen(false)}>{t("common.actions.cancel")}</Button><Button disabled={(!ready && !outcome) || outcome?.complete === true || processMutation.isPending || !command} onClick={() => {if (!command) return;
  const onSuccess = (acknowledged: string[] | undefined) => {
@@ -196,7 +197,10 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
  // Keep the exact original command for an uncertain-response retry. Its UUID
  // must never be reused with only the omitted IDs or another payload.
  };
- if (clearance) clearanceMutation.mutate({...command, reconcileIds: commandRows.filter(row => row.reconciliationStatus === "OUTSTANDING").map(row => row.id)}, {onSuccess: response => onSuccess(response?.data?.cleared)});
+ if (clearance) clearanceMutation.mutate({...command,
+   invoices: commandRows.flatMap(row => row.invoice?.id ? [{id: String(row.invoice.id), number: row.invoice.number}] : []),
+   incomeStatementIds: [...new Set(commandRows.map(row => row.incomeStatementId).filter(id => id > 0))],
+ }, {onSuccess: response => onSuccess(response?.data?.cleared)});
  else reconciliationMutation.mutate(command, {onSuccess: response => onSuccess(response?.data?.reconciled)});
  }}>{actionLabel}</Button></DialogFooter>
     </DialogContent></Dialog>

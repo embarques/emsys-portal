@@ -119,7 +119,8 @@ function WorkflowStepperFixture() {
   </>;
 }
 
-createRoot(document.getElementById("root")!).render(
+const fixtureQueryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
+createRoot(document.getElementById("root")!).render(<QueryClientProvider client={fixtureQueryClient}>{
   document.documentElement.dataset.fixture === "number-mode" ? <NumberModeFixture /> :
   document.documentElement.dataset.fixture === "pickup-reference" ? <PickupReferenceFixture /> :
   document.documentElement.dataset.fixture === "stepper" ? <WorkflowStepperFixture /> :
@@ -128,5 +129,5 @@ createRoot(document.getElementById("root")!).render(
     document.documentElement.dataset.fixture === "address" ? <AddressFixture /> :
     document.documentElement.dataset.fixture === "customer" ? <CustomerFixture /> :
     document.documentElement.dataset.fixture === "statement" ? <DailyIncomeFixture /> :
-      document.documentElement.dataset.fixture === "transaction" ? <DailyIncomeFixture transaction /> : <Fixture />,
+      document.documentElement.dataset.fixture === "transaction" ? <DailyIncomeFixture transaction /> : <Fixture />}</QueryClientProvider>,
 );

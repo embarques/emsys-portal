@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isImeComposing } from "@/hooks/use-form-enter-navigation";
 import {
   InvoiceWizardReviewOptionalMissing,
   InvoiceWizardReviewSection,
@@ -367,6 +368,7 @@ function ReviewPriceTotals({
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
+                  if (isImeComposing(event)) return;
                   applyDiscount();
                 }
               }}

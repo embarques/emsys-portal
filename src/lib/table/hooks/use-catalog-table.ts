@@ -103,6 +103,8 @@ export function useCatalogTable<T>({ fields, keyPrefix, defaultSort, getRowId, q
     items,
     total,
     isLoading: pageQuery.isLoading,
+    isFetching: pageQuery.isFetching,
+    isSearching: enabled && (query.trim() !== debouncedQuery.trim() || pageQuery.isFetching),
     isError: pageQuery.isError,
     error: pageQuery.error,
     refetch: pageQuery.refetch,

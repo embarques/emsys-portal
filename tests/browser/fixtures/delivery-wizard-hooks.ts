@@ -4,6 +4,8 @@ import type { InvoiceDocument } from "@/lib/invoices/documents";
 
 declare global {
   interface Window {
+    wizardLosePaymentResponse?: boolean;
+    wizardPaymentRequestIds?: string[];
     wizardBalance?: number;
     wizardBalanceError?: boolean;
     wizardCannotPay?: boolean;
@@ -200,6 +202,9 @@ export async function searchIncomeStatementForDate(_branch: number, date: string
   if (window.wizardNoStatement && !window.wizardStatements?.length) return null;
   return { id: 1, date, status: "OPEN", branch: { id: 1 }, currency: "USD", rate: 1 };
 }
+export async function fetchCurrentIncomeStatement(branch: number) {
+  return searchIncomeStatementForDate(branch, "2026-10-23");
+}
 export async function createIncomeStatement(values: unknown) {
   window.wizardStatements = [...(window.wizardStatements ?? []), values];
   return { id: 1, date: "2026-10-23", status: "OPEN", branch: { id: 1 }, currency: "USD", rate: 1 };
@@ -223,6 +228,19 @@ export async function createDailyIncomeJournal(_statement: unknown, values: { am
   window.wizardPayments = [...(window.wizardPayments ?? []), values];
   if (values.paymentMethodName === "CASH") window.wizardBalance = (window.wizardBalance ?? 0) - values.amount;
   else window.wizardPendingChecks = [...(window.wizardPendingChecks ?? []), { id: "check-new", amount: values.amount }];
-  return { id: "payment-1", amount: values.amount };
+  return { id: "payment-1", amount: values.amount, clearanceStatus: values.paymentMethodName === "CASH" ? "NOT_REQUIRED" : "OUTSTANDING" };
+}
+export const buildDailyIncomeJournalCreatePayload = (_statement: unknown, values: unknown) => values;
+const paymentReceipts = new Map<string, Awaited<ReturnType<typeof createDailyIncomeJournal>>>();
+export async function createDailyIncomeJournalSync(requestId: string, statement: unknown, values: {amount: number; paymentMethodName: string}) {
+  (window.wizardPaymentRequestIds ??= []).push(requestId);
+  if (paymentReceipts.has(requestId)) return paymentReceipts.get(requestId)!;
+  const receipt = await createDailyIncomeJournal(statement, values);
+  paymentReceipts.set(requestId, receipt);
+  if (window.wizardLosePaymentResponse) {
+    window.wizardLosePaymentResponse = false;
+    throw new Error("Response lost after payment committed");
+  }
+  return receipt;
 }
 export function useBranchPicker() { return { data: { items: [{ id: 1, code: "US", name: "Office" }] } }; }

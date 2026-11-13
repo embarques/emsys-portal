@@ -210,6 +210,7 @@ export function BranchForm({
                 </Label>
                 <Input
                   id="address-zipcode"
+                  autoComplete="postal-code"
                   value={values.address.zipcode}
                   onChange={(event) => updateAddressField("zipcode", event.target.value)}
                   disabled={googleMapsConfigured && !manualAddressEntry}

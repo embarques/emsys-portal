@@ -377,7 +377,7 @@ export function ContainersWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -394,7 +394,7 @@ export function ContainersWorkspace() {
               />
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={t("common.pagination.showingOf", {
                   count: containers.length,
                   total: totalContainers,
@@ -468,7 +468,7 @@ export function ContainersWorkspace() {
             columns={columnVisibility.columns}
             rows={containers}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(container) => String(container.id)}
             rowLabel={(container) => container.name}
             columnLayout={columnVisibility}

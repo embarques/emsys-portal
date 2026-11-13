@@ -330,7 +330,7 @@ export function ItemsWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={advancedFilterCount}
@@ -347,7 +347,7 @@ export function ItemsWorkspace() {
               />
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={listSummary}
                 presets={{
                   storageKey: "items",
@@ -409,7 +409,7 @@ export function ItemsWorkspace() {
             columns={columnVisibility.columns}
             rows={items}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(item) => item.itemId}
             rowLabel={(item) => item.description}
             columnLayout={columnVisibility}

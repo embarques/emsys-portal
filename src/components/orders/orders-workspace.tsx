@@ -1,6 +1,8 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
   Check,
@@ -339,7 +341,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const { loading: authLoading, companyId, hasPermission } = useAuth();
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const deferredQuery = useDeferredValue(filters.query);
+  const debouncedQuery = useDebouncedValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
@@ -362,11 +364,11 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       buildOrderListParams({
         page,
         limit: pageLimit,
-        query: deferredQuery,
+        query: debouncedQuery,
         rows: filters.rows,
         sort,
       }),
-    [deferredQuery, filters.rows, page, pageLimit, sort],
+    [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useOrders(listParams, { routeMode, enabled: !routeMode || routeAccess.canView });
@@ -439,7 +441,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const isPrinting = generatePickupReportMutation.isPending;
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(deferredQuery, filters.rows),
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
     setSelectedIds,
   );
 
@@ -987,7 +989,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const columnVisibility = useApiTableColumns("orders-v10", tableColumns, ORDER_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const isSearchPending = filters.query.trim() !== deferredQuery.trim();
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const isListFiltered = hasActiveFilters;
   const searchSummary = buildToolbarSearchSummary(
     {
@@ -1041,7 +1043,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
 
         <div className="rounded-3xl border bg-card p-4 shadow-sm">
           <div className="flex gap-3">
-            <TableSearchInput
+            <TableSearchInput isLoading={isFetching || isSearchPending}
               value={filters.query}
               onChange={(query) => {
                 setFilters((current) => ({ ...current, query }));
@@ -1068,7 +1070,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
 
           {filtersOpen ? (
             <div className="mt-4">
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={listSummary}
                 presets={{
                   storageKey: "orders-mobile",
@@ -1315,7 +1317,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         </StatCardsCarousel> : null}
         <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -1332,7 +1334,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
               />
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={listSummary}
                 presets={{
                   storageKey: "orders",
@@ -1522,7 +1524,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             columns={columnVisibility.columns}
             rows={orders}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(order) => getOrderRecordId(order)}
             rowLabel={(order) => formatOrderId(order)}
             columnLayout={columnVisibility}

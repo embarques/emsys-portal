@@ -174,7 +174,7 @@ type ApiInvoiceBarcode = {
   status?: ApiInvoiceBarcodeStatus;
   container?: ApiInvoiceBarcodeContainer;
   delivery?: ApiInvoiceBarcodeDelivery;
-  route?: ApiInvoiceBarcodeRoute;
+  route?: ApiInvoiceBarcodeRoute | null;
   scanDate?: string;
   createdAt?: string;
   createdBy?: ApiInvoiceUser;
@@ -336,7 +336,7 @@ function normalizeApiInvoiceReceiver(item: ApiInvoice): OrderParty | null {
 }
 
 /** Normalize nested invoice-barcode `route` (id / routeId / name / nested crew). */
-function normalizeInvoiceBarcodeRoute(raw: ApiInvoiceBarcodeRoute | undefined): {
+function normalizeInvoiceBarcodeRoute(raw: ApiInvoiceBarcodeRoute | null | undefined): {
   routeId?: string;
   routeName?: string;
 } {
@@ -1131,7 +1131,8 @@ export type InvoiceEmbeddedBarcodePatch = {
   number: string;
   status: { id: number; name: string };
   container?: { id: number; name: string };
-  route?: { id: string; name: string };
+  /** Omitted preserves assignment; null explicitly removes an unfinished route. */
+  route?: { id: string; name: string } | null;
 };
 
 function listInvoiceDetailBarcodes(detail: ApiInvoiceDetail): ApiInvoiceBarcode[] {
@@ -1195,7 +1196,7 @@ export async function patchInvoiceEmbeddedBarcodes(
       if (patch.container) {
         barcode.container = patch.container;
       }
-      if (patch.route) {
+      if (patch.route !== undefined) {
         barcode.route = patch.route;
       }
 

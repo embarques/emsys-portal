@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchRouteDateGuard } from "@/lib/pickup-delivery-routes/api/route-business-date-api";
 import { useAssignmentToday } from "@/lib/pickup-delivery-routes/hooks/use-assignment-today";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { permissionKey } from "@/lib/auth/permissions";
@@ -66,10 +67,10 @@ export function useActiveRoutePicker(
 
 export function useDailyRoutePicker(
   limit = 200,
-  options: { enabled?: boolean; branchCode?: string; routeType?: RouteType; date?: string; assignable?: boolean } = {},
+  options: { enabled?: boolean; branchCode?: string; branchId?: number; routeType?: RouteType; date?: string; assignable?: boolean } = {},
 ) {
   const { scope, ready } = useRoutePickerScope();
-  const today = useAssignmentToday(Boolean(options.assignable && (options.enabled ?? true)));
+  const today = useAssignmentToday(Boolean(options.assignable && (options.enabled ?? true)), options.branchId);
   const branchCode = options.branchCode?.trim() || undefined;
   const date = options.date?.trim().slice(0, 10) || undefined;
   const listParams = {
@@ -232,10 +233,17 @@ export function useUpsertActiveRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: {
+    mutationFn: async (input: {
       values: ActiveRouteFormValues;
       existingId?: string | null;
-    }) => upsertActiveRoute(input.values, input.existingId),
+      forAssignment?: boolean;
+    }) => {
+      if (input.forAssignment) {
+        const assertRouteDate = await fetchRouteDateGuard(input.values.branch.id);
+        assertRouteDate(input.values.date);
+      }
+      return upsertActiveRoute(input.values, input.existingId);
+    },
     onSuccess: () => invalidateScheduledRoutes(queryClient),
   });
 }

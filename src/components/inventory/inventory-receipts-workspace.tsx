@@ -276,7 +276,7 @@ export function InventoryReceiptsWorkspace() {
         />
       </div>
 
-      <InventoryDocumentMobileList
+      <InventoryDocumentMobileList isSearching={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
         title={t("inventory.submenus.receipts")}
         description={t("inventory.pages.receipts")}
         addLabel={t("inventory.actions.newReceipt")}
@@ -315,12 +315,12 @@ export function InventoryReceiptsWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel
+              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
                 presetScope="inventory-receipts"
                 dynamicOptions={dynamicOptions}
                 open={filtersOpen}
@@ -376,7 +376,7 @@ export function InventoryReceiptsWorkspace() {
             columns={[t("inventory.columns.supplier"), t("inventory.columns.lines"), t("inventory.columns.status")]}
           />
         ) : (
-          <DataTable
+          <DataTable isPageDataPending={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
             columns={columnVisibility.columns}
             rows={pageRows}
             page={currentPage}

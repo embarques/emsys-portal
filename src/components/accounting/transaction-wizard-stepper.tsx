@@ -20,8 +20,8 @@ export function TransactionWizardStepper({ step, labels, disabled, allowedSteps,
       <p className="text-sm font-medium" aria-live="polite">
         {t("accounting.dailyIncome.wizard.stepCount", { current: step, total: labels.length })} · {labels[step - 1]}
       </p>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-primary transition-[width]" style={{ width: `${step / labels.length * 100}%` }} />
+      <div role="progressbar" aria-label={labels[step - 1]} aria-valuemin={1} aria-valuemax={labels.length} aria-valuenow={step} className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-primary motion-safe:transition-[width]" style={{ width: `${step / labels.length * 100}%` }} />
       </div>
     </div>
   );

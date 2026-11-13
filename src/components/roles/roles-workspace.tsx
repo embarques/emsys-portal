@@ -416,7 +416,7 @@ export function RolesWorkspace() {
         : null;
   const addDisabled = rolesQuery.isLoading || permissionCatalog.length === 0;
   const filtersPanel = (
-    <TableFilterPanel
+    <TableFilterPanel isLoading={rolesQuery.isFetching || isSearchPending}
       resultSummary={listSummary}
       presets={{
         storageKey: "roles",
@@ -465,7 +465,7 @@ export function RolesWorkspace() {
         <StatCards items={statCards} />
       </div>
 
-      <RoleMobileList
+      <RoleMobileList isSearching={rolesQuery.isFetching || isSearchPending}
         query={filters.query}
         roles={pageRoles}
         selectedIds={selectedIds}
@@ -494,7 +494,7 @@ export function RolesWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={rolesQuery.isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -549,7 +549,7 @@ export function RolesWorkspace() {
             columns={columnVisibility.columns}
             rows={pageRoles}
             page={currentPage}
-            isPageDataPending={rolesQuery.isFetching}
+            isPageDataPending={rolesQuery.isFetching || isSearchPending}
             rowKey={(role) => role.roleId}
             rowLabel={(role) => role.name}
             columnLayout={columnVisibility}

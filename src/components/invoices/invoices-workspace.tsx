@@ -1,6 +1,8 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+import { useMemo, useState } from "react";
 import {
   Check,
   CircleAlert,
@@ -11,6 +13,7 @@ import {
   Receipt,
   RefreshCw,
   Search,
+  Loader2,
   Tags,
 } from "lucide-react";
 
@@ -414,7 +417,7 @@ export function InvoicesWorkspace() {
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const deferredQuery = useDeferredValue(filters.query);
+  const debouncedQuery = useDebouncedValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_INVOICE_LIST_PARAMS.sort, () => setPage(1));
@@ -482,12 +485,12 @@ export function InvoicesWorkspace() {
       buildInvoiceListParams({
         page,
         limit: pageLimit,
-        query: deferredQuery,
+        query: debouncedQuery,
         rows: filters.rows,
         paymentLocation: filters.paymentLocation,
         sort,
       }),
-    [deferredQuery, filters.paymentLocation, filters.rows, page, pageLimit, sort],
+    [debouncedQuery, filters.paymentLocation, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching, refetch } = useInvoices(listParams);
@@ -524,7 +527,7 @@ export function InvoicesWorkspace() {
   const isSaving = isDeleting || isPrinting;
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(deferredQuery, filters.rows, filters.paymentLocation),
+    buildTableSelectionResetKey(debouncedQuery, filters.rows, filters.paymentLocation),
     setSelectedIds,
   );
 
@@ -974,7 +977,7 @@ export function InvoicesWorkspace() {
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
-  const isSearchPending = filters.query.trim() !== deferredQuery.trim();
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
     query: filters.query,
@@ -1007,8 +1010,11 @@ export function InvoicesWorkspace() {
       <section className="space-y-5 md:hidden">
         <div className="flex items-center gap-3">
           <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/80" />
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/80" role={isFetching || isSearchPending ? "progressbar" : undefined} aria-label={isFetching || isSearchPending ? t("common.ui.searching") : undefined}>
+              {isFetching || isSearchPending ? <Loader2 aria-hidden="true" className="size-5 animate-spin motion-reduce:animate-none" /> : <Search aria-hidden="true" className="size-5" />}
+            </span>
             <input
+              aria-busy={isFetching || isSearchPending}
               value={filters.query}
               onChange={(event) => {
                 setFilters((current) => ({ ...current, query: event.target.value }));
@@ -1035,7 +1041,7 @@ export function InvoicesWorkspace() {
         </div>
 
         {mobileFiltersOpen ? (
-          <TableFilterPanel
+          <TableFilterPanel isLoading={isFetching || isSearchPending}
             resultSummary={t("invoices.workspace.showing", {
               count: invoices.length,
               total: totalInvoices,
@@ -1192,7 +1198,7 @@ export function InvoicesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={desktopFiltersOpen}
             onFiltersOpenChange={setDesktopFiltersOpen}
             activeFilterCount={activeFilterCount}
@@ -1211,7 +1217,7 @@ export function InvoicesWorkspace() {
               </div>
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={t("invoices.workspace.showing", {
                   count: invoices.length,
                   total: totalInvoices,
@@ -1317,7 +1323,7 @@ export function InvoicesWorkspace() {
             columns={columnVisibility.columns}
             rows={invoices}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || isSearchPending}
             rowKey={(invoice) => invoice.invoiceId}
             rowLabel={(invoice) => invoice.invoiceNumber}
             columnLayout={columnVisibility}

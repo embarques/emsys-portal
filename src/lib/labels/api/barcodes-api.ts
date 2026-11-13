@@ -1,6 +1,6 @@
 import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
 import { assertBarcodeRouteChangeAllowed } from "@/lib/labels/route-assignment-policy";
-import { assertAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
+import { fetchRouteDateGuard } from "@/lib/pickup-delivery-routes/api/route-business-date-api";
 import { translateCurrent } from "@/lib/i18n/translate-current";
 import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -417,6 +417,7 @@ function toEmbeddedPatch(target: Extract<BarcodeWriteTarget, { kind: "invoice-em
     number: payload.number,
     status: payload.status,
     container: payload.container,
+    ...(payload.route !== undefined ? { route: payload.route } : {}),
   };
 }
 
@@ -829,6 +830,7 @@ export async function assignInvoiceItemBarcodesToRoute(
   routeId: string,
   barcodeIds: Array<string | number>,
   routeDate: string,
+  branchId?: number,
 ): Promise<InvoiceItemBarcodeRoute> {
   const id = routeId.trim();
   if (!id) {
@@ -836,7 +838,8 @@ export async function assignInvoiceItemBarcodesToRoute(
   }
 
   const ids = coerceUint32Ids(barcodeIds);
-  assertAssignableRouteDate(routeDate);
+  const assertRouteDate = await fetchRouteDateGuard(branchId);
+  assertRouteDate(routeDate);
   if (ids.length === 0) {
     throw new Error(translateCurrent("labels.errors.noContainerBarcodes"));
   }
@@ -875,18 +878,21 @@ export type AssignBarcodeToRouteTarget = {
 };
 
 function coerceUint32Ids(values: Array<string | number>): number[] {
-  const ids: number[] = [];
-  for (const value of values) {
-    if (typeof value === "number") {
-      if (Number.isInteger(value) && value > 0) ids.push(value);
-      continue;
-    }
-    const trimmed = String(value).trim();
-    if (!/^\d+$/.test(trimmed)) continue;
-    const parsed = Number(trimmed);
-    if (Number.isInteger(parsed) && parsed > 0) ids.push(parsed);
+  if (values.length < 1 || values.length > 200) {
+    throw new Error(translateCurrent("labels.errors.pieceBatchSize"));
   }
-  return Array.from(new Set(ids));
+  const ids = values.map(value => {
+    const text = String(value).trim();
+    const id = Number(text);
+    if (!/^\d+$/.test(text) || !Number.isSafeInteger(id) || id < 1 || id > 0xffffffff) {
+      throw new Error(translateCurrent("labels.errors.pieceIdInvalid"));
+    }
+    return id;
+  });
+  if (new Set(ids).size !== ids.length) {
+    throw new Error(translateCurrent("labels.errors.pieceIdsDuplicate"));
+  }
+  return ids;
 }
 
 async function resolveCatalogBarcodeId(target: AssignBarcodeToRouteTarget): Promise<number | null> {
@@ -924,6 +930,7 @@ async function assignCatalogBarcodeRoute(
   catalogId: number,
   route: { id: string; name: string },
   routeDate: string,
+  assertRouteDate: (date: string) => void,
 ): Promise<void> {
   const existing = await fetchBarcodeById(catalogId);
   const status =
@@ -931,7 +938,7 @@ async function assignCatalogBarcodeRoute(
       ? { id: existing.status.id, name: existing.status.name.trim() }
       : NEW_BARCODE_STATUS;
 
-  assertAssignableRouteDate(routeDate);
+  assertRouteDate(routeDate);
   await updateBarcode(catalogId, {
     number: existing.number,
     status,
@@ -960,6 +967,7 @@ export async function assignBarcodesToDailyRoute(
   targets: AssignBarcodeToRouteTarget[],
   onProgress?: (progress: RouteAssignmentProgress) => void,
   routeDate = "",
+  branchId?: number,
 ): Promise<InvoiceItemBarcodeRoute> {
   const trimmedRouteId = routeId.trim();
   if (!trimmedRouteId) {
@@ -969,7 +977,8 @@ export async function assignBarcodesToDailyRoute(
     throw new Error(translateCurrent("labels.errors.selectAtLeastOne"));
   }
 
-  assertAssignableRouteDate(routeDate);
+  const assertRouteDate = await fetchRouteDateGuard(branchId);
+  assertRouteDate(routeDate);
 
   const route = {
     id: trimmedRouteId,
@@ -1025,7 +1034,7 @@ export async function assignBarcodesToDailyRoute(
   const jobs: Array<{ count: number; run: () => Promise<void> }> =
     Array.from(new Set(catalogIds), (catalogId) => ({
       count: 1,
-      run: () => assignCatalogBarcodeRoute(catalogId, route, routeDate),
+      run: () => assignCatalogBarcodeRoute(catalogId, route, routeDate, assertRouteDate),
     }));
   for (const [invoiceId, invoiceTargets] of embeddedByInvoice) {
     jobs.push({
@@ -1076,7 +1085,7 @@ export async function assignBarcodesToDailyRoute(
           };
         });
 
-        assertAssignableRouteDate(routeDate);
+        assertRouteDate(routeDate);
         await patchInvoiceEmbeddedBarcodes(invoiceId, resolvedPatches);
       },
     });

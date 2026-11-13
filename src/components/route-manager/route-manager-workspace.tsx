@@ -349,7 +349,7 @@ export function RouteManagerWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={isFetching || query.trim() !== debouncedQuery.trim()}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={advancedFilterCount}
@@ -386,7 +386,7 @@ export function RouteManagerWorkspace() {
               </div>
             }
             filterPanel={
-              <TableFilterPanel
+              <TableFilterPanel isLoading={isFetching || query.trim() !== debouncedQuery.trim()}
                 resultSummary={listSummary}
                 presets={{
                   storageKey: "routes",
@@ -439,7 +439,7 @@ export function RouteManagerWorkspace() {
             columns={columnVisibility.columns}
             rows={assignments}
             page={currentPage}
-            isPageDataPending={isFetching || !isBranchFilterReady}
+            isPageDataPending={isFetching || !isBranchFilterReady || query.trim() !== debouncedQuery.trim()}
             rowKey={(assignment) => assignment.id}
             rowLabel={(assignment) => formatRouteName(assignment)}
             columnLayout={columnVisibility}

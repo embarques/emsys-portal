@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
+import { formatInventoryMinor } from "@/lib/inventory/display";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { DispatchReconciliationEntry } from "@/components/accounting/dispatch-reconciliation-entry";
 import { ReconcileDispatchPayments } from "@/components/accounting/reconcile-dispatch-payments";
@@ -12,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import { useAccountingPaymentMethods } from "@/lib/accounting/daily-income/hooks";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -27,7 +29,7 @@ import {
   useRejectReconciliation,
 } from "@/lib/inventory/pending-dispatches/hooks";
 import { accountedQuantity, buildReconciliationInput, createReconciliationForm } from "@/lib/inventory/pending-dispatches/reconciliation";
-import { creditMinor, readOutcomeQuantity, reconciliationFormSchema, type ReconciliationFormValues } from "@/lib/inventory/pending-dispatches/schemas";
+import { creditMinor, paymentsTotalMinor, soldRevenueMinor, readOutcomeQuantity, reconciliationFormSchema, type ReconciliationFormValues } from "@/lib/inventory/pending-dispatches/schemas";
 import {
   DAMAGE_RESOLUTIONS,
   LOSS_OUTCOMES,
@@ -38,11 +40,12 @@ import {
 import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import { cn } from "@/lib/utils";
 
-export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBusyChange }: {
+export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBusyChange, guided = false }: {
   dispatch: PendingInventoryDispatch;
   canReconcile: boolean;
   onClose: () => void;
   onBusyChange?: (busy: boolean) => void;
+  guided?: boolean;
 }) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
@@ -86,12 +89,25 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
   const hasLoss = lines.some((line) => LOSS_OUTCOMES.some((outcome) => (readOutcomeQuantity(line[outcome]) ?? 0) > 0));
   const notesRequired = hasLoss || creditMinor({ lines, payments, salesRecordedAtDispatch: dispatch.salesRecordedAtDispatch }) > 0;
 
+  const [step, setStep] = useState(1);
+  const HistoryContainer = guided ? "details" : "section";
+  const heading = useRef<HTMLHeadingElement>(null);
+  const labels = ["inventoryItems", "inventoryPayment", "review"].map((key) => t(`accounting.dailyIncome.wizard.quickFlow.${key}`));
+  useEffect(() => { if (guided) heading.current?.focus(); }, [guided, step]);
   const submitting = useRef(false);
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     // Validation is async, so a second submit can arrive before the mutation is pending.
     if (submitting.current) return;
     submitting.current = true;
+    if (guided && step < 3) {
+      try {
+        const valid = await form.trigger(step === 1 ? ["lines"] : undefined, { shouldFocus: true });
+        if (valid) setStep(step + 1);
+        else if (step === 2 && form.getFieldState("lines").error) setStep(1);
+      } finally { submitting.current = false; }
+      return;
+    }
     void form.handleSubmit(async (values) => {
       try {
         await reconcile.mutateAsync({ dispatchId: dispatch.id, input: buildReconciliationInput(values, requestId) });
@@ -100,7 +116,10 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
         onClose();
       } catch { /* The error stays visible and the request id is kept so a retry cannot reconcile twice. */ }
       finally { submitting.current = false; }
-    }, () => { submitting.current = false; })(event);
+    }, (validationErrors) => {
+      submitting.current = false;
+      if (guided) setStep(validationErrors.lines ? 1 : 2);
+    })(event);
   }
 
   async function submitConfirmation(action: ConfirmationActionOption, note: string) {
@@ -144,8 +163,8 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
             <div key={key}><dt className="text-xs text-muted-foreground">{text(key)}</dt><dd className="text-base font-semibold">{value}</dd></div>
           ))}
         </dl>
-        {canViewHistory ? <section aria-labelledby="dispatch-reconciliation-history" className="space-y-2">
-          <h3 id="dispatch-reconciliation-history" className="text-sm font-medium">{text("history")}</h3>
+        {canViewHistory ? <HistoryContainer aria-labelledby="dispatch-reconciliation-history" className={cn("space-y-2", guided && "rounded-lg border p-3")}>
+          {guided ? <summary id="dispatch-reconciliation-history" className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">{text("history")}</summary> : <h3 id="dispatch-reconciliation-history" className="text-sm font-medium">{text("history")}</h3>}
           {history.isError ? <p role="alert" className="text-sm text-destructive">{normalizeApiError(history.error).message}</p>
             : history.isPending ? <p role="status" className="text-sm text-muted-foreground">{text("loadingHistory")}</p>
             : !history.data.length ? <p className="text-sm text-muted-foreground">{text("noHistory")}</p>
@@ -159,11 +178,12 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                 onAction={(target, action) => setConfirmationTarget({ entry: target, action })}
               />
             ))}</ol>}
-        </section> : null}
+        </HistoryContainer> : null}
         {!canReconcile ? <p role="status" className="text-sm text-muted-foreground">{text("readOnly")}</p> : lines.length ? (
           <form onSubmit={submit} className="space-y-4 border-t pt-4">
+            {guided ? <div className="space-y-3"><TransactionWizardStepper step={step} labels={labels} disabled={busy} onSelectStep={setStep} /><header className="max-w-2xl space-y-2"><h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{labels[step - 1]}</h2><p className="text-sm leading-relaxed text-muted-foreground">{t(`accounting.dailyIncome.wizard.stepHints.${["inventoryItems", "inventoryPayment", "inventoryReview"][step - 1]}`)}</p></header></div> : null}
             <fieldset disabled={busy} className="min-w-0 space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className={cn("grid gap-3 sm:grid-cols-2 lg:grid-cols-3", guided && step !== 2 && "hidden")}>
                 <div className="space-y-2">
                   <Label htmlFor="reconcile-occurred-at">{text("occurredAt")}</Label>
                   <Input id="reconcile-occurred-at" type="datetime-local" aria-invalid={Boolean(errors.occurredAt)} {...form.register("occurredAt")} />
@@ -173,7 +193,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                   <div className="space-y-2">
                     <Label htmlFor="reconcile-income-employee">{text("incomeEmployee")}</Label>
                     <Controller control={form.control} name="incomeEmployeeId" render={({ field }) => (
-                      <SearchableSelect id="reconcile-income-employee" options={incomeOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectIncomeEmployee")} searchPlaceholder={text("searchEmployees")} emptyMessage={text("noEmployees")} aria-invalid={Boolean(errors.incomeEmployeeId)} mobileSheet />
+                      <SearchableSelect inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="reconcile-income-employee" options={incomeOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectIncomeEmployee")} searchPlaceholder={text("searchEmployees")} emptyMessage={text("noEmployees")} aria-invalid={Boolean(errors.incomeEmployeeId)} mobileSheet />
                     )} />
                     {errors.incomeEmployeeId?.message ? <p role="alert" className="text-xs text-destructive">{t(errors.incomeEmployeeId.message)}</p> : null}
                   </div>
@@ -186,7 +206,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                 </div>
               </div>
               {dispatch.salesRecordedAtDispatch ? <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">{text("salesRecorded")}</p> : null}
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className={cn("grid gap-4 xl:grid-cols-2", guided && step !== 1 && "hidden")}>
               {lines.map((line, index) => {
                 const remaining = line.outstanding - accountedQuantity(line);
                 const lineErrors = errors.lines?.[index];
@@ -219,7 +239,7 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                     {damaged ? <div className="space-y-1">
                       <Label htmlFor={`reconcile-${index}-resolution`} className="text-xs">{text("damageResolution")}</Label>
                       <Controller control={form.control} name={`lines.${index}.damageResolution`} render={({ field }) => (
-                        <SearchableSelect id={`reconcile-${index}-resolution`} options={resolutionOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectResolution")} searchPlaceholder={text("searchResolutions")} emptyMessage={text("noResolutions")} aria-invalid={Boolean(lineErrors?.damageResolution)} mobileSheet />
+                        <SearchableSelect inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id={`reconcile-${index}-resolution`} options={resolutionOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectResolution")} searchPlaceholder={text("searchResolutions")} emptyMessage={text("noResolutions")} aria-invalid={Boolean(lineErrors?.damageResolution)} mobileSheet />
                       )} />
                     </div> : null}
                   </div> : null}
@@ -227,21 +247,39 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                 </fieldset>;
               })}
               </div>
+              <div hidden={guided && step !== 2}>
               {collectsSales ? (
                 <ReconcileDispatchPayments
+                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                   form={form}
                   paymentMethods={paymentMethods.data ?? []}
                   bankAccounts={bankAccounts.data?.items ?? []}
                   loading={paymentMethods.isLoading || bankAccounts.isLoading}
                 />
               ) : null}
+              </div>
+              {guided && step === 3 ? <div className="space-y-4 rounded-xl border bg-card p-4">
+                <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.wizard.workflow.reviewHint")}</p>
+                {lines.filter((line) => accountedQuantity(line) > 0).map((line) => <section key={line.dispatchLineId} className="space-y-2">
+                  <h3 className="text-sm font-semibold">{line.itemName}</h3>
+                  <dl className="flex flex-wrap gap-4">{RECONCILIATION_OUTCOMES.filter((outcome) => (readOutcomeQuantity(line[outcome]) ?? 0) > 0).map((outcome) => <div key={outcome}><dt className="text-xs text-muted-foreground">{outcomeLabel(outcome)}</dt><dd className="text-sm font-medium">{line[outcome]}</dd></div>)}</dl>
+                </section>)}
+                <dl className="grid gap-4 sm:grid-cols-2">
+                  <div><dt className="text-xs text-muted-foreground">{text("occurredAt")}</dt><dd className="text-sm font-medium">{form.getValues("occurredAt")}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">{text("incomeEmployee")}</dt><dd className="text-sm font-medium">{incomeOptions.find((option) => option.value === form.getValues("incomeEmployeeId"))?.label || t("common.empty.dash")}</dd></div>
+                  {collectsSales ? <><div><dt className="text-xs text-muted-foreground">{text("revenue")}</dt><dd className="text-sm font-medium">{formatInventoryMinor(soldRevenueMinor(lines))}</dd></div><div><dt className="text-xs text-muted-foreground">{text("payments")}</dt><dd className="text-sm font-medium">{formatInventoryMinor(paymentsTotalMinor(payments))}</dd></div></> : null}
+                  <div className="sm:col-span-2"><dt className="text-xs text-muted-foreground">{text("notes")}</dt><dd className="whitespace-pre-wrap break-words text-sm font-medium">{form.getValues("notes") || t("common.empty.dash")}</dd></div>
+                </dl>
+                {payments.map((payment) => <p key={payment.key} className="text-sm">{payment.paymentMethodName} · {payment.amount}{payment.checkNumber ? ` · ${payment.checkNumber}` : ""}</p>)}
+              </div> : null}
             </fieldset>
             {nothingMessage ? <p role="alert" className="text-sm text-destructive">{t(nothingMessage)}</p> : null}
             {reconcile.isError ? <p role="alert" className="text-sm text-destructive">{normalizeApiError(reconcile.error).message}</p> : null}
             <p className="text-xs text-muted-foreground">{t("inventory.confirmations.reconciliation.final")}</p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              {guided && step > 1 ? <Button type="button" variant="outline" className="sm:mr-auto" disabled={busy} onClick={() => setStep(step - 1)}>{t("common.actions.previous")}</Button> : null}
               <Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common.actions.cancel")}</Button>
-              <Button type="submit" disabled={busy}>{busy ? text("saving") : text("save")}</Button>
+              <Button type="submit" disabled={busy}>{busy ? text("saving") : guided && step < 3 ? t("common.actions.next") : text("save")}</Button>
             </div>
           </form>
         ) : null}

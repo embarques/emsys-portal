@@ -107,11 +107,10 @@ export function TransactionReview({ values: v, onEdit, compact = false, currency
   }
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.wizard.workflow.reviewHint")}</p>
       {groups.map(({ step, rows, invoiceSummary }) => {
         const visibleRows = rows.filter(([, value]) => value !== undefined && value !== "");
         return (
-          <FormSection key={step} variant="card" title={t(getTransactionStepLabelKey(step, v.transactionType))} action={onEdit ? <Button type="button" size="sm" variant="ghost" onClick={() => onEdit(step)}>{t("common.actions.edit")}</Button> : undefined}>
+          <FormSection key={step} variant="card" title={t(getTransactionStepLabelKey(step, v.transactionType))} action={onEdit ? <Button type="button" size="sm" variant="outline" aria-label={`${t("common.actions.edit")}: ${t(getTransactionStepLabelKey(step, v.transactionType))}`} onClick={() => onEdit(step)}>{t("common.actions.edit")}</Button> : undefined}>
             <div className="space-y-4">
               {invoiceSummary ? (
                 <div className="grid gap-4 sm:grid-cols-3">

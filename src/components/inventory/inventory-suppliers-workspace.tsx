@@ -231,7 +231,7 @@ export function InventorySuppliersWorkspace() {
         />
       </div>
 
-      <InventorySupplierMobileList
+      <InventorySupplierMobileList isSearching={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
         query={query}
         suppliers={suppliers}
         pageRows={pageRows}
@@ -256,12 +256,12 @@ export function InventorySuppliersWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar
+          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel
+              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
                 presetScope="inventory-suppliers"
                 open={filtersOpen}
                 rows={filterRows}
@@ -325,7 +325,7 @@ export function InventorySuppliersWorkspace() {
             ]}
           />
         ) : (
-          <DataTable
+          <DataTable isPageDataPending={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
             columns={columnVisibility.columns}
             rows={pageRows}
             page={currentPage}

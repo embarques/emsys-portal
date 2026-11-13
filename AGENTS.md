@@ -1046,6 +1046,7 @@ When modifying the project:
 13. Always include `x-company-id` for EMSYS API requests.
 14. Keep dashboard routes as they are unless explicitly requested.
 15. Preserve the existing application layout and UI behavior unless explicitly asked to change it.
+16. The `modern-web-guidance` skill (`.agents/skills/modern-web-guidance/`) is advisory. Apply it where it does not conflict with this file or `.cursor/rules/`; when it would replace a shared component, contradict a project rule, or change working behavior, ask the user to decide case by case (see `.cursor/rules/modern-web-guidance.mdc`).
 
 ---
 

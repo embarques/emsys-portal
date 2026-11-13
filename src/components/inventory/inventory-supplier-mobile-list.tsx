@@ -16,6 +16,7 @@ type InventorySupplierMobileListProps = {
   pageRows: InventorySupplier[];
   selectedIds: string[];
   isLoading: boolean;
+  isSearching?: boolean;
   page: number;
   totalPages: number;
   onQueryChange: (query: string) => void;
@@ -33,6 +34,7 @@ export function InventorySupplierMobileList({
   pageRows,
   selectedIds,
   isLoading,
+  isSearching = false,
   page,
   totalPages,
   onQueryChange,
@@ -64,7 +66,7 @@ export function InventorySupplierMobileList({
         </Button>
       </div>
 
-      <TableSearchInput
+      <TableSearchInput isLoading={isSearching}
         value={query}
         onChange={(value) => {
           onQueryChange(value);

@@ -121,6 +121,16 @@ export function selectFormFieldTextOnFocus(
   selectFormFieldText(event.currentTarget);
 }
 
+/**
+ * True while an IME is composing text, so Enter confirms a candidate instead
+ * of acting. Safari resets `isComposing` before the confirming keydown, so
+ * `keyCode === 229` is also required.
+ */
+export function isImeComposing(event: KeyboardEvent | React.KeyboardEvent): boolean {
+  const nativeEvent = "nativeEvent" in event ? event.nativeEvent : event;
+  return nativeEvent.isComposing || nativeEvent.keyCode === 229;
+}
+
 /** Submit the parent form when Enter is pressed on a field (e.g. amount / reference). */
 export function submitFormOnEnterKeyDown(
   event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,

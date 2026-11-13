@@ -1,5 +1,9 @@
 {
   "errors": {
+    "pieceBatchSize": "Seleccione entre 1 y 200 IDs numéricos de piezas distintos.",
+    "pieceIdInvalid": "Cada ID de pieza debe ser un entero positivo de 32 bits.",
+    "pieceIdsDuplicate": "Seleccione IDs de piezas distintos; no se permiten duplicados.",
+
     "deliveredRouteLocked": "Los códigos entregados deben conservar la ruta diaria que los entregó. No se pueden reasignar ni desasignar.",
     "createFailed": "No se pudo crear el código de barras.",
     "updateFailed": "No se pudo actualizar el código de barras.",

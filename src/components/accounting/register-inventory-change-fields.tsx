@@ -14,7 +14,7 @@ import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-s
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
@@ -359,6 +359,7 @@ export function RegisterInventoryChangeFields({
               {t("accounting.dailyIncome.form.fields.inventoryDirection")}
             </RequiredLabel>
             <SearchableSelect
+              inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
               id="journal-inventory-direction"
               value={direction ?? ""}
               onValueChange={(next) => {
@@ -400,6 +401,7 @@ export function RegisterInventoryChangeFields({
                 />
               </div>
               <SearchableSelect
+                inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                 id="journal-inventory-supplier"
                 value={supplierId ?? ""}
                 onValueChange={(next) => {
@@ -431,6 +433,7 @@ export function RegisterInventoryChangeFields({
                   />
                 </div>
                 <SearchableSelect
+                  inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                   id="journal-route"
                   value={routeId || NO_SELECTION}
                   onValueChange={handleRouteChange}
@@ -462,6 +465,7 @@ export function RegisterInventoryChangeFields({
                       {t("accounting.dailyIncome.form.fields.holderVehicle")}
                     </Label>
                     <SearchableSelect
+                      inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                       id="journal-inventory-holder-vehicle"
                       value={holderVehicleId || NO_SELECTION}
                       onValueChange={handleVehicleChange}
@@ -528,6 +532,7 @@ export function RegisterInventoryChangeFields({
           <div className="space-y-2 sm:col-span-3">
             <RequiredLabel htmlFor="journal-inventory-item">{t("inventory.form.fields.item")}</RequiredLabel>
             <SearchableSelect
+              inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
               id="journal-inventory-item"
               value={itemId ?? ""}
               onValueChange={(next) => {

@@ -6,17 +6,23 @@ import { test } from "node:test";
 import { chromium } from "@playwright/test";
 import webpackPackage from "next/dist/compiled/webpack/webpack.js";
 
-for (const branch of ["RD", "NY"]) test(`closeout recovery preserves draft with ${branch} branch settings`, async () => {
+const scenarios = [false, true].flatMap(wizard => ["RD", "NY"].map(branch => ({wizard, branch, failure: "closeout"})));
+scenarios.push({wizard: true, branch: "NY", failure: "rejected"});
+for (const {wizard, branch, failure} of scenarios) test(`save recovery preserves draft with ${branch} branch settings (wizard=${wizard}, failure=${failure})`, async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "emsys-closeout-test-"));
   let browser;
   try {
     const fixtures = path.resolve("tests/browser/fixtures");
     const compiler = webpackPackage.webpack({
       mode: "development", devtool: false,
-      plugins: [new webpackPackage.webpack.DefinePlugin({ "process.env": JSON.stringify({ NODE_ENV: "development" }) })],
+      plugins: [new webpackPackage.webpack.DefinePlugin({ "process.env": JSON.stringify({ NODE_ENV: "development" }) }), new webpackPackage.webpack.optimize.LimitChunkCountPlugin({maxChunks: 1})],
       entry: path.join(fixtures, "closeout-recovery.tsx"),
       output: { path: directory, filename: "fixture.js" },
       resolve: { extensions: [".tsx", ".ts", ".js"], alias: {
+        "@/lib/accounting/loans/use-loan-entry$": path.join(fixtures, "wizard-entry-hooks.ts"),
+        "@/lib/accounting/daily-income/use-inventory-payment-entry$": path.join(fixtures, "wizard-entry-hooks.ts"),
+        "@/components/accounting/loan-entry-dialog$": path.join(fixtures, "wizard-entry-components.tsx"),
+        "@/components/accounting/pending-inventory-dispatches-panel$": path.join(fixtures, "wizard-entry-components.tsx"),
         "@/lib/accounting/daily-income/hooks$": path.join(fixtures, "closeout-hooks.ts"),
         "@/lib/users/hooks/use-users$": path.join(fixtures, "closeout-hooks.ts"),
         "@/lib/auth/hooks/use-auth$": path.join(fixtures, "documents-auth.ts"),
@@ -33,10 +39,22 @@ for (const branch of ["RD", "NY"]) test(`closeout recovery preserves draft with 
     browser = await chromium.launch({headless:true});
     const page = await browser.newPage();
     await page.setContent('<div id="root"></div>');
-    await page.evaluate(code => { window.closeoutBranch = code; }, branch);
+    await page.evaluate(({branch, wizard, failure}) => { window.closeoutBranch = branch; Object.assign(document.documentElement.dataset, {wizard: String(wizard), failure}); }, {branch, wizard, failure});
+    page.setDefaultTimeout(6000);
     await page.addScriptTag({content:await readFile(path.join(directory,"fixture.js"),"utf8")});
     await page.locator("#journal-description").fill("Keep this draft while opening the closeout");
-    await page.locator("#record").click();
+    await (wizard ? page.getByRole("button", {name: "accounting.dailyIncome.wizard.saveTransaction", exact: true}) : page.locator("#record")).click();
+    if (failure === "rejected") {
+      await page.getByRole("alert").getByText("Rejected by API", {exact: true}).waitFor();
+      assert.equal(await page.locator("#journal-description").inputValue(), "Keep this draft while opening the closeout");
+      await page.locator("#journal-amount").fill("30");
+      await page.getByRole("button", {name: "accounting.dailyIncome.wizard.saveTransaction", exact: true}).click();
+      await page.waitForFunction(() => document.getElementById("attempts").textContent === "2");
+      await page.waitForFunction(() => document.getElementById("saved").textContent === "Keep this draft while opening the closeout");
+      assert.equal(await page.getByRole("dialog").count(), 0);
+      assert.equal(await page.evaluate(() => window.closeoutRequests?.length ?? 0), 0);
+      return;
+    }
     await page.getByRole("dialog").waitFor();
     assert.equal(await page.locator("#statement-date").inputValue(), "2026-10-26");
     assert.equal(await page.locator("#statement-date").isDisabled(), true);
