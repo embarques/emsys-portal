@@ -45,6 +45,7 @@ async function withPaymentAccounts(run) {
 
 const accounts = loadFeature("src/lib/accounting/daily-income/payment-accounts.ts");
 const cashOnHand = { id: 1, name: "CASH ON HAND", displayName: "Cash on hand", type: "ASSET", systemAccount: true };
+const legacyCashAccount = { id: 9, name: "Cash Account", displayName: "Cash Account", type: "ASSET", systemAccount: true, parentAccount: { id: 1 } };
 const register = { id: 2, name: "REGISTER", displayName: "Register", type: "ASSET", parentAccount: { id: 1 } };
 const drawer = { id: 3, name: "DRAWER", displayName: "Drawer", type: "ASSET", parentAccount: { id: 2 } };
 const receivable = { id: 4, name: "ACCOUNTS RECEIVABLE", displayName: "Accounts receivable", type: "ASSET", systemAccount: true };
@@ -57,6 +58,27 @@ test("cash accounts are CASH ON HAND and ASSET accounts nested under it", () => 
   assert.equal(accounts.findDefaultCashAccount([receivable, cashOnHand])?.id, 1);
   assert.deepEqual(accounts.listCashAccounts([cashOnHand, register, drawer, receivable]).map((account) => account.id), [1, 2, 3]);
   assert.deepEqual(accounts.listCashAccounts([register, receivable]), []);
+});
+
+test("legacy Cash Account is merged into Cash on Hand for pickers", () => {
+  assert.equal(accounts.isLegacyCashAccountAlias(legacyCashAccount), true);
+  assert.deepEqual(
+    accounts.listCashAccounts([cashOnHand, legacyCashAccount, register, receivable]).map((account) => account.id),
+    [1, 2],
+  );
+  assert.deepEqual(
+    accounts.listExpenseSourceAccounts([cashOnHand, legacyCashAccount, register, receivable]).map((account) => account.id),
+    [1, 2],
+  );
+});
+
+test("expense source accounts exclude receivables and other non-cash assets", () => {
+  const loanReceivable = { id: 5, name: "LOAN RECEIVABLE", displayName: "Loan receivable", type: "ASSET", systemAccount: true };
+  const nonPostingCash = { id: 6, name: "PETTY CASH GROUP", displayName: "Petty cash group", type: "ASSET", parentAccount: { id: 1 }, nonPosting: true };
+  assert.deepEqual(
+    accounts.listExpenseSourceAccounts([cashOnHand, register, drawer, receivable, loanReceivable, nonPostingCash]).map((account) => account.id),
+    [1, 2, 3],
+  );
 });
 
 test("bank picker offers user-defined banks, else the general bank account", () => {

@@ -1115,6 +1115,7 @@
       "hints": {
         "balanceAfterClearance": "New balance is a preview after this payment is applied. Pending payments affect the invoice balance when cleared.",
         "expenseAccount": "The expense category this spending belongs to.",
+        "expenseSourceAccount": "Cash on hand (or another cash account under it), or a bank account for non-cash methods. Accounts receivable and loan receivable cannot fund expenses.",
         "sourceAccount": "Where the funds are coming from.",
         "transferFrom": "Cash or bank account the money leaves.",
         "transferTo": "Cash or bank account the money goes to.",

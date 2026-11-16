@@ -14,7 +14,7 @@ import { TransactionSectionNavigation } from "@/components/accounting/transactio
 import { INLINE_FIELD_ROW_CLASS_NAME } from "@/components/forms/inline-field-row";
 import { TransactionReview } from "@/components/accounting/transaction-review";
 import { getTransactionFieldStep, getTransactionStepHintKey, getTransactionStepFields, getTransactionStepLabelKey, hasPaymentDetailsStep, isExpensePaidByMethod, isFixedCashTransactionType, TRANSACTION_FIELD_IDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
-import { applyMoneyAccount, buildPaymentAccountOptions, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listSelectableBankAccounts, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
+import { applyMoneyAccount, buildPaymentAccountOptions, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listExpenseSourceAccounts, listSelectableBankAccounts, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
 import { PaymentAccountSelect } from "@/components/accounting/payment-account-select";
 import { PaymentChannelFields } from "@/components/accounting/payment-channel-fields";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
@@ -344,7 +344,7 @@ export function DailyIncomeTransactionForm({
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
   const expenseAccounts = useMemo(() => accounts.filter((account) => account.type === "EXPENSE"), [accounts]);
   const revenueAccounts = useMemo(() => accounts.filter(isUserRevenueAccount), [accounts]);
-  const expenseSourceAccounts = useMemo(() => accounts.filter((account) => !account.nonPosting && account.type === "ASSET"), [accounts]);
+  const expenseSourceAccounts = useMemo(() => listExpenseSourceAccounts(accounts), [accounts]);
   const accountSelectAccounts = type === "EXPENSE" ? expenseAccounts : type === "SALES" ? revenueAccounts : accounts;
   const sourceAccountSelectAccounts = type === "EXPENSE" ? expenseSourceAccounts : accounts;
   const accountOptions = useMemo(
@@ -1192,7 +1192,10 @@ export function DailyIncomeTransactionForm({
                         mobileSheet
                         options={sourceAccountOptions}
                       />
-                      <FieldMessage error={errors.sourceAccountId?.message} hint={t("accounting.dailyIncome.form.hints.sourceAccount")} />
+                      <FieldMessage
+                        error={errors.sourceAccountId?.message}
+                        hint={type === "EXPENSE" ? t("accounting.dailyIncome.form.hints.expenseSourceAccount") : t("accounting.dailyIncome.form.hints.sourceAccount")}
+                      />
                     </div>
                   ) : null}
 

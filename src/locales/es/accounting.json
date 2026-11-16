@@ -1114,6 +1114,7 @@
       "hints": {
         "balanceAfterClearance": "El nuevo saldo es una vista previa después de aplicar este pago. Los pagos pendientes afectan el saldo de la factura cuando se liquidan.",
         "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
+        "expenseSourceAccount": "Efectivo en caja (u otra cuenta de efectivo bajo ella), o una cuenta bancaria para métodos que no son efectivo. Cuentas por cobrar y préstamos por cobrar no pueden financiar gastos.",
         "sourceAccount": "De dónde provienen los fondos.",
         "transferFrom": "Cuenta de efectivo o banco de donde sale el dinero.",
         "transferTo": "Cuenta de efectivo o banco a donde va el dinero.",
