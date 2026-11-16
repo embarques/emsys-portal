@@ -1233,6 +1233,7 @@
         "senderRequired": "Sender client is required.",
         "receiverRequired": "Receiver client is required.",
         "amountExceedsBalance": "Amount cannot exceed the invoice balance.",
+        "invoicePaidOff": "This invoice is paid off. Verify the invoice number or select a different one.",
         "accountRequired": "Account is required.",
         "sourceAccountRequired": "Source account is required.",
         "transferSameAccount": "Choose a different account to transfer to.",

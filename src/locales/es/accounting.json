@@ -1232,6 +1232,7 @@
         "senderRequired": "El cliente remitente es obligatorio.",
         "receiverRequired": "El cliente destinatario es obligatorio.",
         "amountExceedsBalance": "El monto no puede exceder el saldo de la factura.",
+        "invoicePaidOff": "Esta factura está saldada. Verifique el número de factura o seleccione otra.",
         "accountRequired": "La cuenta es obligatoria.",
         "sourceAccountRequired": "La cuenta origen es obligatoria.",
         "transferSameAccount": "Elija una cuenta de destino diferente.",
