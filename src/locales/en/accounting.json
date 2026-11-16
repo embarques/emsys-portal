@@ -791,10 +791,10 @@
       "permission": "You do not have permission to edit transactions.",
       "closeout": "Only transactions in the current open closeout can be edited.",
       "type": "This transaction type cannot be edited here. Invoice registrations, inventory changes and loans are managed from their own workflows.",
-      "reconciled": "Reconciled transactions cannot be edited.",
-      "cleared": "Cleared transactions cannot be edited.",
+      "reconciled": "Reconciled transactions cannot be edited. Use void, reverse, or correct after reconciliation.",
+      "cleared": "Cleared transactions cannot be edited. Use void, reverse, or correct after clearance.",
       "restricted": "The API has restricted editing for this transaction.",
-      "reversed": "Reversed transactions and reversals cannot be edited."
+      "reversed": "Reversed or voided transactions cannot be edited."
     },
     "tabs": {
       "editType": "Edit {{type}}",

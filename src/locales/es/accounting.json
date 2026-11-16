@@ -790,10 +790,10 @@
       "permission": "No tiene permiso para editar transacciones.",
       "closeout": "Solo se pueden editar las transacciones del cierre abierto actual.",
       "type": "Este tipo de transacción no se puede editar aquí. Los registros de facturas, cambios de inventario y préstamos se gestionan desde sus propios flujos.",
-      "reconciled": "Las transacciones conciliadas no se pueden editar.",
-      "cleared": "Las transacciones liquidadas no se pueden editar.",
+      "reconciled": "Las transacciones conciliadas no se pueden editar. Use anulación, reversión o corrección después de la conciliación.",
+      "cleared": "Las transacciones liquidadas no se pueden editar. Use anulación, reversión o corrección después de la liquidación.",
       "restricted": "La API ha restringido la edición de esta transacción.",
-      "reversed": "Las transacciones revertidas y sus reversiones no se pueden editar."
+      "reversed": "Las transacciones revertidas o anuladas no se pueden editar."
     },
     "tabs": {
       "editType": "Editar {{type}}",
