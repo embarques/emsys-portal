@@ -172,7 +172,6 @@
       "audit": "Audit"
     },
     "branchId": "Branch ID",
-    "phonePrimary": "{{type}} (primary)",
     "edit": "Edit employee"
   },
   "dialogs": {

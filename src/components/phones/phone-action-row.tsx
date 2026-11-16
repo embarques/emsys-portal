@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Phone } from "lucide-react";
+import { Copy, Phone, Star } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ type PhoneActionRowProps = {
   label: string;
   number: string;
   displayNumber?: string;
+  /** When true, show a star instead of a "(primary)" text suffix. */
+  isPrimary?: boolean;
   className?: string;
 };
 
@@ -33,12 +35,19 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function PhoneActionRow({ label, number, displayNumber, className }: PhoneActionRowProps) {
+export function PhoneActionRow({
+  label,
+  number,
+  displayNumber,
+  isPrimary = false,
+  className,
+}: PhoneActionRowProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const display = resolvePhoneDisplayValue(number, displayNumber);
   const telHref = buildTelHref(number);
   const whatsAppHref = buildWhatsAppHref(number);
+  const actionLabel = isPrimary ? `${label} (${t("phones.primaryBadge")})` : label;
 
   async function handleCopy() {
     if (!display) return;
@@ -59,7 +68,15 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
+        <p className="flex items-center gap-1 text-xs font-medium leading-snug text-muted-foreground">
+          {isPrimary ? (
+            <Star
+              className="size-3.5 shrink-0 fill-current text-amber-500"
+              aria-label={t("phones.primary")}
+            />
+          ) : null}
+          <span>{label}</span>
+        </p>
         <p className="text-sm font-medium leading-snug text-foreground">{display}</p>
       </div>
 
@@ -71,7 +88,7 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              aria-label={t("phones.actions.copyAria", { label })}
+              aria-label={t("phones.actions.copyAria", { label: actionLabel })}
               onClick={handleCopy}
             >
               <Copy className="h-4 w-4" />
@@ -88,7 +105,7 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
                 size="icon"
                 className="h-8 w-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
               >
-                <a href={telHref} aria-label={t("phones.actions.callAria", { label })}>
+                <a href={telHref} aria-label={t("phones.actions.callAria", { label: actionLabel })}>
                   <Phone className="h-4 w-4" />
                 </a>
               </Button>
@@ -109,7 +126,7 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
                   href={whatsAppHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={t("phones.actions.whatsAppAria", { label })}
+                  aria-label={t("phones.actions.whatsAppAria", { label: actionLabel })}
                 >
                   <WhatsAppIcon />
                 </a>

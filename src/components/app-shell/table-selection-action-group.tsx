@@ -48,6 +48,8 @@ type TableSelectionExpandableActionGroupProps = {
   onExpandedChange: (expanded: boolean) => void;
   /** Disables the toggle button only. */
   disabled?: boolean;
+  /** Match sibling action height; default stays compact for table toolbars. */
+  size?: "default" | "sm";
   children: ReactNode;
   className?: string;
   "aria-label"?: string;
@@ -63,6 +65,7 @@ export function TableSelectionExpandableActionGroup({
   expanded,
   onExpandedChange,
   disabled,
+  size = "sm",
   children,
   className,
   "aria-label": ariaLabel,
@@ -79,7 +82,7 @@ export function TableSelectionExpandableActionGroup({
       <Button
         type="button"
         variant="ghost"
-        size="sm"
+        size={size}
         disabled={disabled}
         aria-expanded={expanded}
         onClick={() => onExpandedChange(!expanded)}

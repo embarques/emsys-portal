@@ -267,13 +267,16 @@
     "pickupId": "ID de recogida",
     "summary": "Resumen",
     "system": "Información del sistema",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "phones": "Teléfonos",
+    "address": "Dirección",
     "senderAddress": "Dirección de {{party}}",
     "senderPhones": "Teléfonos de {{party}}",
     "commentsCount": "Comentarios ({{count}})",
     "receiversCount": "Destinatarios ({{count}})",
     "primaryAddress": "Dirección principal",
     "additionalAddress": "Dirección adicional {{index}}",
-    "phonePrimary": "{{type}} (principal)",
     "idNumber": "Número de ID"
   },
   "history": {

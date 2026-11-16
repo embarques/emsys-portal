@@ -26,7 +26,6 @@ import {
   getOrderedRecordPhones,
   getRecordPhoneDisplayNumber,
 } from "@/lib/phones/phones";
-import type { RecordPhone } from "@/lib/phones/types";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 
 const PHONE_COUNT_LINK_MIN = 3;
@@ -35,14 +34,6 @@ type CustomerTablePhoneCellProps = {
   customer: Customer;
   className?: string;
 };
-
-function phoneTypeLabel(
-  phone: Pick<RecordPhone, "type" | "isPrimary">,
-  t: (key: string, values?: Record<string, string | number>) => string,
-): string {
-  const typeLabel = t(`phones.types.${phone.type}`);
-  return phone.isPrimary ? t("customers.view.primaryPhone", { type: typeLabel }) : typeLabel;
-}
 
 type CustomerPhonesSheetProps = {
   customer: Customer | null;
@@ -117,9 +108,10 @@ function CustomerPhonesSheet({ customer, open, onOpenChange }: CustomerPhonesShe
               {phones.map((phone, index) => (
                 <PhoneActionRow
                   key={`${phone.number}-${phone.type}-${index}`}
-                  label={phoneTypeLabel(phone, t)}
+                  label={t(`phones.types.${phone.type}`)}
                   number={phone.number}
                   displayNumber={phone.displayNumber}
+                  isPrimary={phone.isPrimary}
                 />
               ))}
             </RecordViewSheetSection>

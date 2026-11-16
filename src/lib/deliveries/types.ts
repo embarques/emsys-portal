@@ -1,4 +1,6 @@
 import type { Barcode } from "@/lib/barcodes/types";
+import { createEmptyCustomerCoreAddress, type CustomerCoreAddress } from "@/lib/customers/types";
+import type { RecordPhone, RecordPhoneType } from "@/lib/phones/types";
 
 export type DeliveryReceiverPhone = {
   number: string;
@@ -44,6 +46,49 @@ export const DEFAULT_ASSIGNED_DELIVERY_SORT = "receiver.address.city:asc";
 export function formatDeliveryAddress(receiver: DeliveryReceiver | null): string {
   if (!receiver) return "";
   return [receiver.address1, receiver.apartment].map((part) => part.trim()).filter(Boolean).join(", ");
+}
+
+function coerceDeliveryPhoneType(value: string | undefined): RecordPhoneType {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === "business") return "business";
+  if (normalized === "home") return "home";
+  if (normalized === "other") return "other";
+  return "mobile";
+}
+
+/** Normalize delivery party phones for PhoneActionRow / TablePhoneCell. */
+export function toDeliveryRecordPhones(
+  phones: DeliveryReceiverPhone[] | null | undefined,
+): RecordPhone[] {
+  return (phones ?? [])
+    .map((phone) => {
+      const number = phone.number.trim();
+      if (!number) return null;
+      const displayNumber = phone.displayNumber?.trim();
+      return {
+        type: coerceDeliveryPhoneType(phone.type),
+        number,
+        ...(displayNumber ? { displayNumber } : {}),
+        isPrimary: Boolean(phone.isPrimary),
+      } satisfies RecordPhone;
+    })
+    .filter((phone): phone is RecordPhone => phone != null);
+}
+
+/** Full multi-line core address for delivery receiver action rows. */
+export function toDeliveryReceiverCoreAddress(
+  receiver: DeliveryReceiver | null | undefined,
+): CustomerCoreAddress | null {
+  if (!receiver) return null;
+  const address = createEmptyCustomerCoreAddress(receiver.province ? "DO" : "", true);
+  address.address1 = receiver.address1;
+  address.apartment = receiver.apartment;
+  address.city = receiver.city;
+  address.state = receiver.province;
+  address.zipcode = receiver.zipcode;
+  const hasContent = [address.address1, address.apartment, address.city, address.state, address.zipcode]
+    .some((part) => part.trim().length > 0);
+  return hasContent ? address : null;
 }
 
 export function formatDeliveryPhones(party: { phones: DeliveryReceiverPhone[] } | null): { label: string; dial: string }[] {

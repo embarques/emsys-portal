@@ -5,6 +5,8 @@ import { RequestChangeButton } from "@/components/change-requests/request-change
 import { useMemo, useState } from "react";
 import {
   Info,
+  MapPin,
+  Phone as PhoneIcon,
   Printer,
   Receipt,
   Send,
@@ -20,6 +22,8 @@ import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barco
 import { InvoiceCommentsSection } from "@/components/invoices/invoice-comments-section";
 import { InvoicePackageTrackerSection } from "@/components/invoices/invoice-package-tracker-section";
 import { InvoicePaymentsSection } from "@/components/invoices/invoice-payments-section";
+import { AddressActionRow } from "@/components/addresses/address-action-row";
+import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
@@ -35,22 +39,18 @@ import {
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatOrderDateWithWeekday } from "@/lib/orders/display";
 import {
-  formatAddressLine,
-  formatPartyPhoneList,
-} from "@/lib/customers/display";
-import {
   formatInvoiceMoney,
   formatInvoicePickupAssignmentLabel,
   getContainerLabelForInvoice,
   getInvoiceBalance,
   getInvoicePaidStatusLabel,
+  getInvoicePartyCoreAddress,
   getInvoiceSubtotal,
   getPaymentLocationLabel,
   invoicePickupSourceLabelKey,
   resolveInvoicePaidStatus,
 } from "@/lib/invoices/display";
 import {
-  getOrderPartyAddress,
   isInvoiceEmployeePickupSource,
   type Invoice,
 } from "@/lib/invoices/types";
@@ -74,16 +74,12 @@ type InvoiceViewSheetProps = {
   onAddComment: (invoiceId: string, description: string) => void;
 };
 
-function partyPhoneList(party: Invoice["sender"]): string {
-  const formatted = formatPartyPhoneList(party.phones).trim();
-  if (!formatted || formatted === "—" || formatted === "-") return "";
-  return formatted;
-}
-
-function partyAddressLine(party: Invoice["sender"]): string {
-  const address = getOrderPartyAddress(party);
-  if (!address) return "";
-  return formatAddressLine(address).trim();
+function getOrderedPartyPhones(phones: Invoice["sender"]["phones"]) {
+  const withNumbers = phones.filter((phone) => phone.number.trim());
+  return [
+    ...withNumbers.filter((phone) => phone.isPrimary),
+    ...withNumbers.filter((phone) => !phone.isPrimary),
+  ];
 }
 
 function PartySection({
@@ -96,37 +92,56 @@ function PartySection({
   icon: LucideIcon;
 }) {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
   const name = party.name.trim();
   const documentId = party.documentId?.trim() ?? "";
   const email = party.email?.trim() ?? "";
-  const phones = partyPhoneList(party);
-  const addressLine = partyAddressLine(party);
+  const phones = getOrderedPartyPhones(party.phones);
+  const address = getInvoicePartyCoreAddress(party);
 
-  if (!name && !documentId && !email && !phones && !addressLine) return null;
+  if (!name && !documentId && !email && phones.length === 0 && !address) return null;
 
   return (
-    <RecordViewSheetSection title={title} icon={icon}>
-      <RecordViewSheetDetailRow
-        label={t("invoices.view.fields.name")}
-        value={name}
-      />
-      <RecordViewSheetDetailRow
-        label={t("invoices.view.fields.documentId")}
-        value={documentId}
-      />
-      <RecordViewSheetDetailRow
-        label={t("invoices.view.fields.email")}
-        value={email}
-      />
-      <RecordViewSheetDetailRow
-        label={t("invoices.view.fields.phones")}
-        value={phones}
-      />
-      <RecordViewSheetDetailRow
-        label={t("invoices.view.fields.address")}
-        value={addressLine}
-      />
-    </RecordViewSheetSection>
+    <>
+      <RecordViewSheetSection title={title} icon={icon}>
+        <RecordViewSheetDetailRow
+          label={t("invoices.view.fields.name")}
+          value={name || dash}
+        />
+        <RecordViewSheetDetailRow
+          label={t("invoices.view.fields.documentId")}
+          value={documentId || dash}
+        />
+        <RecordViewSheetDetailRow
+          label={t("invoices.view.fields.email")}
+          value={email || dash}
+        />
+      </RecordViewSheetSection>
+
+      <RecordViewSheetSection title={t("invoices.view.fields.phones")} icon={PhoneIcon}>
+        {phones.length === 0 ? (
+          <RecordViewSheetDetailRow label={t("invoices.view.fields.phones")} value={dash} />
+        ) : (
+          phones.map((phone, index) => (
+            <PhoneActionRow
+              key={`${title}-phone-${index}`}
+              label={phone.label?.trim() || t("phones.types.other")}
+              number={phone.number}
+              displayNumber={phone.displayNumber}
+              isPrimary={Boolean(phone.isPrimary)}
+            />
+          ))
+        )}
+      </RecordViewSheetSection>
+
+      <RecordViewSheetSection title={t("invoices.view.fields.address")} icon={MapPin}>
+        {address ? (
+          <AddressActionRow label="" address={address} isPrimary={address.isPrimary} />
+        ) : (
+          <RecordViewSheetDetailRow label={t("invoices.view.fields.address")} value={dash} />
+        )}
+      </RecordViewSheetSection>
+    </>
   );
 }
 

@@ -86,7 +86,6 @@ export function InvoicePoliciesWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <p className="text-sm text-muted-foreground">{t("invoicePolicies.tableHint")}</p>
           <CatalogTableToolbar
             state={table}
             presetScope="invoice-policies"

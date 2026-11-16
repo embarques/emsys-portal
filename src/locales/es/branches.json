@@ -132,8 +132,7 @@
       "imageResampleBy": "Remuestreo de imagen",
       "createdAt": "Creado el"
     },
-    "edit": "Editar sucursal",
-    "phonePrimary": "{{type}} (principal)"
+    "edit": "Editar sucursal"
   },
   "dialogs": {
     "deleteTitle": "¿Eliminar sucursal?",

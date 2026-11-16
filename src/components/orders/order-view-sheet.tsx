@@ -51,8 +51,7 @@ import {
 } from "@/lib/orders/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { coreAddressHasContent, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
-import { getOrderReceivers, type Order } from "@/lib/orders/types";
-import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
+import { getOrderPartyAddressAtIndex, getOrderReceivers, type Order } from "@/lib/orders/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
@@ -81,57 +80,73 @@ type OrderViewSheetProps = {
   actionsDisabled?: boolean;
 };
 
-function SenderViewSections({ customer }: { customer: Customer }) {
+function PartyViewSections({
+  customer,
+  partyLabel,
+  addressIndex,
+}: {
+  customer: Customer;
+  partyLabel: string;
+  addressIndex?: number;
+}) {
   const { t } = useTranslation();
-  const partyLabel = t("orders.columns.sender");
   const phones = getOrderedRecordPhones(customer.phones);
-  const address = getCustomerPrimaryCoreAddress(customer);
+  const address =
+    addressIndex == null
+      ? getCustomerPrimaryCoreAddress(customer)
+      : getOrderPartyAddressAtIndex(customer, addressIndex);
+  const dash = t("common.empty.dash");
 
   return (
     <>
-      <RecordViewSheetSection title={partyLabel} icon={UserRound} padding="relaxed">
-        <p className="text-sm font-medium">{customer.name}</p>
-        {customer.IDNumber ? (
-          <p className="text-xs text-muted-foreground">
-            {t("orders.view.idNumber")}: {customer.IDNumber}
-          </p>
-        ) : null}
-        {customer.email ? <p className="text-xs text-muted-foreground">{customer.email}</p> : null}
+      <RecordViewSheetSection title={partyLabel} icon={UserRound}>
+        <RecordViewSheetDetailRow
+          label={t("orders.view.name")}
+          value={customer.name.trim() || dash}
+        />
+        <RecordViewSheetDetailRow
+          label={t("orders.view.idNumber")}
+          value={customer.IDNumber || dash}
+        />
+        <RecordViewSheetDetailRow
+          label={t("orders.view.email")}
+          value={customer.email || dash}
+        />
       </RecordViewSheetSection>
 
-      {phones.length > 0 ? (
-        <RecordViewSheetSection
-          title={t("orders.view.senderPhones", { party: partyLabel })}
-          icon={PhoneIcon}
-        >
-          {phones.map((phone, index) => (
+      <RecordViewSheetSection
+        title={t("orders.view.senderPhones", { party: partyLabel })}
+        icon={PhoneIcon}
+      >
+        {phones.length === 0 ? (
+          <RecordViewSheetDetailRow label={t("orders.view.phones")} value={dash} />
+        ) : (
+          phones.map((phone, index) => (
             <PhoneActionRow
-              key={`sender-phone-${index}`}
-              label={
-                phone.isPrimary
-                  ? t("orders.view.phonePrimary", {
-                      type: t(`phones.types.${phone.type}`),
-                    })
-                  : t(`phones.types.${phone.type}`)
-              }
+              key={`${partyLabel}-phone-${index}`}
+              label={t(`phones.types.${phone.type}`)}
               number={phone.number}
               displayNumber={phone.displayNumber}
+              isPrimary={phone.isPrimary}
             />
-          ))}
-        </RecordViewSheetSection>
-      ) : null}
+          ))
+        )}
+      </RecordViewSheetSection>
 
-      {coreAddressHasContent(address) ? (
-        <RecordViewSheetSection
-          title={t("orders.view.senderAddress", { party: partyLabel })}
-          icon={MapPin}
-        >
+      <RecordViewSheetSection
+        title={t("orders.view.senderAddress", { party: partyLabel })}
+        icon={MapPin}
+      >
+        {coreAddressHasContent(address) ? (
           <AddressActionRow
-            label={t("orders.view.primaryAddress")}
+            label=""
             address={address}
+            isPrimary={address.isPrimary || addressIndex == null || addressIndex === 0}
           />
-        </RecordViewSheetSection>
-      ) : null}
+        ) : (
+          <RecordViewSheetDetailRow label={t("orders.view.address")} value={dash} />
+        )}
+      </RecordViewSheetSection>
     </>
   );
 }
@@ -209,7 +224,10 @@ export function OrderViewSheet({
         />
 
         <RecordViewSheetBody>
-          <SenderViewSections customer={order.sender} />
+          <PartyViewSections
+            customer={order.sender}
+            partyLabel={t("orders.columns.sender")}
+          />
 
           <RecordViewSheetSection
             title={t("orders.comments.title")}
@@ -232,27 +250,24 @@ export function OrderViewSheet({
             )}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection
-            title={
-              receivers.length > 1
-                ? t("orders.view.receiversCount", { count: receivers.length })
-                : t("orders.columns.receiver")
-            }
-            icon={UserRound}
-            padding="relaxed"
-          >
-            {receivers.length > 0 ? (
-              <ul className="space-y-2">
-                {receivers.map((receiver, index) => (
-                  <li key={`${receiver.id}-${index}`}>
-                    <CustomerContactSummary customer={receiver} addressIndex={0} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
+          {receivers.length > 0 ? (
+            receivers.map((receiver, index) => (
+              <PartyViewSections
+                key={`${receiver.id}-${index}`}
+                customer={receiver}
+                partyLabel={
+                  receivers.length > 1
+                    ? `${t("orders.columns.receiver")} ${index + 1}`
+                    : t("orders.columns.receiver")
+                }
+                addressIndex={0}
+              />
+            ))
+          ) : (
+            <RecordViewSheetSection title={t("orders.columns.receiver")} icon={UserRound} padding="relaxed">
               <p className="text-sm text-muted-foreground">{t("orders.empty.noReceiver")}</p>
-            )}
-          </RecordViewSheetSection>
+            </RecordViewSheetSection>
+          )}
 
           <SenderOrderHistorySection
             sender={order.sender}

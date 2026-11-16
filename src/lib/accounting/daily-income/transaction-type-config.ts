@@ -110,13 +110,10 @@ export function buildTransactionEntryOptions(t: TranslateFn): TransactionEntryOp
 
 /** `nested` groups always open their own screen, even where other groups are shown flattened. */
 const ENTRY_GROUPS: Array<{ id: string; icon: LucideIcon; categories: TransactionEntryCategory[]; nested?: boolean }> = [
-  { id: "invoicePayment", icon: Banknote, categories: ["PAYMENT", "INITIAL-PAYMENT"], nested: true },
-  { id: "invoiceSurcharge", icon: Percent, categories: ["SURCHARGE"] },
-  { id: "invoiceDiscount", icon: Tag, categories: ["DISCOUNT"] },
-  { id: "income", icon: ArrowUpCircle, categories: ["SALES"] },
+  { id: "income", icon: ArrowUpCircle, categories: ["INITIAL-PAYMENT", "SALES", "PAYMENT", "SURCHARGE", "DISCOUNT"], nested: true },
   { id: "expenses", icon: Wallet, categories: ["EXPENSE"] },
-  { id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"] },
-  { id: "loans", icon: Landmark, categories: ["LOAN-ISSUE", "LOAN-INCREASE", "LOAN-PAYMENT"] },
+  { id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"], nested: true },
+  { id: "loans", icon: Landmark, categories: ["LOAN-ISSUE", "LOAN-INCREASE", "LOAN-PAYMENT"], nested: true },
   { id: "transfers", icon: ArrowLeftRight, categories: ["TRANSFER"] },
 ];
 

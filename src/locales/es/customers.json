@@ -217,6 +217,7 @@
     "addresses": "Direcciones",
     "account": "Cuenta",
     "system": "Información del sistema",
+    "customerType": "Tipo",
     "email": "Correo",
     "idNumber": "Número de ID",
     "notes": "Notas",
@@ -229,7 +230,6 @@
     "createdAt": "Creado el",
     "updatedBy": "Actualizado por",
     "updatedAt": "Actualizado el",
-    "primaryPhone": "{{type}} (principal)",
     "edit": "Editar cliente"
   },
   "dialogs": {

@@ -1,3 +1,4 @@
+import type { CustomerCoreAddress } from "@/lib/customers/types";
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 import type { Employee, EmployeePortalBranch } from "./types";
 import {
@@ -61,6 +62,26 @@ export function formatEmployeeAddress(employee: Employee): string {
   ].filter(Boolean);
 
   return parts.length > 0 ? parts.join(", ") : "—";
+}
+
+/** Adapt employee address into the shared AddressActionRow core shape. */
+export function toEmployeeCoreAddress(employee: Pick<Employee, "address">): CustomerCoreAddress {
+  return {
+    address1: employee.address.address1,
+    address2: employee.address.address2,
+    apartment: employee.address.apartment,
+    city: employee.address.city,
+    state: employee.address.state,
+    zipcode: employee.address.zipcode,
+    country: employee.address.country,
+    isPrimary: true,
+    location: null,
+    verification: null,
+  };
+}
+
+export function hasEmployeeAddress(employee: Pick<Employee, "address">): boolean {
+  return formatEmployeeAddress(employee as Employee) !== "—";
 }
 
 export {

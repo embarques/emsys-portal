@@ -1,13 +1,14 @@
 ---
-description: Branch from dev for each unrelated feature; do not commit work directly on dev
+description: Always work off main/dev; reuse the open feature branch when multiple agents share the workspace
 alwaysApply: true
 ---
 
 # Git branch default
 
-- **`dev` is the integration baseline**, not the working branch for feature edits.
-- If the checked-out branch is already a **feature branch related to the current task**, stay on it.
-- If you are on **`dev`**, or on a feature branch **unrelated** to the current task, **create a new feature branch from `dev`** before making changes.
-- Name branches clearly for the work (e.g. `fix/…`, `feat/…`). Prefer the repo’s existing naming style.
-- Only switch, rename, or delete branches when the user asks, or when starting unrelated work that requires a new branch as above.
+- **`dev` is the integration baseline**; **`main` is protected**. Never edit or commit feature work directly on `main` or `dev`.
+- **Always work on a feature branch.** If the checked-out branch is already something other than `main` or `dev`, **stay on it** — even when the task is unrelated.
+- **Multi-agent / shared workspace:** When several agents (or parallel chats) are working on different things in the same checkout, they must **share that already-open feature branch**. Do not create a second branch just because the work is a different topic.
+- Only create a new feature branch from `dev` when the current branch is `main` or `dev` (or the user explicitly asks for a new branch).
+- Name new branches clearly for the work (e.g. `fix/…`, `feat/…`). Prefer the repo’s existing naming style.
+- Only switch, rename, or delete branches when the user asks, or when creating a branch because you are on `main`/`dev` as above.
 - Commit / push / PR only when the user asks.

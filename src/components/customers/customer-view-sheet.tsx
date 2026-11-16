@@ -2,7 +2,6 @@
 
 import { Info, Loader2, Phone as PhoneIcon, User, Wallet } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -22,18 +21,12 @@ import {
 } from "@/lib/customers/display";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { useCustomer } from "@/lib/customers/hooks/use-customers";
-import { getCustomerClientType } from "@/lib/customers/types";
 import {
   getAllAddresses,
   resolveCustomerAddressCount,
 } from "@/lib/customers/utils/address-utils";
 import { useTranslation } from "@/lib/i18n";
 import type { Customer } from "@/lib/customers/types";
-
-function hasCustomerDetailValue(value: string | null | undefined) {
-  const trimmed = value?.trim() ?? "";
-  return trimmed !== "" && trimmed !== "—" && trimmed !== "-";
-}
 
 type CustomerViewSheetProps = {
   customer: Customer | null;
@@ -61,7 +54,6 @@ export function CustomerViewSheet({
 
   if (!customer || !resolvedCustomer) return null;
 
-  const clientType = getCustomerClientType(resolvedCustomer);
   const typeLabel = isCustomerReceiverType(resolvedCustomer.customerType)
     ? t("customers.types.receiver")
     : t("customers.types.sender");
@@ -70,50 +62,31 @@ export function CustomerViewSheet({
     resolveCustomerAddressCount(resolvedCustomer) > 0;
   const phones = getOrderedRecordPhones(resolvedCustomer.phones);
   const isLoadingPhones = detailQuery.isFetching && phones.length === 0;
-  const hasGeneralDetails = [resolvedCustomer.email, resolvedCustomer.IDNumber, resolvedCustomer.notes].some(
-    hasCustomerDetailValue,
-  );
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader
-          title={resolvedCustomer.name.trim() || dash}
-          meta={
-            clientType ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={
-                    clientType === "sender"
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                  }
-                >
-                  {typeLabel}
-                </Badge>
-              </div>
-            ) : null
-          }
-        />
+        <RecordViewSheetHeader title={resolvedCustomer.name.trim() || dash} />
 
         <RecordViewSheetBody>
-          {hasGeneralDetails ? (
-            <RecordViewSheetSection title={t("customers.view.general")} icon={User}>
-              <RecordViewSheetDetailRow
-                label={t("customers.view.email")}
-                value={resolvedCustomer.email || dash}
-              />
-              <RecordViewSheetDetailRow
-                label={t("customers.view.idNumber")}
-                value={resolvedCustomer.IDNumber || dash}
-              />
-              <RecordViewSheetDetailRow
-                label={t("customers.view.notes")}
-                value={resolvedCustomer.notes || dash}
-              />
-            </RecordViewSheetSection>
-          ) : null}
+          <RecordViewSheetSection title={t("customers.view.general")} icon={User}>
+            <RecordViewSheetDetailRow
+              label={t("customers.view.customerType")}
+              value={typeLabel}
+            />
+            <RecordViewSheetDetailRow
+              label={t("customers.view.email")}
+              value={resolvedCustomer.email || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("customers.view.idNumber")}
+              value={resolvedCustomer.IDNumber || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("customers.view.notes")}
+              value={resolvedCustomer.notes || dash}
+            />
+          </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("customers.view.phones")} icon={PhoneIcon}>
             {isLoadingPhones ? (
@@ -127,15 +100,10 @@ export function CustomerViewSheet({
               phones.map((phone, index) => (
                 <PhoneActionRow
                   key={`${phone.number}-${phone.type}-${index}`}
-                  label={
-                    phone.isPrimary
-                      ? t("customers.view.primaryPhone", {
-                          type: t(`phones.types.${phone.type}`),
-                        })
-                      : t(`phones.types.${phone.type}`)
-                  }
+                  label={t(`phones.types.${phone.type}`)}
                   number={phone.number}
                   displayNumber={phone.displayNumber}
+                  isPrimary={phone.isPrimary}
                 />
               ))
             )}

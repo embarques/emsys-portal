@@ -55,14 +55,11 @@ after(async () => {
   if (directory) await rm(directory, { recursive: true, force: true });
 });
 
-const INVOICE_TYPE_GROUPS = { PAYMENT: "invoicePayment", DISCOUNT: "invoiceDiscount", SURCHARGE: "invoiceSurcharge" };
-
-/** Wide pickers show single-type groups as type tiles; narrow pickers show group rows. */
+/** Income invoice types sit under the nested Income group. */
 async function chooseInvoiceTransactionType(page, type) {
   const prefix = "accounting.dailyIncome.wizard.typeSelector";
-  const entry = new RegExp(`^${prefix}\\.(groups\\.${INVOICE_TYPE_GROUPS[type]}|options\\.${type})$`);
-  await page.getByRole("button", { name: entry }).click();
-  if (type === "PAYMENT") await page.getByRole("button", { name: `${prefix}.existingInvoice`, exact: true }).click();
+  await page.getByRole("button", { name: `${prefix}.groups.income`, exact: true }).click();
+  await page.getByRole("button", { name: `${prefix}.options.${type}`, exact: true }).click();
   await page.locator("#journal-employee-source-employee").click();
   await page.getByRole("radio", { name: /Maria/ }).click();
 }
@@ -592,11 +589,12 @@ const typeOption = (page, value) => page.getByRole("button", { name: `accounting
 
 test("transaction categories share headings and open existing payment flows", async () => {
   const page = await fixture(1280, "wizard", { styled: true });
+  const back = () => page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.back", exact: true }).click();
   try {
-    for (const [key, count] of [["invoices", 4], ["incomeExpenses", 2], ["inventory", 2], ["loans", 2], ["transfers", 1]]) {
+    for (const [key, count] of [["income", 5], ["loans", 2], ["inventory", 2]]) {
       await typeCategory(page, key).click();
-      const region = page.getByRole("region", { name: `accounting.dailyIncome.wizard.typeSelector.groups.${key}`, exact: true });
-      assert.equal(await region.getByRole("button").count(), count, key);
+      assert.equal(await page.getByRole("button", { name: /^accounting\.dailyIncome\.wizard\.typeSelector\.options\./ }).count(), count, key);
+      await back();
     }
     const changeType = page.getByRole("button", { name: "accounting.dailyIncome.wizard.changeType", exact: true });
     await typeCategory(page, "loans").click();
@@ -879,8 +877,12 @@ for (const transactionType of ["SALES", "EXPENSE"]) {
     }, async () => {
       const page = await fixture(width, "wizard", { styled: true });
       try {
-        await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.incomeExpenses", exact: true }).click();
-        await page.getByRole("button", { name: `accounting.dailyIncome.wizard.typeSelector.options.${transactionType}`, exact: true }).click();
+        if (transactionType === "SALES") {
+          await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.income", exact: true }).click();
+          await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.options.SALES", exact: true }).click();
+        } else {
+          await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.expenses", exact: true }).click();
+        }
         await page.locator("#journal-employee").click();
         await page.getByRole("option", { name: /Maria/ }).click();
         await page.locator("#journal-amount").fill("20");

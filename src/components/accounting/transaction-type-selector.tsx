@@ -9,11 +9,7 @@ import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** Only options that are easy to confuse with a neighbour get a secondary line. */
-const OPTIONS_WITH_HINT = new Set<TransactionEntryCategory>(["INITIAL-PAYMENT", "INVENTORY", "INVENTORY-PAYMENT", "LOAN-PAYMENT"]);
-
-const PICKER_LABEL_KEYS: Partial<Record<TransactionEntryCategory, string>> = {
-  PAYMENT: "accounting.dailyIncome.wizard.typeSelector.existingInvoice",
-};
+const OPTIONS_WITH_HINT = new Set<TransactionEntryCategory>(["INITIAL-PAYMENT", "SALES", "INVENTORY", "INVENTORY-PAYMENT", "LOAN-PAYMENT"]);
 
 const SEMANTIC_ICON_CLASS: Record<string, string> = {
   income: "text-emerald-600 dark:text-emerald-400",
@@ -116,7 +112,7 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
 
   const headingId = `${pickerId}-heading`;
   const optionLabel = (option: TransactionEntryOption) =>
-    t(PICKER_LABEL_KEYS[option.value] ?? `accounting.dailyIncome.wizard.typeSelector.options.${option.value}`);
+    t(`accounting.dailyIncome.wizard.typeSelector.options.${option.value}`);
   const optionTile = (option: TransactionEntryOption) => (
     <li key={option.value}>
       <PickerTile
@@ -133,8 +129,7 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
     </li>
   );
 
-  // Narrow containers drill into every multi-type group; wide containers show each type as its own
-  // tile and only drill into nested groups.
+  // Wide layout: Income|Expense, Inventory|Loan, Transfer full width. Narrow keeps the list drill-down.
   return (
     <section ref={pickerRef} onKeyDown={handleKeyDown} className="@container space-y-5" aria-labelledby={headingId}>
       <header className={cn("flex items-center gap-1", openGroup && "-ml-2")}>
@@ -147,9 +142,9 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
           {openGroup ? openGroup.label : t("accounting.dailyIncome.wizard.typeSelector.prompt")}
         </h2>
       </header>
-      <ul className={cn("hidden gap-4 @2xl:grid @2xl:grid-cols-2", openGroup ? undefined : "@4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5")}>
-        {openGroup ? openGroup.options.map(optionTile) : groups.flatMap((group) => group.nested ? [(
-          <li key={group.id}>
+      <ul className="hidden grid-cols-2 gap-4 @2xl:grid">
+        {openGroup ? openGroup.options.map(optionTile) : groups.map((group) => (
+          <li key={group.id} className={group.id === "transfers" ? "col-span-2" : undefined}>
             <PickerTile
               icon={group.icon}
               iconClassName={group.options[0].iconClassName}
@@ -163,7 +158,7 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
               onClick={() => enterGroup(group.id)}
             />
           </li>
-        )] : group.options.map(optionTile))}
+        ))}
       </ul>
       <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm @2xl:hidden">
         {openGroup ? openGroup.options.map((option) => (

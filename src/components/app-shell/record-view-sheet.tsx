@@ -221,7 +221,7 @@ export function RecordViewSheetActions({
 
   return (
     <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {leading}
         {onPrint ? (
           <Button variant="outline" onClick={onPrint} disabled={isDisabled || printDisabled || isPrinting}>

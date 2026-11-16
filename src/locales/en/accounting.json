@@ -860,21 +860,21 @@
         "title": "Choose a transaction type",
         "description": "Select the type of transaction you want to record.",
         "ariaLabel": "Transaction type",
-        "prompt": "What are you recording?",
+        "prompt": "Select your transaction type",
         "back": "Back to all transaction types",
-        "existingInvoice": "Existing invoice",
         "hints": {
           "INITIAL-PAYMENT": "Includes first payment",
+          "SALES": "Not from an invoice",
           "INVENTORY": "Received or dispatched",
           "INVENTORY-PAYMENT": "Pay for a dispatch",
           "LOAN-PAYMENT": "Employee repayment"
         },
         "options": {
-          "INITIAL-PAYMENT": "New invoice",
+          "INITIAL-PAYMENT": "Invoice",
           "PAYMENT": "Invoice payment",
-          "DISCOUNT": "Invoice discount",
-          "SURCHARGE": "Invoice surcharge",
-          "SALES": "Income",
+          "DISCOUNT": "Discount",
+          "SURCHARGE": "Surcharge",
+          "SALES": "Other",
           "EXPENSE": "Expense",
           "INVENTORY": "Inventory movement",
           "INVENTORY-PAYMENT": "Inventory payment",
@@ -884,17 +884,18 @@
           "TRANSFER": "Transfer between accounts"
         },
         "groupHints": {
-          "invoicePayment": "For an existing or a new invoice"
+          "income": "Invoice or other income",
+          "expenses": "Cash or bank expense",
+          "inventory": "Movement or payment",
+          "loans": "Issue, increase, or repay",
+          "transfers": "Between accounts"
         },
         "groups": {
-          "invoicePayment": "Invoice payment",
-          "invoiceSurcharge": "Invoice surcharge",
-          "invoiceDiscount": "Invoice discount",
           "income": "Income",
-          "expenses": "Expenses",
+          "expenses": "Expense",
           "inventory": "Inventory",
-          "loans": "Loans",
-          "transfers": "Account transfers"
+          "loans": "Loan",
+          "transfers": "Transfer"
         }
       },
       "workflow": {

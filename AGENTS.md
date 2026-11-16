@@ -976,15 +976,16 @@ useState
 
 # Git Workflow
 
-`dev` is the integration baseline. Do **not** commit feature work directly on `dev`.
+`dev` is the integration baseline; `main` is protected. Do **not** commit feature work directly on `main` or `dev`.
 
 Rules:
 
-1. If the current branch is already a feature branch **related** to the task, stay on it.
-2. If you are on `dev`, or on a feature branch **unrelated** to the task, create a new feature branch from `dev` before editing.
-3. Commit only when the user asks. Push only when the user asks.
-4. When the user asks to push or open a PR, target `dev` by default unless they specify otherwise.
-5. Do not invent merge/push workflows beyond what the user requested.
+1. Always work on a feature branch. Never edit or commit on `main` or `dev`.
+2. If the checked-out branch is already something other than `main` or `dev`, **stay on it** — even when the task is unrelated. Multiple agents sharing the same checkout must reuse that open feature branch; do not create a second branch per topic.
+3. Only create a new feature branch from `dev` when the current branch is `main` or `dev` (or the user explicitly asks for a new branch).
+4. Commit only when the user asks. Push only when the user asks.
+5. When the user asks to push or open a PR, target `dev` by default unless they specify otherwise.
+6. Do not invent merge/push workflows beyond what the user requested.
 
 ---
 

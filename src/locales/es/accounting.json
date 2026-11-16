@@ -859,21 +859,21 @@
         "title": "Elija un tipo de transacción",
         "description": "Seleccione el tipo de transacción que desea registrar.",
         "ariaLabel": "Tipo de transacción",
-        "prompt": "¿Qué vas a registrar?",
+        "prompt": "Seleccione el tipo de transacción",
         "back": "Volver a todos los tipos de transacción",
-        "existingInvoice": "Factura existente",
         "hints": {
           "INITIAL-PAYMENT": "Incluye el primer pago",
+          "SALES": "Fuera de una factura",
           "INVENTORY": "Recibido o despachado",
           "INVENTORY-PAYMENT": "Pago de un despacho",
           "LOAN-PAYMENT": "Abono del empleado"
         },
         "options": {
-          "INITIAL-PAYMENT": "Nueva factura",
+          "INITIAL-PAYMENT": "Factura",
           "PAYMENT": "Pago de factura",
-          "DISCOUNT": "Descuento de factura",
-          "SURCHARGE": "Recargo de factura",
-          "SALES": "Ingreso",
+          "DISCOUNT": "Descuento",
+          "SURCHARGE": "Recargo",
+          "SALES": "Otro",
           "EXPENSE": "Gasto",
           "INVENTORY": "Movimiento de inventario",
           "INVENTORY-PAYMENT": "Pago de inventario",
@@ -883,17 +883,18 @@
           "TRANSFER": "Transferir entre cuentas"
         },
         "groupHints": {
-          "invoicePayment": "Para una factura existente o nueva"
+          "income": "Factura u otro ingreso",
+          "expenses": "Gasto en efectivo o banco",
+          "inventory": "Movimiento o pago",
+          "loans": "Emitir, aumentar o abonar",
+          "transfers": "Entre cuentas"
         },
         "groups": {
-          "invoicePayment": "Pago de factura",
-          "invoiceSurcharge": "Recargo de factura",
-          "invoiceDiscount": "Descuento de factura",
-          "income": "Ingresos",
-          "expenses": "Gastos",
+          "income": "Ingreso",
+          "expenses": "Gasto",
           "inventory": "Inventario",
-          "loans": "Préstamos",
-          "transfers": "Transferencias entre cuentas"
+          "loans": "Préstamo",
+          "transfers": "Transferencia"
         }
       },
       "workflow": {

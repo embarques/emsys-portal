@@ -397,7 +397,6 @@ export function AddTransactionWizard(props: Props) {
         </DialogHeader>
       ) : null}
       {props.lookupError ? <div className="shrink-0 px-5 py-3"><FormFooterNoticeMessage tone="error" message={t("accounting.dailyIncome.wizard.lookupError")} action={<><p className="text-xs">{props.lookupError}</p><Button type="button" variant="outline" size="sm" disabled={props.lookupLoading || isSubmitting} onClick={props.onRetryLookups}>{t("common.actions.retry")}</Button></>} /></div>
-        : props.lookupLoading ? <p role="status" className="flex shrink-0 items-center gap-2 px-5 py-3 text-sm text-muted-foreground"><Loader2 aria-hidden className="size-4 animate-spin" />{t("accounting.dailyIncome.wizard.loadingOptions")}</p>
         : !showTypePicker && !specialType && activeStep === "payment" && props.paymentMethods.length === 0 ? <p role="status" className="border-b bg-muted/30 px-5 py-3 text-sm">{t("accounting.dailyIncome.wizard.noPaymentMethods")}</p> : null}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {isEdit ? entryContent : (
@@ -413,13 +412,28 @@ export function AddTransactionWizard(props: Props) {
             ) : null}
             <div className={cn(
               "flex min-h-0 flex-1 flex-col",
-              !showTypePicker ? "overflow-hidden" : isPhone ? "overflow-y-auto bg-background px-4 py-5" : "overflow-y-auto bg-muted/35 p-4 sm:p-6 lg:p-8",
+              !showTypePicker ? "overflow-hidden" : isPhone ? "bg-background" : "bg-muted/35",
             )}>
-              <TransactionTypeSelector value={specialType ?? selectedType} onChange={handleTypeChange} appearance={appearance}
-                onGroupChange={chooseType} isBusy={isSubmitting}
-                inventoryPaymentEnabled={inventoryPaymentEnabled} loanIssueEnabled={Boolean(loanEntry.openCreate)} loanIncreaseEnabled={Boolean(loanEntry.openIncrease)} loanPaymentEnabled={Boolean(loanEntry.openPayment)}>
-                {!showTypePicker ? entryContent : null}
-              </TransactionTypeSelector>
+              <div className={cn(
+                "flex min-h-0 flex-1 flex-col",
+                showTypePicker && (isPhone ? "overflow-y-auto px-4 py-5" : "overflow-y-auto p-4 sm:p-6 lg:p-8"),
+                !showTypePicker && "overflow-hidden",
+              )}>
+                <TransactionTypeSelector value={specialType ?? selectedType} onChange={handleTypeChange} appearance={appearance}
+                  onGroupChange={chooseType} isBusy={isSubmitting}
+                  inventoryPaymentEnabled={inventoryPaymentEnabled} loanIssueEnabled={Boolean(loanEntry.openCreate)} loanIncreaseEnabled={Boolean(loanEntry.openIncrease)} loanPaymentEnabled={Boolean(loanEntry.openPayment)}>
+                  {!showTypePicker ? entryContent : null}
+                </TransactionTypeSelector>
+              </div>
+              {showTypePicker && props.lookupLoading ? (
+                <p role="status" className={cn(
+                  "flex shrink-0 items-center gap-2 border-t border-border/60 text-sm text-muted-foreground",
+                  isPhone ? "px-4 py-3" : "px-4 py-3 sm:px-6 lg:px-8",
+                )}>
+                  <Loader2 aria-hidden className="size-4 animate-spin" />
+                  {t("accounting.dailyIncome.wizard.loadingOptions")}
+                </p>
+              ) : null}
             </div>
           </div>
         )}

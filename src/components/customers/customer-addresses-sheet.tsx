@@ -25,6 +25,7 @@ import type { Customer } from "@/lib/customers/types";
 import {
   formatCoreAddressLines,
   getAddressLabelKey,
+  getAddressViewLabelKey,
   ADDRESS_TEXT_WRAP_CLASSNAME,
   getPrimaryAddress,
   orderAddressesForDisplay,
@@ -113,21 +114,28 @@ export function CustomerAddressesSheet({
                 <p className="px-4 py-6 text-sm text-muted-foreground">{t("common.empty.dash")}</p>
               ) : null}
 
-              {addresses.map((address, index) => (
-                <AddressActionRow
-                  key={address.id ?? `${getAddressLabelKey(address, index)}-${index}`}
-                  label={t(getAddressLabelKey(address, index))}
-                  address={address}
-                  labelAction={resolvedCustomer ? (
-                    <CustomerUnverifiedAddressAction
-                      customer={resolvedCustomer}
-                      address={address}
-                      label={t(getAddressLabelKey(address, index))}
-                      onBeforeEdit={() => onOpenChange(false)}
-                    />
-                  ) : null}
-                />
-              ))}
+              {addresses.map((address, index) => {
+                const viewLabelKey = getAddressViewLabelKey(address, index);
+                const label = viewLabelKey ? t(viewLabelKey) : "";
+                const actionLabel = label || t(getAddressLabelKey(address, index));
+
+                return (
+                  <AddressActionRow
+                    key={address.id ?? `${getAddressLabelKey(address, index)}-${index}`}
+                    label={label}
+                    address={address}
+                    isPrimary={address.isPrimary}
+                    labelAction={resolvedCustomer ? (
+                      <CustomerUnverifiedAddressAction
+                        customer={resolvedCustomer}
+                        address={address}
+                        label={actionLabel}
+                        onBeforeEdit={() => onOpenChange(false)}
+                      />
+                    ) : null}
+                  />
+                );
+              })}
             </RecordViewSheetSection>
           </RecordViewSheetBody>
 

@@ -1,7 +1,8 @@
 # Swagger/Scalar publication and schema parity
 
-Standalone handoff. Restructured November 15, 2026; evidence remains dated
-November 13–14, 2026. This edit adds no runtime verification or item closure.
+Standalone handoff. Restructured November 15, 2026. The November 16 follow-up
+records backend source changes and local validation; historical observations
+retain their November 13–14 dates. Deployed acceptance remains open.
 
 Each ID uses **Issue → Expected result → Suggested action**, with actions split
 into **API work**, **Database work**, and **Both — API and database together**.
@@ -38,6 +39,20 @@ descriptions and date/sort validation details, with generated/served contract
 regressions and a backend-owned public snapshot comparison. Completion and check
 results are recorded in the backend's `docs/contracts/b05-publication-verification.md`.
 Source fixes do not close deployed parity or authenticated HTTP acceptance.
+
+The new contract tests also established that this dev baseline lacks the selected
+B09 allow-list additions, despite the earlier publication-focused handoff. PR
+#374 therefore adds actual branch prefix, container sequence, vehicle calendar
+date and inventory posting-time searches, with numeric/date validation, scoped
+server pagination and stable sort ties. It also corrects the missing date-time
+format declaration for reserved `receivedAt`.
+
+Local `go fmt ./...`, `go vet ./...`, the full Go suite (database integration
+disabled), and exact `make swagger` passed. The backend-owned comparison against
+saved public specifications detected the expected deployment drift. The backend
+verification report contains the commands, scope/query-count controls and skipped
+acceptance checks; PR #374 carries the final CI result. These source changes await
+review and rollout; they do not establish deployed HTTP/database acceptance.
 
 Current source implements shared-trip assignment and reuses the trip for an
 unchanged assignment. The older replay warning below is historical compatibility

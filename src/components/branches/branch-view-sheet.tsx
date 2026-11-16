@@ -15,7 +15,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
-import { formatRecordPhoneTypeLabel, getOrderedRecordPhones } from "@/lib/phones/phones";
+import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
 import {
   formatBranchId,
@@ -101,15 +101,10 @@ export function BranchViewSheet({
               getOrderedRecordPhones(branch.phones).map((phone, index) => (
                 <PhoneActionRow
                   key={`phone-${index}`}
-                  label={
-                    phone.isPrimary
-                      ? t("branches.view.phonePrimary", {
-                          type: formatRecordPhoneTypeLabel(phone.type),
-                        })
-                      : formatRecordPhoneTypeLabel(phone.type)
-                  }
+                  label={t(`phones.types.${phone.type}`)}
                   number={phone.number}
                   displayNumber={phone.displayNumber}
+                  isPrimary={phone.isPrimary}
                 />
               ))
             )}
@@ -118,8 +113,9 @@ export function BranchViewSheet({
           <RecordViewSheetSection title={t("branches.view.sections.address")} icon={MapPin}>
             {hasBranchAddress(branch) ? (
               <AddressActionRow
-                label={t("branches.view.fields.fullAddress")}
+                label=""
                 address={toBranchActionAddress(branch)}
+                isPrimary
               />
             ) : (
               <RecordViewSheetDetailRow label={t("branches.view.fields.fullAddress")} value={dash} />

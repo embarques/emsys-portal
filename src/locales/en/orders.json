@@ -267,13 +267,16 @@
     "pickupId": "Pickup ID",
     "summary": "Summary",
     "system": "System information",
+    "name": "Name",
+    "email": "Email",
+    "phones": "Phones",
+    "address": "Address",
     "senderAddress": "{{party}} address",
     "senderPhones": "{{party}} phones",
     "commentsCount": "Comments ({{count}})",
     "receiversCount": "Receivers ({{count}})",
     "primaryAddress": "Primary address",
     "additionalAddress": "Additional address {{index}}",
-    "phonePrimary": "{{type}} (primary)",
     "idNumber": "ID number"
   },
   "history": {

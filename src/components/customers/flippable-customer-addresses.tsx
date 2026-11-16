@@ -8,6 +8,7 @@ import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet
 import type { Customer } from "@/lib/customers/types";
 import {
   getAddressLabelKey,
+  getAddressViewLabelKey,
   getAllAddresses,
   orderAddressesForDisplay,
   resolveCustomerAddressCount,
@@ -44,21 +45,28 @@ export function FlippableCustomerAddresses({
           {t("customers.addresses.loadingAddresses")}
         </div>
       ) : (
-        orderedAddresses.map((address, index) => (
-          <AddressActionRow
-            key={address.id ?? `${customer.id}-address-${index}`}
-            label={t(getAddressLabelKey(address, index))}
-            address={address}
-            labelAction={
-              <CustomerUnverifiedAddressAction
-                customer={customer}
-                address={address}
-                label={t(getAddressLabelKey(address, index))}
-                onBeforeEdit={onBeforeAddressEdit}
-              />
-            }
-          />
-        ))
+        orderedAddresses.map((address, index) => {
+          const viewLabelKey = getAddressViewLabelKey(address, index);
+          const label = viewLabelKey ? t(viewLabelKey) : "";
+          const actionLabel = label || t(getAddressLabelKey(address, index));
+
+          return (
+            <AddressActionRow
+              key={address.id ?? `${customer.id}-address-${index}`}
+              label={label}
+              address={address}
+              isPrimary={address.isPrimary}
+              labelAction={
+                <CustomerUnverifiedAddressAction
+                  customer={customer}
+                  address={address}
+                  label={actionLabel}
+                  onBeforeEdit={onBeforeAddressEdit}
+                />
+              }
+            />
+          );
+        })
       )}
 
       {isLoadingMore && orderedAddresses.length > 0 ? (

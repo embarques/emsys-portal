@@ -114,8 +114,7 @@ import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
-import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
-import { Badge } from "@/components/ui/badge";
+import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { OrderParty } from "@/lib/orders/types";
@@ -141,28 +140,7 @@ function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefin
 }
 
 function InvoicePartyPhoneCell({ party }: { party: OrderParty | null | undefined }) {
-  const { t } = useTranslation();
-  const phones = (party?.phones ?? []).map((phone) => ({
-    ...phone,
-    display: resolvePhoneDisplayValue(phone.number, phone.displayNumber),
-  })).filter((phone) => phone.display)
-    .sort((a, b) => Number(b.isPrimary === true) - Number(a.isPrimary === true));
-
-  return (
-    <div className="flex flex-col gap-1 tabular-nums">
-      {phones.length ? phones.map((phone, index) => (
-        <span key={`${phone.id}-${index}`} className="flex items-center gap-2 whitespace-nowrap leading-snug">
-          <span title={phone.label}>{phone.display}</span>
-          {phone.isPrimary ? (
-            <Badge variant="outline"
-              className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
-              {t("invoices.columns.primaryPhone")}
-            </Badge>
-          ) : null}
-        </span>
-      )) : t("common.empty.dash")}
-    </div>
-  );
+  return <TablePhoneCell phones={party?.phones ?? []} />;
 }
 
 function hasPendingRegistration(invoice: Invoice): boolean {

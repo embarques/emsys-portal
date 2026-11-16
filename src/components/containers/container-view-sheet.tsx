@@ -2,7 +2,6 @@
 
 import { Container as ContainerIcon, Info, Ship } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -46,23 +45,13 @@ export function ContainerViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={container.name}
-          meta={
-            <>
-              {container.containerNumber ? (
-                <Badge variant="outline" className="font-mono">
-                  {container.containerNumber}
-                </Badge>
-              ) : null}
-              <Badge variant="outline" className="font-mono">
-                {container.booking}
-              </Badge>
-            </>
-          }
+          title={container.containerNumber.trim() || dash}
         />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection icon={ContainerIcon} title={t("containers.form.sections.container")}>
+            <RecordViewSheetDetailRow label={t("containers.form.fields.name")} value={container.name.trim() || dash} />
+            <RecordViewSheetDetailRow label={t("containers.form.fields.booking")} value={container.booking.trim() || dash} />
             <RecordViewSheetDetailRow label={t("containers.form.fields.sealNumber")} value={container.sealNumber || dash} />
             <RecordViewSheetDetailRow label={t("containers.form.fields.itn")} value={container.itn || dash} />
             <RecordViewSheetDetailRow label={t("containers.view.containerId")} value={formatContainerId(container.id)} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, MapPin, Navigation } from "lucide-react";
+import { Copy, MapPin, Navigation, Star } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -18,6 +18,8 @@ import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils
 type AddressActionRowProps = {
   label: string;
   address: CustomerCoreAddress;
+  /** When true, show a star instead of a "Primary" text label. */
+  isPrimary?: boolean;
   className?: string;
   labelAction?: ReactNode;
 };
@@ -30,11 +32,20 @@ function buildMapsDirectionsHref(query: string): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
 }
 
-export function AddressActionRow({ label, address, className, labelAction }: AddressActionRowProps) {
+export function AddressActionRow({
+  label,
+  address,
+  isPrimary = false,
+  className,
+  labelAction,
+}: AddressActionRowProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const lines = formatCoreAddressLines(address);
   const query = buildCoreAddressMapsQuery(address);
+  const actionLabel =
+    label.trim() ||
+    (isPrimary ? t("customers.form.address.primary") : t("customers.addresses.labels.other"));
 
   if (lines.length === 0) return null;
 
@@ -58,7 +69,15 @@ export function AddressActionRow({ label, address, className, labelAction }: Add
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1">
-          <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
+          {isPrimary ? (
+            <Star
+              className="size-3.5 shrink-0 fill-current text-amber-500"
+              aria-label={t("customers.form.address.primary")}
+            />
+          ) : null}
+          {label.trim() ? (
+            <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
+          ) : null}
           {labelAction}
         </div>
         <div className={cn("text-sm font-medium leading-snug text-foreground", ADDRESS_TEXT_WRAP_CLASSNAME)}>
@@ -76,7 +95,7 @@ export function AddressActionRow({ label, address, className, labelAction }: Add
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              aria-label={t("customers.address.copyAria", { label })}
+              aria-label={t("customers.address.copyAria", { label: actionLabel })}
               onClick={handleCopy}
             >
               <Copy className="h-4 w-4" />
@@ -98,7 +117,7 @@ export function AddressActionRow({ label, address, className, labelAction }: Add
                     href={buildMapsSearchHref(query)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={t("customers.address.openMapsAria", { label })}
+                    aria-label={t("customers.address.openMapsAria", { label: actionLabel })}
                   >
                     <MapPin className="h-4 w-4" />
                   </a>
@@ -118,7 +137,7 @@ export function AddressActionRow({ label, address, className, labelAction }: Add
                     href={buildMapsDirectionsHref(query)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={t("customers.address.directionsAria", { label })}
+                    aria-label={t("customers.address.directionsAria", { label: actionLabel })}
                   >
                     <Navigation className="h-4 w-4" />
                   </a>

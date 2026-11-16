@@ -22,7 +22,8 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
 const SELECT_COLUMN_WIDTH_PX = 40;
-const SELECT_ACTIONS_COLUMN_WIDTH_PX = 72;
+/** Checkbox + edit/delete icon buttons (DirectoryTableRowActions) in one fixed cell. */
+const SELECT_ACTIONS_COLUMN_WIDTH_PX = 112;
 
 type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
@@ -335,7 +336,7 @@ function DataTableContent<T>({
             {selectable ? (
               <th
                 style={{ width: selectColumnWidth }}
-                className="py-3 pl-4 pr-2"
+                className="overflow-hidden py-3 pl-4 pr-2 align-middle"
                 aria-label={hasSelectCellActions ? t("tableFields.table.selectAndActions") : undefined}
               >
                 <input
@@ -496,10 +497,10 @@ function DataTableContent<T>({
                   {selectable ? (
                     <td
                       style={{ width: selectColumnWidth }}
-                      className="py-3 pl-4 pr-2 align-top"
+                      className="overflow-hidden py-3 pl-4 pr-2 align-middle"
                       onClick={(event) => event.stopPropagation()}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 whitespace-nowrap">
                         <input
                           type="checkbox"
                           aria-label={t("tableFields.table.selectRow", { row: rowLabel?.(row) ?? id })}

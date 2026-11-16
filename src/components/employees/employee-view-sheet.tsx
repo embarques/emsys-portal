@@ -21,19 +21,18 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
+import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
-import {
-  formatRecordPhoneTypeLabel,
-  getOrderedRecordPhones,
-} from "@/lib/phones/phones";
+import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
 import {
-  formatEmployeeAddress,
   formatEmployeeDate,
   formatEmployeeId,
   formatEmployeeMoney,
   formatEmployeeUserLabel,
   getEmployeeBranchBadgeClass,
+  hasEmployeeAddress,
+  toEmployeeCoreAddress,
 } from "@/lib/employees/display";
 import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
 import type { Employee } from "@/lib/employees/types";
@@ -134,15 +133,10 @@ export function EmployeeViewSheet({
               getOrderedRecordPhones(employee.phones).map((phone, index) => (
                 <PhoneActionRow
                   key={`phone-${index}`}
-                  label={
-                    phone.isPrimary
-                      ? t("employees.view.phonePrimary", {
-                          type: formatRecordPhoneTypeLabel(phone.type),
-                        })
-                      : formatRecordPhoneTypeLabel(phone.type)
-                  }
+                  label={t(`phones.types.${phone.type}`)}
                   number={phone.number}
                   displayNumber={phone.displayNumber}
+                  isPrimary={phone.isPrimary}
                 />
               ))
             )}
@@ -153,38 +147,18 @@ export function EmployeeViewSheet({
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("employees.view.sections.address")} icon={MapPin}>
-            <RecordViewSheetDetailRow
-              label={t("employees.columns.address.address1")}
-              value={employee.address.address1 || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.form.fields.address2")}
-              value={employee.address.address2 || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.form.fields.apartment")}
-              value={employee.address.apartment || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.columns.address.city")}
-              value={employee.address.city || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.columns.address.state")}
-              value={employee.address.state || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.form.fields.zipcode")}
-              value={employee.address.zipcode || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.columns.address.country")}
-              value={employee.address.country || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("employees.form.sections.address")}
-              value={formatEmployeeAddress(employee)}
-            />
+            {hasEmployeeAddress(employee) ? (
+              <AddressActionRow
+                label=""
+                address={toEmployeeCoreAddress(employee)}
+                isPrimary
+              />
+            ) : (
+              <RecordViewSheetDetailRow
+                label={t("employees.form.sections.address")}
+                value={dash}
+              />
+            )}
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("employees.view.sections.loans")} icon={Wallet}>

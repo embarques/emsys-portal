@@ -132,8 +132,7 @@
       "imageResampleBy": "Image resample by",
       "createdAt": "Created at"
     },
-    "edit": "Edit branch",
-    "phonePrimary": "{{type}} (primary)"
+    "edit": "Edit branch"
   },
   "dialogs": {
     "deleteTitle": "Delete branch?",

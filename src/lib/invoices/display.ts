@@ -198,7 +198,7 @@ export function formatInvoicePartySummary(party: Invoice["sender"] | undefined):
   return `${party.name} · ${addressLine}`;
 }
 
-function orderPartyAddressToCore(
+export function orderPartyAddressToCore(
   address: NonNullable<ReturnType<typeof getOrderPartyAddress>>,
 ): CustomerCoreAddress {
   return {
@@ -214,6 +214,16 @@ function orderPartyAddressToCore(
     location: null,
     verification: null,
   };
+}
+
+/** Core address for invoice/order party action rows; null when the party has no address content. */
+export function getInvoicePartyCoreAddress(
+  party: OrderParty | null | undefined,
+): CustomerCoreAddress | null {
+  const address = party ? getOrderPartyAddress(party) : null;
+  if (!address) return null;
+  const core = orderPartyAddressToCore(address);
+  return formatCoreAddressLines(core).length > 0 ? core : null;
 }
 
 /** Full snapshot address line for invoice table cells (matches pickup address formatting). */

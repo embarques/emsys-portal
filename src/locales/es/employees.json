@@ -172,7 +172,6 @@
       "audit": "Auditoría"
     },
     "branchId": "ID de sucursal",
-    "phonePrimary": "{{type}} (principal)",
     "edit": "Editar empleado"
   },
   "dialogs": {

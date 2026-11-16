@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Star } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 import { useTranslation } from "@/lib/i18n";
 import { getRecordPhoneDisplayNumber } from "@/lib/phones/phones";
@@ -31,14 +31,15 @@ export function TablePhoneCell({ phones, className, callable = false, onShowAll 
         {(expanded ? entries : entries.slice(0, 2)).map(({ phone, display }, index) => {
           const dial = (phone.number || display).replace(/[^\d+]/g, "");
           return (
-            <span key={`${phone.number}-${index}`} className="flex flex-wrap items-center gap-2 leading-snug">
+            <span key={`${phone.number}-${index}`} className="flex flex-wrap items-center gap-1.5 leading-snug">
               {callable && dial ? (
                 <a href={`tel:${dial}`} className="whitespace-nowrap tabular-nums hover:underline" onClick={(event) => event.stopPropagation()}>{display}</a>
               ) : <span className="whitespace-nowrap tabular-nums">{display}</span>}
               {phone.isPrimary ? (
-                <Badge variant="outline" className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
-                  {t("phones.primaryBadge")}
-                </Badge>
+                <Star
+                  className="size-3 shrink-0 fill-current text-amber-500"
+                  aria-label={t("phones.primary")}
+                />
               ) : null}
             </span>
           );

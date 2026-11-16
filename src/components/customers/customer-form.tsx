@@ -874,7 +874,7 @@ export function CustomerForm({
     <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
         <div className="grid items-start gap-5 @3xl:h-full @3xl:grid-cols-2 @3xl:grid-rows-[minmax(0,1fr)]">
-          <FormSection variant="card" icon={User} title={`01 · ${t("customers.form.workflow.contactTitle")}`}>
+          <FormSection variant="card" icon={User} title={`01 · ${t("customers.form.sections.general")}`}>
             <div className="grid gap-2.5">
               <div className="space-y-1">
                 <Label htmlFor="customerType">
