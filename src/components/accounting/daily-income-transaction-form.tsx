@@ -14,7 +14,8 @@ import { TransactionSectionNavigation } from "@/components/accounting/transactio
 import { INLINE_FIELD_ROW_CLASS_NAME } from "@/components/forms/inline-field-row";
 import { TransactionReview } from "@/components/accounting/transaction-review";
 import { getTransactionFieldStep, getTransactionStepHintKey, getTransactionStepFields, getTransactionStepLabelKey, hasPaymentDetailsStep, isExpensePaidByMethod, isFixedCashTransactionType, TRANSACTION_FIELD_IDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
-import { applyMoneyAccount, buildPaymentAccountOptions, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listExpenseSourceAccounts, listSelectableBankAccounts, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
+import { applyMoneyAccount, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listCashHierarchyRoots, listExpenseSourceAccounts, listSelectableBankAccounts, listTransferHierarchyRoots, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
+import { HierarchicalAccountSelect } from "@/components/accounting/hierarchical-account-select";
 import { PaymentAccountSelect } from "@/components/accounting/payment-account-select";
 import { PaymentChannelFields } from "@/components/accounting/payment-channel-fields";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
@@ -360,30 +361,19 @@ export function DailyIncomeTransactionForm({
       ),
     [accountId, accountName, accountSelectAccounts],
   );
-  const sourceAccountOptions = useMemo(
-    () =>
-      withPinnedSelectOption(
-        sourceAccountSelectAccounts.map((account) => ({
-          value: String(account.id),
-          label: account.displayName,
-          keywords: [account.displayName],
-        })),
-        sourceAccountId,
-        sourceAccountName,
-      ),
-    [sourceAccountId, sourceAccountName, sourceAccountSelectAccounts],
-  );
+  const expenseSourceRoots = useMemo(() => listCashHierarchyRoots(accounts), [accounts]);
   const isTransfer = type === "TRANSFER";
-  const transferPathSource = useMemo(() => [...accounts, ...bankAccounts], [accounts, bankAccounts]);
   const transferAccounts = useMemo(() => {
     const byId = new Map<number, ChartAccount>();
-    for (const account of transferPathSource) {
-      if ((account.type === "ASSET" || account.type === "BANK") && !account.nonPosting && !byId.has(account.id)) byId.set(account.id, account);
+    for (const account of [...listCashAccounts(accounts), ...bankAccounts]) {
+      if (!account.nonPosting && !byId.has(account.id)) byId.set(account.id, account);
     }
     return [...byId.values()];
-  }, [transferPathSource]);
-  const transferOptions = (excludeId: number | undefined, value: number | undefined, valueName: string | undefined) =>
-    withPinnedSelectOption(buildPaymentAccountOptions(transferAccounts.filter((account) => account.id !== excludeId), transferPathSource), value, valueName);
+  }, [accounts, bankAccounts]);
+  const transferRoots = useMemo(
+    () => listTransferHierarchyRoots(accounts, bankAccounts).filter((account) => !account.nonPosting),
+    [accounts, bankAccounts],
+  );
   const expensePaidByMethod = isExpensePaidByMethod(type);
   const moneyAccountTarget = expensePaidByMethod ? "sourceAccount" : "paymentAccount";
   const moneyAccountId = expensePaidByMethod ? sourceAccountId : paymentAccountId;
@@ -1091,52 +1081,50 @@ export function DailyIncomeTransactionForm({
               {isTransfer ? (
                 <div className="grid gap-4">
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start sm:gap-3">
-                    <div className="min-w-0 space-y-2">
-                      <RequiredLabel htmlFor="journal-source">{t("accounting.dailyIncome.form.fields.transferFrom")}</RequiredLabel>
-                      <SearchableSelect
-                        inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
-                        id="journal-source"
-                        value={sourceAccountId != null ? String(sourceAccountId) : ""}
-                        onValueChange={(next) => {
-                          const account = transferAccounts.find((item) => item.id === Number(next));
-                          setValue("sourceAccountId", account?.id, { shouldValidate: true });
-                          setValue("sourceAccountName", account?.displayName ?? "");
-                          setValue("sourceAccountType", account?.type);
-                        }}
-                        placeholder={t("accounting.dailyIncome.form.placeholders.selectTransferFrom")}
-                        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
-                        selectAllOnFocus
-                        mobileSheet
-                        options={transferOptions(accountId, sourceAccountId, sourceAccountName)}
-                        aria-invalid={Boolean(errors.sourceAccountId)}
-                      />
-                      <FieldMessage error={errors.sourceAccountId?.message} hint={t("accounting.dailyIncome.form.hints.transferFrom")} />
-                    </div>
+                    <HierarchicalAccountSelect
+                      inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                      id="journal-source"
+                      accounts={transferAccounts}
+                      roots={transferRoots}
+                      excludeIds={accountId != null ? [accountId] : []}
+                      value={sourceAccountId}
+                      valueName={sourceAccountName}
+                      label={t("accounting.dailyIncome.form.fields.transferFrom")}
+                      required
+                      error={errors.sourceAccountId?.message}
+                      hint={t("accounting.dailyIncome.form.hints.transferFrom")}
+                      placeholder={t("accounting.dailyIncome.form.placeholders.selectTransferFrom")}
+                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                      onChange={(account) => {
+                        setValue("sourceAccountId", account?.id, { shouldValidate: true });
+                        setValue("sourceAccountName", account?.displayName ?? "");
+                        setValue("sourceAccountType", account?.type);
+                      }}
+                    />
                     <span aria-hidden="true" className="flex justify-center text-muted-foreground sm:mt-8">
                       <ArrowDown className="size-4 sm:hidden" />
                       <ArrowRight className="hidden size-4 sm:block" />
                     </span>
-                    <div className="min-w-0 space-y-2">
-                      <RequiredLabel htmlFor="journal-account">{t("accounting.dailyIncome.form.fields.transferTo")}</RequiredLabel>
-                      <SearchableSelect
-                        inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
-                        id="journal-account"
-                        value={accountId != null ? String(accountId) : ""}
-                        onValueChange={(next) => {
-                          const account = transferAccounts.find((item) => item.id === Number(next));
-                          setValue("accountId", account?.id, { shouldValidate: true });
-                          setValue("accountName", account?.displayName ?? "");
-                          setValue("accountType", account?.type);
-                        }}
-                        placeholder={t("accounting.dailyIncome.form.placeholders.selectTransferTo")}
-                        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
-                        selectAllOnFocus
-                        mobileSheet
-                        options={transferOptions(sourceAccountId, accountId, accountName)}
-                        aria-invalid={Boolean(errors.accountId)}
-                      />
-                      <FieldMessage error={errors.accountId?.message} hint={t("accounting.dailyIncome.form.hints.transferTo")} />
-                    </div>
+                    <HierarchicalAccountSelect
+                      inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                      id="journal-account"
+                      accounts={transferAccounts}
+                      roots={transferRoots}
+                      excludeIds={sourceAccountId != null ? [sourceAccountId] : []}
+                      value={accountId}
+                      valueName={accountName}
+                      label={t("accounting.dailyIncome.form.fields.transferTo")}
+                      required
+                      error={errors.accountId?.message}
+                      hint={t("accounting.dailyIncome.form.hints.transferTo")}
+                      placeholder={t("accounting.dailyIncome.form.placeholders.selectTransferTo")}
+                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                      onChange={(account) => {
+                        setValue("accountId", account?.id, { shouldValidate: true });
+                        setValue("accountName", account?.displayName ?? "");
+                        setValue("accountType", account?.type);
+                      }}
+                    />
                   </div>
                   {amountField}
                 </div>
@@ -1173,30 +1161,26 @@ export function DailyIncomeTransactionForm({
                   ) : null}
 
                   {needsSourceAccount ? (
-                    <div className="space-y-2">
-                      <RequiredLabel htmlFor="journal-source">{t("accounting.dailyIncome.form.fields.sourceAccount")}</RequiredLabel>
-                      <SearchableSelect
-                        inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
-                        id="journal-source"
-                        value={sourceAccountId != null ? String(sourceAccountId) : ""}
-                        onValueChange={(next) => {
-                          setSourceAccountDefaultCleared(next === "");
-                          const account = sourceAccountSelectAccounts.find((item) => item.id === Number(next));
-                          setValue("sourceAccountId", account?.id, { shouldValidate: true });
-                          setValue("sourceAccountName", account?.displayName ?? "");
-                          setValue("sourceAccountType", account?.type);
-                        }}
-                        placeholder={t("accounting.dailyIncome.form.placeholders.selectSourceAccount")}
-                        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
-                        selectAllOnFocus
-                        mobileSheet
-                        options={sourceAccountOptions}
-                      />
-                      <FieldMessage
-                        error={errors.sourceAccountId?.message}
-                        hint={type === "EXPENSE" ? t("accounting.dailyIncome.form.hints.expenseSourceAccount") : t("accounting.dailyIncome.form.hints.sourceAccount")}
-                      />
-                    </div>
+                    <HierarchicalAccountSelect
+                      inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                      id="journal-source"
+                      accounts={sourceAccountSelectAccounts}
+                      roots={type === "EXPENSE" ? expenseSourceRoots : sourceAccountSelectAccounts.filter((account) => !account.parentAccount?.id)}
+                      value={sourceAccountId}
+                      valueName={sourceAccountName}
+                      label={t("accounting.dailyIncome.form.fields.sourceAccount")}
+                      required
+                      error={errors.sourceAccountId?.message}
+                      hint={type === "EXPENSE" ? t("accounting.dailyIncome.form.hints.expenseSourceAccount") : t("accounting.dailyIncome.form.hints.sourceAccount")}
+                      placeholder={t("accounting.dailyIncome.form.placeholders.selectSourceAccount")}
+                      searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                      onChange={(account) => {
+                        setSourceAccountDefaultCleared(!account);
+                        setValue("sourceAccountId", account?.id, { shouldValidate: true });
+                        setValue("sourceAccountName", account?.displayName ?? "");
+                        setValue("sourceAccountType", account?.type);
+                      }}
+                    />
                   ) : null}
 
                   {amountField}

@@ -86,6 +86,101 @@ export function listSelectableBankAccounts<T extends AccountNode>(bankAccounts: 
   return general ? [general] : [];
 }
 
+function isPostingAccount<T extends AccountNode>(account: T): boolean {
+  return !account.nonPosting;
+}
+
+/** Direct posting children of a parent (any depth handled by cascading UI). */
+export function listPostingChildren<T extends AccountNode>(accounts: readonly T[], parentId: number): T[] {
+  return accounts
+    .filter((account) => isPostingAccount(account) && account.parentAccount?.id === parentId)
+    .sort((left, right) => (left.displayName || left.name).localeCompare(right.displayName || right.name));
+}
+
+/** Top-level cash picker roots: Cash on Hand when present. */
+export function listCashHierarchyRoots<T extends AccountNode>(accounts: readonly T[]): T[] {
+  const cash = listCashAccounts(accounts).filter(isPostingAccount);
+  const root = findDefaultCashAccount(cash) ?? findDefaultCashAccount(accounts);
+  return root && isPostingAccount(root) ? [root] : cash.filter((account) => !account.parentAccount?.id);
+}
+
+/**
+ * Top-level bank picker roots: direct posting children of the BANK umbrella,
+ * else the general bank when it is the only selectable account.
+ */
+export function listBankHierarchyRoots<T extends AccountNode>(bankAccounts: readonly T[]): T[] {
+  const general = findDefaultBankAccount(bankAccounts);
+  const posting = bankAccounts.filter((account) => account.type === "BANK" && isPostingAccount(account));
+  if (!general) {
+    return posting.filter((account) => !account.parentAccount?.id);
+  }
+  const direct = posting
+    .filter((account) => account.parentAccount?.id === general.id)
+    .sort((left, right) => (left.displayName || left.name).localeCompare(right.displayName || right.name));
+  if (direct.length) return direct;
+  return isPostingAccount(general) ? [general] : [];
+}
+
+/** Transfer roots: cash root(s) plus bank hierarchy roots. */
+export function listTransferHierarchyRoots<T extends AccountNode>(accounts: readonly T[], bankAccounts: readonly T[]): T[] {
+  const byId = new Map<number, T>();
+  for (const account of [...listCashHierarchyRoots(accounts), ...listBankHierarchyRoots(bankAccounts)]) {
+    if (!byId.has(account.id)) byId.set(account.id, account);
+  }
+  return [...byId.values()];
+}
+
+/** Ancestor chain from a hierarchy root down to the selected account (inclusive). */
+export function buildAccountHierarchyChain<T extends AccountNode>(
+  accounts: readonly T[],
+  roots: readonly T[],
+  selectedId: number | undefined,
+): T[] {
+  if (selectedId == null) return [];
+  const byId = new Map(accounts.map((account) => [account.id, account]));
+  const selected = byId.get(selectedId);
+  if (!selected) return [];
+  const rootIds = new Set(roots.map((account) => account.id));
+  const chain: T[] = [];
+  const seen = new Set<number>();
+  let current: T | undefined = selected;
+  while (current && !seen.has(current.id) && chain.length < MAX_ACCOUNT_DEPTH) {
+    seen.add(current.id);
+    chain.unshift(current);
+    if (rootIds.has(current.id)) break;
+    const parentId = current.parentAccount?.id;
+    current = parentId ? byId.get(parentId) : undefined;
+  }
+  if (!chain.length) return [];
+  if (!rootIds.has(chain[0].id) && roots.length) {
+    // Selection outside the offered roots — still show the account as a single level.
+    return [selected];
+  }
+  return chain;
+}
+
+/** Levels for cascading pickers: one select per ancestor, plus a child refine level when needed. */
+export function buildAccountHierarchyLevels<T extends AccountNode>(
+  accounts: readonly T[],
+  roots: readonly T[],
+  selectedId: number | undefined,
+): { parentId: number | null; options: T[]; valueId?: number }[] {
+  const chain = buildAccountHierarchyChain(accounts, roots, selectedId);
+  const levels: { parentId: number | null; options: T[]; valueId?: number }[] = [
+    { parentId: null, options: roots, valueId: chain[0]?.id },
+  ];
+  for (let index = 0; index < chain.length; index += 1) {
+    const children = listPostingChildren(accounts, chain[index].id);
+    if (!children.length) break;
+    levels.push({
+      parentId: chain[index].id,
+      options: children,
+      valueId: chain[index + 1]?.id,
+    });
+  }
+  return levels;
+}
+
 /** Bank account to preselect: only when there is no choice to make. */
 export function resolveDefaultBankAccount<T extends AccountNode>(bankAccounts: readonly T[]): T | undefined {
   const selectable = listSelectableBankAccounts(bankAccounts);
