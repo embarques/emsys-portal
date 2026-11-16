@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 
-import { FieldMessage } from "@/components/forms/field-message";
-import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
-import { buildPaymentAccountOptions } from "@/lib/accounting/daily-income/payment-accounts";
+import { HierarchicalAccountSelect } from "@/components/accounting/hierarchical-account-select";
+import {
+  listBankHierarchyRoots,
+  listCashAccounts,
+  listCashHierarchyRoots,
+} from "@/lib/accounting/daily-income/payment-accounts";
 import type { ChartAccount } from "@/lib/accounting/daily-income/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -16,7 +17,7 @@ type Props = {
   kind: "bank" | "cash";
   /** Accounts offered in the picker. */
   accounts: readonly ChartAccount[];
-  /** Accounts used to build "Parent › Child" labels (defaults to `accounts`). */
+  /** Accounts used to build hierarchy/path labels (defaults to `accounts`). */
   pathSource?: readonly ChartAccount[];
   value?: number;
   valueName?: string;
@@ -29,43 +30,50 @@ type Props = {
   onChange: (account: ChartAccount | undefined) => void;
 };
 
-export function PaymentAccountSelect({ id, kind, accounts, pathSource, value, valueName, label, required = false, error, hint, className, onChange, inlineOptionsLimit }: Props) {
+export function PaymentAccountSelect({
+  id,
+  kind,
+  accounts,
+  pathSource,
+  value,
+  valueName,
+  label,
+  required = false,
+  error,
+  hint,
+  className,
+  onChange,
+  inlineOptionsLimit,
+}: Props) {
   const { t } = useTranslation();
   const fields = "accounting.dailyIncome.form.fields";
   const placeholders = "accounting.dailyIncome.form.placeholders";
-  const selectPlaceholder = t(`${placeholders}.${kind === "bank" ? "selectBankAccount" : "selectCashAccount"}`);
-  const options = useMemo(
-    () =>
-      withPinnedSelectOption(
-        [
-          ...(kind === "bank" ? [{ value: "", label: selectPlaceholder, keywords: [] as string[] }] : []),
-          ...buildPaymentAccountOptions(accounts, pathSource ?? accounts),
-        ],
-        value,
-        valueName,
-      ),
-    [accounts, kind, pathSource, selectPlaceholder, value, valueName],
+  const pool = pathSource ?? accounts;
+  const roots = useMemo(
+    () => (kind === "cash" ? listCashHierarchyRoots(pool) : listBankHierarchyRoots(pool)),
+    [kind, pool],
   );
-  const text = label ?? t(`${fields}.${kind === "bank" ? "bankAccount" : "cashAccount"}`);
+  const hierarchyAccounts = useMemo(() => {
+    if (kind === "cash") return listCashAccounts(pool);
+    return pool.filter((account) => account.type === "BANK");
+  }, [kind, pool]);
 
   return (
-    <div className={className ?? "space-y-2 min-w-0"}>
-      <Label htmlFor={id}>
-        {text}
-        {required ? <span className="text-destructive"> *</span> : null}
-      </Label>
-      <SearchableSelect
-        inlineOptionsLimit={inlineOptionsLimit}
-        id={id}
-        value={value != null ? String(value) : ""}
-        onValueChange={(next) => onChange(next ? accounts.find((account) => account.id === Number(next)) : undefined)}
-        placeholder={selectPlaceholder}
-        searchPlaceholder={t(`${placeholders}.${kind === "bank" ? "searchBankAccounts" : "searchCashAccounts"}`)}
-        mobileSheet
-        options={options}
-        aria-invalid={Boolean(error)}
-      />
-      <FieldMessage error={error} hint={hint} />
-    </div>
+    <HierarchicalAccountSelect
+      inlineOptionsLimit={inlineOptionsLimit}
+      id={id}
+      accounts={hierarchyAccounts}
+      roots={roots}
+      value={value}
+      valueName={valueName}
+      label={label ?? t(`${fields}.${kind === "bank" ? "bankAccount" : "cashAccount"}`)}
+      required={required}
+      error={error}
+      hint={hint}
+      className={className}
+      placeholder={t(`${placeholders}.${kind === "bank" ? "selectBankAccount" : "selectCashAccount"}`)}
+      searchPlaceholder={t(`${placeholders}.${kind === "bank" ? "searchBankAccounts" : "searchCashAccounts"}`)}
+      onChange={onChange}
+    />
   );
 }

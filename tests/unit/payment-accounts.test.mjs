@@ -60,6 +60,36 @@ test("cash accounts are CASH ON HAND and ASSET accounts nested under it", () => 
   assert.deepEqual(accounts.listCashAccounts([register, receivable]), []);
 });
 
+test("account hierarchy levels cascade and allow stopping at any posting level", () => {
+  const cashRoot = { id: 1, name: "CASH ON HAND", displayName: "Cash on hand", type: "ASSET", systemAccount: true };
+  const petty = { id: 20, name: "PETTY CASH", displayName: "Petty cash", type: "ASSET", parentAccount: { id: 1 } };
+  const tape = { id: 21, name: "PETTY TAPE CASH", displayName: "Petty tape cash", type: "ASSET", parentAccount: { id: 20 } };
+  const bankRoot = { id: 10, name: "BANK", displayName: "Bank", type: "BANK", systemAccount: true };
+  const mt = { id: 11, name: "M&T BANK", displayName: "M&T Bank", type: "BANK", parentAccount: { id: 10 } };
+  const checking = { id: 12, name: "M&T CHECKING", displayName: "M&T checking", type: "BANK", parentAccount: { id: 11 } };
+  const cashPool = [cashRoot, petty, tape];
+  const bankPool = [bankRoot, mt, checking];
+
+  assert.deepEqual(accounts.listCashHierarchyRoots(cashPool).map((account) => account.id), [1]);
+  assert.deepEqual(accounts.listBankHierarchyRoots(bankPool).map((account) => account.id), [11]);
+  assert.deepEqual(accounts.listPostingChildren(cashPool, 1).map((account) => account.id), [20]);
+  assert.deepEqual(accounts.listPostingChildren(cashPool, 20).map((account) => account.id), [21]);
+
+  const cashLevels = accounts.buildAccountHierarchyLevels(cashPool, accounts.listCashHierarchyRoots(cashPool), 20);
+  assert.deepEqual(cashLevels.map((level) => level.valueId ?? null), [1, 20, null]);
+  assert.deepEqual(cashLevels[1].options.map((account) => account.id), [20]);
+  assert.deepEqual(cashLevels[2].options.map((account) => account.id), [21]);
+
+  const bankLevels = accounts.buildAccountHierarchyLevels(bankPool, accounts.listBankHierarchyRoots(bankPool), 12);
+  assert.deepEqual(bankLevels.map((level) => level.valueId ?? null), [11, 12]);
+  assert.equal(bankLevels.length, 2);
+
+  assert.deepEqual(
+    accounts.listTransferHierarchyRoots(cashPool, bankPool).map((account) => account.id),
+    [1, 11],
+  );
+});
+
 test("legacy Cash Account is merged into Cash on Hand for pickers", () => {
   assert.equal(accounts.isLegacyCashAccountAlias(legacyCashAccount), true);
   assert.deepEqual(
