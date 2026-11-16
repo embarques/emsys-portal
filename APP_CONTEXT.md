@@ -374,6 +374,17 @@ same values with `allowDuplicatePayment: true`; other conflicts do not authorize
 an override. Never carry that override into another payment.
 
 Financial writes respect current grants, versions and backend `allowedActions`.
+
+**Direct journal edit (same-day outstanding):** Daily Income Edit and
+`PUT /journals/{id}` correct unrestricted journals in the **current open
+closeout** while reconciliation is `OUTSTANDING` and bank clearance is not
+`CLEARED` — typical fixes are amount typos, wrong payment method or funding
+account, and description. Period membership cannot change. Invoice registrations
+(`INITIAL-PAYMENT`), inventory-backed journals, and loan journals keep dedicated
+workflows. After reconciliation, clearance, void/reversal, closeout closure, or a
+pending change request, use audited void / reverse / correct or
+`/change-requests` instead of direct edit.
+
 Protected corrections use an audited void/reversal/correction or approved change
 request, with dedicated invoice, inventory and loan lifecycles preserved. Pending
 work is in `docs/financial-controls.md` and `docs/payment-accounts-api-contract.md`.

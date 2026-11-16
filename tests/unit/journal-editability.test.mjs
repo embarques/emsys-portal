@@ -9,7 +9,15 @@ new Function("exports", output)(loadedModule.exports);
 const { journalEditBlockReason } = loadedModule.exports;
 
 const current = { id: 32676, date: "2026-11-04", status: "OPEN", currency: "USD", rate: 1 };
-const journal = (overrides = {}) => ({ id: "j1", incomeStatementId: 32676, transactionType: "EXPENSE", reconciliationStatus: "OUTSTANDING", version: 1, allowedActions: {edit:true}, ...overrides });
+const journal = (overrides = {}) => ({
+  id: "j1",
+  incomeStatementId: 32676,
+  transactionType: "EXPENSE",
+  reconciliationStatus: "OUTSTANDING",
+  version: 1,
+  allowedActions: { edit: true },
+  ...overrides,
+});
 
 test("outstanding journals in the current open closeout are editable", () => {
   for (const transactionType of ["PAYMENT", "EXPENSE", "SALES", "DISCOUNT", "SURCHARGE", "TRANSFER"]) {
@@ -25,24 +33,30 @@ test("journals outside the current open closeout are blocked", () => {
 });
 
 test("invoice registrations, inventory, loans and voids use their own workflows", () => {
-  for (const transactionType of ["INITIAL-PAYMENT", "INVENTORY", "LOAN", "VOID"]) {
+  for (const transactionType of ["INITIAL-PAYMENT", "INVENTORY", "LOAN", "LOAN-PAYMENT", "VOID", "REVERSAL"]) {
     assert.equal(journalEditBlockReason(journal({ transactionType }), current), "type", transactionType);
   }
+  assert.equal(journalEditBlockReason(journal({ loan: { id: 12 } }), current), "type");
+  assert.equal(journalEditBlockReason(journal({ sourceSystem: "inventory_receipt" }), current), "type");
+  assert.equal(journalEditBlockReason(journal({ sourceSystem: "legacy-api" }), current), "type");
 });
 
 test("reconciled, reversed and reversal journals are final", () => {
   assert.equal(journalEditBlockReason(journal({ reconciliationStatus: "RECONCILED" }), current), "reconciled");
+  assert.equal(journalEditBlockReason(journal({ reconciliationStatus: "NOT_REQUIRED" }), current), "reversed");
+  assert.equal(journalEditBlockReason(journal({ transactionStatus: "REVERSED" }), current), "reversed");
   assert.equal(journalEditBlockReason(journal({ reversedAt: "2026-11-04T15:00:00Z" }), current), "reversed");
   assert.equal(journalEditBlockReason(journal({ reversalOf: "j0" }), current), "reversed");
 });
 
 test("cleared transactions and explicit backend edit restrictions block direct editing", () => {
- assert.equal(journalEditBlockReason(journal({clearanceStatus:"CLEARED"}),current),"cleared");
- assert.equal(journalEditBlockReason(journal({allowedActions:{edit:false}}),current),"restricted");
- assert.equal(journalEditBlockReason(journal({clearanceStatus:"OUTSTANDING",allowedActions:{edit:true}}),current),null);
+  assert.equal(journalEditBlockReason(journal({ clearanceStatus: "CLEARED" }), current), "cleared");
+  assert.equal(journalEditBlockReason(journal({ allowedActions: { edit: false } }), current), "restricted");
+  assert.equal(journalEditBlockReason(journal({ pendingChange: true }), current), "restricted");
+  assert.equal(journalEditBlockReason(journal({ clearanceStatus: "OUTSTANDING", allowedActions: { edit: true } }), current), null);
 });
 
- test("missing eligibility or version fails closed", () => {
- assert.equal(journalEditBlockReason(journal({allowedActions:undefined}),current),"restricted");
- assert.equal(journalEditBlockReason(journal({version:undefined}),current),"restricted");
- });
+test("missing eligibility or version fails closed", () => {
+  assert.equal(journalEditBlockReason(journal({ allowedActions: undefined }), current), "restricted");
+  assert.equal(journalEditBlockReason(journal({ version: undefined }), current), "restricted");
+});
