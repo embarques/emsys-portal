@@ -27,7 +27,9 @@
   "actions": {
     "add": "Agregar código de barras",
     "edit": "Editar código de barras",
-    "editNamed": "Editar {{number}}"
+    "editNamed": "Editar {{number}}",
+    "manageAssignment": "Gestionar asignación",
+    "assignmentGroup": "Asignación de código de barras"
   },
   "bulk": {
     "changeStatus": "Cambiar estado",

@@ -51,7 +51,7 @@ type EmployeeMobileListProps = {
   onClearFilters: () => void;
   onPageChange: (page: number) => void;
   onToggleSelect: (employeeId: string, checked: boolean) => void;
-  onClearSelection: () => void;
+  onSelectedIdsChange: (ids: string[]) => void;
   onView: (employee: Employee) => void;
   onEdit: (employee: Employee) => void;
   onDeleteSelected: () => void;
@@ -84,7 +84,7 @@ export function EmployeeMobileList({
   onClearFilters,
   onPageChange,
   onToggleSelect,
-  onClearSelection,
+  onSelectedIdsChange,
   onView,
   onEdit,
   onDeleteSelected,
@@ -189,10 +189,11 @@ export function EmployeeMobileList({
 
       <EmployeeMobileSelectionToolbar
         selectedIds={selectedIds}
+        pageRowIds={employees.map((employee) => String(employee.id))}
         totalCount={totalCount}
         singleSelectedEmployee={singleSelectedEmployee}
         isSaving={isSaving}
-        onClearSelection={onClearSelection}
+        onSelectedIdsChange={onSelectedIdsChange}
         onView={onView}
         onEdit={onEdit}
         onDeleteSelected={onDeleteSelected}

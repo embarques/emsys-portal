@@ -25,6 +25,9 @@ test("journal selection spans pages, restricts methods, and retries approval wit
     "@/lib/store/hooks$":path.join(fixtures,"journal-auth.ts"),
     "@/lib/api/client$":path.join(fixtures,"journal-api.ts"),
     "@/lib/i18n$":path.join(fixtures,"journal-i18n.ts"),
+    "@/lib/layout/hooks/use-workspace-tabs$":path.join(fixtures,"journal-workspace-tabs.ts"),
+    "@/components/app-shell/feedback-provider$":path.join(fixtures,"journal-feedback.ts"),
+    "next/navigation$":path.join(fixtures,"journal-navigation.ts"),
     "@":path.resolve("src")}},
    module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:path.join(fixtures,"typescript-loader.mjs")}]}
   });
@@ -45,13 +48,13 @@ test("journal selection spans pages, restricts methods, and retries approval wit
   await page.getByRole("checkbox",{name:"Select TXN-A2",exact:true}).check();
   await page.waitForFunction(()=>window.journalCalls.some(call=>call.url==="/journals/summary"&&call.body.ids?.length===2));
   await page.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).click();
-  const dialog=page.getByRole("dialog");
-  await dialog.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).click();
-  await dialog.getByRole("alert").waitFor();
-  await dialog.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).click();
-  await dialog.getByText("accounting.journalReconciliation.batchComplete",{exact:true}).waitFor();
-  assert.equal(await dialog.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).isDisabled(),true);
-  await dialog.getByRole("button",{name:"common.actions.cancel",exact:true}).click();
+  await page.getByRole("heading",{name:"accounting.journalReconciliation.confirmTitle",exact:true}).waitFor();
+  await page.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).click();
+  await page.getByRole("alert").waitFor();
+  await page.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).click();
+  await page.getByText("accounting.journalReconciliation.batchComplete",{exact:true}).waitFor();
+  assert.equal(await page.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).isDisabled(),true);
+  await page.getByRole("button",{name:"common.actions.cancel",exact:true}).click();
   const calls=await page.evaluate(()=>window.journalCalls);
   const approvals=calls.filter(call=>call.url==="/journals/reconcile");
   assert.equal(approvals.length,2);
@@ -69,13 +72,13 @@ test("journal selection spans pages, restricts methods, and retries approval wit
   await incomplete.getByRole("button",{name:"common.actions.next",exact:true}).click();
   await incomplete.getByRole("checkbox",{name:"Select TXN-A2",exact:true}).check();
   await incomplete.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true}).click();
-  const partialDialog=incomplete.getByRole("dialog");
-  const retry=partialDialog.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true});
+  await incomplete.getByRole("heading",{name:"accounting.journalReconciliation.confirmTitle",exact:true}).waitFor();
+  const retry=incomplete.getByRole("button",{name:"accounting.journalReconciliation.reconcileSelected",exact:true});
   await retry.click();
-  await partialDialog.getByText("650000000000000000000003 — accounting.journalReconciliation.unconfirmed",{exact:true}).waitFor();
+  await incomplete.getByText("650000000000000000000003 — accounting.journalReconciliation.unconfirmed",{exact:true}).waitFor();
   assert.equal(await retry.isEnabled(),true);
   await retry.click();
-  await partialDialog.getByText("accounting.journalReconciliation.batchComplete",{exact:true}).waitFor();
+  await incomplete.getByText("accounting.journalReconciliation.batchComplete",{exact:true}).waitFor();
   assert.equal(await retry.isDisabled(),true);
   const partialCalls=await incomplete.evaluate(()=>window.journalCalls.filter(call=>call.url==="/journals/reconcile"));
   assert.equal(partialCalls.length,2);
@@ -122,17 +125,17 @@ test("journal selection spans pages, restricts methods, and retries approval wit
   assert.equal(await clearance.getByRole("button",{name:"accounting.journalClearance.blocked.notAuthorized",exact:true}).count(),1);
   // TXN-A1 is unreconciled and belongs to a closed closeout; settlement handles both statuses.
   await clearance.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
-  const clearanceDialog=clearance.getByRole("dialog");
-  const confirmList=clearanceDialog.getByRole("table",{name:"accounting.journalClearance.confirmList.caption"});
+  await clearance.getByRole("heading",{name:"accounting.journalClearance.confirmTitle",exact:true}).waitFor();
+  const confirmList=clearance.getByRole("table",{name:"accounting.journalClearance.confirmList.caption"});
   assert.equal(await confirmList.getByRole("row").count(),2);
   for (const value of ["INV-26-001475","TXN-A1","004521","CHECK"]) await confirmList.getByRole("cell",{name:value,exact:true}).waitFor();
-  await clearanceDialog.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
-  await clearanceDialog.getByRole("alert").waitFor();
-  await clearanceDialog.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
-  await clearanceDialog.getByText("accounting.journalClearance.batchComplete",{exact:true}).waitFor();
+  await clearance.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
+  await clearance.getByRole("alert").waitFor();
+  await clearance.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).click();
+  await clearance.getByText("accounting.journalClearance.batchComplete",{exact:true}).waitFor();
   await confirmList.getByRole("cell",{name:"TXN-A1",exact:true}).waitFor();
-  assert.equal(await clearanceDialog.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).isDisabled(),true);
-  await clearanceDialog.getByRole("button",{name:"common.actions.cancel",exact:true}).click();
+  assert.equal(await clearance.getByRole("button",{name:"accounting.journalClearance.clearSelected",exact:true}).isDisabled(),true);
+  await clearance.getByRole("button",{name:"common.actions.cancel",exact:true}).click();
   const clearanceCalls=await clearance.evaluate(()=>window.journalCalls);
   const settlements=clearanceCalls.filter(call=>call.url==="/journals/clear");
   assert.equal(settlements.length,2);

@@ -552,7 +552,7 @@ export function CustomersWorkspace() {
         }}
         onPageChange={setPage}
         onToggleSelect={toggleSelect}
-        onClearSelection={() => setSelectedIds([])}
+        onSelectedIdsChange={setSelectedIds}
         onView={openViewCustomer}
         onEdit={openEditForm}
         onDeleteSelected={() => openDeleteTarget({ mode: "bulk", ids: [...selectedIds] })}

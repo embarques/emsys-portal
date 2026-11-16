@@ -120,3 +120,30 @@ test("payments keep their own balance rule", () => {
   const payment = { ...discount(150, 100), transactionType: "PAYMENT", paymentMethodId: 1, paymentMethodName: "CASH" };
   assert.equal(dailyIncomeJournalSchema.safeParse(payment).success, false);
 });
+
+test("payments reject paid-off invoices before amount checks", () => {
+  const paidOff = {
+    ...discount(20, 0),
+    transactionType: "PAYMENT",
+    paymentMethodId: 1,
+    paymentMethodName: "CASH",
+  };
+  const result = dailyIncomeJournalSchema.safeParse(paidOff);
+  assert.equal(result.success, false);
+  assert.equal(result.error.issues.some((issue) => issue.path.join(".") === "invoiceId"), true);
+});
+
+test("editing a payment restores the payable balance before paid-off checks", () => {
+  const schema = createDailyIncomeJournalSchema(
+    new Proxy({}, { get: (_target, key) => String(key) }),
+    { originalPayment: { invoiceId: "inv-1", amount: 40 } },
+  );
+  const values = {
+    ...discount(40, 0),
+    transactionType: "PAYMENT",
+    paymentMethodId: 1,
+    paymentMethodName: "CASH",
+  };
+  assert.equal(schema.safeParse(values).success, true);
+  assert.equal(schema.safeParse({ ...values, amount: 40.01 }).success, false);
+});

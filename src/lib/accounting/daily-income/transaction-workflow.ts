@@ -98,3 +98,73 @@ export function getTransactionStepLabelKey(step: TransactionFormStep, type: Jour
   }
   return `accounting.dailyIncome.wizard.workflow.${step}`;
 }
+
+/** Default post-save continue target when no batch-from-step mark is set. */
+export function getDefaultBatchContinueStep(type: JournalTransactionType): TransactionFormStep {
+  return type === "INVENTORY" ? "assignment" : "amounts";
+}
+
+/**
+ * Form value keys (including display companions) owned by a step for batch continue.
+ * Used to keep everything before the marked batch-start step and clear the rest.
+ */
+const BATCH_STEP_VALUE_KEYS: Record<Exclude<TransactionFormStep, "review">, (keyof DailyIncomeJournalValues)[]> = {
+  assignment: [
+    "employeeId", "employeeName", "employeeGroupId", "employeeGroupName", "assigneeSource",
+    "routeId", "routeName", "routeCrewId", "routeCrewName",
+    "supervisorId", "supervisorName",
+    "inventoryDirection", "inventorySupplierId", "inventorySupplierName",
+    "inventoryHolderVehicleId", "inventoryHolderVehicleName", "inventoryHolderEmployees",
+  ],
+  amounts: [
+    "invoiceId", "invoiceNumber", "autoGenerateInvoiceNumber", "invoiceCost", "invoiceDiscount", "invoiceBalance", "amount",
+    "accountId", "accountName", "accountType",
+    "sourceAccountId", "sourceAccountName", "sourceAccountType",
+    "inventoryItemId", "inventoryItemName", "inventoryQuantity", "inventoryUnitPrice", "inventoryTotal", "autoReconcile",
+  ],
+  payment: [
+    "paymentMethodId", "paymentMethodName",
+    "paymentAccountId", "paymentAccountName", "paymentAccountType",
+    "checkNumber", "autoClear", "clearPaymentOnSave", "externalReferenceNumber", "refNumberMode", "refNumber", "description",
+  ],
+  parties: [
+    "includeSender", "senderId", "senderName",
+    "includeReceiver", "receiverId", "receiverName",
+  ],
+};
+
+function getBatchStepValueKeys(
+  step: Exclude<TransactionFormStep, "review">,
+  type: JournalTransactionType,
+): (keyof DailyIncomeJournalValues)[] {
+  const keys = BATCH_STEP_VALUE_KEYS[step];
+  if (isExpensePaidByMethod(type)) {
+    if (step === "amounts") {
+      return keys.filter((field) => field !== "sourceAccountId" && field !== "sourceAccountName" && field !== "sourceAccountType");
+    }
+    if (step === "payment") {
+      return [...keys, "sourceAccountId", "sourceAccountName", "sourceAccountType"];
+    }
+  }
+  if (step === "amounts" && isFixedCashTransactionType(type)) {
+    return [...keys, "description"];
+  }
+  return keys;
+}
+
+/** Keys to copy from the saved entry when continuing a batch that restarts at `batchStartStep`. */
+export function getBatchPreservedValueKeys(
+  type: JournalTransactionType,
+  batchStartStep: TransactionFormStep,
+): (keyof DailyIncomeJournalValues)[] {
+  const steps = getTransactionFormSteps(type);
+  const startIndex = steps.indexOf(batchStartStep);
+  if (startIndex <= 0) return [];
+
+  const keys: (keyof DailyIncomeJournalValues)[] = [];
+  for (const step of steps.slice(0, startIndex)) {
+    if (step === "review") continue;
+    keys.push(...getBatchStepValueKeys(step, type));
+  }
+  return keys;
+}

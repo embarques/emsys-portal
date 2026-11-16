@@ -349,51 +349,62 @@ export type DailyIncomeTransactionSpec = {
   needsPaymentMethod?: boolean;
 };
 
+/** Chooser path from the Add transaction type picker (group/option button names). */
+const TRANSACTION_TYPE_CHOOSER_PATH: Record<string, string[]> = {
+  "register-invoice": ["Income", "Invoice", "Payment"],
+  "register-payment": ["Income", "Invoice", "Payment"],
+  "register-expense": ["Expense"],
+  "register-income": ["Income", "Other"],
+  "apply-discount": ["Income", "Invoice", "Discount"],
+  "apply-surcharge": ["Income", "Invoice", "Surcharge"],
+  "transfer-account": ["Transfer"],
+};
+
 /** One entry per journal transaction type — slug appears in test titles for independent runs. */
 export const DAILY_INCOME_TRANSACTION_SPECS: DailyIncomeTransactionSpec[] = [
   {
     slug: "register-invoice",
-    label: "Register new invoice",
+    label: "Payment",
     sectionTitle: "Invoice information",
     needsRegisterInvoice: true,
     needsPaymentMethod: true,
   },
   {
     slug: "register-payment",
-    label: "Register invoice payment",
+    label: "Payment",
     sectionTitle: "Payment information",
     needsInvoice: true,
     needsPaymentMethod: true,
   },
   {
     slug: "register-expense",
-    label: "Register expense",
+    label: "Expense",
     sectionTitle: "Expense information",
     needsAccount: true,
     needsSourceAccount: true,
   },
   {
     slug: "register-income",
-    label: "Register income",
+    label: "Other",
     sectionTitle: "Income information",
     needsAccount: true,
     needsPaymentMethod: true,
   },
   {
     slug: "apply-discount",
-    label: "Apply invoice discount",
+    label: "Discount",
     sectionTitle: "Discount information",
     needsInvoice: true,
   },
   {
     slug: "apply-surcharge",
-    label: "Apply invoice surcharge",
+    label: "Surcharge",
     sectionTitle: "Surcharge information",
     needsInvoice: true,
   },
   {
     slug: "transfer-account",
-    label: "Transfer account",
+    label: "Transfer",
     sectionTitle: "Transfer information",
     needsAccount: true,
     needsSourceAccount: true,
@@ -422,7 +433,10 @@ export async function openRegisterPaymentTransactionWizard(page: Page, main: Loc
 }
 
 export async function openTransactionTypeWizard(page: Page, main: Locator, spec: DailyIncomeTransactionSpec) {
-  return openAddTransactionWizard(page, main, spec.label, spec.sectionTitle, spec);
+  return openAddTransactionWizard(page, main, spec.label, spec.sectionTitle, {
+    ...spec,
+    slug: spec.slug,
+  });
 }
 
 export async function resolveTransactionWizardSurface(page: Page) {
@@ -441,15 +455,24 @@ export async function openAddTransactionWizard(
   main: Locator,
   transactionLabel: string,
   sectionTitle: string,
-  spec?: Pick<DailyIncomeTransactionSpec, "needsRegisterInvoice" | "needsInvoice" | "needsAccount">,
+  spec?: Pick<DailyIncomeTransactionSpec, "needsRegisterInvoice" | "needsInvoice" | "needsAccount" | "slug">,
 ) {
   await expect(main.getByRole("button", { name: "Add transaction" })).toBeEnabled({ timeout: 15_000 });
   await main.getByRole("button", { name: "Add transaction" }).click();
 
   const wizard = await resolveTransactionWizardSurface(page);
   await expect(page.getByRole("heading", { name: "Add transaction" })).toBeVisible();
-  await wizard.getByRole("radio", { name: transactionLabel }).click();
-  await wizard.getByRole("button", { name: "Next" }).click();
+  const chooserPath =
+    (spec?.slug ? TRANSACTION_TYPE_CHOOSER_PATH[spec.slug] : undefined) ??
+    Object.values(TRANSACTION_TYPE_CHOOSER_PATH).find((path) => path.at(-1) === transactionLabel) ??
+    [transactionLabel];
+  for (const name of chooserPath) {
+    await wizard.getByRole("button", { name, exact: true }).click();
+  }
+  if (spec?.needsRegisterInvoice) {
+    await wizard.locator("#journal-invoice").click();
+    await page.getByRole("option", { name: "Create new invoice", exact: true }).click();
+  }
   await expect(wizard.getByText(sectionTitle)).toBeVisible();
 
   await expect(async () => {

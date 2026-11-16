@@ -102,6 +102,8 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   "label-updater": "barcodes",
   vehicles: "vehicles",
   "daily-income-transactions": "accounting",
+  "journal-reconciliation-batch": "accounting",
+  "journal-clearance-batch": "accounting",
   users: "admin",
   roles: "admin",
   employees: "admin",

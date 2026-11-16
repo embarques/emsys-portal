@@ -13,6 +13,11 @@ export type TableSelectionBarProps = {
   selectedCount: number;
   onClear: () => void;
   selectionActions?: ReactNode;
+  /**
+   * Optional middle content (e.g. selected totals) rendered between the
+   * selection island and the record actions in the same toolbar row.
+   */
+  meta?: ReactNode;
   /** Total selectable records (across pages). Falls back to the selected count. */
   totalCount?: number;
   onView?: () => void;
@@ -49,6 +54,7 @@ export function TableSelectionBar({
   selectedCount,
   onClear,
   selectionActions,
+  meta,
   totalCount,
   onView,
   onEdit,
@@ -109,6 +115,8 @@ export function TableSelectionBar({
           </>
         ) : null}
       </div>
+
+      {meta ? <div className="min-w-0 flex-1">{meta}</div> : null}
 
       {/* Record actions: operate on the selected rows */}
       {hasRecordActions ? (

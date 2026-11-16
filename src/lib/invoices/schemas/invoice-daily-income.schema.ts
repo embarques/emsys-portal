@@ -15,7 +15,7 @@ const translateEnglish: TranslateFn = (key, params) => translate("en", key, para
 
 const createInvoiceDailyIncomeRegistrationBaseSchema = (t: TranslateFn) => z.object({
   amount: z.number().nonnegative(t("invoices.wizard.dailyIncome.validation.amountNegative")),
-  assigneeSource: z.enum(["employee", "route"]).optional(),
+  assigneeSource: z.enum(["creator", "employee", "route"]).optional(),
   employeeId: z.number().optional(),
   employeeName: z.string().optional(),
   employeeGroupId: z.string().optional(),

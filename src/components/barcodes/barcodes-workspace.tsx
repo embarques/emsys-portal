@@ -108,6 +108,32 @@ const defaultFilters: BarcodeFilterState = {
   rows: [],
 };
 
+function getInvoiceTargetForBarcode(barcode: Barcode) {
+  const invoiceId = barcode.invoiceId?.trim();
+  if (!invoiceId) return null;
+  const focusBarcodeId =
+    barcode.barcodeId?.trim() ||
+    barcode.number.trim() ||
+    (barcode.id > 0 ? String(barcode.id) : "");
+  return {
+    invoiceId,
+    invoiceNumber: barcode.invoiceNumber?.trim() || "",
+    focusBarcodeId: focusBarcodeId || undefined,
+  };
+}
+
+function toAssignRouteBarcode(barcode: Barcode) {
+  return {
+    number: barcode.number,
+    barcodeId:
+      barcode.barcodeId?.trim() ||
+      (barcode.id > 0 ? String(barcode.id) : undefined),
+    catalogId: barcode.id > 0 ? barcode.id : undefined,
+    invoiceId: barcode.invoiceId,
+    currentRouteName: barcode.route?.name,
+  };
+}
+
 export function BarcodesWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
@@ -211,53 +237,36 @@ export function BarcodesWorkspace() {
     () =>
       selectedBarcodes
         .filter((barcode) => barcode.number.trim().length > 0 && !isDeliveredBarcode(barcode.status))
-        .map((barcode) => ({
-          number: barcode.number,
-          barcodeId:
-            barcode.barcodeId?.trim() ||
-            (barcode.id > 0 ? String(barcode.id) : undefined),
-          catalogId: barcode.id > 0 ? barcode.id : undefined,
-          invoiceId: barcode.invoiceId,
-          currentRouteName: barcode.route?.name,
-        })),
+        .map(toAssignRouteBarcode),
     [selectedBarcodes],
   );
 
   const selectedInvoiceTarget = useMemo(() => {
     if (selectedBarcodes.length !== 1) return null;
-    const barcode = selectedBarcodes[0];
-    const invoiceId = barcode.invoiceId?.trim();
-    if (!invoiceId) return null;
-    const focusBarcodeId =
-      barcode.barcodeId?.trim() ||
-      barcode.number.trim() ||
-      (barcode.id > 0 ? String(barcode.id) : "");
-    return {
-      invoiceId,
-      invoiceNumber: barcode.invoiceNumber?.trim() || "",
-      focusBarcodeId: focusBarcodeId || undefined,
-    };
+    return getInvoiceTargetForBarcode(selectedBarcodes[0]);
   }, [selectedBarcodes]);
 
-  function openSelectedInvoice(options?: {
-    initialWizardStep?: number;
-    focusBarcode?: boolean;
-  }) {
-    if (!selectedInvoiceTarget) {
+  function openInvoiceForBarcode(
+    barcode: Barcode,
+    options?: {
+      initialWizardStep?: number;
+      focusBarcode?: boolean;
+    },
+  ) {
+    const target = getInvoiceTargetForBarcode(barcode);
+    if (!target) {
       notifyError(t("barcodes.bulk.noInvoice"));
       return;
     }
 
     setViewBarcode(null);
 
-    const focusBarcodeId = options?.focusBarcode
-      ? selectedInvoiceTarget.focusBarcodeId
-      : undefined;
+    const focusBarcodeId = options?.focusBarcode ? target.focusBarcodeId : undefined;
     const initialWizardStep = options?.initialWizardStep;
     const formNonce = Date.now();
 
     const label = formatInvoiceTabLabel(
-      { invoiceNumber: selectedInvoiceTarget.invoiceNumber },
+      { invoiceNumber: target.invoiceNumber },
       t("invoices.workspace.untitledTab"),
     );
 
@@ -266,7 +275,7 @@ export function BarcodesWorkspace() {
         feature: "invoices",
         baseHref: "/invoices",
         mode: "edit",
-        entityId: selectedInvoiceTarget.invoiceId,
+        entityId: target.invoiceId,
         label,
         ...(initialWizardStep != null ? { initialWizardStep } : {}),
         ...(focusBarcodeId ? { focusBarcodeId } : {}),
@@ -277,7 +286,45 @@ export function BarcodesWorkspace() {
     setEditInvoiceInitialStep(initialWizardStep);
     setEditInvoiceFocusBarcodeId(focusBarcodeId);
     setEditInvoiceFormNonce(formNonce);
-    setEditInvoiceId(selectedInvoiceTarget.invoiceId);
+    setEditInvoiceId(target.invoiceId);
+  }
+
+  function openSelectedInvoice(options?: {
+    initialWizardStep?: number;
+    focusBarcode?: boolean;
+  }) {
+    if (!selectedBarcodes[0]) {
+      notifyError(t("barcodes.bulk.noInvoice"));
+      return;
+    }
+    openInvoiceForBarcode(selectedBarcodes[0], options);
+  }
+
+  function selectBarcodeForBulk(barcode: Barcode) {
+    setSelectedIds([barcodeSelectionKey(barcode)]);
+  }
+
+  function openStatusForBarcode(barcode: Barcode) {
+    selectBarcodeForBulk(barcode);
+    setBulkError(null);
+    setNewStatus(
+      barcodeStatusOptions[0]?.name ??
+        FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ??
+        "CREATED",
+    );
+    setStatusDialogOpen(true);
+  }
+
+  function openContainerForBarcode(barcode: Barcode) {
+    selectBarcodeForBulk(barcode);
+    setBulkError(null);
+    setNewContainerId(containers[0] ? String(containers[0].id) : "");
+    setContainerDialogOpen(true);
+  }
+
+  function openRouteForBarcode(barcode: Barcode) {
+    selectBarcodeForBulk(barcode);
+    setRouteDialogOpen(true);
   }
 
   function toggleSelectAll(checked: boolean) {
@@ -800,6 +847,50 @@ export function BarcodesWorkspace() {
         onOpenChange={(open) => {
           if (!open) setViewBarcode(null);
         }}
+        actionsDisabled={isUpdating || isFetching}
+        canDeliver={deliveryAccess.canDeliver}
+        canPrintInvoice={deliveryAccess.canPrint}
+        canPrint={canPrint}
+        canOpenInvoice={canUpdateInvoices}
+        canChangeStatus
+        canTransferContainer
+        canAssignRoute
+        canEdit={canUpdateInvoices}
+        canDelete={canUpdateInvoices}
+        deliverDisabled={!viewBarcode || !canStartBarcodeDelivery(viewBarcode)}
+        printInvoiceDisabled={!viewBarcode?.invoiceId}
+        printDisabled={!viewBarcode || !canPrint}
+        isPrinting={isPrinting}
+        openInvoiceDisabled={!viewBarcode || !getInvoiceTargetForBarcode(viewBarcode)}
+        assignRouteDisabled={
+          !viewBarcode ||
+          viewBarcode.number.trim().length === 0 ||
+          isDeliveredBarcode(viewBarcode.status)
+        }
+        editDisabled={!viewBarcode || !getInvoiceTargetForBarcode(viewBarcode)}
+        deleteDisabled={!viewBarcode || !getInvoiceTargetForBarcode(viewBarcode)}
+        onDeliver={(barcode) => {
+          if (canStartBarcodeDelivery(barcode)) {
+            setDeliveryTarget({ scope: deliveryScope, barcode });
+          }
+        }}
+        onPrintInvoice={(barcode) => {
+          if (!barcode.invoiceId) return;
+          setInvoicePrintTarget({ scope: deliveryScope, ids: [barcode.invoiceId] });
+        }}
+        onPrint={(barcode) => {
+          void printBarcodes([barcode]);
+        }}
+        onOpenInvoice={(barcode) => openInvoiceForBarcode(barcode)}
+        onChangeStatus={openStatusForBarcode}
+        onTransferContainer={openContainerForBarcode}
+        onAssignRoute={openRouteForBarcode}
+        onEdit={(barcode) =>
+          openInvoiceForBarcode(barcode, { initialWizardStep: 3, focusBarcode: true })
+        }
+        onDelete={(barcode) =>
+          openInvoiceForBarcode(barcode, { initialWizardStep: 3, focusBarcode: true })
+        }
       />
 
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ReceiptText, UserRound, UserX } from "lucide-react";
+import { ReceiptText, UserPlus, UserRound, UserX } from "lucide-react";
 import type { UseFormSetValue, UseFormTrigger, UseFormWatch, FieldErrors } from "react-hook-form";
 
 import { FieldMessage } from "@/components/forms/field-message";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormSection } from "@/components/forms/form-shell";
 import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
@@ -23,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
+import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import { useCustomerPicker, useCustomerSearch } from "@/lib/customers/hooks/use-customers";
 import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
@@ -38,6 +40,7 @@ import {
   moneyFormSetValueAs,
 } from "@/lib/accounting/daily-income/money-input";
 import type { Employee } from "@/lib/employees/types";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -90,7 +93,6 @@ type Props = {
   quickEntry?: boolean;
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
-  statementDate?: string;
   statementBranchId?: number | null;
   /** Full chart of accounts; enables choosing a cash account for cash payments. */
   accounts?: ChartAccount[];
@@ -129,13 +131,16 @@ type Props = {
   guided?: boolean;
   /** Guided layout: reference fields shown with the payment (bank payments). */
   paymentReferenceFields?: React.ReactNode;
+  onAddEmployee?: () => void;
+  onEditEmployee?: () => void;
+  onAddRoute?: () => void;
+  onEditRoute?: () => void;
   onAssigneeComplete?: () => void;
 };
 
 export function RegisterInvoiceTransactionFields({
   employees,
-  dailyRoutes,
-  statementDate,
+  dailyRoutes = [],
   statementBranchId,
   accounts = EMPTY_ACCOUNTS,
   bankAccounts,
@@ -160,9 +165,14 @@ export function RegisterInvoiceTransactionFields({
   compact = false,
   guided = false,
   paymentReferenceFields,
+  onAddEmployee,
+  onEditEmployee,
+  onAddRoute,
+  onEditRoute,
   onAssigneeComplete,
 }: Props) {
   const { t } = useTranslation();
+  const { openFormTab } = useWorkspaceTabs();
   const { hasPermission } = useAuth();
   const canUseManualNumber = hasPermission(
     PERMISSIONS.invoicesManualNumber.name,
@@ -217,6 +227,18 @@ export function RegisterInvoiceTransactionFields({
   const senderName = watch("senderName");
   const receiverId = watch("receiverId");
   const receiverName = watch("receiverName");
+
+  const { markPendingPartyEdit, markPendingPartyAdd } = useApplyCustomerOnTabReturn((side, customer) => {
+    if (side === "sender") {
+      setValue("includeSender", true, { shouldValidate: true });
+      setValue("senderId", customer.id, { shouldValidate: true });
+      setValue("senderName", customer.name, { shouldValidate: true });
+      return;
+    }
+    setValue("includeReceiver", true, { shouldValidate: true });
+    setValue("receiverId", customer.id, { shouldValidate: true });
+    setValue("receiverName", customer.name, { shouldValidate: true });
+  });
 
   useEffect(() => {
     if (amount == null) setValue("amount", 0);
@@ -364,20 +386,65 @@ export function RegisterInvoiceTransactionFields({
     setReceiverQuery("");
   }
 
+  function openAddParty(side: "sender" | "receiver") {
+    const customerType = side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER;
+    markPendingPartyAdd(side, customerType);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "add",
+      customerType,
+      label: t(
+        side === "receiver"
+          ? "invoices.form.partyActions.addReceiver"
+          : "invoices.form.partyActions.addSender",
+      ),
+    });
+  }
+
+  function openEditParty(side: "sender" | "receiver") {
+    const currentId = side === "sender" ? senderId : receiverId;
+    if (!currentId?.trim()) return;
+    markPendingPartyEdit(side, currentId);
+    openFormTab({
+      feature: "customers",
+      baseHref: "/customers",
+      mode: "edit",
+      entityId: currentId,
+      customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+      label: t(
+        side === "receiver"
+          ? "invoices.form.partyActions.editReceiver"
+          : "invoices.form.partyActions.editSender",
+      ),
+    });
+  }
+
   function partyModeField(side: "sender" | "receiver", included: boolean, field: React.ReactNode) {
     const id = `journal-${side}-mode`;
+    const selectedId = side === "sender" ? senderId : receiverId;
     return (
       <div className={cn("min-w-0 space-y-2", inlineInvoiceParties && side === "receiver" && "border-l border-border pl-4")}>
         <div className="space-y-2">
-          <div className={cn(inlineInvoiceParties && "flex min-w-0 items-center gap-2")}>
-            {inlineInvoiceParties ? (
-              <span aria-hidden="true" className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", side === "sender" ? "bg-primary/10 text-primary" : "border border-border bg-muted/40 text-muted-foreground")}>
-                <UserRound className="size-3.5" />
-              </span>
+          <div className={cn("flex min-w-0 items-center justify-between gap-2", inlineInvoiceParties && "items-center")}>
+            <div className={cn("min-w-0", inlineInvoiceParties && "flex items-center gap-2")}>
+              {inlineInvoiceParties ? (
+                <span aria-hidden="true" className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", side === "sender" ? "bg-primary/10 text-primary" : "border border-border bg-muted/40 text-muted-foreground")}>
+                  <UserRound className="size-3.5" />
+                </span>
+              ) : null}
+              <Label id={`${id}-label`}>
+                {t(side === "sender" ? "accounting.dailyIncome.form.fields.senderClient" : "accounting.dailyIncome.form.fields.receiverClient")}
+              </Label>
+            </div>
+            {included ? (
+              <FieldEntityActions
+                hasSelection={Boolean(selectedId)}
+                onAdd={() => openAddParty(side)}
+                onEdit={() => openEditParty(side)}
+                addIcon={UserPlus}
+              />
             ) : null}
-            <Label id={`${id}-label`}>
-              {t(side === "sender" ? "accounting.dailyIncome.form.fields.senderClient" : "accounting.dailyIncome.form.fields.receiverClient")}
-            </Label>
           </div>
           <div data-enter-navigation="field">
             {activeStep && !inlineInvoiceParties ? (
@@ -421,7 +488,6 @@ export function RegisterInvoiceTransactionFields({
             singleColumn
             employees={employees}
             dailyRoutes={dailyRoutes}
-            statementDate={statementDate}
             statementBranchId={statementBranchId}
             employeeId={employeeId}
             employeeName={employeeName}
@@ -434,13 +500,16 @@ export function RegisterInvoiceTransactionFields({
             error={errors.employeeId?.message ?? errors.routeId?.message}
             supervisorError={errors.supervisorId?.message}
             setValue={setValue}
+            onAddEmployee={onAddEmployee}
+            onEditEmployee={onEditEmployee}
+            onAddRoute={onAddRoute}
+            onEditRoute={onEditRoute}
             onAssigneeComplete={onAssigneeComplete}
           />
         </div>
       ) : null}
     </>
   );
-
   function changePaymentMethod(method: AccountingLookup | undefined) {
     setValue("autoClear", false, { shouldDirty: true });
     setValue("clearPaymentOnSave", false, { shouldDirty: true });

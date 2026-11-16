@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Loader2, Package, Trash2 } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -122,36 +123,47 @@ export function PickupRouteOrdersSection({
 
   return (
     <div className="rounded-xl border bg-muted/20 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Package className="h-3.5 w-3.5" />
-            {t("routes.pickupRoutes.view.orders.title", { count: total })}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {editable
-              ? t("routes.pickupRoutes.view.orders.editDescription")
-              : t("routes.pickupRoutes.view.orders.description")}
-          </p>
-        </div>
-
-        {editable && orders.length > 0 ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={effectiveSelectedIds.length === 0 || isUnassigning}
-            onClick={() => void handleUnassign()}
-          >
-            {isUnassigning ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Trash2 className="size-4" />
-            )}
-            {t("routes.pickupRoutes.view.orders.removeFromRoute")}
-          </Button>
-        ) : null}
+      <div>
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Package className="h-3.5 w-3.5" />
+          {t("routes.pickupRoutes.view.orders.title", { count: total })}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {editable
+            ? t("routes.pickupRoutes.view.orders.editDescription")
+            : t("routes.pickupRoutes.view.orders.description")}
+        </p>
       </div>
+
+      {editable ? (
+        <TableSelectionToolbar
+          className="mt-3 rounded-lg border"
+          selectedIds={effectiveSelectedIds.map(String)}
+          pageRowIds={orderIds.map(String)}
+          totalCount={orderIds.length}
+          onSelectedIdsChange={(ids) => {
+            setSelectedIds(ids.map(Number));
+            setActionError(null);
+          }}
+          hideStandardActions
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={effectiveSelectedIds.length === 0 || isUnassigning}
+              onClick={() => void handleUnassign()}
+            >
+              {isUnassigning ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              {t("routes.pickupRoutes.view.orders.removeFromRoute")}
+            </Button>
+          }
+        />
+      ) : null}
 
       {actionError ? <p className="mt-3 text-sm text-destructive">{actionError}</p> : null}
 

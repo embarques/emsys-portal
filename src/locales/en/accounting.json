@@ -31,7 +31,8 @@
     "batchComplete": "All selected transactions are confirmed.",
     "batchUnconfirmed": "Some results are unconfirmed. Retry the original batch to retrieve its result; no omitted transaction is labeled as failed.",
     "confirmed": "Confirmed",
-    "unconfirmed": "Not confirmed"
+    "unconfirmed": "Not confirmed",
+    "confirmMissingSelection": "The selected transactions are no longer available. Return to Pending Clearance and select them again."
   },
   "pages": {
     "description": "Maintain a centralized financial history of payments, transactions, income, and expenses."
@@ -785,7 +786,8 @@
     "errors": {
       "noCloseoutLoaded": "No closeout loaded.",
       "transactionNotFound": "This transaction could not be found.",
-      "closeoutNotFound": "This daily closeout could not be found."
+      "closeoutNotFound": "This daily closeout could not be found.",
+      "invalidDailyRoute": "The selected daily route is invalid or has no supervisor. Choose a valid route or employee, or leave both empty to use your linked employee."
     },
     "editBlocked": {
       "permission": "You do not have permission to edit transactions.",
@@ -812,7 +814,7 @@
       "continueToReview": "Continue to review",
       "continueToStep": "Continue to {{step}}",
       "stepHints": {
-        "assignment": "Choose the employee or daily route responsible for this transaction. Selecting an assignee continues to the next step.",
+        "assignment": "Choose the employee or daily route responsible for this transaction.",
         "INITIAL-PAYMENT": "Set the invoice number and total, then enter any discount and initial payment. Check the remaining balance before continuing.",
         "PAYMENT": "Choose the invoice and enter the amount received. Use Pay full balance to settle the outstanding amount.",
         "DISCOUNT": "Choose the invoice and the discount to apply. Check the resulting balance before continuing.",
@@ -888,14 +890,24 @@
           "expenses": "Cash or bank expense",
           "inventory": "Movement or payment",
           "loans": "Issue, increase, or repay",
-          "transfers": "Between accounts"
+          "transfers": "Between accounts",
+          "invoice": "Payment, surcharge, or discount",
+          "invoicePayment": "Search or create an invoice",
+          "invoiceSurcharge": "Existing invoice",
+          "invoiceDiscount": "Existing invoice",
+          "otherIncome": "Not from an invoice"
         },
         "groups": {
           "income": "Income",
           "expenses": "Expense",
           "inventory": "Inventory",
           "loans": "Loan",
-          "transfers": "Transfer"
+          "transfers": "Transfer",
+          "invoice": "Invoice",
+          "invoicePayment": "Payment",
+          "invoiceSurcharge": "Surcharge",
+          "invoiceDiscount": "Discount",
+          "otherIncome": "Other"
         }
       },
       "workflow": {
@@ -904,6 +916,33 @@
         "payment": "Payment & references",
         "review": "Review",
         "reviewHint": "Review the transaction before saving. Use Previous to make changes."
+      },
+      "batchPinStep": "Resume next entry from {{step}}",
+      "batchPinnedStatus": "Next entry starts at {{step}}",
+      "type": {
+        "backTo": "Back to {{group}}",
+        "hints": {
+          "INITIAL-PAYMENT": "Create invoice and first payment",
+          "PAYMENT": "Search an invoice or create a new one"
+        },
+        "options": {
+          "INITIAL-PAYMENT": "Payment",
+          "PAYMENT": "Payment"
+        },
+        "groupHints": {
+          "invoice": "Payment, surcharge, or discount",
+          "invoicePayment": "Search or create an invoice",
+          "invoiceSurcharge": "Existing invoice",
+          "invoiceDiscount": "Existing invoice",
+          "otherIncome": "Not from an invoice"
+        },
+        "groups": {
+          "invoice": "Invoice",
+          "invoicePayment": "Payment",
+          "invoiceSurcharge": "Surcharge",
+          "invoiceDiscount": "Discount",
+          "otherIncome": "Other"
+        }
       }
     },
     "transactionTypes": {
@@ -981,12 +1020,13 @@
       }
     },
     "form": {
-      "creatorAssigneeHint": "If left empty, you will be responsible for reconciling this transaction.",
+      "creatorAssigneeHint": "Choose the employee or daily route responsible for this transaction.",
       "assigneeSourceHints": {
         "employee": "One employee is responsible",
-        "route": "A daily route and its supervisor are responsible"
+        "route": "A daily route and its supervisor are responsible",
+        "creator": "You (the user digitizing) are responsible"
       },
-      "creatorAssignee": "Creator’s linked employee",
+      "creatorAssignee": "Me",
       "fields": {
         "assignedTo": "Assigned to",
         "employee": "Employee",
@@ -1085,8 +1125,8 @@
         "selectTransferFrom": "Select the account money leaves",
         "selectTransferTo": "Select the account money goes to",
         "selectInvoice": "Select invoice",
-        "selectInvoiceMode": "Select existing or new invoice",
-        "searchInvoices": "Search invoices",
+        "selectInvoiceMode": "Search an invoice or create a new one",
+        "searchInvoices": "Search invoices or create new…",
         "enterCheckNumber": "Enter check number",
         "enterReferenceNumber": "Enter internal reference number",
         "enterDescription": "Enter description (optional)",
@@ -1110,7 +1150,11 @@
         "addHolderEmployee": "Add employee",
         "noEmployeesFound": "No employees found.",
         "noVehicle": "No vehicle",
-        "noDailyRoute": "No daily route"
+        "noDailyRoute": "No daily route",
+        "createNewInvoice": "Create new invoice",
+        "createNewInvoiceDescription": "Register the invoice with this payment",
+        "invoiceAlreadyExists": "Invoice #{{number}} already exists.",
+        "useExistingInvoice": "Use existing invoice"
       },
       "hints": {
         "balanceAfterClearance": "New balance is a preview after this payment is applied. Pending payments affect the invoice balance when cleared.",
@@ -1123,13 +1167,18 @@
         "routeSupervisorAccountability": "The daily route is kept for reporting. The supervisor is responsible for reconciling this transaction.",
         "inventoryHolders": "Holders share one assignment: 20 boxes for a vehicle and two employees is 20 boxes in total.",
         "inventoryDailyRoute": "Kept for reporting only. It does not make the route crew responsible.",
-        "noHolderEmployees": "No employees selected."
+        "noHolderEmployees": "No employees selected.",
+        "expenseSourceAccount": "Cash on hand (or another cash account under it), or a bank account for non-cash methods. Accounts receivable and loan receivable cannot fund expenses."
+      },
+      "warnings": {
+        "staleDailyRoute": "This daily route is dated {{date}}, which is not today or yesterday. Confirm it is the correct route before continuing."
       },
       "invoiceSummary": {
         "total": "Total",
         "discount": "Discount",
         "paid": "Paid",
         "balance": "Balance",
+        "balancePreview": "Balance: {{amount}}",
         "previousBalance": "Previous balance",
         "newBalance": "New balance",
         "sender": "Sender: {{name}}",
@@ -1833,6 +1882,7 @@
     "selectedTotals": "Selected transactions",
     "income": "Income",
     "expenses": "Expenses",
+    "otherTransactions": "Other transactions",
     "net": "Net income",
     "selectedCount": "Selected:",
     "totalCount": "Transactions:",
@@ -1841,6 +1891,7 @@
     "sameMethod": "Select up to 200 transactions with the same payment method.",
     "confirmTitle": "Reconcile selected transactions?",
     "confirmDescription": "Confirm that money or supporting documents have been accounted for. This releases the assignee’s responsibility and retains the reconciliation history. Clearance status, invoice balances and closeout amounts stay unchanged.",
+    "confirmMissingSelection": "The selected transactions are no longer available. Return to Pending Reconciliation and select them again.",
     "pendingAlert": "{{count}} transactions pending reconciliation",
     "fields": {
       "clearanceStatus": {
@@ -1945,7 +1996,13 @@
     "batchComplete": "All selected transactions are confirmed.",
     "batchUnconfirmed": "Some results are unconfirmed. Retry the original batch to retrieve its result; no omitted transaction is labeled as failed.",
     "confirmed": "Confirmed",
-    "unconfirmed": "Not confirmed"
+    "unconfirmed": "Not confirmed",
+    "confirmList": {
+      "caption": "Transactions selected for reconciliation",
+      "invoiceOrExternalRef": "Invoice / external ref",
+      "digitizedBy": "User digitized",
+      "employeeResponsible": "Employee responsible"
+    }
   },
   "changeRequests": {
     "invalid": "Enter the required fields, a reason of at most 1,000 characters, and a valid positive amount when provided.",
@@ -1989,14 +2046,39 @@
     "searchPlaceholder": "Search by record ID, requester or reviewer…",
     "filters": {
       "fields": {
-        "status": { "label": "Status" },
-        "action": { "label": "Requested action" },
-        "resourceType": { "label": "Record type" },
-        "resourceId": { "label": "Record ID", "placeholder": "Enter record ID…" },
-        "requestedBy": { "name": { "label": "Requested by", "placeholder": "Enter name…" } },
-        "reviewedBy": { "name": { "label": "Reviewed by", "placeholder": "Enter name…" } },
-        "createdAt": { "label": "Requested on", "placeholder": "YYYY-MM-DD" },
-        "reviewedAt": { "label": "Reviewed on", "placeholder": "YYYY-MM-DD" }
+        "status": {
+          "label": "Status"
+        },
+        "action": {
+          "label": "Requested action"
+        },
+        "resourceType": {
+          "label": "Record type"
+        },
+        "resourceId": {
+          "label": "Record ID",
+          "placeholder": "Enter record ID…"
+        },
+        "requestedBy": {
+          "name": {
+            "label": "Requested by",
+            "placeholder": "Enter name…"
+          }
+        },
+        "reviewedBy": {
+          "name": {
+            "label": "Reviewed by",
+            "placeholder": "Enter name…"
+          }
+        },
+        "createdAt": {
+          "label": "Requested on",
+          "placeholder": "YYYY-MM-DD"
+        },
+        "reviewedAt": {
+          "label": "Reviewed on",
+          "placeholder": "YYYY-MM-DD"
+        }
       }
     }
   },

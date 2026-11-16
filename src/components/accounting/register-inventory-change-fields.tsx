@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, PackagePlus, Route, Truck, UserPlus, Users, X } from "lucide-react";
+import { Building2, Car, PackagePlus, Route, Truck, UserPlus, Users, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
@@ -8,9 +8,11 @@ import { FormSection } from "@/components/forms/form-shell";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { InventoryAutoReconcileField } from "@/components/accounting/inventory-auto-reconcile-field";
+import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
+import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { Button } from "@/components/ui/button";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Input } from "@/components/ui/input";
@@ -42,11 +44,19 @@ import { useCreateEmployee } from "@/lib/employees/hooks/use-employees";
 import { createEmptyEmployeeForm, type EmployeeFormValues } from "@/lib/employees/types";
 import { getInventoryItemLabel } from "@/lib/inventory/display";
 import {
+  useCreateInventoryItem,
   useCreateSupplier,
   useInventoryItems,
   useInventorySuppliers,
+  useUpdateInventoryItem,
   useUpdateSupplier,
 } from "@/lib/inventory/hooks/use-inventory";
+import {
+  createEmptyInventoryForm,
+  inventoryItemToFormValues,
+  type InventoryFormValues,
+  type InventoryItem,
+} from "@/lib/inventory/types";
 import {
   createEmptySupplierForm,
   supplierToFormValues,
@@ -57,10 +67,15 @@ import { useTranslation } from "@/lib/i18n";
 import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
-import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
+import { useCreateVehicle, useUpdateVehicle, useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
+import {
+  createEmptyVehicleForm,
+  vehicleToFormValues,
+  type Vehicle,
+  type VehicleFormValues,
+} from "@/lib/vehicles/types";
 
-type EntityDialog = "supplier" | "employee" | "route" | null;
-
+type EntityDialog = "supplier" | "employee" | "route" | "item" | "vehicle" | null;
 type Props = {
   activeStep?: TransactionFormStep;
   dailyRoutes?: ActiveRoute[];
@@ -104,6 +119,10 @@ export function RegisterInventoryChangeFields({
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const createEmployee = useCreateEmployee();
+  const createItem = useCreateInventoryItem();
+  const updateItem = useUpdateInventoryItem();
+  const createVehicle = useCreateVehicle();
+  const updateVehicle = useUpdateVehicle();
 
   const direction = watch("inventoryDirection");
   const itemId = watch("inventoryItemId");
@@ -125,10 +144,13 @@ export function RegisterInventoryChangeFields({
   const [entityDialog, setEntityDialog] = useState<EntityDialog>(null);
   const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
   const [editingRoute, setEditingRoute] = useState<ActiveRoute | null>(null);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [entityError, setEntityError] = useState<string | null>(null);
 
   const selectedSupplier = suppliers.find((supplier) => supplier.id === supplierId) ?? editingSupplier;
   const selectedRoute = dailyRoutes.find((route) => route.id === routeId) ?? editingRoute;
+  const selectedItem = items.find((item) => item.id === itemId) ?? editingItem;
 
   const dispatched = direction === "dispatched";
   const branchesQuery = useBranchPicker(200, { enabled: dispatched });
@@ -138,6 +160,9 @@ export function RegisterInventoryChangeFields({
     "";
   const vehiclesQuery = useVehiclePicker(200, { enabled: dispatched, branchCode: branchCode || undefined });
   const vehicles = useMemo(() => vehiclesQuery.data?.items ?? [], [vehiclesQuery.data?.items]);
+  const selectedVehicle =
+    (holderVehicleId ? vehicles.find((vehicle) => vehicle.id === holderVehicleId) : undefined) ??
+    editingVehicle;
 
   const vehicleOptions = useMemo(
     () => [
@@ -332,6 +357,32 @@ export function RegisterInventoryChangeFields({
     setEntityDialog("route");
   }
 
+  function openAddItem() {
+    setEditingItem(null);
+    setEntityError(null);
+    setEntityDialog("item");
+  }
+
+  function openEditItem() {
+    if (!selectedItem) return;
+    setEditingItem(selectedItem);
+    setEntityError(null);
+    setEntityDialog("item");
+  }
+
+  function openAddVehicle() {
+    setEditingVehicle(null);
+    setEntityError(null);
+    setEntityDialog("vehicle");
+  }
+
+  function openEditVehicle() {
+    if (!selectedVehicle) return;
+    setEditingVehicle(selectedVehicle);
+    setEntityError(null);
+    setEntityDialog("vehicle");
+  }
+
   async function saveSupplier(values: SupplierFormValues) {
     try {
       setEntityError(null);
@@ -356,6 +407,38 @@ export function RegisterInventoryChangeFields({
         { id: saved.id, name: saved.name },
       ]);
       setEntityDialog(null);
+    } catch (error) {
+      setEntityError(normalizeApiError(error).message);
+    }
+  }
+
+  async function saveItem(values: InventoryFormValues) {
+    try {
+      setEntityError(null);
+      const saved = editingItem
+        ? await updateItem.mutateAsync({ item: editingItem, values })
+        : await createItem.mutateAsync(values);
+      setValue("inventoryItemId", saved.id, { shouldValidate: true });
+      setValue("inventoryItemName", getInventoryItemLabel(saved));
+      setEntityDialog(null);
+      setEditingItem(null);
+    } catch (error) {
+      setEntityError(normalizeApiError(error).message);
+    }
+  }
+
+  async function saveVehicle(values: VehicleFormValues) {
+    try {
+      setEntityError(null);
+      const saved = editingVehicle
+        ? await updateVehicle.mutateAsync({ vehicleId: editingVehicle.id, values })
+        : await createVehicle.mutateAsync(values);
+      setHolderVehicle({
+        id: saved.id,
+        name: saved.name || saved.vehicleId || saved.id,
+      });
+      setEntityDialog(null);
+      setEditingVehicle(null);
     } catch (error) {
       setEntityError(normalizeApiError(error).message);
     }
@@ -477,9 +560,17 @@ export function RegisterInventoryChangeFields({
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="journal-inventory-holder-vehicle">
-                      {t("accounting.dailyIncome.form.fields.holderVehicle")}
-                    </Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="journal-inventory-holder-vehicle">
+                        {t("accounting.dailyIncome.form.fields.holderVehicle")}
+                      </Label>
+                      <FieldEntityActions
+                        hasSelection={Boolean(holderVehicleId)}
+                        onAdd={openAddVehicle}
+                        onEdit={openEditVehicle}
+                        addIcon={Car}
+                      />
+                    </div>
                     <SearchableSelect
                       inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
                       id="journal-inventory-holder-vehicle"
@@ -546,7 +637,15 @@ export function RegisterInventoryChangeFields({
       <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.inventoryAmounts")}>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2 sm:col-span-3">
-            <RequiredLabel htmlFor="journal-inventory-item">{t("inventory.form.fields.item")}</RequiredLabel>
+            <div className="flex items-center justify-between gap-2">
+              <RequiredLabel htmlFor="journal-inventory-item">{t("inventory.form.fields.item")}</RequiredLabel>
+              <FieldEntityActions
+                hasSelection={Boolean(itemId)}
+                onAdd={openAddItem}
+                onEdit={openEditItem}
+                addIcon={PackagePlus}
+              />
+            </div>
             <SearchableSelect
               inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
               id="journal-inventory-item"
@@ -647,6 +746,45 @@ export function RegisterInventoryChangeFields({
             onCancel={() => setEntityDialog(null)}
           />
           {entityError ? <p className="px-6 pb-4 text-sm text-destructive">{entityError}</p> : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={entityDialog === "item"} onOpenChange={(open) => !open && setEntityDialog(null)}>
+        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>
+              {editingItem ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
+            </DialogTitle>
+          </DialogHeader>
+          <InventoryItemForm
+            key={editingItem?.id ?? "new-item"}
+            initialValues={editingItem ? inventoryItemToFormValues(editingItem) : createEmptyInventoryForm()}
+            submitLabel={editingItem ? t("common.actions.saveChanges") : t("inventory.actions.addItem")}
+            isSubmitting={createItem.isPending || updateItem.isPending}
+            onSubmit={saveItem}
+            onCancel={() => setEntityDialog(null)}
+          />
+          {entityError ? <p className="px-6 pb-4 text-sm text-destructive">{entityError}</p> : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={entityDialog === "vehicle"} onOpenChange={(open) => !open && setEntityDialog(null)}>
+        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>
+              {editingVehicle ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
+            </DialogTitle>
+          </DialogHeader>
+          <VehicleForm
+            key={editingVehicle?.id ?? "new-vehicle"}
+            initialValues={editingVehicle ? vehicleToFormValues(editingVehicle) : createEmptyVehicleForm()}
+            isEditing={Boolean(editingVehicle)}
+            submitLabel={editingVehicle ? t("common.actions.saveChanges") : t("vehicles.actions.add")}
+            isSubmitting={createVehicle.isPending || updateVehicle.isPending}
+            externalError={entityError}
+            onSubmit={saveVehicle}
+            onCancel={() => setEntityDialog(null)}
+          />
         </DialogContent>
       </Dialog>
 

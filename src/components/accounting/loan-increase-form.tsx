@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Banknote, Landmark, ReceiptText, User } from "lucide-react";
 import { JournalSummaryLine } from "@/components/accounting/loan-journal-summary-line";
+import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
 import { BalanceTile } from "@/components/accounting/record-loan-payment-dialog";
 import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
@@ -115,27 +116,22 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           <FormSection className={stageClass(1)} variant="card" icon={User} title={text("sections.loan")} description={text("loanHint")}>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                {requiredLabel("loan-increase-employee", text("employee"))}
-                <SearchableSelect
-                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
-                  id="loan-increase-employee"
-                  aria-label={text("employee")}
-                  aria-invalid={Boolean(errors.employeeId)}
-                  value={values.employeeId ? String(values.employeeId) : ""}
-                  onValueChange={(next) => {
-                    const employee = employees.find((item) => item.id === Number(next));
-                    setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
-                    setValue("employeeName", employee?.name ?? "");
-                    setValue("loanId", "");
-                  }}
-                  options={employees.map((employee) => ({ value: String(employee.id), label: employee.name, keywords: [employee.name] }))}
-                  placeholder={text("selectEmployee")}
-                  searchPlaceholder={text("searchEmployees")}
-                  mobileSheet
-                />
-                {fieldError("employeeId")}
-              </div>
+              <LoanEmployeeField
+                id="loan-increase-employee"
+                label={text("employee")}
+                employees={employees}
+                value={values.employeeId || undefined}
+                valueName={values.employeeName}
+                error={errors.employeeId?.message}
+                guided={guided}
+                placeholder={text("selectEmployee")}
+                searchPlaceholder={text("searchEmployees")}
+                onChange={(employee) => {
+                  setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
+                  setValue("employeeName", employee?.name ?? "");
+                  setValue("loanId", "");
+                }}
+              />
               <div className="space-y-2">
                 {requiredLabel("loan-increase-loan", text("loan"))}
                 <SearchableSelect

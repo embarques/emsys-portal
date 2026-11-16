@@ -674,15 +674,13 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
       }
     : null;
   // Inventory accountability is carried by the holders, not by the journal employee.
-  const employeeRef = isInventory
+  // Route journals omit employee: the API attributeFinancialRoute call sets the
+  // snapshotted supervisor. Sending a different supervisor id yields INVALID_DAILY_ROUTE.
+  const employeeRef = isInventory || assignedToRoute
     ? null
-    : assignedToRoute
-      ? values.supervisorId
-        ? { id: values.supervisorId, name: values.supervisorName ?? "" }
-        : null
-      : values.employeeId
-        ? { id: values.employeeId, name: values.employeeName ?? "" }
-        : null;
+    : values.employeeId
+      ? { id: values.employeeId, name: values.employeeName ?? "" }
+      : null;
   const refNumber = resolveJournalRefNumberForWrite(values);
 
   return {

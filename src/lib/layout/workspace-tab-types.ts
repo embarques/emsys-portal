@@ -50,6 +50,12 @@ export type WorkspaceTabForm = {
    * hand the created id back (see `form-tab-return`).
    */
   closeOnSave?: boolean;
+  /** Pending reconciliation/clearance batch confirmation payload. */
+  journalBatch?: {
+    queue: "reconciliation" | "clearance";
+    requestId: string;
+    ids: string[];
+  };
 };
 
 export type WorkspaceTab = {

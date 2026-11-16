@@ -144,6 +144,15 @@ export const NEW_BARCODE_STATUS: { id: number; name: string } = {
   name: "ALM-NY",
 };
 
+/**
+ * Status applied when a piece is assigned to a daily delivery route.
+ * Core catalog id 6 is shared across companies (same as ENTREGADO = 7).
+ */
+export const CONDUCE_BARCODE_STATUS: { id: number; name: string } = {
+  id: 6,
+  name: "CONDUCE",
+};
+
 /** Barcode location status from tenant `barcode_statuses` / status-options. */
 export type BarcodeStatusOption = {
   id: number;

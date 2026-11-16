@@ -141,10 +141,34 @@ export function formatActiveRouteAssignmentLabel(
   return formatActiveRouteReferenceLabel(record, t);
 }
 
+function routeScheduleDateKey(route: Pick<ActiveRoute, "date">): string {
+  const day = route.date?.trim().slice(0, 10) ?? "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : "";
+}
+
 function compareActiveRoutesByDateDesc(left: ActiveRoute, right: ActiveRoute): number {
-  const byDate = right.date.localeCompare(left.date);
-  if (byDate !== 0) return byDate;
+  const leftDate = routeScheduleDateKey(left);
+  const rightDate = routeScheduleDateKey(right);
+  if (leftDate && rightDate) {
+    const byDate = rightDate.localeCompare(leftDate);
+    if (byDate !== 0) return byDate;
+  } else if (leftDate !== rightDate) {
+    // Dated routes stay ahead of undated ones when sorting newest first.
+    return leftDate ? -1 : 1;
+  }
   return formatActiveRouteRowLabel(left).localeCompare(formatActiveRouteRowLabel(right));
+}
+
+/** Assignment option label: keep generated names, otherwise prefix the schedule date. */
+function formatActiveRouteAssignmentOptionLabel(
+  record: ActiveRoute,
+  t?: (key: string) => string,
+): string {
+  const name = formatActiveRouteAssignmentLabel(record, t);
+  const iso = routeScheduleDateKey(record);
+  if (!iso || name.startsWith(iso)) return name;
+  const dateLabel = formatActiveRouteScheduleLabel(record, t, "");
+  return dateLabel ? `${dateLabel} · ${name}` : name;
 }
 
 /** Searchable daily route options, ordered by route date newest first. */
@@ -154,7 +178,7 @@ export function buildActiveRouteAssignmentOptions(
 ): TableFilterFieldOption[] {
   return [...records].sort(compareActiveRoutesByDateDesc).map((record) => ({
     value: record.id,
-    label: formatActiveRouteAssignmentLabel(record, t),
+    label: formatActiveRouteAssignmentOptionLabel(record, t),
     keywords: [
       record.name,
       record.date,

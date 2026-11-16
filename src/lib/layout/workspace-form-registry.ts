@@ -18,6 +18,10 @@ import { RouteFormWorkspace } from "@/components/route-manager/route-form-worksp
 import { UserFormWorkspace } from "@/components/users/user-form-workspace";
 import { VehicleFormWorkspace } from "@/components/vehicles/vehicle-form-workspace";
 import { DailyIncomeTransactionFormWorkspace } from "@/components/accounting/daily-income-transaction-form-workspace";
+import {
+  JournalClearanceBatchWorkspace,
+  JournalReconciliationBatchWorkspace,
+} from "@/components/accounting/journal-batch-confirm-workspace";
 import type { WorkspaceTabForm } from "@/lib/layout/workspace-tab-types";
 
 /** Props every add/edit form host component rendered inside a workspace tab receives. */
@@ -42,6 +46,8 @@ export type WorkspaceFormHostProps = {
   formNonce?: number;
   /** Close after a successful add and hand the created id back to the opener. */
   closeOnSave?: boolean;
+  /** Pending reconciliation/clearance batch confirmation payload. */
+  journalBatch?: WorkspaceTabForm["journalBatch"];
 };
 
 /** Maps a feature key to the form host component rendered inside a form tab. */
@@ -63,6 +69,8 @@ export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHo
   employees: EmployeeFormWorkspace,
   branches: BranchFormWorkspace,
   "daily-income-transactions": DailyIncomeTransactionFormWorkspace,
+  "journal-reconciliation-batch": JournalReconciliationBatchWorkspace,
+  "journal-clearance-batch": JournalClearanceBatchWorkspace,
 };
 
 export function resolveWorkspaceFormComponent(

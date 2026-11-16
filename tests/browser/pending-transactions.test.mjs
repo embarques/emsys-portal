@@ -27,6 +27,9 @@ before(async () => {
       "@/lib/accounting/daily-income/hooks$": hooks,
       "@/lib/accounting/chart-accounts/hooks/use-chart-accounts$": hooks,
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/print-signatures-i18n.ts"),
+      "@/lib/layout/hooks/use-workspace-tabs$": path.resolve("tests/browser/fixtures/journal-workspace-tabs.ts"),
+      "@/components/app-shell/feedback-provider$": path.resolve("tests/browser/fixtures/journal-feedback.ts"),
+      "next/navigation$": path.resolve("tests/browser/fixtures/journal-navigation.ts"),
       "@": path.resolve("src"),
     } },
     module: { rules: [{ test: /\.tsx?$/, exclude: /node_modules/, use: path.resolve("tests/browser/fixtures/typescript-loader.mjs") }] },
@@ -73,12 +76,12 @@ test("cross-page selection uses one method, summarizes and retries with a stable
     await selected.getByText("75.00", { exact: true }).waitFor();
     assert.ok(await page.evaluate(() => window.calls.some(call => call.url.endsWith("/summary") && call.body.ids?.length === 2)));
     await page.getByRole("button", { name: "Reconcile selected", exact: true }).click();
-    const dialog = page.getByRole("dialog");
-    await dialog.getByRole("button", { name: "Reconcile selected", exact: true }).click();
-    await dialog.getByText("Temporary reconciliation failure").waitFor();
-    await dialog.getByRole("button", { name: "Reconcile selected", exact: true }).click();
-    await dialog.getByText("All selected transactions are confirmed.", {exact: true}).waitFor();
-    await dialog.getByRole("button", {name: "Cancel", exact: true}).click();
+    await page.getByRole("heading", { name: "Reconcile selected transactions?", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Reconcile selected", exact: true }).click();
+    await page.getByText("Temporary reconciliation failure").waitFor();
+    await page.getByRole("button", { name: "Reconcile selected", exact: true }).click();
+    await page.getByText("All selected transactions are confirmed.", {exact: true}).waitFor();
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
     const calls = await page.evaluate(() => window.calls.filter(call => call.url.endsWith("/reconcile")));
     assert.equal(calls.length, 2);
     assert.deepEqual(calls[0].body.ids, ["j1", "j2"]);

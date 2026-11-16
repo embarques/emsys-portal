@@ -49,7 +49,8 @@ export function resolveDailyIncomeAssigneeSource(values: {
 }): DailyIncomeAssigneeSource {
   if (values.assigneeSource) return values.assigneeSource;
   if (values.routeId?.trim()) return "route";
-  return "employee";
+  if (values.employeeId) return "employee";
+  return "creator";
 }
 
 export function dailyRouteMatchesStatementDate(route: ActiveRoute, date: string): boolean {
@@ -61,6 +62,29 @@ export function dailyRoutesForStatement(routes: ActiveRoute[], date?: string): A
   if (!date?.trim()) return routes;
   const matched = routes.filter((route) => dailyRouteMatchesStatementDate(route, date));
   return matched.length > 0 ? matched : routes;
+}
+
+/** Previous calendar day for a `YYYY-MM-DD` value (noon local avoids DST day-shift). */
+export function calendarDayBefore(date: string): string | null {
+  const day = date.trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const value = new Date(`${day}T12:00:00`);
+  if (Number.isNaN(value.getTime())) return null;
+  value.setDate(value.getDate() - 1);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const dayOfMonth = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${dayOfMonth}`;
+}
+
+/** True when the route date is the operator's today or yesterday. */
+export function isTodayOrYesterdayRouteDate(routeDate: string, today: string): boolean {
+  const day = routeDate.trim().slice(0, 10);
+  const ref = today.trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^\d{4}-\d{2}-\d{2}$/.test(ref)) return false;
+  if (day === ref) return true;
+  const yesterday = calendarDayBefore(ref);
+  return Boolean(yesterday && day === yesterday);
 }
 
 export type DailyRouteSupervisorRef = { id: number; name: string };

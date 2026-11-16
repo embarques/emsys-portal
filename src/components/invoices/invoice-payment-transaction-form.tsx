@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "rea
 import { useForm, type FieldErrors } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
+import { useTransactionAssigneeEntityActions } from "@/components/accounting/use-transaction-assignee-entity-actions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
@@ -281,6 +282,16 @@ export function InvoicePaymentTransactionForm({
   const needsSupervisorChoice = Boolean(step1RouteId) && pickupRoutesQuery.isSuccess
     && (!step1Route || dailyRouteSupervisors(step1Route).length !== 1);
   const assigneeVisible = showAssignee || needsSupervisorChoice;
+  const employeeId = watch("employeeId");
+  const routeId = watch("routeId");
+  const assigneeEntityActions = useTransactionAssigneeEntityActions({
+    setValue,
+    employees,
+    dailyRoutes,
+    statementDate: statement.date,
+    employeeId,
+    routeId,
+  });
 
   // Default Cash once methods load, only if the user has not chosen a method yet.
   useEffect(() => {
@@ -460,7 +471,6 @@ export function InvoicePaymentTransactionForm({
           grouped
           employees={employees}
           dailyRoutes={dailyRoutes}
-          statementDate={statement.date}
           statementBranchId={statement.branch?.id}
           accounts={accounts}
           bankAccounts={bankAccounts}
@@ -475,8 +485,13 @@ export function InvoicePaymentTransactionForm({
           showParties={false}
           invoiceCostReadOnly
           paymentSectionFirst
+          onAddEmployee={assigneeEntityActions.onAddEmployee}
+          onEditEmployee={assigneeEntityActions.onEditEmployee}
+          onAddRoute={assigneeEntityActions.onAddRoute}
+          onEditRoute={assigneeEntityActions.onEditRoute}
         />
       )}
+      {skipPayment ? null : assigneeEntityActions.entityDialogs}
 
       {createJournal.isPending ? (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">

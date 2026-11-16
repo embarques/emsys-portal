@@ -55,11 +55,24 @@ after(async () => {
   if (directory) await rm(directory, { recursive: true, force: true });
 });
 
-/** Income invoice types sit under the nested Income group. */
+/** Income → Invoice → Payment (search/create) | Surcharge | Discount. */
 async function chooseInvoiceTransactionType(page, type) {
   const prefix = "accounting.dailyIncome.wizard.typeSelector";
   await page.getByRole("button", { name: `${prefix}.groups.income`, exact: true }).click();
-  await page.getByRole("button", { name: `${prefix}.options.${type}`, exact: true }).click();
+  await page.getByRole("button", { name: `${prefix}.groups.invoice`, exact: true }).click();
+  if (type === "PAYMENT" || type === "INITIAL-PAYMENT") {
+    await page.getByRole("button", { name: `${prefix}.groups.invoicePayment`, exact: true }).click();
+    if (type === "INITIAL-PAYMENT") {
+      await page.locator("#journal-invoice").click();
+      await page.getByRole("option", { name: "accounting.dailyIncome.form.placeholders.createNewInvoice" }).click();
+    }
+  } else if (type === "SURCHARGE") {
+    await page.getByRole("button", { name: `${prefix}.groups.invoiceSurcharge`, exact: true }).click();
+  } else if (type === "DISCOUNT") {
+    await page.getByRole("button", { name: `${prefix}.groups.invoiceDiscount`, exact: true }).click();
+  } else {
+    await page.getByRole("button", { name: `${prefix}.options.${type}`, exact: true }).click();
+  }
   await page.locator("#journal-employee-source-employee").click();
   await page.getByRole("radio", { name: /Maria/ }).click();
 }
@@ -591,7 +604,18 @@ test("transaction categories share headings and open existing payment flows", as
   const page = await fixture(1280, "wizard", { styled: true });
   const back = () => page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.back", exact: true }).click();
   try {
-    for (const [key, count] of [["income", 5], ["loans", 2], ["inventory", 2]]) {
+    await typeCategory(page, "income").click();
+    assert.equal(await page.getByRole("button", { name: /^accounting\.dailyIncome\.wizard\.typeSelector\.groups\.(invoice|otherIncome)$/ }).count(), 2, "income");
+    await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.invoice", exact: true }).click();
+    assert.equal(await page.getByRole("button", { name: /^accounting\.dailyIncome\.wizard\.typeSelector\.groups\.invoice(Payment|Surcharge|Discount)$/ }).count(), 3, "invoice");
+    await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.invoicePayment", exact: true }).click();
+    assert.equal(await page.locator("#journal-invoice").count(), 1, "invoicePayment opens discovery");
+    await page.getByRole("button", { name: "accounting.dailyIncome.wizard.changeType", exact: true }).click();
+    await typeCategory(page, "income").click();
+    await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.invoice", exact: true }).click();
+    await back();
+    await back();
+    for (const [key, count] of [["loans", 2], ["inventory", 2]]) {
       await typeCategory(page, key).click();
       assert.equal(await page.getByRole("button", { name: /^accounting\.dailyIncome\.wizard\.typeSelector\.options\./ }).count(), count, key);
       await back();
@@ -753,7 +777,11 @@ for (const width of [1280, 390]) {
   test(`new invoice shares compact amount layout at ${width}px`, async () => {
     const page = await fixture(width, "wizard", { styled: true });
     try {
-      await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.options.INITIAL-PAYMENT", exact: true }).click();
+      await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.income", exact: true }).click();
+      await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.invoice", exact: true }).click();
+      await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.invoicePayment", exact: true }).click();
+      await page.locator("#journal-invoice").click();
+      await page.getByRole("option", { name: "accounting.dailyIncome.form.placeholders.createNewInvoice" }).click();
       await page.locator("#journal-employee").click();
       await page.getByRole("option", { name: /Maria/ }).click();
       const section = page.locator("[data-form-section]").filter({ has: page.locator("#journal-invoice-cost") });
@@ -879,7 +907,7 @@ for (const transactionType of ["SALES", "EXPENSE"]) {
       try {
         if (transactionType === "SALES") {
           await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.income", exact: true }).click();
-          await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.options.SALES", exact: true }).click();
+          await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.otherIncome", exact: true }).click();
         } else {
           await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.groups.expenses", exact: true }).click();
         }

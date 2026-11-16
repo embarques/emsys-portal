@@ -138,10 +138,11 @@ export function UserMobileList({
       </div>
 
       <UserMobileSelectionToolbar
-        selectedCount={selectedIds.length}
+        selectedIds={selectedIds}
+        pageRowIds={users.map((user) => String(user.id))}
         canEdit={selectedIds.length === 1}
         disabled={isSaving}
-        onClear={() => onSelectedIdsChange([])}
+        onSelectedIdsChange={onSelectedIdsChange}
         onEdit={() => {
           const user = selectedUsers[0];
           if (user) onEdit(user);

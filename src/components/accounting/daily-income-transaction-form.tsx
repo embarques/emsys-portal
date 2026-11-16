@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
-import { ArrowDown, ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
 
 import { InvoiceAdjustmentPresetButtons } from "@/components/accounting/invoice-adjustment-preset-buttons";
 import { getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
@@ -14,20 +14,22 @@ import { TransactionSectionNavigation } from "@/components/accounting/transactio
 import { INLINE_FIELD_ROW_CLASS_NAME } from "@/components/forms/inline-field-row";
 import { TransactionReview } from "@/components/accounting/transaction-review";
 import { getTransactionFieldStep, getTransactionStepHintKey, getTransactionStepFields, getTransactionStepLabelKey, hasPaymentDetailsStep, isExpensePaidByMethod, isFixedCashTransactionType, TRANSACTION_FIELD_IDS, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
-import { applyMoneyAccount, buildPaymentAccountOptions, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listSelectableBankAccounts, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
+import { applyMoneyAccount, buildPaymentAccountOptions, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listExpenseSourceAccounts, listSelectableBankAccounts, resolveDefaultBankAccount, shouldClearMoneyAccount } from "@/lib/accounting/daily-income/payment-accounts";
 import { PaymentAccountSelect } from "@/components/accounting/payment-account-select";
 import { PaymentChannelFields } from "@/components/accounting/payment-channel-fields";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { RegisterInventoryChangeFields } from "@/components/accounting/register-inventory-change-fields";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
+import { useTransactionAssigneeEntityActions } from "@/components/accounting/use-transaction-assignee-entity-actions";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { TransactionTypeSummary } from "@/components/accounting/transaction-type-summary";
 import { FieldMessage } from "@/components/forms/field-message";
-import { FormBody, FormSection } from "@/components/forms/form-shell";
+import { FormBody, FormFooterNoticeMessage, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { focusWithoutOpeningCombobox, getNavigableFormFields, isDesktopFormNavigation, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useScrollFocusedSectionToTop } from "@/hooks/use-scroll-focused-section-to-top";
 import { finalizeInventoryChangeJournal } from "@/lib/accounting/daily-income/inventory-change";
@@ -50,7 +52,8 @@ import { isBankTransaction } from "@/lib/accounting/daily-income/auto-clear";
 import { getInvoicePaymentBalancePreview } from "@/lib/accounting/daily-income/invoice-balance-preview";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { Employee } from "@/lib/employees/types";
-import { getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
+import { useInvoiceSearch } from "@/lib/invoices/hooks/use-invoices";
+import { createInvoiceSearchFilter, getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { cn } from "@/lib/utils";
@@ -61,6 +64,8 @@ import { isCloseoutRequired } from "@/lib/accounting/daily-income/closeout-requi
 const RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME =
   "w-40 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
+const CREATE_NEW_INVOICE_VALUE = "__create-new-invoice__";
+
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
@@ -68,6 +73,10 @@ type Props = {
   summaryContainer?: HTMLElement | null;
   summaryCurrency?: string;
   onValuesChange?: (values: DailyIncomeJournalValues) => void;
+  /** Create-only: Payment can search an existing invoice or create a new one. */
+  invoiceDiscovery?: boolean;
+  /** Keep the wizard journal type in sync when discovery switches new ↔ existing. */
+  onTransactionTypeChange?: (type: JournalTransactionType) => void;
   quickEntry?: boolean;
   activeStep?: TransactionFormStep;
   onStepChange?: (step: TransactionFormStep) => void;
@@ -88,6 +97,9 @@ type Props = {
   /** Section navigation: return to the transaction type step. */
   onChangeType?: () => void;
   changeTypeDisabled?: boolean;
+  /** Guided wizard: back control beside the step title (same pattern as the type picker). */
+  onStepBack?: () => void;
+  stepBackDisabled?: boolean;
   appearance?: "default" | "phone";
   focusSecondFieldSignal?: number;
   /** When false, the form mounts without moving focus into any field. */
@@ -136,13 +148,15 @@ function isUserRevenueAccount(account: ChartAccount) {
 
 export function DailyIncomeTransactionForm({
   quickEntry = false,
+  invoiceDiscovery = false,
+  onTransactionTypeChange,
   activeStep,
   onStepChange,
   onContinue,
   transactionType,
   initialValues,
   employees,
-  dailyRoutes,
+  dailyRoutes = [],
   statementDate,
   statementBranchId,
   accounts,
@@ -154,6 +168,8 @@ export function DailyIncomeTransactionForm({
   showSectionNavigation = false,
   onChangeType,
   changeTypeDisabled = false,
+  onStepBack,
+  stepBackDisabled = false,
   appearance = "default",
   focusSecondFieldSignal,
   autoFocusOnMount = true,
@@ -183,6 +199,13 @@ export function DailyIncomeTransactionForm({
   const handleEnterNavigation = useFormEnterNavigation();
   useScrollFocusedSectionToTop(formRef, showSectionNavigation);
   const [sourceAccountDefaultCleared, setSourceAccountDefaultCleared] = useState(false);
+  const [invoiceQuery, setInvoiceQuery] = useState("");
+  const [selectedInvoiceCache, setSelectedInvoiceCache] = useState<Invoice | null>(null);
+  const debouncedInvoiceQuery = useDebouncedValue(invoiceQuery.trim(), 300);
+  const invoiceSearch = useInvoiceSearch(createInvoiceSearchFilter(debouncedInvoiceQuery), {
+    enabled: Boolean(debouncedInvoiceQuery),
+    limit: 40,
+  });
   const schema = useMemo(
     () =>
       createDailyIncomeJournalSchema({
@@ -205,6 +228,7 @@ export function DailyIncomeTransactionForm({
         senderRequired: t("accounting.dailyIncome.form.validation.senderRequired"),
         receiverRequired: t("accounting.dailyIncome.form.validation.receiverRequired"),
         amountExceedsBalance: t("accounting.dailyIncome.form.validation.amountExceedsBalance"),
+        invoicePaidOff: t("accounting.dailyIncome.form.validation.invoicePaidOff"),
         accountRequired: t("accounting.dailyIncome.form.validation.accountRequired"),
         sourceAccountRequired: t("accounting.dailyIncome.form.validation.sourceAccountRequired"),
         transferSameAccount: t("accounting.dailyIncome.form.validation.transferSameAccount"),
@@ -215,8 +239,8 @@ export function DailyIncomeTransactionForm({
         supplierRequired: t("accounting.dailyIncome.form.validation.supplierRequired"),
         supervisorRequired: t("accounting.dailyIncome.form.validation.supervisorRequired"),
         inventoryHoldersRequired: t("accounting.dailyIncome.form.validation.inventoryHoldersRequired"),
-      }, { originalDiscount }),
-    [originalDiscount, t],
+      }, { originalDiscount, originalPayment }),
+    [originalDiscount, originalPayment, t],
   );
 
   const {
@@ -224,6 +248,7 @@ export function DailyIncomeTransactionForm({
     handleSubmit,
     trigger,
     getFieldState,
+    getValues,
     register,
     reset,
     setValue,
@@ -248,7 +273,16 @@ export function DailyIncomeTransactionForm({
   useEffect(() => {
     reset({ ...initialValues, autoGenerateInvoiceNumber: initialValues.autoGenerateInvoiceNumber ?? initialTransactionType === "INITIAL-PAYMENT", transactionType: initialTransactionType });
     setSourceAccountDefaultCleared(false);
-  }, [initialValues, initialTransactionType, reset]);
+    setInvoiceQuery("");
+    const initialInvoiceId = initialValues.invoiceId?.trim();
+    // Keep a just-selected invoice when discovery flips PAYMENT ↔ INITIAL-PAYMENT; the directory
+    // list may not include search hits, so do not clear a matching cache entry.
+    setSelectedInvoiceCache((current) => {
+      if (!initialInvoiceId) return null;
+      if (current?.invoiceId === initialInvoiceId) return current;
+      return invoices.find((invoice) => invoice.invoiceId === initialInvoiceId) ?? null;
+    });
+  }, [initialValues, initialTransactionType, invoices, reset]);
 
   useEffect(() => {
     if (!focusSecondFieldSignal) return;
@@ -322,6 +356,14 @@ export function DailyIncomeTransactionForm({
   const supervisorId = watch("supervisorId");
   const supervisorName = watch("supervisorName");
   const assigneeSource = watch("assigneeSource");
+  const assigneeEntityActions = useTransactionAssigneeEntityActions({
+    setValue,
+    employees,
+    dailyRoutes,
+    statementDate,
+    employeeId,
+    routeId,
+  });
   const invoiceId = watch("invoiceId");
   const invoiceNumber = watch("invoiceNumber");
   const accountId = watch("accountId");
@@ -341,10 +383,26 @@ export function DailyIncomeTransactionForm({
   const clearPaymentOnSave = watch("clearPaymentOnSave");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
-  const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
+  const invoiceResults = useMemo(
+    () => (debouncedInvoiceQuery ? (invoiceSearch.data?.items ?? []) : invoices),
+    [debouncedInvoiceQuery, invoiceSearch.data?.items, invoices],
+  );
+  const selectedInvoice = useMemo(() => {
+    if (!invoiceId) return undefined;
+    if (selectedInvoiceCache?.invoiceId === invoiceId) return selectedInvoiceCache;
+    return invoiceResults.find((item) => item.invoiceId === invoiceId)
+      ?? invoices.find((item) => item.invoiceId === invoiceId);
+  }, [invoiceId, invoiceResults, invoices, selectedInvoiceCache]);
+  const payableInvoiceBalance = getInvoicePaymentBalancePreview(
+    selectedInvoice ? getInvoiceBalanceAmount(selectedInvoice) : invoiceBalance,
+    0,
+    invoiceId,
+    originalPayment,
+  ).previousBalance;
+  const selectedInvoicePaidOff = type === "PAYMENT" && Boolean(invoiceId) && payableInvoiceBalance != null && payableInvoiceBalance <= 0;
   const expenseAccounts = useMemo(() => accounts.filter((account) => account.type === "EXPENSE"), [accounts]);
   const revenueAccounts = useMemo(() => accounts.filter(isUserRevenueAccount), [accounts]);
-  const expenseSourceAccounts = useMemo(() => accounts.filter((account) => !account.nonPosting && account.type === "ASSET"), [accounts]);
+  const expenseSourceAccounts = useMemo(() => listExpenseSourceAccounts(accounts), [accounts]);
   const accountSelectAccounts = type === "EXPENSE" ? expenseAccounts : type === "SALES" ? revenueAccounts : accounts;
   const sourceAccountSelectAccounts = type === "EXPENSE" ? expenseSourceAccounts : accounts;
   const accountOptions = useMemo(
@@ -394,40 +452,54 @@ export function DailyIncomeTransactionForm({
     isCashPaymentMethod(paymentMethodName) &&
     (expensePaidByMethod || isCashAccountSelectable(type, true));
   const selectableBankAccounts = useMemo(() => listSelectableBankAccounts(bankAccounts), [bankAccounts]);
-  const invoiceOptions = useMemo(
-    () =>
-      withPinnedSelectOption(
-        invoices.map((invoice) => {
-          const primaryReceiver = getInvoicePrimaryReceiver(invoice);
-          const phones = [...(invoice.sender?.phones ?? []), ...(primaryReceiver?.phones ?? [])];
-          const phoneKeywords = phones.flatMap((phone) =>
-            [phone.number, phone.displayNumber].filter((value): value is string => Boolean(value)),
-          );
-          const descriptionLines = [
-            invoice.sender?.name
-              ? t("accounting.dailyIncome.form.invoiceSummary.sender", { name: invoice.sender.name })
-              : null,
-            primaryReceiver?.name
-              ? t("accounting.dailyIncome.form.invoiceSummary.receiver", { name: primaryReceiver.name })
-              : null,
-          ].filter((line): line is string => Boolean(line));
-          return {
-            value: invoice.invoiceId,
-            label: invoice.invoiceNumber,
-            descriptionLines,
-            keywords: [
-              invoice.invoiceNumber,
-              invoice.sender?.name ?? "",
-              primaryReceiver?.name ?? "",
-              ...phoneKeywords,
-            ].filter(Boolean),
-          };
-        }),
-        invoiceId,
-        invoiceNumber,
-      ),
-    [invoiceId, invoiceNumber, invoices, t],
-  );
+  const allowInvoiceDiscovery = invoiceDiscovery && (type === "PAYMENT" || type === "INITIAL-PAYMENT");
+  const creatingDiscoveredInvoice = allowInvoiceDiscovery && type === "INITIAL-PAYMENT";
+  const invoiceOptions = useMemo(() => {
+    const existing = withPinnedSelectOption(
+      invoiceResults.map((invoice) => {
+        const primaryReceiver = getInvoicePrimaryReceiver(invoice);
+        const phones = [...(invoice.sender?.phones ?? []), ...(primaryReceiver?.phones ?? [])];
+        const phoneKeywords = phones.flatMap((phone) =>
+          [phone.number, phone.displayNumber].filter((value): value is string => Boolean(value)),
+        );
+        const balance = getInvoiceBalanceAmount(invoice);
+        const descriptionLines = [
+          t("accounting.dailyIncome.form.invoiceSummary.balancePreview", {
+            amount: formatAccountingMoney(balance),
+          }),
+          invoice.sender?.name
+            ? t("accounting.dailyIncome.form.invoiceSummary.sender", { name: invoice.sender.name })
+            : null,
+          primaryReceiver?.name
+            ? t("accounting.dailyIncome.form.invoiceSummary.receiver", { name: primaryReceiver.name })
+            : null,
+        ].filter((line): line is string => Boolean(line));
+        return {
+          value: invoice.invoiceId,
+          label: invoice.invoiceNumber,
+          descriptionLines,
+          keywords: [
+            invoice.invoiceNumber,
+            invoice.sender?.name ?? "",
+            primaryReceiver?.name ?? "",
+            ...phoneKeywords,
+          ].filter(Boolean),
+        };
+      }),
+      invoiceId,
+      invoiceNumber,
+    );
+    if (!allowInvoiceDiscovery) return existing;
+    return [
+      {
+        value: CREATE_NEW_INVOICE_VALUE,
+        label: t("accounting.dailyIncome.form.placeholders.createNewInvoice"),
+        descriptionLines: [t("accounting.dailyIncome.form.placeholders.createNewInvoiceDescription")],
+        keywords: ["new", "create", "nueva", "crear"],
+      },
+      ...existing,
+    ];
+  }, [allowInvoiceDiscovery, invoiceId, invoiceNumber, invoiceResults, t]);
   const needsExistingInvoice = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
   const isRegisterInvoice = type === "INITIAL-PAYMENT";
   const isInventoryChange = type === "INVENTORY";
@@ -436,17 +508,69 @@ export function DailyIncomeTransactionForm({
   const showPaymentDetails = hasPaymentDetailsStep(type);
   const needsSourceAccount = (type === "TRANSFER" || type === "EXPENSE" || type === "LOAN") && !expensePaidByMethod;
   const isInvoiceAdjustment = type === "DISCOUNT" || type === "SURCHARGE";
-  const showExistingInvoiceDetails = (showInvoiceDetails && type === "PAYMENT") || isInvoiceAdjustment;
+  const showExistingInvoiceDetails =
+    ((showInvoiceDetails || allowInvoiceDiscovery) && type === "PAYMENT") || isInvoiceAdjustment;
+  const autoGenerateInvoiceNumber = watch("autoGenerateInvoiceNumber");
+  const duplicateDiscoveredInvoice = useMemo(() => {
+    if (!creatingDiscoveredInvoice || autoGenerateInvoiceNumber) return null;
+    const needle = (invoiceNumber ?? "").trim().toLowerCase();
+    if (!needle) return null;
+    return invoices.find((invoice) => invoice.invoiceNumber.trim().toLowerCase() === needle) ?? null;
+  }, [autoGenerateInvoiceNumber, creatingDiscoveredInvoice, invoiceNumber, invoices]);
+
+  function applyExistingInvoice(invoice: Invoice) {
+    setSelectedInvoiceCache(invoice);
+    setInvoiceQuery("");
+    setValue("transactionType", "PAYMENT", { shouldValidate: true, shouldDirty: true });
+    setValue("invoiceId", invoice.invoiceId, { shouldValidate: true, shouldDirty: true });
+    setValue("invoiceNumber", invoice.invoiceNumber, { shouldValidate: true, shouldDirty: true });
+    setValue("autoGenerateInvoiceNumber", undefined);
+    setValue("invoiceBalance", getInvoiceBalanceAmount(invoice), { shouldValidate: true, shouldDirty: true });
+    setValue("invoiceCost", undefined);
+    setValue("invoiceDiscount", undefined);
+    setValue("includeSender", false);
+    setValue("includeReceiver", false);
+    setValue("senderId", undefined);
+    setValue("receiverId", undefined);
+    // Flush before the wizard syncs type + resets from initialValues.
+    onValuesChange?.(getValues());
+    onTransactionTypeChange?.("PAYMENT");
+  }
+
+  function applyCreateNewInvoice() {
+    setSelectedInvoiceCache(null);
+    setInvoiceQuery("");
+    setValue("transactionType", "INITIAL-PAYMENT", { shouldValidate: true, shouldDirty: true });
+    setValue("invoiceId", "", { shouldValidate: true, shouldDirty: true });
+    setValue("invoiceNumber", "", { shouldValidate: true, shouldDirty: true });
+    setValue("autoGenerateInvoiceNumber", true, { shouldValidate: true, shouldDirty: true });
+    setValue("invoiceBalance", undefined);
+    setValue("amount", 0, { shouldDirty: true });
+    onValuesChange?.(getValues());
+    onTransactionTypeChange?.("INITIAL-PAYMENT");
+  }
 
   const invoiceSelectRow = (details: React.ReactNode, stacked = false) => (
     <div className={stacked ? "min-w-0 space-y-1" : INLINE_FIELD_ROW_CLASS_NAME}>
       <RequiredLabel htmlFor="journal-invoice">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
       <SearchableSelect
-        inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+        inlineOptionsLimit={activeStep && !debouncedInvoiceQuery ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
         id="journal-invoice"
-        value={invoiceId ?? ""}
+        value={creatingDiscoveredInvoice ? CREATE_NEW_INVOICE_VALUE : (invoiceId ?? "")}
         onValueChange={(next) => {
-          const invoice = invoices.find((item) => item.invoiceId === next);
+          if (allowInvoiceDiscovery && next === CREATE_NEW_INVOICE_VALUE) {
+            applyCreateNewInvoice();
+            return;
+          }
+          const invoice = invoiceResults.find((item) => item.invoiceId === next)
+            ?? invoices.find((item) => item.invoiceId === next)
+            ?? (selectedInvoiceCache?.invoiceId === next ? selectedInvoiceCache : undefined);
+          if (allowInvoiceDiscovery && invoice) {
+            applyExistingInvoice(invoice);
+            return;
+          }
+          setSelectedInvoiceCache(invoice ?? null);
+          setInvoiceQuery("");
           setValue("invoiceId", invoice?.invoiceId ?? "", { shouldValidate: true });
           setValue("invoiceNumber", invoice?.invoiceNumber ?? "");
           setValue(
@@ -456,12 +580,31 @@ export function DailyIncomeTransactionForm({
           );
           if (!invoice) setValue("amount", 0, { shouldDirty: true });
         }}
-        placeholder={t("accounting.dailyIncome.form.placeholders.selectInvoice")}
+        onSearchChange={setInvoiceQuery}
+        manualFiltering
+        loading={Boolean(debouncedInvoiceQuery) && invoiceSearch.isFetching}
+        placeholder={t(
+          allowInvoiceDiscovery
+            ? "accounting.dailyIncome.form.placeholders.selectInvoiceMode"
+            : "accounting.dailyIncome.form.placeholders.selectInvoice",
+        )}
         searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchInvoices")}
+        emptyMessage={
+          allowInvoiceDiscovery
+            ? t("accounting.dailyIncome.form.placeholders.createNewInvoice")
+            : undefined
+        }
         mobileSheet
         options={invoiceOptions}
       />
       <FieldMessage error={errors.invoiceId?.message} className="sm:col-start-2" />
+      {selectedInvoicePaidOff ? (
+        <FormFooterNoticeMessage
+          tone="error"
+          className="sm:col-start-2"
+          message={t("accounting.dailyIncome.form.validation.invoicePaidOff")}
+        />
+      ) : null}
       {details ? <div className="min-w-0 sm:col-start-2">{details}</div> : null}
     </div>
   );
@@ -697,7 +840,7 @@ export function DailyIncomeTransactionForm({
             <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" />
             <dl className="min-w-0 space-y-1 text-right">
               <dt className={invoiceDetailLabelClassName}>{t("accounting.dailyIncome.form.invoiceSummary.newBalance")}</dt>
-              <dd id="journal-invoice-new-balance" className={cn(balanceClassName, getInvoiceBalanceTextClassName(preview.newBalance))}>
+              <dd id="journal-invoice-new-balance" className={cn(balanceClassName, "text-emerald-700 dark:text-emerald-400")}>
                 {preview.newBalance == null ? t("common.empty.dash") : formatAccountingMoney(preview.newBalance)}
               </dd>
             </dl>
@@ -839,7 +982,6 @@ export function DailyIncomeTransactionForm({
         singleColumn
         employees={employees}
         dailyRoutes={dailyRoutes}
-        statementDate={statementDate}
         statementBranchId={statementBranchId}
         employeeId={employeeId}
         employeeName={employeeName}
@@ -851,8 +993,13 @@ export function DailyIncomeTransactionForm({
         error={errors.employeeId?.message ?? errors.routeId?.message}
         supervisorError={errors.supervisorId?.message}
         setValue={setValue}
+        onAddEmployee={assigneeEntityActions.onAddEmployee}
+        onEditEmployee={assigneeEntityActions.onEditEmployee}
+        onAddRoute={assigneeEntityActions.onAddRoute}
+        onEditRoute={assigneeEntityActions.onEditRoute}
         onAssigneeComplete={continueAfterAssignee}
       />
+      {assigneeEntityActions.entityDialogs}
     </FormSection>
   );
 
@@ -1008,10 +1155,34 @@ export function DailyIncomeTransactionForm({
           "space-y-5 overflow-x-hidden bg-background px-4 py-5 [&_input]:h-12 [&_input]:rounded-xl [&_input]:text-base [&_label]:text-base [&_textarea]:min-h-28 [&_textarea]:rounded-xl [&_textarea]:text-base",
         )}
       >
-        {activeStep ? <header className="max-w-2xl space-y-2">
-          <h2 data-step-heading tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{t(getTransactionStepLabelKey(activeStep, type))}</h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">{t(getTransactionStepHintKey(activeStep, type))}</p>
-        </header> : null}
+        {activeStep ? (
+          <header className="max-w-2xl space-y-2">
+            <div className={cn("flex min-w-0 items-center gap-1", onStepBack && "-ml-2")}>
+              {onStepBack ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("common.actions.previous")}
+                  disabled={stepBackDisabled}
+                  onClick={onStepBack}
+                >
+                  <ArrowLeft className="size-4" />
+                </Button>
+              ) : null}
+              <h2
+                data-step-heading
+                tabIndex={-1}
+                className="text-2xl font-semibold tracking-tight outline-none"
+              >
+                {t(getTransactionStepLabelKey(activeStep, type))}
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {t(getTransactionStepHintKey(activeStep, type))}
+            </p>
+          </header>
+        ) : null}
         {stepError && !onStepErrorChange ? <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{stepError}</p> : null}
         {showTypeSummary && isPhone ? (
           <div className="space-y-1">
@@ -1024,29 +1195,63 @@ export function DailyIncomeTransactionForm({
 
         {activeStep === "review" ? <TransactionReview values={watch()} onEdit={onStepChange} /> : null}
         {isRegisterInvoice ? (
-          <RegisterInvoiceTransactionFields
-            grouped
-            guided
-            manualInvoiceTotals
-            paymentReferenceFields={referenceInPayment ? referenceFields : null}
-            quickEntry={quickEntry}
-            activeStep={activeStep}
-            employees={employees}
-            dailyRoutes={dailyRoutes}
-            statementDate={statementDate}
-            statementBranchId={statementBranchId}
-            allowDailyRoute
-            allowAutoClear={allowAutoClear}
-            accounts={accounts}
-            bankAccounts={bankAccounts}
-            paymentMethods={paymentMethods}
-            errors={errors}
-            register={register}
-            setValue={setValue}
-            watch={watch}
-            trigger={trigger}
-            onAssigneeComplete={continueAfterAssignee}
-          />
+          <>
+            {allowInvoiceDiscovery && (!activeStep || activeStep === "amounts") ? (
+              <FormSection
+                className={cn(activeStep && activeStep !== "amounts" && "hidden")}
+                variant={activeStep ? "plain" : "card"}
+                title={activeStep ? undefined : t("accounting.dailyIncome.form.sections.invoiceDetails")}
+              >
+                {invoiceSelectRow(null, true)}
+                {duplicateDiscoveredInvoice ? (
+                  <FormFooterNoticeMessage
+                    tone="warning"
+                    className="mt-3"
+                    message={t("accounting.dailyIncome.form.placeholders.invoiceAlreadyExists", {
+                      number: duplicateDiscoveredInvoice.invoiceNumber,
+                    })}
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => applyExistingInvoice(duplicateDiscoveredInvoice)}
+                      >
+                        {t("accounting.dailyIncome.form.placeholders.useExistingInvoice")}
+                      </Button>
+                    }
+                  />
+                ) : null}
+              </FormSection>
+            ) : null}
+            <RegisterInvoiceTransactionFields
+              grouped
+              guided
+              manualInvoiceTotals
+              paymentReferenceFields={referenceInPayment ? referenceFields : null}
+              quickEntry={quickEntry}
+              activeStep={activeStep}
+              employees={employees}
+              dailyRoutes={dailyRoutes}
+              statementBranchId={statementBranchId}
+              allowDailyRoute
+              allowAutoClear={allowAutoClear}
+              accounts={accounts}
+              bankAccounts={bankAccounts}
+              paymentMethods={paymentMethods}
+              errors={errors}
+              register={register}
+              setValue={setValue}
+              watch={watch}
+              trigger={trigger}
+              onAddEmployee={assigneeEntityActions.onAddEmployee}
+              onEditEmployee={assigneeEntityActions.onEditEmployee}
+              onAddRoute={assigneeEntityActions.onAddRoute}
+              onEditRoute={assigneeEntityActions.onEditRoute}
+              onAssigneeComplete={continueAfterAssignee}
+            />
+            {assigneeEntityActions.entityDialogs}
+          </>
         ) : isInventoryChange ? (
           <RegisterInventoryChangeFields
             activeStep={activeStep}
@@ -1073,12 +1278,18 @@ export function DailyIncomeTransactionForm({
                         {invoiceTextRow("journal-invoice-sender", t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice?.sender?.name)}
                         {invoiceTextRow("journal-invoice-receiver", t("accounting.dailyIncome.form.fields.receiverClient"), selectedInvoice ? getInvoicePrimaryReceiver(selectedInvoice)?.name : null)}
                       </dl>
-                      <dl className="grid min-w-0 grid-cols-3 gap-4 border-y border-border bg-muted/35 px-4 py-3 tabular-nums">
+                      <dl className="grid min-w-0 grid-cols-2 gap-4 border-y border-border bg-muted/35 px-4 py-3 tabular-nums sm:grid-cols-4">
                         {invoiceTextRow("journal-invoice-total", t("accounting.dailyIncome.form.sections.invoiceAmount"), selectedInvoice ? formatAccountingMoney(getInvoiceTotal(selectedInvoice)) : null)}
                         {invoiceSummaryRow("journal-invoice-discount", t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice?.discount ?? null)}
                         {invoiceSummaryRow("journal-invoice-paid", t("accounting.dailyIncome.form.invoiceSummary.paid"), selectedInvoice?.amountPaid ?? null)}
+                        {invoiceSummaryRow(
+                          "journal-invoice-current-balance",
+                          t("accounting.dailyIncome.form.invoiceSummary.balance"),
+                          selectedInvoice ? getInvoiceBalanceAmount(selectedInvoice) : null,
+                          true,
+                        )}
                       </dl>
-                      {isInvoiceAdjustment
+                      {selectedInvoicePaidOff ? null : isInvoiceAdjustment
                         ? renderInvoiceAdjustmentAmountField(type, true)
                         : renderInvoiceAmountRow("accounting.dailyIncome.form.fields.paymentAmount", { error: errors.amount?.message })}
                     </div>
@@ -1192,7 +1403,10 @@ export function DailyIncomeTransactionForm({
                         mobileSheet
                         options={sourceAccountOptions}
                       />
-                      <FieldMessage error={errors.sourceAccountId?.message} hint={t("accounting.dailyIncome.form.hints.sourceAccount")} />
+                      <FieldMessage
+                        error={errors.sourceAccountId?.message}
+                        hint={type === "EXPENSE" ? t("accounting.dailyIncome.form.hints.expenseSourceAccount") : t("accounting.dailyIncome.form.hints.sourceAccount")}
+                      />
                     </div>
                   ) : null}
 

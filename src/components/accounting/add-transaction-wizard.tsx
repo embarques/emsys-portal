@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Loader2, Save, X } from "lucide-react";
+import { ArrowRight, Loader2, Save, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
@@ -8,7 +8,17 @@ import { type TransactionEntryCategory } from "@/lib/accounting/daily-income/tra
 import type { GuidedTypeStep } from "@/components/accounting/guided-entry-chrome";
 import { TransactionTypeSelector } from "@/components/accounting/transaction-type-selector";
 import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
-import { getTransactionFormSteps, getTransactionStepLabelKey, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
+import {
+  getDefaultBatchContinueStep,
+  getTransactionFormSteps,
+  getTransactionStepLabelKey,
+  type TransactionFormStep,
+} from "@/lib/accounting/daily-income/transaction-workflow";
+import {
+  continueTransactionValues,
+  continueTransactionValuesFromStep,
+  emptyTransaction,
+} from "@/lib/accounting/daily-income/batch-continue";
 import dynamic from "next/dynamic";
 import { useLoanEntry } from "@/lib/accounting/loans/use-loan-entry";
 import { useInventoryPaymentEntryAccess } from "@/lib/accounting/daily-income/use-inventory-payment-entry";
@@ -76,66 +86,6 @@ type Props = AddModeProps | EditModeProps;
 /** Invoice entries stay unfocused after "save and add another"; they only autofocus when opened. */
 const NO_AUTOFOCUS_AFTER_SAVE_TYPES = new Set<JournalTransactionType>(["INITIAL-PAYMENT", "PAYMENT", "SURCHARGE", "DISCOUNT"]);
 
-function emptyTransaction(
-  type: JournalTransactionType,
-  paymentMethods: AccountingLookup[] = [],
-): DailyIncomeJournalValues {
-  const values: DailyIncomeJournalValues = {
-    transactionType: type,
-    autoGenerateInvoiceNumber: type === "INITIAL-PAYMENT",
-    amount: 0,
-    autoClear: false,
-    clearPaymentOnSave: false,
-    refNumber: "",
-    refNumberMode: "system",
-    externalReferenceNumber: "",
-    description: "",
-    includeSender: false,
-    includeReceiver: false,
-  };
-
-  return withDefaultCashPaymentMethod(values, paymentMethods);
-}
-
-function continueTransactionValues(
-  type: JournalTransactionType,
-  values: DailyIncomeJournalValues,
-  paymentMethods: AccountingLookup[] = [],
-): DailyIncomeJournalValues {
-  return {
-    ...emptyTransaction(type, paymentMethods),
-    autoGenerateInvoiceNumber: type === "INITIAL-PAYMENT" ? values.autoGenerateInvoiceNumber ?? true : undefined,
-    employeeId: values.employeeId,
-    employeeName: values.employeeName,
-    employeeGroupId: values.employeeGroupId,
-    employeeGroupName: values.employeeGroupName,
-    assigneeSource: values.assigneeSource,
-    routeId: values.routeId,
-    routeName: values.routeName,
-    supervisorId: values.supervisorId,
-    supervisorName: values.supervisorName,
-    routeCrewId: values.routeCrewId,
-    routeCrewName: values.routeCrewName,
-    paymentMethodId: values.paymentMethodId,
-    paymentMethodName: values.paymentMethodName,
-    paymentAccountId: values.paymentAccountId,
-    paymentAccountName: values.paymentAccountName,
-    paymentAccountType: values.paymentAccountType,
-    refNumberMode: values.refNumberMode ?? "system",
-    autoClear: values.autoClear ?? false,
-    autoReconcile: values.autoReconcile,
-    includeSender: values.includeSender ?? false,
-    includeReceiver: values.includeReceiver ?? false,
-    accountId: values.accountId,
-    accountName: values.accountName,
-    accountType: values.accountType,
-    sourceAccountId: values.sourceAccountId,
-    sourceAccountName: values.sourceAccountName,
-    sourceAccountType: values.sourceAccountType,
-    transactionType: type,
-  };
-}
-
 function clearTypeSpecificFields(
   values: DailyIncomeJournalValues,
   nextType: JournalTransactionType,
@@ -176,7 +126,11 @@ export function AddTransactionWizard(props: Props) {
   const isPhone = appearance === "phone";
   const isEdit = props.mode === "edit";
   const [showTypePicker, setShowTypePicker] = useState(!isEdit);
+  const [typePickerKey, setTypePickerKey] = useState(0);
   const [activeStep, setActiveStep] = useState<TransactionFormStep>("assignment");
+  const [batchStartStep, setBatchStartStep] = useState<TransactionFormStep | null>(null);
+  const batchStartStepRef = useRef<TransactionFormStep | null>(null);
+  batchStartStepRef.current = batchStartStep;
   const [specialType, setSpecialType] = useState<"INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-INCREASE" | "LOAN-PAYMENT" | null>(null);
   const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(
     isEdit ? props.initialValues.transactionType : null,
@@ -242,7 +196,9 @@ export function AddTransactionWizard(props: Props) {
     }
 
     setShowTypePicker(true);
+    setTypePickerKey((key) => key + 1);
     setActiveStep("assignment");
+    setBatchStartStep(null);
     setStepError(null);
     setSpecialType(null);
     setSelectedType(null);
@@ -266,10 +222,24 @@ export function AddTransactionWizard(props: Props) {
       const saved = await confirmation.submit(values, props.onSubmit);
       if (!saved) return;
       if (!isEdit && selectedType) {
-        setDetailValues(continueTransactionValues(selectedType, values, props.paymentMethods));
-        setActiveStep(selectedType === "INVENTORY" ? "assignment" : "amounts");
+        // Payment discovery always restarts on search (PAYMENT); create-new is chosen again if needed.
+        const continueType = selectedType === "INITIAL-PAYMENT" ? "PAYMENT" : selectedType;
+        const continueSteps = getTransactionFormSteps(continueType);
+        // Read the ref so a long save/duplicate confirm still uses the mark from submit time.
+        const markedAtSubmit = batchStartStepRef.current;
+        const markedStep = markedAtSubmit && continueSteps.includes(markedAtSubmit) ? markedAtSubmit : null;
+        if (markedAtSubmit && !markedStep) setBatchStartStep(null);
+        // Batch continue keeps the chosen transaction type; never bounce back to the type picker.
+        setShowTypePicker(false);
+        setSelectedType(continueType);
+        setDetailValues(
+          markedStep
+            ? continueTransactionValuesFromStep(continueType, values, markedStep, props.paymentMethods)
+            : continueTransactionValues(continueType, values, props.paymentMethods),
+        );
+        setActiveStep(markedStep ?? getDefaultBatchContinueStep(continueType));
         setFormSessionKey((key) => key + 1);
-        const skipAutofocus = NO_AUTOFOCUS_AFTER_SAVE_TYPES.has(selectedType);
+        const skipAutofocus = NO_AUTOFOCUS_AFTER_SAVE_TYPES.has(continueType);
         setSkipAutofocusAfterSave(skipAutofocus);
         if (!skipAutofocus) setFocusSecondFieldSignal((signal) => signal + 1);
       }
@@ -302,6 +272,8 @@ export function AddTransactionWizard(props: Props) {
       setDetailValues(nextValues);
       setSelectedType(type);
       setActiveStep("assignment");
+      const nextSteps = getTransactionFormSteps(type);
+      setBatchStartStep((current) => (current && nextSteps.includes(current) ? current : null));
     }
     setStepError(null);
     setShowTypePicker(false);
@@ -336,7 +308,9 @@ export function AddTransactionWizard(props: Props) {
         <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", !showTypePicker && !specialType ? "flex" : "hidden")}>
           <fieldset disabled={isSubmitting} className="contents">
             <DailyIncomeTransactionForm
-              key={`${selectedType}-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}
+              key={`${
+                selectedType === "PAYMENT" || selectedType === "INITIAL-PAYMENT" ? "invoice-payment" : selectedType
+              }-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}
               summaryContainer={!showTypePicker && !specialType ? props.summaryContainer : null}
               summaryCurrency={props.summaryCurrency}
               formId={formId}
@@ -357,10 +331,39 @@ export function AddTransactionWizard(props: Props) {
               showSectionNavigation={false}
               onChangeType={isEdit ? undefined : chooseType}
               changeTypeDisabled={isSubmitting}
+              onStepBack={
+                isEdit
+                  ? undefined
+                  : () => {
+                      if (stepIndex > 0) {
+                        setActiveStep(steps[stepIndex - 1]);
+                        return;
+                      }
+                      // Batch only preloads later steps; back can still reopen type selection.
+                      chooseType();
+                    }
+              }
+              stepBackDisabled={isSubmitting}
               appearance={appearance}
               focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
               autoFocusOnMount={isEdit || !skipAutofocusAfterSave}
               allowAutoClear={!isEdit}
+              invoiceDiscovery={!isEdit && (selectedType === "PAYMENT" || selectedType === "INITIAL-PAYMENT")}
+              onTransactionTypeChange={
+                isEdit
+                  ? undefined
+                  : (type) => {
+                      setSelectedType(type);
+                      // Discovery switches type after setValue; use the live form draft so reset
+                      // keeps the selected invoice (or create-new fields) instead of stale detailValues.
+                      setDetailValues((current) => ({
+                        ...(currentValuesRef.current ?? current),
+                        transactionType: type,
+                      }));
+                      const nextSteps = getTransactionFormSteps(type);
+                      setBatchStartStep((current) => (current && nextSteps.includes(current) ? current : null));
+                    }
+              }
               originalDiscount={originalDiscount}
               originalSurcharge={originalSurcharge}
               originalPayment={originalPayment}
@@ -406,25 +409,51 @@ export function AddTransactionWizard(props: Props) {
                 {showTypePicker || !selectedType ? (
                   <TransactionWizardStepper step={1} labels={stepperLabels} disabled onSelectStep={() => undefined} appearance={appearance} />
                 ) : (
-                  <TransactionWizardStepper step={stepIndex + 2} labels={stepperLabels} disabled={isSubmitting} onSelectStep={(step) => step === 1 ? chooseType() : setActiveStep(steps[step - 2])} appearance={appearance} />
+                  <TransactionWizardStepper
+                    step={stepIndex + 2}
+                    labels={stepperLabels}
+                    disabled={isSubmitting}
+                    onSelectStep={(step) => (step === 1 ? chooseType() : setActiveStep(steps[step - 2]))}
+                    appearance={appearance}
+                    batchPin={{
+                      // Type picker (1) and Review are not resume targets for batch continue.
+                      pinnableSteps: steps.flatMap((formStep, index) =>
+                        formStep === "review" ? [] : [index + 2],
+                      ),
+                      pinnedStep:
+                        batchStartStep && steps.includes(batchStartStep)
+                          ? steps.indexOf(batchStartStep) + 2
+                          : null,
+                      onPinnedStepChange: (stepNumber) => {
+                        if (stepNumber == null) {
+                          setBatchStartStep(null);
+                          return;
+                        }
+                        const formStep = steps[stepNumber - 2];
+                        setBatchStartStep(formStep && formStep !== "review" ? formStep : null);
+                      },
+                      disabled: isSubmitting,
+                    }}
+                  />
                 )}
               </div>
             ) : null}
-            <div className={cn(
-              "flex min-h-0 flex-1 flex-col",
-              !showTypePicker ? "overflow-hidden" : isPhone ? "bg-background" : "bg-muted/35",
-            )}>
-              <div className={cn(
-                "flex min-h-0 flex-1 flex-col",
-                showTypePicker && (isPhone ? "overflow-y-auto px-4 py-5" : "overflow-y-auto p-4 sm:p-6 lg:p-8"),
-                !showTypePicker && "overflow-hidden",
-              )}>
-                <TransactionTypeSelector value={specialType ?? selectedType} onChange={handleTypeChange} appearance={appearance}
-                  onGroupChange={chooseType} isBusy={isSubmitting}
-                  inventoryPaymentEnabled={inventoryPaymentEnabled} loanIssueEnabled={Boolean(loanEntry.openCreate)} loanIncreaseEnabled={Boolean(loanEntry.openIncrease)} loanPaymentEnabled={Boolean(loanEntry.openPayment)}>
-                  {!showTypePicker ? entryContent : null}
-                </TransactionTypeSelector>
-              </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TransactionTypeSelector
+                value={specialType ?? selectedType}
+                onChange={handleTypeChange}
+                appearance={appearance}
+                formActive={!showTypePicker}
+                typePickerKey={typePickerKey}
+                onGroupChange={chooseType}
+                isBusy={isSubmitting}
+                inventoryPaymentEnabled={inventoryPaymentEnabled}
+                loanIssueEnabled={Boolean(loanEntry.openCreate)}
+                loanIncreaseEnabled={Boolean(loanEntry.openIncrease)}
+                loanPaymentEnabled={Boolean(loanEntry.openPayment)}
+              >
+                {entryContent}
+              </TransactionTypeSelector>
               {showTypePicker && props.lookupLoading ? (
                 <p role="status" className={cn(
                   "flex shrink-0 items-center gap-2 border-t border-border/60 text-sm text-muted-foreground",
@@ -442,15 +471,10 @@ export function AddTransactionWizard(props: Props) {
         <div className={cn("shrink-0 space-y-3 border-t border-border bg-card px-5 py-3", isPhone && "pb-[calc(env(safe-area-inset-bottom)+1rem)]")}>
           {footerError ? <FormFooterNoticeMessage tone="error" message={footerError} /> : null}
           {!showTypePicker ? <div className="flex flex-wrap items-center justify-end gap-2">
-            {!isEdit && !showTypePicker ? (
-              <Button type="button" variant="outline" className="mr-auto" disabled={isSubmitting} onClick={() => stepIndex > 0 ? setActiveStep(steps[stepIndex - 1]) : chooseType()}>
-                <ArrowLeft className="size-4" />{t("common.actions.previous")}
-              </Button>
-            ) : null}
             <Button type="button" variant="ghost" onClick={props.onCancel} disabled={isSubmitting}>
               {t("common.actions.cancel")}
             </Button>
-            {!showTypePicker && selectedType ? (
+            {selectedType ? (
               <Button type="submit" form={formId} disabled={isSubmitting} className="h-auto min-h-10 basis-full whitespace-normal py-2 sm:basis-auto">
                 {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : isReview ? <Save className="size-4" /> : <ArrowRight className="size-4" />}
                 {t(isSubmitting ? "common.actions.saving" : isReview ? "accounting.dailyIncome.wizard.saveTransaction" : activeStep === "parties" ? "accounting.dailyIncome.wizard.continueToReview" : "accounting.dailyIncome.wizard.continueToStep", { step: t(getTransactionStepLabelKey(steps[Math.min(stepIndex + 1, steps.length - 1)], selectedType)) })}

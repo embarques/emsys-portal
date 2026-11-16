@@ -62,7 +62,7 @@ test("a route's only supervisor is responsible; several supervisors need an expl
   assert.equal(resolveDailyRouteSupervisor(shared, 4), null);
 });
 
-test("route payments keep the route attribution and post under the supervisor only", async () => {
+test("route payments keep the route attribution and let the API set the snapshotted supervisor", async () => {
   let sent;
   const api = loadFeature("src/lib/accounting/daily-income/api.ts", {
     post: async (_url, body) => { sent = body; return { success: true, data: { id: "journal-1" } }; },
@@ -73,7 +73,8 @@ test("route payments keep the route attribution and post under the supervisor on
   });
   assert.deepEqual(sent.vehicleRoute, { id: ROUTE_ID, name: "2026-10-28_Truck_Ana" });
   assert.deepEqual(sent.route, sent.vehicleRoute);
-  assert.deepEqual(sent.employee, { id: 1, name: "Ana" });
+  // Omitting employee avoids INVALID_DAILY_ROUTE when the chosen supervisor differs from the route snapshot.
+  assert.equal(sent.employee, null);
 });
 
 test("inventory dispatch sends joint holders and route attribution, never a journal employee", async () => {

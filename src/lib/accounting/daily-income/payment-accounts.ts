@@ -6,6 +6,8 @@ import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/typ
 type AccountNode = Pick<ChartAccount, "id" | "name" | "displayName" | "type" | "systemAccount" | "parentAccount" | "nonPosting">;
 
 const DEFAULT_CASH_ACCOUNT_NAME = "CASH ON HAND";
+/** Legacy duplicate cash posting account from chart repair; same role as CASH ON HAND. */
+const LEGACY_CASH_ACCOUNT_ALIAS = "CASH ACCOUNT";
 const DEFAULT_BANK_ACCOUNT_NAME = "BANK";
 const MAX_ACCOUNT_DEPTH = 10;
 
@@ -26,6 +28,11 @@ export function isCashAccountSelectable(transactionType: string | null | undefin
 
 function systemName(account: AccountNode): string {
   return (account.name || account.displayName || "").trim().toUpperCase();
+}
+
+/** True for the legacy "Cash Account" child that duplicates CASH ON HAND. */
+export function isLegacyCashAccountAlias(account: AccountNode): boolean {
+  return systemName(account) === LEGACY_CASH_ACCOUNT_ALIAS;
 }
 
 /** The system CASH ON HAND account every company has; the cash umbrella. */
@@ -53,7 +60,22 @@ export function listCashAccounts<T extends AccountNode>(accounts: readonly T[]):
   const root = findDefaultCashAccount(accounts);
   if (!root) return [];
   const byId = new Map(accounts.map((account) => [account.id, account]));
-  return accounts.filter((account) => account.type === "ASSET" && (account.id === root.id || isDescendantOf(account, root.id, byId)));
+  return accounts.filter((account) => {
+    if (account.type !== "ASSET") return false;
+    if (account.id !== root.id && !isDescendantOf(account, root.id, byId)) return false;
+    // Hide the legacy Cash Account duplicate when Cash on Hand is available.
+    if (account.id !== root.id && isLegacyCashAccountAlias(account)) return false;
+    return true;
+  });
+}
+
+/**
+ * Expense funding when payment-accounts is off: posting cash accounts only.
+ * Receivables (AR, loan receivable, etc.) are assets but cannot pay expenses.
+ * When payment-accounts is on, cash/bank pickers replace this list.
+ */
+export function listExpenseSourceAccounts<T extends AccountNode>(accounts: readonly T[]): T[] {
+  return listCashAccounts(accounts).filter((account) => !account.nonPosting);
 }
 
 /** User-defined bank accounts; the general bank account only when none are defined. */
