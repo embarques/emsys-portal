@@ -9,6 +9,7 @@ import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
+import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
 import { normalizeApiError } from "@/lib/api/axios";
 import {
   useAccountingPaymentMethods,
@@ -68,13 +69,11 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   );
   const dailyRoutesQuery = useDailyRoutePicker(200);
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
-  // Payments and discounts apply only to invoices with an outstanding balance. The API
-  // search allowlist has no `balance` field, so filter by paidStatus != CLOSED (OPEN or PARTIAL).
+  // Payment entry can search any invoice (paid or unpaid); the form blocks paid-off invoices.
   const invoicesQuery = useInvoices({
     page: 1,
     limit: 200,
     sort: "number:desc",
-    filterRows: [{ id: "payment-outstanding", join: "and", field: "paidStatus", operator: "neq", value: "CLOSED" }],
   });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
@@ -132,8 +131,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       }
     } catch (error) {
       if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
-      const message = normalizeApiError(error).message;
-      setFormError(message);
+      setFormError(normalizeDailyIncomeJournalError(error));
       return Promise.reject(error);
     }
   }

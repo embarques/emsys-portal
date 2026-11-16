@@ -16,6 +16,7 @@ import type { PaginatedApiEnvelope } from "@/lib/api/types";
 import { fetchInvoiceById, patchInvoiceEmbeddedBarcodes } from "@/lib/invoices/api/invoices-api";
 import type { InvoiceLineItem, InvoiceLineItemBarcode } from "@/lib/invoices/types";
 import {
+  CONDUCE_BARCODE_STATUS,
   NEW_BARCODE_STATUS,
   type Barcode,
   type GeneratedLabel,
@@ -933,15 +934,12 @@ async function assignCatalogBarcodeRoute(
   assertRouteDate: (date: string) => void,
 ): Promise<void> {
   const existing = await fetchBarcodeById(catalogId);
-  const status =
-    existing.status?.id != null && existing.status.id > 0 && existing.status.name?.trim()
-      ? { id: existing.status.id, name: existing.status.name.trim() }
-      : NEW_BARCODE_STATUS;
 
   assertRouteDate(routeDate);
   await updateBarcode(catalogId, {
     number: existing.number,
-    status,
+    // Successful daily-route assignment also moves the piece to CONDUCE.
+    status: CONDUCE_BARCODE_STATUS,
     ...(existing.container?.id != null && existing.container.id > 0
       ? {
           container: {
@@ -957,9 +955,9 @@ async function assignCatalogBarcodeRoute(
 /**
  * Assign barcodes to a daily route.
  *
- * 1. Catalog rows → `PUT /barcodes/{id}` + `route` (scanner path)
- * 2. Invoice-only labels (common for legacy embeds) → patch `route` on the
- *    invoice-embedded barcode via `PUT /invoices/{id}`
+ * 1. Catalog rows → `PUT /barcodes/{id}` + `route` + CONDUCE status
+ * 2. Invoice-only labels (common for legacy embeds) → patch `route` + CONDUCE
+ *    on the invoice-embedded barcode via `PUT /invoices/{id}`
  */
 export async function assignBarcodesToDailyRoute(
   routeId: string,
@@ -1043,11 +1041,11 @@ export async function assignBarcodesToDailyRoute(
         const patches = invoiceTargets.map((target) => ({
           barcodeId: target.barcodeId?.trim() || "",
           number: target.number.trim(),
-          status: NEW_BARCODE_STATUS,
+          status: CONDUCE_BARCODE_STATUS,
           route,
         }));
 
-        // Preserve existing status/container from the live invoice when present.
+        // Preserve existing container from the live invoice; status becomes CONDUCE.
         const liveInvoice = await fetchInvoiceById(invoiceId);
         const liveByNumber = new Map<string, InvoiceLineItemBarcode>();
         for (const item of liveInvoice.lineItems) {
@@ -1064,15 +1062,11 @@ export async function assignBarcodesToDailyRoute(
             { id: live.routeId },
             route,
           );
-          const status =
-            live?.statusId != null && live.statusId > 0 && live.statusName?.trim()
-              ? { id: live.statusId, name: live.statusName.trim() }
-              : NEW_BARCODE_STATUS;
           const containerId = readNumericId(live?.containerId);
           return {
             barcodeId: live?.barcodeId?.trim() || patch.barcodeId,
             number: patch.number,
-            status,
+            status: CONDUCE_BARCODE_STATUS,
             ...(containerId != null && containerId > 0
               ? {
                   container: {

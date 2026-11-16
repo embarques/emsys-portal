@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Route, UserPlus, UserRound, X } from "lucide-react";
+import { Route, UserCheck, UserPlus, UserRound, X } from "lucide-react";
 
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
@@ -12,9 +13,9 @@ import {
   buildDailyRouteSupervisorOptions,
   buildTransactionAssigneeOptions,
   dailyRoutesForAssigneeBranch,
-  dailyRoutesForStatement,
   employeesForAssigneeBranch,
   getTransactionAssigneeSelectValue,
+  isTodayOrYesterdayRouteDate,
   resolveDailyIncomeAssigneeSource,
   resolveDailyRouteSupervisor,
 } from "@/lib/accounting/daily-income/assignee";
@@ -23,7 +24,9 @@ import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-fo
 import type { DailyIncomeAssigneeSource } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import { useTranslation } from "@/lib/i18n";
+import { assignmentToday } from "@/lib/pickup-delivery-routes/assignment-policy";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import { formatRouteDate } from "@/lib/route-manager/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 type Props = {
@@ -34,7 +37,6 @@ type Props = {
   guided?: boolean;
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
-  statementDate?: string;
   /** Closeout branch; employee and route options are limited to it. */
   statementBranchId?: number | null;
   employeeId?: number;
@@ -107,7 +109,6 @@ export function TransactionAssigneeSelect({
   inlineOptionsLimit,
   employees,
   dailyRoutes = [],
-  statementDate,
   statementBranchId,
   employeeId,
   employeeName,
@@ -139,16 +140,24 @@ export function TransactionAssigneeSelect({
   const source = allowDailyRoute
     ? resolveDailyIncomeAssigneeSource({ assigneeSource, employeeId, routeId })
     : "employee";
+  // Guided flow defaults to the digitizing user ("creator"); pickers appear only for employee/route.
   const sourceChosen = !guided || !allowDailyRoute || Boolean(assigneeSource || employeeId || routeId?.trim());
+  const showEmployeePicker = sourceChosen && source === "employee";
+  const showRoutePicker = sourceChosen && source === "route";
 
   const branchScopedEmployees = useMemo(
     () => employeesForAssigneeBranch(employees, branchId),
     [branchId, employees],
   );
-  const branchScopedRoutes = useMemo(() => {
-    const byDate = dailyRoutesForStatement(dailyRoutes, statementDate);
-    return dailyRoutesForAssigneeBranch(byDate, branchId);
-  }, [branchId, dailyRoutes, statementDate]);
+  const branchScopedRoutes = useMemo(
+    () => dailyRoutesForAssigneeBranch(dailyRoutes, branchId),
+    [branchId, dailyRoutes],
+  );
+
+  const today = assignmentToday();
+  const isStaleRouteDate = (route?: ActiveRoute) =>
+    Boolean(route?.date && !isTodayOrYesterdayRouteDate(route.date, today));
+  const showStaleRouteWarning = source === "route" && isStaleRouteDate(selectedRoute);
 
   const employeeOptions = useMemo(
     () =>
@@ -206,16 +215,26 @@ export function TransactionAssigneeSelect({
   }, [selectedRoute, setValue, source, supervisorId]);
 
   const employeeValue = getTransactionAssigneeSelectValue(employeeId);
-  const sourceOptions: { value: DailyIncomeAssigneeSource; label: string }[] = [
-    { value: "employee", label: t("accounting.dailyIncome.form.fields.employee") },
-    { value: "route", label: t("accounting.dailyIncome.form.fields.route") },
-  ];
+  const sourceOptions: { value: DailyIncomeAssigneeSource; label: string }[] = allowDailyRoute
+    ? [
+        { value: "creator", label: t("accounting.dailyIncome.form.creatorAssignee") },
+        { value: "employee", label: t("accounting.dailyIncome.form.fields.employee") },
+        { value: "route", label: t("accounting.dailyIncome.form.fields.route") },
+      ]
+    : [{ value: "employee", label: t("accounting.dailyIncome.form.fields.employee") }];
+
+  // Keep the form discriminator in sync with the default "Me" tile.
+  useEffect(() => {
+    if (!guided || !allowDailyRoute) return;
+    if (assigneeSource || employeeId || routeId?.trim()) return;
+    setValue("assigneeSource", "creator", { shouldValidate: false });
+  }, [allowDailyRoute, assigneeSource, employeeId, guided, routeId, setValue]);
 
   const pendingSourceFocusRef = useRef<DailyIncomeAssigneeSource | null>(null);
   useEffect(() => {
     if (pendingSourceFocusRef.current !== source) return;
     pendingSourceFocusRef.current = null;
-    if (!isDesktopFormNavigation()) return;
+    if (!isDesktopFormNavigation() || source === "creator") return;
     // A newly mounted select swaps its control once the viewport resolves; focus the settled one.
     const frame = window.requestAnimationFrame(() => {
       const field = document.getElementById(source === "route" ? "journal-route" : id);
@@ -226,7 +245,8 @@ export function TransactionAssigneeSelect({
   }, [id, source]);
 
   function handleSourceChange(next: string) {
-    const sourceValue = next === "route" ? "route" : "employee";
+    const sourceValue: DailyIncomeAssigneeSource =
+      next === "route" ? "route" : next === "creator" ? "creator" : "employee";
     pendingSourceFocusRef.current = sourceValue;
     setValue("assigneeSource", sourceValue, { shouldValidate: true });
     if (sourceValue === "route") {
@@ -234,6 +254,10 @@ export function TransactionAssigneeSelect({
       return;
     }
     clearRoute(setValue);
+    if (sourceValue === "creator") {
+      clearEmployee(setValue);
+      // Stay on Assignment so the operator can still switch to employee/route before continuing.
+    }
   }
 
   function handleEmployeeChange(next: string) {
@@ -269,7 +293,8 @@ export function TransactionAssigneeSelect({
     const supervisor = resolveDailyRouteSupervisor(route);
     setSupervisor(setValue, supervisor);
     clearEmployee(setValue);
-    if (supervisor) onAssigneeComplete?.();
+    // Stay on Assignment when the stale-date warning is shown so the user can read it.
+    if (supervisor && !isStaleRouteDate(route)) onAssigneeComplete?.();
   }
 
   function handleSupervisorChange(next: string) {
@@ -280,18 +305,42 @@ export function TransactionAssigneeSelect({
     }
     const option = supervisorOptions.find((item) => item.value === next);
     setSupervisor(setValue, { id, name: option?.label ?? "" });
-    if (routeId) onAssigneeComplete?.();
+    const assignedRoute = routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined;
+    if (routeId && !isStaleRouteDate(assignedRoute)) onAssigneeComplete?.();
   }
 
   const sourceControl = !allowDailyRoute ? null : guided ? (
     <ChoiceTiles<DailyIncomeAssigneeSource>
       id={`${id}-source`}
       aria-label={t("accounting.dailyIncome.form.fields.assignedTo")}
-      value={sourceChosen ? source : null}
+      className="sm:grid-cols-3"
+      value={sourceChosen ? source : "creator"}
       onValueChange={handleSourceChange}
       options={[
-        { value: "employee", label: t("accounting.dailyIncome.form.fields.employee"), description: t("accounting.dailyIncome.form.assigneeSourceHints.employee"), icon: UserRound, iconClassName: "text-blue-600", iconBackgroundClassName: "bg-blue-50 dark:bg-muted" },
-        { value: "route", label: t("accounting.dailyIncome.form.fields.route"), description: t("accounting.dailyIncome.form.assigneeSourceHints.route"), icon: Route, iconClassName: "text-indigo-700", iconBackgroundClassName: "bg-indigo-50 dark:bg-muted" },
+        {
+          value: "creator",
+          label: t("accounting.dailyIncome.form.creatorAssignee"),
+          description: t("accounting.dailyIncome.form.assigneeSourceHints.creator"),
+          icon: UserCheck,
+          iconClassName: "text-emerald-700",
+          iconBackgroundClassName: "bg-emerald-50 dark:bg-muted",
+        },
+        {
+          value: "employee",
+          label: t("accounting.dailyIncome.form.fields.employee"),
+          description: t("accounting.dailyIncome.form.assigneeSourceHints.employee"),
+          icon: UserRound,
+          iconClassName: "text-blue-600",
+          iconBackgroundClassName: "bg-blue-50 dark:bg-muted",
+        },
+        {
+          value: "route",
+          label: t("accounting.dailyIncome.form.fields.route"),
+          description: t("accounting.dailyIncome.form.assigneeSourceHints.route"),
+          icon: Route,
+          iconClassName: "text-indigo-700",
+          iconBackgroundClassName: "bg-indigo-50 dark:bg-muted",
+        },
       ]}
     />
   ) : (
@@ -308,7 +357,7 @@ export function TransactionAssigneeSelect({
     <div className={singleColumn ? "flex flex-col gap-4" : "grid gap-4 sm:grid-cols-2"}>
       {sourceControl}
 
-      {sourceChosen && source === "route" ? (
+      {showRoutePicker ? (
         <div className="space-y-2 sm:col-span-2">
           {onAddRoute ? (
             <div className="flex items-center justify-end gap-2">
@@ -331,11 +380,19 @@ export function TransactionAssigneeSelect({
             mobileSheet
             options={routeOptions}
           />
+          {showStaleRouteWarning && selectedRoute?.date ? (
+            <FormFooterNoticeMessage
+              tone="warning"
+              message={t("accounting.dailyIncome.form.warnings.staleDailyRoute", {
+                date: formatRouteDate(selectedRoute.date),
+              })}
+            />
+          ) : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       ) : null}
 
-      {!sourceChosen ? null : source === "route" ? (
+      {showRoutePicker ? (
         <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:col-span-2">
           <div className="flex min-h-9 items-center justify-between gap-2">
             <Label htmlFor={`${id}-supervisor`} className="font-semibold text-foreground">
@@ -371,7 +428,9 @@ export function TransactionAssigneeSelect({
             {t("accounting.dailyIncome.form.hints.routeSupervisorAccountability")}
           </p>
         </div>
-      ) : (
+      ) : null}
+
+      {showEmployeePicker ? (
         <div className="space-y-2 sm:col-span-2">
           {onAddEmployee ? (
             <div className="flex items-center justify-end gap-2">
@@ -396,8 +455,7 @@ export function TransactionAssigneeSelect({
           />
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
-      )}
-      <p className="text-sm text-muted-foreground sm:col-span-2">{t("accounting.dailyIncome.form.creatorAssigneeHint")}</p>
+      ) : null}
     </div>
   );
 }

@@ -103,9 +103,10 @@ export function InventorySupplierMobileList({
       </div>
 
       <InventoryItemMobileSelectionToolbar
-        selectedCount={selectedIds.length}
+        selectedIds={selectedIds}
+        pageRowIds={pageRows.map((supplier) => supplier.id)}
         canEdit={selectedIds.length === 1}
-        onClear={() => onSelectedIdsChange([])}
+        onSelectedIdsChange={onSelectedIdsChange}
         onEdit={onEdit ? () => {
           const supplier = selectedSuppliers[0];
           if (supplier) onEdit(supplier);

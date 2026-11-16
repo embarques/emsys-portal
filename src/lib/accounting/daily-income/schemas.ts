@@ -6,6 +6,7 @@ import {
 } from "@/lib/accounting/daily-income/types";
 import { isExpensePaidByMethod, isFixedCashTransactionType } from "@/lib/accounting/daily-income/transaction-workflow";
 import { getBalanceAfterDiscount, getDiscountableBalance, type OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
+import { getInvoicePaymentBalancePreview } from "@/lib/accounting/daily-income/invoice-balance-preview";
 
 export type DailyIncomeStatementSchemaMessages = {
   dateRequired: string;
@@ -34,6 +35,7 @@ export type DailyIncomeJournalSchemaMessages = {
   senderRequired: string;
   receiverRequired: string;
   amountExceedsBalance: string;
+  invoicePaidOff: string;
   accountRequired: string;
   sourceAccountRequired: string;
   transferSameAccount?: string;
@@ -59,6 +61,8 @@ export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementS
 
 export type DailyIncomeJournalSchemaOptions = {
   originalDiscount?: OriginalInvoiceAdjustment;
+  /** Edit only: restores the pre-payment balance when the saved payment already reduced it. */
+  originalPayment?: OriginalInvoiceAdjustment;
 };
 
 export function createDailyIncomeJournalSchema(
@@ -90,7 +94,7 @@ export function createDailyIncomeJournalSchema(
       employeeName: z.string().optional(),
       employeeGroupId: z.string().optional(),
       employeeGroupName: z.string().optional(),
-      assigneeSource: z.enum(["employee", "route"]).optional(),
+      assigneeSource: z.enum(["creator", "employee", "route"]).optional(),
       routeId: z.string().optional(),
       routeName: z.string().optional(),
       routeCrewId: z.string().optional(),
@@ -290,8 +294,20 @@ export function createDailyIncomeJournalSchema(
       }
 
       if (values.transactionType === "PAYMENT") {
+        const payableBalance = getInvoicePaymentBalancePreview(
+          values.invoiceBalance,
+          0,
+          values.invoiceId,
+          options.originalPayment,
+        ).previousBalance;
         if (!values.invoiceId) {
           context.addIssue({ code: "custom", path: ["invoiceId"], message: messages.invoiceRequired });
+        } else if (payableBalance != null && payableBalance <= 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["invoiceId"],
+            message: messages.invoicePaidOff,
+          });
         }
         if (!values.paymentMethodId) {
           context.addIssue({
@@ -300,7 +316,7 @@ export function createDailyIncomeJournalSchema(
             message: messages.paymentMethodRequired,
           });
         }
-        if (values.invoiceBalance != null && values.amount != null && values.amount > values.invoiceBalance) {
+        if (payableBalance != null && values.amount != null && values.amount > payableBalance) {
           context.addIssue({
             code: "custom",
             path: ["amount"],
@@ -379,6 +395,7 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   senderRequired: "Sender client is required.",
   receiverRequired: "Receiver client is required.",
   amountExceedsBalance: "Amount cannot exceed the invoice balance.",
+  invoicePaidOff: "This invoice is paid off. Verify the invoice number or select a different one.",
   accountRequired: "Account is required.",
   sourceAccountRequired: "Source account is required.",
   inventoryRequired: "Select received or dispatched.",

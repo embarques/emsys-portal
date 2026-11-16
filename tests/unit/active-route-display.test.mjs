@@ -76,6 +76,38 @@ test("daily route dropdowns order by scheduled date regardless of creation date 
   assert.deepEqual(records.map(record => record.id), ["old", "new", "middle"]);
 });
 
+test("assignment options put recent dates first and surface the date on conduce names", () => {
+  const records = [
+    route({
+      id: "older-delivery",
+      date: "2026-11-14",
+      routeType: "delivery",
+      branch: { id: 2, code: "RD", name: "RD" },
+      name: "2-70-26",
+    }),
+    route({
+      id: "newer-delivery",
+      date: "2026-11-16",
+      routeType: "delivery",
+      branch: { id: 2, code: "RD", name: "RD" },
+      name: "2-71-26",
+    }),
+    route({
+      id: "pickup",
+      date: "2026-11-15",
+      name: "2026-11-15_Truck 1_Basilio",
+    }),
+  ];
+  const options = buildActiveRouteAssignmentOptions(records);
+  assert.deepEqual(
+    options.map((option) => option.value),
+    ["newer-delivery", "pickup", "older-delivery"],
+  );
+  assert.match(options[0].label, /Nov 16, 2026/);
+  assert.equal(options[1].label, "2026-11-15_Truck 1_Basilio");
+  assert.match(options[2].label, /Nov 14, 2026/);
+});
+
 test("daily route table defaults sort by date descending on every server page and preserve explicit header sorting", async () => {
   const calls = [];
   const { buildActiveRouteListParams } = loadDisplay("src/lib/pickup-delivery-routes/types.ts");

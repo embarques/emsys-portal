@@ -69,7 +69,7 @@ function fixture(failInvoice, statusId = 3, routeDate = "2099-01-01") {
   return { api, targets, writes, routeDate, peak: () => peak };
 }
 
-test("route assignments run concurrently, group invoice labels, and preserve location fields", async () => {
+test("route assignments run concurrently, group invoice labels, set CONDUCE, and preserve container", async () => {
   const f = fixture();
   const progress = [];
   const result = await f.api.assignBarcodesToDailyRoute("route", "Daily route", f.targets, p => progress.push(p), f.routeDate);
@@ -79,7 +79,7 @@ test("route assignments run concurrently, group invoice labels, and preserve loc
   assert.equal(new Set(f.writes.map(w => w.id)).size, 6);
   for (const { patches } of f.writes) {
     assert.equal(patches.length, 2);
-    assert.deepEqual(patches[0].status, { id: 3, name: "EN TRANSITO" });
+    assert.deepEqual(patches[0].status, { id: 6, name: "CONDUCE" });
     assert.deepEqual(patches[0].container, { id: 9, name: "Container" });
     assert.deepEqual(patches[0].route, { id: "route", name: "Daily route" });
   }
@@ -129,7 +129,7 @@ test("catalog lookups and updates are bounded and duplicate catalog IDs are writ
   assert.equal(result.assignedCount, 9);
   assert.equal(writes.length, 9);
   for (const { payload } of writes) {
-    assert.deepEqual(payload.status, records[0].status);
+    assert.deepEqual(payload.status, { id: 6, name: "CONDUCE" });
     assert.deepEqual(payload.container, records[0].container);
     assert.deepEqual(payload.route, { id: "route", name: "Daily route" });
   }

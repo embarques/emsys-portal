@@ -133,8 +133,16 @@ export function useWorkspaceTabs() {
       closeOnSave?: boolean;
       /** Start a new invoice from an appointment's sender/receiver. */
       invoicePrefill?: WorkspaceTabForm["invoicePrefill"];
+      /** Pending reconciliation/clearance batch confirmation payload. */
+      journalBatch?: WorkspaceTabForm["journalBatch"];
     }) => {
       if (!isDesktopTabs) {
+        if (params.journalBatch) {
+          router.push(
+            `${pathnameFromHref(params.baseHref)}/confirm?requestId=${encodeURIComponent(params.journalBatch.requestId)}`,
+          );
+          return;
+        }
         if (params.feature !== "customers") {
           router.push(params.baseHref);
           return;
@@ -231,6 +239,7 @@ export function useWorkspaceTabs() {
               : {}),
             ...(params.closeOnSave ? { closeOnSave: true } : {}),
             ...(params.invoicePrefill ? { invoicePrefill: params.invoicePrefill } : {}),
+            ...(params.journalBatch ? { journalBatch: params.journalBatch } : {}),
             formNonce: Date.now(),
           },
         }),

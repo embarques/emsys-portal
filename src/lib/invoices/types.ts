@@ -155,6 +155,18 @@ export type Invoice = ApiTableRecord & {
   containerId: string;
   containerName?: string;
   paymentLocation: InvoicePaymentLocation;
+  /**
+   * Authoritative financial/ops daily-route snapshot on the invoice (journal posts
+   * inherit this). Distinct from received-by when delivery later assigns a route.
+   */
+  dailyRouteId?: string;
+  dailyRouteName?: string;
+  dailyRoute?: {
+    id: string;
+    name: string;
+    date?: string;
+    supervisor?: { id: number; name: string } | null;
+  };
   /** Daily pickup route (`vehicle-routes`) when `receivedBy` is a route. */
   routeId?: string;
   routeName?: string;

@@ -31,7 +31,8 @@
     "batchComplete": "Todas las transacciones seleccionadas están confirmadas.",
     "batchUnconfirmed": "Hay resultados sin confirmar. Reintenta el lote original para recuperar el resultado. Una transacción omitida no se considera fallida.",
     "confirmed": "Confirmada",
-    "unconfirmed": "Sin confirmar"
+    "unconfirmed": "Sin confirmar",
+    "confirmMissingSelection": "Las transacciones seleccionadas ya no están disponibles. Vuelva a Liquidación pendiente y selecciónelas de nuevo."
   },
   "pages": {
     "description": "Mantenga un historial financiero centralizado de pagos, transacciones, ingresos y gastos."
@@ -784,7 +785,8 @@
     "errors": {
       "noCloseoutLoaded": "No hay cierre cargado.",
       "transactionNotFound": "No se encontró esta transacción.",
-      "closeoutNotFound": "No se encontró este cierre diario."
+      "closeoutNotFound": "No se encontró este cierre diario.",
+      "invalidDailyRoute": "La ruta diaria seleccionada no es válida o no tiene supervisor. Elija una ruta o empleado válido, o deje ambos vacíos para usar su empleado vinculado."
     },
     "editBlocked": {
       "permission": "No tiene permiso para editar transacciones.",
@@ -811,7 +813,7 @@
       "continueToReview": "Continuar a revisión",
       "continueToStep": "Continuar a {{step}}",
       "stepHints": {
-        "assignment": "Elige el empleado o la ruta diaria responsable de esta transacción. Al seleccionar un responsable, pasarás al siguiente paso.",
+        "assignment": "Elija el empleado o la ruta diaria responsable de esta transacción.",
         "INITIAL-PAYMENT": "Define el número y el total de la factura, e ingresa el descuento y el pago inicial si corresponde. Verifica el saldo antes de continuar.",
         "PAYMENT": "Elige la factura e ingresa el importe recibido. Usa Pagar saldo completo para saldar el importe pendiente.",
         "DISCOUNT": "Elige la factura y el descuento que aplicarás. Verifica el saldo resultante antes de continuar.",
@@ -887,14 +889,24 @@
           "expenses": "Gasto en efectivo o banco",
           "inventory": "Movimiento o pago",
           "loans": "Emitir, aumentar o abonar",
-          "transfers": "Entre cuentas"
+          "transfers": "Entre cuentas",
+          "invoice": "Pago, recargo o descuento",
+          "invoicePayment": "Buscar o crear una factura",
+          "invoiceSurcharge": "Factura existente",
+          "invoiceDiscount": "Factura existente",
+          "otherIncome": "No proviene de una factura"
         },
         "groups": {
           "income": "Ingreso",
           "expenses": "Gasto",
           "inventory": "Inventario",
           "loans": "Préstamo",
-          "transfers": "Transferencia"
+          "transfers": "Transferencia",
+          "invoice": "Factura",
+          "invoicePayment": "Pago",
+          "invoiceSurcharge": "Recargo",
+          "invoiceDiscount": "Descuento",
+          "otherIncome": "Otro"
         }
       },
       "workflow": {
@@ -903,6 +915,33 @@
         "payment": "Pago y referencias",
         "review": "Revisar",
         "reviewHint": "Revisa la transacción antes de guardar. Usa Anterior para hacer cambios."
+      },
+      "batchPinStep": "Reanudar la siguiente entrada desde {{step}}",
+      "batchPinnedStatus": "La siguiente entrada empieza en {{step}}",
+      "type": {
+        "backTo": "Volver a {{group}}",
+        "hints": {
+          "INITIAL-PAYMENT": "Crear factura y primer pago",
+          "PAYMENT": "Buscar una factura o crear una nueva"
+        },
+        "options": {
+          "INITIAL-PAYMENT": "Pago",
+          "PAYMENT": "Pago"
+        },
+        "groupHints": {
+          "invoice": "Pago, recargo o descuento",
+          "invoicePayment": "Buscar o crear una factura",
+          "invoiceSurcharge": "Factura existente",
+          "invoiceDiscount": "Factura existente",
+          "otherIncome": "No proviene de una factura"
+        },
+        "groups": {
+          "invoice": "Factura",
+          "invoicePayment": "Pago",
+          "invoiceSurcharge": "Recargo",
+          "invoiceDiscount": "Descuento",
+          "otherIncome": "Otro"
+        }
       }
     },
     "transactionTypes": {
@@ -980,12 +1019,13 @@
       }
     },
     "form": {
-      "creatorAssigneeHint": "Si lo deja vacío, usted será responsable de cuadrar esta transacción.",
+      "creatorAssigneeHint": "Elija el empleado o la ruta diaria responsable de esta transacción.",
       "assigneeSourceHints": {
         "employee": "Un empleado es responsable",
-        "route": "Una ruta diaria y su supervisor son responsables"
+        "route": "Una ruta diaria y su supervisor son responsables",
+        "creator": "Usted (quien digitaliza) es responsable"
       },
-      "creatorAssignee": "Empleado vinculado al creador",
+      "creatorAssignee": "Yo",
       "fields": {
         "assignedTo": "Asignado a",
         "employee": "Empleado",
@@ -1087,8 +1127,8 @@
         "selectTransferFrom": "Seleccione la cuenta de donde sale el dinero",
         "selectTransferTo": "Seleccione la cuenta a donde va el dinero",
         "selectInvoice": "Seleccionar factura",
-        "selectInvoiceMode": "Seleccionar factura existente o nueva",
-        "searchInvoices": "Buscar facturas",
+        "selectInvoiceMode": "Buscar una factura o crear una nueva",
+        "searchInvoices": "Buscar facturas o crear nueva…",
         "enterCheckNumber": "Ingrese el número de cheque",
         "enterReferenceNumber": "Ingresa el número de referencia interna",
         "enterDescription": "Ingrese la descripción (opcional)",
@@ -1112,7 +1152,11 @@
         "addHolderEmployee": "Agregar empleado",
         "noEmployeesFound": "No se encontraron empleados.",
         "noVehicle": "Sin vehículo",
-        "noDailyRoute": "Sin ruta diaria"
+        "noDailyRoute": "Sin ruta diaria",
+        "createNewInvoice": "Crear factura nueva",
+        "createNewInvoiceDescription": "Registrar la factura con este pago",
+        "invoiceAlreadyExists": "La factura #{{number}} ya existe.",
+        "useExistingInvoice": "Usar factura existente"
       },
       "hints": {
         "balanceAfterClearance": "El nuevo saldo es una vista previa después de aplicar este pago. Los pagos pendientes afectan el saldo de la factura cuando se liquidan.",
@@ -1127,13 +1171,18 @@
         "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. El supervisor es responsable de cuadrar esta transacción.",
         "inventoryHolders": "Los responsables comparten una sola asignación: 20 cajas para un vehículo y dos empleados son 20 cajas en total.",
         "inventoryDailyRoute": "Solo se usa para reportes. No hace responsable a la tripulación de la ruta.",
-        "noHolderEmployees": "No hay empleados seleccionados."
+        "noHolderEmployees": "No hay empleados seleccionados.",
+        "expenseSourceAccount": "Efectivo en caja (u otra cuenta de efectivo bajo ella), o una cuenta bancaria para métodos que no son efectivo. Cuentas por cobrar y préstamos por cobrar no pueden financiar gastos."
+      },
+      "warnings": {
+        "staleDailyRoute": "Esta ruta diaria tiene fecha {{date}}, que no es hoy ni ayer. Confirme que es la ruta correcta antes de continuar."
       },
       "invoiceSummary": {
         "total": "Total",
         "discount": "Descuento",
         "paid": "Pagado",
         "balance": "Saldo",
+        "balancePreview": "Saldo: {{amount}}",
         "previousBalance": "Saldo anterior",
         "newBalance": "Nuevo saldo",
         "sender": "Remitente: {{name}}",
@@ -1837,6 +1886,7 @@
     "selectedTotals": "Transacciones seleccionadas",
     "income": "Ingresos",
     "expenses": "Gastos",
+    "otherTransactions": "Otras transacciones",
     "net": "Ingreso neto",
     "selectedCount": "Seleccionadas:",
     "totalCount": "Transacciones:",
@@ -1845,6 +1895,7 @@
     "sameMethod": "Selecciona hasta 200 transacciones con el mismo método de pago.",
     "confirmTitle": "¿Conciliar las transacciones seleccionadas?",
     "confirmDescription": "Confirme que se ha verificado el dinero o la documentación. Libera la responsabilidad del encargado y conserva el historial de conciliación. No cambia la liquidación, los saldos de facturas ni los importes del cierre.",
+    "confirmMissingSelection": "Las transacciones seleccionadas ya no están disponibles. Vuelva a Conciliación pendiente y selecciónelas de nuevo.",
     "pendingAlert": "{{count}} transacciones pendientes de conciliación",
     "fields": {
       "clearanceStatus": {
@@ -1949,7 +2000,13 @@
     "batchComplete": "Todas las transacciones seleccionadas están confirmadas.",
     "batchUnconfirmed": "Hay resultados sin confirmar. Reintenta el lote original para recuperar el resultado. Una transacción omitida no se considera fallida.",
     "confirmed": "Confirmada",
-    "unconfirmed": "Sin confirmar"
+    "unconfirmed": "Sin confirmar",
+    "confirmList": {
+      "caption": "Transacciones seleccionadas para conciliación",
+      "invoiceOrExternalRef": "Factura / ref. externa",
+      "digitizedBy": "Usuario que digitalizó",
+      "employeeResponsible": "Empleado responsable"
+    }
   },
   "changeRequests": {
     "invalid": "Completa los campos obligatorios, un motivo de hasta 1,000 caracteres y un monto positivo válido si lo indicas.",
@@ -1993,14 +2050,39 @@
     "searchPlaceholder": "Buscar por ID de registro, solicitante o revisor…",
     "filters": {
       "fields": {
-        "status": { "label": "Estado" },
-        "action": { "label": "Acción solicitada" },
-        "resourceType": { "label": "Tipo de registro" },
-        "resourceId": { "label": "ID de registro", "placeholder": "Ingrese el ID de registro…" },
-        "requestedBy": { "name": { "label": "Solicitado por", "placeholder": "Ingrese el nombre…" } },
-        "reviewedBy": { "name": { "label": "Revisado por", "placeholder": "Ingrese el nombre…" } },
-        "createdAt": { "label": "Solicitado el", "placeholder": "AAAA-MM-DD" },
-        "reviewedAt": { "label": "Revisado el", "placeholder": "AAAA-MM-DD" }
+        "status": {
+          "label": "Estado"
+        },
+        "action": {
+          "label": "Acción solicitada"
+        },
+        "resourceType": {
+          "label": "Tipo de registro"
+        },
+        "resourceId": {
+          "label": "ID de registro",
+          "placeholder": "Ingrese el ID de registro…"
+        },
+        "requestedBy": {
+          "name": {
+            "label": "Solicitado por",
+            "placeholder": "Ingrese el nombre…"
+          }
+        },
+        "reviewedBy": {
+          "name": {
+            "label": "Revisado por",
+            "placeholder": "Ingrese el nombre…"
+          }
+        },
+        "createdAt": {
+          "label": "Solicitado el",
+          "placeholder": "AAAA-MM-DD"
+        },
+        "reviewedAt": {
+          "label": "Revisado el",
+          "placeholder": "AAAA-MM-DD"
+        }
       }
     }
   },

@@ -1,14 +1,15 @@
 "use client";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import type { Employee } from "@/lib/employees/types";
 
 type EmployeeMobileSelectionToolbarProps = {
   selectedIds: string[];
+  pageRowIds: string[];
   totalCount: number;
   singleSelectedEmployee?: Employee;
   isSaving: boolean;
-  onClearSelection: () => void;
+  onSelectedIdsChange: (ids: string[]) => void;
   onView: (employee: Employee) => void;
   onEdit: (employee: Employee) => void;
   onDeleteSelected: () => void;
@@ -16,19 +17,21 @@ type EmployeeMobileSelectionToolbarProps = {
 
 export function EmployeeMobileSelectionToolbar({
   selectedIds,
+  pageRowIds,
   totalCount,
   singleSelectedEmployee,
   isSaving,
-  onClearSelection,
+  onSelectedIdsChange,
   onView,
   onEdit,
   onDeleteSelected,
 }: EmployeeMobileSelectionToolbarProps) {
   return (
-    <TableSelectionBar
-      selectedCount={selectedIds.length}
+    <TableSelectionToolbar
+      selectedIds={selectedIds}
+      pageRowIds={pageRowIds}
       totalCount={totalCount}
-      onClear={onClearSelection}
+      onSelectedIdsChange={onSelectedIdsChange}
       onView={() => singleSelectedEmployee && onView(singleSelectedEmployee)}
       onEdit={() => singleSelectedEmployee && onEdit(singleSelectedEmployee)}
       viewDisabled={!singleSelectedEmployee}

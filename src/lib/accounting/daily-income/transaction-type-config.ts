@@ -65,6 +65,47 @@ const LEGACY_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
 export type TransactionEntryCategory = JournalTransactionType | "INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-INCREASE" | "LOAN-PAYMENT";
 export type TransactionEntryOption = Omit<TransactionTypeOption, "value"> & { value: TransactionEntryCategory };
 
+type EntryChooserNode = {
+  id: string;
+  icon: LucideIcon;
+  /** Leaf types shown at this level. Single-category nodes select immediately when opened. */
+  categories?: TransactionEntryCategory[];
+  /** Nested chooser nodes. Prefer children for multi-step drill-downs. */
+  children?: EntryChooserNode[];
+};
+
+/**
+ * Income → Invoice (Payment new/existing, Surcharge, Discount) | Other;
+ * then Expense, Inventory, Loan, Transfer.
+ */
+const ENTRY_CHOOSER_TREE: EntryChooserNode[] = [
+  {
+    id: "income",
+    icon: ArrowUpCircle,
+    children: [
+      {
+        id: "invoice",
+        icon: FileText,
+        children: [
+          // Payment opens one adaptive form: search an existing invoice or create a new one.
+          { id: "invoicePayment", icon: Banknote, categories: ["PAYMENT"] },
+          { id: "invoiceSurcharge", icon: Percent, categories: ["SURCHARGE"] },
+          { id: "invoiceDiscount", icon: Tag, categories: ["DISCOUNT"] },
+        ],
+      },
+      { id: "otherIncome", icon: ArrowUpCircle, categories: ["SALES"] },
+    ],
+  },
+  { id: "expenses", icon: Wallet, categories: ["EXPENSE"] },
+  { id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"] },
+  {
+    id: "loans",
+    icon: Landmark,
+    categories: ["LOAN-ISSUE", ...(isLoanIncreaseEnabled() ? (["LOAN-INCREASE"] as const) : []), "LOAN-PAYMENT"],
+  },
+  { id: "transfers", icon: ArrowLeftRight, categories: ["TRANSFER"] },
+];
+
 function transactionTypeKey(type: JournalTransactionType) {
   return TRANSACTION_TYPE_I18N_KEYS[type];
 }
@@ -108,24 +149,47 @@ export function buildTransactionEntryOptions(t: TranslateFn): TransactionEntryOp
   return options;
 }
 
-/** `nested` groups always open their own screen, even where other groups are shown flattened. */
-const ENTRY_GROUPS: Array<{ id: string; icon: LucideIcon; categories: TransactionEntryCategory[]; nested?: boolean }> = [
-  { id: "income", icon: ArrowUpCircle, categories: ["INITIAL-PAYMENT", "SALES", "PAYMENT", "SURCHARGE", "DISCOUNT"], nested: true },
-  { id: "expenses", icon: Wallet, categories: ["EXPENSE"] },
-  { id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"], nested: true },
-  { id: "loans", icon: Landmark, categories: ["LOAN-ISSUE", "LOAN-INCREASE", "LOAN-PAYMENT"], nested: true },
-  { id: "transfers", icon: ArrowLeftRight, categories: ["TRANSFER"] },
-];
+export type TransactionEntryGroup = {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  options: TransactionEntryOption[];
+  children: TransactionEntryGroup[];
+};
 
-export function buildTransactionEntryGroups(t: TranslateFn) {
-  const options = buildTransactionEntryOptions(t);
-  return ENTRY_GROUPS.map((group) => ({
-    id: group.id,
-    icon: group.icon,
-    nested: group.nested ?? false,
-    label: t(`accounting.dailyIncome.wizard.typeSelector.groups.${group.id}`),
-    options: group.categories.flatMap((category) => options.filter((option) => option.value === category)),
-  }));
+function buildEntryGroup(node: EntryChooserNode, optionsByValue: Map<TransactionEntryCategory, TransactionEntryOption>, t: TranslateFn): TransactionEntryGroup {
+  return {
+    id: node.id,
+    icon: node.icon,
+    label: t(`accounting.dailyIncome.wizard.typeSelector.groups.${node.id}`),
+    description: t(`accounting.dailyIncome.wizard.typeSelector.groupHints.${node.id}`),
+    options: (node.categories ?? []).flatMap((category) => {
+      const option = optionsByValue.get(category);
+      return option ? [option] : [];
+    }),
+    children: (node.children ?? []).map((child) => buildEntryGroup(child, optionsByValue, t)),
+  };
+}
+
+export function buildTransactionEntryGroups(t: TranslateFn): TransactionEntryGroup[] {
+  const optionsByValue = new Map(buildTransactionEntryOptions(t).map((option) => [option.value, option]));
+  return ENTRY_CHOOSER_TREE.map((node) => buildEntryGroup(node, optionsByValue, t));
+}
+
+/** Resolve a drill-down path from the root groups. */
+export function resolveTransactionEntryGroup(
+  groups: TransactionEntryGroup[],
+  path: string[],
+): TransactionEntryGroup | null {
+  let nodes = groups;
+  let current: TransactionEntryGroup | null = null;
+  for (const id of path) {
+    current = nodes.find((group) => group.id === id) ?? null;
+    if (!current) return null;
+    nodes = current.children;
+  }
+  return current;
 }
 
 export function getTransactionTypeOption(type: JournalTransactionType, t: TranslateFn): TransactionTypeOption {

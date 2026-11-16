@@ -2,29 +2,35 @@
 
 import { Archive } from "lucide-react";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useTranslation } from "@/lib/i18n";
 
 type InventoryItemMobileSelectionToolbarProps = {
-  selectedCount: number;
+  selectedIds: string[];
+  pageRowIds: string[];
+  totalCount?: number;
   canEdit: boolean;
-  onClear: () => void;
+  onSelectedIdsChange: (ids: string[]) => void;
   onEdit?: () => void;
   onDeactivate?: () => void;
 };
 
 export function InventoryItemMobileSelectionToolbar({
-  selectedCount,
+  selectedIds,
+  pageRowIds,
+  totalCount,
   canEdit,
-  onClear,
+  onSelectedIdsChange,
   onEdit,
   onDeactivate,
 }: InventoryItemMobileSelectionToolbarProps) {
   const { t } = useTranslation();
   return (
-    <TableSelectionBar
-      selectedCount={selectedCount}
-      onClear={onClear}
+    <TableSelectionToolbar
+      selectedIds={selectedIds}
+      pageRowIds={pageRowIds}
+      totalCount={totalCount}
+      onSelectedIdsChange={onSelectedIdsChange}
       onEdit={onEdit}
       editDisabled={!canEdit}
       onDelete={onDeactivate}

@@ -48,6 +48,7 @@ const WorkspaceTabPanel = memo(function WorkspaceTabPanel({ tab, active }: Works
               invoicePrefill={tab.form.invoicePrefill}
               formNonce={tab.form.formNonce}
               closeOnSave={tab.form.closeOnSave}
+              journalBatch={tab.form.journalBatch}
             />
           ) : Component ? (
             <Component />

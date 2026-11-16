@@ -48,6 +48,7 @@ import {
 } from "@/lib/accounting/daily-income/display";
 import { formatAccountingDate } from "@/lib/accounting/display";
 import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
+import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -302,13 +303,11 @@ export function DailyIncomeWorkspace() {
   );
   const dailyRoutesQuery = useDailyRoutePicker(200);
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
-  // Only invoices with an outstanding balance can receive a payment. The API search
-  // allowlist has no `balance` field, so filter by paidStatus != CLOSED (OPEN or PARTIAL).
+  // Payment entry can search any invoice (paid or unpaid); the form blocks paid-off invoices.
   const invoicesQuery = useInvoices({
     page: 1,
     limit: 200,
     sort: "number:desc",
-    filterRows: [{ id: "payment-outstanding", join: "and", field: "paidStatus", operator: "neq", value: "CLOSED" }],
   });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, transactionDialog);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, transactionDialog);
@@ -403,7 +402,7 @@ export function DailyIncomeWorkspace() {
       })
       .catch((error) => {
         if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
-        setFormError(normalizeApiError(error).message);
+        setFormError(normalizeDailyIncomeJournalError(error));
         return Promise.reject(error);
       });
   }

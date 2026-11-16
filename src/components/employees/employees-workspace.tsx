@@ -531,7 +531,7 @@ export function EmployeesWorkspace() {
         }}
         onPageChange={setPage}
         onToggleSelect={toggleSelect}
-        onClearSelection={() => setSelectedIds([])}
+        onSelectedIdsChange={setSelectedIds}
         onView={setViewEmployee}
         onEdit={openEditForm}
         onDeleteSelected={() =>

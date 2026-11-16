@@ -219,6 +219,13 @@ type ApiInvoice = {
   officeBranch?: InvoiceBranch;
   pickupEmployee?: ApiInvoiceUser;
   pickupSource?: string;
+  dailyRouteId?: string;
+  dailyRoute?: {
+    id?: string | number;
+    name?: string;
+    date?: string;
+    supervisor?: { id?: string | number; name?: string } | null;
+  };
   route?: ApiInvoiceRouteRef;
   routeCrew?: ApiInvoiceRouteRef;
   vehicleRoute?: ApiInvoiceRouteRef;
@@ -599,6 +606,29 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
   };
 }
 
+function normalizeInvoiceDailyRoute(item: ApiInvoice): Pick<Invoice, "dailyRoute" | "dailyRouteId" | "dailyRouteName"> {
+  const raw = item.dailyRoute;
+  const id = String(raw?.id ?? item.dailyRouteId ?? "").trim();
+  if (!id) return {};
+
+  const name = String(raw?.name ?? "").trim() || id;
+  const supervisorId = Number(raw?.supervisor?.id);
+  const supervisorName = String(raw?.supervisor?.name ?? "").trim();
+  return {
+    dailyRouteId: id,
+    dailyRouteName: name,
+    dailyRoute: {
+      id,
+      name,
+      date: String(raw?.date ?? "").trim().slice(0, 10) || undefined,
+      supervisor:
+        Number.isFinite(supervisorId) && supervisorId > 0
+          ? { id: supervisorId, name: supervisorName || String(supervisorId) }
+          : null,
+    },
+  };
+}
+
 function normalizeInvoice(raw: unknown): Invoice | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -612,6 +642,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
   const receivedBy = resolveInvoiceReceivedBy(item);
   const officeBranchId = item.officeBranch?.id != null ? String(item.officeBranch.id) : undefined;
   const officeBranchName = String(item.officeBranch?.name ?? "").trim();
+  const dailyRouteFields = normalizeInvoiceDailyRoute(item);
 
   return {
     ...captureApiTableFields(raw, INVOICE_API_TABLE_FIELDS),
@@ -632,6 +663,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     officeBranchName: officeBranchName || undefined,
     pickupEmployeeId: receivedBy.pickupEmployeeId,
     pickupEmployeeName: receivedBy.pickupEmployeeName,
+    ...dailyRouteFields,
     routeId: receivedBy.routeId,
     routeName: receivedBy.routeName,
     routeCrewId: receivedBy.routeCrewId,

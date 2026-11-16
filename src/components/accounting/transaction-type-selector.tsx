@@ -4,12 +4,25 @@ import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState 
 import { ArrowLeft, ChevronRight, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { buildTransactionEntryGroups, type TransactionEntryCategory, type TransactionEntryOption } from "@/lib/accounting/daily-income/transaction-type-config";
+import {
+  buildTransactionEntryGroups,
+  resolveTransactionEntryGroup,
+  type TransactionEntryCategory,
+  type TransactionEntryGroup,
+  type TransactionEntryOption,
+} from "@/lib/accounting/daily-income/transaction-type-config";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** Only options that are easy to confuse with a neighbour get a secondary line. */
-const OPTIONS_WITH_HINT = new Set<TransactionEntryCategory>(["INITIAL-PAYMENT", "SALES", "INVENTORY", "INVENTORY-PAYMENT", "LOAN-PAYMENT"]);
+const OPTIONS_WITH_HINT = new Set<TransactionEntryCategory>([
+  "INITIAL-PAYMENT",
+  "PAYMENT",
+  "SALES",
+  "INVENTORY",
+  "INVENTORY-PAYMENT",
+  "LOAN-PAYMENT",
+]);
 
 const SEMANTIC_ICON_CLASS: Record<string, string> = {
   income: "text-emerald-600 dark:text-emerald-400",
@@ -24,6 +37,13 @@ function visibleOptionButtons(container: HTMLElement) {
 type Props = {
   value: TransactionEntryCategory | null;
   children?: ReactNode;
+  /**
+   * When true, keep the type picker mounted but hidden and show `children` in the same shell.
+   * Preserves drill-down path so back returns to Income → Invoice (etc.), not the root.
+   */
+  formActive?: boolean;
+  /** Bump when the wizard reopens so the drill-down path resets for a new session. */
+  typePickerKey?: number;
   isBusy?: boolean;
   onGroupChange?: () => void;
   onChange: (type: TransactionEntryCategory) => void;
@@ -36,65 +56,104 @@ type Props = {
 
 type PickerProps = Pick<Props, "value" | "onChange"> & { isDisabled: (category: TransactionEntryCategory) => boolean };
 
-export function TransactionTypeSelector({ value, onChange, children, isBusy = false, inventoryPaymentEnabled = true, loanIssueEnabled = true, loanIncreaseEnabled = true, loanPaymentEnabled = true }: Props) {
+export function TransactionTypeSelector({
+  value,
+  onChange,
+  children,
+  formActive = false,
+  typePickerKey = 0,
+  isBusy = false,
+  appearance = "default",
+  inventoryPaymentEnabled = true,
+  loanIssueEnabled = true,
+  loanIncreaseEnabled = true,
+  loanPaymentEnabled = true,
+}: Props) {
   const { t } = useTranslation();
+  const isPhone = appearance === "phone";
   const isDisabled = (category: TransactionEntryCategory) =>
     isBusy || (category === "INVENTORY-PAYMENT" && !inventoryPaymentEnabled) ||
     (category === "LOAN-ISSUE" && !loanIssueEnabled) ||
     (category === "LOAN-INCREASE" && !loanIncreaseEnabled) ||
     (category === "LOAN-PAYMENT" && !loanPaymentEnabled);
 
-  if (children) {
-    return <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label={t("accounting.dailyIncome.wizard.typeSelector.ariaLabel")}>{children}</section>;
-  }
-
-  // Mounted only while visible, so every return to the picker starts at the top level.
-  return <TransactionTypePicker value={value} onChange={onChange} isDisabled={isDisabled} />;
+  // One shell for type drill-down and form steps: only title/content swap; picker stays mounted.
+  return (
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label={t("accounting.dailyIncome.wizard.typeSelector.ariaLabel")}>
+      <div
+        className={cn(
+          "min-h-0 flex-1",
+          formActive ? "hidden" : "overflow-y-auto",
+          !formActive && (isPhone ? "bg-background px-4 py-5" : "bg-muted/35 p-4 sm:p-6 lg:p-8"),
+        )}
+        inert={formActive ? true : undefined}
+      >
+        <TransactionTypePicker key={typePickerKey} value={value} onChange={onChange} isDisabled={isDisabled} />
+      </div>
+      {children ? (
+        <div
+          className={cn("flex min-h-0 min-w-0 flex-1 flex-col", !formActive && "hidden")}
+          inert={!formActive ? true : undefined}
+        >
+          {children}
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
   const { t } = useTranslation();
   const pickerId = useId();
-  const groups = buildTransactionEntryGroups(t).filter((group) => group.options.length > 0);
-  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const groups = buildTransactionEntryGroups(t).filter((group) => group.options.length > 0 || group.children.length > 0);
+  const [path, setPath] = useState<string[]>([]);
   const returnFocusGroupRef = useRef<string | null>(null);
   const pickerRef = useRef<HTMLElement>(null);
-  const openGroup = groups.find((group) => group.id === openGroupId);
+  const openGroup = path.length > 0 ? resolveTransactionEntryGroup(groups, path) : null;
+  const parentGroup = path.length > 1 ? resolveTransactionEntryGroup(groups, path.slice(0, -1)) : null;
+  const childGroups = openGroup ? openGroup.children : groups;
+  const leafOptions = openGroup?.options ?? [];
 
   // Focus follows the level: the current type (or first row) on open, the group row on return.
   useEffect(() => {
     if (!pickerRef.current) return;
     const options = visibleOptionButtons(pickerRef.current);
-    const returnTo = !openGroupId && returnFocusGroupRef.current
+    const returnTo = returnFocusGroupRef.current
       ? options.find((option) => option.dataset.group === returnFocusGroupRef.current)
       : undefined;
+    if (returnTo) returnFocusGroupRef.current = null;
     (returnTo ?? options.find((option) => option.hasAttribute("data-selected")) ?? options[0])?.focus({ preventScroll: true });
-  }, [openGroupId]);
+  }, [path]);
 
-  function enterGroup(groupId: string) {
-    const group = groups.find((entry) => entry.id === groupId);
-    if (!group) return;
-    if (group.options.length === 1) {
+  function enterGroup(group: TransactionEntryGroup) {
+    if (group.children.length === 0 && group.options.length === 1) {
       onChange(group.options[0].value);
       return;
     }
-    returnFocusGroupRef.current = groupId;
-    setOpenGroupId(groupId);
+    returnFocusGroupRef.current = null;
+    setPath((current) => [...current, group.id]);
+  }
+
+  function goBack() {
+    if (path.length === 0) return;
+    returnFocusGroupRef.current = path[path.length - 1] ?? null;
+    setPath((current) => current.slice(0, -1));
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const target = event.target;
     if (!(target instanceof HTMLButtonElement) || !target.hasAttribute("data-type-option")) return;
-    if (event.key === "ArrowLeft" && openGroupId && !target.hasAttribute("data-tile")) {
+    if (event.key === "ArrowLeft" && path.length > 0 && !target.hasAttribute("data-tile")) {
       event.preventDefault();
-      setOpenGroupId(null);
+      goBack();
       return;
     }
     const isTile = target.hasAttribute("data-tile");
-    if (event.key === "ArrowRight" && !openGroupId && target.dataset.group && !isTile) {
+    if (event.key === "ArrowRight" && target.dataset.group && !isTile) {
       event.preventDefault();
-      enterGroup(target.dataset.group);
+      const group = childGroups.find((entry) => entry.id === target.dataset.group);
+      if (group) enterGroup(group);
       return;
     }
     const options = visibleOptionButtons(event.currentTarget);
@@ -113,6 +172,25 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
   const headingId = `${pickerId}-heading`;
   const optionLabel = (option: TransactionEntryOption) =>
     t(`accounting.dailyIncome.wizard.typeSelector.options.${option.value}`);
+  const backLabel = path.length <= 1
+    ? t("accounting.dailyIncome.wizard.typeSelector.back")
+    : t("accounting.dailyIncome.wizard.typeSelector.backTo", { group: parentGroup?.label ?? "" });
+  const groupDisabled = (group: TransactionEntryGroup): boolean => {
+    if (group.children.length > 0) return group.children.every((child) => groupDisabled(child));
+    return group.options.length > 0 && group.options.every((option) => isDisabled(option.value));
+  };
+  const groupSelected = (group: TransactionEntryGroup): boolean => {
+    if (group.children.some((child) => groupSelected(child))) return true;
+    return group.options.some((option) => option.value === value);
+  };
+  const firstLeafOption = (group: TransactionEntryGroup): TransactionEntryOption | undefined => {
+    if (group.options[0]) return group.options[0];
+    for (const child of group.children) {
+      const leaf = firstLeafOption(child);
+      if (leaf) return leaf;
+    }
+    return undefined;
+  };
   const optionTile = (option: TransactionEntryOption) => (
     <li key={option.value}>
       <PickerTile
@@ -120,7 +198,7 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
         iconClassName={option.iconClassName}
         iconBackgroundClassName={option.iconBackgroundClassName}
         label={optionLabel(option)}
-        description={option.description}
+        description={OPTIONS_WITH_HINT.has(option.value) ? t(`accounting.dailyIncome.wizard.typeSelector.hints.${option.value}`) : option.description}
         idPrefix={`${pickerId}-tile-${option.value}`}
         selected={value === option.value}
         disabled={isDisabled(option.value)}
@@ -128,13 +206,36 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
       />
     </li>
   );
+  const groupTile = (group: TransactionEntryGroup) => {
+    const leaf = firstLeafOption(group);
+    return (
+      <li key={group.id} className={!openGroup && group.id === "transfers" ? "col-span-2" : undefined}>
+        <PickerTile
+          icon={group.icon}
+          iconClassName={leaf?.iconClassName ?? "text-foreground"}
+          iconBackgroundClassName={leaf?.iconBackgroundClassName ?? "bg-muted"}
+          label={group.label}
+          description={group.description}
+          idPrefix={`${pickerId}-tile-${group.id}`}
+          group={group.id}
+          selected={groupSelected(group)}
+          disabled={groupDisabled(group)}
+          onClick={() => enterGroup(group)}
+        />
+      </li>
+    );
+  };
 
-  // Wide layout: Income|Expense, Inventory|Loan, Transfer full width. Narrow keeps the list drill-down.
+  // Wide layout: 2-col root (Transfer spans), 3-col when a level has exactly three tiles (e.g. Invoice).
+  // Narrow keeps the list drill-down.
+  const tileCount = openGroup ? childGroups.length + leafOptions.length : childGroups.length;
+  const gridColsClass = tileCount === 3 ? "grid-cols-3" : "grid-cols-2";
+
   return (
     <section ref={pickerRef} onKeyDown={handleKeyDown} className="@container space-y-5" aria-labelledby={headingId}>
       <header className={cn("flex items-center gap-1", openGroup && "-ml-2")}>
         {openGroup ? (
-          <Button type="button" variant="ghost" size="icon" aria-label={t("accounting.dailyIncome.wizard.typeSelector.back")} onClick={() => setOpenGroupId(null)}>
+          <Button type="button" variant="ghost" size="icon" aria-label={backLabel} onClick={goBack}>
             <ArrowLeft className="size-4" />
           </Button>
         ) : null}
@@ -142,38 +243,43 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
           {openGroup ? openGroup.label : t("accounting.dailyIncome.wizard.typeSelector.prompt")}
         </h2>
       </header>
-      <ul className="hidden grid-cols-2 gap-4 @2xl:grid">
-        {openGroup ? openGroup.options.map(optionTile) : groups.map((group) => (
-          <li key={group.id} className={group.id === "transfers" ? "col-span-2" : undefined}>
-            <PickerTile
-              icon={group.icon}
-              iconClassName={group.options[0].iconClassName}
-              iconBackgroundClassName={group.options[0].iconBackgroundClassName}
-              label={group.label}
-              description={t(`accounting.dailyIncome.wizard.typeSelector.groupHints.${group.id}`)}
-              idPrefix={`${pickerId}-tile-${group.id}`}
-              group={group.id}
-              selected={group.options.some((option) => option.value === value)}
-              disabled={group.options.every((option) => isDisabled(option.value))}
-              onClick={() => enterGroup(group.id)}
-            />
-          </li>
-        ))}
+      <ul className={cn("hidden gap-4 @2xl:grid", gridColsClass)}>
+        {openGroup
+          ? [...childGroups.map(groupTile), ...leafOptions.map(optionTile)]
+          : childGroups.map(groupTile)}
       </ul>
       <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm @2xl:hidden">
-        {openGroup ? openGroup.options.map((option) => (
-          <li key={option.value}>
-            <PickerRow
-              icon={option.icon}
-              label={optionLabel(option)}
-              hint={OPTIONS_WITH_HINT.has(option.value) ? t(`accounting.dailyIncome.wizard.typeSelector.hints.${option.value}`) : undefined}
-              idPrefix={`${pickerId}-${option.value}`}
-              selected={value === option.value}
-              disabled={isDisabled(option.value)}
-              onClick={() => onChange(option.value)}
-            />
-          </li>
-        )) : groups.map((group) => (
+        {openGroup ? (
+          <>
+            {childGroups.map((group) => (
+              <li key={group.id}>
+                <PickerRow
+                  icon={group.icon}
+                  label={group.label}
+                  hint={group.description}
+                  idPrefix={`${pickerId}-${group.id}`}
+                  group={group.id}
+                  selected={groupSelected(group)}
+                  disabled={groupDisabled(group)}
+                  onClick={() => enterGroup(group)}
+                />
+              </li>
+            ))}
+            {leafOptions.map((option) => (
+              <li key={option.value}>
+                <PickerRow
+                  icon={option.icon}
+                  label={optionLabel(option)}
+                  hint={OPTIONS_WITH_HINT.has(option.value) ? t(`accounting.dailyIncome.wizard.typeSelector.hints.${option.value}`) : undefined}
+                  idPrefix={`${pickerId}-${option.value}`}
+                  selected={value === option.value}
+                  disabled={isDisabled(option.value)}
+                  onClick={() => onChange(option.value)}
+                />
+              </li>
+            ))}
+          </>
+        ) : childGroups.map((group) => (
           <li key={group.id}>
             <PickerRow
               icon={group.icon}
@@ -181,9 +287,9 @@ function TransactionTypePicker({ value, onChange, isDisabled }: PickerProps) {
               label={group.label}
               idPrefix={`${pickerId}-${group.id}`}
               group={group.id}
-              selected={group.options.some((option) => option.value === value)}
-              disabled={group.options.every((option) => isDisabled(option.value))}
-              onClick={() => enterGroup(group.id)}
+              selected={groupSelected(group)}
+              disabled={groupDisabled(group)}
+              onClick={() => enterGroup(group)}
             />
           </li>
         ))}

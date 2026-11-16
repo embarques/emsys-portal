@@ -27,7 +27,9 @@
   "actions": {
     "add": "Add barcode",
     "edit": "Edit barcode",
-    "editNamed": "Edit {{number}}"
+    "editNamed": "Edit {{number}}",
+    "manageAssignment": "Manage assignment",
+    "assignmentGroup": "Barcode assignment"
   },
   "bulk": {
     "changeStatus": "Change status",

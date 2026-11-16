@@ -1,31 +1,38 @@
 "use client";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { UserX } from "lucide-react";
+
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useTranslation } from "@/lib/i18n";
 
 type UserMobileSelectionToolbarProps = {
-  selectedCount: number;
+  selectedIds: string[];
+  pageRowIds: string[];
+  totalCount?: number;
   canEdit: boolean;
   disabled?: boolean;
-  onClear: () => void;
+  onSelectedIdsChange: (ids: string[]) => void;
   onEdit: () => void;
   onDeactivate: () => void;
 };
 
 export function UserMobileSelectionToolbar({
-  selectedCount,
+  selectedIds,
+  pageRowIds,
+  totalCount,
   canEdit,
   disabled = false,
-  onClear,
+  onSelectedIdsChange,
   onEdit,
   onDeactivate,
 }: UserMobileSelectionToolbarProps) {
   const { t } = useTranslation();
   return (
-    <TableSelectionBar
-      selectedCount={selectedCount}
-      onClear={onClear}
+    <TableSelectionToolbar
+      selectedIds={selectedIds}
+      pageRowIds={pageRowIds}
+      totalCount={totalCount}
+      onSelectedIdsChange={onSelectedIdsChange}
       onEdit={onEdit}
       editDisabled={!canEdit || disabled}
       onDelete={onDeactivate}

@@ -9,6 +9,7 @@ import { TransactionSectionNavigation } from "@/components/accounting/transactio
 import { useScrollFocusedSectionToTop } from "@/hooks/use-scroll-focused-section-to-top";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { JournalSummaryLine } from "@/components/accounting/loan-journal-summary-line";
+import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
 import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -155,31 +156,22 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             description={allocationMode === "specific-loan" ? text("specificLoanHint") : text("oldestFirstHint")}
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                {requiredLabel("loan-payment-employee", text("employee"))}
-                <SearchableSelect
-                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
-                  id="loan-payment-employee"
-                  aria-label={text("employee")}
-                  aria-invalid={Boolean(errors.employeeId)}
-                  value={selectedEmployeeId ? String(selectedEmployeeId) : ""}
-                  onValueChange={(next) => {
-                    const employee = employees.find((item) => item.id === Number(next));
-                    setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
-                    setValue("employeeName", employee?.name ?? "");
-                    setValue("loanId", undefined, { shouldValidate: allocationMode === "specific-loan" });
-                  }}
-                  options={employees.map((employee) => ({
-                    value: String(employee.id),
-                    label: employee.name,
-                    keywords: [employee.name],
-                  }))}
-                  placeholder={text("selectEmployee")}
-                  searchPlaceholder={text("searchEmployees")}
-                  mobileSheet
-                />
-                {fieldError("employeeId")}
-              </div>
+              <LoanEmployeeField
+                id="loan-payment-employee"
+                label={text("employee")}
+                employees={employees}
+                value={selectedEmployeeId || undefined}
+                valueName={watch("employeeName")}
+                error={errors.employeeId?.message}
+                guided={guided}
+                placeholder={text("selectEmployee")}
+                searchPlaceholder={text("searchEmployees")}
+                onChange={(employee) => {
+                  setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
+                  setValue("employeeName", employee?.name ?? "");
+                  setValue("loanId", undefined, { shouldValidate: allocationMode === "specific-loan" });
+                }}
+              />
               <div className="space-y-2">
                 {requiredLabel("loan-payment-allocation", text("allocationMode"))}
                 <SegmentedControl<LoanPaymentAllocationMode>

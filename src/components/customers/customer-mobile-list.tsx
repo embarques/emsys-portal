@@ -35,7 +35,7 @@ import {
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { cn } from "@/lib/utils";
 
 type FilterField = ComponentProps<typeof TableAdvancedFilterBuilder>["fields"][number];
@@ -72,7 +72,7 @@ type CustomerMobileListProps = {
   onClearFilters: () => void;
   onPageChange: (page: number) => void;
   onToggleSelect: (customerId: string, checked: boolean) => void;
-  onClearSelection: () => void;
+  onSelectedIdsChange: (ids: string[]) => void;
   onView: (customer: Customer) => void;
   onEdit: (customer: Customer) => void;
   onDeleteSelected: () => void;
@@ -227,7 +227,7 @@ export function CustomerMobileList({
   onClearFilters,
   onPageChange,
   onToggleSelect,
-  onClearSelection,
+  onSelectedIdsChange,
   onView,
   onEdit,
   onDeleteSelected,
@@ -328,10 +328,11 @@ export function CustomerMobileList({
         </div>
       ) : null}
 
-      <TableSelectionBar
-        selectedCount={selectedIds.length}
+      <TableSelectionToolbar
+        selectedIds={selectedIds}
+        pageRowIds={customers.map((customer) => customer.id)}
         totalCount={totalCount}
-        onClear={onClearSelection}
+        onSelectedIdsChange={onSelectedIdsChange}
         onView={() => singleSelectedCustomer && onView(singleSelectedCustomer)}
         onEdit={() => singleSelectedCustomer && onEdit(singleSelectedCustomer)}
         canEdit={canUpdate}

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
 import { useCreateLoanForm } from "@/lib/accounting/loans/use-create-loan-form";
 import { formatLoanMoney } from "@/lib/accounting/loans/display";
 import type { LoanCreateValues } from "@/lib/accounting/loans/types";
@@ -73,13 +74,21 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
       <fieldset disabled={busy} className="min-w-0 space-y-4">
         <div className={singlePage || step === 1 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={User} title={text("steps.employee")} description={text("employeeHint")}>
-            <div className="space-y-2">{requiredLabel("loan-employee", text("employee"))}
-              <SearchableSelect
-                inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="loan-employee" aria-label={text("employee")} aria-invalid={Boolean(errors.employeeId)} value={values.employeeId ? String(values.employeeId) : ""}
-                onValueChange={next => { const employee = employees.find(item => item.id === Number(next)); setValue("employeeId", employee?.id ?? 0, { shouldValidate: true }); setValue("employeeName", employee?.name ?? ""); }}
-                options={employees.map(employee => ({ value: String(employee.id), label: employee.name }))} placeholder={text("selectEmployee")} searchPlaceholder={text("searchEmployees")} mobileSheet />
-              {fieldError("employeeId")}
-            </div>
+            <LoanEmployeeField
+              id="loan-employee"
+              label={text("employee")}
+              employees={employees}
+              value={values.employeeId || undefined}
+              valueName={values.employeeName}
+              error={errors.employeeId?.message}
+              guided={guided}
+              placeholder={text("selectEmployee")}
+              searchPlaceholder={text("searchEmployees")}
+              onChange={(employee) => {
+                setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
+                setValue("employeeName", employee?.name ?? "");
+              }}
+            />
           </FormSection>
         </div>
         <div className={singlePage || step === 2 ? "space-y-4" : "hidden"}>

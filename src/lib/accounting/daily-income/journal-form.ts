@@ -112,7 +112,11 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     refNumberMode: row.refNumber?.trim() ? "custom" : "system",
     externalReferenceNumber: row.externalReferenceNumber ?? "",
     description: row.description ?? "",
-    assigneeSource: assignedToRoute ? "route" : "employee",
+    assigneeSource: assignedToRoute
+      ? "route"
+      : lookupId(row.employee?.id)
+        ? "employee"
+        : "creator",
     employeeId: assignedToRoute ? undefined : lookupId(row.employee?.id),
     employeeName: assignedToRoute ? undefined : row.employee?.name,
     employeeGroupId: assignedToRoute

@@ -1,30 +1,36 @@
 "use client";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 
 type RoleMobileSelectionToolbarProps = {
-  selectedCount: number;
+  selectedIds: string[];
+  pageRowIds: string[];
+  totalCount?: number;
   canViewOrEdit: boolean;
   deleteDisabled?: boolean;
-  onClear: () => void;
+  onSelectedIdsChange: (ids: string[]) => void;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 };
 
 export function RoleMobileSelectionToolbar({
-  selectedCount,
+  selectedIds,
+  pageRowIds,
+  totalCount,
   canViewOrEdit,
   deleteDisabled = false,
-  onClear,
+  onSelectedIdsChange,
   onView,
   onEdit,
   onDelete,
 }: RoleMobileSelectionToolbarProps) {
   return (
-    <TableSelectionBar
-      selectedCount={selectedCount}
-      onClear={onClear}
+    <TableSelectionToolbar
+      selectedIds={selectedIds}
+      pageRowIds={pageRowIds}
+      totalCount={totalCount}
+      onSelectedIdsChange={onSelectedIdsChange}
       onView={onView}
       onEdit={onEdit}
       viewDisabled={!canViewOrEdit}

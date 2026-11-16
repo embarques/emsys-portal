@@ -129,9 +129,10 @@ export function InventoryItemMobileList({
       </div>
 
       <InventoryItemMobileSelectionToolbar
-        selectedCount={selectedIds.length}
+        selectedIds={selectedIds}
+        pageRowIds={pageItems.map((item) => item.id)}
         canEdit={selectedIds.length === 1}
-        onClear={() => onSelectedIdsChange([])}
+        onSelectedIdsChange={onSelectedIdsChange}
         onEdit={onEdit ? () => {
           const item = selectedItems[0];
           if (item) onEdit(item);
