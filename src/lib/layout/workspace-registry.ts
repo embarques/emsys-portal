@@ -26,6 +26,7 @@ import { InventoryReceiptsWorkspace } from "@/components/inventory/inventory-rec
 import { InventoryDispatchesWorkspace } from "@/components/inventory/inventory-dispatches-workspace";
 import { InventorySuppliersWorkspace } from "@/components/inventory/inventory-suppliers-workspace";
 import { InvoicesWorkspace } from "@/components/invoices/invoices-workspace";
+import { ComplaintsWorkspace } from "@/components/complaints/complaints-workspace";
 import { InvoicePoliciesWorkspace } from "@/components/invoice-policies/invoice-policies-workspace";
 import { ItemsWorkspace } from "@/components/items/items-workspace";
 import { PredefinedRoutesWorkspace } from "@/components/predefined-routes/predefined-routes-workspace";
@@ -69,6 +70,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/inventory/suppliers": InventorySuppliersWorkspace,
   "/items": ItemsWorkspace,
   "/containers": ContainersWorkspace,
+  "/complaints": ComplaintsWorkspace,
   "/routes": RouteManagerWorkspace,
   "/daily-routes": DailyRoutesWorkspace,
   "/deliveries": DeliveriesWorkspace,

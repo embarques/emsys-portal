@@ -49,7 +49,7 @@ try {
     const absentLoan = await request("GET", "/loans/2147483646");
     if (absentLoan.status !== 404) throw new Error("Absent loan control not established; no increase probe sent");
     try {
-      await load("src/lib/accounting/loans/api.ts").increaseLoan({loanId: "2147483646", employeeId: 2147483646, employeeName: marker, sourceAccountId: 2147483646, sourceAccountName: marker, sourceAccountType: "ASSET", amount: 1, transactionDate: new Date().toISOString().slice(0,10), referenceNumber: marker, description: marker});
+      await load("src/lib/accounting/loans/api.ts").increaseLoan(randomUUID(), {loanId: "2147483646", employeeId: 2147483646, employeeName: marker, sourceAccountId: 2147483646, sourceAccountName: marker, sourceAccountType: "ASSET", amount: 1, transactionDate: new Date().toISOString().slice(0,10), referenceNumber: marker, description: marker});
       suite.fail("Impossible loan increase rejected", 0, "Unexpected success");
     } catch (error) { suite.note(`Loan increase negative-path response HTTP ${error.response?.status ?? 0}; see evidence. This does not certify a valid loan increase.`); }
   }

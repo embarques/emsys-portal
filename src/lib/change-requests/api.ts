@@ -1,5 +1,12 @@
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import type { CatalogPageParams } from "@/lib/api/fetch-catalog-page";
+import { fetchCappedPage } from "@/lib/api/fetch-capped-page";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
+import { buildApiListQuery } from "@/lib/api/list-query";
+import { buildResourceSearchFilterGroups, buildStripeStyleSearchBody, createListTextSearch, hasResourceListFilters } from "@/lib/api/search-query";
+import { resolvePaginatedListTotal, type PaginatedResult } from "@/lib/api/types";
+import { CHANGE_REQUEST_BAR_OR_SEARCH_FIELDS, CHANGE_REQUEST_TABLE_FILTER_FIELDS } from "@/lib/change-requests/filter-fields";
 export type ChangeResource = "pickup" | "invoice" | "journal" | "labels" | "inventory";
 export type ChangeRequest = {
     id: string;
@@ -41,10 +48,43 @@ export type NewChange = {
     reason: string;
     proposedChanges?: Record<string, unknown>;
 };
-export async function fetchChanges(page: number, signal?: AbortSignal) { return apiClient.get<{
-    data: ChangeRequest[];
-    total: number;
-}>(`${API_ENDPOINTS.CHANGE_REQUESTS}?page=${page}&limit=25&sort=createdAt:desc`, { signal }); }
+/** The API rejects change-request pages larger than 100 records. */
+const API_PAGE_LIMIT = 100;
+
+function fetchChangeRequestApiPage(params: CatalogPageParams, signal?: AbortSignal): Promise<PaginatedResult<ChangeRequest>> {
+    const search = createListTextSearch(params.query ?? "");
+    return fetchPaginatedResourceList({
+        endpoint: API_ENDPOINTS.CHANGE_REQUESTS,
+        page: params.page,
+        limit: params.limit,
+        signal,
+        isFiltered: hasResourceListFilters({ search, filterRows: params.filterRows, tableFilterFields: CHANGE_REQUEST_TABLE_FILTER_FIELDS }),
+        buildGetQuery: () => buildApiListQuery({ page: params.page, limit: params.limit, sort: params.sort }),
+        buildSearchBody: () => buildStripeStyleSearchBody({
+            sort: params.sort,
+            filterGroups: buildResourceSearchFilterGroups({
+                search,
+                barOrSearchFields: CHANGE_REQUEST_BAR_OR_SEARCH_FIELDS,
+                filterRows: params.filterRows,
+                tableFilterFields: CHANGE_REQUEST_TABLE_FILTER_FIELDS,
+            }),
+        }),
+        normalize: (payload, context) => {
+            const items = Array.isArray(payload.data) ? payload.data as ChangeRequest[] : [];
+            return {
+                items,
+                page: payload.page ?? params.page,
+                resultsPerPage: payload.resultsPerPage ?? items.length,
+                total: resolvePaginatedListTotal(payload, items.length, context),
+            };
+        },
+    });
+}
+
+/** GET /change-requests when unfiltered, POST /change-requests/search for the search box or filter rows. */
+export function fetchChangeRequestsPage(params: CatalogPageParams, signal?: AbortSignal) {
+    return fetchCappedPage(params, API_PAGE_LIMIT, (page, limit) => fetchChangeRequestApiPage({ ...params, page, limit }, signal), signal);
+}
 export async function fetchChangeTarget(resourceType: ChangeResource, resourceId: string, signal?: AbortSignal) { return apiClient.get<{
     data: TargetContext;
 }>(`${API_ENDPOINTS.CHANGE_REQUESTS}/target?${new URLSearchParams({ resourceType, resourceId })}`, { signal }); }

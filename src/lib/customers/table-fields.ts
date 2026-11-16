@@ -1,7 +1,9 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["customer.Customer"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["customer.Customer"]. */
 export const CUSTOMER_API_TABLE_FIELDS = [
+  // Optimistic concurrency token; consumed by mutations, never displayed as customer data.
+  { field: "version", column: false },
   { field: "IDNumber", defaultVisible: false },
   { field: "accountBalance", defaultVisible: false },
   { field: "active", defaultVisible: false },

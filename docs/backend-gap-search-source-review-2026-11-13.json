@@ -1,0 +1,433 @@
+{
+  "reviewDate": "2026-11-13",
+  "backendCommit": "675da5320b9ea6901b1223088579cd74a4d759e3",
+  "method": "Static comparison of B09 candidates against explicit Go allow-list entries; not a live API test. Aliases, operator support, persistence, indexes and query plans are not established by this comparison.",
+  "candidateCount": 53,
+  "presentByExactName": 0,
+  "rows": [
+    {
+      "endpoint": "/branches/search",
+      "operation": "filter",
+      "candidate": "address.address1",
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/branches/search",
+      "operation": "filter",
+      "candidate": "address.country",
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/branches/search",
+      "operation": "filter",
+      "candidate": "settings.labelPrefix",
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/branches/search",
+      "operation": "filter",
+      "candidate": "disclaimer",
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/branches/search",
+      "operation": "sort",
+      "candidate": "address.address1",
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/branches/search",
+      "operation": "sort",
+      "candidate": "address.country",
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/branches/search",
+      "operation": "sort",
+      "candidate": "settings.labelPrefix",
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/containers/search",
+      "operation": "filter",
+      "candidate": "barcodeSequence",
+      "source": ".reference/emsys-api/internal/container/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/containers/search",
+      "operation": "filter",
+      "candidate": "deliverySequence",
+      "source": ".reference/emsys-api/internal/container/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/containers/search",
+      "operation": "sort",
+      "candidate": "number",
+      "source": ".reference/emsys-api/internal/container/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/customers/search",
+      "operation": "filter",
+      "candidate": "notes",
+      "source": ".reference/emsys-api/internal/customer/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/customers/search",
+      "operation": "filter",
+      "candidate": "receivers",
+      "source": ".reference/emsys-api/internal/customer/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/employees/search",
+      "operation": "filter",
+      "candidate": "loanBalanceUpdated",
+      "source": ".reference/emsys-api/internal/employee/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/dispatches/search",
+      "operation": "filter",
+      "candidate": "supplierName",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "dispatchAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/dispatches/search",
+      "operation": "filter",
+      "candidate": "postedAt",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "dispatchAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/dispatches/search",
+      "operation": "filter",
+      "candidate": "postedBy.name",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "dispatchAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/dispatches/search",
+      "operation": "sort",
+      "candidate": "supplierName",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "dispatchAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/dispatches/search",
+      "operation": "sort",
+      "candidate": "fromHolderName",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "dispatchAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/dispatches/search",
+      "operation": "sort",
+      "candidate": "postedAt",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "dispatchAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/dispatches/search",
+      "operation": "sort",
+      "candidate": "postedBy.name",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "dispatchAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/receipts/search",
+      "operation": "filter",
+      "candidate": "supplierName",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "receiptAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/receipts/search",
+      "operation": "filter",
+      "candidate": "postedAt",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "receiptAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/receipts/search",
+      "operation": "filter",
+      "candidate": "postedBy.name",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "receiptAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/receipts/search",
+      "operation": "sort",
+      "candidate": "supplierName",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "receiptAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/receipts/search",
+      "operation": "sort",
+      "candidate": "toHolderName",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "receiptAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/receipts/search",
+      "operation": "sort",
+      "candidate": "postedAt",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "receiptAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/receipts/search",
+      "operation": "sort",
+      "candidate": "postedBy.name",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "receiptAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/inventory/suppliers/search",
+      "operation": "sort",
+      "candidate": "name",
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "allowList": "supplierAllowedFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/invoice-descriptions/search",
+      "operation": "filter",
+      "candidate": "createdBy.name",
+      "source": ".reference/emsys-api/internal/invoice_description/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/invoice-descriptions/search",
+      "operation": "filter",
+      "candidate": "updatedBy.name",
+      "source": ".reference/emsys-api/internal/invoice_description/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/invoices/search",
+      "operation": "filter",
+      "candidate": "invoiceDetails",
+      "source": ".reference/emsys-api/internal/invoice/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/invoices/search",
+      "operation": "filter",
+      "candidate": "itemCount",
+      "source": ".reference/emsys-api/internal/invoice/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/invoices/search",
+      "operation": "filter",
+      "candidate": "legacySyncedAt",
+      "source": ".reference/emsys-api/internal/invoice/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/invoices/search",
+      "operation": "filter",
+      "candidate": "branch.name",
+      "source": ".reference/emsys-api/internal/invoice/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/invoices/search",
+      "operation": "filter",
+      "candidate": "branch.code",
+      "source": ".reference/emsys-api/internal/invoice/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/journals/search",
+      "operation": "filter",
+      "candidate": "invoice.discount",
+      "source": ".reference/emsys-api/internal/journal/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/journals/search",
+      "operation": "filter",
+      "candidate": "accounts.type",
+      "source": ".reference/emsys-api/internal/journal/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/journals/search",
+      "operation": "filter",
+      "candidate": "transactionBalance",
+      "source": ".reference/emsys-api/internal/journal/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/journals/search",
+      "operation": "filter",
+      "candidate": "currency",
+      "source": ".reference/emsys-api/internal/journal/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/journals/search",
+      "operation": "filter",
+      "candidate": "customer",
+      "source": ".reference/emsys-api/internal/journal/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/journals/search",
+      "operation": "filter",
+      "candidate": "loan",
+      "source": ".reference/emsys-api/internal/journal/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/pickups/search",
+      "operation": "filter",
+      "candidate": "routeNumber",
+      "source": ".reference/emsys-api/internal/pickup/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/pickups/search",
+      "operation": "sort",
+      "candidate": "routeNumber",
+      "source": ".reference/emsys-api/internal/pickup/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/roles/search",
+      "operation": "filter",
+      "candidate": "permissions",
+      "source": ".reference/emsys-api/internal/role/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicle-routes/search",
+      "operation": "filter",
+      "candidate": "createdAt",
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicle-routes/search",
+      "operation": "filter",
+      "candidate": "driver.name",
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicle-routes/search",
+      "operation": "filter",
+      "candidate": "supervisor.name",
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicle-routes/search",
+      "operation": "filter",
+      "candidate": "helpers.name",
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicle-routes/search",
+      "operation": "sort",
+      "candidate": "driver.name",
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicle-routes/search",
+      "operation": "sort",
+      "candidate": "supervisor.name",
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicle-routes/search",
+      "operation": "sort",
+      "candidate": "helpers.name",
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicles/search",
+      "operation": "filter",
+      "candidate": "inspectionDate",
+      "source": ".reference/emsys-api/internal/vehicle/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    },
+    {
+      "endpoint": "/vehicles/search",
+      "operation": "filter",
+      "candidate": "registrationDate",
+      "source": ".reference/emsys-api/internal/vehicle/model.go",
+      "allowList": "AllowedQueryFields",
+      "presentByExactName": false
+    }
+  ]
+}

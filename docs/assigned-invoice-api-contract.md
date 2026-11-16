@@ -18,6 +18,6 @@
 - Verify any initial payment uses its separately authorized journal receipt and
   cannot duplicate financial effects on invoice retry.
 
-See the [API schema](../api-docs.json) and
+See the [API schema](../.reference/emsys-api/docs/swagger.json) and
 [backend gaps](backend-api-gaps.md). Generic 400 responses do not establish
 correct ownership or customer validation.

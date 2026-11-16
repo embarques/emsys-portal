@@ -61,3 +61,30 @@ test("explicitly clearing branch coordinates survives replacement updates", asyn
  await api.updateBranch(1, { ...loaded, address: { ...loaded.address, location: null } });
  assert.equal(saved.address.location, null);
 });
+
+test("new branches do not invent a configured label status", () => {
+ const { createEmptyBranchForm } = loadFeature("src/lib/branches/types.ts", {});
+ assert.equal(createEmptyBranchForm().settings.defaultLabelStatus, 0);
+});
+
+test("branch read and unrelated edit preserve an unconfigured label status", async () => {
+ for (const settings of [undefined, {}, { defaultLabelStatus: 0 }]) {
+  let saved;
+  const api = loadFeature(feature, {
+   get: async () => ({ data: { ...branch, settings } }),
+   put: async (_url, body) => { saved = body; return { data: { ...branch, ...body } }; },
+  });
+  const loaded = await api.fetchBranchById(1);
+  assert.equal(loaded.settings.defaultLabelStatus, 0);
+  await api.updateBranch(1, { ...loaded, name: "Renamed depot" });
+  assert.equal(saved.settings.defaultLabelStatus, 0);
+ }
+});
+
+test("branch normalization preserves explicitly configured current and legacy label statuses", async () => {
+ for (const settings of [{ defaultLabelStatus: 3 }, { DefaultLabelStatus: 6 }]) {
+  const api = loadFeature(feature, { get: async () => ({ data: { ...branch, settings } }) });
+  const loaded = await api.fetchBranchById(1);
+  assert.equal(loaded.settings.defaultLabelStatus, Object.values(settings)[0]);
+ }
+});

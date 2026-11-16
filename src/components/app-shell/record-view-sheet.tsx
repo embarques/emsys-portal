@@ -70,6 +70,8 @@ type RecordViewSheetActionsProps = {
   onEdit?: () => void;
   onDelete?: () => void;
   onPrint?: () => void;
+  /** Extra controls rendered before Edit/Delete (e.g. Request a change). */
+  leading?: React.ReactNode;
   editLabel?: string;
   deleteLabel?: string;
   printLabel?: string;
@@ -200,6 +202,7 @@ export function RecordViewSheetActions({
   onEdit,
   onDelete,
   onPrint,
+  leading,
   editLabel: editLabelProp,
   deleteLabel: deleteLabelProp,
   printLabel: printLabelProp,
@@ -214,11 +217,12 @@ export function RecordViewSheetActions({
   const deleteLabel = deleteLabelProp ?? t("common.actions.delete");
   const printLabel = printLabelProp ?? t("common.actions.print");
 
-  if (!onEdit && !onDelete && !onPrint) return null;
+  if (!onEdit && !onDelete && !onPrint && !leading) return null;
 
   return (
     <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+        {leading}
         {onPrint ? (
           <Button variant="outline" onClick={onPrint} disabled={isDisabled || printDisabled || isPrinting}>
             {isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}

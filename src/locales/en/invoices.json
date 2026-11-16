@@ -349,6 +349,7 @@
     "actions": {
       "back": "Back",
       "print": "Print",
+      "printInvoice": "Print invoice",
       "preparing": "Preparing…"
     },
     "validation": {
@@ -558,7 +559,11 @@
       "documentId": "Doc",
       "phones": "Phones",
       "address": "Address",
-      "scanned": "Scanned"
+      "scanned": "Scanned",
+      "paymentLocation": "Payment Location",
+      "paymentStatus": "Payment Status",
+      "name": "Name",
+      "email": "Email"
     },
     "lineItems": {
       "title": "Line items",

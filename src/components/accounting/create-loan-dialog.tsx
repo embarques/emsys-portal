@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Banknote, Loader2, Save, User } from "lucide-react";
 import { FormBody, FormFooterNoticeMessage, FormSection } from "@/components/forms/form-shell";
 import { TransactionWizardStepper } from "./transaction-wizard-stepper";
+import type { GuidedTypeStep } from "./guided-entry-chrome";
+import { LoanEntryStepFooter, LoanEntryStepHeading, LoanEntryStepNavigation } from "./loan-entry-step-navigation";
 import { LoanCloseoutGate, LoanCloseoutPanel } from "./loan-closeout-panel";
 import { JournalSummaryLine } from "./loan-journal-summary-line";
 import { CurrentTransactionSummary } from "./transaction-review";
@@ -44,7 +46,7 @@ export function CreateLoanDialog(props: Props) {
   </Dialog>;
 }
 
-export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange, continuous = false, guided = false, summaryContainer }: Props & { continuous?: boolean; guided?: boolean; summaryContainer?: HTMLElement | null }) {
+export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending, onSubmit, onOpenChange, continuous = false, guided = false, summaryContainer, typeStep }: Props & { continuous?: boolean; guided?: boolean; summaryContainer?: HTMLElement | null; typeStep?: GuidedTypeStep }) {
   const { t } = useTranslation();
   const text = (key: string) => t(`accounting.loans.createForm.${key}`);
   const singlePage = continuous && !guided;
@@ -63,9 +65,11 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
     {rows.map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words whitespace-pre-wrap text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}
   </dl>;
   return <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={event => { event.preventDefault(); void state.advance(); }}>
-    {!singlePage ? <div className="shrink-0 border-b px-5 py-4"><TransactionWizardStepper step={step} labels={stepLabels} disabled={busy} onSelectStep={state.setStep} /></div> : null}
-    <FormBody workflow isBusy={busy}>
-      {!singlePage ? <header className="max-w-2xl space-y-2"><h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{stepLabels[step - 1]}</h2>{guided ? <p className="text-sm leading-relaxed text-muted-foreground">{t(`accounting.dailyIncome.wizard.stepHints.${["loanAssignment", "loanDetails", "loanReview"][step - 1]}`)}</p> : null}</header> : null}
+    {guided ? <LoanEntryStepNavigation step={step} onStepChange={state.setStep} busy={busy} typeStep={typeStep} />
+      : !singlePage ? <div className="shrink-0 border-b px-5 py-4"><TransactionWizardStepper step={step} labels={stepLabels} disabled={busy} onSelectStep={state.setStep} /></div> : null}
+    <FormBody workflow className={guided ? "lg:p-8" : undefined} isBusy={busy}>
+      {guided ? <LoanEntryStepHeading step={step} appearance={typeStep?.appearance} />
+        : !singlePage ? <header className="max-w-2xl space-y-2"><h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{stepLabels[step - 1]}</h2></header> : null}
       <fieldset disabled={busy} className="min-w-0 space-y-4">
         <div className={singlePage || step === 1 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={User} title={text("steps.employee")} description={text("employeeHint")}>
@@ -143,6 +147,9 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
       [text("date"), values.transactionDate || t("common.empty.dash")],
       ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
     ]} />, summaryContainer) : null}
+    {guided ? <LoanEntryStepFooter step={step} onStepChange={state.setStep} busy={busy} typeStep={typeStep}
+      onCancel={() => onOpenChange(false)} submitLabel={text("title")} error={errors.root?.server?.message}
+      warning={step > 1 && !closeoutReady ? text("closeoutRequired") : null} submitDisabled={step > 1 && !closeoutReady} /> : (
     <div className="shrink-0 space-y-3 border-t bg-card px-5 py-4">
       {errors.root?.server?.message ? <FormFooterNoticeMessage tone="error" message={errors.root.server.message} /> : (singlePage || step > 1) && !closeoutReady ? <FormFooterNoticeMessage tone="warning" message={text("closeoutRequired")} /> : null}
       <div className="flex items-center justify-between gap-3">
@@ -153,5 +160,6 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
         </Button></div>
       </div>
     </div>
+    )}
   </form>;
 }

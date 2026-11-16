@@ -9,12 +9,10 @@ import {
   FileText,
   Filter,
   Plus,
-  Printer,
   Receipt,
   RefreshCw,
   Search,
   Loader2,
-  Tags,
 } from "lucide-react";
 
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
@@ -122,7 +120,6 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { OrderParty } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { useTranslation } from "@/lib/i18n";
 
 const invoiceWizardDialogClassName =
@@ -434,15 +431,6 @@ export function InvoicesWorkspace() {
     PERMISSIONS.packagesView.resourceType,
   );
 
-  function openManageInvoiceItems() {
-    if (selectedInvoices.length === 0) {
-      notifyError(t("invoices.workspace.selectForManageItems"));
-      return;
-    }
-
-    openManageItemsFor(selectedInvoices);
-  }
-
   function openManageItemsFor(targets: Invoice[]) {
     if (!canViewBarcodes) return;
     openTab(
@@ -585,27 +573,25 @@ export function InvoicesWorkspace() {
     setSelectedIds((current) => (checked ? [...current, invoiceId] : current.filter((entry) => entry !== invoiceId)));
   }
 
-  const documentsButton = (
-    <InvoiceDocumentsButton
-      invoice={selectedInvoices[0]}
-      selectedCount={selectedCount}
-      onOpenMobile={(invoice) => {
-        openView(invoice);
-        setViewDocuments(true);
-      }}
-    />
-  );
-
-  function openView(invoice: Invoice) {
-    setViewDocuments(false);
+  function openView(invoice: Invoice, options?: { documents?: boolean }) {
+    setViewDocuments(Boolean(options?.documents));
     setViewInvoiceId(invoice.invoiceId);
     setViewOverlay(null);
   }
 
   function closeView() {
     setViewInvoiceId(null);
+    setViewDocuments(false);
     setViewOverlay(null);
   }
+
+  const documentsButton = (
+    <InvoiceDocumentsButton
+      invoice={selectedInvoices[0]}
+      selectedCount={selectedCount}
+      onOpen={(invoice) => openView(invoice, { documents: true })}
+    />
+  );
 
   function addInvoiceComment(invoiceId: string, description: string) {
     const comment = createInvoiceComment(description);
@@ -626,11 +612,6 @@ export function InvoicesWorkspace() {
     }));
 
     notifyAdded(t("invoices.view.comments.entity"));
-  }
-
-  async function printSelectedInvoices() {
-    const invoiceIds = selectedInvoices.map((invoice) => invoice.invoiceId).filter(Boolean);
-    if (canPrintInvoices && invoiceIds.length) setPrintInvoiceIds(invoiceIds);
   }
 
   async function confirmDelete() {
@@ -1113,15 +1094,7 @@ export function InvoicesWorkspace() {
             canEdit={canUpdateInvoices}
             canDelete={canDeleteInvoices}
             deleteDisabled={isDeleting}
-            actions={
-              <>
-                {documentsButton}
-                <Button variant="outline" size="sm" className={tableSelectionActionStyles.print} onClick={printSelectedInvoices} disabled={isPrinting || !canPrintInvoices}>
-                  <Printer className="h-4 w-4" />
-                  {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
-                </Button>
-              </>
-            }
+            actions={documentsButton}
           />
         ) : null}
 
@@ -1276,25 +1249,7 @@ export function InvoicesWorkspace() {
           canEdit={canUpdateInvoices}
           canDelete={canDeleteInvoices}
           deleteDisabled={isDeleting}
-          actions={
-            <>
-              <Button size="sm" onClick={openManageInvoiceItems} disabled={!canViewBarcodes}>
-                <Tags className="h-4 w-4" />
-                {t("invoices.staging.tableAction")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={printSelectedInvoices}
-                disabled={isPrinting || !canPrintInvoices}
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-              >
-                <Printer className="h-4 w-4" />
-                {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
-              </Button>
-              {documentsButton}
-            </>
-          }
+          actions={documentsButton}
         />
 
         {isError ? (

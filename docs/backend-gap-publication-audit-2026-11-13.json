@@ -1,0 +1,192 @@
+{
+  "checkedAt": "2026-11-14T01:51:07.425Z",
+  "evidenceKind": "schema-declarations-only",
+  "localMatchesPublished": true,
+  "snapshots": {
+    "local": {
+      "format": "3.0.3",
+      "semanticHash": "9e04f7693191ff99ce76155f6b79e89827b28ed92d03177b757ea1a0faeb3b34",
+      "pathCount": 297,
+      "schemaCount": 350,
+      "operationCount": 432
+    },
+    "published": {
+      "format": "3.0.3",
+      "semanticHash": "9e04f7693191ff99ce76155f6b79e89827b28ed92d03177b757ea1a0faeb3b34",
+      "pathCount": 297,
+      "schemaCount": 350,
+      "operationCount": 432
+    },
+    "source": {
+      "format": "2.0",
+      "semanticHash": "f47493365054dbb372606144f01c064fb2de44b20c45bb3982ff7ab571262743",
+      "pathCount": 311,
+      "schemaCount": 371,
+      "operationCount": 448
+    }
+  },
+  "sourceOnlyOperations": [
+    "GET /companies/current/invoice-numbering",
+    "GET /complaint-categories",
+    "GET /complaints/insights",
+    "GET /complaints/notifications",
+    "GET /vehicle-routes/business-date",
+    "PATCH /complaints/{id}",
+    "POST /change-requests/search",
+    "POST /complaints/{id}/attachments",
+    "POST /complaints/{id}/events",
+    "POST /complaints/{id}/reopen",
+    "POST /invoices/reserved/search",
+    "POST /loans/{id}/increases",
+    "PUT /admin/complaint-categories/{key}",
+    "PUT /companies/current/invoice-numbering",
+    "PUT /complaints/notifications/{id}/read",
+    "PUT /complaints/{id}/targets"
+  ],
+  "publishedOnlyOperations": [],
+  "checks": [
+    {
+      "id": "operation:get:/vehicle-routes/business-date",
+      "contract": "GET /vehicle-routes/business-date",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "operation:post:/invoices/reserved/search",
+      "contract": "POST /invoices/reserved/search",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "operation:post:/change-requests/search",
+      "contract": "POST /change-requests/search",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "operation:post:/loans/{id}/increases",
+      "contract": "POST /loans/{id}/increases",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "barcode-route-nullable",
+      "contract": "barcode.Barcode.route explicitly nullable",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "embedded-single-piece-route-nullable",
+      "contract": "core.Barcode.route explicitly nullable (invoice.InvoiceDetail.barcode)",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": false
+      }
+    },
+    {
+      "id": "reconciliation-not-required",
+      "contract": "journal.Journal.reconciliationStatus includes NOT_REQUIRED",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "bulk-array-constraints",
+      "contract": "Required 1–200 distinct bulk barcodeIds",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "bulk-positive-uint32-bounds",
+      "contract": "Bulk barcodeIds item schema declares positive uint32 bounds",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": false
+      }
+    },
+    {
+      "id": "loan-increase-uuid",
+      "contract": "Required UUID loan.IncreaseRequest.requestId",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    },
+    {
+      "id": "reservation-received-at-nullable",
+      "contract": "invoice.ReservedInvoice.receivedAt explicitly nullable",
+      "declared": {
+        "local": false,
+        "published": false,
+        "source": true
+      }
+    }
+  ],
+  "missingPublishedDeclarations": [
+    "operation:get:/vehicle-routes/business-date",
+    "operation:post:/invoices/reserved/search",
+    "operation:post:/change-requests/search",
+    "operation:post:/loans/{id}/increases",
+    "barcode-route-nullable",
+    "embedded-single-piece-route-nullable",
+    "reconciliation-not-required",
+    "bulk-array-constraints",
+    "bulk-positive-uint32-bounds",
+    "loan-increase-uuid",
+    "reservation-received-at-nullable"
+  ],
+  "missingSourceDeclarations": [
+    "embedded-single-piece-route-nullable",
+    "bulk-positive-uint32-bounds"
+  ],
+  "descriptionsForReview": {
+    "local": {
+      "clearance": "Requires explicit canClearJournal. Atomic 1-200 distinct journal IDs of one bank payment method; all must have clearanceStatus OUTSTANDING and remain active. May settle after closeout closure, before or after reconciliation. Applies deferred invoice receipts exactly once. Never changes reconciliation status or historical ledger lines. UUID requestId is actor/payload-bound; identical retries return the original complete result. No partial success or per-ID failure results. A ledger reversal does not initiate a bank refund.",
+      "reconciliation": "Requires explicit standalone canReconcileJournal; journal CRUD grants do not imply this permission and no update grant is additionally required. Accepts 1–200 distinct journal ObjectIDs with one payment method. All must be Outstanding, not reversed, and in the current company. Atomic accounting approval and audit; never changes invoice payments or balances; UUID requestId is durable and payload-bound. Reconciliation evidence is immutable; controlled corrections create new entries. Bank clearance is independent. Success acknowledges every requested ID; failures roll back the entire batch. Error data.ids identifies invalid selections, not per-ID financial outcomes. No partial success or per-ID failure reasons are returned."
+    },
+    "published": {
+      "clearance": "Requires explicit canClearJournal. Atomic 1-200 distinct journal IDs of one bank payment method; all must have clearanceStatus OUTSTANDING and remain active. May settle after closeout closure, before or after reconciliation. Applies deferred invoice receipts exactly once. Never changes reconciliation status or historical ledger lines. UUID requestId is actor/payload-bound; identical retries return the original complete result. No partial success or per-ID failure results. A ledger reversal does not initiate a bank refund.",
+      "reconciliation": "Requires explicit standalone canReconcileJournal; journal CRUD grants do not imply this permission and no update grant is additionally required. Accepts 1–200 distinct journal ObjectIDs with one payment method. All must be Outstanding, not reversed, and in the current company. Atomic accounting approval and audit; never changes invoice payments or balances; UUID requestId is durable and payload-bound. Reconciliation evidence is immutable; controlled corrections create new entries. Bank clearance is independent. Success acknowledges every requested ID; failures roll back the entire batch. Error data.ids identifies invalid selections, not per-ID financial outcomes. No partial success or per-ID failure reasons are returned."
+    },
+    "source": {
+      "clearance": "Requires explicit canClearJournal. Atomic 1-200 distinct journal IDs of one bank payment method; all must have clearanceStatus OUTSTANDING and remain active. May settle after closeout closure. Records clearance and reconciliation together, preserving earlier reconciliation evidence on legacy rows. Applies deferred invoice receipts exactly once and preserves historical ledger lines. UUID requestId is actor/payload-bound; identical retries return the original complete result. No partial success or per-ID failure results. A ledger reversal does not initiate a bank refund.",
+      "reconciliation": "Requires explicit standalone canReconcileJournal; journal CRUD grants do not imply this permission and no update grant is additionally required. Accepts 1–200 distinct journal ObjectIDs with one payment method. Only OUTSTANDING active non-bank rows in the current company are eligible. NOT_REQUIRED, voided, reversed and reversal rows are excluded. Atomic accounting approval and audit; never changes invoice payments or balances; UUID requestId is durable and payload-bound. Reconciliation evidence is immutable; controlled corrections create new entries. Bank transactions are ineligible for this operation and reconcile through POST /journals/clear. Success acknowledges every requested ID; failures roll back the entire batch. Error data.ids identifies invalid selections, not per-ID financial outcomes. No partial success or per-ID failure reasons are returned."
+    }
+  },
+  "limitations": [
+    "Declaration presence is not schema validation, conversion parity, deployed route behavior or persisted business acceptance.",
+    "Nullable and bound checks inspect these named schema properties; no external references are fetched.",
+    "Descriptions require human review; the declaration checks do not certify all B05/B09 contracts.",
+    "No API, tenant, authentication, permission, database, migration or load tests are executed."
+  ],
+  "inputs": {
+    "localFile": "api-docs.json",
+    "publishedFile": "/tmp/emsys-current-scalar-openapi.json",
+    "sourceFile": ".reference/emsys-api/docs/swagger.json",
+    "sourceRevision": "4fdef23abcbaa89778d9ea6ca2d8f28b633cd270",
+    "publishedUrl": "https://api.embarqueros.com/scalar/openapi.json"
+  }
+}

@@ -1,4 +1,5 @@
-export const INVENTORY_ITEM_BAR_OR_SEARCH_FIELDS = ["name", "sku", "category"] as const;
+/** Main search identifies supplies; category stays an explicit advanced filter. */
+export const INVENTORY_ITEM_BAR_OR_SEARCH_FIELDS = ["name", "sku"] as const;
 
 export const INVENTORY_STOCK_BAR_OR_SEARCH_FIELDS = ["itemId", "holderId"] as const;
 

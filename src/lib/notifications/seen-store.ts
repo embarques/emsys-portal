@@ -35,6 +35,10 @@ export function notificationActivityId(activityId: string) {
   return `activity:${activityId}`;
 }
 
+export function notificationComplaintId(complaintId: string) {
+  return `complaint:${complaintId}`;
+}
+
 /** Keyed by count so the warning resurfaces whenever the low count changes. */
 export function notificationInvoicePoolLowId(companyId: string | number | null | undefined, remaining: number) {
   return `invoice-pool-low:${companyId ?? ""}:${remaining}`;

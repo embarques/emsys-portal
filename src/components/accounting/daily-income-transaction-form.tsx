@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
-import { ArrowDown, ArrowRight, ReceiptText, UserRound } from "lucide-react";
+import { ArrowDown, ArrowRight } from "lucide-react";
 
 import { InvoiceAdjustmentPresetButtons } from "@/components/accounting/invoice-adjustment-preset-buttons";
 import { getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
@@ -28,12 +28,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
-import { SelectOptionButtons } from "@/components/ui/select-option-buttons";
 import { focusWithoutOpeningCombobox, getNavigableFormFields, isDesktopFormNavigation, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useScrollFocusedSectionToTop } from "@/hooks/use-scroll-focused-section-to-top";
 import { finalizeInventoryChangeJournal } from "@/lib/accounting/daily-income/inventory-change";
 import { formatAccountingMoney } from "@/lib/accounting/display";
-import { getTransactionTypeOption, getTransactionFormSecondFieldId, INVOICE_ACTION_TYPES, isInvoiceActionType } from "@/lib/accounting/daily-income/transaction-type-config";
+import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
 import {
@@ -41,6 +40,7 @@ import {
   getBalanceAfterSurcharge,
   getDiscountableBalance,
   getSurchargeBaseBalance,
+  isSameMoneyAmount,
   type InvoiceAdjustmentKind,
   type OriginalInvoiceAdjustment,
 } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
@@ -96,10 +96,6 @@ type Props = {
   allowAutoClear?: boolean;
   /** Register payment: show the selected invoice's parties and totals as read-only fields. */
   showInvoiceDetails?: boolean;
-  /** Existing-invoice entry: once an invoice is chosen, switch between payment, discount and surcharge. */
-  showInvoiceActions?: boolean;
-  /** Reports the live transaction type, which differs from `transactionType` after an invoice action switch. */
-  onTransactionTypeChange?: (type: JournalTransactionType) => void;
   /** Edit only: the saved discount, which the discount cap adds back to the invoice balance. */
   originalDiscount?: OriginalInvoiceAdjustment;
   /** Edit only: the saved surcharge, which is taken back out of the balance before recalculating. */
@@ -163,8 +159,6 @@ export function DailyIncomeTransactionForm({
   autoFocusOnMount = true,
   allowAutoClear = false,
   showInvoiceDetails = false,
-  showInvoiceActions = false,
-  onTransactionTypeChange,
   originalDiscount,
   originalSurcharge,
   originalPayment,
@@ -227,7 +221,6 @@ export function DailyIncomeTransactionForm({
 
   const {
     formState: { errors },
-    clearErrors,
     handleSubmit,
     trigger,
     getFieldState,
@@ -322,9 +315,6 @@ export function DailyIncomeTransactionForm({
   }, [invalidField, activeStep, errors]);
 
   const type = watch("transactionType");
-  useEffect(() => {
-    onTransactionTypeChange?.(type);
-  }, [onTransactionTypeChange, type]);
   const employeeId = watch("employeeId");
   const employeeName = watch("employeeName");
   const routeId = watch("routeId");
@@ -476,31 +466,6 @@ export function DailyIncomeTransactionForm({
     </div>
   );
 
-  function changeInvoiceAction(next: string) {
-    if (!isInvoiceActionType(next) || next === type) return;
-    setValue("transactionType", next, { shouldDirty: true });
-    // A payment amount is not a discount or surcharge amount; make the user enter it again.
-    setValue("amount", 0, { shouldDirty: true });
-    clearErrors("amount");
-  }
-
-  const invoiceActionField = showInvoiceActions && selectedInvoice && isInvoiceActionType(type) ? (
-    <div className="min-w-0 space-y-1">
-      <Label id="journal-invoice-action-label">{t("accounting.dailyIncome.form.fields.invoiceAction")}</Label>
-      <SelectOptionButtons
-        id="journal-invoice-action"
-        aria-labelledby="journal-invoice-action-label"
-        clearable={false}
-        value={type}
-        onValueChange={changeInvoiceAction}
-        options={INVOICE_ACTION_TYPES.map((action) => ({
-          value: action,
-          label: t(`accounting.dailyIncome.transactionTypes.${action.toLowerCase()}.shortLabel`),
-        }))}
-      />
-    </div>
-  ) : null;
-
   function renderAmountField(labelKey = "accounting.dailyIncome.form.fields.amount", inline = false, emphasized = false) {
     return (
       <div className={inline ? "space-y-1" : "space-y-2"}>
@@ -546,51 +511,52 @@ export function DailyIncomeTransactionForm({
     const error = errors.amount?.message
       ?? (isDiscount && balanceAfter != null && balanceAfter < 0 ? t("accounting.dailyIncome.form.validation.discountExceedsBalance") : undefined);
     const maxAmount = isDiscount ? baseBalance : undefined;
+    const presets = (
+      <InvoiceAdjustmentPresetButtons
+        key={kind}
+        kind={kind}
+        inline={!stacked}
+        total={invoiceTotal}
+        maxAmount={maxAmount}
+        amount={amount}
+        onSelectAmount={(next) => setValue("amount", next, { shouldDirty: true, shouldValidate: true })}
+        onCustomAmount={() => {
+          const input = formRef.current?.querySelector<HTMLInputElement>("#journal-amount");
+          input?.focus();
+          input?.select();
+        }}
+      />
+    );
+    if (stacked) {
+      return renderInvoiceAmountRow(`accounting.dailyIncome.transactionTypes.${isDiscount ? "discount" : "surcharge"}.label`, {
+        error,
+        hint,
+        maxAmount,
+        preview: { previousBalance: baseBalance ?? null, newBalance: balanceAfter },
+        feedbackId: "journal-adjustment-amount-feedback",
+        leading: <div className="border-b border-border pb-3">{presets}</div>,
+      });
+    }
     return (
-      <div className={stacked ? "divide-y divide-border" : "space-y-4"}>
-        <div className={stacked ? "bg-muted/35 px-4 py-3" : undefined}>
-          <InvoiceAdjustmentPresetButtons
-            key={kind}
-            kind={kind}
-            inline={!stacked}
-            total={invoiceTotal}
-            maxAmount={maxAmount}
-            amount={amount}
-            onSelectAmount={(next) => setValue("amount", next, { shouldDirty: true, shouldValidate: true })}
-            onCustomAmount={() => {
-              const input = formRef.current?.querySelector<HTMLInputElement>("#journal-amount");
-              input?.focus();
-              input?.select();
-            }}
+      <div className="space-y-4">
+        <div>{presets}</div>
+        <div className={INLINE_FIELD_ROW_CLASS_NAME}>
+          <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
+          <Input
+            id="journal-amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            max={maxAmount != null && maxAmount > 0 ? maxAmount : undefined}
+            placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+            aria-invalid={Boolean(error)}
+            aria-describedby="journal-adjustment-amount-feedback"
+            className={cn(RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME, "max-sm:w-full sm:justify-self-end")}
+            {...register("amount", { setValueAs: moneyFormSetValueAs })}
           />
-        </div>
-        <div className={stacked ? "bg-card px-4 py-3" : undefined}>
-          {stacked ? renderInvoiceAmountRow(`accounting.dailyIncome.transactionTypes.${isDiscount ? "discount" : "surcharge"}.label`, {
-            error,
-            hint,
-            maxAmount,
-            preview: { previousBalance: baseBalance ?? null, newBalance: balanceAfter },
-            feedbackId: "journal-adjustment-amount-feedback",
-          }) : (
-            <div className={INLINE_FIELD_ROW_CLASS_NAME}>
-              <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
-              <Input
-                id="journal-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                max={maxAmount != null && maxAmount > 0 ? maxAmount : undefined}
-                placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
-                aria-invalid={Boolean(error)}
-                aria-describedby="journal-adjustment-amount-feedback"
-                className={cn(RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME, "max-sm:w-full sm:justify-self-end")}
-                {...register("amount", { setValueAs: moneyFormSetValueAs })}
-              />
-              <div id="journal-adjustment-amount-feedback" className="sm:col-start-2">
-                <FieldMessage error={error} hint={hint} className="justify-end text-right" />
-              </div>
-            </div>
-          )}
+          <div id="journal-adjustment-amount-feedback" className="sm:col-start-2">
+            <FieldMessage error={error} hint={hint} className="justify-end text-right" />
+          </div>
         </div>
       </div>
     );
@@ -670,61 +636,77 @@ export function DailyIncomeTransactionForm({
     maxAmount?: number;
     feedbackId?: string;
     preview?: { previousBalance: number | null; newBalance: number | null };
+    /** Rendered above the amount (e.g. discount / surcharge presets). */
+    leading?: React.ReactNode;
   } = {}) {
-    const { error, hint, maxAmount, feedbackId = "journal-payment-amount-error" } = options;
+    const { error, hint, maxAmount, feedbackId = "journal-payment-amount-error", leading } = options;
     const preview = options.preview ?? getInvoicePaymentBalancePreview(
       selectedInvoice ? getInvoiceBalanceAmount(selectedInvoice) : null,
       amount,
       invoiceId,
       originalPayment,
     );
+    const fullBalance = type === "PAYMENT" && preview.previousBalance != null && preview.previousBalance > 0 ? preview.previousBalance : null;
+    const fullBalanceActive = fullBalance != null && isSameMoneyAmount(fullBalance, amount);
+    const balanceClassName = "break-words text-lg font-semibold tracking-tight tabular-nums md:text-xl";
     return (
-      <div className="grid min-w-0 grid-cols-3 items-center gap-x-3 gap-y-1 sm:gap-x-4">
-        <dl className="contents">
-          <dt className={cn(invoiceDetailLabelClassName, "col-start-1 row-start-1 self-start")}>
-            {t("accounting.dailyIncome.form.invoiceSummary.previousBalance")}
-          </dt>
-          <dd id="journal-invoice-balance" className="col-start-1 row-start-2 min-w-0 break-words text-lg font-semibold tracking-tight text-orange-700 tabular-nums md:text-2xl dark:text-orange-400">
-            {preview.previousBalance == null ? t("common.empty.dash") : formatAccountingMoney(preview.previousBalance)}
-          </dd>
-          <dt className={cn(invoiceDetailLabelClassName, "col-start-3 row-start-1 self-start text-right")}>
-            {t("accounting.dailyIncome.form.invoiceSummary.newBalance")}
-          </dt>
-          <dd id="journal-invoice-new-balance" className="col-start-3 row-start-2 min-w-0 break-words text-right text-lg font-semibold tracking-tight text-emerald-700 tabular-nums md:text-2xl dark:text-emerald-400">
-            {preview.newBalance == null ? t("common.empty.dash") : formatAccountingMoney(preview.newBalance)}
-          </dd>
-        </dl>
-        <div className="col-start-2 row-start-1 min-w-0 self-start text-center [&>label]:block">
-          <RequiredLabel htmlFor="journal-amount">{t(labelKey)}</RequiredLabel>
+      <>
+        <div className="min-w-0 space-y-3 p-4">
+          {leading}
+          <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
+            <RequiredLabel htmlFor="journal-amount">{t(labelKey)}</RequiredLabel>
+            {fullBalance != null ? (
+              <Button
+                type="button"
+                size="sm"
+                variant={fullBalanceActive ? "default" : "outline"}
+                aria-pressed={fullBalanceActive}
+                className="tabular-nums"
+                onClick={() => setValue("amount", fullBalance, { shouldDirty: true, shouldValidate: true })}
+              >
+                {t("accounting.dailyIncome.wizard.quickFlow.fullBalance", { amount: formatAccountingMoney(fullBalance) })}
+              </Button>
+            ) : null}
+          </div>
+          <Input
+            id="journal-amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            max={maxAmount != null && maxAmount > 0 ? maxAmount : undefined}
+            placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error || hint ? feedbackId : undefined}
+            className={cn(RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME, "h-11 w-full text-lg font-semibold md:text-lg")}
+            {...register("amount", { setValueAs: moneyFormSetValueAs })}
+          />
+          {error || hint ? (
+            <div id={feedbackId} className="min-w-0">
+              <FieldMessage error={error} hint={hint} className="justify-end text-right" />
+            </div>
+          ) : null}
         </div>
-        <Input
-          id="journal-amount"
-          type="number"
-          min="0.01"
-          step="0.01"
-          max={maxAmount != null && maxAmount > 0 ? maxAmount : undefined}
-          placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error || hint ? feedbackId : undefined}
-          className={cn(RIGHT_ALIGNED_AMOUNT_INPUT_CLASS_NAME, "col-start-2 row-start-2 h-10 w-full text-center text-lg font-semibold md:text-lg")}
-          {...register("amount", { setValueAs: moneyFormSetValueAs })}
-        />
-        {error || hint ? (
-          <div id={feedbackId} className="col-start-2 row-start-3 min-w-0 text-center">
-            <FieldMessage error={error} hint={hint} className="justify-center" />
+        <div className="space-y-2 border-t border-border bg-muted/35 px-4 py-3">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+            <dl className="min-w-0 space-y-1">
+              <dt className={invoiceDetailLabelClassName}>{t("accounting.dailyIncome.form.invoiceSummary.previousBalance")}</dt>
+              <dd id="journal-invoice-balance" className={cn(balanceClassName, getInvoiceBalanceTextClassName(preview.previousBalance))}>
+                {preview.previousBalance == null ? t("common.empty.dash") : formatAccountingMoney(preview.previousBalance)}
+              </dd>
+            </dl>
+            <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" />
+            <dl className="min-w-0 space-y-1 text-right">
+              <dt className={invoiceDetailLabelClassName}>{t("accounting.dailyIncome.form.invoiceSummary.newBalance")}</dt>
+              <dd id="journal-invoice-new-balance" className={cn(balanceClassName, getInvoiceBalanceTextClassName(preview.newBalance))}>
+                {preview.newBalance == null ? t("common.empty.dash") : formatAccountingMoney(preview.newBalance)}
+              </dd>
+            </dl>
           </div>
-        ) : null}
-        {type === "PAYMENT" && preview.previousBalance != null && preview.previousBalance > 0 ? (
-          <div className="col-span-3 flex justify-center pt-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => setValue("amount", preview.previousBalance ?? 0, { shouldDirty: true, shouldValidate: true })}>
-              {t("accounting.dailyIncome.wizard.quickFlow.fullBalance", { amount: formatAccountingMoney(preview.previousBalance) })}
-            </Button>
-          </div>
-        ) : null}
-        {type === "PAYMENT" && paymentMethodName && !isCashPaymentMethod(paymentMethodName) && !clearPaymentOnSave ? (
-          <p className="col-span-3 row-start-4 text-xs text-muted-foreground">{t("accounting.dailyIncome.form.hints.balanceAfterClearance")}</p>
-        ) : null}
-      </div>
+          {type === "PAYMENT" && paymentMethodName && !isCashPaymentMethod(paymentMethodName) && !clearPaymentOnSave ? (
+            <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.hints.balanceAfterClearance")}</p>
+          ) : null}
+        </div>
+      </>
     );
   }
 
@@ -850,9 +832,10 @@ export function DailyIncomeTransactionForm({
   );
 
   const assignmentSection = (
-    <FormSection className={activeStep && activeStep !== "assignment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.assignment")}>
+    <FormSection className={activeStep && activeStep !== "assignment" ? "hidden" : undefined} variant={activeStep ? "plain" : "card"} title={t("accounting.dailyIncome.form.sections.assignment")}>
       <TransactionAssigneeSelect
         inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+        guided={Boolean(activeStep)}
         singleColumn
         employees={employees}
         dailyRoutes={dailyRoutes}
@@ -891,10 +874,11 @@ export function DailyIncomeTransactionForm({
   ) : null;
 
   const paymentSection = showPaymentDetails ? (
-    <FormSection className={activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
+    <FormSection className={activeStep && activeStep !== "payment" ? "hidden" : undefined} variant={activeStep ? "plain" : "card"} title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
       <div className="grid gap-4 sm:grid-cols-2">
         <PaymentChannelFields
           inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+          guided={Boolean(activeStep)}
           paymentMethods={paymentMethods}
           paymentMethodId={paymentMethodId}
           paymentMethodName={paymentMethodName}
@@ -1019,6 +1003,7 @@ export function DailyIncomeTransactionForm({
         workflow={!isPhone && activeStep !== "review"}
         className={cn(
           activeStep && "[&_[data-form-section]>div>div>h3]:normal-case [&_[data-form-section]>div>div>h3]:tracking-normal [&_[data-form-section]>div>div>h3]:text-sm [&_[data-form-section]_label]:text-sm [&_[data-form-section]_label]:text-foreground",
+          activeStep && !isPhone && "lg:p-8",
           isPhone &&
           "space-y-5 overflow-x-hidden bg-background px-4 py-5 [&_input]:h-12 [&_input]:rounded-xl [&_input]:text-base [&_label]:text-base [&_textarea]:min-h-28 [&_textarea]:rounded-xl [&_textarea]:text-base",
         )}
@@ -1078,52 +1063,24 @@ export function DailyIncomeTransactionForm({
             {assignmentSection}
             {activeStep ? null : paymentSection}
             {showExistingInvoiceDetails ? (
-              <FormSection className={cn("p-4 [&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground", activeStep && activeStep !== "amounts" && "hidden")} variant="card" title={t("accounting.dailyIncome.form.sections.invoiceDetails")}>
+              <FormSection className={cn("[&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground", !activeStep && "p-4", activeStep && activeStep !== "amounts" && "hidden")} variant={activeStep ? "plain" : "card"} title={activeStep ? undefined : t("accounting.dailyIncome.form.sections.invoiceDetails")}>
                 <div className="@container">
                   <div className="flex min-w-0 flex-col gap-3">
                     {invoiceSelectRow(null, true)}
-                    {invoiceActionField}
                     {selectedInvoice ? (
-                    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card">
-                      <div className="flex items-center gap-3 border-b border-border bg-muted/25 px-4 py-2.5">
-                        <ReceiptText aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
-                        <dl className="min-w-0">
-                          {invoiceTextRow("journal-selected-invoice-number", t("accounting.dailyIncome.form.fields.invoiceNumber"), selectedInvoice?.invoiceNumber)}
-                        </dl>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 px-4 py-3">
-                        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:gap-3">
-                          <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <UserRound className="size-3.5" />
-                          </span>
-                          <dl className="min-w-0">
-                            {invoiceTextRow("journal-invoice-sender", t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice?.sender?.name)}
-                          </dl>
-                        </div>
-                        <div className="flex min-w-0 flex-col gap-2 border-l border-border pl-4 sm:flex-row sm:gap-3">
-                          <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 text-muted-foreground">
-                            <UserRound className="size-3.5" />
-                          </span>
-                          <dl className="min-w-0">
-                            {invoiceTextRow("journal-invoice-receiver", t("accounting.dailyIncome.form.fields.receiverClient"), selectedInvoice ? getInvoicePrimaryReceiver(selectedInvoice)?.name : null)}
-                          </dl>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 border-y border-border bg-muted/50 px-4 py-2.5">
-                        <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <ReceiptText className="size-5" />
-                        </span>
-                        <dl className="grid min-w-0 flex-1 grid-cols-3 grid-rows-[auto_auto] gap-x-3 gap-y-1 tabular-nums sm:gap-x-6 [&>div]:row-span-2 [&>div]:grid [&>div]:grid-rows-subgrid [&>div]:space-y-0 [&>div:nth-child(2)]:text-center [&>div:last-child]:text-right">
-                          {invoiceTextRow("journal-invoice-total", t("accounting.dailyIncome.form.sections.invoiceAmount"), selectedInvoice ? formatAccountingMoney(getInvoiceTotal(selectedInvoice)) : null)}
-                          {invoiceSummaryRow("journal-invoice-discount", t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice?.discount ?? null)}
-                          {invoiceSummaryRow("journal-invoice-paid", t("accounting.dailyIncome.form.invoiceSummary.paid"), selectedInvoice?.amountPaid ?? null)}
-                        </dl>
-                      </div>
-                      <div className={isInvoiceAdjustment ? undefined : "bg-muted/35 px-4 py-3"}>
-                        {isInvoiceAdjustment
-                          ? renderInvoiceAdjustmentAmountField(type, true)
-                          : renderInvoiceAmountRow("accounting.dailyIncome.form.fields.paymentAmount", { error: errors.amount?.message })}
-                      </div>
+                    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+                      <dl className="grid min-w-0 grid-cols-2 gap-4 px-4 py-3">
+                        {invoiceTextRow("journal-invoice-sender", t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice?.sender?.name)}
+                        {invoiceTextRow("journal-invoice-receiver", t("accounting.dailyIncome.form.fields.receiverClient"), selectedInvoice ? getInvoicePrimaryReceiver(selectedInvoice)?.name : null)}
+                      </dl>
+                      <dl className="grid min-w-0 grid-cols-3 gap-4 border-y border-border bg-muted/35 px-4 py-3 tabular-nums">
+                        {invoiceTextRow("journal-invoice-total", t("accounting.dailyIncome.form.sections.invoiceAmount"), selectedInvoice ? formatAccountingMoney(getInvoiceTotal(selectedInvoice)) : null)}
+                        {invoiceSummaryRow("journal-invoice-discount", t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice?.discount ?? null)}
+                        {invoiceSummaryRow("journal-invoice-paid", t("accounting.dailyIncome.form.invoiceSummary.paid"), selectedInvoice?.amountPaid ?? null)}
+                      </dl>
+                      {isInvoiceAdjustment
+                        ? renderInvoiceAdjustmentAmountField(type, true)
+                        : renderInvoiceAmountRow("accounting.dailyIncome.form.fields.paymentAmount", { error: errors.amount?.message })}
                     </div>
                     ) : null}
                   </div>

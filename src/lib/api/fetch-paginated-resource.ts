@@ -15,6 +15,7 @@ type FetchPaginatedResourceListOptions<T> = {
   page?: number;
   limit?: number;
   offset?: number;
+  signal?: AbortSignal;
   isFiltered: boolean;
   buildGetQuery: () => string;
   buildSearchBody: () => StripeStyleSearchBody;
@@ -30,11 +31,13 @@ export async function fetchPaginatedResourceList<T>({
   page = 1,
   limit = 40,
   offset,
+  signal,
   isFiltered,
   buildGetQuery,
   buildSearchBody,
   normalize,
 }: FetchPaginatedResourceListOptions<T>): Promise<PaginatedResult<T>> {
+  const config: [] | [{ signal: AbortSignal }] = signal ? [{ signal }] : [];
   if (isFiltered) {
     const resolvedOffset = offset ?? (page - 1) * limit;
     const paginationQuery = buildApiSearchPaginationQuery({
@@ -46,6 +49,7 @@ export async function fetchPaginatedResourceList<T>({
     const response = await client.post<PaginatedApiEnvelope<unknown[]>>(
       `${endpoint}/search?${paginationQuery}`,
       buildSearchBody(),
+      ...config,
     );
 
     return normalize(response, { isFiltered: true });
@@ -53,6 +57,7 @@ export async function fetchPaginatedResourceList<T>({
 
   const response = await client.get<PaginatedApiEnvelope<unknown[]>>(
     `${endpoint}?${buildGetQuery()}`,
+    ...config,
   );
 
   return normalize(response, { isFiltered: false });

@@ -28,14 +28,16 @@ function loader(apiClient = {}) {
  return load;
 }
 const t = key => key;
+const values = {employeeId:7,employeeName:"Ana",loanId:"42",sourceAccountId:3,sourceAccountName:"Cash on hand",sourceAccountType:"ASSET",amount:200,transactionDate:"2026-11-11",referenceNumber:"",description:"Extra"};
+const requestId = "55c7647d-4a55-444d-81a8-c8076804af17";
 
 test("additional loan amount posts to the loan's increase command with the source account", async () => {
  const calls=[];
  const api=loader({post:async(url,body)=>{calls.push([url,body]);return{data:{loan:{id:"42",principalAmount:700,paidAmount:100,balance:600,employee:{id:7,name:"Ana"}}}};}})("src/lib/accounting/loans/api.ts");
- const loan=await api.increaseLoan({employeeId:7,employeeName:"Ana",loanId:"42",sourceAccountId:3,sourceAccountName:"Cash on hand",sourceAccountType:"ASSET",amount:200,transactionDate:"2026-11-11",referenceNumber:"",description:"Extra"});
+ const loan=await api.increaseLoan(requestId, values);
  assert.equal(calls.length,1);
  assert.equal(calls[0][0],"/loans/42/increases");
- assert.deepEqual(calls[0][1],{employee:{id:7,name:"Ana"},sourceAccount:{id:3,name:"Cash on hand",type:"ASSET"},amount:200,transactionDate:"2026-11-11",referenceNumber:"",description:"Extra"});
+ assert.deepEqual(calls[0][1],{requestId,employee:{id:7,name:"Ana"},sourceAccount:{id:3,name:"Cash on hand",type:"ASSET"},amount:200,transactionDate:"2026-11-11",referenceNumber:"",description:"Extra"});
  assert.equal(loan.balance,600);
 });
 
@@ -50,7 +52,7 @@ test("additional loan amount requires a loan and a positive amount", () => {
  assert.equal(zero.error.issues[0].message,"accounting.loans.validation.increaseAmountPositive");
 });
 
-test("the entry stays hidden until the API ships its increase command", () => {
+test("the entry stays hidden until the increase lifecycle is verified", () => {
  const previous=process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED;
  try {
   delete process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED;
@@ -60,5 +62,70 @@ test("the entry stays hidden until the API ships its increase command", () => {
   assert.deepEqual(loans(),["LOAN-ISSUE","LOAN-INCREASE","LOAN-PAYMENT"]);
  } finally {
   if (previous === undefined) delete process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED; else process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED=previous;
+ }
+});
+
+function sessionFixture(post) {
+ const load = loader({post});
+ const {createLoanIncreaseSession} = load("src/lib/accounting/loans/loan-increase-session.ts");
+ let sequence = 0;
+ return createLoanIncreaseSession(undefined, () => `55c7647d-4a55-444d-81a8-${String(++sequence).padStart(12,"0")}`);
+}
+
+test("lost increase response retries the same command, then a new completed entry gets a new UUID", async () => {
+ const calls=[], receipts=new Set();
+ let lost=true;
+ const submit=sessionFixture(async(url,body)=>{
+  calls.push({url,body:structuredClone(body)});
+  receipts.add(body.requestId);
+  if(lost){lost=false;throw new Error("Response lost after commit");}
+  return {data:{loan:{id:42,balance:600}}};
+ });
+ await assert.rejects(submit("company-a:actor-a",values),/Response lost/);
+ await submit("company-a:actor-a",{...values});
+ assert.deepEqual(calls[0],calls[1]);
+ assert.equal(receipts.size,1);
+ await submit("company-a:actor-a",values);
+ assert.notEqual(calls[2].body.requestId,calls[0].body.requestId);
+});
+
+test("concurrent identical submissions share one frozen wire request", async () => {
+ let finish;
+ const waiting=new Promise(resolve=>{finish=resolve;});
+ const calls=[];
+ const submit=sessionFixture(async(url,body)=>{calls.push({url,body:structuredClone(body)});await waiting;return{data:{loan:{id:42}}};});
+ const draft={...values};
+ const first=submit("company:actor",draft);
+ const second=submit("company:actor",{...draft});
+ draft.amount=999;
+ draft.loanId="99";
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].body.amount,200);
+ finish();
+ const results=await Promise.all([first,second]);
+ assert.deepEqual(results[0],results[1]);
+});
+
+test("uncertain commands are isolated by scope, loan and every submitted field", async () => {
+ const calls=[];
+ const submit=sessionFixture(async(url,body)=>{calls.push({url,body:structuredClone(body)});throw Error("Uncertain");});
+ for(const [scope,input] of [
+  ["company-a:actor-a",values], ["company-b:actor-a",values], ["company-a:actor-b",values],
+  ...["loanId","employeeId","employeeName","sourceAccountId","sourceAccountName","sourceAccountType","amount","transactionDate","referenceNumber","description"].map(field=>[
+   "company-a:actor-a",{...values,[field]:typeof values[field]==="number"?values[field]+1:`${values[field]}-changed`},
+  ]),
+ ]) await assert.rejects(submit(scope,input),/Uncertain/);
+ assert.equal(new Set(calls.map(call=>call.body.requestId)).size,calls.length);
+ await assert.rejects(submit("company-a:actor-a",values),/Uncertain/);
+ assert.deepEqual(calls.at(-1),calls[0],"returning to the original draft retains its uncertain identity");
+});
+
+test("missing or mismatched loan success stays uncertain and reuses the UUID", async () => {
+ for(const data of [{},{loan:{id:99}}]) {
+  const calls=[];
+  const submit=sessionFixture(async(_url,body)=>{calls.push(structuredClone(body));return{success:true,data};});
+  await assert.rejects(submit("company:actor",values));
+  await assert.rejects(submit("company:actor",values));
+  assert.deepEqual(calls[0],calls[1]);
  }
 });

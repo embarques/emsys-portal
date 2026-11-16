@@ -661,6 +661,13 @@
       "searchBranches": "Search branches…",
       "noCloseout": "No closeout for this date"
     },
+    "emptyCloseout": {
+      "title": "No active closeout",
+      "loading": "Checking for a closeout…",
+      "descriptionCanCreate": "Open today’s closeout for this location to start recording transactions.",
+      "descriptionOtherDate": "Nothing was found for this date. Pick another day, or open today’s closeout if it is not open yet.",
+      "descriptionUnavailable": "There is no closeout for this location and date. Switch to your branch, or ask someone with permission to open today’s closeout."
+    },
     "status": {
       "open": "Active",
       "closed": "Inactive",
@@ -821,16 +828,17 @@
         "loanAssignment": "Choose the employee. For an existing loan, select the loan to update.",
         "loanDetails": "Enter the amount and select the applicable accounts. Check the loan details before continuing.",
         "loanReview": "Check the employee, loan amount and accounts. Edit any section that needs a correction, then save.",
+        "inventoryDispatch": "Find the pending dispatch you are collecting for, then choose Reconcile to record its outcomes and payment.",
         "inventoryItems": "Enter the outcome quantities for each item. Check sold, returned and lost quantities against the outstanding stock.",
         "inventoryPayment": "Record any money received and its payment method. Add a note when required for losses or credit.",
         "inventoryReview": "Check the item outcomes, payment totals and any remaining credit before saving."
       },
       "quickFlow": {
-        "chooseHint": "Choose what you need to record. Each action opens only the steps it needs.",
         "fullBalance": "Pay full balance · {{amount}}",
         "assignment": "Employee / loan",
         "details": "Amount & details",
         "review": "Review & save",
+        "selectDispatch": "Select dispatch",
         "inventoryItems": "Items & outcomes",
         "inventoryPayment": "Payment & details",
         "noPayment": "No payment yet",
@@ -857,7 +865,6 @@
         "existingInvoice": "Existing invoice",
         "hints": {
           "INITIAL-PAYMENT": "Includes first payment",
-          "PAYMENT": "Payment, discount, or surcharge",
           "INVENTORY": "Received or dispatched",
           "INVENTORY-PAYMENT": "Pay for a dispatch",
           "LOAN-PAYMENT": "Employee repayment"
@@ -865,8 +872,8 @@
         "options": {
           "INITIAL-PAYMENT": "New invoice",
           "PAYMENT": "Invoice payment",
-          "DISCOUNT": "Discount",
-          "SURCHARGE": "Surcharge",
+          "DISCOUNT": "Invoice discount",
+          "SURCHARGE": "Invoice surcharge",
           "SALES": "Income",
           "EXPENSE": "Expense",
           "INVENTORY": "Inventory movement",
@@ -876,8 +883,13 @@
           "LOAN-PAYMENT": "Loan payment",
           "TRANSFER": "Transfer between accounts"
         },
+        "groupHints": {
+          "invoicePayment": "For an existing or a new invoice"
+        },
         "groups": {
-          "invoices": "Invoices",
+          "invoicePayment": "Invoice payment",
+          "invoiceSurcharge": "Invoice surcharge",
+          "invoiceDiscount": "Invoice discount",
           "income": "Income",
           "expenses": "Expenses",
           "inventory": "Inventory",
@@ -969,6 +981,10 @@
     },
     "form": {
       "creatorAssigneeHint": "If left empty, you will be responsible for reconciling this transaction.",
+      "assigneeSourceHints": {
+        "employee": "One employee is responsible",
+        "route": "A daily route and its supervisor are responsible"
+      },
       "creatorAssignee": "Creator’s linked employee",
       "fields": {
         "assignedTo": "Assigned to",
@@ -984,17 +1000,16 @@
         "autoClear": "Auto-reconcile",
         "autoClearPayment": "Auto-clear payment on save",
         "bankPaymentClearanceHint": "Bank payments are not applied to the invoice until they are cleared.",
-        "bankPaymentAutoClearHint": "By default, this payment stays uncleared and unreconciled, and is not applied to the invoice until it is cleared. Enable auto-clear only if you are certain the funds have arrived in the selected bank account; it also reconciles the payment.",
+        "bankPaymentAutoClearHint": "By default, this payment stays uncleared and unreconciled, and is not applied to the invoice until it is cleared. Choose Yes only if you are certain the funds have arrived in the selected bank account; it also reconciles the payment.",
         "autoClearTransaction": "Auto-clear transaction on save",
         "bankTransactionClearanceHint": "Bank transactions remain pending until they are cleared.",
-        "bankTransactionAutoClearHint": "Leave this off unless you are certain the transaction has settled and is already reflected in the selected bank account. Auto-clear clears it on save; internal reconciliation follows when permitted.",
+        "bankTransactionAutoClearHint": "Choose No unless you are certain the transaction has settled and is already reflected in the selected bank account. Auto-clear clears it on save; internal reconciliation follows when permitted.",
         "autoClearHint": "Reconcile this transaction when saved. This confirms you already received this payment.",
         "autoClearReviewValue": "Reconciled on creation",
         "autoReconcile": "Auto-reconcile (mark as sold)",
         "autoReconcileHint": "Skip the pending step: the handoff is completed and the full quantity is reconciled as sold when you save, so it does not appear in Pending Transactions.",
         "autoReconcileReviewValue": "Reconciled as sold on save",
         "invoice": "Invoice",
-        "invoiceAction": "Record for this invoice",
         "invoiceNumber": "Invoice number",
         "notes": "Notes",
         "referenceNumber": "Internal reference number",
@@ -1002,8 +1017,8 @@
         "referenceNumberModeCustom": "Enter your own",
         "referenceNumberCustom": "Custom internal reference number",
         "referenceNumberHint": "EMSYS uses this to identify the transaction.",
-        "referenceNumberSystemHint": "EMSYS will generate an internal reference number when you save. Turn this off to enter your own.",
-        "referenceNumberCustomHint": "Turn this on to have EMSYS generate the internal reference number.",
+        "referenceNumberSystemHint": "EMSYS will generate an internal reference number when you save.",
+        "referenceNumberCustomHint": "Enter the internal reference number to use for this transaction.",
         "account": "Account",
         "sourceAccount": "Source account",
         "transferFrom": "From account",
@@ -1019,6 +1034,8 @@
         "paymentChannel": "Cash or bank",
         "paymentChannelCash": "Cash",
         "paymentChannelBank": "Bank",
+        "paymentChannelCashHint": "Paid in cash",
+        "paymentChannelBankHint": "Check, card, transfer or another bank method",
         "partySkipped": "Skipped",
         "receiverClient": "Receiver client",
         "inventoryDirection": "Received or dispatched",
@@ -1039,6 +1056,8 @@
       "inventory": {
         "received": "Received",
         "dispatched": "Dispatched",
+        "receivedHint": "Supplies came in from a supplier",
+        "dispatchedHint": "Supplies went out to a route, vehicle or employees",
         "priceHint": "Fill unit price or total; the other amount updates automatically.",
         "receivedDescription": "Received {{item}} × {{quantity}} from {{supplier}}",
         "receivedDescriptionNoSupplier": "Received {{item}} × {{quantity}}",
@@ -1351,7 +1370,8 @@
       "paymentRecorded": "Loan payment recorded."
     },
     "errors": {
-      "openCloseoutRequired": "An open Daily Income closeout is required for this loan account's branch on the selected date. Open or create that closeout below, then try again."
+      "openCloseoutRequired": "An open Daily Income closeout is required for this loan account's branch on the selected date. Open or create that closeout below, then try again.",
+      "increaseUnconfirmed": "The loan increase could not be confirmed. Keep this entry open and retry the same values."
     },
     "validation": {
       "employeeRequired": "Employee is required.",
@@ -1964,7 +1984,20 @@
     "previous": "Previous",
     "next": "Next",
     "before": "Before",
-    "after": "After"
+    "after": "After",
+    "searchPlaceholder": "Search by record ID, requester or reviewer…",
+    "filters": {
+      "fields": {
+        "status": { "label": "Status" },
+        "action": { "label": "Requested action" },
+        "resourceType": { "label": "Record type" },
+        "resourceId": { "label": "Record ID", "placeholder": "Enter record ID…" },
+        "requestedBy": { "name": { "label": "Requested by", "placeholder": "Enter name…" } },
+        "reviewedBy": { "name": { "label": "Reviewed by", "placeholder": "Enter name…" } },
+        "createdAt": { "label": "Requested on", "placeholder": "YYYY-MM-DD" },
+        "reviewedAt": { "label": "Reviewed on", "placeholder": "YYYY-MM-DD" }
+      }
+    }
   },
   "journalLifecycle": {
     "void": "Void",

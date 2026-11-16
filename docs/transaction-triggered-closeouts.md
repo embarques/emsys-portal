@@ -19,4 +19,4 @@
 Use isolated non-production fixtures or a natural date boundary; do not close
 an existing shared period merely to force recovery.
 
-See [backend gaps](backend-api-gaps.md) and [api-docs.json](../api-docs.json).
+See [backend gaps](backend-api-gaps.md) and [API reference](../.reference/emsys-api/docs/swagger.json).

@@ -1,0 +1,349 @@
+{
+  "title": "Complaints",
+  "description": "Log customer complaints taken by phone, work them through review and resolution, and keep a full timeline.",
+  "entity": "Complaint",
+  "add": "New complaint",
+  "searchPlaceholder": "Search number, subject, phone or reference…",
+  "empty": "No complaints found.",
+  "emptyUnresolved": "No unresolved complaints. Everything is handled.",
+  "retry": "Retry",
+  "forbidden": "You don't have permission to view complaints.",
+  "unassigned": "Unassigned",
+  "userFallback": "User #{{id}}",
+  "employeeFallback": "Employee #{{id}}",
+  "yes": "Yes",
+  "no": "No",
+  "scopes": {
+    "label": "Complaints to show",
+    "unresolved": "Unresolved",
+    "all": "All complaints"
+  },
+  "errors": {
+    "missingId": "This complaint has no ID.",
+    "loadFailed": "Unable to load complaints.",
+    "categoriesFailed": "Unable to load complaint categories.",
+    "createFailed": "Unable to file the complaint.",
+    "updateFailed": "Unable to update the complaint.",
+    "versionConflict": "Someone else updated this complaint. The latest version has been loaded; review it and try again.",
+    "closedConflict": "This complaint is closed. Reopen it before making changes.",
+    "insightsFailed": "Unable to load complaint insights.",
+    "notificationsFailed": "Unable to load complaint notifications."
+  },
+  "validation": {
+    "tooLong": "Too long.",
+    "phone": "Enter a phone number with at least 7 digits.",
+    "email": "Enter a valid email address.",
+    "subjectTooLong": "Keep the subject under 120 characters.",
+    "targetRequired": "Add at least one person or record this complaint is about.",
+    "targetLabelTooLong": "Keep the reference under 200 characters.",
+    "targetNoteTooLong": "Keep the note under 1,000 characters.",
+    "nonNegativeNumber": "Enter a number of zero or more.",
+    "wholeNumber": "Enter a whole number.",
+    "invalidOption": "Choose one of the listed options.",
+    "tooManyValues": "Enter at most 20 values.",
+    "httpsUrl": "Enter a secure link that starts with https://.",
+    "attachmentSize": "Enter a size greater than 0 and up to 25 MB."
+  },
+  "statuses": {
+    "open": "Open",
+    "in_progress": "In progress",
+    "pending_customer": "Waiting on customer",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "rejected": "Rejected"
+  },
+  "severities": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "categories": {
+    "appointment": "Appointment",
+    "delivery": "Delivery",
+    "billing": "Pricing / billing",
+    "customer_service": "Customer service",
+    "progress": "Status / progress",
+    "quality": "Quality of service",
+    "general": "General / multiple areas",
+    "other": "Other"
+  },
+  "targetKinds": {
+    "employee": "Employee",
+    "appointment": "Appointment",
+    "order": "Order",
+    "invoice": "Invoice",
+    "other": "Other"
+  },
+  "detailFields": {
+    "appointment_ref": "Appointment reference",
+    "issue": "Issue",
+    "provider_name": "Staff member",
+    "wait_minutes": "Wait (minutes)",
+    "order_ref": "Order reference",
+    "tracking_number": "Tracking number",
+    "expected_date": "Expected date",
+    "photos": "Photo links",
+    "invoice_ref": "Invoice reference",
+    "amount_disputed": "Amount disputed",
+    "currency": "Currency",
+    "channel_used": "Contact channel",
+    "agent_name": "Agent name",
+    "date_of_contact": "Date of contact",
+    "ticket_id": "Ticket ID",
+    "reference": "Reference",
+    "days_waiting": "Days waiting",
+    "service_date": "Service date",
+    "issue_summary": "Issue summary",
+    "affected_areas": "Affected areas"
+  },
+  "detailOptions": {
+    "late": "Late",
+    "no-show": "No-show",
+    "cancelled": "Cancelled",
+    "rescheduled": "Rescheduled",
+    "wrong service": "Wrong service",
+    "missing": "Missing",
+    "damaged": "Damaged",
+    "wrong item": "Wrong item",
+    "never arrived": "Never arrived",
+    "overcharged": "Overcharged",
+    "double charge": "Double charge",
+    "unexpected fee": "Unexpected fee",
+    "refund missing": "Refund missing",
+    "rude": "Rude",
+    "unhelpful": "Unhelpful",
+    "no reply": "No reply",
+    "wrong info": "Wrong information",
+    "no update": "No update",
+    "stuck": "Stuck",
+    "wrong status": "Wrong status",
+    "poor result": "Poor result",
+    "incomplete": "Incomplete",
+    "unsafe": "Unsafe"
+  },
+  "fields": {
+    "number": "Number",
+    "createdAt": "Filed",
+    "status": "Status",
+    "severity": "Severity",
+    "category": "Category",
+    "subject": "Subject",
+    "callerName": "Caller name",
+    "callerPhone": "Caller phone",
+    "callerEmail": "Caller email",
+    "assignee": "Assigned to",
+    "targets": "About",
+    "description": "Description",
+    "loggedBy": "Logged by",
+    "reopenedCount": "Times reopened",
+    "resolutionSummary": "Resolution summary",
+    "actionTaken": "Action taken",
+    "resolvedBy": "Resolved by",
+    "resolvedAt": "Resolved",
+    "note": "Note",
+    "reopenReason": "Reason for reopening"
+  },
+  "form": {
+    "description": "Record the caller's complaint. It is filed as Open and counts toward the red Complaints badge until it is resolved or rejected.",
+    "sections": {
+      "caller": "Caller",
+      "complaint": "Complaint",
+      "details": "{{category}} details",
+      "targets": "What or who it's about"
+    },
+    "detailsHint": "These fields depend on the category. Required fields are marked.",
+    "targetsHint": "Add the employees or records involved. At least one is required.",
+    "addTarget": "Add",
+    "removeTarget": "Remove",
+    "targetKind": "Type",
+    "targetEmployee": "Employee",
+    "targetLabel": "Reference",
+    "targetLabelPlaceholders": {
+      "appointment": "Appointment number or description",
+      "order": "Order number or description",
+      "invoice": "Invoice number",
+      "other": "Describe what the complaint is about"
+    },
+    "targetNote": "Note (optional)",
+    "employeePlaceholder": "Select employee",
+    "employeeSearch": "Search employees…",
+    "employeeEmpty": "No employees found.",
+    "selectOption": "Select an option",
+    "searchOptions": "Search…",
+    "noOptions": "No options found.",
+    "listHint": "Separate multiple values with commas.",
+    "categoryPlaceholder": "Select category",
+    "categorySearch": "Search categories…",
+    "categoryEmpty": "No categories found.",
+    "severityDefault": "Category default ({{severity}})",
+    "severityDefaultGeneric": "Category default",
+    "severityHint": "Use Urgent for legal or privacy escalations. Unsafe quality complaints are always urgent.",
+    "submit": "File complaint"
+  },
+  "filters": {
+    "fields": {
+      "status": {
+        "label": "Status"
+      },
+      "severity": {
+        "label": "Severity"
+      },
+      "category": {
+        "label": "Category"
+      },
+      "number": {
+        "label": "Number",
+        "placeholder": "C-2026-00001"
+      },
+      "subject": {
+        "label": "Subject",
+        "placeholder": "Enter subject…"
+      },
+      "callerPhone": {
+        "label": "Caller phone",
+        "placeholder": "2015551234"
+      },
+      "targets.label": {
+        "label": "Target reference",
+        "placeholder": "Enter reference…"
+      },
+      "createdAt": {
+        "label": "Filed",
+        "placeholder": "YYYY-MM-DD"
+      }
+    }
+  },
+  "view": {
+    "legacyNotice": "This complaint was recorded with the original complaint workflow and is read-only here.",
+    "details": "Category details",
+    "resolution": "Resolution",
+    "attachments": "Attachments",
+    "openAttachment": "Open file",
+    "timeline": "Timeline",
+    "assigneeSearch": "Search users…",
+    "assigneeEmpty": "No users found."
+  },
+  "timeline": {
+    "filed": "Filed as {{status}}",
+    "statusChange": "{{from}} → {{to}}",
+    "assigned": "Assigned to {{user}}",
+    "unassigned": "Assignee removed",
+    "reopened": "Reopened",
+    "note": "Internal note"
+  },
+  "workflow": {
+    "actions": {
+      "open": {
+        "in_progress": "Start work",
+        "rejected": "Reject"
+      },
+      "in_progress": {
+        "pending_customer": "Waiting on customer",
+        "resolved": "Resolve",
+        "rejected": "Reject"
+      },
+      "pending_customer": {
+        "in_progress": "Resume work",
+        "rejected": "Reject"
+      },
+      "resolved": {
+        "closed": "Close",
+        "in_progress": "Back to in progress"
+      },
+      "rejected": {
+        "open": "Reinstate"
+      }
+    },
+    "reopen": "Reopen",
+    "addNote": "Add note",
+    "confirmReject": "Reject this complaint? It will no longer count as unresolved.",
+    "success": {
+      "open": "Complaint reinstated.",
+      "in_progress": "Complaint is in progress.",
+      "pending_customer": "Complaint is waiting on the customer.",
+      "resolved": "Complaint resolved.",
+      "closed": "Complaint closed.",
+      "rejected": "Complaint rejected.",
+      "assigned": "Assignee updated.",
+      "unassigned": "Assignee removed.",
+      "severity": "Severity updated.",
+      "note": "Note added.",
+      "reopened": "Complaint reopened.",
+      "targets": "Updated what or who the complaint is about.",
+      "attachment": "Attachment added."
+    },
+    "dialogs": {
+      "resolve": {
+        "title": "Resolve complaint",
+        "description": "Describe the outcome and what was done. The complaint can be closed afterward.",
+        "submit": "Resolve"
+      },
+      "note": {
+        "title": "Add internal note",
+        "description": "Notes are visible to staff only and appear in the timeline.",
+        "submit": "Add note"
+      },
+      "reopen": {
+        "title": "Reopen complaint",
+        "description": "The complaint returns to In progress. The previous resolution is kept.",
+        "submit": "Reopen"
+      },
+      "targets": {
+        "title": "Edit what or who it's about",
+        "description": "Replace the employees or records this complaint is about. The full list is saved together.",
+        "submit": "Save"
+      },
+      "attachment": {
+        "title": "Add attachment",
+        "description": "Link a file that is already stored online. Attachments are visible to staff only.",
+        "submit": "Add attachment"
+      }
+    },
+    "editTargets": "Edit",
+    "addAttachment": "Add"
+  },
+  "attachments": {
+    "fileUrl": "File link",
+    "mimeType": "File type",
+    "selectType": "Select a file type",
+    "sizeMb": "Size (MB)",
+    "hint": "The file stays where it is hosted; EMSYS saves the link, type and size. Maximum 25 MB.",
+    "empty": "No attachments yet.",
+    "types": {
+      "pdf": "PDF document",
+      "jpeg": "JPEG image",
+      "png": "PNG image",
+      "webp": "WebP image",
+      "heic": "HEIC photo",
+      "mp4": "MP4 video",
+      "mov": "QuickTime video",
+      "mp3": "MP3 audio",
+      "m4a": "M4A audio",
+      "text": "Text file",
+      "docx": "Word document",
+      "xlsx": "Excel spreadsheet",
+      "other": "Other file"
+    }
+  },
+  "insights": {
+    "open": "Insights",
+    "title": "Complaint insights",
+    "description": "Volume, repeat issues and resolution time for complaints filed in the selected dates (UTC).",
+    "from": "From",
+    "to": "To",
+    "loading": "Loading insights…",
+    "total": "Complaints filed",
+    "reopened": "Reopened",
+    "averageResolution": "Average time to resolve",
+    "hours": "{{hours}} h",
+    "byCategory": "By category",
+    "byEmployee": "Employees named most often",
+    "empty": "No complaints in this range.",
+    "errors": {
+      "dates": "Enter both dates.",
+      "order": "The end date must be on or after the start date.",
+      "span": "Choose a range of 365 days or less."
+    }
+  }
+}

@@ -1,0 +1,480 @@
+{
+  "checkedAt": "2026-11-14T17:27:52.359Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "fixtureMarker": "CODEX-NY-CLAIM-80e1f1df-a67d-409e-9bd3-b1dcbc06e8cc",
+  "ownedIds": [
+    "6af899a431a295cf38084333",
+    "6af899a431a295cf38084334"
+  ],
+  "evidence": [
+    {
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "operator": "or",
+            "filters": [
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01031"
+              },
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01032"
+              }
+            ]
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 5
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "asc"
+          },
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084333",
+            "number": "P-01031",
+            "allocation": {
+              "userId": 0,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          },
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084334",
+            "number": "P-01032",
+            "allocation": {
+              "userId": 0,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.019454458,
+        "page": 1,
+        "resultsPerPage": 5,
+        "total": 2,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V14 owned generated numbers have a real createdAt tie",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "operator": "or",
+            "filters": [
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01031"
+              },
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01032"
+              }
+            ]
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "asc"
+          },
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084333",
+            "number": "P-01031",
+            "allocation": {
+              "userId": 0,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.018392166,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 2,
+        "subtotal": 1
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/reserved/actions",
+      "body": {
+        "requestId": "ced27575-fae8-403f-91d9-716091386c3d",
+        "action": "assign",
+        "userId": 73,
+        "items": [
+          {
+            "id": "6af899a431a295cf38084333",
+            "token": "[redacted]"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice pool updated",
+        "data": [
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084333",
+            "number": "P-01031",
+            "allocation": {
+              "userId": 73,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          }
+        ],
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "operator": "or",
+            "filters": [
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01031"
+              },
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01032"
+              }
+            ]
+          }
+        ],
+        "pagination": {
+          "page": 2,
+          "limit": 1
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "asc"
+          },
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084334",
+            "number": "P-01032",
+            "allocation": {
+              "userId": 0,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.015553542,
+        "page": 2,
+        "resultsPerPage": 1,
+        "total": 2,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "operator": "or",
+            "filters": [
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01031"
+              },
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01032"
+              }
+            ]
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 1
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "asc"
+          },
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084333",
+            "number": "P-01031",
+            "allocation": {
+              "userId": 73,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.016433125,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 2,
+        "subtotal": 1
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/reserved/search",
+      "body": {
+        "filters": [
+          {
+            "operator": "or",
+            "filters": [
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01031"
+              },
+              {
+                "field": "number",
+                "operator": "eq",
+                "value": "P-01032"
+              }
+            ]
+          }
+        ],
+        "pagination": {
+          "page": 2,
+          "limit": 1
+        },
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "asc"
+          },
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": [
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084334",
+            "number": "P-01032",
+            "allocation": {
+              "userId": 0,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          }
+        ],
+        "error": "",
+        "duration": 0.020292,
+        "page": 2,
+        "resultsPerPage": 1,
+        "total": 2,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V14 page-spanning timestamp tie survives owned allocation change",
+      "passed": true
+    },
+    {
+      "label": "V14 repeated concurrent tied pages remain deterministic",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/reserved?userId=0&q=P-0103&sort=number:asc&limit=1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "reserved invoice numbers",
+        "data": {
+          "items": [
+            {
+              "claimed": false,
+              "id": "6af7a47731a295cf380842cc",
+              "number": "P-01030",
+              "allocation": {
+                "userId": 0,
+                "token": "[redacted]"
+              },
+              "receivedAt": null,
+              "reservedAt": "2026-11-13T23:59:51.217Z",
+              "createdAt": "2026-11-13T23:59:51.217Z"
+            }
+          ],
+          "remaining": 2,
+          "lowThreshold": 10,
+          "nextCursor": "6af7a47731a295cf380842cc"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/reserved?userId=0&q=CODEX-NONMATCHING-FILTER&sort=number:asc&limit=1&after=6af7a47731a295cf380842cc",
+      "http": 400,
+      "response": {
+        "success": false,
+        "message": "invalid invoice pool request",
+        "error": "invalid invoice pool request. Suggested solution: Correct the request using the error details and try again."
+      }
+    },
+    {
+      "label": "V14 number cursor rejects changed nonmatching filter",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/reserved/actions",
+      "body": {
+        "requestId": "a2ef2f56-eb6c-4ae5-8f59-20e64d5ca141",
+        "action": "return",
+        "items": [
+          {
+            "id": "6af899a431a295cf38084333",
+            "token": "[redacted]"
+          }
+        ]
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice pool updated",
+        "data": [
+          {
+            "claimed": false,
+            "id": "6af899a431a295cf38084333",
+            "number": "P-01031",
+            "allocation": {
+              "userId": 0,
+              "token": "[redacted]"
+            },
+            "receivedAt": null,
+            "reservedAt": "2026-11-14T17:25:56.818Z",
+            "createdAt": "2026-11-14T17:25:56.818Z"
+          }
+        ],
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Only own newly generated number returned to company pool",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled allocation changes and repeated concurrent reads do not establish every sort-key mutation, tenant or DST boundary.",
+    "Only the two previously created mock numbers were eligible for mutations; no period changes."
+  ]
+}

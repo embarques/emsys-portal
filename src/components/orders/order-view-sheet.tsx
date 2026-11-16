@@ -1,17 +1,37 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 
-import { Info, MapPin, Phone as PhoneIcon, Receipt } from "lucide-react";
+import {
+  CheckCircle2,
+  Info,
+  Map as MapIcon,
+  MapPin,
+  MessageSquare,
+  Pencil,
+  Phone as PhoneIcon,
+  Printer,
+  Receipt,
+  Route as RouteIcon,
+  RouteOff,
+  Trash2,
+  UserRound,
+  XCircle,
+  Eye,
+} from "lucide-react";
 
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
 import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  TableSelectionActionDivider,
+  TableSelectionExpandableActionGroup,
+} from "@/components/app-shell/table-selection-action-group";
+import {
   RecordViewSheet,
-  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -34,6 +54,8 @@ import { coreAddressHasContent, getCustomerPrimaryCoreAddress, type Customer } f
 import { getOrderReceivers, type Order } from "@/lib/orders/types";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 type OrderViewSheetProps = {
   order: Order | null;
@@ -45,6 +67,18 @@ type OrderViewSheetProps = {
   loadRouteDetails?: boolean;
   /** Omit to hide Create invoice (e.g. no invoice access). */
   onCreateInvoice?: (order: Order) => void;
+  onMap?: (order: Order) => void;
+  onPrint?: (order: Order) => void;
+  isPrinting?: boolean;
+  onMarkComplete?: (order: Order) => void;
+  onMarkIncomplete?: (order: Order) => void;
+  canManageCompletion?: boolean;
+  onAssignRoute?: (order: Order) => void;
+  onViewRoute?: (order: Order) => void;
+  onClearRoute?: (order: Order) => void;
+  /** Hide route actions in route-appointments mode. */
+  canManageRoutes?: boolean;
+  actionsDisabled?: boolean;
 };
 
 function SenderViewSections({ customer }: { customer: Customer }) {
@@ -55,7 +89,7 @@ function SenderViewSections({ customer }: { customer: Customer }) {
 
   return (
     <>
-      <RecordViewSheetSection title={partyLabel} padding="relaxed">
+      <RecordViewSheetSection title={partyLabel} icon={UserRound} padding="relaxed">
         <p className="text-sm font-medium">{customer.name}</p>
         {customer.IDNumber ? (
           <p className="text-xs text-muted-foreground">
@@ -109,16 +143,46 @@ export function OrderViewSheet({
   onEdit,
   onDelete,
   onCreateInvoice,
+  onMap,
+  onPrint,
+  isPrinting = false,
+  onMarkComplete,
+  onMarkIncomplete,
+  canManageCompletion,
+  onAssignRoute,
+  onViewRoute,
+  onClearRoute,
+  canManageRoutes = true,
   canEdit,
   loadRouteDetails = true,
+  actionsDisabled = false,
 }: OrderViewSheetProps) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: loadRouteDetails && Boolean(order) });
+  const [completionExpanded, setCompletionExpanded] = useState(false);
+  const [routesExpanded, setRoutesExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setCompletionExpanded(false);
+      setRoutesExpanded(false);
+    }
+  }, [open]);
 
   if (!order) return null;
 
   const receivers = getOrderReceivers(order);
+  const allowEdit = canEdit ?? hasPermission("canUpdatePickup", "pickup");
+  const allowDelete = Boolean(onDelete) && hasPermission("canDeletePickup", "pickup");
+  const allowCompletion = canManageCompletion ?? allowEdit;
+  const hasRoute = Boolean(order.routeId?.trim());
+  const canClearRoute = hasRoute && !order.completed;
+  const showCompletionActions = Boolean(onMarkComplete || onMarkIncomplete) && allowCompletion;
+  const showRouteActions =
+    canManageRoutes && Boolean(onAssignRoute || onViewRoute || onClearRoute);
+  const showPrimaryOps = Boolean(onCreateInvoice || onMap || onPrint);
+  const showManageGroups = showCompletionActions || showRouteActions;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -142,14 +206,6 @@ export function OrderViewSheet({
               </Badge>
             </div>
           }
-          actions={
-            onCreateInvoice ? (
-              <Button type="button" size="sm" variant="outline" onClick={() => onCreateInvoice(order)}>
-                <Receipt className="size-4" />
-                {t("orders.actions.createInvoice")}
-              </Button>
-            ) : null
-          }
         />
 
         <RecordViewSheetBody>
@@ -157,6 +213,7 @@ export function OrderViewSheet({
 
           <RecordViewSheetSection
             title={t("orders.comments.title")}
+            icon={MessageSquare}
             padding="relaxed"
           >
             {order.comments.length > 0 ? (
@@ -181,6 +238,7 @@ export function OrderViewSheet({
                 ? t("orders.view.receiversCount", { count: receivers.length })
                 : t("orders.columns.receiver")
             }
+            icon={UserRound}
             padding="relaxed"
           >
             {receivers.length > 0 ? (
@@ -232,13 +290,180 @@ export function OrderViewSheet({
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
-        <RequestChangeButton resourceType="pickup" resourceId={String(order.id)} inSheet />
 
-        <RecordViewSheetActions
-          editLabel={t("orders.actions.editPickup")}
-          onEdit={(canEdit ?? hasPermission("canUpdatePickup", "pickup")) ? () => onEdit(order) : undefined}
-          onDelete={onDelete && hasPermission("canDeletePickup", "pickup") ? () => onDelete(order) : undefined}
-        />
+        <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {showPrimaryOps && !completionExpanded && !routesExpanded ? (
+              <>
+                {onCreateInvoice ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="whitespace-nowrap"
+                    disabled={actionsDisabled}
+                    onClick={() => onCreateInvoice(order)}
+                  >
+                    <Receipt className="size-4" />
+                    {t("orders.actions.createInvoice")}
+                  </Button>
+                ) : null}
+                {onMap ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="whitespace-nowrap"
+                    disabled={actionsDisabled}
+                    onClick={() => onMap(order)}
+                  >
+                    <MapIcon className="size-4" />
+                    {t("orders.actions.map")}
+                  </Button>
+                ) : null}
+                {onPrint ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={actionsDisabled || isPrinting}
+                    onClick={() => onPrint(order)}
+                  >
+                    <Printer className="size-4" />
+                    {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
+                  </Button>
+                ) : null}
+                {showManageGroups || allowEdit || allowDelete ? <TableSelectionActionDivider /> : null}
+              </>
+            ) : null}
+
+            {showCompletionActions && !routesExpanded ? (
+              <>
+                <TableSelectionExpandableActionGroup
+                  label={t("orders.actions.manageCompletion")}
+                  icon={CheckCircle2}
+                  expanded={completionExpanded}
+                  onExpandedChange={setCompletionExpanded}
+                  disabled={actionsDisabled}
+                  aria-label={t("orders.actions.completionGroup")}
+                >
+                  {onMarkComplete ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={actionsDisabled || order.completed}
+                      onClick={() => onMarkComplete(order)}
+                      className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+                    >
+                      <CheckCircle2 className="size-4" />
+                      {t("orders.actions.markComplete")}
+                    </Button>
+                  ) : null}
+                  {onMarkIncomplete ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={actionsDisabled || !order.completed}
+                      onClick={() => onMarkIncomplete(order)}
+                      className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                    >
+                      <XCircle className="size-4" />
+                      {t("orders.actions.markIncomplete")}
+                    </Button>
+                  ) : null}
+                </TableSelectionExpandableActionGroup>
+                {showRouteActions || allowEdit || allowDelete ? <TableSelectionActionDivider /> : null}
+              </>
+            ) : null}
+
+            {showRouteActions ? (
+              <TableSelectionExpandableActionGroup
+                label={t("orders.actions.manageRoutes")}
+                icon={RouteIcon}
+                expanded={routesExpanded}
+                onExpandedChange={(expanded) => {
+                  setRoutesExpanded(expanded);
+                  if (expanded) setCompletionExpanded(false);
+                }}
+                disabled={actionsDisabled}
+                aria-label={t("orders.actions.routeGroup")}
+              >
+                {onAssignRoute ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={actionsDisabled}
+                    onClick={() => onAssignRoute(order)}
+                  >
+                    <RouteIcon className="size-4" />
+                    {t("orders.actions.assignRoute")}
+                  </Button>
+                ) : null}
+                {onViewRoute ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasRoute}
+                    onClick={() => onViewRoute(order)}
+                    className={tableSelectionActionStyles.view}
+                  >
+                    <Eye className="size-4" />
+                    {t("orders.actions.viewRoute")}
+                  </Button>
+                ) : null}
+                {onClearRoute ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={actionsDisabled || !canClearRoute}
+                    onClick={() => onClearRoute(order)}
+                    className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                  >
+                    <RouteOff className="size-4" />
+                    {t("orders.actions.clearRoute")}
+                  </Button>
+                ) : null}
+              </TableSelectionExpandableActionGroup>
+            ) : null}
+
+            <RequestChangeButton resourceType="pickup" resourceId={String(order.id)} />
+
+            {allowEdit || allowDelete ? <TableSelectionActionDivider /> : null}
+
+            {allowEdit ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={actionsDisabled}
+                onClick={() => onEdit(order)}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+              >
+                <Pencil className="size-4" />
+                {t("orders.actions.editPickup")}
+              </Button>
+            ) : null}
+            {allowDelete && onDelete ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={actionsDisabled}
+                onClick={() => onDelete(order)}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
+              >
+                <Trash2 className="size-4" />
+                {t("common.actions.delete")}
+              </Button>
+            ) : null}
+          </div>
+        </div>
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

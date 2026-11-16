@@ -118,3 +118,10 @@ test("explicit route-management grant restores normal action permissions", async
  assert.equal(granted(PERMISSIONS.journalsClear),false);
  assert.equal(granted({name:"canApproveChangeRequest",resourceType:"change_request"}),true);
 });
+
+test("change-request create or approve grants can open and list change requests", async () => {
+ for (const name of ["canCreateChangeRequest", "canApproveChangeRequest"]) {
+  const {granted}=await grantsFor([{name,resourceType:"change_request"}]);
+  assert.equal(granted({name:"canViewChangeRequest",resourceType:"change_request"}),true, name);
+ }
+});

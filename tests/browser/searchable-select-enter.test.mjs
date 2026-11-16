@@ -55,6 +55,18 @@ after(async () => {
   if (directory) await rm(directory, { recursive: true, force: true });
 });
 
+const INVOICE_TYPE_GROUPS = { PAYMENT: "invoicePayment", DISCOUNT: "invoiceDiscount", SURCHARGE: "invoiceSurcharge" };
+
+/** Wide pickers show single-type groups as type tiles; narrow pickers show group rows. */
+async function chooseInvoiceTransactionType(page, type) {
+  const prefix = "accounting.dailyIncome.wizard.typeSelector";
+  const entry = new RegExp(`^${prefix}\\.(groups\\.${INVOICE_TYPE_GROUPS[type]}|options\\.${type})$`);
+  await page.getByRole("button", { name: entry }).click();
+  if (type === "PAYMENT") await page.getByRole("button", { name: `${prefix}.existingInvoice`, exact: true }).click();
+  await page.locator("#journal-employee-source-employee").click();
+  await page.getByRole("radio", { name: /Maria/ }).click();
+}
+
 async function fixture(width = 1280, kind = "select", settings = {}) {
   const page = await browser.newPage({ viewport: { width, height: 800 } });
   page.on("pageerror", (error) => console.error(error));
@@ -684,29 +696,22 @@ for (const kind of ["DISCOUNT", "SURCHARGE"]) {
     test(`invoice adjustment cards preserve ${kind} controls at ${width}px`, async () => {
       const page = await fixture(width, "wizard", { styled: true });
       try {
-        await page.getByRole("button", { name: `accounting.dailyIncome.wizard.typeSelector.options.${kind}`, exact: true }).click();
-        await page.locator("#journal-employee").click();
-        await page.getByRole("option", { name: /Maria/ }).click();
-        await page.locator("#journal-invoice").click();
-        await page.getByRole("option", { name: /80430/ }).click();
+        await chooseInvoiceTransactionType(page, kind);
+        await page.getByRole("radio").filter({ hasText: "80430" }).click();
         const section = page.locator("[data-form-section]").filter({ has: page.locator("#journal-invoice") });
         assert.equal(await section.locator("#journal-invoice-sender").textContent(), "Ana Sender");
         assert.equal(await section.locator("#journal-invoice-receiver").textContent(), "Luis Receiver");
         assert.match(await section.locator("#journal-invoice-total").textContent(), /200\.00/);
         assert.match(await section.locator("#journal-invoice-balance").textContent(), /130\.00/);
         assert.equal(await page.locator("#journal-description").isEditable(), true);
-        const senderBox = await page.locator("#journal-invoice-sender").locator("../..").boundingBox();
-        const receiverBox = await page.locator("#journal-invoice-receiver").locator("../..").boundingBox();
+        const senderBox = await page.locator("#journal-invoice-sender").locator("..").boundingBox();
+        const receiverBox = await page.locator("#journal-invoice-receiver").locator("..").boundingBox();
         const balanceBox = await page.locator("#journal-invoice-balance").boundingBox();
-        const balanceLabelBox = await page.locator("#journal-invoice-balance").locator("..").locator("dt").first().boundingBox();
-        const amountLabelBox = await page.locator('label[for="journal-amount"]').boundingBox();
         const amountBox = await page.locator("#journal-amount").boundingBox();
         assert.ok(Math.abs(senderBox.y - receiverBox.y) < 1);
         assert.ok(receiverBox.x > senderBox.x);
         assert.ok(amountBox.y > Math.max(senderBox.y + senderBox.height, receiverBox.y + receiverBox.height));
-        assert.ok(Math.abs(balanceLabelBox.y - amountLabelBox.y) < 1);
-        assert.ok(Math.abs((balanceBox.y + balanceBox.height / 2) - (amountBox.y + amountBox.height / 2)) < 1);
-        assert.ok(balanceBox.x + balanceBox.width <= amountBox.x);
+        assert.ok(balanceBox.y >= amountBox.y + amountBox.height);
         const presets = section.getByRole("group", { name: `accounting.dailyIncome.form.adjustmentPresets.label.${kind}`, exact: true });
         const customPercent = presets.getByRole("button", { name: "accounting.dailyIncome.form.adjustmentPresets.customPercent", exact: true });
         await customPercent.click();
@@ -734,9 +739,8 @@ for (const kind of ["DISCOUNT", "SURCHARGE"]) {
         assert.equal(await page.locator("#journal-amount").getAttribute("aria-invalid"), "false");
         assert.match(await page.locator("#journal-invoice-new-balance").textContent(), kind === "DISCOUNT" ? /110\.00/ : /150\.00/);
         const newBalanceBox = await page.locator("#journal-invoice-new-balance").boundingBox();
-        const updatedAmountBox = await page.locator("#journal-amount").boundingBox();
         const updatedBalanceBox = await page.locator("#journal-invoice-balance").boundingBox();
-        assert.ok(newBalanceBox.x >= updatedAmountBox.x + updatedAmountBox.width);
+        assert.ok(newBalanceBox.x >= updatedBalanceBox.x + updatedBalanceBox.width);
         assert.ok(Math.abs((newBalanceBox.y + newBalanceBox.height / 2) - (updatedBalanceBox.y + updatedBalanceBox.height / 2)) < 1);
         await page.locator("#journal-amount").press("Tab");
         assert.equal(await page.evaluate(() => document.activeElement.id), "journal-description");
@@ -819,20 +823,23 @@ for (const width of [1280, 390]) {
   test(`invoice payment previews previous and new balances at ${width}px`, async () => {
     const page = await fixture(width, "wizard", { styled: true });
     try {
-      await page.getByRole("button", { name: "accounting.dailyIncome.wizard.typeSelector.options.PAYMENT", exact: true }).click();
-      await page.locator("#journal-employee").click();
-      await page.getByRole("option", { name: /Maria/ }).click();
-      await page.locator("#journal-invoice").click();
-      await page.getByRole("option", { name: /80430/ }).click();
+      await chooseInvoiceTransactionType(page, "PAYMENT");
+      await page.getByRole("radio").filter({ hasText: "80430" }).click();
       await page.locator("#journal-amount").fill("20");
       assert.match(await page.locator("#journal-invoice-balance").textContent(), /130\.00/);
       assert.match(await page.locator("#journal-invoice-new-balance").textContent(), /110\.00/);
       const beforeBox = await page.locator("#journal-invoice-balance").boundingBox();
       const amountBox = await page.locator("#journal-amount").boundingBox();
       const afterBox = await page.locator("#journal-invoice-new-balance").boundingBox();
-      assert.ok(beforeBox.x + beforeBox.width <= amountBox.x);
-      assert.ok(amountBox.x + amountBox.width <= afterBox.x);
+      assert.ok(beforeBox.y >= amountBox.y + amountBox.height);
+      assert.ok(beforeBox.x + beforeBox.width <= afterBox.x);
       assert.ok(Math.abs((beforeBox.y + beforeBox.height / 2) - (afterBox.y + afterBox.height / 2)) < 1);
+      const fullBalance = page.getByRole("button", { name: "accounting.dailyIncome.wizard.quickFlow.fullBalance", exact: true });
+      assert.equal(await fullBalance.getAttribute("aria-pressed"), "false");
+      await fullBalance.click();
+      assert.equal(await page.locator("#journal-amount").inputValue(), "130");
+      assert.equal(await fullBalance.getAttribute("aria-pressed"), "true");
+      await page.locator("#journal-amount").fill("20");
       await page.locator("#journal-payment").click();
       await page.getByRole("option", { name: "ZELLE", exact: true }).click();
       assert.equal(await page.getByText("accounting.dailyIncome.form.hints.balanceAfterClearance", { exact: true }).isVisible(), true);

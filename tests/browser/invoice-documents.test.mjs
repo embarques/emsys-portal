@@ -226,15 +226,15 @@ test("mobile layout contains overflow and read-only users cannot mutate document
   }
 });
 
-test("Documents shortcut opens an invoice-number tab and is disabled for multiple selection", async () => {
+test("Documents shortcut opens the invoice documents view and is disabled for multiple selection", async () => {
   const page = await fixture();
   try {
     const button = page.getByRole("button", { name: "Documents", exact: true });
     await button.click();
-    const tabs = await page.evaluate(() => window.documentTabs);
-    assert.equal(tabs[0].feature, "invoice-documents");
-    assert.equal(tabs[0].entityId, "invoice");
-    assert.equal(tabs[0].label, "INV-456");
+    assert.equal(
+      await page.evaluate(() => window.openedDocumentsView),
+      true,
+    );
   } finally {
     await page.close();
   }
@@ -254,7 +254,10 @@ test("Documents shortcut opens an invoice-number tab and is disabled for multipl
     await mobile
       .getByRole("button", { name: "Documents", exact: true })
       .click();
-    assert.equal(await mobile.evaluate(() => window.openedMobile), true);
+    assert.equal(
+      await mobile.evaluate(() => window.openedDocumentsView),
+      true,
+    );
   } finally {
     await mobile.close();
   }

@@ -1,0 +1,653 @@
+{
+  "checkedAt": "2026-11-14T17:34:28.500Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "fixtureMarker": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+  "loanId": "5",
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/loans/5",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 5,
+          "employee": {
+            "id": 273,
+            "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+          },
+          "branch": {
+            "id": 1,
+            "name": "NY",
+            "code": "NY"
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "id": 32738
+          },
+          "loanAccount": {
+            "id": 7,
+            "name": "Cuenta Préstamos",
+            "type": "LOAN"
+          },
+          "principalAmount": 1.25,
+          "paidAmount": 1.25,
+          "status": "PAID",
+          "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+          "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+          "openedAt": "2026-11-14T00:00:00Z",
+          "lastActivityAt": "2026-11-14T00:00:00Z",
+          "createdAt": "2026-11-14T17:31:02.054Z",
+          "updatedAt": "2026-11-14T17:31:05.015Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          }
+        },
+        "error": "",
+        "duration": 0.038325708,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/loans/5/transactions",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": 9,
+            "loanId": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "id": 32738
+            },
+            "journalEntryId": "6af89ad631a295cf38084342",
+            "type": "LOAN",
+            "amount": 1,
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "assetAccount": {
+              "id": 1,
+              "name": "Cash on Hand",
+              "type": "ASSET"
+            },
+            "transactionDate": "2026-11-14T00:00:00Z",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "createdAt": "2026-11-14T17:31:02.054Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 10,
+            "loanId": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "branch": {
+                "id": 1
+              },
+              "id": 32738
+            },
+            "journalEntryId": "6af89ad631a295cf38084344",
+            "type": "LOAN",
+            "amount": 0.25,
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "assetAccount": {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            "transactionDate": "2026-11-14T00:00:00Z",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c-INCREASE",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "createdAt": "2026-11-14T17:31:02.771Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 11,
+            "loanId": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "id": 32738
+            },
+            "journalEntryId": "6af89ad831a295cf38084346",
+            "type": "PAYMENT",
+            "amount": 1.25,
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "assetAccount": {
+              "id": 1,
+              "name": "Cash on Hand",
+              "type": "ASSET"
+            },
+            "transactionDate": "2026-11-14T00:00:00Z",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c-REPAY",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "createdAt": "2026-11-14T17:31:04.771Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        ],
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 3,
+        "total": 3,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/loans/5/increases",
+      "body": {
+        "requestId": "4ac2d76c-4bd0-44ff-961c-a8a7184cfdc2",
+        "employee": {
+          "id": 273,
+          "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+        },
+        "sourceAccount": {
+          "id": 1,
+          "name": "CASH ON HAND",
+          "type": "ASSET"
+        },
+        "amount": 0.25,
+        "transactionDate": "2026-11-14",
+        "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c-INCREASE",
+        "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Loan principal increased",
+        "data": {
+          "loan": {
+            "id": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "id": 32738
+            },
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "principalAmount": 1.25,
+            "paidAmount": 1.25,
+            "status": "PAID",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "openedAt": "2026-11-14T00:00:00Z",
+            "lastActivityAt": "2026-11-14T00:00:00Z",
+            "createdAt": "2026-11-14T17:31:02.054Z",
+            "updatedAt": "2026-11-14T17:31:05.015Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "updatedBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          "transaction": {
+            "id": 10,
+            "loanId": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "branch": {
+                "id": 1
+              },
+              "id": 32738
+            },
+            "journalEntryId": "6af89ad631a295cf38084344",
+            "type": "LOAN",
+            "amount": 0.25,
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "assetAccount": {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            "transactionDate": "2026-11-14T00:00:00Z",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c-INCREASE",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "createdAt": "2026-11-14T17:31:02.771Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          "journal": {
+            "pendingChange": false,
+            "version": 1,
+            "transactionStatus": "ACTIVE",
+            "clearanceStatus": "NOT_REQUIRED",
+            "clearedAt": null,
+            "clearedBy": null,
+            "allowedActions": {
+              "edit": false,
+              "void": false,
+              "reverse": false,
+              "correct": false,
+              "note": true,
+              "clear": false
+            },
+            "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+            "sourceAccount": {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "reconciliationStatus": "OUTSTANDING",
+            "reconciledAt": null,
+            "reconciledBy": null,
+            "autoReconciled": false,
+            "id": "6af89ad631a295cf38084344",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "date": "2026-11-14T00:00:00Z",
+            "refNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c-INCREASE",
+            "currency": "USD",
+            "rate": 1,
+            "transactionType": "LOAN",
+            "loan": {
+              "id": 5,
+              "principalAmount": 1.25
+            },
+            "loanTransaction": {
+              "id": 10,
+              "type": "LOAN",
+              "amount": 0.25
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "id": 32738
+            },
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "createdAt": "2026-11-14T17:31:02.791Z",
+            "updatedAt": "2026-11-14T17:31:02.791Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "accounts": [
+              {
+                "id": 7,
+                "name": "Cuenta Préstamos",
+                "type": "LOAN",
+                "debit": 0.25
+              },
+              {
+                "id": 1,
+                "name": "CASH ON HAND",
+                "type": "ASSET",
+                "credit": 0.25
+              }
+            ],
+            "transactionAmount": 0.25,
+            "sourceSystem": "account:7"
+          }
+        },
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/loans/5",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 5,
+          "employee": {
+            "id": 273,
+            "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+          },
+          "branch": {
+            "id": 1,
+            "name": "NY",
+            "code": "NY"
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "id": 32738
+          },
+          "loanAccount": {
+            "id": 7,
+            "name": "Cuenta Préstamos",
+            "type": "LOAN"
+          },
+          "principalAmount": 1.25,
+          "paidAmount": 1.25,
+          "status": "PAID",
+          "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+          "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+          "openedAt": "2026-11-14T00:00:00Z",
+          "lastActivityAt": "2026-11-14T00:00:00Z",
+          "createdAt": "2026-11-14T17:31:02.054Z",
+          "updatedAt": "2026-11-14T17:31:05.015Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          }
+        },
+        "error": "",
+        "duration": 0.034947959,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/loans/5/transactions",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": [
+          {
+            "id": 9,
+            "loanId": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "id": 32738
+            },
+            "journalEntryId": "6af89ad631a295cf38084342",
+            "type": "LOAN",
+            "amount": 1,
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "assetAccount": {
+              "id": 1,
+              "name": "Cash on Hand",
+              "type": "ASSET"
+            },
+            "transactionDate": "2026-11-14T00:00:00Z",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "createdAt": "2026-11-14T17:31:02.054Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 10,
+            "loanId": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "branch": {
+                "id": 1
+              },
+              "id": 32738
+            },
+            "journalEntryId": "6af89ad631a295cf38084344",
+            "type": "LOAN",
+            "amount": 0.25,
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "assetAccount": {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            "transactionDate": "2026-11-14T00:00:00Z",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c-INCREASE",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "createdAt": "2026-11-14T17:31:02.771Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          {
+            "id": 11,
+            "loanId": 5,
+            "employee": {
+              "id": 273,
+              "name": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c"
+            },
+            "branch": {
+              "id": 1,
+              "name": "NY",
+              "code": "NY"
+            },
+            "incomeStatement": {
+              "status": "open",
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "id": 32738
+            },
+            "journalEntryId": "6af89ad831a295cf38084346",
+            "type": "PAYMENT",
+            "amount": 1.25,
+            "loanAccount": {
+              "id": 7,
+              "name": "Cuenta Préstamos",
+              "type": "LOAN"
+            },
+            "assetAccount": {
+              "id": 1,
+              "name": "Cash on Hand",
+              "type": "ASSET"
+            },
+            "transactionDate": "2026-11-14T00:00:00Z",
+            "referenceNumber": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c-REPAY",
+            "description": "CODEX-ACTIVE-NY-f2c34f5b-c6b8-43c0-be60-55d1cb8adb1c",
+            "createdAt": "2026-11-14T17:31:04.771Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        ],
+        "error": "",
+        "duration": 0,
+        "page": 1,
+        "resultsPerPage": 3,
+        "total": 3,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "B12 exactly one committed issue and increase identified by result IDs",
+      "passed": true
+    },
+    {
+      "label": "B12 exact authorized retry after PAID returns original effects and current paid loan",
+      "passed": false
+    },
+    {
+      "label": "B12 own NY loan has issue, increase and full repayment only",
+      "passed": false
+    }
+  ],
+  "reviewCorrections": [
+    {
+      "affectedAssertions": [
+        "B12 NY has one issue and one increase with journal links",
+        "B12 authorized exact retry after PAID returns original effects/current loan"
+      ],
+      "reason": "The source/API uses wire type LOAN for both disbursements. The initial harness incorrectly searched for a transaction type INCREASE. Corrected checks use committed result transaction/journal identities; initial raw observations retained."
+    },
+    {
+      "affectedAssertions": [
+        "Raw paid balance checks"
+      ],
+      "reason": "The reviewed source declares balance with omitempty. A paid zero balance is absent in raw JSON; normalizeLoan derives zero from principalAmount-paidAmount. Raw requests/responses and the initial false results are retained; correctedAssertions is the reviewed disposition."
+    }
+  ],
+  "limitations": [
+    "No after-current-period-closure, other-actor replay or fault injection tested."
+  ],
+  "correctedAssertions": [
+    {
+      "label": "B12 exactly one committed issue and increase identified by result IDs",
+      "passed": true
+    },
+    {
+      "label": "B12 authorized exact retry after PAID returns original effects/current loan",
+      "passed": true
+    },
+    {
+      "label": "B12 own NY loan has issue, increase and full repayment only",
+      "passed": true
+    }
+  ],
+  "reviewedAt": "2026-11-14T17:36:55.439Z"
+}

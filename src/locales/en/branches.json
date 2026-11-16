@@ -57,6 +57,8 @@
     }
   },
   "form": {
+    "defaultLabelStatusUnconfigured": "Not configured",
+    "defaultLabelStatusHelp": "An administrator must configure a valid default label status in Branches → edit branch → Settings → Default label status before generating labels.",
     "validation": {
       "nameRequired": "Branch name is required.",
       "nonNegativeWholeNumber": "Use a non-negative whole number."

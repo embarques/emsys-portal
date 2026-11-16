@@ -1,0 +1,379 @@
+{
+  "checkedAt": "2026-11-14T16:57:05.258335+00:00",
+  "sourceRevision": "4fdef23abcbaa89778d9ea6ca2d8f28b633cd270",
+  "kind": "static-source-inventory-only",
+  "files": [
+    {
+      "path": "internal/loan/increase.go",
+      "exists": true,
+      "sha256": "25512a79bc6542855c82f539e4a7d4ca3867e32fa929c168eaf5b5dfadc136c5",
+      "tests": [],
+      "environmentVariables": [],
+      "selectedSourceLines": [
+        {
+          "line": 31,
+          "text": "key, err := uuid.Parse(request.RequestID)"
+        },
+        {
+          "line": 33,
+          "text": "return nil, ErrIncreaseRequestID"
+        }
+      ]
+    },
+    {
+      "path": "internal/loan/increase_integration_test.go",
+      "exists": true,
+      "sha256": "008c344855e555e3faebc6d23f8c826b66e9967d50b9d1d0b03494bedeec2823",
+      "tests": [
+        "TestLoanIncreaseIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_FINANCIAL_CONTROLS_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/chart_account/service.go",
+      "exists": true,
+      "sha256": "a25a43e33e84711d3eaba38c194e48e26298041c1d1ab1621d8c9d664c638648",
+      "tests": [],
+      "environmentVariables": [],
+      "selectedSourceLines": [
+        {
+          "line": 234,
+          "text": "if parent.TemplateLayer != 3 || parent.CustomizationPolicy != \"PERMITTED\" {"
+        },
+        {
+          "line": 251,
+          "text": "if parent.CodeRange == \"1300-1399\" {"
+        }
+      ]
+    },
+    {
+      "path": "internal/chart_account/repository_test.go",
+      "exists": true,
+      "sha256": "f76ed106b4036a0a773cfe8d32147addc0f6b278b9762dfa44b342abba1769e5",
+      "tests": [
+        "TestChartAccountAllocationReservesSystemIDs"
+      ],
+      "environmentVariables": [],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/journal/financial_controls_integration_test.go",
+      "exists": true,
+      "sha256": "12b7fc2f860d0cc634188dc3213b70501fd4c27463c63916f1424bf46bd29917",
+      "tests": [
+        "TestFinancialControlsIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_FINANCIAL_CONTROLS_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/income_statement/end_of_day_integration_test.go",
+      "exists": true,
+      "sha256": "e8f8eece0183d000148168e1d64f1e7da502f883010bad5e18239d4fce03c044",
+      "tests": [
+        "TestExplicitCloseoutRolloverIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "DATABASE_NAME",
+        "QUALITY_TEST_MONGO_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/delivery/workflow_integration_test.go",
+      "exists": true,
+      "sha256": "76da7f91c3ba12430a94dfdadecdf7a7448c8ae4c210416a640c9007387e8d6c",
+      "tests": [
+        "TestDeliveryWorkflowIntegration",
+        "TestDeliveryAssignedPerformanceIntegration",
+        "TestDeliveryRenamedStatusesIntegration",
+        "TestDeliveryRouteOnlyVisibleWithoutEmployeeLinkIntegration",
+        "TestDeliveryOptionalPhotosIntegration",
+        "TestDeliveryLegacyItemsIntegration",
+        "TestAssignedDeliveryCrewScopeIntegration",
+        "TestAssignedBarcodeCurrentInvoiceMetadata",
+        "TestAssignedBarcodeDailyRouteRateIntegration",
+        "TestAssignedDeliveryCityDefaultAndAlternateSortIntegration",
+        "TestAssignedBarcodesExcludeDeliveryInDifferentContainer",
+        "TestCatalogAssignmentFeedsDeliveryCompletion",
+        "TestEmbeddedAssignmentFeedsDeliveryReview",
+        "TestCompletionAndDailyRouteAssignmentRace",
+        "TestDailyRouteBatchAndHistory",
+        "TestManualRemovalFromExpiredDailyRoute",
+        "TestDailyRouteBusinessMidnightRollback",
+        "TestDeliveryCompletionRechecksActiveAuthorization",
+        "TestLegacyInvoiceOnlyPieceRouteRemoval",
+        "TestInvoiceDeletionVersionDocumentsAndDependents"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_FOREIGN_TENANT_TEST_URI",
+        "EMSYS_WIZARD_MONGO_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/delivery/completion_balance_integration_test.go",
+      "exists": true,
+      "sha256": "69382e80d2111f8d8e49b49bf2620b8892a9076c994b7494e0ae11e75eb54058",
+      "tests": [
+        "TestCompletionBalanceIntegration",
+        "TestCompletionRejectsDeferredJournalWithoutLegacyDirectory",
+        "TestCompletionBalanceQueryPlanIntegration",
+        "TestCompletionRejectsConcurrentInvoiceWriteAndRechecksBalanceOnRetry"
+      ],
+      "environmentVariables": [],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/customer/duplicate_test.go",
+      "exists": true,
+      "sha256": "f68b38c7bd452767a805e4f0c273d2d6fbea13bd7237db898673fdbc3e2e0e8e",
+      "tests": [
+        "TestDetectCustomerDuplicateRequiresNameAndPhone",
+        "TestDetectCustomerDuplicateAllowsAddressOnlyMatch",
+        "TestDetectCustomerDuplicateAllowsNameOrPhoneOnlyMatch",
+        "TestDetectCustomerDuplicateIgnoresAddressDifferences",
+        "TestDuplicateCustomerErrorUnwrapsSentinel"
+      ],
+      "environmentVariables": [],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/customer/address_migration_test.go",
+      "exists": true,
+      "sha256": "54953a324d6003acbb2beccca67040735267f95c349c19701c0ec7d05da1cb07",
+      "tests": [
+        "TestCustomerFromDocumentPromotesLegacyAddress",
+        "TestCustomerFromDocumentPromotesLegacyAddressBSOND",
+        "TestCustomerFromDocumentPromotesWhenAddressesNull",
+        "TestCustomerFromDocumentKeepsExistingAddresses",
+        "TestLegacyAddressFieldPresent"
+      ],
+      "environmentVariables": [],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/customer/delete_integration_test.go",
+      "exists": true,
+      "sha256": "dab5592a4fc37519d008ffa56ec21bece241f778d02cc08821abe64e8ec11cb4",
+      "tests": [
+        "TestVersionedDeleteRecordsHistoryAfterCommit"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_CUSTOMER_DELETE_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/invoice/assigned_create_integration_test.go",
+      "exists": true,
+      "sha256": "01ff6688cd9db6a5bcba658624bfed2dd51e0209509bd193d206aa4796fd946b",
+      "tests": [
+        "TestAssignedInvoiceAndPaymentTransactionsIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_INVOICE_SYNC_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/invoice/handler_integration_test.go",
+      "exists": true,
+      "sha256": "0970284392ac72847f936157324f589e3398dcc792f4032b8d70a108148cbd87",
+      "tests": [
+        "TestCreateInvoiceEndpointIntegration",
+        "TestCreateInvoiceRollsBackWhenInvoiceDetailsFail"
+      ],
+      "environmentVariables": [
+        "DATABASE_NAME",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/invoice/reserved_integration_test.go",
+      "exists": true,
+      "sha256": "9a6e97fb97ce94efbdcb47dd92ae0950e331c967f9c912071a69abc23d3005a3",
+      "tests": [
+        "TestReservedInvoicePoolTransactionsIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_INVOICE_SYNC_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/invoice/reserved_search_test.go",
+      "exists": true,
+      "sha256": "4744ea1f915d18e0ded944c4f8a6de3c594fb722c7d0b07104f9be4ca4efc464",
+      "tests": [
+        "TestReservedNumberSearchPreservesScopeAndEscapesLiteral",
+        "TestReservedSearchFiltersCountAndCursorPageInMongoDB",
+        "TestReservedNumberCursorUsesTheNumberAndIDInSortOrder",
+        "TestReservationReceivedAtBusinessDayAcrossDST"
+      ],
+      "environmentVariables": [],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/invoice/repository.go",
+      "exists": true,
+      "sha256": "c62585ebc8044e78c729709cff48a38842a9ebad4cd28e068cab9b7cd683dcff",
+      "tests": [],
+      "environmentVariables": [],
+      "selectedSourceLines": [
+        {
+          "line": 2434,
+          "text": "if branch == nil || branch.Settings == nil || branch.Settings.DefaultLabelStatus == 0 {"
+        }
+      ]
+    },
+    {
+      "path": "internal/barcode/service.go",
+      "exists": true,
+      "sha256": "ea09e17a6dabbe58a38ae071b1cc0337dcc11b5f62baf58039631b458fa1dccb",
+      "tests": [],
+      "environmentVariables": [],
+      "selectedSourceLines": [
+        {
+          "line": 132,
+          "text": "if branch == nil || branch.Settings == nil || branch.Settings.DefaultLabelStatus == 0 {"
+        }
+      ]
+    },
+    {
+      "path": "internal/inventory/posting_integration_test.go",
+      "exists": true,
+      "sha256": "9ca34e30c9dd4e89611c5e1f1ed950c40392941dc0c49e46859ad25a5d3fc76e",
+      "tests": [
+        "TestInventoryPostingTransactionsAndConcurrentDispatch"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/change_request/workflow_integration_test.go",
+      "exists": true,
+      "sha256": "5b1f8b7f374e461789784b4660e495278ccf321f367d26b06ff30c0e52aa15e2",
+      "tests": [
+        "TestChangeRequestWorkflowIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_FINANCIAL_CONTROLS_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/financial_activity/integration_test.go",
+      "exists": true,
+      "sha256": "bc940aa1ea9937fe6158a7a6346126114a6ab6c0cc81afeea8ead106eaef79d5",
+      "tests": [
+        "TestHistoricalReconciliationIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "DATABASE_NAME",
+        "QUALITY_TEST_MONGO_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/insight/timezone_integration_test.go",
+      "exists": true,
+      "sha256": "e7189e2f1dc00206b5c073c1ee274211af5c367e7a97c4ff8dc2eadcac4ba929",
+      "tests": [
+        "TestInvoiceCreationHistogramsUseNewYorkInstants"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "DATABASE_NAME",
+        "EMSYS_INSIGHT_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/legacy-api/client_test.go",
+      "exists": true,
+      "sha256": "c8febb4841e82533d5c579be9f521b1614a43cf5947c961a1568fcb655d2e698",
+      "tests": [
+        "TestClientLoginSendsLegacyFormAndStoresCookies",
+        "TestClientCheckSessionSendsCSRFToken",
+        "TestClientCreatePickupSendsLegacyPayload",
+        "TestClientListSQLPickupsSortsByPickupDateDesc",
+        "TestClientListInvoicesSortsByNumberDesc",
+        "TestClientListInvoiceJournalsUsesInvoiceNumberFilter",
+        "TestClientListBarcodeStatusUsesInvoiceID",
+        "TestClientFindIncomeStatementByIDSendsLegacyQuery",
+        "TestClientListContainersUsesPaginatedEndpoint",
+        "TestNewClientValidatesRequiredConfig"
+      ],
+      "environmentVariables": [],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/authz/route_policy_integration_test.go",
+      "exists": true,
+      "sha256": "bd9d17d9d3b5684af886efcb505acd1bcc2d8d6b5add7e74656db2c9e0866846",
+      "tests": [
+        "TestRoutePolicyScopeAndQueryPlanIntegration"
+      ],
+      "environmentVariables": [
+        "APP_ENV",
+        "EMSYS_FINANCIAL_CONTROLS_TEST_URI",
+        "RUN_INTEGRATION_TESTS"
+      ],
+      "selectedSourceLines": []
+    },
+    {
+      "path": "internal/complaint/categories.go",
+      "exists": true,
+      "sha256": "2381730f103ac246b7d307e1516169bb504cc5d6fa89f9d1063ca5a2a75a251a",
+      "tests": [],
+      "environmentVariables": [],
+      "selectedSourceLines": [
+        {
+          "line": 24,
+          "text": "func builtInCategories() []Category {"
+        },
+        {
+          "line": 32,
+          "text": "return Category{Key: key, Label: label, Active: true, DefaultSeverity: severity, ResponseSLAHours: response, ResolutionSLAHours: resolution,"
+        },
+        {
+          "line": 161,
+          "text": "cursor, err := col.Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{Key: \"_id\", Value: 1}}).SetLimit(201))"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Source presence is not execution or deployed acceptance. No Go/Mongo backend tests ran.",
+    "No backend files were changed. Missing path observations require locating renamed sources, not defect classification."
+  ]
+}

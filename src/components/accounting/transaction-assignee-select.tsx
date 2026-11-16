@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Route, UserPlus } from "lucide-react";
+import { Route, UserPlus, UserRound, X } from "lucide-react";
 
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   buildDailyRouteSupervisorOptions,
@@ -29,6 +30,8 @@ type Props = {
   inlineOptionsLimit?: number;
   id?: string;
   singleColumn?: boolean;
+  /** Step-by-step entry: employee / daily route are tiles, and the matching picker appears once one is chosen. */
+  guided?: boolean;
   employees: Employee[];
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
@@ -100,6 +103,7 @@ function clearRoute(setValue: TransactionAssigneeSetValue) {
 export function TransactionAssigneeSelect({
   id = "journal-employee",
   singleColumn = false,
+  guided = false,
   inlineOptionsLimit,
   employees,
   dailyRoutes = [],
@@ -135,6 +139,7 @@ export function TransactionAssigneeSelect({
   const source = allowDailyRoute
     ? resolveDailyIncomeAssigneeSource({ assigneeSource, employeeId, routeId })
     : "employee";
+  const sourceChosen = !guided || !allowDailyRoute || Boolean(assigneeSource || employeeId || routeId?.trim());
 
   const branchScopedEmployees = useMemo(
     () => employeesForAssigneeBranch(employees, branchId),
@@ -181,6 +186,17 @@ export function TransactionAssigneeSelect({
       ),
     [branchScopedEmployees, selectedRoute, supervisorId, supervisorName],
   );
+  const supervisorPlaceholder = t(
+    routeId
+      ? "accounting.dailyIncome.form.placeholders.selectSupervisor"
+      : "accounting.dailyIncome.form.placeholders.selectRouteFirst",
+  );
+  const supervisorInline = getInlineSelectOptions({
+    inlineOptionsLimit,
+    options: supervisorOptions,
+    value: supervisorId ? String(supervisorId) : "",
+    placeholder: supervisorPlaceholder,
+  }) !== null;
 
   // Fill the supervisor for prefilled routes; never replace one that was already recorded.
   useEffect(() => {
@@ -267,7 +283,18 @@ export function TransactionAssigneeSelect({
     if (routeId) onAssigneeComplete?.();
   }
 
-  const sourceControl = allowDailyRoute ? (
+  const sourceControl = !allowDailyRoute ? null : guided ? (
+    <ChoiceTiles<DailyIncomeAssigneeSource>
+      id={`${id}-source`}
+      aria-label={t("accounting.dailyIncome.form.fields.assignedTo")}
+      value={sourceChosen ? source : null}
+      onValueChange={handleSourceChange}
+      options={[
+        { value: "employee", label: t("accounting.dailyIncome.form.fields.employee"), description: t("accounting.dailyIncome.form.assigneeSourceHints.employee"), icon: UserRound, iconClassName: "text-blue-600", iconBackgroundClassName: "bg-blue-50 dark:bg-muted" },
+        { value: "route", label: t("accounting.dailyIncome.form.fields.route"), description: t("accounting.dailyIncome.form.assigneeSourceHints.route"), icon: Route, iconClassName: "text-indigo-700", iconBackgroundClassName: "bg-indigo-50 dark:bg-muted" },
+      ]}
+    />
+  ) : (
     <SegmentedControl
       id={`${id}-source`}
       aria-label={t("accounting.dailyIncome.form.fields.assignedTo")}
@@ -275,13 +302,13 @@ export function TransactionAssigneeSelect({
       onValueChange={handleSourceChange}
       options={sourceOptions}
     />
-  ) : null;
+  );
 
   return (
     <div className={singleColumn ? "flex flex-col gap-4" : "grid gap-4 sm:grid-cols-2"}>
       {sourceControl}
 
-      {source === "route" ? (
+      {sourceChosen && source === "route" ? (
         <div className="space-y-2 sm:col-span-2">
           {onAddRoute ? (
             <div className="flex items-center justify-end gap-2">
@@ -308,21 +335,31 @@ export function TransactionAssigneeSelect({
         </div>
       ) : null}
 
-      {source === "route" ? (
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor={`${id}-supervisor`}>
-            {t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
-          </Label>
+      {!sourceChosen ? null : source === "route" ? (
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:col-span-2">
+          <div className="flex min-h-9 items-center justify-between gap-2">
+            <Label htmlFor={`${id}-supervisor`} className="font-semibold text-foreground">
+              {t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
+            </Label>
+            {supervisorInline && supervisorId ? (
+              <button type="button" disabled={!routeId}
+                onClick={() => {
+                  handleSupervisorChange("");
+                  window.requestAnimationFrame(() => document.getElementById(`${id}-supervisor`)?.focus());
+                }}
+                className="flex min-h-9 items-center gap-1 rounded-md px-1 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
+                <X aria-hidden="true" className="size-3" />{t("common.ui.clearSelection")}
+              </button>
+            ) : null}
+          </div>
           <SearchableSelect
             inlineOptionsLimit={inlineOptionsLimit}
+            stretchInlineOptions
+            clearable={false}
             id={`${id}-supervisor`}
             value={supervisorId ? String(supervisorId) : ""}
             onValueChange={handleSupervisorChange}
-            placeholder={t(
-              routeId
-                ? "accounting.dailyIncome.form.placeholders.selectSupervisor"
-                : "accounting.dailyIncome.form.placeholders.selectRouteFirst",
-            )}
+            placeholder={supervisorPlaceholder}
             searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSupervisors")}
             emptyMessage={t("accounting.dailyIncome.form.placeholders.noRouteSupervisors")}
             disabled={!routeId}
@@ -330,7 +367,7 @@ export function TransactionAssigneeSelect({
             options={supervisorOptions}
           />
           {supervisorError ? <p className="text-sm text-destructive">{supervisorError}</p> : null}
-          <p className="text-xs text-muted-foreground">
+          <p className="border-t border-border pt-3 text-xs text-muted-foreground">
             {t("accounting.dailyIncome.form.hints.routeSupervisorAccountability")}
           </p>
         </div>

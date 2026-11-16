@@ -1,5 +1,7 @@
 "use client";
 
+import { Info, Shield } from "lucide-react";
+
 import { RolePermissionsEditor } from "@/components/roles/role-permissions-editor";
 import {
   RecordViewSheet,
@@ -48,11 +50,15 @@ export function RoleViewSheet({
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("roles.view.sections.role")}>
+          <RecordViewSheetSection title={t("roles.view.sections.role")} icon={Shield}>
             <RecordViewSheetDetailRow label={t("roles.view.roleId")} value={truncateRoleId(role.roleId)} />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection padding="relaxed">
+          <RecordViewSheetSection
+            title={t("roles.permissions.title")}
+            icon={Shield}
+            padding="relaxed"
+          >
             <RolePermissionsEditor
               permissions={role.permissions}
               catalog={permissionCatalog}
@@ -62,7 +68,7 @@ export function RoleViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("roles.view.sections.audit")}>
+          <RecordViewSheetSection title={t("roles.view.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow
               label={t("roles.columns.createdAt")}
               value={formatAuditDateTime(role.createdAt)}

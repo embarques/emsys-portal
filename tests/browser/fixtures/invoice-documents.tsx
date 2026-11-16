@@ -17,8 +17,9 @@ createRoot(document.getElementById("root")!).render(
         selectedCount={
           (window as unknown as { multipleDocs?: boolean }).multipleDocs ? 2 : 1
         }
-        onOpenMobile={() => {
-          (window as unknown as { openedMobile?: boolean }).openedMobile = true;
+        onOpen={() => {
+          (window as unknown as { openedDocumentsView?: boolean }).openedDocumentsView =
+            true;
         }}
       />
       <InvoiceDocumentsSection

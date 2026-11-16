@@ -39,7 +39,9 @@
     "searching": "Buscando…",
     "clearSelection": "Borrar selección",
     "openOptions": "Abrir opciones",
-    "closeOptions": "Cerrar opciones"
+    "closeOptions": "Cerrar opciones",
+    "yes": "Sí",
+    "no": "No"
   },
   "validation": {
     "required": "Obligatorio."
@@ -373,7 +375,8 @@
     "icon": "Icono",
     "enabled": "Habilitado",
     "sortOrder": "Orden",
-    "filters": "Filtros"
+    "filters": "Filtros",
+    "reservedAt": "Reservado el"
   },
   "statuses": {
     "active": "Activo",

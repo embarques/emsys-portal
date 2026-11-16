@@ -9,16 +9,19 @@ import {
   type User,
 } from "firebase/auth";
 import { useQueryClient } from "@tanstack/react-query";
+import { CanceledError } from "axios";
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
-import { clearIdTokenProvider, registerIdTokenProvider } from "@/lib/api/auth-transport";
+import { clearIdTokenProvider, getAuthContextVersion, isAuthContextCurrent, registerIdTokenProvider } from "@/lib/api/auth-transport";
+import { subscribeAuthQueryBoundary } from "@/lib/auth/utils/auth-query-boundary";
 import { getFirebaseAuth } from "@/lib/auth/firebase/firebase-config";
 import {
   mergeFirebaseUserProfile,
@@ -41,8 +44,8 @@ import {
   saveDevSession,
   type DevSession,
 } from "@/lib/auth/utils/dev-session";
-import { queryKeys } from "@/lib/query/query-keys";
-import { useAppDispatch } from "@/lib/store/hooks";
+import { store } from "@/lib/store/store";
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { clearAuthTransport, setAuthTransport } from "@/lib/store/auth/auth-slice";
 
 export type DevSessionInput = {
@@ -122,7 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const isAuthBypass = isAuthBypassEnabled();
   const dispatch = useAppDispatch();
+  const contextVersion = useAppSelector((state) => state.auth.contextVersion);
   const queryClient = useQueryClient();
+  const devSignInAttempt = useRef(0);
+
+  useEffect(() => subscribeAuthQueryBoundary(queryClient), [queryClient]);
 
   const companyId = profile?.companyId ?? null;
 
@@ -150,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthTransport({
           idToken: session.idToken,
           companyId: session.companyId,
+          actorId: `dev:${session.email?.trim().toLowerCase() ?? ""}`,
         }),
       );
     },
@@ -157,13 +165,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const clearLocalSession = useCallback(() => {
+    setUser(null);
+    setLoading(false);
+    setProfileLoading(false);
     setIdToken(null);
     setProfile(null);
     setDevSessionExpiresAt(null);
     dispatch(clearAuthTransport());
-    queryClient.removeQueries({ queryKey: queryKeys.permissions.all });
-    queryClient.removeQueries({ queryKey: queryKeys.sessionVersion.all });
-  }, [dispatch, queryClient]);
+  }, [dispatch]);
 
   useEffect(() => {
     if (!isAuthBypass) return;
@@ -171,13 +180,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     const init = async () => {
+      let version = getAuthContextVersion();
       setLoading(true);
       setProfileLoading(true);
       setError(null);
 
       try {
         const session = await resolveInitialDevSession();
-        if (cancelled) return;
+        if (cancelled || !isAuthContextCurrent(version)) return;
 
         if (session) {
           applyDevSession(session);
@@ -185,11 +195,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           clearDevSession();
           clearLocalSession();
         }
+        version = getAuthContextVersion();
       } catch (initError) {
+        if (cancelled || !isAuthContextCurrent(version)) return;
         console.error("Dev session bootstrap failed:", initError);
         if (!cancelled) {
           clearDevSession();
           clearLocalSession();
+          version = getAuthContextVersion();
           setError(
             initError instanceof Error
               ? initError
@@ -197,7 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && isAuthContextCurrent(version)) {
           setLoading(false);
           setProfileLoading(false);
         }
@@ -229,10 +242,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setProfileLoading(true);
 
+    let generation = 0;
+    let disposed = false;
     const unsubscribe = onIdTokenChanged(
       auth,
       async (currentUser) => {
+        if (disposed || currentUser?.uid !== auth.currentUser?.uid) return;
+        const currentGeneration = ++generation;
+        const current = () => !disposed && currentGeneration === generation;
+        let version = getAuthContextVersion();
         try {
+          if (store.getState().auth.actorId !== (currentUser?.uid ?? null)) clearLocalSession();
+          version = getAuthContextVersion();
           setUser(currentUser);
           setError(null);
           setLoading(false);
@@ -241,6 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIdToken(null);
             setProfile(null);
             clearLocalSession();
+            version = getAuthContextVersion();
             setProfileLoading(false);
             return;
           }
@@ -250,15 +272,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             currentUser.getIdToken(),
             resolveFirebaseUserProfile(currentUser),
           ]);
+          if (!current() || !isAuthContextCurrent(version) || auth.currentUser?.uid !== currentUser.uid) return;
           setIdToken(token);
           setProfile(resolvedProfile);
           dispatch(
             setAuthTransport({
               idToken: token,
               companyId: resolvedProfile.companyId,
+              actorId: currentUser.uid,
             }),
           );
+          version = getAuthContextVersion();
         } catch (nextError) {
+          if (!current() || !isAuthContextCurrent(version)) return;
           console.error("Error handling Firebase auth state:", nextError);
           setError(
             nextError instanceof Error
@@ -268,11 +294,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIdToken(null);
           setProfile(null);
           clearLocalSession();
+          version = getAuthContextVersion();
         } finally {
-          setProfileLoading(false);
+          if (current() && isAuthContextCurrent(version)) setProfileLoading(false);
         }
       },
       (nextError) => {
+        if (disposed) return;
+        generation += 1;
         setError(nextError);
         setUser(null);
         setIdToken(null);
@@ -283,14 +312,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     );
 
-    return () => unsubscribe();
+    return () => { disposed = true; generation += 1; unsubscribe(); };
   }, [clearLocalSession, dispatch, isAuthBypass]);
 
   useEffect(() => {
+    const actorId = isAuthBypass ? `dev:${profile?.email?.trim().toLowerCase() ?? ""}` : user?.uid ?? null;
+    const matchesScope = () => {
+      const current = store.getState().auth;
+      return current.actorId === actorId && current.companyId === companyId;
+    };
     if (isAuthBypass) {
       if (!idToken || !devSessionExpiresAt) return;
 
       const refreshIfNeeded = async () => {
+        if (!matchesScope()) return;
+        const version = getAuthContextVersion();
         const session = readDevSession();
         if (session && isDevSessionValid(session)) return;
 
@@ -304,8 +340,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             companyId,
             name: profile?.name,
           });
+          if (!isAuthContextCurrent(version)) return;
           applyDevSession(next);
         } catch (refreshError) {
+          if (!isAuthContextCurrent(version)) return;
           console.warn("Dev token refresh failed:", refreshError);
         }
       };
@@ -326,24 +364,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     const scheduleRefresh = async () => {
+      const version = getAuthContextVersion();
+      if (cancelled || !matchesScope()) return;
       try {
         const tokenResult = await user.getIdTokenResult();
-        if (cancelled) return;
+        if (cancelled || !isAuthContextCurrent(version)) return;
 
         const expiresAt = new Date(tokenResult.expirationTime).getTime();
         const refreshInMs = Math.max(expiresAt - Date.now() - 5 * 60 * 1000, 60 * 1000);
 
         refreshTimer = setTimeout(async () => {
+          if (cancelled || !matchesScope()) return;
+          const version = getAuthContextVersion();
           try {
             const refreshedToken = await user.getIdToken(true);
+            if (cancelled || !isAuthContextCurrent(version)) return;
             setIdToken(refreshedToken);
             dispatch(
               setAuthTransport({
                 idToken: refreshedToken,
                 companyId,
+                actorId: user.uid,
               }),
             );
           } catch (refreshError) {
+            if (cancelled || !isAuthContextCurrent(version)) return;
             console.error("Error refreshing Firebase ID token:", refreshError);
             setError(
               refreshError instanceof Error
@@ -357,20 +402,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }, refreshInMs);
       } catch (refreshError) {
+        if (cancelled || !isAuthContextCurrent(version)) return;
         console.error("Error scheduling Firebase ID token refresh:", refreshError);
       }
     };
 
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") {
+        if (cancelled || !matchesScope()) return;
+        const version = getAuthContextVersion();
         void user.getIdToken().then((nextToken) => {
+          if (cancelled || !isAuthContextCurrent(version)) return;
           setIdToken(nextToken);
           dispatch(
             setAuthTransport({
               idToken: nextToken,
               companyId,
+              actorId: user.uid,
             }),
           );
+        }).catch((refreshError) => {
+          if (cancelled || !isAuthContextCurrent(version)) return;
+          setError(refreshError instanceof Error ? refreshError : new Error("Token refresh failed."));
         });
       }
     };
@@ -393,6 +446,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     idToken,
     isAuthBypass,
     profile?.name,
+    profile?.email,
     user,
   ]);
 
@@ -402,8 +456,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Dev session sign-in is only available in bypass mode.");
       }
 
+      const attempt = ++devSignInAttempt.current;
+      const version = getAuthContextVersion();
       const session = await establishDevSession(input);
+      if (attempt !== devSignInAttempt.current || !isAuthContextCurrent(version)) throw new CanceledError();
       applyDevSession(session);
+      setLoading(false);
+      setProfileLoading(false);
     },
     [applyDevSession, isAuthBypass],
   );
@@ -433,6 +492,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    devSignInAttempt.current += 1;
     if (isAuthBypass) {
       clearDevSession();
       clearLocalSession();
@@ -440,16 +500,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const auth = getFirebaseAuth();
-    if (!auth) return;
-
     clearLocalSession();
+    if (!auth) return;
     await firebaseSignOut(auth);
   }, [clearLocalSession, isAuthBypass]);
 
   const getIdToken = useCallback(
     async (forceRefresh = false) => {
+      const version = getAuthContextVersion();
+      const transport = store.getState().auth;
+      if (!transport.idToken || transport.companyId !== companyId) return null;
       if (isAuthBypass) {
-        if (!forceRefresh) return idToken;
+        if (transport.actorId !== `dev:${profile?.email?.trim().toLowerCase() ?? ""}`) return null;
+        if (!forceRefresh) return transport.idToken;
 
         const env = readDevEnvDefaults();
         const cached = readDevSession();
@@ -462,19 +525,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           companyId,
           name: profile?.name,
         });
+        if (!isAuthContextCurrent(version)) return null;
         applyDevSession(session);
         return session.idToken;
       }
 
       const currentUser = getFirebaseAuth()?.currentUser ?? user;
-      if (!currentUser) return null;
+      if (!currentUser || currentUser.uid !== transport.actorId) return null;
 
       const token = await currentUser.getIdToken(forceRefresh);
+      if (!isAuthContextCurrent(version)) return null;
       setIdToken(token);
-      dispatch(setAuthTransport({ idToken: token, companyId }));
+      dispatch(setAuthTransport({ idToken: token, companyId, actorId: currentUser.uid }));
       return token;
     },
-    [applyDevSession, companyId, dispatch, idToken, isAuthBypass, profile?.name, user],
+    [applyDevSession, companyId, dispatch, idToken, isAuthBypass, profile?.name, profile?.email, user],
   );
 
   const refreshToken = useCallback(() => getIdToken(true), [getIdToken]);
@@ -570,7 +635,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>
+    {/* Reset observers/local views at identity boundaries so keepPreviousData cannot retain prior tenant rows. */}
+    <React.Fragment key={contextVersion}>{children}</React.Fragment>
+  </AuthContext.Provider>;
 }
 
 export function useAuth() {

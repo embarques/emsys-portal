@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { ScanBarcode } from "lucide-react";
 
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
@@ -26,6 +27,7 @@ export function InvoiceBarcodeStatusSection({ invoice }: InvoiceBarcodeStatusSec
   return (
     <RecordViewSheetSection
       title={t("invoices.view.barcodeStatus.title", { count: rows.length })}
+      icon={ScanBarcode}
     >
       {rows.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.barcodeStatus.empty")}</p>

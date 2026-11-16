@@ -33,6 +33,7 @@
     "inventorySuppliers": "Suppliers",
     "items": "Items",
     "containers": "Containers",
+    "complaints": "Complaints",
     "routeManager": "Route crews",
     "routeGroups": "Route crews",
     "routeCrews": "Route crews",
@@ -72,6 +73,7 @@
   },
   "badges": {
     "pendingAppointments": "{{count}} pending appointments",
-    "todayTransactions": "{{count}} transactions today"
+    "todayTransactions": "{{count}} transactions today",
+    "unresolvedComplaints": "{{count}} unresolved complaints"
   }
 }

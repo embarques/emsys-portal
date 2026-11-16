@@ -1,7 +1,14 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["pickup.Pickup"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["pickup.Pickup"]. */
 export const ORDER_API_TABLE_FIELDS = [
+  // Route-stop order and lifecycle/attribution metadata stay in their dedicated workflows.
+  // orderNumber is distinct from the legacy routeNumber compatibility field below.
+  { field: "dailyRoute", column: false },
+  { field: "orderNumber", column: false },
+  { field: "voidReason", column: false },
+  { field: "voidedAt", column: false },
+  { field: "voidedBy", column: false },
   { field: "branch", columnId: "branch.code" },
   { field: "comments" },
   { field: "completed" },

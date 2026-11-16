@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/client";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import {
   buildAdvancedSearchBody,
@@ -311,24 +312,36 @@ export async function createLoan(values: LoanCreateValues): Promise<Loan | null>
   return normalizeLoan(firstDefined(data.loan, unwrapArray(payload)[0], data));
 }
 
-/** Proposed contract (docs/backend-api-gaps.md); the entry stays hidden until the API ships it. */
-export async function increaseLoan(values: LoanIncreaseValues): Promise<Loan | null> {
+/** Build the exact payload used both for submission and retry identity. */
+export function buildLoanIncreasePayload(values: LoanIncreaseValues) {
+  return {
+    employee: values.employeeId ? { id: values.employeeId, name: values.employeeName ?? "" } : undefined,
+    sourceAccount: values.sourceAccountId
+      ? { id: values.sourceAccountId, name: values.sourceAccountName ?? "", type: values.sourceAccountType }
+      : undefined,
+    amount: values.amount,
+    transactionDate: values.transactionDate,
+    referenceNumber: values.referenceNumber,
+    description: values.description,
+  };
+}
+
+/** Caller-owned UUID must survive uncertain responses; activation still awaits B12 acceptance. */
+export async function increaseLoan(requestId: string, values: LoanIncreaseValues): Promise<Loan> {
   const payload = await apiClient.post<ApiEnvelope>(
     `${API_ENDPOINTS.ACCOUNTING_LOAN}/${encodeURIComponent(values.loanId)}/increases`,
     {
-      employee: values.employeeId ? { id: values.employeeId, name: values.employeeName ?? "" } : undefined,
-      sourceAccount: values.sourceAccountId
-        ? { id: values.sourceAccountId, name: values.sourceAccountName ?? "", type: values.sourceAccountType }
-        : undefined,
-      amount: values.amount,
-      transactionDate: values.transactionDate,
-      referenceNumber: values.referenceNumber,
-      description: values.description,
+      requestId,
+      ...buildLoanIncreasePayload(values),
     },
   );
   assertMutation(payload, "Unable to add to the loan.");
   const data = objectValue(unwrap(payload));
-  return normalizeLoan(firstDefined(data.loan, data));
+  const loan = normalizeLoan(firstDefined(data.loan, data));
+  if (!loan || loan.id !== values.loanId) {
+    throw new Error(translateCurrent("accounting.loans.errors.increaseUnconfirmed"));
+  }
+  return loan;
 }
 
 export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan | null> {

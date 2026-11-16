@@ -4,7 +4,7 @@ Current backend defects are listed in [backend-api-gaps.md](backend-api-gaps.md)
 Latest read-only evidence: [November 12 recheck](backend-gap-test-sweep-2026-11-12.md).
 Later mutation evidence: [Section 3 ownership](section3-ownership-2026-11-12.md).
 Current portal/runtime follow-up: [portal verification](section3-portal-verification-2026-11-12.md).
-The wire contract is [api-docs.json](../api-docs.json); business meaning belongs
+The wire contract is [API reference](../.reference/emsys-api/docs/swagger.json); business meaning belongs
 in [APP_CONTEXT.md](../APP_CONTEXT.md).
 
 Latest live results: [November 13 verification](backend-gap-follow-up-2026-11-13.md).
@@ -15,6 +15,22 @@ remain. Tested B10 funding references reject; classification trust is separately
 B15. A real persisted EXPENSE positive control confirms the latter defect.
 The journal createdAt-desc list now passes a bounded ordering check. Swagger
 publication and historical PAYMENT migration remain incomplete.
+
+## Confirmed policy — November 14, 2026
+
+Reconciliation confirms internal receipt and does not clear a payment or apply a
+deferred bank invoice receipt. Clearance records actual payment posting and
+atomically reconciles as well, applying eligible receipts exactly once. Preserve
+earlier reconciliation actor/time when subsequently clearing. An uncleared bank
+receipt may be internally reconciled; earlier API/portal rejection controls reflect
+a superseded rule and must be updated under V02.
+
+Closeouts limit new transaction entry to a day and provide operational summaries.
+Existing transactions can reconcile/clear after that day closes without moving
+periods or reopening it. Registered amounts stay with the original day; status
+breakdowns may update with clear labels and audit history. Do not require a frozen
+accounting-period snapshot or duplicate income merely for clearance. This is a
+confirmed target, not a claim that implementation/deployment already matches.
 
 ## Journal lifecycle and migration
 

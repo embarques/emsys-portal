@@ -7,4 +7,4 @@
   intended coverage, and verify affected appointment filtering before retiring
   the old records. Do not copy or delete legacy data automatically.
 
-Current endpoint and payload definitions are in [api-docs.json](../api-docs.json).
+Current endpoint and payload definitions are in [API reference](../.reference/emsys-api/docs/swagger.json).

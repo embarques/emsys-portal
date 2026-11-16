@@ -273,7 +273,9 @@
     "startTime": "Shift start",
     "endTime": "Shift end",
     "systemRole": "System role",
-    "accountBalance": "Account balance"
+    "accountBalance": "Account balance",
+    "eventType": "Event type",
+    "barcodeRouteChange.previous.id": "Previous route ID"
   },
   "placeholders": {
     "dateFormat": "YYYY-MM-DD",
@@ -323,7 +325,9 @@
     "enterReference": "Enter reference…",
     "enterExternalReference": "Enter external reference…",
     "enterInternalReference": "Enter internal reference…",
-    "enterCommentText": "Enter comment text…"
+    "enterCommentText": "Enter comment text…",
+    "eventTypeExample": "e.g. BARCODE_DAILY_ROUTE_CHANGED",
+    "enterRouteId": "Enter route ID…"
   },
   "options": {
     "active": {

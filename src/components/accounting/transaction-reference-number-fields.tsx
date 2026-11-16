@@ -6,7 +6,7 @@ import type { UseFormRegisterReturn } from "react-hook-form";
 import { FieldMessage } from "@/components/forms/field-message";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { SwitchField } from "@/components/ui/switch-field";
+import { ChoiceField } from "@/components/ui/choice-field";
 import { submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
 import {
   resolveDailyIncomeRefNumberMode,
@@ -64,13 +64,17 @@ export function TransactionReferenceNumberFields({
 
   return (
     <div className={cn("grid gap-4 sm:col-span-2", resolvedMode === "custom" && "sm:grid-cols-2")}>
-      <SwitchField
+      <ChoiceField<DailyIncomeRefNumberMode>
         id={`${id}-mode`}
-        label={<>{t("accounting.dailyIncome.form.fields.referenceNumber")}: {t(resolvedMode === "system" ? "accounting.dailyIncome.form.fields.referenceNumberModeSystem" : "accounting.dailyIncome.form.fields.referenceNumberModeCustom")}</>}
+        label={t("accounting.dailyIncome.form.fields.referenceNumber")}
         description={resolvedMode === "system" ? systemHint ?? t("accounting.dailyIncome.form.fields.referenceNumberSystemHint") : t("accounting.dailyIncome.form.fields.referenceNumberCustomHint")}
-        checked={resolvedMode === "system"}
+        value={resolvedMode}
+        options={[
+          { value: "system", label: t("accounting.dailyIncome.form.fields.referenceNumberModeSystem") },
+          { value: "custom", label: t("accounting.dailyIncome.form.fields.referenceNumberModeCustom") },
+        ]}
         disabled={disabled}
-        onCheckedChange={(checked) => changeMode(checked ? "system" : "custom")}
+        onValueChange={changeMode}
       />
 
       {resolvedMode === "custom" ? (

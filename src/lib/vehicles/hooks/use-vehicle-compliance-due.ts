@@ -16,7 +16,7 @@ const NO_DUE: VehicleComplianceDue[] = [];
 
 /**
  * Severe inspection/registration warnings for users who can open Vehicles:
- * active vehicles whose date is 7 days or fewer away (including overdue).
+ * active vehicles whose date is 10 days or fewer away (including overdue).
  * The API cannot filter by these dates yet, so this reads the shared fleet
  * snapshot; `isPartial` is true when the fleet exceeds that snapshot.
  */

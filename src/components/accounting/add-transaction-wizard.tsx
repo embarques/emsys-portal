@@ -4,8 +4,8 @@ import { ArrowLeft, ArrowRight, Loader2, Save, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
-import { isInvoiceActionType, type TransactionEntryCategory } from "@/lib/accounting/daily-income/transaction-type-config";
-import { TransactionSectionNavigation } from "@/components/accounting/transaction-section-navigation";
+import { type TransactionEntryCategory } from "@/lib/accounting/daily-income/transaction-type-config";
+import type { GuidedTypeStep } from "@/components/accounting/guided-entry-chrome";
 import { TransactionTypeSelector } from "@/components/accounting/transaction-type-selector";
 import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
 import { getTransactionFormSteps, getTransactionStepLabelKey, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
@@ -192,12 +192,14 @@ export function AddTransactionWizard(props: Props) {
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
   const [skipAutofocusAfterSave, setSkipAutofocusAfterSave] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const [formType, setFormType] = useState<JournalTransactionType | null>(null);
-  // The existing-invoice entry (PAYMENT) can switch to a discount or surcharge inside the form.
-  const activeType = selectedType === "PAYMENT" && isInvoiceActionType(formType) ? formType : selectedType;
   const footerError = stepError || props.error;
-  const steps = getTransactionFormSteps(activeType);
+  const steps = getTransactionFormSteps(selectedType);
   const stepIndex = steps.indexOf(activeStep);
+  // Choosing the type is step 1 of the add workflow; the form's own steps follow it.
+  const stepperLabels = [
+    !showTypePicker && selectedType ? t(`accounting.dailyIncome.wizard.typeSelector.options.${selectedType}`) : t("accounting.dailyIncome.wizard.steps.selectType"),
+    ...steps.map((step) => t(getTransactionStepLabelKey(step, selectedType))),
+  ];
   const isReview = isEdit || activeStep === "review";
   const { onEntryActiveChange, onSelectedTypeChange, open } = props;
   const editInitialValues = isEdit ? props.initialValues : null;
@@ -223,8 +225,8 @@ export function AddTransactionWizard(props: Props) {
     onEntryActiveChange?.(open && !showTypePicker);
   }, [onEntryActiveChange, open, showTypePicker]);
   useEffect(() => {
-    onSelectedTypeChange?.(open && !showTypePicker && !specialType ? activeType : null);
-  }, [activeType, onSelectedTypeChange, open, showTypePicker, specialType]);
+    onSelectedTypeChange?.(open && !showTypePicker && !specialType ? selectedType : null);
+  }, [selectedType, onSelectedTypeChange, open, showTypePicker, specialType]);
   const title = isEdit
     ? t("accounting.dailyIncome.wizard.editTitle")
     : t("accounting.dailyIncome.wizard.addTitle");
@@ -244,7 +246,6 @@ export function AddTransactionWizard(props: Props) {
     setStepError(null);
     setSpecialType(null);
     setSelectedType(null);
-    setFormType(null);
     setDetailValues(emptyTransaction("INITIAL-PAYMENT", props.paymentMethods));
     setFormSessionKey(0);
     setFocusSecondFieldSignal(0);
@@ -265,11 +266,10 @@ export function AddTransactionWizard(props: Props) {
       const saved = await confirmation.submit(values, props.onSubmit);
       if (!saved) return;
       if (!isEdit && selectedType) {
-        const continueType = selectedType === "PAYMENT" ? values.transactionType : selectedType;
-        setDetailValues(continueTransactionValues(continueType, values, props.paymentMethods));
-        setActiveStep(continueType === "INVENTORY" ? "assignment" : "amounts");
+        setDetailValues(continueTransactionValues(selectedType, values, props.paymentMethods));
+        setActiveStep(selectedType === "INVENTORY" ? "assignment" : "amounts");
         setFormSessionKey((key) => key + 1);
-        const skipAutofocus = NO_AUTOFOCUS_AFTER_SAVE_TYPES.has(continueType);
+        const skipAutofocus = NO_AUTOFOCUS_AFTER_SAVE_TYPES.has(selectedType);
         setSkipAutofocusAfterSave(skipAutofocus);
         if (!skipAutofocus) setFocusSecondFieldSignal((signal) => signal + 1);
       }
@@ -315,33 +315,25 @@ export function AddTransactionWizard(props: Props) {
     setShowTypePicker(true);
   }
 
+  // Loans and inventory payments run their own steps; they continue this wizard's type step, stepper and footer.
+  const specialTypeStep: GuidedTypeStep | null = specialType ? {
+    label: t(`accounting.dailyIncome.wizard.typeSelector.options.${specialType}`),
+    onBack: chooseType,
+    onCancel: () => { loanEntry.close(); props.onCancel(); },
+    appearance,
+  } : null;
+
   const entryContent = (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {specialType ? (
-        <TransactionSectionNavigation
-          title={t(`accounting.dailyIncome.wizard.typeSelector.options.${specialType}`)}
-          onBack={chooseType}
-          backDisabled={isSubmitting}
-        />
-      ) : null}
-      {specialType === "INVENTORY-PAYMENT" && inventoryPaymentEnabled ? (
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <PendingInventoryDispatchesPanel presentation="inline" onBusyChange={setInventoryBusy} />
+      {specialType === "INVENTORY-PAYMENT" && inventoryPaymentEnabled && specialTypeStep ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <PendingInventoryDispatchesPanel presentation="inline" onBusyChange={setInventoryBusy} typeStep={specialTypeStep} />
         </div>
-      ) : specialType === "LOAN-ISSUE" || specialType === "LOAN-INCREASE" || specialType === "LOAN-PAYMENT" ? (
-        <LoanEntryForm entry={loanEntry} employees={props.employees} accounts={props.accounts} summaryContainer={props.summaryContainer} onComplete={() => { setSpecialType(null); setShowTypePicker(true); }} />
+      ) : (specialType === "LOAN-ISSUE" || specialType === "LOAN-INCREASE" || specialType === "LOAN-PAYMENT") && specialTypeStep ? (
+        <LoanEntryForm entry={loanEntry} employees={props.employees} accounts={props.accounts} summaryContainer={props.summaryContainer} typeStep={specialTypeStep} onComplete={() => { setSpecialType(null); setShowTypePicker(true); }} />
       ) : null}
       {selectedType && !specialType ? (
         <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", !showTypePicker && !specialType ? "flex" : "hidden")}>
-          {!isEdit ? (
-            <div className="shrink-0 space-y-3 border-b bg-card px-5 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium text-muted-foreground">{t(`accounting.dailyIncome.wizard.typeSelector.options.${activeType}`)}</p>
-                <Button type="button" variant="ghost" size="sm" disabled={isSubmitting} onClick={chooseType}>{t("accounting.dailyIncome.wizard.changeType")}</Button>
-              </div>
-              <TransactionWizardStepper step={stepIndex + 1} labels={steps.map((step) => t(getTransactionStepLabelKey(step, activeType)))} disabled={isSubmitting} onSelectStep={(step) => setActiveStep(steps[step - 1])} appearance={appearance} />
-            </div>
-          ) : null}
           <fieldset disabled={isSubmitting} className="contents">
             <DailyIncomeTransactionForm
               key={`${selectedType}-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}
@@ -373,8 +365,6 @@ export function AddTransactionWizard(props: Props) {
               originalSurcharge={originalSurcharge}
               originalPayment={originalPayment}
               showInvoiceDetails={selectedType === "PAYMENT"}
-              showInvoiceActions={!isEdit && selectedType === "PAYMENT"}
-              onTransactionTypeChange={setFormType}
               onValuesChange={rememberFormValues}
               onStepErrorChange={setStepError}
               onSubmit={handleFormSubmit}
@@ -412,9 +402,18 @@ export function AddTransactionWizard(props: Props) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {isEdit ? entryContent : (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {!specialType ? (
+              <div className="shrink-0 border-b bg-card px-5 py-4">
+                {showTypePicker || !selectedType ? (
+                  <TransactionWizardStepper step={1} labels={stepperLabels} disabled onSelectStep={() => undefined} appearance={appearance} />
+                ) : (
+                  <TransactionWizardStepper step={stepIndex + 2} labels={stepperLabels} disabled={isSubmitting} onSelectStep={(step) => step === 1 ? chooseType() : setActiveStep(steps[step - 2])} appearance={appearance} />
+                )}
+              </div>
+            ) : null}
             <div className={cn(
               "flex min-h-0 flex-1 flex-col",
-              !showTypePicker ? "overflow-hidden" : isPhone ? "overflow-y-auto bg-background px-4 py-5" : "overflow-y-auto bg-muted/35 p-4 sm:p-6",
+              !showTypePicker ? "overflow-hidden" : isPhone ? "overflow-y-auto bg-background px-4 py-5" : "overflow-y-auto bg-muted/35 p-4 sm:p-6 lg:p-8",
             )}>
               <TransactionTypeSelector value={specialType ?? selectedType} onChange={handleTypeChange} appearance={appearance}
                 onGroupChange={chooseType} isBusy={isSubmitting}
@@ -429,8 +428,8 @@ export function AddTransactionWizard(props: Props) {
         <div className={cn("shrink-0 space-y-3 border-t border-border bg-card px-5 py-3", isPhone && "pb-[calc(env(safe-area-inset-bottom)+1rem)]")}>
           {footerError ? <FormFooterNoticeMessage tone="error" message={footerError} /> : null}
           {!showTypePicker ? <div className="flex flex-wrap items-center justify-end gap-2">
-            {!isEdit && !showTypePicker && stepIndex > 0 ? (
-              <Button type="button" variant="outline" className="mr-auto" disabled={isSubmitting} onClick={() => setActiveStep(steps[stepIndex - 1])}>
+            {!isEdit && !showTypePicker ? (
+              <Button type="button" variant="outline" className="mr-auto" disabled={isSubmitting} onClick={() => stepIndex > 0 ? setActiveStep(steps[stepIndex - 1]) : chooseType()}>
                 <ArrowLeft className="size-4" />{t("common.actions.previous")}
               </Button>
             ) : null}
@@ -440,7 +439,7 @@ export function AddTransactionWizard(props: Props) {
             {!showTypePicker && selectedType ? (
               <Button type="submit" form={formId} disabled={isSubmitting} className="h-auto min-h-10 basis-full whitespace-normal py-2 sm:basis-auto">
                 {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : isReview ? <Save className="size-4" /> : <ArrowRight className="size-4" />}
-                {t(isSubmitting ? "common.actions.saving" : isReview ? "accounting.dailyIncome.wizard.saveTransaction" : activeStep === "parties" ? "accounting.dailyIncome.wizard.continueToReview" : "accounting.dailyIncome.wizard.continueToStep", { step: t(getTransactionStepLabelKey(steps[Math.min(stepIndex + 1, steps.length - 1)], activeType)) })}
+                {t(isSubmitting ? "common.actions.saving" : isReview ? "accounting.dailyIncome.wizard.saveTransaction" : activeStep === "parties" ? "accounting.dailyIncome.wizard.continueToReview" : "accounting.dailyIncome.wizard.continueToStep", { step: t(getTransactionStepLabelKey(steps[Math.min(stepIndex + 1, steps.length - 1)], selectedType)) })}
               </Button>
             ) : null}
           </div> : null}

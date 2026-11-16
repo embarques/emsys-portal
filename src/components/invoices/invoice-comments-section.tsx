@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquarePlus } from "lucide-react";
+import { MessageSquare, MessageSquarePlus } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,10 @@ export function InvoiceCommentsSection({ comments, onAddComment }: InvoiceCommen
   const empty = t("common.empty.dash");
 
   return (
-    <RecordViewSheetSection title={t("invoices.view.comments.title", { count: comments.length })}>
+    <RecordViewSheetSection
+      title={t("invoices.view.comments.title", { count: comments.length })}
+      icon={MessageSquare}
+    >
       {sortedComments.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.comments.empty")}</p>
       ) : (

@@ -2,6 +2,8 @@
 
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 
+import { Info } from "lucide-react";
+
 import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -202,7 +204,7 @@ export function DailyIncomeTransactionViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("accounting.dailyIncome.view.sections.audit")}>
+          <RecordViewSheetSection title={t("accounting.dailyIncome.view.sections.audit")} icon={Info}>
             {resolved.duplicatePaymentOverride ? (
               <RecordViewSheetDetailRow
                 label={t("accounting.dailyIncome.duplicatePayment.auditLabel")}

@@ -23,6 +23,7 @@ type SegmentedControlProps<T extends string> = {
   className?: string;
   "aria-label"?: string;
   "aria-labelledby"?: string;
+  "aria-describedby"?: string;
 };
 
 /** Single-choice segments (radio group) with arrow-key selection. */

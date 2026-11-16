@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer, Loader2 } from "lucide-react";
+import { Loader2, Printer, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useGenerateReport } from "@/lib/reports/hooks/use-reports";
@@ -66,6 +66,7 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
   return (
     <RecordViewSheetSection
       title={t("invoices.view.payments.title", { count: sortedPayments.length })}
+      icon={Wallet}
     >
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">

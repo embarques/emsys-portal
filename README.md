@@ -83,7 +83,7 @@ Restart the dev server after changing env files.
 |-----|---------|
 | [`AGENTS.md`](./AGENTS.md) | Frontend architecture standards for agents and developers |
 | [`APP_CONTEXT.md`](./APP_CONTEXT.md) | Domain meaning of each workspace section |
-| [`api-docs.json`](api-docs.json) | Published API schemas, endpoints, headers and payloads |
+| [`.reference/emsys-api/docs/swagger.json`](.reference/emsys-api/docs/swagger.json) | API reference: schemas, endpoints, headers and payloads from a local clone of [`emsys-api`](https://github.com/embarques/emsys-api) (`dev`). Not committed; clone it into `.reference/emsys-api` and `git pull` to update. |
 | [`API-List-Query.md`](./API-List-Query.md) | GET list query format (`page`, `limit`, `sort`, filters) |
 | [`API-Permission.md`](./API-Permission.md) | Route permissions and sidebar gating |
 | [`API-Query-Usage.md`](./API-Query-Usage.md) | How portal code should call the EMSYS API |

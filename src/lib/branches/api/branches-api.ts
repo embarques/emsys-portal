@@ -132,7 +132,7 @@ type ApiBranch = {
   settings?: ApiBranchSettings;
 };
 
-/** POST/PUT /branches — see api-docs.json */
+/** POST/PUT /branches — see .reference/emsys-api/docs/swagger.json */
 type ApiBranchWritePayload = {
   name: string;
   type: string;

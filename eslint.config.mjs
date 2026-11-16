@@ -12,6 +12,7 @@ const config = [
       "next-env.d.ts",
       "playwright-report/**",
       "test-results/**",
+      ".reference/**",
     ],
   },
   ...nextCoreWebVitals,

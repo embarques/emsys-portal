@@ -495,6 +495,19 @@ export function DailyIncomeWorkspace() {
     </Button>
   );
 
+  const canCreateCloseout =
+    !calendar.data?.current &&
+    hasPermission("canCreateIncomeStatement", "income_statement") &&
+    selectedBranch?.id === currentUser.data?.branch?.id;
+  const viewingToday = !selectedDate || !serverToday || selectedDate === serverToday;
+  const emptyCloseoutDescription = t(
+    canCreateCloseout
+      ? viewingToday
+        ? "accounting.dailyIncome.emptyCloseout.descriptionCanCreate"
+        : "accounting.dailyIncome.emptyCloseout.descriptionOtherDate"
+      : "accounting.dailyIncome.emptyCloseout.descriptionUnavailable",
+  );
+
   return <div className="overflow-x-hidden">
     {startTransaction.error && !startTransaction.setupOpen && <p role="alert" className="mb-4 text-sm text-destructive">{startTransaction.error}</p>}
     {startTransaction.setupOpen && <TransactionCloseoutSetup pending={startTransaction.isPending} error={startTransaction.error} onSubmit={(values) => void startTransaction.start(values)} onCancel={startTransaction.cancel} />}
@@ -579,20 +592,7 @@ export function DailyIncomeWorkspace() {
           loading={summaryTotalsQuery.isLoading}
           error={summaryTotalsQuery.isError ? normalizeApiError(summaryTotalsQuery.error).message : null}
         />
-      ) : (
-        <div className="rounded-3xl border bg-card px-5 py-6 shadow-sm">
-          <p className="text-lg font-semibold">{t("accounting.dailyIncome.filters.noCloseout")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{t("accounting.dailyIncome.description")}</p>
-
-          {hasPermission("canCreateIncomeStatement", "income_statement") && selectedBranch?.id === currentUser.data?.branch.id ? (
-            <Button className="mt-5 h-12 w-full rounded-xl text-base" onClick={() => setStatementDialog(true)} disabled={!serverToday}>
-              <Plus className="size-5" />
-              {t("accounting.dailyIncome.actions.createCloseout")}
-            </Button>
-          ) : null}
-        </div>
-      )}
-
+      ) : null}
 
     </div>
 
@@ -608,7 +608,7 @@ export function DailyIncomeWorkspace() {
           {t("accounting.dailyIncome.actions.printReport")}
         </Button>
       ) : null}
-      {!calendar.data?.current && hasPermission("canCreateIncomeStatement","income_statement") && selectedBranch?.id === currentUser.data?.branch?.id ? <Button onClick={() => setStatementDialog(true)} disabled={!serverToday}><Plus className="h-4 w-4" />{t("accounting.dailyIncome.actions.createCloseout")}</Button> : null}
+      {canCreateCloseout ? <Button onClick={() => setStatementDialog(true)} disabled={!serverToday}><Plus className="h-4 w-4" />{t("accounting.dailyIncome.actions.createCloseout")}</Button> : null}
       {addTransactionButton()}
     </>} />
 
@@ -681,8 +681,64 @@ export function DailyIncomeWorkspace() {
 
     </div>
 
-    {!statement ? <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{t("accounting.dailyIncome.transactions.title")}</h2>{addTransactionButton("md:hidden")}</div> : null}
-    {statement ? <JournalTransactionsTable key={`${currentUser.data?.id}:${statement.id}`} incomeStatementId={statement.id} headerActions={addTransactionButton("md:hidden")} isPrintingReceipt={generateReceiptMutation.isPending} onView={setViewJournal} onEdit={openEditTransactionForm} canEditRow={canEditJournal} onPrintReceipt={journal => void printReceipt(journal)} /> : null}
+    {!statement ? (
+      <Card className="mt-6 gap-0 md:mt-0">
+        <CardContent className="flex flex-col items-center justify-center px-6 py-14 text-center sm:py-16">
+          {statementQuery.isLoading ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {t("accounting.dailyIncome.emptyCloseout.loading")}
+            </p>
+          ) : (
+            <>
+              <div
+                className="mb-4 flex size-12 items-center justify-center rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                aria-hidden
+              >
+                <CalendarDays className="size-6" />
+              </div>
+              <h2 className="text-lg font-semibold tracking-tight">
+                {t("accounting.dailyIncome.emptyCloseout.title")}
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">{emptyCloseoutDescription}</p>
+              <div className="mt-6 flex w-full max-w-sm flex-col gap-2 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
+                {canCreateCloseout ? (
+                  <Button
+                    className="h-11 w-full sm:h-9 sm:w-auto"
+                    onClick={() => setStatementDialog(true)}
+                    disabled={!serverToday}
+                  >
+                    <Plus className="size-4" />
+                    {t("accounting.dailyIncome.actions.createCloseout")}
+                  </Button>
+                ) : null}
+                {startTransaction.canStart ? (
+                  <Button
+                    variant={canCreateCloseout ? "outline" : "default"}
+                    className="h-11 w-full sm:h-9 sm:w-auto"
+                    onClick={() => void startTransaction.start()}
+                    disabled={startTransaction.isPending}
+                  >
+                    <Plus className="size-4" />
+                    {t("accounting.dailyIncome.actions.addTransaction")}
+                  </Button>
+                ) : null}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    ) : (
+      <JournalTransactionsTable
+        key={`${currentUser.data?.id}:${statement.id}`}
+        incomeStatementId={statement.id}
+        headerActions={addTransactionButton("md:hidden")}
+        isPrintingReceipt={generateReceiptMutation.isPending}
+        onView={setViewJournal}
+        onEdit={openEditTransactionForm}
+        canEditRow={canEditJournal}
+        onPrintReceipt={(journal) => void printReceipt(journal)}
+      />
+    )}
 
     {statementDialog ? <CloseoutRolloverDialog open={statementDialog} onOpenChange={setStatementDialog} onReady={async created=>{setBranchCode(created.branch?.code??branchCode);setDate(created.date);await calendar.refetch();}} /> : null}
     <DailyIncomePrintDialog

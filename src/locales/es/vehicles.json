@@ -78,7 +78,7 @@
   "compliance": {
     "bannerTitle_one": "1 fecha de inspección o registro requiere atención",
     "bannerTitle_other": "{{count}} fechas de inspección o registro requieren atención",
-    "bannerDescription": "Estas fechas están a 7 días o menos, o ya pasaron. Renuévelas y actualice el registro del vehículo.",
+    "bannerDescription": "Estas fechas están a 10 días calendario o menos, o ya pasaron. Renuévelas y actualice el registro del vehículo.",
     "partial": "Solo se revisaron los primeros {{limit}} vehículos.",
     "entry": "{{name}} · {{kind}} {{timing}}",
     "more": "+{{count}} más",

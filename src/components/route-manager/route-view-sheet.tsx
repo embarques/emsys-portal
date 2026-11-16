@@ -1,5 +1,7 @@
 "use client";
 
+import { ClipboardList, Info, Users } from "lucide-react";
+
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -54,7 +56,7 @@ export function RouteViewSheet({
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("routes.viewSheet.sections.route")}>
+          <RecordViewSheetSection title={t("routes.viewSheet.sections.route")} icon={ClipboardList}>
             <RecordViewSheetDetailRow
               label={t("routes.viewSheet.recordId")}
               value={truncateObjectId(assignment.id)}
@@ -77,14 +79,14 @@ export function RouteViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("routes.viewSheet.sections.employees")}>
+          <RecordViewSheetSection title={t("routes.viewSheet.sections.employees")} icon={Users}>
             <RecordViewSheetDetailRow
               label={t("routes.columns.employees")}
               value={getRouteEmployeesLabel(assignment.employees)}
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("routes.viewSheet.sections.audit")}>
+          <RecordViewSheetSection title={t("routes.viewSheet.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow
               label={t("routes.columns.createdAt")}
               value={assignment.createdAt ? formatAuditDateTime(assignment.createdAt) : dash}

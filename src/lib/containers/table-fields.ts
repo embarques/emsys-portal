@@ -1,7 +1,10 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["container.Container"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["container.Container"]. */
 export const CONTAINER_API_TABLE_FIELDS = [
+  // Customs report configuration is not an additional directory column.
+  { field: "receiverDocType", column: false },
+  { field: "senderDocType", column: false },
   { field: "arrivalDate", format: "date" },
   { field: "barcodeSequence" },
   { field: "booking" },

@@ -1,5 +1,7 @@
 "use client";
 
+import { Clock, Info, KeyRound, ShieldCheck } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -56,7 +58,7 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
           }
         />
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("users.view.sections.profile")}>
+          <RecordViewSheetSection title={t("users.view.sections.profile")} icon={KeyRound}>
             <RecordViewSheetDetailRow label={t("users.view.userId")} value={truncateUserId(user.id)} />
             <RecordViewSheetDetailRow label={t("users.view.email")} value={user.email} />
             <RecordViewSheetDetailRow
@@ -64,7 +66,7 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
               value={userLabels.active(user.active)}
             />
           </RecordViewSheetSection>
-          <RecordViewSheetSection title={t("users.view.sections.access")}>
+          <RecordViewSheetSection title={t("users.view.sections.access")} icon={ShieldCheck}>
             <RecordViewSheetDetailRow label={t("users.view.role")} value={user.role.name || dash} />
             <RecordViewSheetDetailRow
               label={t("users.view.branch")}
@@ -73,7 +75,7 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
               }
             />
           </RecordViewSheetSection>
-          {user.startTime.trim() || user.endTime.trim() ? <RecordViewSheetSection title={t("users.view.sections.loginHours")}>
+          {user.startTime.trim() || user.endTime.trim() ? <RecordViewSheetSection title={t("users.view.sections.loginHours")} icon={Clock}>
             {user.startTime.trim() ? (
             <RecordViewSheetDetailRow
               label={t("users.view.startTime")}
@@ -87,7 +89,7 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
             />
             ) : null}
           </RecordViewSheetSection> : null}
-          <RecordViewSheetSection title={t("users.view.sections.audit")}>
+          <RecordViewSheetSection title={t("users.view.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow
               label={t("users.view.created")}
               value={user.createdAt ? formatAuditDateTime(user.createdAt) : dash}

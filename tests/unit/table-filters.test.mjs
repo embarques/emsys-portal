@@ -66,6 +66,87 @@ function searchLeaves(calls) {
 
 const row = (field, operator, value, join = "and") => ({ id: `${field}-${operator}`, join, field, operator, value });
 
+const directorySearchCases = [
+  {
+    resource: "branches",
+    file: "src/lib/branches/api/branches-api.ts",
+    method: "fetchBranches",
+    mainFields: ["name", "code"],
+    rows: [row("type", "eq", "OFFICE")],
+    advanced: [{ field: "type", operator: "eq", value: "OFFICE" }],
+  },
+  {
+    resource: "vehicles",
+    file: "src/lib/vehicles/api/vehicles-api.ts",
+    method: "fetchVehicles",
+    mainFields: ["vehicleId", "name", "licensePlate", "vin"],
+    rows: [row("active", "eq", "false"), row("year", "gte", "2020")],
+    advanced: [{ field: "active", operator: "eq", value: false }, { field: "year", operator: "gte", value: 2020 }],
+  },
+  {
+    resource: "containers",
+    file: "src/lib/containers/api/containers-api.ts",
+    method: "fetchContainers",
+    mainFields: ["name", "containerNumber", "booking", "sealNumber", "itn"],
+    rows: [row("cost", "gte", "0"), row("departureDateRange", "eq", "2026-11-01 to 2026-11-13")],
+    advanced: [
+      { field: "cost", operator: "gte", value: 0 },
+      { field: "departureDate", operator: "gte", value: "2026-11-01" },
+      { field: "departureDate", operator: "lte", value: "2026-11-13" },
+    ],
+  },
+  {
+    resource: "inventory/items",
+    file: "src/lib/inventory/api/inventory-api.ts",
+    method: "fetchInventoryItems",
+    mainFields: ["name", "sku"],
+    rows: [row("category", "eq", "BOXES")],
+    advanced: [{ field: "category", operator: "eq", value: "BOXES" }],
+  },
+];
+
+for (const spec of directorySearchCases) {
+  test(`${spec.resource} main search stays OR within advanced AND filters in one paginated request`, async (t) => {
+    const { calls, client } = createRecordingClient();
+    const api = createLoader(client)(spec.file);
+    await api[spec.method]({ page: 3, limit: 20, sort: "name:desc", search: { value: "NY" }, filterRows: spec.rows });
+    assert.equal(calls.length, 1, "search must not fan out into per-field requests");
+    const [method, url, body] = calls[0];
+    const query = new URL(url, "http://localhost");
+    assert.equal(method, "post");
+    assert.equal(query.pathname, `/${spec.resource}/search`);
+    assert.equal(query.searchParams.get("page"), "3");
+    assert.equal(query.searchParams.get("limit"), "20");
+    assert.equal(query.searchParams.get("offset"), "40");
+    assert.equal(body.operator, "and");
+    assert.deepEqual(body.sort, [{ field: "name", direction: "desc" }]);
+    t.diagnostic(`request sample: ${calls.length} request, ${Buffer.byteLength(JSON.stringify(body))} JSON bytes; ${body.filters[0].filters.length} main-search leaves`);
+    assert.equal(body.filters[0].operator, "or");
+    assert.deepEqual(body.filters[0].filters, spec.mainFields.map((field) => ({ field, operator: "contains", value: "NY" })));
+    const leaves = searchLeaves(calls);
+    assert.deepEqual(leaves.slice(spec.mainFields.length), spec.advanced, "advanced dates/numbers/booleans must retain their typed values");
+  });
+}
+
+test("narrowed main search preserves explicit lookups, idle GET and default sort", async () => {
+  for (const spec of directorySearchCases) {
+    const { calls, client } = createRecordingClient();
+    const api = createLoader(client)(spec.file);
+    await api[spec.method]({ page: 2, limit: 20 });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], "get");
+    const url = new URL(calls[0][1], "http://localhost");
+    assert.equal(url.searchParams.get("page"), "2");
+    assert.equal(url.searchParams.get("offset"), "20");
+    assert.equal(url.searchParams.get("sort"), spec.resource === "containers" ? "id:desc" : "name:asc");
+  }
+  const { calls, client } = createRecordingClient();
+  await createLoader(client)("src/lib/branches/api/branches-api.ts").fetchBranches({
+    search: { field: "phones.number", operator: "eq", value: "8095551234" },
+  });
+  assert.deepEqual(searchLeaves(calls), [{ field: "phones.number", operator: "eq", value: "8095551234" }]);
+});
+
 test("inventory directories send typed filter rows and resolve bar search names to reference ids", async () => {
   const receipts = createRecordingClient();
   await createLoader(receipts.client)("src/lib/inventory/api/inventory-api.ts").fetchInventoryReceipts({

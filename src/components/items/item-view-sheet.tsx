@@ -1,5 +1,7 @@
 "use client";
 
+import { Package } from "lucide-react";
+
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -34,7 +36,7 @@ export function ItemViewSheet({ item, open, onOpenChange, onEdit, onDelete }: It
         <RecordViewSheetHeader title={item.description.trim() || dash} />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("items.view.details")}>
+          <RecordViewSheetSection title={t("items.view.details")} icon={Package}>
             <RecordViewSheetDetailRow label={t("items.view.itemId")} value={item.itemId} />
             <RecordViewSheetDetailRow label={t("items.view.price")} value={formatItemPrice(item.price)} />
             <RecordViewSheetDetailRow

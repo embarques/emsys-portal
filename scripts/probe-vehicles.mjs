@@ -237,7 +237,7 @@ async function runSeededFilters() {
     // Mirrors the app's VEHICLE_BAR_OR_SEARCH_FIELDS verbatim so the probe
     // reflects the real bar-search request the UI sends.
     const token = String(rec.name).split(" ").find((w) => w.length >= 3) ?? "ZZ";
-    const barFields = ["vehicleId", "name", "vin", "fuelType", "branch", "createdBy.name"];
+    const barFields = ["vehicleId", "name", "licensePlate", "vin"];
     const bar = await req("POST", `${RESOURCE}/search?page=1&limit=1&offset=0`, {
       operator: "and",
       filters: [

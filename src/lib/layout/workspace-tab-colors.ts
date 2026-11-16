@@ -67,6 +67,7 @@ const NAV_LABEL_TO_SECTION: Record<string, WorkspaceTabSection> = {
   "navigation.items.invoices": "invoices",
   "navigation.items.items": "invoices",
   "navigation.items.containers": "invoices",
+  "navigation.items.complaints": "customers",
   "navigation.submenus.routes": "pickups",
   "navigation.submenus.barcodeManager": "barcodes",
   "navigation.submenus.inventory": "inventory",

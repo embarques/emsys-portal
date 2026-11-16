@@ -58,6 +58,20 @@ export const USER_ACTIVITY_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter record ID…",
   },
   {
+    field: "eventType",
+    label: "Event type",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "e.g. BARCODE_DAILY_ROUTE_CHANGED",
+  },
+  {
+    field: "barcodeRouteChange.previous.id",
+    label: "Previous route ID",
+    operators: ["eq", "neq"],
+    valueType: "text",
+    placeholder: "Enter route ID…",
+  },
+  {
     field: "activityId",
     label: "Activity ID",
     operators: ["eq", "neq"],

@@ -1,8 +1,10 @@
 "use client";
 
 import { type ReactNode, useMemo, useRef, useState } from "react";
+import { Banknote, Landmark } from "lucide-react";
 
 import { FieldMessage } from "@/components/forms/field-message";
+import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -23,11 +25,13 @@ type Props = {
   className?: string;
   /** Rendered beside the segments while Cash is selected (e.g. the cash account). */
   cashField?: ReactNode;
+  /** Step-by-step entry: cash / bank are tiles and the follow-up field appears below them. */
+  guided?: boolean;
   onMethodChange: (method: AccountingLookup | undefined) => void;
 };
 
 /** Cash or bank first; bank then asks which non-cash method moved the money. */
-export function PaymentChannelFields({ paymentMethods, paymentMethodId, paymentMethodName, required = false, error, className, cashField, onMethodChange, inlineOptionsLimit }: Props) {
+export function PaymentChannelFields({ paymentMethods, paymentMethodId, paymentMethodName, required = false, error, className, cashField, guided = false, onMethodChange, inlineOptionsLimit }: Props) {
   const { t } = useTranslation();
   const cashMethod = findCashPaymentMethod(paymentMethods);
   const bankMethods = useMemo(() => paymentMethods.filter((method) => !isCashPaymentMethod(method.name)), [paymentMethods]);
@@ -61,7 +65,7 @@ export function PaymentChannelFields({ paymentMethods, paymentMethodId, paymentM
   }
 
   return (
-    <div className={cn("grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2", className)}>
+    <div className={cn("grid min-w-0 gap-4 sm:col-span-2", !guided && "sm:grid-cols-2", className)}>
       <div className="min-w-0 space-y-2">
         <Label id="journal-payment-channel-label">{t("accounting.dailyIncome.form.fields.paymentChannel")}</Label>
         <div
@@ -69,16 +73,29 @@ export function PaymentChannelFields({ paymentMethods, paymentMethodId, paymentM
           onPointerDownCapture={() => { pointerChangeRef.current = true; }}
           onKeyDownCapture={() => { pointerChangeRef.current = false; }}
         >
-          <SegmentedControl<PaymentChannel>
-            id="journal-payment-channel"
-            aria-labelledby="journal-payment-channel-label"
-            value={channel}
-            onValueChange={changeChannel}
-            options={[
-              { value: "cash", label: t("accounting.dailyIncome.form.fields.paymentChannelCash"), disabled: !cashMethod },
-              { value: "bank", label: t("accounting.dailyIncome.form.fields.paymentChannelBank"), disabled: bankMethods.length === 0 },
-            ]}
-          />
+          {guided ? (
+            <ChoiceTiles<PaymentChannel>
+              id="journal-payment-channel"
+              aria-labelledby="journal-payment-channel-label"
+              value={channel}
+              onValueChange={changeChannel}
+              options={[
+                { value: "cash", label: t("accounting.dailyIncome.form.fields.paymentChannelCash"), description: t("accounting.dailyIncome.form.fields.paymentChannelCashHint"), icon: Banknote, iconClassName: "text-emerald-600", iconBackgroundClassName: "bg-emerald-50 dark:bg-muted", disabled: !cashMethod },
+                { value: "bank", label: t("accounting.dailyIncome.form.fields.paymentChannelBank"), description: t("accounting.dailyIncome.form.fields.paymentChannelBankHint"), icon: Landmark, iconClassName: "text-blue-600", iconBackgroundClassName: "bg-blue-50 dark:bg-muted", disabled: bankMethods.length === 0 },
+              ]}
+            />
+          ) : (
+            <SegmentedControl<PaymentChannel>
+              id="journal-payment-channel"
+              aria-labelledby="journal-payment-channel-label"
+              value={channel}
+              onValueChange={changeChannel}
+              options={[
+                { value: "cash", label: t("accounting.dailyIncome.form.fields.paymentChannelCash"), disabled: !cashMethod },
+                { value: "bank", label: t("accounting.dailyIncome.form.fields.paymentChannelBank"), disabled: bankMethods.length === 0 },
+              ]}
+            />
+          )}
         </div>
       </div>
       {channel === "bank" ? (

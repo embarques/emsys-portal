@@ -1,0 +1,752 @@
+{
+  "checkedAt": "2026-11-14T16:51:10.235Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "marker": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+  "owned": [
+    {
+      "path": "/branches",
+      "id": 50,
+      "marker": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a"
+    },
+    {
+      "path": "/containers",
+      "id": 1415,
+      "marker": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a"
+    }
+  ],
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/users/current",
+      "http": 200,
+      "success": true,
+      "message": "Request successful",
+      "error": "",
+      "total": 1,
+      "returned": 0
+    },
+    {
+      "label": "Authorized context",
+      "companyId": "64d5c0b0d1eab2aaf30b1819",
+      "userId": 73,
+      "branchId": 1,
+      "roleId": 1
+    },
+    {
+      "method": "POST",
+      "path": "/branches/search",
+      "body": {
+        "filters": [
+          {
+            "field": "settings.labelPrefix",
+            "operator": "eq",
+            "value": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a"
+          }
+        ],
+        "sort": [
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, crea"
+    },
+    {
+      "label": "B09 accepts /branches filter settings.labelPrefix",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, crea"
+    },
+    {
+      "method": "POST",
+      "path": "/containers/search",
+      "body": {
+        "filters": [
+          {
+            "field": "barcodeSequence",
+            "operator": "eq",
+            "value": 0
+          }
+        ],
+        "sort": [
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id,"
+    },
+    {
+      "label": "B09 accepts /containers filter barcodeSequence",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: condition 1 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id,"
+    },
+    {
+      "method": "POST",
+      "path": "/containers/search",
+      "body": {
+        "filters": [
+          {
+            "field": "deliverySequence",
+            "operator": "eq",
+            "value": 0
+          }
+        ],
+        "sort": [
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id"
+    },
+    {
+      "label": "B09 accepts /containers filter deliverySequence",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: condition 1 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id"
+    },
+    {
+      "method": "POST",
+      "path": "/vehicles/search",
+      "body": {
+        "filters": [
+          {
+            "field": "inspectionDate",
+            "operator": "eq",
+            "value": "2026-11-14"
+          }
+        ],
+        "sort": [
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"inspectionDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id, licensePlate, name, updatedAt, updatedBy.id, updatedBy.name, vehicleId, vin, year. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"inspectionDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id, "
+    },
+    {
+      "label": "B09 accepts /vehicles filter inspectionDate",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: condition 1 in and group: field \"inspectionDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id, "
+    },
+    {
+      "method": "POST",
+      "path": "/vehicles/search",
+      "body": {
+        "filters": [
+          {
+            "field": "registrationDate",
+            "operator": "eq",
+            "value": "2026-11-14"
+          }
+        ],
+        "sort": [
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"registrationDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id, licensePlate, name, updatedAt, updatedBy.id, updatedBy.name, vehicleId, vin, year. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"registrationDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id"
+    },
+    {
+      "label": "B09 accepts /vehicles filter registrationDate",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: condition 1 in and group: field \"registrationDate\" is not allowed. Allowed fields: active, branch.code, branch.id, createdAt, createdBy.id, createdBy.name, fuelType, id"
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts/search",
+      "body": {
+        "filters": [
+          {
+            "field": "postedAt",
+            "operator": "gte",
+            "value": "2026-11-01"
+          }
+        ],
+        "sort": [
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHol"
+    },
+    {
+      "label": "B09 accepts /inventory/receipts filter postedAt",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHol"
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/dispatches/search",
+      "body": {
+        "filters": [
+          {
+            "field": "postedAt",
+            "operator": "gte",
+            "value": "2026-11-01"
+          }
+        ],
+        "sort": [
+          {
+            "field": "id",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsib"
+    },
+    {
+      "label": "B09 accepts /inventory/dispatches filter postedAt",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: condition 1 in and group: field \"postedAt\" is not allowed. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsib"
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts/search",
+      "body": {
+        "filters": [],
+        "sort": [
+          {
+            "field": "postedAt",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed"
+    },
+    {
+      "label": "B09 accepts /inventory/receipts sort postedAt asc",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed"
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/receipts/search",
+      "body": {
+        "filters": [],
+        "sort": [
+          {
+            "field": "postedAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed"
+    },
+    {
+      "label": "B09 accepts /inventory/receipts sort postedAt desc",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, id, lines.itemId, notes, receivedAt, status, supplierId, toHolderId. Allowed"
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/dispatches/search",
+      "body": {
+        "filters": [],
+        "sort": [
+          {
+            "field": "postedAt",
+            "direction": "asc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, s"
+    },
+    {
+      "label": "B09 accepts /inventory/dispatches sort postedAt asc",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, s"
+    },
+    {
+      "method": "POST",
+      "path": "/inventory/dispatches/search",
+      "body": {
+        "filters": [],
+        "sort": [
+          {
+            "field": "postedAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, status, toHolderId. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"status\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, s"
+    },
+    {
+      "label": "B09 accepts /inventory/dispatches sort postedAt desc",
+      "passed": false,
+      "detail": "HTTP 400; search query validation failed: field \"postedAt\" is not allowed for sorting. Allowed fields: audit.createdAt, dailyRouteId, dispatchedAt, fromHolderId, id, lines.itemId, notes, responsibleHolderIds, s"
+    },
+    {
+      "method": "GET",
+      "path": "/vehicle-routes/business-date",
+      "http": 200,
+      "success": true,
+      "message": "Route business date",
+      "error": "",
+      "total": 0,
+      "returned": 0
+    },
+    {
+      "label": "Business clock",
+      "http": 200,
+      "data": {
+        "businessDate": "2026-11-14",
+        "timezone": "America/New_York",
+        "serverTime": "2026-11-14T16:51:08.979460792Z",
+        "nextMidnight": "2026-11-15T05:00:00Z"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/complaint-categories",
+      "http": 404,
+      "success": false,
+      "message": "Route not found",
+      "error": "No API route matches GET /v1/complaint-categories. Suggested solution: Verify the request method and path against the API documentation.",
+      "returned": 0,
+      "detail": "No API route matches GET /v1/complaint-categories. Suggested solution: Verify the request method and path against the API documentation."
+    },
+    {
+      "label": "B17 category model",
+      "http": 404,
+      "categories": []
+    },
+    {
+      "label": "F03 CORS",
+      "origin": "http://localhost:3000",
+      "http": 204,
+      "allowOrigin": "http://localhost:3000",
+      "allowHeaders": "Origin, Content-Type, Authorization, Default-Api-Key, App-Id, Api-Key, Auth-Type, x-company-id, X-Request-ID, If-Match"
+    },
+    {
+      "label": "F03 CORS",
+      "origin": "http://localhost:3100",
+      "http": 403,
+      "allowOrigin": null,
+      "allowHeaders": null
+    },
+    {
+      "label": "F03 CORS",
+      "origin": "http://127.0.0.1:3100",
+      "http": 403,
+      "allowOrigin": null,
+      "allowHeaders": null
+    },
+    {
+      "method": "POST",
+      "path": "/branches",
+      "body": {
+        "name": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+        "code": "Zdd2ff5",
+        "type": "US",
+        "settings": {
+          "labelPrefix": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a"
+        }
+      },
+      "http": 201,
+      "success": true,
+      "message": "Request successful",
+      "error": "",
+      "total": 1,
+      "returned": 0
+    },
+    {
+      "method": "GET",
+      "path": "/branches/50",
+      "http": 200,
+      "success": true,
+      "message": "Request successful",
+      "error": "",
+      "total": 1,
+      "returned": 0
+    },
+    {
+      "label": "B09 fixture prefix saved",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/branches/search",
+      "body": {
+        "filters": [
+          {
+            "field": "settings.labelPrefix",
+            "operator": "eq",
+            "value": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a"
+          }
+        ],
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, crea"
+    },
+    {
+      "label": "B09 labelPrefix matches saved branch",
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/branches/search",
+      "body": {
+        "filters": [
+          {
+            "field": "settings.labelPrefix",
+            "operator": "eq",
+            "value": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a-missing"
+          }
+        ],
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, createdBy.name, id, name, phones.isPrimary, phones.number, phones.type, type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 1 in and group: field \"settings.labelPrefix\" is not allowed. Allowed fields: address.city, address.state, address.zipcode, code, createdAt, createdBy.id, crea"
+    },
+    {
+      "label": "B09 labelPrefix excludes nonmatching branch",
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/containers",
+      "body": {
+        "name": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+        "containerNumber": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+        "booking": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+        "barcodeSequence": 17,
+        "deliverySequence": 23,
+        "cost": 0
+      },
+      "http": 201,
+      "success": true,
+      "message": "Request successful",
+      "error": "",
+      "total": 1,
+      "returned": 0
+    },
+    {
+      "method": "GET",
+      "path": "/containers/1415",
+      "http": 200,
+      "success": true,
+      "message": "Request successful",
+      "error": "",
+      "total": 1,
+      "returned": 0
+    },
+    {
+      "method": "POST",
+      "path": "/containers/search",
+      "body": {
+        "filters": [
+          {
+            "field": "id",
+            "operator": "eq",
+            "value": 1415
+          },
+          {
+            "field": "barcodeSequence",
+            "operator": "eq",
+            "value": 17
+          }
+        ],
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 2 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 2 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id,"
+    },
+    {
+      "method": "POST",
+      "path": "/containers/search",
+      "body": {
+        "filters": [
+          {
+            "field": "id",
+            "operator": "eq",
+            "value": 1415
+          },
+          {
+            "field": "barcodeSequence",
+            "operator": "eq",
+            "value": 18
+          }
+        ],
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 2 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 2 in and group: field \"barcodeSequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id,"
+    },
+    {
+      "label": "B09 barcodeSequence matches persisted numeric value",
+      "passed": false
+    },
+    {
+      "label": "B09 barcodeSequence excludes wrong numeric value",
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/containers/search",
+      "body": {
+        "filters": [
+          {
+            "field": "id",
+            "operator": "eq",
+            "value": 1415
+          },
+          {
+            "field": "deliverySequence",
+            "operator": "eq",
+            "value": 23
+          }
+        ],
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 2 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 2 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id"
+    },
+    {
+      "method": "POST",
+      "path": "/containers/search",
+      "body": {
+        "filters": [
+          {
+            "field": "id",
+            "operator": "eq",
+            "value": 1415
+          },
+          {
+            "field": "deliverySequence",
+            "operator": "eq",
+            "value": 24
+          }
+        ],
+        "sort": [
+          {
+            "field": "createdAt",
+            "direction": "desc"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 2
+        }
+      },
+      "http": 400,
+      "success": false,
+      "message": "Search query validation failed",
+      "error": "search query validation failed: condition 2 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id, createdBy.name, departureDate, id, itn, name, receiver_doc_type, seal, sealNumber, sender_doc_type, updatedAt, updatedBy.id, updatedBy.name. Allowed operators: eq, neq, contains, startsWith, in, notIn, gt, gte, lt, lte. Suggested payload: {\"field\":\"name\",\"operator\":\"eq\",\"value\":\"example\",\"pagination\":{\"page\":1,\"limit\":40}}. Suggested solution: Correct the search filters, operators, and field names, then try again.",
+      "returned": 0,
+      "detail": "search query validation failed: condition 2 in and group: field \"deliverySequence\" is not allowed. Allowed fields: arrivalDate, booking, broker, company, containerNumber, cost, createdAt, createdBy.id"
+    },
+    {
+      "label": "B09 deliverySequence matches persisted numeric value",
+      "passed": false
+    },
+    {
+      "label": "B09 deliverySequence excludes wrong numeric value",
+      "passed": false
+    },
+    {
+      "method": "POST",
+      "path": "/vehicles",
+      "body": {
+        "name": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+        "vehicleId": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+        "vin": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+        "licensePlate": "62cc959a",
+        "year": 2026,
+        "fuelType": "DIESEL",
+        "active": true,
+        "branch": {
+          "id": 50
+        },
+        "inspectionDate": "2026-11-24",
+        "registrationDate": "2026-11-25"
+      },
+      "http": 400,
+      "success": false,
+      "message": "vehicle branch id and code are required",
+      "error": "vehicle branch id and code are required. Suggested solution: Correct the request using the error details and try again.",
+      "returned": 0,
+      "detail": "vehicle branch id and code are required. Suggested solution: Correct the request using the error details and try again."
+    },
+    {
+      "label": "Run stopped",
+      "error": "Fixture /vehicles: HTTP 400; vehicle branch id and code are required. Suggested solution: Correct the request using the error details and try again."
+    }
+  ],
+  "limitations": [
+    "Accepted requests do not prove complete matching, isolation, rollback or capacity.",
+    "No pre-existing record was intentionally updated or deleted. New tagged fixtures are retained."
+  ]
+}

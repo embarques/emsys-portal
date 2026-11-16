@@ -1,5 +1,26 @@
 # Daily-route assignment — pending fixes and verification
 
+## Confirmed target model
+
+Daily-route assignment also assigns a delivery/trip and sets CONDUCE. One shared
+delivery/trip can contain pieces from several shipping containers. The daily
+delivery route is the trip; adding pieces to it does not create another trip.
+No separate open-trip selection or start-new-trip action is required within it.
+Each piece's original shipping container remains provenance. The user identifies
+DEV-RD as the normal returned state. Recommend an atomic Return/unassign action
+that clears current route/delivery membership and sets DEV-RD (ID 5); direct
+reassignment should replace membership and retain CONDUCE. Do not restore an
+arbitrary prior status. Historical assignments and signed receipts must remain
+intact. Legacy delivery/trip identity mappings and retry behavior still need a
+concrete API contract. This does not make every generic status edit alter routes.
+
+This target supersedes the current per-container trip grouping and preservation
+of numeric delivery on route removal as desired behavior; the evidence below
+still describes the old implementation. See the
+[delivery contract](delivery-completion-api-contract.md) and
+[source review](backend-gap-source-review-2026-11-13.md). No API implementation
+or identity migration has been performed.
+
 ## Latest readback and portal implementation
 
 See the [November 12 read-only recheck](backend-gap-test-sweep-2026-11-12.md)

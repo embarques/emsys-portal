@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils";
 type FormSectionProps = {
   /** Optional leading icon rendered in the primary color. */
   icon?: React.ComponentType<{ className?: string }>;
-  title: string;
+  /** Omit when a surrounding heading already names the section. */
+  title?: string;
   variant?: "plain" | "card";
   description?: string;
   /** Append a required asterisk to the title. */
@@ -41,16 +42,20 @@ export function FormSection({
   const sectionId = useId();
   return (
     <section id={sectionId} data-form-section tabIndex={-1} className={cn("space-y-2.5", variant === "card" && "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm", className)}>
-      <div className="flex min-h-7 items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {Icon ? <Icon className="size-4 shrink-0 text-primary" /> : null}
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {title}
-            {required ? <span className="text-destructive"> *</span> : null}
-          </h3>
+      {title || action ? (
+        <div className="flex min-h-7 items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {Icon ? <Icon className="size-4 shrink-0 text-primary" /> : null}
+            {title ? (
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {title}
+                {required ? <span className="text-destructive"> *</span> : null}
+              </h3>
+            ) : null}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      ) : null}
       {description ? <p className="text-sm leading-relaxed text-muted-foreground">{description}</p> : null}
       {children}
     </section>

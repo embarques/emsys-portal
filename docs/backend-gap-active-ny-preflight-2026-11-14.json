@@ -1,0 +1,226 @@
+{
+  "checkedAt": "2026-11-14T17:20:24.473Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "marker": "CODEX-ACTIVE-NY-bfdbfa4a-af66-484d-8ae3-3006fae7ae21",
+  "owned": [],
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/users/current",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 73,
+          "uid": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "email": "elk@elk.com",
+          "name": "elk@elk.com",
+          "active": true,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares"
+          },
+          "role": {
+            "id": 1,
+            "name": "Administrador"
+          }
+        },
+        "error": "",
+        "duration": 0.020261958,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/branches/1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 1,
+          "name": "Embarque Tenares",
+          "code": "NY",
+          "address": {
+            "id": "000000000000000000000000",
+            "address1": "2249 Washington Avenue",
+            "city": "The Bronx",
+            "state": "NY",
+            "zipcode": "10457",
+            "country": "US",
+            "location": {
+              "type": "Point",
+              "coordinates": [
+                -73.8939588,
+                40.854537799999996
+              ]
+            }
+          },
+          "phones": [
+            {
+              "type": "business",
+              "number": "+17185621300",
+              "displayNumber": "(718) 562-1300",
+              "isPrimary": true
+            }
+          ],
+          "logo": "media/logo/tenareslogo.png",
+          "settings": {
+            "labelPrefix": "ET",
+            "printLabelCount": true,
+            "roundDecimalPlaces": 2,
+            "defaultLabelStatus": 1
+          },
+          "createdAt": "2026-09-11T00:13:27.767Z",
+          "updatedAt": "2026-10-20T15:56:53.971Z",
+          "createdBy": {
+            "id": 1,
+            "name": "jpAdmin"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          }
+        },
+        "error": "",
+        "duration": 0.016517083,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/income-statements/context?branchId=1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Closeout calendar",
+        "data": {
+          "today": "2026-11-14",
+          "serverTimezone": "America/New_York",
+          "serverTime": "2026-11-14T17:20:24.263841799Z",
+          "current": null,
+          "previous": {
+            "businessDate": "2026-11-13",
+            "timezone": "America/New_York",
+            "periodStart": "2026-11-13T05:00:00Z",
+            "periodEnd": "2026-11-14T05:00:00Z",
+            "id": 32736,
+            "date": "2026-11-13T05:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "rate": 1,
+            "currency": "USD",
+            "status": "open",
+            "createdAt": "2026-11-13T18:40:00.732Z",
+            "updatedAt": "2026-11-13T18:40:00.732Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          "latest": {
+            "businessDate": "2026-11-13",
+            "timezone": "America/New_York",
+            "periodStart": "2026-11-13T05:00:00Z",
+            "periodEnd": "2026-11-14T05:00:00Z",
+            "id": 32736,
+            "date": "2026-11-13T05:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "rate": 1,
+            "currency": "USD",
+            "status": "open",
+            "createdAt": "2026-11-13T18:40:00.732Z",
+            "updatedAt": "2026-11-13T18:40:00.732Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          "requiredReason": "STALE_OPEN_CLOSEOUT"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V13 NY server context reports authoritative date/timezone",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/journals",
+      "body": {
+        "transactionType": "SALES",
+        "amount": 0.01,
+        "branch": {
+          "id": 1
+        },
+        "currency": "USD",
+        "rate": 1,
+        "description": "CODEX-ACTIVE-NY-bfdbfa4a-af66-484d-8ae3-3006fae7ae21",
+        "refNumber": "CODEX-ACTIVE-NY-bfdbfa4a-af66-484d-8ae3-3006fae7ae21",
+        "paymentMethod": {
+          "id": 1,
+          "name": "CASH"
+        },
+        "account": {
+          "id": 6,
+          "name": "VENTA DE CAJAS",
+          "type": "REVENUE"
+        }
+      },
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "CLOSEOUT_REQUIRED",
+        "error": "Choose currency and exchange rate to open today's closeout. Suggested solution: Open the current closeout and retry the transaction.",
+        "data": {
+          "code": "CLOSEOUT_REQUIRED",
+          "reason": "STALE_OPEN_CLOSEOUT",
+          "today": "2026-11-14",
+          "serverTimezone": "America/New_York",
+          "latestCloseout": {
+            "id": 32736,
+            "date": "2026-11-13T05:00:00Z",
+            "businessDate": "2026-11-13",
+            "timezone": "America/New_York",
+            "status": "open",
+            "currency": "USD",
+            "rate": 1
+          }
+        }
+      }
+    },
+    {
+      "label": "V13 stale NY closeout rejects posting with CLOSEOUT_REQUIRED",
+      "passed": true
+    },
+    {
+      "label": "Run stopped",
+      "error": "NY normal rollover needs approval: current=null; existing stale periods may be closed"
+    }
+  ],
+  "limitations": [
+    "No existing records deleted or branch configuration changed.",
+    "Period rollover only when --allow-rollover explicitly authorized.",
+    "Failure injection, other actors, after-period-closure retry and all account combinations remain separate."
+  ]
+}

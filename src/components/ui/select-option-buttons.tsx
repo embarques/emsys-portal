@@ -8,10 +8,7 @@ import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** The same single selection as a dropdown, exposed as a wrapping radio-button group. */
-export function SelectOptionButtons(props: SearchableSelectProps & {
-  /** Set false when a choice is always required, so no "Clear selection" control is offered. */
-  clearable?: boolean;
-}) {
+export function SelectOptionButtons(props: SearchableSelectProps) {
   const { options, value, onValueChange, disabled, id, name, autoFocus, required, advanceFocusOnSelect = true, clearable = true } = props;
   const { t } = useTranslation();
   const descriptionId = useId();
@@ -70,6 +67,7 @@ export function SelectOptionButtons(props: SearchableSelectProps & {
             tabIndex={index === focusIndex ? 0 : -1} disabled={disabled || option.disabled}
             onClick={() => select(index, true)} onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn("flex min-h-12 min-w-0 max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              props.stretchInlineOptions && "flex-1 basis-48",
               checked ? "border-primary bg-primary/10 text-primary" : "border-input bg-card hover:bg-accent",
               props["aria-invalid"] && "border-destructive")}>
             <span aria-hidden="true" className={cn("flex size-4 shrink-0 items-center justify-center rounded-full border", checked ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50")}>

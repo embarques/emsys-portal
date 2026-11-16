@@ -15,6 +15,7 @@ function fixture() {
     if (name.endsWith("use-auth")) return {useAuth: () => ({companyId: context.companyId, hasPermission: () => context.permitted})};
     if (name.endsWith("daily-income/hooks")) return {useAccountingQueryEnabled: () => true, useCurrentCloseoutTransactionCount: active => active ? 4 : 0};
     if (name.endsWith("orders/hooks/use-orders")) return {usePendingOrderCount: active => active ? 7 : 0};
+    if (name.endsWith("complaints/hooks/use-complaints")) return {useUnresolvedComplaintCount: active => active ? 2 : 0};
     if (name.endsWith("reconciliation-api")) return {fetchOutstandingJournalCount: () => {throw new Error("Unexpected request");}};
     if (name.endsWith("query-keys")) return {queryKeys: {accounting: {all: ["accounting"]}}};
     if (name.endsWith("use-workspace-query")) return {useWorkspaceQuery: options => {
@@ -51,6 +52,17 @@ test("accounting group counts pending tasks from both queues", () => {
     {href: "/accounting/pending-clearance"},
   ]), 8);
   assert.equal(api.useNavAlertLabel("/accounting/pending-clearance", 5), "accounting.journalClearance.pendingAlert");
+});
+
+test("complaints show a red alert for unresolved complaints only on their own link", () => {
+  const {api} = fixture();
+  assert.equal(api.useNavAlertCount("/complaints"), 2);
+  assert.equal(api.useNavAlertCount("/containers"), 0);
+  assert.equal(api.useNavItemsAlertCount([{href: "/complaints"}]), 2);
+  assert.equal(api.useNavAlertLabel("/complaints", 2), "navigation.badges.unresolvedComplaints");
+  assert.equal(api.useNavItemsAlertLabel([{href: "/complaints"}], 2), "navigation.badges.unresolvedComplaints");
+  assert.equal(api.useNavItemsAlertLabel([{href: "/accounting/pending-clearance"}], 5), "accounting.pendingTasksAlert");
+  assert.equal(api.useNavCount("/complaints"), 0);
 });
 
 test("informational counts only load for appointments and daily income", () => {

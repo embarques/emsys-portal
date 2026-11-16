@@ -1,0 +1,172 @@
+{
+  "checkedAt": "2026-11-14T17:00:00.754Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "results": [
+    {
+      "path": "/journals/6af891f031a295cf3808430b",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891f031a295cf38084309",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891ee31a295cf38084307",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891ed31a295cf38084305",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891ed31a295cf38084303",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891ec31a295cf38084301",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891ec31a295cf380842ff",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891eb31a295cf380842fb",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891e831a295cf380842f6",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891e731a295cf380842f3",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/journals/6af891e731a295cf380842f0",
+      "kind": "journal",
+      "http": 200,
+      "branchId": 51,
+      "closeoutId": 32737,
+      "clearanceStatus": "NOT_REQUIRED",
+      "reconciliationStatus": "NOT_REQUIRED",
+      "transactionStatus": "REVERSED",
+      "passed": true
+    },
+    {
+      "path": "/branches/50",
+      "kind": "retained-directory",
+      "marker": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "/containers/1415",
+      "kind": "retained-directory",
+      "marker": "CODEX-REVALIDATE-de9424bc-b8cb-40b5-83a3-036562cc959a",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "/branches/52",
+      "kind": "retained-directory",
+      "marker": "CODEX-REVALIDATE-48021574-f49f-4324-b7c0-82126694ffbb",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "/containers/1416",
+      "kind": "retained-directory",
+      "marker": "CODEX-REVALIDATE-48021574-f49f-4324-b7c0-82126694ffbb",
+      "http": 200,
+      "passed": true
+    },
+    {
+      "path": "/vehicles/6af8922d31a295cf38084330",
+      "kind": "retained-directory",
+      "marker": "CODEX-REVALIDATE-48021574-f49f-4324-b7c0-82126694ffbb",
+      "http": 200,
+      "passed": true
+    }
+  ],
+  "loanPrerequisite": {
+    "http": 200,
+    "total": 36,
+    "returned": 36,
+    "eligibleLayer3LoanParents": [],
+    "completeBoundedCatalog": true
+  },
+  "limitations": [
+    "Only records created by these runs were read for cleanup verification. This does not establish arbitrary production history, plans or migrations."
+  ]
+}

@@ -182,7 +182,7 @@ Delivered merchandise labels retain the daily route that delivered them; their r
 
 ### Inventory
 
-Inventory manages the company's **internal supplies and materials**, separate from customer merchandise. Stock belongs to persistent warehouse, employee, vehicle or route-crew holders. Current wire models are in `api-docs.json`; remaining integration work is in `docs/inventory-workflow.md`.
+Inventory manages the company's **internal supplies and materials**, separate from customer merchandise. Stock belongs to persistent warehouse, employee, vehicle or route-crew holders. Current wire models are in `.reference/emsys-api/docs/swagger.json`; remaining integration work is in `docs/inventory-workflow.md`.
 
 Stock belongs to a persistent **holder**: a warehouse, employee, vehicle, or route crew (`/inventory/holders`). A daily route is context only, never a stock destination. Quantities are never stored on items; they come from read-only **stock balances** per item, holder and condition (`AVAILABLE` / `QUARANTINED`).
 
@@ -193,7 +193,7 @@ The sub-tables under Inventory use that contract:
 - **Dispatches**: multi-line transfers from a warehouse to an employee, vehicle or crew holder (optional responsible employee and daily-route context). Dispatches record **no revenue**.
 - **Suppliers**: `companyName`, `contacts[]` (`{name, phone, email}`), `addresses[]`, `isActive`. Deactivated, not deleted.
 
-Receipts and dispatches are versioned documents: created as **DRAFT**, edited with PATCH + `If-Match`, then **posted** (`If-Match` + `Idempotency-Key`) or **cancelled** (`If-Match`). Posting submits the document as **PENDING_CONFIRMATION**. A receipt adds stock only when the **warehouse** confirms it. A dispatch reserves the source stock and moves it to the holder only when both the **warehouse** and the **custodian** (responsible employee, holder employee, crew member or route supervisor) confirm the handoff. Either party can reject with a reason, which returns the document to DRAFT. Confirmations need `canConfirmInventoryWarehouse` / `canConfirmInventoryCustodian` plus the API's per-user `allowedActions`. The same user cannot confirm both sides. Pending, posted and cancelled documents are read-only. The Stock table also shows **In warehouse** and **Pending** (in custody with employees, vehicles or crews, not reconciled yet). Remaining acceptance: `docs/inventory-workflow.md`; wire models: `api-docs.json`. Money is integer USD cents (`…Minor`); `receivedAt` / `dispatchedAt` / `occurredAt` are UTC instants; `businessDate` is a calendar date. The server-owned `audit` block (`createdAt`, `createdBy`, `updatedAt`, `updatedBy`) is never sent.
+Receipts and dispatches are versioned documents: created as **DRAFT**, edited with PATCH + `If-Match`, then **posted** (`If-Match` + `Idempotency-Key`) or **cancelled** (`If-Match`). Posting submits the document as **PENDING_CONFIRMATION**. A receipt adds stock only when the **warehouse** confirms it. A dispatch reserves the source stock and moves it to the holder only when both the **warehouse** and the **custodian** (responsible employee, holder employee, crew member or route supervisor) confirm the handoff. Either party can reject with a reason, which returns the document to DRAFT. Confirmations need `canConfirmInventoryWarehouse` / `canConfirmInventoryCustodian` plus the API's per-user `allowedActions`. The same user cannot confirm both sides. Pending, posted and cancelled documents are read-only. The Stock table also shows **In warehouse** and **Pending** (in custody with employees, vehicles or crews, not reconciled yet). Remaining acceptance: `docs/inventory-workflow.md`; wire models: `.reference/emsys-api/docs/swagger.json`. Money is integer USD cents (`…Minor`); `receivedAt` / `dispatchedAt` / `occurredAt` are UTC instants; `businessDate` is a calendar date. The server-owned `audit` block (`createdAt`, `createdBy`, `updatedAt`, `updatedBy`) is never sent.
 
 **Supply operations** (`/inventory/workflow`, behind `NEXT_PUBLIC_INVENTORY_WORKFLOW_ENABLED=true`) covers the rest of the lifecycle: returns, loss & damage dispositions, physical counts, adjustments, aggregate supply sales, payments and allocations, office cash handovers, collection obligations and settlements, daily closeouts (preview, close, reopen, revisions), holder custody and reassignment, item price history, route crews, daily routes, and the stock-valuation / sales / obligations / discrepancy reports, audit events and journal entries. Closeout requires available and quarantined counts that reconcile with a fresh server preview; financial differences require an explanation. Reopening needs `closeout.reopen` and a reason, and creates a new immutable revision. Retained stock persists overnight with its holder.
 
@@ -201,7 +201,7 @@ Daily Income **Add transaction categories** are Invoices (New invoice, Invoice p
 
 **Register new loan / Register loan payment** reuse the dedicated loan creation and employee loan-payment dialogs and existing loan APIs, including the existing payment allocation rules. They do not post a generic `LOAN` journal directly. The chooser reuses its employee/account lookups, and payment loans load only after selecting an employee. Loan actions inherit the Add transaction journal-create and income-statement-view gates; the API remains authoritative for loan permissions.
 
-**Additional loan amount** adds to an employee's existing active loan (like a surcharge on the loan): debit the loan's account, credit a source asset account, and raise the loan principal and balance. It is hidden behind `NEXT_PUBLIC_LOAN_INCREASE_ENABLED` until the API ships the proposed `POST /loans/{id}/increases` (see `docs/backend-api-gaps.md`).
+**Additional loan amount** adds to an employee's existing active loan (like a surcharge on the loan): debit the loan's account, credit a source asset account, and raise the loan principal and balance. The portal adapter sends a stable UUID `requestId` to `POST /loans/{id}/increases`; within the mounted entry session, uncertain identical submissions retain their UUID and payload, and concurrent identical submissions share one request. Missing/mismatched loan responses remain unconfirmed. The action stays hidden behind `NEXT_PUBLIC_LOAN_INCREASE_ENABLED` pending valid deployed lifecycle/replay acceptance (B12/F04 in `docs/backend-api-gaps.md`). Browser-reload recovery is not established.
 
 **Register new invoice** starts an `INITIAL-PAYMENT`; **Register invoice payment** starts a `PAYMENT` for an existing invoice. Both retain Assignment → Invoice details → Payment & references → Review. Their invoice mode is fixed by the chosen category. Existing invoices display sender, receiver, total, discount, paid, and balance read-only above the payment amount. New invoices allow system or custom numbers, optional sender/receiver, and Total/Discount/Paid with the calculated Balance. After saving, the same category remains active and shared employee/daily-route and payment-method selections carry forward.
 
@@ -223,7 +223,7 @@ A new daily route can start from a previous day’s configuration. Copying to an
 
 The same employee can be driver and supervisor, or driver, or supervisor, or helper. A helper holds only the helper role. Every daily route needs at least one supervisor and one driver (they can be the same person); the portal blocks saving without them, and the API must enforce the same.
 
-**Predefined routes** (`/predefined-routes`) are reusable named coverage filters, separate from route crews and daily routes. The list shows ID, name, Cities, and ZIP codes. The form retains one ordered mixed city/ZIP textbox list. Data is persisted through `/v1/predefined-routes` in the tenant `predefined_routes` collection. The appointment Route selector (below advanced filters) sends `predefinedRoute.id`; the API matches the customer sender address city OR ZIP and combines this restriction with existing filters using AND before counting/pagination. Add is available beside the selector; Edit/Delete are only in the catalog. Migration follow-up: `docs/predefined-routes.md`; API shapes: `api-docs.json`.
+**Predefined routes** (`/predefined-routes`) are reusable named coverage filters, separate from route crews and daily routes. The list shows ID, name, Cities, and ZIP codes. The form retains one ordered mixed city/ZIP textbox list. Data is persisted through `/v1/predefined-routes` in the tenant `predefined_routes` collection. The appointment Route selector (below advanced filters) sends `predefinedRoute.id`; the API matches the customer sender address city OR ZIP and combines this restriction with existing filters using AND before counting/pagination. Add is available beside the selector; Edit/Delete are only in the catalog. Migration follow-up: `docs/predefined-routes.md`; API shapes: `.reference/emsys-api/docs/swagger.json`.
 
 Route concepts and wire-model boundaries:
 
@@ -322,6 +322,14 @@ income, expenses, inventory changes and account transfers. Loan creation and
 loan payments use their dedicated feature APIs. Historical closeouts remain
 available for browsing; financial writes use the server-selected current period.
 
+**Register income** records other income generated outside initial and subsequent
+invoice payments. The existing API transaction type is `SALES`. Invoice-related
+receipts use their dedicated `INITIAL-PAYMENT` and `PAYMENT` workflows, which own
+invoice linkage and balance effects. All belong to the income discussion; the
+separate entry actions describe different operational use cases. Registration
+with zero initial payment does not represent money received. This clarification
+does not rename API transaction types or change accounting recognition rules.
+
 **Pending Reconciliation** (`/accounting/pending-financial-activity`) verifies
 money custody and supporting documents. **Pending Clearance**
 (`/accounting/pending-clearance`) records financial settlement. Both span all
@@ -330,14 +338,15 @@ Only explicitly authorized actions are available; role names do not grant access
 Reconciliation never applies invoice receipts. Clearance applies deferred bank
 receipts once without changing the original ledger date or period.
 
-**Bank transactions reconcile only through clearance.** A journal whose
-`clearanceStatus` is `OUTSTANDING` stays unreconciled and uncleared until it
-clears; Pending Reconciliation blocks it ("awaiting clearance"). Clearing, whether
-manual in Pending Clearance or auto-clear on save, also reconciles it. Cash and
-`NOT_REQUIRED` journals reconcile as before. Until the API does this atomically,
-the portal follows each confirmed clear with `/journals/reconcile` for those IDs
-(requires `canReconcileJournal`); a cleared journal whose follow-up failed stays
-reconcilable in Pending Reconciliation. See `docs/backend-api-gaps.md`.
+**Confirmed reconciliation/clearance policy (November 14, 2026):** reconciliation
+confirms internal receipt by the responsible party and never clears a payment.
+Bank receipts can therefore be reconciled while clearance remains outstanding.
+Clearance confirms actual payment posting and atomically reconciles the record
+as well; if already reconciled, retain the original confirmation actor/time and
+record clearance actor/time separately. Clearance applies deferred invoice
+payments exactly once; reconciliation alone does not apply them. Separate action
+permissions remain enforced. The earlier API/portal rule blocking reconciliation
+until bank clearance requires alignment; this decision is not a deployed change.
 
 Queries, advanced filters and pagination run on the server. Matching and selected
 Income / Expenses / Net totals use `/journals/summary`, preserve currency groups,
@@ -403,24 +412,25 @@ reconciliation and bank clearance are separate operations.
 
 The API resources are `/v1/zelle-payments`, `/v1/deposits` and
 `/v1/credit-card-payments`, with their documented read permissions. Current payloads
-and independent journal commands are defined in `api-docs.json`.
+and independent journal commands are defined in `.reference/emsys-api/docs/swagger.json`.
 
 **Auto-approve in Daily Income:** `autoClear` is the existing wire flag for
 internal auto-reconciliation and requires `canReconcileJournal`. It does not grant
 or substitute for bank clearance. The frontend must preserve that distinction
 and never infer clearance rights from per-method update permissions. Bank invoice
-payments and bank Income/Expense transactions never send `autoClear`; they reconcile only through clearance.
+payments and bank Income/Expense transactions do not send the ambiguous create
+flag `autoClear` to request internal confirmation. Standalone internal reconciliation
+is allowed by the confirmed policy above; backend/portal alignment remains pending.
 
 **Auto-clear bank transactions:** the frontend-only `clearPaymentOnSave`
 option defaults to false and requires `canClearJournal`. For PAYMENT,
 INITIAL-PAYMENT, SALES (Income), and EXPENSE bank transactions, it creates the journal and then calls the existing
-`POST /journals/clear` command with a UUID request ID. Once clearance is confirmed,
-it reconciles the journal with `POST /journals/reconcile` when the user has
-`canReconcileJournal`. It is never sent as a journal payload field or mapped to
-`autoClear`. Changing the method or destination account resets consent. If
-clearance cannot be confirmed after creation, report the saved payment and direct
-the user to Pending clearance; never retry journal creation. If only the
-reconciliation cannot be confirmed, report that it remains in Pending Reconciliation.
+`POST /journals/clear` command with a UUID request ID. Clearance itself reconciles
+atomically; do not add a separate reconciliation call or require its standalone
+grant for this combined action. The option is never sent as a journal payload
+field or mapped to `autoClear`. Changing the method or destination account resets
+consent. If clearance cannot be confirmed after creation, report the saved payment
+and direct the user to Pending clearance; never retry journal creation.
 
 Each clearable payment stores:
 
@@ -470,6 +480,18 @@ That aggregation:
 3. Sums invoice detail merchandise totals, falling back to invoice `cost` when there are no details.
 4. Averages across every departed container in the window. Containers with no invoices count as `$0`.
 5. Returns `average`, `previousAverage`, `containerCount`, `totalValue`, plus `period` / `timezone` / window metadata.
+
+### Complaints
+
+Portal route: `/complaints` (operations sidebar band with Reports, Inventory and Containers). Staff log customer complaints taken by phone: caller, category, optional severity, subject, description, category-specific details from `GET /complaint-categories`, and at least one target (a directory employee, or a typed appointment / order / invoice / other reference). The API assigns the `C-YYYY-NNNNN` number.
+
+**Business complaint types.** Every complaint is about one of three things: an **appointment** (employee behavior, prices, etc.), a **barcode item delivery** (pieces of an invoice: employee, damage, lost), or the company in **general** (employee behavior, overall service). Target workflow: choose the type; for appointments search the sender then pick the appointment; for deliveries search the invoice (optionally the barcodes); add zero or more employees; attach customer photos/videos as proof; then work the case through its status, a case history of everything done, and a written solution. The API still serves its generic built-in categories (appointment, delivery, billing, customer service, progress, quality, general, other) and lacks media upload, full history and an editable solution; the requested changes are B17–B19 in `docs/backend-handoffs/complaints.md`. The portal keeps the current model until they ship.
+
+The red sidebar badge counts **unresolved** complaints: the API's `pending` flag (open, in progress, or waiting on the customer), read from `POST /complaints/search` `total`. It is independent of the per-user notification inbox (`GET /complaints/notifications`), which appears in the topbar notifications; opening an item marks it read for that user. The table defaults to the Unresolved view and can switch to All.
+
+Workflow commands send the loaded `version` in `If-Match`; a 412 or 409 reloads the record. Open → In progress or Rejected; In progress → Waiting on customer, Resolved (summary + action taken) or Rejected; Waiting on customer → In progress or Rejected; Resolved → Closed or back to In progress; Rejected → Open; Closed → Reopen with a reason (`canReopenComplaint`). Assignee, severity and internal notes are editable until closed. Legacy linked-origin complaints (no `category`) are read-only.
+
+Permissions: `canViewComplaint`, `canCreateComplaint`, `canUpdateComplaint` (`complaint`), `canReopenComplaint` (`complaint_reopen`). The API returns numeric user IDs for assignee, logger and timeline actors, and numeric employee IDs for targets. The portal shows names from the users / employees directories when the viewer can list them, otherwise `User #id` / `Employee #id`; returning name snapshots from the API would remove that lookup. Staff can replace what or who a complaint is about, add staff-only attachment links (HTTPS URL, type, size; the file stays with its host) and open Insights (category, employee, reopen and resolution-time summary for a UTC date range). Category administration is not in the portal.
 
 ### Employees
 
@@ -643,7 +665,11 @@ Closeouts are opened explicitly using the server date and branch timezone.
 RD/DR/DO branches supply currency/rate; other branches use USD/rate 1. Journals
 use the current authorized location period, never a viewed historical date or
 caller-selected old period. Closed periods remain read-only for membership;
-later reconciliation and settlement do not reopen them.
+later reconciliation and settlement do not reopen them. A closeout is a daily
+entry window and operational summary, not a finalized accounting-period lock.
+Registered amounts remain attributed to the entry day; status-based reconciled/
+cleared breakdowns can update as existing transactions progress, with explicit
+labels and audit history. Clearance must not count the receipt as new income again.
 
 Missing-period recovery follows `CLOSEOUT_REQUIRED`. Pending transaction inputs
 must survive setup failure/cancellation and must not be reposted if already
@@ -666,7 +692,7 @@ and contract decisions are in `docs/inventory-workflow.md`.
 
 Journal summaries preserve currencies and exclude non-income/expense transfers,
 discounts, surcharges and loans according to the shared classification helper.
-Current contracts are published in `api-docs.json`; pending implementation and
+Current contracts are defined in `.reference/emsys-api/docs/swagger.json`; pending implementation and
 migration work is indexed in `docs/backend-api-gaps.md`.
 
 ### Add transaction starts the current closeout
@@ -710,3 +736,15 @@ covers limited fields and inventory dispatches only.
 Approval, assignment isolation, atomic corrections and audit invariants require
 server enforcement. Their remaining acceptance cases are in
 `docs/financial-controls.md`.
+
+### Authentication context isolation
+
+Redux transport keeps actor/company identity and a client context version. Login,
+logout and actor/company transitions clear the prior Query cache and remount
+child views so old rows and placeholder data cannot carry into a new context.
+Ordinary token renewal preserves the context/cache. The central Axios client
+rejects delayed responses and refresh retries from ended contexts and rebuilds
+auth/company headers centrally. These controls do not undo committed server
+mutations or replace API authorization. Real Firebase, stored workspace/draft
+scope and local-origin CORS acceptance remain tracked under F03 in
+`docs/backend-api-gaps.md`.

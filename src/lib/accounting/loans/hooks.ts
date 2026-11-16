@@ -1,13 +1,15 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { createLoanIncreaseSession } from "./loan-increase-session";
 
 import {
   createLoan,
   fetchLoan,
   fetchLoans,
   fetchLoanTransactions,
-  increaseLoan,
   recordLoanPayment,
 } from "@/lib/accounting/loans/api";
 import type { LoanCreateValues, LoanIncreaseValues, LoanListParams, LoanPaymentValues } from "@/lib/accounting/loans/types";
@@ -72,8 +74,12 @@ export function useCreateLoan() {
 
 export function useIncreaseLoan() {
   const queryClient = useQueryClient();
+  const { companyId, user } = useAuth();
+  const session = useRef<ReturnType<typeof createLoanIncreaseSession> | null>(null);
+  if (session.current === null) session.current = createLoanIncreaseSession();
   return useMutation({
-    mutationFn: (values: LoanIncreaseValues) => increaseLoan(values),
+    mutationFn: (values: LoanIncreaseValues) => session.current!(JSON.stringify([companyId, user?.uid]), values),
+    retry: false,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
   });
 }

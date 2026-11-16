@@ -1,7 +1,16 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["chartaccount.ChartAccount"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["chartaccount.ChartAccount"]. */
 export const CHART_ACCOUNT_API_TABLE_FIELDS = [
+  // Master-chart structure/posting controls are modeled by the feature, not raw generated columns.
+  { field: "classification", column: false },
+  { field: "code", column: false },
+  { field: "codeRange", column: false },
+  { field: "customizationPolicy", column: false },
+  { field: "nonPosting", column: false },
+  { field: "subType", column: false },
+  { field: "templateLayer", column: false },
+  { field: "templateVersion", column: false },
   { field: "branch" },
   { field: "branchAccount", defaultVisible: false, sortField: "branchAccount" },
   { field: "createdAt", format: "date", defaultVisible: false, sortField: "createdAt" },

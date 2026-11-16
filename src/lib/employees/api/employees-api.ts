@@ -135,7 +135,7 @@ type ApiEmployee = {
 };
 
 /**
- * POST/PUT /employees — see api-docs.json.
+ * POST/PUT /employees — see .reference/emsys-api/docs/swagger.json.
  * Create treats `active` by JSON presence: omit → default true; `"active": false` stays false.
  * Always send an explicit boolean so inactive creates are not coerced back to active.
  */

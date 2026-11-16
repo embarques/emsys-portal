@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useAccountingQueryEnabled, useCurrentCloseoutTransactionCount } from "@/lib/accounting/daily-income/hooks";
+import { useUnresolvedComplaintCount } from "@/lib/complaints/hooks/use-complaints";
 import { usePendingOrderCount } from "@/lib/orders/hooks/use-orders";
 import { fetchOutstandingJournalCount } from "@/lib/accounting/daily-income/reconciliation-api";
 import type { JournalQueue } from "@/lib/accounting/daily-income/journal-queue";
@@ -13,6 +14,7 @@ const reconciliationHref = "/accounting/pending-financial-activity";
 const clearanceHref = "/accounting/pending-clearance";
 const appointmentsHref = "/appointments";
 const dailyIncomeHref = "/accounting/daily-income";
+const complaintsHref = "/complaints";
 type NavAlertItem = { href?: string; children?: Array<{ href?: string }> };
 
 function hasHref(items: NavAlertItem[], href: string) {
@@ -32,13 +34,16 @@ export function useOutstandingJournalCount(queue: JournalQueue = "reconciliation
 }
 
 export function useNavAlertCount(href?: string) {
-  return useOutstandingJournalCount(href === clearanceHref ? "clearance" : "reconciliation", href === reconciliationHref || href === clearanceHref);
+  const journals = useOutstandingJournalCount(href === clearanceHref ? "clearance" : "reconciliation", href === reconciliationHref || href === clearanceHref);
+  const complaints = useUnresolvedComplaintCount(href === complaintsHref);
+  return journals + complaints;
 }
 
 export function useNavItemsAlertCount(items: NavAlertItem[]) {
   const reconciliation = useOutstandingJournalCount("reconciliation", hasHref(items, reconciliationHref));
   const clearance = useOutstandingJournalCount("clearance", hasHref(items, clearanceHref));
-  return reconciliation + clearance;
+  const complaints = useUnresolvedComplaintCount(hasHref(items, complaintsHref));
+  return reconciliation + clearance + complaints;
 }
 
 export function useNavAlertLabel(href: string | undefined, count: number) {
@@ -46,13 +51,16 @@ export function useNavAlertLabel(href: string | undefined, count: number) {
   if (count <= 0) return "";
   if (href === reconciliationHref) return t("accounting.journalReconciliation.pendingAlert", { count });
   if (href === clearanceHref) return t("accounting.journalClearance.pendingAlert", { count });
+  if (href === complaintsHref) return t("navigation.badges.unresolvedComplaints", { count });
   return "";
 }
 
 export function useNavItemsAlertLabel(items: NavAlertItem[], count: number) {
   const { t } = useTranslation();
-  return count > 0 && (hasHref(items, reconciliationHref) || hasHref(items, clearanceHref))
-    ? t("accounting.pendingTasksAlert", { count }) : "";
+  if (count <= 0) return "";
+  if (hasHref(items, reconciliationHref) || hasHref(items, clearanceHref)) return t("accounting.pendingTasksAlert", { count });
+  if (hasHref(items, complaintsHref)) return t("navigation.badges.unresolvedComplaints", { count });
+  return "";
 }
 
 /** Informational (green) counts: pending appointments and today's closeout transactions. */

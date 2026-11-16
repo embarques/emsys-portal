@@ -1,0 +1,3373 @@
+{
+  "reviewDate": "2026-11-13",
+  "backendCommit": "675da5320b9ea6901b1223088579cd74a4d759e3",
+  "scope": "Proposed initial main-search, advanced-filter and user-sort contracts. Does not remove current capabilities or modify runtime configuration.",
+  "addressDecision": "User confirmed street address and city remain in main search for Customers, Appointments, Invoices and Route Deliveries.",
+  "tables": [
+    {
+      "group": "Operations",
+      "table": "Customers",
+      "resourcePath": "/customers",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "email",
+        "IDNumber",
+        "phones.number",
+        "phone1",
+        "phone2",
+        "addresses.address1",
+        "addresses.city"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "email",
+        "IDNumber",
+        "phones.number",
+        "phone1",
+        "phone2",
+        "addresses.address1",
+        "addresses.city",
+        "customerType",
+        "active",
+        "branch.id",
+        "accountBalance",
+        "addresses.state",
+        "addresses.zipcode",
+        "createdAt",
+        "createdBy.id",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "customerType",
+        "active",
+        "branch.id",
+        "accountBalance",
+        "addresses.state",
+        "addresses.zipcode",
+        "createdAt",
+        "createdBy.id",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "name",
+        "createdAt",
+        "updatedAt",
+        "accountBalance"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "customerType",
+        "phone",
+        "phone1",
+        "phone2",
+        "phones.number",
+        "phones.type",
+        "phones.isPrimary",
+        "email",
+        "active",
+        "IDNumber",
+        "createdAt",
+        "updatedAt",
+        "accountBalance",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name",
+        "branch.id",
+        "branch.name",
+        "branch.code",
+        "addresses.address1",
+        "addresses.address2",
+        "addresses.apartment",
+        "addresses.city",
+        "addresses.state",
+        "addresses.zipcode",
+        "addresses.zipCode",
+        "addresses.country",
+        "addresses.phone",
+        "addresses.label",
+        "addresses.isPrimary",
+        "addresses.active"
+      ],
+      "source": ".reference/emsys-api/internal/customer/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Appointments and Route Appointments",
+      "resourcePath": "/pickups",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "orderNumber",
+        "sender.name",
+        "receivers.name",
+        "sender.phones.number",
+        "receivers.phones.number",
+        "sender.address.address1",
+        "sender.address.city",
+        "receivers.address.address1",
+        "receivers.address.city"
+      ],
+      "advancedFilterFields": [
+        "orderNumber",
+        "sender.name",
+        "receivers.name",
+        "sender.phones.number",
+        "receivers.phones.number",
+        "sender.address.address1",
+        "sender.address.city",
+        "receivers.address.address1",
+        "receivers.address.city",
+        "date",
+        "completed",
+        "purpose",
+        "route.id",
+        "employee.id",
+        "branch.id",
+        "sector.id",
+        "legacySyncStatus",
+        "completedAt",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "date",
+        "completed",
+        "purpose",
+        "route.id",
+        "employee.id",
+        "branch.id",
+        "sector.id",
+        "legacySyncStatus",
+        "completedAt",
+        "createdAt"
+      ],
+      "sortFields": [
+        "date",
+        "orderNumber",
+        "completed",
+        "createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "dailyRoute.id",
+        "dailyRoute.date",
+        "dailyRoute.vehicle.id",
+        "dailyRoute.supervisor.id",
+        "dailyRoute.driver.id",
+        "dailyRoute.helpers.id",
+        "predefinedRoute.id",
+        "id",
+        "route.id",
+        "route.name",
+        "date",
+        "completed",
+        "completedAt",
+        "legacySyncStatus",
+        "legacySyncError",
+        "legacySyncedAt",
+        "orderNumber",
+        "purpose",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name",
+        "branch.id",
+        "branch.name",
+        "branch.code",
+        "completedBy.id",
+        "completedBy.name",
+        "employee.id",
+        "employee.name",
+        "sector.id",
+        "sector.name",
+        "sender.id",
+        "sender.name",
+        "sender.phone",
+        "sender.phone1",
+        "sender.phone2",
+        "sender.phones.number",
+        "sender.phones.type",
+        "sender.phones.isPrimary",
+        "sender.address.address1",
+        "sender.address.address2",
+        "sender.address.apartment",
+        "sender.address.city",
+        "sender.address.state",
+        "sender.address.zipcode",
+        "sender.address.country",
+        "sender.addresses.address1",
+        "sender.addresses.address2",
+        "sender.addresses.apartment",
+        "sender.addresses.city",
+        "sender.addresses.state",
+        "sender.addresses.zipcode",
+        "sender.addresses.country",
+        "receivers.id",
+        "receivers.name",
+        "receivers.phone",
+        "receivers.phone1",
+        "receivers.phone2",
+        "receivers.phones.number",
+        "receivers.phones.type",
+        "receivers.phones.isPrimary",
+        "receivers.address.address1",
+        "receivers.address.address2",
+        "receivers.address.apartment",
+        "receivers.address.city",
+        "receivers.address.state",
+        "receivers.address.zipcode",
+        "receivers.address.country",
+        "receivers.addresses.address1",
+        "receivers.addresses.address2",
+        "receivers.addresses.apartment",
+        "receivers.addresses.city",
+        "receivers.addresses.state",
+        "receivers.addresses.zipcode",
+        "receivers.addresses.country",
+        "comments.description",
+        "comments.purpose",
+        "comments.unit",
+        "comments.quantity"
+      ],
+      "source": ".reference/emsys-api/internal/pickup/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Invoices",
+      "resourcePath": "/invoices",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "number",
+        "sender.name",
+        "receiver.name",
+        "sender.phones.number",
+        "receiver.phones.number",
+        "sender.address.address1",
+        "sender.address.city",
+        "receiver.address.address1",
+        "receiver.address.city"
+      ],
+      "advancedFilterFields": [
+        "number",
+        "sender.name",
+        "receiver.name",
+        "sender.phones.number",
+        "receiver.phones.number",
+        "sender.address.address1",
+        "sender.address.city",
+        "receiver.address.address1",
+        "receiver.address.city",
+        "date",
+        "registration",
+        "branch.id",
+        "container.id",
+        "dailyRoute.id",
+        "employee.id",
+        "receivedBy.type",
+        "cost",
+        "discount",
+        "payment",
+        "balance",
+        "paidStatus",
+        "isVoid",
+        "isArchive",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "date",
+        "registration",
+        "branch.id",
+        "container.id",
+        "dailyRoute.id",
+        "employee.id",
+        "receivedBy.type",
+        "cost",
+        "discount",
+        "payment",
+        "balance",
+        "paidStatus",
+        "isVoid",
+        "isArchive",
+        "createdAt"
+      ],
+      "sortFields": [
+        "number",
+        "date",
+        "createdAt",
+        "balance",
+        "cost"
+      ],
+      "sourceDeclaredQueryFields": [
+        "dailyRoute.id",
+        "dailyRoute.date",
+        "dailyRoute.vehicle.id",
+        "dailyRoute.supervisor.id",
+        "dailyRoute.driver.id",
+        "dailyRoute.helpers.id",
+        "registration",
+        "id",
+        "number",
+        "date",
+        "isVoid",
+        "isArchive",
+        "paidRegion",
+        "paidStatus",
+        "cost",
+        "discount",
+        "payment",
+        "balance",
+        "surcharge",
+        "phone",
+        "address",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name",
+        "branch.id",
+        "container.id",
+        "container.name",
+        "container.containerNumber",
+        "sender.id",
+        "sender.name",
+        "sender.phone",
+        "sender.phone1",
+        "sender.phone2",
+        "sender.phones.number",
+        "sender.phones.type",
+        "sender.phones.isPrimary",
+        "sender.address.address1",
+        "sender.address.address2",
+        "sender.address.apartment",
+        "sender.address.city",
+        "sender.address.state",
+        "sender.address.zipcode",
+        "sender.address.country",
+        "receiver.id",
+        "receiver.name",
+        "receiver.phone",
+        "receiver.phone1",
+        "receiver.phone2",
+        "receiver.phones.number",
+        "receiver.phones.type",
+        "receiver.phones.isPrimary",
+        "receiver.address.address1",
+        "receiver.address.address2",
+        "receiver.address.apartment",
+        "receiver.address.city",
+        "receiver.address.state",
+        "receiver.address.zipcode",
+        "receiver.address.country",
+        "employee.id",
+        "employee.name",
+        "receivedBy.id",
+        "receivedBy.name",
+        "receivedBy.type",
+        "receivedBy.route.id",
+        "receivedBy.route.name",
+        "receivedBy.employee.id",
+        "receivedBy.employee.name",
+        "pickupSource",
+        "route.id",
+        "route.name",
+        "pickupEmployee.id",
+        "pickupEmployee.name",
+        "officeBranch.id",
+        "officeBranch.name",
+        "officeBranch.code"
+      ],
+      "source": ".reference/emsys-api/internal/invoice/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Reserved invoice numbers",
+      "resourcePath": "/invoices/reserved",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "number"
+      ],
+      "advancedFilterFields": [
+        "number",
+        "allocation.userId",
+        "claimed",
+        "createdAt",
+        "reservedAt",
+        "receivedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "allocation.userId",
+        "claimed",
+        "createdAt",
+        "reservedAt",
+        "receivedAt"
+      ],
+      "sortFields": [
+        "number",
+        "createdAt",
+        "reservedAt",
+        "receivedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "number",
+        "allocation.userId",
+        "claimed",
+        "createdAt",
+        "reservedAt",
+        "receivedAt"
+      ],
+      "source": ".reference/emsys-api/internal/invoice/reserved_search.go",
+      "sourceSymbol": "reservedSearchFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Barcodes",
+      "resourcePath": "/barcodes",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "number",
+        "invoice.number",
+        "description"
+      ],
+      "advancedFilterFields": [
+        "number",
+        "invoice.number",
+        "description",
+        "status.id",
+        "container.id",
+        "route.id",
+        "delivery.id",
+        "scanDate",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "status.id",
+        "container.id",
+        "route.id",
+        "delivery.id",
+        "scanDate",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id"
+      ],
+      "sortFields": [
+        "number",
+        "invoice.number",
+        "createdAt",
+        "scanDate"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "number",
+        "name",
+        "barcodeId",
+        "invoice.id",
+        "invoice.number",
+        "invoiceNumber",
+        "description",
+        "status.id",
+        "status.name",
+        "container.id",
+        "container.name",
+        "container.booking",
+        "container.seal",
+        "container.containerNumber",
+        "container.itn",
+        "container.broker",
+        "container.sealNumber",
+        "container.company",
+        "container.cost",
+        "container.departureDate",
+        "container.arrivalDate",
+        "delivery.id",
+        "delivery.name",
+        "delivery.date",
+        "route.id",
+        "route.name",
+        "tripNumber",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.uid",
+        "createdBy.email",
+        "createdBy.name",
+        "createdBy.userName",
+        "createdBy.fullName",
+        "updatedBy.id",
+        "updatedBy.uid",
+        "updatedBy.email",
+        "updatedBy.name",
+        "updatedBy.userName",
+        "updatedBy.fullName",
+        "scanDate"
+      ],
+      "source": ".reference/emsys-api/internal/barcode/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Route Deliveries",
+      "resourcePath": "/deliveries/assigned-barcodes",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "number",
+        "invoice.number",
+        "name",
+        "sender.name",
+        "receiver.name",
+        "sender.phones.number",
+        "receiver.phones.number",
+        "receiver.address.address1",
+        "receiver.address.city"
+      ],
+      "advancedFilterFields": [
+        "number",
+        "invoice.number",
+        "name",
+        "sender.name",
+        "receiver.name",
+        "sender.phones.number",
+        "receiver.phones.number",
+        "receiver.address.address1",
+        "receiver.address.city",
+        "route.id",
+        "delivery.id",
+        "container.name",
+        "receiver.address.state",
+        "invoice.balance",
+        "route.rate"
+      ],
+      "additionalAdvancedFilterFields": [
+        "route.id",
+        "delivery.id",
+        "container.name",
+        "receiver.address.state",
+        "invoice.balance",
+        "route.rate"
+      ],
+      "sortFields": [
+        "number",
+        "invoice.number",
+        "receiver.address.city",
+        "receiver.address.state",
+        "receiver.name"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "barcodeId",
+        "number",
+        "name",
+        "description",
+        "invoice.number",
+        "invoice.balance",
+        "sender.name",
+        "sender.phones.number",
+        "sender.phones.type",
+        "sender.phones.isPrimary",
+        "invoice.id",
+        "receiver.name",
+        "receiver.address.address1",
+        "receiver.phones.number",
+        "receiver.address.state",
+        "receiver.address.city",
+        "container.name",
+        "status.name",
+        "delivery.id",
+        "delivery.name",
+        "route.name",
+        "route.rate",
+        "route.id"
+      ],
+      "source": ".reference/emsys-api/internal/delivery/assigned_barcodes.go",
+      "sourceSymbol": "AssignedBarcodeFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Shipping containers",
+      "resourcePath": "/containers",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "containerNumber",
+        "booking",
+        "sealNumber",
+        "itn"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "containerNumber",
+        "booking",
+        "sealNumber",
+        "itn",
+        "company",
+        "broker",
+        "cost",
+        "departureDate",
+        "arrivalDate",
+        "barcodeSequence",
+        "deliverySequence",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "company",
+        "broker",
+        "cost",
+        "departureDate",
+        "arrivalDate",
+        "barcodeSequence",
+        "deliverySequence",
+        "createdAt"
+      ],
+      "sortFields": [
+        "name",
+        "containerNumber",
+        "departureDate",
+        "arrivalDate",
+        "cost",
+        "createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "booking",
+        "seal",
+        "containerNumber",
+        "itn",
+        "broker",
+        "sealNumber",
+        "company",
+        "cost",
+        "sender_doc_type",
+        "receiver_doc_type",
+        "departureDate",
+        "arrivalDate",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/container/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [
+          "barcodeSequence",
+          "deliverySequence"
+        ],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Daily delivery/pickup routes",
+      "resourcePath": "/vehicle-routes",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "vehicle.name",
+        "employees.name"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "vehicle.name",
+        "employees.name",
+        "date",
+        "routeType",
+        "branch.id",
+        "vehicle.id",
+        "employees.id",
+        "employees.roles",
+        "active",
+        "container.id",
+        "rate"
+      ],
+      "additionalAdvancedFilterFields": [
+        "date",
+        "routeType",
+        "branch.id",
+        "vehicle.id",
+        "employees.id",
+        "employees.roles",
+        "active",
+        "container.id",
+        "rate"
+      ],
+      "sortFields": [
+        "name",
+        "date",
+        "branch.code",
+        "vehicle.name",
+        "routeType"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "date",
+        "branch.id",
+        "branch.name",
+        "branch.code",
+        "vehicle.id",
+        "vehicle.name",
+        "employees.id",
+        "employees.name",
+        "employees.role",
+        "employees.roles",
+        "routeType",
+        "container.id",
+        "container.number",
+        "tripNumber",
+        "rate",
+        "active"
+      ],
+      "source": ".reference/emsys-api/internal/vehicle_route/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Reusable route crews",
+      "resourcePath": "/routes",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "employees.name"
+      ],
+      "advancedFilterFields": [
+        "employees.name",
+        "branch.id",
+        "employees.id",
+        "createdAt",
+        "createdBy.id",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "branch.id",
+        "employees.id",
+        "createdAt",
+        "createdBy.id",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "branch.code",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "active",
+        "branch.id",
+        "branch.name",
+        "branch.code",
+        "employees.id",
+        "employees.name",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/route/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Predefined route templates",
+      "resourcePath": "/predefined-routes",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "content",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "content",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "content",
+        "createdAt",
+        "updatedAt"
+      ],
+      "source": ".reference/emsys-api/internal/predefined_route/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Operations",
+      "table": "Merchandise item shortcuts",
+      "resourcePath": "/invoice-descriptions",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "price",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "price",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "name",
+        "price",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "price",
+        "createdAt",
+        "updatedAt"
+      ],
+      "source": ".reference/emsys-api/internal/invoice_description/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Employees",
+      "resourcePath": "/employees",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "email",
+        "phones.number"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "email",
+        "phones.number",
+        "title",
+        "department",
+        "active",
+        "branch.id",
+        "startDate",
+        "endDate",
+        "totalLoanGiven",
+        "totalPaymentReceived",
+        "loanAmountOwed",
+        "cost",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "title",
+        "department",
+        "active",
+        "branch.id",
+        "startDate",
+        "endDate",
+        "totalLoanGiven",
+        "totalPaymentReceived",
+        "loanAmountOwed",
+        "cost",
+        "createdAt"
+      ],
+      "sortFields": [
+        "name",
+        "startDate",
+        "department",
+        "title",
+        "loanAmountOwed",
+        "createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "title",
+        "department",
+        "phones.type",
+        "phones.number",
+        "phones.isPrimary",
+        "email",
+        "active",
+        "startDate",
+        "endDate",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name",
+        "totalLoanGiven",
+        "totalPaymentReceived",
+        "loanAmountOwed",
+        "cost",
+        "branch.id",
+        "branch.name",
+        "branch.code",
+        "user.id",
+        "user.name",
+        "address.address1",
+        "address.address2",
+        "address.apartment",
+        "address.city",
+        "address.state",
+        "address.zipcode",
+        "address.country"
+      ],
+      "source": ".reference/emsys-api/internal/employee/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Employee titles",
+      "resourcePath": "/employee-titles",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "translations.en",
+        "translations.es"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "translations.en",
+        "translations.es",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "active",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "translations.en",
+        "translations.es",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ],
+      "source": ".reference/emsys-api/internal/employee_title/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Employee departments",
+      "resourcePath": "/employee-departments",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "translations.en",
+        "translations.es"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "translations.en",
+        "translations.es",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "active",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "translations.en",
+        "translations.es",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ],
+      "source": ".reference/emsys-api/internal/employee_department/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Users",
+      "resourcePath": "/users",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "email"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "email",
+        "active",
+        "role.id",
+        "branch.id",
+        "uid",
+        "startTime",
+        "endTime",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "active",
+        "role.id",
+        "branch.id",
+        "uid",
+        "startTime",
+        "endTime",
+        "createdAt"
+      ],
+      "sortFields": [
+        "name",
+        "email",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "uid",
+        "email",
+        "name",
+        "active",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name",
+        "branch.id",
+        "branch.name",
+        "role.id",
+        "role.name",
+        "startTime",
+        "endTime"
+      ],
+      "source": ".reference/emsys-api/internal/user/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Roles",
+      "resourcePath": "/roles",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "active",
+        "systemRole",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "active",
+        "systemRole",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id"
+      ],
+      "sortFields": [
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "active",
+        "systemRole",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/role/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Branches",
+      "resourcePath": "/branches",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "code"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "code",
+        "type",
+        "phones.number",
+        "address.city",
+        "address.state",
+        "address.zipcode",
+        "settings.labelPrefix",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "type",
+        "phones.number",
+        "address.city",
+        "address.state",
+        "address.zipcode",
+        "settings.labelPrefix",
+        "createdAt"
+      ],
+      "sortFields": [
+        "name",
+        "code",
+        "type",
+        "createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "type",
+        "code",
+        "phones.type",
+        "phones.number",
+        "phones.isPrimary",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name",
+        "address.city",
+        "address.state",
+        "address.zipcode"
+      ],
+      "source": ".reference/emsys-api/internal/branch/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [
+          "settings.labelPrefix"
+        ],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Vehicles",
+      "resourcePath": "/vehicles",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "vehicleId",
+        "name",
+        "licensePlate",
+        "vin"
+      ],
+      "advancedFilterFields": [
+        "vehicleId",
+        "name",
+        "licensePlate",
+        "vin",
+        "year",
+        "fuelType",
+        "branch.id",
+        "active",
+        "inspectionDate",
+        "registrationDate",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "year",
+        "fuelType",
+        "branch.id",
+        "active",
+        "inspectionDate",
+        "registrationDate",
+        "createdAt"
+      ],
+      "sortFields": [
+        "vehicleId",
+        "name",
+        "licensePlate",
+        "year",
+        "createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "vehicleId",
+        "name",
+        "licensePlate",
+        "vin",
+        "year",
+        "fuelType",
+        "branch.id",
+        "branch.code",
+        "active",
+        "createdAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedAt",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/vehicle/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [
+          "inspectionDate",
+          "registrationDate"
+        ],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Invoice policies",
+      "resourcePath": "/invoice-policies",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "title"
+      ],
+      "advancedFilterFields": [
+        "title",
+        "body",
+        "active",
+        "sortOrder",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "body",
+        "active",
+        "sortOrder",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "title",
+        "sortOrder",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "title",
+        "body",
+        "sortOrder",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ],
+      "source": ".reference/emsys-api/internal/invoice_policy/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Memo pads",
+      "resourcePath": "/memo-pads",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "content"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "content",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "updatedBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "updatedBy.id"
+      ],
+      "sortFields": [
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "content",
+        "createdAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedAt",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/memo_pad/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Barcode status catalog",
+      "resourcePath": "/barcodes/status-options",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name"
+      ],
+      "advancedFilterFields": [],
+      "additionalAdvancedFilterFields": [],
+      "sortFields": [],
+      "sourceDeclaredQueryFields": [],
+      "source": null,
+      "sourceSymbol": null,
+      "notDeclaredByExactName": {},
+      "evidence": "Status options is an options endpoint; do not assume server search/sort support.",
+      "sortDirections": [],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "User Activity",
+      "resourcePath": "/user-activities",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "description",
+        "user.name",
+        "documentId"
+      ],
+      "advancedFilterFields": [
+        "description",
+        "user.name",
+        "documentId",
+        "origin",
+        "eventType",
+        "severity",
+        "timestamp",
+        "user.id",
+        "quantity",
+        "barcodeRouteChange.previous.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "origin",
+        "eventType",
+        "severity",
+        "timestamp",
+        "user.id",
+        "quantity",
+        "barcodeRouteChange.previous.id"
+      ],
+      "sortFields": [
+        "timestamp",
+        "user.name",
+        "origin",
+        "severity"
+      ],
+      "sourceDeclaredQueryFields": [
+        "activityId",
+        "eventType",
+        "barcodeRouteChange.previous.id",
+        "timestamp",
+        "user.id",
+        "user.name",
+        "description",
+        "origin",
+        "documentId",
+        "quantity",
+        "severity"
+      ],
+      "source": ".reference/emsys-api/internal/user_activity/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "People and administration",
+      "table": "Protected change requests",
+      "resourcePath": "/change-requests",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "resourceId",
+        "requestedBy.name"
+      ],
+      "advancedFilterFields": [
+        "resourceId",
+        "requestedBy.name",
+        "resourceType",
+        "action",
+        "status",
+        "createdAt",
+        "reviewedAt",
+        "requestedBy.id",
+        "reviewedBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "resourceType",
+        "action",
+        "status",
+        "createdAt",
+        "reviewedAt",
+        "requestedBy.id",
+        "reviewedBy.id"
+      ],
+      "sortFields": [
+        "createdAt",
+        "reviewedAt",
+        "status",
+        "resourceType"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "resourceType",
+        "resourceId",
+        "action",
+        "status",
+        "createdAt",
+        "reviewedAt",
+        "requestedBy.id",
+        "requestedBy.name",
+        "reviewedBy.id",
+        "reviewedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/change_request/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Chart of accounts",
+      "resourcePath": "/chart-accounts",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "displayName",
+        "name",
+        "code"
+      ],
+      "advancedFilterFields": [
+        "displayName",
+        "name",
+        "code",
+        "type",
+        "description",
+        "branch.id",
+        "parentAccount.id",
+        "systemAccount",
+        "default",
+        "nonPosting",
+        "templateLayer",
+        "classification",
+        "subType"
+      ],
+      "additionalAdvancedFilterFields": [
+        "type",
+        "description",
+        "branch.id",
+        "parentAccount.id",
+        "systemAccount",
+        "default",
+        "nonPosting",
+        "templateLayer",
+        "classification",
+        "subType"
+      ],
+      "sortFields": [
+        "code",
+        "displayName",
+        "name",
+        "type",
+        "createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "templateLayer",
+        "classification",
+        "subType",
+        "code",
+        "nonPosting",
+        "id",
+        "name",
+        "type",
+        "displayName",
+        "description",
+        "default",
+        "systemAccount",
+        "branchAccount",
+        "branch.id",
+        "branch.name",
+        "branch.code",
+        "parentAccount.id",
+        "parentAccount.name",
+        "createdAt",
+        "updatedAt",
+        "createdBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/chart_account/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Loans",
+      "resourcePath": "/loans",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "employee.name",
+        "referenceNumber",
+        "description"
+      ],
+      "advancedFilterFields": [
+        "employee.name",
+        "referenceNumber",
+        "description",
+        "employee.id",
+        "branch.id",
+        "loanAccount.id",
+        "status",
+        "principalAmount",
+        "openedAt",
+        "lastActivityAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "employee.id",
+        "branch.id",
+        "loanAccount.id",
+        "status",
+        "principalAmount",
+        "openedAt",
+        "lastActivityAt"
+      ],
+      "sortFields": [
+        "employee.name",
+        "principalAmount",
+        "openedAt",
+        "lastActivityAt",
+        "createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "employee.id",
+        "employee.name",
+        "branch.id",
+        "branch.name",
+        "branch.code",
+        "incomeStatement.id",
+        "loanAccount.id",
+        "loanAccount.name",
+        "principalAmount",
+        "status",
+        "referenceNumber",
+        "description",
+        "openedAt",
+        "lastActivityAt",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/loan/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Daily Income journals and pending reconciliation/clearance",
+      "resourcePath": "/journals",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "refNumber",
+        "paymentReference",
+        "external_reference_number",
+        "invoice.number",
+        "description"
+      ],
+      "advancedFilterFields": [
+        "refNumber",
+        "paymentReference",
+        "external_reference_number",
+        "invoice.number",
+        "description",
+        "date",
+        "branch.id",
+        "incomeStatement.id",
+        "employee.id",
+        "accounts.name",
+        "transactionType",
+        "paymentMethod.name",
+        "transactionAmount",
+        "reconciliationStatus",
+        "clearanceStatus",
+        "transactionStatus",
+        "createdBy.id",
+        "createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "date",
+        "branch.id",
+        "incomeStatement.id",
+        "employee.id",
+        "accounts.name",
+        "transactionType",
+        "paymentMethod.name",
+        "transactionAmount",
+        "reconciliationStatus",
+        "clearanceStatus",
+        "transactionStatus",
+        "createdBy.id",
+        "createdAt"
+      ],
+      "sortFields": [
+        "date",
+        "createdAt",
+        "transactionAmount",
+        "invoice.number",
+        "refNumber"
+      ],
+      "sourceDeclaredQueryFields": [
+        "clearanceStatus",
+        "transactionStatus",
+        "version",
+        "reconciliationStatus",
+        "date",
+        "branch.id",
+        "accounts.name",
+        "invoice.cost",
+        "invoice.payment",
+        "invoice.balance",
+        "transactionAmount",
+        "paymentMethod.name",
+        "paymentReference",
+        "dailyRoute.id",
+        "dailyRoute.date",
+        "dailyRoute.vehicle.id",
+        "dailyRoute.supervisor.id",
+        "dailyRoute.driver.id",
+        "dailyRoute.helpers.id",
+        "id",
+        "description",
+        "refNumber",
+        "idempotencyKey",
+        "external_reference_number",
+        "invoice.number",
+        "transactionType",
+        "incomeStatement.id",
+        "employee.id",
+        "employee.name",
+        "vehicleRoute.id",
+        "vehicleRoute.name",
+        "vehicleRoute.route.id",
+        "vehicleRoute.route.name",
+        "route.id",
+        "route.name",
+        "employeeGroup.id",
+        "employeeGroup.name",
+        "employeeGroup.route.id",
+        "employeeGroup.route.name",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/journal/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Closeout history",
+      "resourcePath": "/income-statements",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "businessDate",
+        "date",
+        "status",
+        "branch.id",
+        "currency",
+        "automated",
+        "periodStart",
+        "periodEnd"
+      ],
+      "additionalAdvancedFilterFields": [
+        "businessDate",
+        "date",
+        "status",
+        "branch.id",
+        "currency",
+        "automated",
+        "periodStart",
+        "periodEnd"
+      ],
+      "sortFields": [
+        "businessDate",
+        "date",
+        "createdAt",
+        "status"
+      ],
+      "sourceDeclaredQueryFields": [
+        "businessDate",
+        "periodStart",
+        "periodEnd",
+        "automated",
+        "id",
+        "date",
+        "status",
+        "currency",
+        "branch.id",
+        "container.id",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/income_statement/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Checks",
+      "resourcePath": "/checks",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "checkNumber",
+        "refNumber",
+        "invoice.number"
+      ],
+      "advancedFilterFields": [
+        "checkNumber",
+        "refNumber",
+        "invoice.number",
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "sortFields": [
+        "datePosted",
+        "checkNumber",
+        "refNumber",
+        "paymentAmount",
+        "createdAt",
+        "clearedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "invoice.balance",
+        "clearedBy.name",
+        "id",
+        "invoice.id",
+        "invoice.number",
+        "journal.id",
+        "datePosted",
+        "checkNumber",
+        "refNumber",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/check/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Deposits",
+      "resourcePath": "/deposits",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "paymentReference",
+        "refNumber",
+        "invoice.number"
+      ],
+      "advancedFilterFields": [
+        "paymentReference",
+        "refNumber",
+        "invoice.number",
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "sortFields": [
+        "datePosted",
+        "paymentReference",
+        "refNumber",
+        "paymentAmount",
+        "createdAt",
+        "clearedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "invoice.balance",
+        "clearedBy.name",
+        "id",
+        "invoice.id",
+        "invoice.number",
+        "journal.id",
+        "datePosted",
+        "paymentReference",
+        "refNumber",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/deposit/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Zelle payments",
+      "resourcePath": "/zelle-payments",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "paymentReference",
+        "refNumber",
+        "invoice.number"
+      ],
+      "advancedFilterFields": [
+        "paymentReference",
+        "refNumber",
+        "invoice.number",
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "sortFields": [
+        "datePosted",
+        "paymentReference",
+        "refNumber",
+        "paymentAmount",
+        "createdAt",
+        "clearedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "invoice.balance",
+        "clearedBy.name",
+        "id",
+        "invoice.id",
+        "invoice.number",
+        "journal.id",
+        "datePosted",
+        "paymentReference",
+        "refNumber",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/zelle_payment/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Accounting",
+      "table": "Credit-card receipts",
+      "resourcePath": "/credit-card-payments",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "paymentReference",
+        "refNumber",
+        "invoice.number"
+      ],
+      "advancedFilterFields": [
+        "paymentReference",
+        "refNumber",
+        "invoice.number",
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "additionalAdvancedFilterFields": [
+        "datePosted",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "clearedBy.name",
+        "invoice.balance",
+        "createdBy.id"
+      ],
+      "sortFields": [
+        "datePosted",
+        "paymentReference",
+        "refNumber",
+        "paymentAmount",
+        "createdAt",
+        "clearedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "invoice.balance",
+        "clearedBy.name",
+        "id",
+        "invoice.id",
+        "invoice.number",
+        "journal.id",
+        "datePosted",
+        "paymentReference",
+        "refNumber",
+        "paymentAmount",
+        "status",
+        "clearedAt",
+        "createdAt",
+        "updatedAt",
+        "createdBy.id",
+        "createdBy.name",
+        "updatedBy.id",
+        "updatedBy.name"
+      ],
+      "source": ".reference/emsys-api/internal/credit_card_payment/model.go",
+      "sourceSymbol": "AllowedQueryFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory",
+      "table": "Supply items",
+      "resourcePath": "/inventory/items",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name",
+        "sku"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "sku",
+        "category",
+        "unitOfMeasure",
+        "currency",
+        "defaultSellingPriceMinor",
+        "isActive",
+        "reorderThreshold",
+        "audit.createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "category",
+        "unitOfMeasure",
+        "currency",
+        "defaultSellingPriceMinor",
+        "isActive",
+        "reorderThreshold",
+        "audit.createdAt"
+      ],
+      "sortFields": [
+        "name",
+        "sku",
+        "category",
+        "defaultSellingPriceMinor",
+        "audit.createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "unitOfMeasure",
+        "currency",
+        "defaultSellingPriceMinor",
+        "createdAt",
+        "id",
+        "sku",
+        "name",
+        "category",
+        "isActive",
+        "reorderThreshold",
+        "audit.createdAt"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "sourceSymbol": "itemAllowedFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory",
+      "table": "Supply suppliers",
+      "resourcePath": "/inventory/suppliers",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "companyName"
+      ],
+      "advancedFilterFields": [
+        "companyName",
+        "contacts.name",
+        "contacts.email",
+        "contacts.phone",
+        "isActive",
+        "audit.createdAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "contacts.name",
+        "contacts.email",
+        "contacts.phone",
+        "isActive",
+        "audit.createdAt"
+      ],
+      "sortFields": [
+        "companyName",
+        "audit.createdAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "addresses",
+        "contacts.name",
+        "contacts.email",
+        "contacts.phone",
+        "id",
+        "companyName",
+        "isActive",
+        "audit.createdAt"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "sourceSymbol": "supplierAllowedFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory",
+      "table": "Holders / Recipients",
+      "resourcePath": "/inventory/holders",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "displayName"
+      ],
+      "advancedFilterFields": [
+        "displayName",
+        "type",
+        "entityId",
+        "isActive"
+      ],
+      "additionalAdvancedFilterFields": [
+        "type",
+        "entityId",
+        "isActive"
+      ],
+      "sortFields": [
+        "displayName",
+        "type"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "type",
+        "entityId",
+        "displayName",
+        "isActive"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "sourceSymbol": "holderAllowedFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory",
+      "table": "Stock balances",
+      "resourcePath": "/inventory/stock",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "itemId",
+        "holderId",
+        "condition",
+        "quantityOnHand",
+        "quantityReserved",
+        "updatedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "itemId",
+        "holderId",
+        "condition",
+        "quantityOnHand",
+        "quantityReserved",
+        "updatedAt"
+      ],
+      "sortFields": [
+        "quantityOnHand",
+        "quantityReserved",
+        "updatedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "itemId",
+        "holderId",
+        "condition",
+        "quantityOnHand",
+        "quantityReserved",
+        "updatedAt"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "sourceSymbol": "stockAllowedFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory",
+      "table": "Supply receipts",
+      "resourcePath": "/inventory/receipts",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "notes"
+      ],
+      "advancedFilterFields": [
+        "notes",
+        "supplierId",
+        "toHolderId",
+        "receivedAt",
+        "status",
+        "lines.itemId",
+        "dailyRouteId",
+        "audit.createdAt",
+        "postedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "supplierId",
+        "toHolderId",
+        "receivedAt",
+        "status",
+        "lines.itemId",
+        "dailyRouteId",
+        "audit.createdAt",
+        "postedAt"
+      ],
+      "sortFields": [
+        "receivedAt",
+        "audit.createdAt",
+        "postedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "dailyRouteId",
+        "notes",
+        "id",
+        "supplierId",
+        "toHolderId",
+        "receivedAt",
+        "status",
+        "lines.itemId",
+        "audit.createdAt"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "sourceSymbol": "receiptAllowedFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [
+          "postedAt"
+        ],
+        "sorts": [
+          "postedAt"
+        ]
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory",
+      "table": "Supply dispatches",
+      "resourcePath": "/inventory/dispatches",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "notes"
+      ],
+      "advancedFilterFields": [
+        "notes",
+        "fromHolderId",
+        "toHolderId",
+        "responsibleHolderIds",
+        "dispatchedAt",
+        "status",
+        "lines.itemId",
+        "dailyRouteId",
+        "audit.createdAt",
+        "postedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "fromHolderId",
+        "toHolderId",
+        "responsibleHolderIds",
+        "dispatchedAt",
+        "status",
+        "lines.itemId",
+        "dailyRouteId",
+        "audit.createdAt",
+        "postedAt"
+      ],
+      "sortFields": [
+        "dispatchedAt",
+        "audit.createdAt",
+        "postedAt"
+      ],
+      "sourceDeclaredQueryFields": [
+        "responsibleHolderIds",
+        "notes",
+        "id",
+        "fromHolderId",
+        "toHolderId",
+        "dailyRouteId",
+        "dispatchedAt",
+        "status",
+        "lines.itemId",
+        "audit.createdAt"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/service.go",
+      "sourceSymbol": "dispatchAllowedFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [
+          "postedAt"
+        ],
+        "sorts": [
+          "postedAt"
+        ]
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory",
+      "table": "Pending supply reconciliation",
+      "resourcePath": "/inventory/pending-dispatches",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "holder.id",
+        "dailyRoute.id",
+        "dailyRoute.supervisor.id",
+        "dispatchedAt",
+        "ageDays",
+        "outstandingQuantity",
+        "pendingReconciliationCount"
+      ],
+      "additionalAdvancedFilterFields": [
+        "holder.id",
+        "dailyRoute.id",
+        "dailyRoute.supervisor.id",
+        "dispatchedAt",
+        "ageDays",
+        "outstandingQuantity",
+        "pendingReconciliationCount"
+      ],
+      "sortFields": [
+        "dispatchedAt",
+        "ageDays",
+        "outstandingQuantity"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "holder.id",
+        "dispatchedAt",
+        "ageDays",
+        "dailyRoute.id",
+        "dailyRoute.supervisor.id",
+        "dispatchedQuantity",
+        "reconciledQuantity",
+        "awaitingConfirmationQuantity",
+        "outstandingQuantity",
+        "pendingReconciliationCount"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/pending_dispatch.go",
+      "sourceSymbol": "pendingDispatchFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Returns",
+      "resourcePath": "/inventory/returns",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "assignmentId",
+        "dailyRouteId",
+        "fromHolderId",
+        "toWarehouseHolderId",
+        "returnedAt",
+        "status",
+        "lines.itemId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "assignmentId",
+        "dailyRouteId",
+        "fromHolderId",
+        "toWarehouseHolderId",
+        "returnedAt",
+        "status",
+        "lines.itemId"
+      ],
+      "sortFields": [
+        "returnedAt",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "assignmentId",
+        "dailyRouteId",
+        "id",
+        "fromHolderId",
+        "toWarehouseHolderId",
+        "returnedAt",
+        "status",
+        "lines.itemId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "returnsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Dispositions",
+      "resourcePath": "/inventory/dispositions",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "assignmentId",
+        "holderId",
+        "dailyRouteId",
+        "closeoutId",
+        "type",
+        "occurredAt",
+        "status",
+        "lines.itemId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "assignmentId",
+        "holderId",
+        "dailyRouteId",
+        "closeoutId",
+        "type",
+        "occurredAt",
+        "status",
+        "lines.itemId"
+      ],
+      "sortFields": [
+        "occurredAt",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "assignmentId",
+        "id",
+        "holderId",
+        "dailyRouteId",
+        "closeoutId",
+        "type",
+        "occurredAt",
+        "status",
+        "lines.itemId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "dispositionsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Counts",
+      "resourcePath": "/inventory/counts",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "holderId",
+        "businessDate",
+        "status",
+        "lines.itemId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "holderId",
+        "businessDate",
+        "status",
+        "lines.itemId"
+      ],
+      "sortFields": [
+        "businessDate",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "holderId",
+        "businessDate",
+        "status",
+        "lines.itemId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "countsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Adjustments",
+      "resourcePath": "/inventory/adjustments",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "reason"
+      ],
+      "advancedFilterFields": [
+        "reason",
+        "id",
+        "holderId",
+        "dailyRouteId",
+        "occurredAt",
+        "status",
+        "lines.itemId",
+        "correctsSourceId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "holderId",
+        "dailyRouteId",
+        "occurredAt",
+        "status",
+        "lines.itemId",
+        "correctsSourceId"
+      ],
+      "sortFields": [
+        "occurredAt",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "dailyRouteId",
+        "id",
+        "holderId",
+        "reason",
+        "occurredAt",
+        "status",
+        "lines.itemId",
+        "correctsSourceId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "adjustmentsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Supply sales reports",
+      "resourcePath": "/inventory/sales-reports",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "assignmentId",
+        "dailyRouteId",
+        "holderId",
+        "closeoutId",
+        "businessDate",
+        "status",
+        "lines.itemId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "assignmentId",
+        "dailyRouteId",
+        "holderId",
+        "closeoutId",
+        "businessDate",
+        "status",
+        "lines.itemId"
+      ],
+      "sortFields": [
+        "businessDate",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "assignmentId",
+        "dailyRouteId",
+        "id",
+        "holderId",
+        "closeoutId",
+        "businessDate",
+        "status",
+        "lines.itemId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "salesReportsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Supply payments",
+      "resourcePath": "/inventory/payments",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "method",
+        "status",
+        "amountMinor",
+        "collectedByEmployeeId",
+        "collectedAt",
+        "dailyRouteId",
+        "inventoryDispatchId",
+        "inventoryReconciliationId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "method",
+        "status",
+        "amountMinor",
+        "collectedByEmployeeId",
+        "collectedAt",
+        "dailyRouteId",
+        "inventoryDispatchId",
+        "inventoryReconciliationId"
+      ],
+      "sortFields": [
+        "collectedAt",
+        "amountMinor",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "method",
+        "status",
+        "amountMinor",
+        "collectedByEmployeeId",
+        "collectedAt",
+        "dailyRouteId",
+        "dailyRoute.date",
+        "dailyRoute.vehicle.id",
+        "dailyRoute.supervisor.id",
+        "inventoryDispatchId",
+        "inventoryReconciliationId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "paymentsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Cash handovers",
+      "resourcePath": "/inventory/cash-handovers",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "fromEmployeeId",
+        "toEmployeeId",
+        "method",
+        "amountMinor",
+        "status",
+        "handedAt",
+        "receivedAt"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "fromEmployeeId",
+        "toEmployeeId",
+        "method",
+        "amountMinor",
+        "status",
+        "handedAt",
+        "receivedAt"
+      ],
+      "sortFields": [
+        "handedAt",
+        "receivedAt",
+        "amountMinor",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "fromEmployeeId",
+        "toEmployeeId",
+        "method",
+        "amountMinor",
+        "status",
+        "handedAt",
+        "receivedAt"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "handoversWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Collection obligations",
+      "resourcePath": "/inventory/collection-obligations",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "responsibleEmployeeId",
+        "closeoutId",
+        "kind",
+        "amountMinor",
+        "settledMinor",
+        "status"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "responsibleEmployeeId",
+        "closeoutId",
+        "kind",
+        "amountMinor",
+        "settledMinor",
+        "status"
+      ],
+      "sortFields": [
+        "amountMinor",
+        "settledMinor",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "responsibleEmployeeId",
+        "closeoutId",
+        "kind",
+        "amountMinor",
+        "settledMinor",
+        "status"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "obligationsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Supply closeouts",
+      "resourcePath": "/inventory/closeouts",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "holderId",
+        "accountableEmployeeId",
+        "dailyRouteId",
+        "businessDate",
+        "status",
+        "revision",
+        "needsReconciliation"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "holderId",
+        "accountableEmployeeId",
+        "dailyRouteId",
+        "businessDate",
+        "status",
+        "revision",
+        "needsReconciliation"
+      ],
+      "sortFields": [
+        "businessDate",
+        "revision",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "holderId",
+        "accountableEmployeeId",
+        "dailyRouteId",
+        "businessDate",
+        "status",
+        "revision",
+        "needsReconciliation"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "closeoutsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Supply route crews",
+      "resourcePath": "/route-crews",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [
+        "name"
+      ],
+      "advancedFilterFields": [
+        "name",
+        "id",
+        "isActive"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "isActive"
+      ],
+      "sortFields": [
+        "name",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "name",
+        "isActive"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "crewsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Supply daily routes",
+      "resourcePath": "/daily-routes",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "businessDate",
+        "vehicleId",
+        "crewId",
+        "members.employeeId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "businessDate",
+        "vehicleId",
+        "crewId",
+        "members.employeeId"
+      ],
+      "sortFields": [
+        "businessDate",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "businessDate",
+        "vehicleId",
+        "crewId",
+        "members.employeeId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "dailyRoutesWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Supply audit events",
+      "resourcePath": "/audit-events",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "entityType",
+        "entityId",
+        "actorId",
+        "action",
+        "at",
+        "correlationId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "entityType",
+        "entityId",
+        "actorId",
+        "action",
+        "at",
+        "correlationId"
+      ],
+      "sortFields": [
+        "at",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "entityType",
+        "entityId",
+        "actorId",
+        "action",
+        "at",
+        "correlationId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "auditEventsWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    },
+    {
+      "group": "Inventory workflow",
+      "table": "Supply journal entries",
+      "resourcePath": "/journal-entries",
+      "status": "proposed-not-applied",
+      "mainSearchFields": [],
+      "advancedFilterFields": [
+        "id",
+        "sourceType",
+        "sourceId",
+        "postedAt",
+        "postingRevision",
+        "lines.accountId"
+      ],
+      "additionalAdvancedFilterFields": [
+        "id",
+        "sourceType",
+        "sourceId",
+        "postedAt",
+        "postingRevision",
+        "lines.accountId"
+      ],
+      "sortFields": [
+        "postedAt",
+        "postingRevision",
+        "id"
+      ],
+      "sourceDeclaredQueryFields": [
+        "id",
+        "sourceType",
+        "sourceId",
+        "postedAt",
+        "postingRevision",
+        "lines.accountId"
+      ],
+      "source": ".reference/emsys-api/internal/inventory/workflow_reads.go",
+      "sourceSymbol": "journalEntriesWorkflowFields",
+      "notDeclaredByExactName": {
+        "mainSearch": [],
+        "advancedFilters": [],
+        "sorts": []
+      },
+      "evidence": "Static source allow-list comparison only; field presence does not certify operator/sort semantics, deployed support or query performance.",
+      "sortDirections": [
+        "asc",
+        "desc"
+      ],
+      "defaultSortPolicy": "Preserve current feature default and stable resource-identity tie-breaker; this proposal does not change initial ordering."
+    }
+  ]
+}

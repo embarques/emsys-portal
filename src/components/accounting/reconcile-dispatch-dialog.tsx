@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
+import { GuidedEntryFooter, GuidedEntryStepper, GuidedStepHeading, type GuidedTypeStep } from "@/components/accounting/guided-entry-chrome";
+import { FormBody } from "@/components/forms/form-shell";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import { formatInventoryMinor } from "@/lib/inventory/display";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { DispatchReconciliationEntry } from "@/components/accounting/dispatch-reconciliation-entry";
@@ -40,12 +42,29 @@ import {
 import type { ConfirmationActionOption } from "@/lib/inventory/utils/confirmations";
 import { cn } from "@/lib/utils";
 
-export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBusyChange, guided = false }: {
+const INVENTORY_PAYMENT_STEPS = [
+  ["selectDispatch", "inventoryDispatch"],
+  ["inventoryItems", "inventoryItems"],
+  ["inventoryPayment", "inventoryPayment"],
+  ["review", "inventoryReview"],
+] as const;
+
+/** Inventory payment inside the add-transaction wizard: choose a dispatch, then reconcile it. */
+export function inventoryPaymentSteps(t: TranslateFn) {
+  return INVENTORY_PAYMENT_STEPS.map(([label, hint]) => ({
+    label: t(`accounting.dailyIncome.wizard.quickFlow.${label}`),
+    hint: t(`accounting.dailyIncome.wizard.stepHints.${hint}`),
+  }));
+}
+
+/** `guided` renders inline as the add-transaction wizard's steps instead of a dialog; `onClose` returns to the dispatch list. */
+export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBusyChange, guided = false, typeStep }: {
   dispatch: PendingInventoryDispatch;
   canReconcile: boolean;
   onClose: () => void;
   onBusyChange?: (busy: boolean) => void;
   guided?: boolean;
+  typeStep?: GuidedTypeStep;
 }) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
@@ -91,9 +110,8 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
 
   const [step, setStep] = useState(1);
   const HistoryContainer = guided ? "details" : "section";
-  const heading = useRef<HTMLHeadingElement>(null);
-  const labels = ["inventoryItems", "inventoryPayment", "review"].map((key) => t(`accounting.dailyIncome.wizard.quickFlow.${key}`));
-  useEffect(() => { if (guided) heading.current?.focus(); }, [guided, step]);
+  const formId = useId();
+  const steps = inventoryPaymentSteps(t);
   const submitting = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -146,13 +164,8 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
     form.setValue(`lines.${index}.RETURNED`, String((readOutcomeQuantity(line.RETURNED) ?? 0) + remaining), { shouldDirty: true });
   }
 
-  return (
-    <Dialog open onOpenChange={(open) => { if (!open && !busy && !confirmationPending) onClose(); }}>
-      <DialogContent centerInWorkspace className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-7xl" aria-busy={busy}>
-        <DialogHeader>
-          <DialogTitle>{text("title")}</DialogTitle>
-          <DialogDescription>{text("description", { holder: dispatch.holder.displayName, date: dateTime(dispatch.dispatchedAt) })}</DialogDescription>
-        </DialogHeader>
+  const description = text("description", { holder: dispatch.holder.displayName, date: dateTime(dispatch.dispatchedAt) });
+  const summary = (
         <dl className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-3 text-sm sm:grid-cols-4">
           {([
             ["dispatched", dispatch.dispatchedQuantity],
@@ -163,7 +176,8 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
             <div key={key}><dt className="text-xs text-muted-foreground">{text(key)}</dt><dd className="text-base font-semibold">{value}</dd></div>
           ))}
         </dl>
-        {canViewHistory ? <HistoryContainer aria-labelledby="dispatch-reconciliation-history" className={cn("space-y-2", guided && "rounded-lg border p-3")}>
+  );
+  const historySection = canViewHistory ? <HistoryContainer aria-labelledby="dispatch-reconciliation-history" className={cn("space-y-2", guided && "rounded-lg border p-3")}>
           {guided ? <summary id="dispatch-reconciliation-history" className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">{text("history")}</summary> : <h3 id="dispatch-reconciliation-history" className="text-sm font-medium">{text("history")}</h3>}
           {history.isError ? <p role="alert" className="text-sm text-destructive">{normalizeApiError(history.error).message}</p>
             : history.isPending ? <p role="status" className="text-sm text-muted-foreground">{text("loadingHistory")}</p>
@@ -178,10 +192,9 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                 onAction={(target, action) => setConfirmationTarget({ entry: target, action })}
               />
             ))}</ol>}
-        </HistoryContainer> : null}
-        {!canReconcile ? <p role="status" className="text-sm text-muted-foreground">{text("readOnly")}</p> : lines.length ? (
-          <form onSubmit={submit} className="space-y-4 border-t pt-4">
-            {guided ? <div className="space-y-3"><TransactionWizardStepper step={step} labels={labels} disabled={busy} onSelectStep={setStep} /><header className="max-w-2xl space-y-2"><h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{labels[step - 1]}</h2><p className="text-sm leading-relaxed text-muted-foreground">{t(`accounting.dailyIncome.wizard.stepHints.${["inventoryItems", "inventoryPayment", "inventoryReview"][step - 1]}`)}</p></header></div> : null}
+        </HistoryContainer> : null;
+  const readOnly = <p role="status" className="text-sm text-muted-foreground">{text("readOnly")}</p>;
+  const fields = (
             <fieldset disabled={busy} className="min-w-0 space-y-4">
               <div className={cn("grid gap-3 sm:grid-cols-2 lg:grid-cols-3", guided && step !== 2 && "hidden")}>
                 <div className="space-y-2">
@@ -273,16 +286,15 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                 {payments.map((payment) => <p key={payment.key} className="text-sm">{payment.paymentMethodName} · {payment.amount}{payment.checkNumber ? ` · ${payment.checkNumber}` : ""}</p>)}
               </div> : null}
             </fieldset>
+  );
+  const notices = (
+    <>
             {nothingMessage ? <p role="alert" className="text-sm text-destructive">{t(nothingMessage)}</p> : null}
             {reconcile.isError ? <p role="alert" className="text-sm text-destructive">{normalizeApiError(reconcile.error).message}</p> : null}
             <p className="text-xs text-muted-foreground">{t("inventory.confirmations.reconciliation.final")}</p>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              {guided && step > 1 ? <Button type="button" variant="outline" className="sm:mr-auto" disabled={busy} onClick={() => setStep(step - 1)}>{t("common.actions.previous")}</Button> : null}
-              <Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common.actions.cancel")}</Button>
-              <Button type="submit" disabled={busy}>{busy ? text("saving") : guided && step < 3 ? t("common.actions.next") : text("save")}</Button>
-            </div>
-          </form>
-        ) : null}
+    </>
+  );
+  const confirmationDialog = (
         <InventoryConfirmationDialog
           action={confirmationTarget?.action ?? null}
           subject="reconciliation"
@@ -296,6 +308,51 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
           onSubmit={submitConfirmation}
           onOpenChange={(open) => !open && setConfirmationTarget(null)}
         />
+  );
+
+  if (guided) {
+    const canSubmit = canReconcile && lines.length > 0;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <GuidedEntryStepper typeStep={typeStep} labels={steps.map((entry) => entry.label)} step={step + 1} busy={busy}
+          onStepChange={(next) => next === 1 ? onClose() : setStep(next - 1)} />
+        <FormBody workflow className="lg:p-8" isBusy={busy}>
+          <GuidedStepHeading title={steps[step].label} hint={steps[step].hint} focusKey={step} appearance={typeStep?.appearance} />
+          <p className="text-sm font-medium">{description}</p>
+          {summary}
+          {historySection}
+          {!canReconcile ? readOnly : canSubmit ? <form id={formId} onSubmit={submit} className="space-y-4">{fields}{notices}</form> : null}
+        </FormBody>
+        <GuidedEntryFooter busy={busy} formId={formId} appearance={typeStep?.appearance}
+          onPrevious={step > 1 ? () => setStep(step - 1) : onClose}
+          onCancel={typeStep?.onCancel ?? onClose}
+          submitLabel={!canSubmit ? undefined : step < 3 ? t("accounting.dailyIncome.wizard.continueToStep", { step: steps[step + 1].label }) : text("save")}
+          final={step === 3} />
+        {confirmationDialog}
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open && !busy && !confirmationPending) onClose(); }}>
+      <DialogContent centerInWorkspace className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-7xl" aria-busy={busy}>
+        <DialogHeader>
+          <DialogTitle>{text("title")}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {summary}
+        {historySection}
+        {!canReconcile ? readOnly : lines.length ? (
+          <form onSubmit={submit} className="space-y-4 border-t pt-4">
+            {fields}
+            {notices}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common.actions.cancel")}</Button>
+              <Button type="submit" disabled={busy}>{busy ? text("saving") : text("save")}</Button>
+            </div>
+          </form>
+        ) : null}
+        {confirmationDialog}
       </DialogContent>
     </Dialog>
   );

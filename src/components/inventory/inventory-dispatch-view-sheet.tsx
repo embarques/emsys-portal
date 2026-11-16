@@ -2,6 +2,8 @@
 
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 
+import { CheckCircle2, Info, ListOrdered, Truck } from "lucide-react";
+
 import {
   RecordViewSheet,
   RecordViewSheetBody,
@@ -67,7 +69,7 @@ export function InventoryDispatchViewSheet({
           description={t("inventory.references.dispatch")}
         />
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("inventory.form.sections.header")}>
+          <RecordViewSheetSection title={t("inventory.form.sections.header")} icon={Truck}>
             <RecordViewSheetDetailRow label={t("inventory.columns.status")} value={<InventoryDocumentStatusBadge status={dispatch.status} />} />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.fromHolder")} value={getHolderNameById(dispatch.fromHolderId, holders) || dash} />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.toHolder")} value={getHolderNameById(dispatch.toHolderId, holders) || dash} />
@@ -88,7 +90,7 @@ export function InventoryDispatchViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.form.fields.notes")} value={dispatch.notes || dash} />
           </RecordViewSheetSection>
           {showConfirmations ? (
-            <RecordViewSheetSection title={t("inventory.confirmations.title")} padding="relaxed">
+            <RecordViewSheetSection title={t("inventory.confirmations.title")} icon={CheckCircle2} padding="relaxed">
               <InventoryConfirmationPanel
                 state={dispatch}
                 parties={DISPATCH_PARTIES}
@@ -99,7 +101,7 @@ export function InventoryDispatchViewSheet({
               />
             </RecordViewSheetSection>
           ) : null}
-          <RecordViewSheetSection title={t("inventory.view.lines")}>
+          <RecordViewSheetSection title={t("inventory.view.lines")} icon={ListOrdered}>
             {dispatch.lines.map((line, index) => (
               <RecordViewSheetDetailRow
                 key={line.id ?? `${line.itemId}-${index}`}
@@ -114,7 +116,7 @@ export function InventoryDispatchViewSheet({
               valueAlign="end"
             />
           </RecordViewSheetSection>
-          <RecordViewSheetSection title={t("inventory.view.audit")}>
+          <RecordViewSheetSection title={t("inventory.view.audit")} icon={Info}>
             <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDateTime(dispatch.createdAt)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.userCreated")} value={dispatch.createdBy || dash} />
             <RecordViewSheetDetailRow label={t("inventory.columns.dateModified")} value={formatAuditDateTime(dispatch.updatedAt)} />

@@ -8,7 +8,8 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
 import { createRandomId } from "@/lib/utils/id";
-import { useChanges, useChangeTarget, useSubmitChange, useReviewChange } from "@/lib/change-requests/hooks";
+import { useChangeRequestsTable, useChangeTarget, useSubmitChange, useReviewChange } from "@/lib/change-requests/hooks";
+import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 import type { ChangeRequest, ChangeResource, NewChange } from "@/lib/change-requests/api";
 import { CHANGE_RESOURCES, changeRequestFormSchema, changeReviewSchema, type ChangeRequestFormValues } from "@/lib/change-requests/schemas/change-request.schema";
 import { buildChangeCommand, canRequestChange } from "@/lib/change-requests/utils/commands";
@@ -16,7 +17,7 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export function ChangeRequestsWorkspace() {
@@ -32,8 +33,7 @@ function Workspace() {
   const { hasPermission } = useAuth();
   const { t } = useTranslation();
   const text = (key: string) => t(`accounting.changeRequests.${key}`);
-  const [page, setPage] = useState(1);
-  const list = useChanges(page);
+  const list = useChangeRequestsTable();
   const submit = useSubmitChange();
   const review = useReviewChange();
   const [reviewing, setReviewing] = useState<ChangeRequest | null>(null);
@@ -151,10 +151,14 @@ function Workspace() {
         {submit.isSuccess ? <p role="status">{text("submitted")}</p> : null}
       </form>
     </CardContent></Card> : null}
-    {list.isLoading ? <p role="status">{text("loading")}</p> : null}
-    {list.isError ? <p role="alert">{normalizeApiError(list.error).message}</p> : null}
-    {list.isSuccess && !list.data.data.length ? <p>{text("empty")}</p> : null}
-    <div className="space-y-3">{!list.isError && list.data?.data.map(row => <Card key={row.id}>
+    {hasPermission("canViewChangeRequest", "change_request") ? <Card className="gap-0">
+      <CardHeader className="gap-3 border-b py-4 pb-3">
+        <CatalogTableToolbar state={list} presetScope="change-requests" searchPlaceholder={text("searchPlaceholder")} />
+      </CardHeader>
+      {list.isLoading ? <p role="status" className="px-6 py-6 text-sm text-muted-foreground">{text("loading")}</p> : null}
+      {list.isError ? <p role="alert" className="border-b px-6 py-3 text-sm text-destructive">{normalizeApiError(list.error).message}</p> : null}
+      {!list.isLoading && !list.isError && !list.items.length ? <p className="px-6 py-6 text-sm text-muted-foreground">{list.hasActiveFilters ? t("common.table.noMatches") : text("empty")}</p> : null}
+      {!list.isLoading && !list.isError && list.items.length ? <div className="space-y-3 p-6">{list.items.map(row => <Card key={row.id}>
       <CardContent className="space-y-3 pt-6">
         <div className="flex flex-wrap justify-between gap-2"><p className="font-medium">{text(row.resourceType)} · {row.resourceId}</p><span>{text(row.status.toLowerCase())}</span></div>
         <p>{text(row.action.toLowerCase())}: {row.reason}</p>
@@ -170,12 +174,9 @@ function Workspace() {
           review.reset();
         }}>{text("review")}</Button> : null}
       </CardContent>
-    </Card>)}</div>
-    <div className="flex items-center justify-between">
-      <Button variant="outline" disabled={page === 1 || list.isFetching} onClick={() => setPage(page - 1)}>{text("previous")}</Button>
-      <span>{page}</span>
-      <Button variant="outline" disabled={page * 25 >= (list.data?.total ?? 0) || list.isFetching} onClick={() => setPage(page + 1)}>{text("next")}</Button>
-    </div>
+    </Card>)}</div> : null}
+      <CatalogTablePagination state={list} />
+    </Card> : null}
     <Dialog open={Boolean(reviewing)} onOpenChange={open => { if (!open && !review.isPending) setReviewing(null); }}>
       <DialogContent>
         <DialogHeader><DialogTitle>{text("review")}</DialogTitle><DialogDescription>{text("reviewDescription")}</DialogDescription></DialogHeader>

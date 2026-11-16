@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { complaintSeverityLabel } from "@/lib/complaints/display";
+import { useMarkComplaintNotificationRead } from "@/lib/complaints/hooks/use-complaints";
 import { useTranslation } from "@/lib/i18n";
 import {
   getSeenNotificationIds,
@@ -41,11 +43,18 @@ type Translate = (key: string, params?: Record<string, string | number>) => stri
 const VEHICLE_COMPLIANCE_DETAIL_LIMIT = 3;
 
 function isSevereNotification(item: NotificationItem) {
-  return item.kind === "invoice-pool-low" || item.kind === "vehicle-compliance-due";
+  return (
+    item.kind === "invoice-pool-low" ||
+    item.kind === "vehicle-compliance-due" ||
+    (item.kind === "complaint" && item.complaint.severity === "urgent")
+  );
 }
 
 function notificationTitle(item: NotificationItem, t: Translate) {
   if (item.kind === "invoice-pool-low") return t("shell.notifications.invoicePoolLowTitle");
+  if (item.kind === "complaint") {
+    return item.complaint.subject.trim() || t("shell.notifications.complaintFallback");
+  }
   if (item.kind === "vehicle-compliance-due") {
     const count = item.due.length;
     return t(`shell.notifications.vehicleComplianceDueTitle_${count === 1 ? "one" : "other"}`, { count });
@@ -70,6 +79,12 @@ function notificationDetail(item: NotificationItem, t: Translate) {
     if (remaining > 0) lines.push(t("vehicles.compliance.more", { count: remaining }));
     return lines.join(" · ");
   }
+  if (item.kind === "complaint") {
+    return [
+      t("shell.notifications.complaintDetail", { number: item.complaint.number }),
+      item.complaint.severity ? complaintSeverityLabel(t, item.complaint.severity) : "",
+    ].filter(Boolean).join(" · ");
+  }
   const user = item.activity.user.name.trim();
   const origin = item.activity.origin.trim();
   return [user, origin].filter(Boolean).join(" · ") || t("shell.notifications.rareActivity");
@@ -78,6 +93,7 @@ function notificationDetail(item: NotificationItem, t: Translate) {
 export function NotificationsMenu() {
   const { locale, t } = useTranslation();
   const { items, isLoading } = useTopbarNotifications();
+  const markComplaintRead = useMarkComplaintNotificationRead();
   const [seenIds, setSeenIds] = useState(() => getSeenNotificationIds());
   const [open, setOpen] = useState(false);
 
@@ -142,7 +158,10 @@ export function NotificationsMenu() {
                   key={item.id}
                   href={item.href}
                   label={title}
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    if (item.kind === "complaint") markComplaintRead.mutate(item.complaint.id);
+                    setOpen(false);
+                  }}
                   className={cn(
                     "flex items-start gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
                     "hover:bg-accent hover:text-accent-foreground",

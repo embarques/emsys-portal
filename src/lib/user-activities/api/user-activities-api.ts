@@ -19,6 +19,8 @@ import {
   DEFAULT_USER_ACTIVITY_LIST_PARAMS,
   type UserActivity,
   type UserActivityListParams,
+  type UserActivityRouteChange,
+  type UserActivityRouteRef,
   type UserActivitySeverity,
   type UserActivityUser,
 } from "@/lib/user-activities/types";
@@ -44,8 +46,23 @@ type ApiUserActivity = {
   details?: string;
   activity?: string;
   origin?: string;
+  eventType?: string;
   quantity?: number | null;
   severity?: string;
+  barcodeRouteChange?: ApiBarcodeRouteChange | null;
+};
+
+type ApiRouteReference = {
+  id?: string;
+  name?: string;
+  dailyRoute?: { date?: string; name?: string } | null;
+};
+
+type ApiBarcodeRouteChange = {
+  barcodeId?: string;
+  previous?: ApiRouteReference | null;
+  next?: ApiRouteReference | null;
+  previousTripNumber?: number | null;
 };
 
 function hasUserActivityListFilters(params: UserActivityListParams): boolean {
@@ -113,6 +130,27 @@ function normalizeUser(raw: ApiUser | string | undefined): UserActivityUser {
   };
 }
 
+function normalizeRouteRef(raw: ApiRouteReference | null | undefined): UserActivityRouteRef | null {
+  if (!raw || typeof raw !== "object") return null;
+  const id = readString(raw.id);
+  const name = readString(raw.name) || readString(raw.dailyRoute?.name);
+  if (!id && !name) return null;
+  return { id, name, date: readString(raw.dailyRoute?.date) };
+}
+
+function normalizeRouteChange(raw: ApiBarcodeRouteChange | null | undefined): UserActivityRouteChange | null {
+  if (!raw || typeof raw !== "object") return null;
+  const previous = normalizeRouteRef(raw.previous);
+  if (!previous) return null;
+  const trip = Number(raw.previousTripNumber);
+  return {
+    barcodeId: readString(raw.barcodeId),
+    previous,
+    next: normalizeRouteRef(raw.next),
+    previousTripNumber: Number.isInteger(trip) && trip > 0 ? trip : null,
+  };
+}
+
 function normalizeQuantity(value: unknown): number | null {
   if (value == null || value === "") return null;
   const parsed = Number(value);
@@ -153,9 +191,11 @@ export function normalizeUserActivity(raw: unknown): UserActivity | null {
     user: normalizeUser(item.user),
     description,
     origin: readString(item.origin) || "unknown",
+    eventType: readString(item.eventType),
     entityId,
     quantity: normalizeQuantity(item.quantity),
     severity: normalizeSeverity(item.severity),
+    routeChange: normalizeRouteChange(item.barcodeRouteChange),
   };
 }
 

@@ -349,6 +349,7 @@
     "actions": {
       "back": "Atrás",
       "print": "Imprimir",
+      "printInvoice": "Imprimir factura",
       "preparing": "Preparando…"
     },
     "validation": {
@@ -558,7 +559,11 @@
       "documentId": "Doc",
       "phones": "Teléfonos",
       "address": "Dirección",
-      "scanned": "Escaneado"
+      "scanned": "Escaneado",
+      "paymentLocation": "Lugar de pago",
+      "paymentStatus": "Estado de pago",
+      "name": "Nombre",
+      "email": "Correo"
     },
     "lineItems": {
       "title": "Artículos de la factura",

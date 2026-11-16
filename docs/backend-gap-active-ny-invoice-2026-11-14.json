@@ -1,0 +1,395 @@
+{
+  "checkedAt": "2026-11-14T17:22:54.712Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "marker": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+  "owned": [
+    {
+      "path": "/containers",
+      "id": 1417,
+      "marker": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+      "retained": true
+    },
+    {
+      "path": "/employees",
+      "id": 272,
+      "marker": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+      "retained": true
+    },
+    {
+      "path": "/vehicles",
+      "id": "6af898ed31a295cf38084331",
+      "marker": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+      "retained": true
+    }
+  ],
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/users/current",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 73,
+          "uid": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+          "email": "elk@elk.com",
+          "name": "elk@elk.com",
+          "active": true,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares"
+          },
+          "role": {
+            "id": 1,
+            "name": "Administrador"
+          }
+        },
+        "error": "",
+        "duration": 0.02098975,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/branches/1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 1,
+          "name": "Embarque Tenares",
+          "code": "NY",
+          "address": {
+            "id": "000000000000000000000000",
+            "address1": "2249 Washington Avenue",
+            "city": "The Bronx",
+            "state": "NY",
+            "zipcode": "10457",
+            "country": "US",
+            "location": {
+              "type": "Point",
+              "coordinates": [
+                -73.8939588,
+                40.854537799999996
+              ]
+            }
+          },
+          "phones": [
+            {
+              "type": "business",
+              "number": "+17185621300",
+              "displayNumber": "(718) 562-1300",
+              "isPrimary": true
+            }
+          ],
+          "logo": "media/logo/tenareslogo.png",
+          "settings": {
+            "labelPrefix": "ET",
+            "printLabelCount": true,
+            "roundDecimalPlaces": 2,
+            "defaultLabelStatus": 1
+          },
+          "createdAt": "2026-09-11T00:13:27.767Z",
+          "updatedAt": "2026-10-20T15:56:53.971Z",
+          "createdBy": {
+            "id": 1,
+            "name": "jpAdmin"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          }
+        },
+        "error": "",
+        "duration": 0.014980917,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/income-statements/context?branchId=1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Closeout calendar",
+        "data": {
+          "today": "2026-11-14",
+          "serverTimezone": "America/New_York",
+          "serverTime": "2026-11-14T17:22:53.087351257Z",
+          "current": null,
+          "previous": {
+            "businessDate": "2026-11-13",
+            "timezone": "America/New_York",
+            "periodStart": "2026-11-13T05:00:00Z",
+            "periodEnd": "2026-11-14T05:00:00Z",
+            "id": 32736,
+            "date": "2026-11-13T05:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "rate": 1,
+            "currency": "USD",
+            "status": "open",
+            "createdAt": "2026-11-13T18:40:00.732Z",
+            "updatedAt": "2026-11-13T18:40:00.732Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          "latest": {
+            "businessDate": "2026-11-13",
+            "timezone": "America/New_York",
+            "periodStart": "2026-11-13T05:00:00Z",
+            "periodEnd": "2026-11-14T05:00:00Z",
+            "id": 32736,
+            "date": "2026-11-13T05:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "rate": 1,
+            "currency": "USD",
+            "status": "open",
+            "createdAt": "2026-11-13T18:40:00.732Z",
+            "updatedAt": "2026-11-13T18:40:00.732Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          "requiredReason": "STALE_OPEN_CLOSEOUT"
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "Existing open invoice-date period",
+      "id": 32736,
+      "date": "2026-11-13",
+      "explanation": "Ordinary unpaid digitization uses this open invoice date; no period is opened/closed and no payment is posted."
+    },
+    {
+      "method": "POST",
+      "path": "/containers",
+      "body": {
+        "name": "988197-26",
+        "booking": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+        "containerNumber": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+        "cost": 0,
+        "departureDate": "2026-11-14T17:22:53.147Z",
+        "arrivalDate": "2026-11-14T17:22:53.159Z"
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 1417,
+          "name": "988197-26",
+          "booking": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "seal": "",
+          "containerNumber": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "itn": "",
+          "broker": "",
+          "sealNumber": "",
+          "company": "",
+          "cost": 0,
+          "senderDocType": "SA13-TID",
+          "receiverDocType": "SA13-TID",
+          "departureDate": "2026-11-14T17:22:53.147Z",
+          "arrivalDate": "2026-11-14T17:22:53.159Z",
+          "createdAt": "2026-11-14T17:22:53.363220924Z",
+          "updatedAt": "2026-11-14T17:22:53.363220924Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "barcodeSequence": 0,
+          "deliverySequence": 0
+        },
+        "error": "",
+        "duration": 0.138235709,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/employees",
+      "body": {
+        "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+        "active": true,
+        "branch": {
+          "id": 1,
+          "code": "NY",
+          "name": "Embarque Tenares"
+        }
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 272,
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "active": true,
+          "createdAt": "2026-11-14T17:22:53.609394174Z",
+          "updatedAt": "2026-11-14T17:22:53.609394174Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          }
+        },
+        "error": "",
+        "duration": 0.078240833,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/vehicles",
+      "body": {
+        "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+        "vehicleId": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+        "licensePlate": "5b99330d",
+        "year": 2026,
+        "fuelType": "DIESEL",
+        "active": true,
+        "branch": {
+          "id": 1,
+          "code": "NY"
+        }
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "6af898ed31a295cf38084331",
+          "vehicleId": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "licensePlate": "5b99330d",
+          "year": 2026,
+          "fuelType": "diesel",
+          "branch": {
+            "id": 1,
+            "code": "NY"
+          },
+          "active": true,
+          "createdAt": "2026-11-14T17:22:53.751965299Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedAt": "2026-11-14T17:22:53.751965299Z"
+        },
+        "error": "",
+        "duration": 0.038429042,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/invoices",
+      "body": {
+        "number": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+        "date": "2026-11-13",
+        "branch": {
+          "id": 1,
+          "code": "NY",
+          "name": "Embarque Tenares"
+        },
+        "cost": 0.02,
+        "payment": 0,
+        "balance": 0.02,
+        "surcharge": 0,
+        "paidRegion": "NY",
+        "paidStatus": "UNPAID",
+        "container": {
+          "id": 1417,
+          "name": "988197-26"
+        },
+        "sender": {
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "customerType": 1,
+          "phone1": "+12021948749",
+          "address": {
+            "address1": "1 Mock Verification St",
+            "city": "Bronx",
+            "state": "NY",
+            "zipcode": "10451",
+            "country": "US"
+          }
+        },
+        "invoiceDetails": [
+          {
+            "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+            "description": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+            "quantity": 2,
+            "labels": 2,
+            "price": 0.01,
+            "total": 0.02
+          }
+        ],
+        "receivedBy": {
+          "id": "272",
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        },
+        "employee": {
+          "id": 272,
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        },
+        "pickupEmployee": {
+          "id": 272,
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        }
+      },
+      "http": 409,
+      "response": {
+        "success": false,
+        "message": "Income statement is required",
+        "error": "An open income statement must exist for the invoice date and branch before creating invoices. Suggested solution: Open the daily income statement for the branch and date, then try again."
+      }
+    },
+    {
+      "label": "Run stopped",
+      "error": "An open income statement must exist for the invoice date and branch before creating invoices. Suggested solution: Open the daily income statement for the branch and date, then try again.",
+      "http": 409
+    }
+  ],
+  "limitations": [
+    "All new mock records retained and tagged; no delete calls.",
+    "No existing period opened, closed or reopened; no payment journal posted.",
+    "Ordinary digitization is not unpaid financial-registration completion or linked financial deletion acceptance."
+  ]
+}

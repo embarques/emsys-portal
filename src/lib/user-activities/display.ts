@@ -1,4 +1,9 @@
-import type { UserActivitySeverity } from "@/lib/user-activities/types";
+import type { UserActivityRouteRef, UserActivitySeverity } from "@/lib/user-activities/types";
+
+export function formatUserActivityRoute(route: UserActivityRouteRef): string {
+  const label = route.name || route.id;
+  return route.date ? `${label} (${route.date})` : label;
+}
 
 export function getUserActivitySeverityClass(severity: UserActivitySeverity): string {
   switch (severity) {

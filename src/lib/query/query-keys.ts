@@ -44,6 +44,18 @@ export const queryKeys = {
     detail: (id: number) => ["employee-departments", "detail", id] as const,
     page: (params: CatalogPageParams) => ["employee-departments", "page", params] as const,
   },
+  complaints: {
+    all: ["complaints"] as const,
+    pages: () => ["complaints", "page"] as const,
+    page: (companyId: string | null, scope: "unresolved" | "all", params: CatalogPageParams) =>
+      ["complaints", "page", companyId, scope, params] as const,
+    detail: (companyId: string | null, id: string) => ["complaints", "detail", companyId, id] as const,
+    categories: (companyId: string | null) => ["complaints", "categories", companyId] as const,
+    unresolvedCounts: () => ["complaints", "unresolved-count"] as const,
+    unresolvedCount: (companyId: string | null) => ["complaints", "unresolved-count", companyId] as const,
+    notifications: (companyId: string | null, actorId: string) => ["complaints", "notifications", companyId, actorId] as const,
+    insights: (companyId: string | null, from: string, to: string) => ["complaints", "insights", companyId, from, to] as const,
+  },
   invoicePolicies: {
     all: ["invoice-policies"] as const,
     list: () => ["invoice-policies", "list"] as const,

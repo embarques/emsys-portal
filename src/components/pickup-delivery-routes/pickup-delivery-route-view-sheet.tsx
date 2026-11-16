@@ -1,5 +1,7 @@
 "use client";
 
+import { CalendarDays, ClipboardList, Info, Route as RouteIcon, Users } from "lucide-react";
+
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -71,7 +73,7 @@ export function ActiveRouteViewSheet({
         <RecordViewSheetHeader title={title} />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("routes.activeRouteForm.sections.schedule")}>
+          <RecordViewSheetSection title={t("routes.activeRouteForm.sections.schedule")} icon={CalendarDays}>
             <RecordViewSheetDetailRow
               label={t("routes.columns.date")}
               value={formatScheduleLabel(record, t, dash)}
@@ -87,7 +89,7 @@ export function ActiveRouteViewSheet({
             ) : null}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t(`routes.${copyPrefix}.view.sections.assignment`)}>
+          <RecordViewSheetSection title={t(`routes.${copyPrefix}.view.sections.assignment`)} icon={RouteIcon}>
             <RecordViewSheetDetailRow
               label={t("routes.viewSheet.recordId")}
               value={truncateObjectId(record.id)}
@@ -114,7 +116,7 @@ export function ActiveRouteViewSheet({
             ) : null}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("routes.viewSheet.sections.employees")}>
+          <RecordViewSheetSection title={t("routes.viewSheet.sections.employees")} icon={Users}>
             <RecordViewSheetDetailRow
               label={t("routes.columns.driver")}
               value={formatActiveRouteDriverNames(record) || dash}
@@ -130,12 +132,12 @@ export function ActiveRouteViewSheet({
           </RecordViewSheetSection>
 
           {record.routeType === "pickup" ? (
-            <RecordViewSheetSection title={t("routes.pickupRoutes.view.sections.orders")}>
+            <RecordViewSheetSection title={t("routes.pickupRoutes.view.sections.orders")} icon={ClipboardList}>
               <PickupRouteOrdersSection routeId={record.id} enabled={open} />
             </RecordViewSheetSection>
           ) : null}
 
-          <RecordViewSheetSection title={t("routes.viewSheet.sections.audit")}>
+          <RecordViewSheetSection title={t("routes.viewSheet.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow
               label={t("routes.columns.createdAt")}
               value={record.createdAt ? formatAuditDateTime(record.createdAt) : dash}

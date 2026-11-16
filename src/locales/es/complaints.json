@@ -1,0 +1,349 @@
+{
+  "title": "Quejas",
+  "description": "Registre las quejas de clientes recibidas por teléfono, gestiónelas hasta su resolución y conserve el historial completo.",
+  "entity": "Queja",
+  "add": "Nueva queja",
+  "searchPlaceholder": "Buscar número, asunto, teléfono o referencia…",
+  "empty": "No se encontraron quejas.",
+  "emptyUnresolved": "No hay quejas sin resolver. Todo está atendido.",
+  "retry": "Reintentar",
+  "forbidden": "No tiene permiso para ver las quejas.",
+  "unassigned": "Sin asignar",
+  "userFallback": "Usuario #{{id}}",
+  "employeeFallback": "Empleado #{{id}}",
+  "yes": "Sí",
+  "no": "No",
+  "scopes": {
+    "label": "Quejas a mostrar",
+    "unresolved": "Sin resolver",
+    "all": "Todas las quejas"
+  },
+  "errors": {
+    "missingId": "Esta queja no tiene ID.",
+    "loadFailed": "No se pudieron cargar las quejas.",
+    "categoriesFailed": "No se pudieron cargar las categorías de quejas.",
+    "createFailed": "No se pudo registrar la queja.",
+    "updateFailed": "No se pudo actualizar la queja.",
+    "versionConflict": "Otra persona actualizó esta queja. Se cargó la versión más reciente; revísela e intente de nuevo.",
+    "closedConflict": "Esta queja está cerrada. Reábrala antes de hacer cambios.",
+    "insightsFailed": "No se pudieron cargar los indicadores de quejas.",
+    "notificationsFailed": "No se pudieron cargar las notificaciones de quejas."
+  },
+  "validation": {
+    "tooLong": "Demasiado largo.",
+    "phone": "Ingrese un teléfono con al menos 7 dígitos.",
+    "email": "Ingrese un correo electrónico válido.",
+    "subjectTooLong": "El asunto debe tener menos de 120 caracteres.",
+    "targetRequired": "Agregue al menos una persona o registro relacionado con la queja.",
+    "targetLabelTooLong": "La referencia debe tener menos de 200 caracteres.",
+    "targetNoteTooLong": "La nota debe tener menos de 1.000 caracteres.",
+    "nonNegativeNumber": "Ingrese un número igual o mayor que cero.",
+    "wholeNumber": "Ingrese un número entero.",
+    "invalidOption": "Elija una de las opciones disponibles.",
+    "tooManyValues": "Ingrese como máximo 20 valores.",
+    "httpsUrl": "Ingrese un enlace seguro que comience con https://.",
+    "attachmentSize": "Ingrese un tamaño mayor que 0 y de hasta 25 MB."
+  },
+  "statuses": {
+    "open": "Abierta",
+    "in_progress": "En proceso",
+    "pending_customer": "Esperando al cliente",
+    "resolved": "Resuelta",
+    "closed": "Cerrada",
+    "rejected": "Rechazada"
+  },
+  "severities": {
+    "low": "Baja",
+    "normal": "Normal",
+    "high": "Alta",
+    "urgent": "Urgente"
+  },
+  "categories": {
+    "appointment": "Cita",
+    "delivery": "Entrega",
+    "billing": "Precios / facturación",
+    "customer_service": "Servicio al cliente",
+    "progress": "Estado / avance",
+    "quality": "Calidad del servicio",
+    "general": "General / varias áreas",
+    "other": "Otra"
+  },
+  "targetKinds": {
+    "employee": "Empleado",
+    "appointment": "Cita",
+    "order": "Pedido",
+    "invoice": "Factura",
+    "other": "Otro"
+  },
+  "detailFields": {
+    "appointment_ref": "Referencia de la cita",
+    "issue": "Problema",
+    "provider_name": "Empleado que atendió",
+    "wait_minutes": "Espera (minutos)",
+    "order_ref": "Referencia del pedido",
+    "tracking_number": "Número de rastreo",
+    "expected_date": "Fecha esperada",
+    "photos": "Enlaces de fotos",
+    "invoice_ref": "Referencia de la factura",
+    "amount_disputed": "Monto en disputa",
+    "currency": "Moneda",
+    "channel_used": "Medio de contacto",
+    "agent_name": "Nombre del agente",
+    "date_of_contact": "Fecha de contacto",
+    "ticket_id": "ID del ticket",
+    "reference": "Referencia",
+    "days_waiting": "Días de espera",
+    "service_date": "Fecha del servicio",
+    "issue_summary": "Resumen del problema",
+    "affected_areas": "Áreas afectadas"
+  },
+  "detailOptions": {
+    "late": "Tarde",
+    "no-show": "No se presentó",
+    "cancelled": "Cancelada",
+    "rescheduled": "Reprogramada",
+    "wrong service": "Servicio equivocado",
+    "missing": "Faltante",
+    "damaged": "Dañado",
+    "wrong item": "Artículo equivocado",
+    "never arrived": "Nunca llegó",
+    "overcharged": "Cobro excesivo",
+    "double charge": "Cobro doble",
+    "unexpected fee": "Cargo inesperado",
+    "refund missing": "Reembolso pendiente",
+    "rude": "Descortés",
+    "unhelpful": "Poco servicial",
+    "no reply": "Sin respuesta",
+    "wrong info": "Información incorrecta",
+    "no update": "Sin actualización",
+    "stuck": "Detenido",
+    "wrong status": "Estado incorrecto",
+    "poor result": "Mal resultado",
+    "incomplete": "Incompleto",
+    "unsafe": "Inseguro"
+  },
+  "fields": {
+    "number": "Número",
+    "createdAt": "Registrada",
+    "status": "Estado",
+    "severity": "Gravedad",
+    "category": "Categoría",
+    "subject": "Asunto",
+    "callerName": "Nombre de quien llama",
+    "callerPhone": "Teléfono de quien llama",
+    "callerEmail": "Correo de quien llama",
+    "assignee": "Asignada a",
+    "targets": "Relacionada con",
+    "description": "Descripción",
+    "loggedBy": "Registrada por",
+    "reopenedCount": "Veces reabierta",
+    "resolutionSummary": "Resumen de la resolución",
+    "actionTaken": "Acción tomada",
+    "resolvedBy": "Resuelta por",
+    "resolvedAt": "Resuelta",
+    "note": "Nota",
+    "reopenReason": "Motivo de la reapertura"
+  },
+  "form": {
+    "description": "Registre la queja de quien llama. Se registra como Abierta y se cuenta en el indicador rojo de Quejas hasta que se resuelva o se rechace.",
+    "sections": {
+      "caller": "Quien llama",
+      "complaint": "Queja",
+      "details": "Detalles de {{category}}",
+      "targets": "Con qué o con quién está relacionada"
+    },
+    "detailsHint": "Estos campos dependen de la categoría. Los campos obligatorios están marcados.",
+    "targetsHint": "Agregue los empleados o registros involucrados. Se requiere al menos uno.",
+    "addTarget": "Agregar",
+    "removeTarget": "Quitar",
+    "targetKind": "Tipo",
+    "targetEmployee": "Empleado",
+    "targetLabel": "Referencia",
+    "targetLabelPlaceholders": {
+      "appointment": "Número o descripción de la cita",
+      "order": "Número o descripción del pedido",
+      "invoice": "Número de factura",
+      "other": "Describa con qué está relacionada la queja"
+    },
+    "targetNote": "Nota (opcional)",
+    "employeePlaceholder": "Seleccione un empleado",
+    "employeeSearch": "Buscar empleados…",
+    "employeeEmpty": "No se encontraron empleados.",
+    "selectOption": "Seleccione una opción",
+    "searchOptions": "Buscar…",
+    "noOptions": "No se encontraron opciones.",
+    "listHint": "Separe varios valores con comas.",
+    "categoryPlaceholder": "Seleccione una categoría",
+    "categorySearch": "Buscar categorías…",
+    "categoryEmpty": "No se encontraron categorías.",
+    "severityDefault": "Predeterminada de la categoría ({{severity}})",
+    "severityDefaultGeneric": "Predeterminada de la categoría",
+    "severityHint": "Use Urgente para casos legales o de privacidad. Las quejas de calidad marcadas como inseguras siempre son urgentes.",
+    "submit": "Registrar queja"
+  },
+  "filters": {
+    "fields": {
+      "status": {
+        "label": "Estado"
+      },
+      "severity": {
+        "label": "Gravedad"
+      },
+      "category": {
+        "label": "Categoría"
+      },
+      "number": {
+        "label": "Número",
+        "placeholder": "C-2026-00001"
+      },
+      "subject": {
+        "label": "Asunto",
+        "placeholder": "Ingrese el asunto…"
+      },
+      "callerPhone": {
+        "label": "Teléfono de quien llama",
+        "placeholder": "2015551234"
+      },
+      "targets.label": {
+        "label": "Referencia relacionada",
+        "placeholder": "Ingrese la referencia…"
+      },
+      "createdAt": {
+        "label": "Registrada",
+        "placeholder": "AAAA-MM-DD"
+      }
+    }
+  },
+  "view": {
+    "legacyNotice": "Esta queja se registró con el flujo de quejas anterior y aquí es de solo lectura.",
+    "details": "Detalles de la categoría",
+    "resolution": "Resolución",
+    "attachments": "Adjuntos",
+    "openAttachment": "Abrir archivo",
+    "timeline": "Historial",
+    "assigneeSearch": "Buscar usuarios…",
+    "assigneeEmpty": "No se encontraron usuarios."
+  },
+  "timeline": {
+    "filed": "Registrada como {{status}}",
+    "statusChange": "{{from}} → {{to}}",
+    "assigned": "Asignada a {{user}}",
+    "unassigned": "Asignación eliminada",
+    "reopened": "Reabierta",
+    "note": "Nota interna"
+  },
+  "workflow": {
+    "actions": {
+      "open": {
+        "in_progress": "Iniciar gestión",
+        "rejected": "Rechazar"
+      },
+      "in_progress": {
+        "pending_customer": "Esperando al cliente",
+        "resolved": "Resolver",
+        "rejected": "Rechazar"
+      },
+      "pending_customer": {
+        "in_progress": "Reanudar gestión",
+        "rejected": "Rechazar"
+      },
+      "resolved": {
+        "closed": "Cerrar",
+        "in_progress": "Volver a en proceso"
+      },
+      "rejected": {
+        "open": "Restablecer"
+      }
+    },
+    "reopen": "Reabrir",
+    "addNote": "Agregar nota",
+    "confirmReject": "¿Rechazar esta queja? Dejará de contarse como sin resolver.",
+    "success": {
+      "open": "Queja restablecida.",
+      "in_progress": "La queja está en proceso.",
+      "pending_customer": "La queja está esperando al cliente.",
+      "resolved": "Queja resuelta.",
+      "closed": "Queja cerrada.",
+      "rejected": "Queja rechazada.",
+      "assigned": "Asignación actualizada.",
+      "unassigned": "Asignación eliminada.",
+      "severity": "Gravedad actualizada.",
+      "note": "Nota agregada.",
+      "reopened": "Queja reabierta.",
+      "targets": "Se actualizó con qué o con quién está relacionada la queja.",
+      "attachment": "Adjunto agregado."
+    },
+    "dialogs": {
+      "resolve": {
+        "title": "Resolver queja",
+        "description": "Describa el resultado y lo que se hizo. Después podrá cerrar la queja.",
+        "submit": "Resolver"
+      },
+      "note": {
+        "title": "Agregar nota interna",
+        "description": "Las notas solo las ve el personal y aparecen en el historial.",
+        "submit": "Agregar nota"
+      },
+      "reopen": {
+        "title": "Reabrir queja",
+        "description": "La queja vuelve a En proceso. Se conserva la resolución anterior.",
+        "submit": "Reabrir"
+      },
+      "targets": {
+        "title": "Editar con qué o con quién está relacionada",
+        "description": "Reemplace los empleados o registros con los que está relacionada esta queja. La lista completa se guarda junta.",
+        "submit": "Guardar"
+      },
+      "attachment": {
+        "title": "Agregar adjunto",
+        "description": "Vincule un archivo que ya esté guardado en línea. Los adjuntos solo los ve el personal.",
+        "submit": "Agregar adjunto"
+      }
+    },
+    "editTargets": "Editar",
+    "addAttachment": "Agregar"
+  },
+  "attachments": {
+    "fileUrl": "Enlace del archivo",
+    "mimeType": "Tipo de archivo",
+    "selectType": "Seleccione un tipo de archivo",
+    "sizeMb": "Tamaño (MB)",
+    "hint": "El archivo permanece donde está alojado; EMSYS guarda el enlace, el tipo y el tamaño. Máximo 25 MB.",
+    "empty": "Aún no hay adjuntos.",
+    "types": {
+      "pdf": "Documento PDF",
+      "jpeg": "Imagen JPEG",
+      "png": "Imagen PNG",
+      "webp": "Imagen WebP",
+      "heic": "Foto HEIC",
+      "mp4": "Video MP4",
+      "mov": "Video QuickTime",
+      "mp3": "Audio MP3",
+      "m4a": "Audio M4A",
+      "text": "Archivo de texto",
+      "docx": "Documento de Word",
+      "xlsx": "Hoja de cálculo de Excel",
+      "other": "Otro archivo"
+    }
+  },
+  "insights": {
+    "open": "Indicadores",
+    "title": "Indicadores de quejas",
+    "description": "Volumen, quejas reabiertas y tiempo de resolución de las quejas registradas en las fechas seleccionadas (UTC).",
+    "from": "Desde",
+    "to": "Hasta",
+    "loading": "Cargando indicadores…",
+    "total": "Quejas registradas",
+    "reopened": "Reabiertas",
+    "averageResolution": "Tiempo promedio de resolución",
+    "hours": "{{hours}} h",
+    "byCategory": "Por categoría",
+    "byEmployee": "Empleados mencionados con más frecuencia",
+    "empty": "No hay quejas en este rango.",
+    "errors": {
+      "dates": "Ingrese ambas fechas.",
+      "order": "La fecha final debe ser igual o posterior a la inicial.",
+      "span": "Elija un rango de 365 días o menos."
+    }
+  }
+}

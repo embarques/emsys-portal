@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  Building2,
+  Info,
+  KeyRound,
+  MapPin,
+  Phone,
+  User as UserIcon,
+  Wallet,
+} from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -79,7 +89,7 @@ export function EmployeeViewSheet({
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("employees.view.sections.employee")}>
+          <RecordViewSheetSection title={t("employees.view.sections.employee")} icon={UserIcon}>
             <RecordViewSheetDetailRow
               label={t("employees.view.employeeId")}
               value={formatEmployeeId(employee.id)}
@@ -98,7 +108,7 @@ export function EmployeeViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("employees.view.sections.branch")}>
+          <RecordViewSheetSection title={t("employees.view.sections.branch")} icon={Building2}>
             <RecordViewSheetDetailRow
               label={t("employees.view.branchId")}
               value={employee.branch.id > 0 ? String(employee.branch.id) : dash}
@@ -117,7 +127,7 @@ export function EmployeeViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("employees.view.sections.contact")}>
+          <RecordViewSheetSection title={t("employees.view.sections.contact")} icon={Phone}>
             {getOrderedRecordPhones(employee.phones).length === 0 ? (
               <RecordViewSheetDetailRow label={t("employees.columns.phone")} value={dash} />
             ) : (
@@ -142,7 +152,7 @@ export function EmployeeViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("employees.view.sections.address")}>
+          <RecordViewSheetSection title={t("employees.view.sections.address")} icon={MapPin}>
             <RecordViewSheetDetailRow
               label={t("employees.columns.address.address1")}
               value={employee.address.address1 || dash}
@@ -177,7 +187,7 @@ export function EmployeeViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("employees.view.sections.loans")}>
+          <RecordViewSheetSection title={t("employees.view.sections.loans")} icon={Wallet}>
             <RecordViewSheetDetailRow
               label={t("employees.columns.totalLoanGiven")}
               value={formatEmployeeMoney(employee.totalLoanGiven)}
@@ -197,7 +207,7 @@ export function EmployeeViewSheet({
           </RecordViewSheetSection>
 
           {employee.user ? (
-            <RecordViewSheetSection title={t("employees.view.sections.user")}>
+            <RecordViewSheetSection title={t("employees.view.sections.user")} icon={KeyRound}>
               <RecordViewSheetDetailRow
                 label={t("employees.columns.user")}
                 value={formatEmployeeUserLabel(employee)}
@@ -223,7 +233,7 @@ export function EmployeeViewSheet({
             </RecordViewSheetSection>
           ) : null}
 
-          <RecordViewSheetSection title={t("employees.view.sections.audit")}>
+          <RecordViewSheetSection title={t("employees.view.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow
               label={t("employees.columns.createdAt")}
               value={employee.createdAt ? formatAuditDateTime(employee.createdAt) : dash}

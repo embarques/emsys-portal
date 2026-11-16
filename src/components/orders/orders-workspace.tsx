@@ -357,6 +357,8 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [clearRouteOpen, setClearRouteOpen] = useState(false);
   const [completionConfirm, setCompletionConfirm] = useState<boolean | null>(null);
+  /** When set, completion / route dialogs act on these orders instead of table selection. */
+  const [bulkActionOrders, setBulkActionOrders] = useState<Order[] | null>(null);
   const [completionExpanded, setCompletionExpanded] = useState(false);
   const [routesExpanded, setRoutesExpanded] = useState(false);
   const listParams = useMemo(
@@ -464,13 +466,22 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     [orders, selectedIds],
   );
   const selectedCount = selectedOrders.length;
+  const actionOrders = bulkActionOrders ?? selectedOrders;
   const selectedOrdersWithRoute = useMemo(
     () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
     [selectedOrders],
   );
+  const actionOrdersWithRoute = useMemo(
+    () => actionOrders.filter((order) => Boolean(order.routeId?.trim())),
+    [actionOrders],
+  );
   const selectedOrdersToUnassign = useMemo(
     () => selectedOrdersWithRoute.filter(order => !order.completed),
     [selectedOrdersWithRoute],
+  );
+  const actionOrdersToUnassign = useMemo(
+    () => actionOrdersWithRoute.filter((order) => !order.completed),
+    [actionOrdersWithRoute],
   );
   const assignRouteOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(pickupRouteLookup.items, t),
@@ -632,13 +643,13 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
 
   async function handleSetCompleted(completed: boolean) {
     if (routeMode && !routeAccess.canUpdate) return;
-    if (selectedOrders.length === 0) return;
+    if (actionOrders.length === 0) return;
 
-    const affectedCount = selectedOrders.length;
+    const affectedCount = actionOrders.length;
 
     try {
       const result = await setOrdersCompletedMutation.mutateAsync({
-        orders: selectedOrders,
+        orders: actionOrders,
         completed,
       });
 
@@ -664,33 +675,49 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         onAllFailed: (message) => {
           notifyError(message);
           setCompletionConfirm(null);
+          setBulkActionOrders(null);
         },
         onDone: () => {
           setSelectedIds((current) =>
             current.filter((id) => !result.succeededIds.includes(id)),
           );
+          if (
+            viewOrder &&
+            result.succeededIds.includes(getOrderRecordId(viewOrder))
+          ) {
+            setViewOrder((current) =>
+              current ? { ...current, completed } : current,
+            );
+          }
           setCompletionConfirm(null);
+          setBulkActionOrders(null);
         },
       });
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
       setCompletionConfirm(null);
+      setBulkActionOrders(null);
     }
   }
 
-  function openCompletionConfirm(completed: boolean) {
-    if (selectedOrders.length === 0) return;
+  function openCompletionConfirm(completed: boolean, orders?: Order[]) {
+    const targets = orders ?? selectedOrders;
+    if (targets.length === 0) return;
+    setBulkActionOrders(orders ?? null);
     setCompletionConfirm(completed);
   }
 
-  function openAssignRoute() {
+  function openAssignRoute(orders?: Order[]) {
     if (routeMode) return;
-    if (selectedOrders.length === 0) return;
+    const targets = orders ?? selectedOrders;
+    if (targets.length === 0) return;
+    setBulkActionOrders(orders ?? null);
     setAssignRouteOpen(true);
   }
 
-  function openMapView() {
-    const mappableSelected = selectedOrders.filter(isOrderMappable);
+  function openMapView(orders?: Order[]) {
+    const targets = orders ?? selectedOrders;
+    const mappableSelected = targets.filter(isOrderMappable);
     if (mappableSelected.length === 0) {
       notifyError(t("orders.map.noMappableStops"));
       return;
@@ -699,13 +726,16 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     writeOrdersMapContext({
       filters,
       sort,
-      selectedIds,
+      selectedIds: mappableSelected.map((order) => getOrderRecordId(order)),
     });
     openTab(routeMode ? "/route-appointments/map" : "/appointments/map", t("orders.map.title"));
   }
 
-  function viewSelectedRoute() {
-    const routeIds = new Set(selectedOrdersWithRoute.map((order) => order.routeId!.trim()));
+  function viewSelectedRoute(order?: Order) {
+    const targets = order
+      ? [order].filter((entry) => Boolean(entry.routeId?.trim()))
+      : selectedOrdersWithRoute;
+    const routeIds = new Set(targets.map((entry) => entry.routeId!.trim()));
     if (routeIds.size === 0) {
       notifyError(t("orders.actions.noAssignedRoute"));
       return;
@@ -715,27 +745,32 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       return;
     }
 
+    setViewOrder(null);
     setFilters({ query: "", rows: buildPickupRouteFilterRows([...routeIds][0]) });
     setPage(1);
     setFiltersOpen(true);
   }
 
-  function openClearRoute() {
+  function openClearRoute(orders?: Order[]) {
     if (routeMode) return;
-    if (selectedOrdersToUnassign.length === 0) {
+    const targets = (orders ?? selectedOrders).filter(
+      (order) => Boolean(order.routeId?.trim()) && !order.completed,
+    );
+    if (targets.length === 0) {
       notifyError(t("orders.actions.noAssignedRoute"));
       return;
     }
+    setBulkActionOrders(orders ?? null);
     setClearRouteOpen(true);
   }
 
   async function confirmClearRoute() {
     if (routeMode) return;
-    if (selectedOrdersToUnassign.length === 0) return;
+    if (actionOrdersToUnassign.length === 0) return;
 
     console.info("[clearPickupRoute] UI confirm", {
-      count: selectedOrdersToUnassign.length,
-      orders: selectedOrdersToUnassign.map((order) => ({
+      count: actionOrdersToUnassign.length,
+      orders: actionOrdersToUnassign.map((order) => ({
         id: order.id,
         routeId: order.routeId ?? null,
         routeName: order.routeName ?? null,
@@ -744,7 +779,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     });
 
     try {
-      const result = await clearRouteMutation.mutateAsync(selectedOrdersToUnassign);
+      const result = await clearRouteMutation.mutateAsync(actionOrdersToUnassign);
 
       reportBulkSettled({
         result,
@@ -762,19 +797,31 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         },
         onDone: () => {
           setClearRouteOpen(false);
+          setBulkActionOrders(null);
           setSelectedIds((current) =>
             current.filter((id) => !result.succeededIds.includes(id)),
           );
+          if (
+            viewOrder &&
+            result.succeededIds.includes(getOrderRecordId(viewOrder))
+          ) {
+            setViewOrder((current) =>
+              current
+                ? { ...current, routeId: undefined, routeName: undefined }
+                : current,
+            );
+          }
         },
       });
     } catch (mutationError) {
       console.error("[clearPickupRoute] UI error", mutationError);
       notifyError(normalizeApiError(mutationError).message);
+      setBulkActionOrders(null);
     }
   }
 
-  async function printSelectedOrders() {
-    const pickupIds = selectedOrders.map((order) => getOrderRecordId(order)).filter(Boolean);
+  async function printOrders(orders: Order[]) {
+    const pickupIds = orders.map((order) => getOrderRecordId(order)).filter(Boolean);
     if (pickupIds.length === 0) {
       notifyError(t("orders.actions.selectAtLeastOne"));
       return;
@@ -796,6 +843,10 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
+  }
+
+  function printSelectedOrders() {
+    return printOrders(selectedOrders);
   }
 
   async function handleRetryLegacySync(order: Order) {
@@ -1152,7 +1203,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                 variant="outline"
                 size="sm"
                 className="whitespace-nowrap"
-                onClick={openMapView}
+                onClick={() => openMapView()}
               >
                 <MapIcon className="size-4" />
                 {t("orders.actions.map")}
@@ -1165,7 +1216,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                   tableSelectionActionStyles.print,
                 )}
                 variant="outline"
-                onClick={printSelectedOrders}
+                onClick={() => void printSelectedOrders()}
                 disabled={isPrinting}
               >
                 <Printer className="size-4" />
@@ -1199,7 +1250,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                 size="sm"
                 className="whitespace-nowrap"
                 disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                onClick={openAssignRoute}
+                onClick={() => openAssignRoute()}
               >
                 <RouteIcon className="size-4" />
                 {t("orders.actions.assignRoute")}
@@ -1210,7 +1261,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                 size="sm"
                 className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
                 disabled={selectedOrdersWithRoute.length === 0}
-                onClick={viewSelectedRoute}
+                onClick={() => viewSelectedRoute()}
               >
                 <Eye className="size-4" />
                 {t("orders.actions.viewRoute")}
@@ -1221,7 +1272,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                 size="sm"
                 className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
                 disabled={isSaving || selectedOrdersToUnassign.length === 0}
-                onClick={openClearRoute}
+                onClick={() => openClearRoute()}
               >
                 <RouteOff className="size-4" />
                 {clearRouteMutation.isPending
@@ -1415,14 +1466,14 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                       {t("orders.actions.createInvoice")}
                     </Button>
                   ) : null}
-                  <Button variant="outline" size="sm" onClick={openMapView}>
+                  <Button variant="outline" size="sm" onClick={() => openMapView()}>
                     <MapIcon className="h-4 w-4" />
                     {t("orders.actions.map")}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={printSelectedOrders}
+                    onClick={() => void printSelectedOrders()}
                     disabled={isPrinting}
                     className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
                   >
@@ -1480,7 +1531,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                   variant="outline"
                   size="sm"
                   disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                  onClick={openAssignRoute}
+                  onClick={() => openAssignRoute()}
                 >
                   <RouteIcon className="h-4 w-4" />
                   {t("orders.actions.assignRoute")}
@@ -1489,7 +1540,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                   variant="outline"
                   size="sm"
                   disabled={selectedOrdersWithRoute.length === 0}
-                  onClick={viewSelectedRoute}
+                  onClick={() => viewSelectedRoute()}
                   className={tableSelectionActionStyles.view}
                 >
                   <Eye className="h-4 w-4" />
@@ -1499,7 +1550,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                   variant="outline"
                   size="sm"
                   disabled={isSaving || selectedOrdersToUnassign.length === 0}
-                  onClick={openClearRoute}
+                  onClick={() => openClearRoute()}
                   className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
                 >
                   <RouteOff className="h-4 w-4" />
@@ -1601,6 +1652,17 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
           setDeleteTarget(order);
         }}
         onCreateInvoice={appointmentInvoice.canCreateInvoice ? createInvoiceFromOrder : undefined}
+        onMap={(order) => openMapView([order])}
+        onPrint={(order) => void printOrders([order])}
+        isPrinting={isPrinting}
+        onMarkComplete={(order) => openCompletionConfirm(true, [order])}
+        onMarkIncomplete={(order) => openCompletionConfirm(false, [order])}
+        canManageCompletion={!routeMode || routeAccess.canUpdate}
+        onAssignRoute={routeMode ? undefined : (order) => openAssignRoute([order])}
+        onViewRoute={routeMode ? undefined : (order) => viewSelectedRoute(order)}
+        onClearRoute={routeMode ? undefined : (order) => openClearRoute([order])}
+        canManageRoutes={!routeMode}
+        actionsDisabled={isSaving}
       />
 
       <AppointmentInvoiceDialogs state={appointmentInvoice} />
@@ -1654,13 +1716,21 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
 
       <AssignAppointmentRouteDialog
         open={assignRouteOpen}
-        onOpenChange={setAssignRouteOpen}
-        appointments={selectedOrders}
+        onOpenChange={(open) => {
+          setAssignRouteOpen(open);
+          if (!open) setBulkActionOrders(null);
+        }}
+        appointments={actionOrders}
       />
 
       <Dialog
         open={completionConfirm !== null}
-        onOpenChange={(open) => !open && setCompletionConfirm(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCompletionConfirm(null);
+            setBulkActionOrders(null);
+          }
+        }}
       >
         <DialogContent className="z-[60]">
           <DialogHeader>
@@ -1670,25 +1740,28 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                 : t("orders.dialogs.markIncompleteTitle")}
             </DialogTitle>
             <DialogDescription>
-              {selectedOrders.length === 1
+              {actionOrders.length === 1
                 ? t(
                     completionConfirm
                       ? "orders.dialogs.markCompleteDescription"
                       : "orders.dialogs.markIncompleteDescription",
-                    { count: selectedOrders.length },
+                    { count: actionOrders.length },
                   )
                 : t(
                     completionConfirm
                       ? "orders.dialogs.markCompleteDescription_plural"
                       : "orders.dialogs.markIncompleteDescription_plural",
-                    { count: selectedOrders.length },
+                    { count: actionOrders.length },
                   )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setCompletionConfirm(null)}
+              onClick={() => {
+                setCompletionConfirm(null);
+                setBulkActionOrders(null);
+              }}
               disabled={setOrdersCompletedMutation.isPending}
             >
               {t("common.actions.cancel")}
@@ -1723,6 +1796,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         onOpenChange={(open) => {
           if (clearRouteMutation.isPending) return;
           setClearRouteOpen(open);
+          if (!open) setBulkActionOrders(null);
         }}
       >
         <DialogContent
@@ -1737,13 +1811,13 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
           <DialogHeader>
             <DialogTitle>{t("orders.dialogs.clearRouteTitle")}</DialogTitle>
             <DialogDescription>
-              {selectedOrdersToUnassign.length === 1
+              {actionOrdersToUnassign.length === 1
                 ? t("orders.dialogs.clearRouteDescription", {
-                    count: selectedOrdersToUnassign.length,
+                    count: actionOrdersToUnassign.length,
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
                   })
                 : t("orders.dialogs.clearRouteDescription_plural", {
-                    count: selectedOrdersToUnassign.length,
+                    count: actionOrdersToUnassign.length,
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
                   })}
             </DialogDescription>
@@ -1751,7 +1825,10 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setClearRouteOpen(false)}
+              onClick={() => {
+                setClearRouteOpen(false);
+                setBulkActionOrders(null);
+              }}
               disabled={clearRouteMutation.isPending}
             >
               {t("common.actions.cancel")}

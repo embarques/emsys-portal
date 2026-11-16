@@ -1,0 +1,70 @@
+{
+  "checkedAt": "2026-11-14T17:29:26.961Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "results": [
+    {
+      "label": "Rejected invoice left no invoices",
+      "http": 200,
+      "total": 0,
+      "passed": true
+    },
+    {
+      "label": "Rejected invoice left no customers",
+      "http": 200,
+      "total": 0,
+      "passed": true
+    },
+    {
+      "label": "Rejected invoice left no journals",
+      "http": 200,
+      "total": 0,
+      "passed": true
+    },
+    {
+      "label": "Existing NY period lifecycle retained",
+      "id": 4,
+      "http": 200,
+      "status": "OPEN",
+      "passed": true
+    },
+    {
+      "label": "Existing NY period lifecycle retained",
+      "id": 32736,
+      "http": 200,
+      "status": "open",
+      "passed": true
+    },
+    {
+      "label": "Only temporary identity removed",
+      "path": "/roles/89",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Only temporary identity removed",
+      "path": "/users/161",
+      "http": 404,
+      "passed": true
+    },
+    {
+      "label": "Own number is unassigned and unclaimed",
+      "id": "6af899a431a295cf38084333",
+      "number": "P-01031",
+      "http": 200,
+      "allocationUserId": 0,
+      "claimed": false,
+      "receivedAt": null,
+      "passed": true
+    },
+    {
+      "label": "Own number is unassigned and unclaimed",
+      "id": "6af899a431a295cf38084334",
+      "number": "P-01032",
+      "http": 200,
+      "allocationUserId": 0,
+      "claimed": false,
+      "receivedAt": null,
+      "passed": true
+    }
+  ]
+}

@@ -33,6 +33,7 @@
     "inventorySuppliers": "Proveedores",
     "items": "Artículos",
     "containers": "Contenedores",
+    "complaints": "Quejas",
     "routeManager": "Cuadrillas de ruta",
     "routeGroups": "Cuadrillas de ruta",
     "routeCrews": "Cuadrillas de ruta",
@@ -72,6 +73,7 @@
   },
   "badges": {
     "pendingAppointments": "{{count}} citas pendientes",
-    "todayTransactions": "{{count}} transacciones hoy"
+    "todayTransactions": "{{count}} transacciones hoy",
+    "unresolvedComplaints": "{{count}} quejas sin resolver"
   }
 }

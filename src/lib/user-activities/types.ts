@@ -23,16 +23,34 @@ export type UserActivityUser = {
  * The activity document’s own key is normalized to `activityId` so it does not
  * collide with the entity `id`.
  */
+export type UserActivityRouteRef = {
+  id: string;
+  name: string;
+  /** Daily route business date, when the route was a daily route. */
+  date: string;
+};
+
+/** API `barcodeRouteChange`: an undelivered barcode left its daily route. `next` is null when it was removed. */
+export type UserActivityRouteChange = {
+  barcodeId: string;
+  previous: UserActivityRouteRef | null;
+  next: UserActivityRouteRef | null;
+  previousTripNumber: number | null;
+};
+
 export type UserActivity = ApiTableRecord & {
   activityId: string;
   timestamp: string;
   user: UserActivityUser;
   description: string;
   origin: string;
+  /** API event code, e.g. `INVOICE_CREATED`; empty for older activities. */
+  eventType: string;
   /** Entity record id from API field `id` (paired with `origin`). */
   entityId: string;
   quantity: number | null;
   severity: UserActivitySeverity;
+  routeChange: UserActivityRouteChange | null;
 };
 
 export type UserActivitySearchFilter = ApiListTextSearch;

@@ -1,5 +1,7 @@
 "use client";
 
+import { Building2, Info, PackageCheck, User } from "lucide-react";
+
 import {
   RecordViewSheet,
   RecordViewSheetBody,
@@ -53,7 +55,7 @@ export function InventorySupplierViewSheet({
       <RecordViewSheetContent>
         <RecordViewSheetHeader title={supplier.companyName} description={t("inventory.submenus.suppliers")} />
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("inventory.form.sections.supplier")}>
+          <RecordViewSheetSection title={t("inventory.form.sections.supplier")} icon={Building2}>
             <RecordViewSheetDetailRow label={t("inventory.columns.status")} value={<InventoryActiveBadge isActive={supplier.isActive} />} />
             <RecordViewSheetDetailRow
               label={t("inventory.form.fields.addresses")}
@@ -61,7 +63,7 @@ export function InventorySupplierViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("inventory.form.sections.contacts")}>
+          <RecordViewSheetSection title={t("inventory.form.sections.contacts")} icon={User}>
             {supplier.contacts.length === 0 ? (
               <p className="text-sm text-muted-foreground">{dash}</p>
             ) : (
@@ -75,7 +77,7 @@ export function InventorySupplierViewSheet({
             )}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("inventory.view.receipts")}>
+          <RecordViewSheetSection title={t("inventory.view.receipts")} icon={PackageCheck}>
             {receipts.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("inventory.empty.receipts")}</p>
             ) : (
@@ -93,7 +95,7 @@ export function InventorySupplierViewSheet({
             )}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("inventory.view.audit")}>
+          <RecordViewSheetSection title={t("inventory.view.audit")} icon={Info}>
             <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDateTime(supplier.createdAt)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.userCreated")} value={supplier.createdBy || dash} />
             <RecordViewSheetDetailRow label={t("inventory.columns.dateModified")} value={formatAuditDateTime(supplier.updatedAt)} />

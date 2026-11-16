@@ -2,6 +2,8 @@ import enEmployeeTitles from "@/locales/en/employee-titles.json";
 import esEmployeeTitles from "@/locales/es/employee-titles.json";
 import enEmployeeDepartments from "@/locales/en/employee-departments.json";
 import esEmployeeDepartments from "@/locales/es/employee-departments.json";
+import enComplaints from "@/locales/en/complaints.json";
+import esComplaints from "@/locales/es/complaints.json";
 import enInvoicePolicies from "@/locales/en/invoice-policies.json";
 import esInvoicePolicies from "@/locales/es/invoice-policies.json";
 import enPredefinedRoutes from "@/locales/en/predefined-routes.json";
@@ -73,6 +75,7 @@ const catalogs: Record<Locale, MessageTree> = {
     barcodes: enBarcodes,
     barcodeStatuses: enBarcodeStatuses,
     common: enCommon,
+    complaints: enComplaints,
     containers: enContainers,
     customers: enCustomers,
     dashboard: enDashboard,
@@ -106,6 +109,7 @@ const catalogs: Record<Locale, MessageTree> = {
     barcodes: esBarcodes,
     barcodeStatuses: esBarcodeStatuses,
     common: esCommon,
+    complaints: esComplaints,
     containers: esContainers,
     customers: esCustomers,
     dashboard: esDashboard,

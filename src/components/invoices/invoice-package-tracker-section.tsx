@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Package } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { formatLabelTimestamp } from "@/lib/labels/display";
@@ -26,6 +27,7 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
   return (
     <RecordViewSheetSection
       title={t("invoices.view.packageTracker.title", { count: timeline.length })}
+      icon={Package}
     >
       {sortedTimeline.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.packageTracker.empty")}</p>

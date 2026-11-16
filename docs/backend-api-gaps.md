@@ -1,192 +1,124 @@
-# Backend/API gaps — remaining work
+# Backend/API gaps — team handoff index
 
-Updated November 13, 2026. Remaining fixes and checks, grouped by ownership.
+Revalidated November 14, 2026 using bounded live API probes, isolated tagged
+mock fixtures, automated portal checks and API source review. **Only confirmed
+problems, unverified cases and unfinished integrations remain active.** Passing
+subcases are evidence/regression controls, not additional open defects.
 
-## 1. Backend/API fixes
+[Current results, exact remaining scope and fixture ledger](backend-gap-revalidation-2026-11-14.md)
+record what ran and why each remaining ID is still open. No whole backend ID is
+closed by a partial control. F02 local metadata and F03/F04 local implementation
+work are verified; their remaining deployment/browser acceptance is separate.
 
-All endpoint paths below are relative to `/v1`. Schema names refer to
-`components.schemas` in [API-Docs.json](../API-Docs.json); the published Scalar specification is
-[`GET /scalar/openapi.json`](https://api.embarqueros.com/scalar/openapi.json),
-with Swagger separately available at `GET /swagger/doc.json`. Each item identifies the
-contract surface that still needs implementation or publication.
+[Existing NY/DR follow-up](backend-gap-active-branches-2026-11-14.md) now verifies
+the approved NY rollover, a paid mock loan with exact after-PAID replay, configured
+label defaults, unpaid registration completion, both receivedBy positives and
+additional reservation date/cursor controls. Only their remaining variants stay open.
 
-### B05 — Publish the affected OpenAPI contracts
+Use the packet for the backend domain you are assigning. The routing below is a
+suggested responsibility split, not an assignment to named people or new teams.
+Each packet is standalone: send its Markdown file alone. It includes the required
+business rules, historical findings, acceptance steps, test prerequisites and
+completion evidence; recipients do not need other portal files. Source pointers
+and artifact names are optional provenance, not required attachments. **B** IDs cover backend changes or
+contract/publication work; **V** IDs cover remaining live API acceptance;
+**I** IDs cover backend-controlled integration, history, migration or capacity.
+A verification item is not automatically a confirmed defect.
 
-Update the specific operations and schemas below in the published specifications
-and the checked-in schema. Supporting requirements are in
-[daily-route assignment](daily-route-assignment-api-contract.md),
-[payment accounts](payment-accounts-api-contract.md),
-[financial controls](financial-controls.md) and
-[reserved invoice search](reserved-invoice-search-api-contract.md).
+All 11 handoff packets now use **Issue → Expected result → Suggested action**
+for each pending ID, with suggested actions separated into **API work**,
+**Database work**, and **Both — API and database together**. Portal responsibilities
+remain explicitly assigned to portal owners. The November 15 formatting update
+adds no runtime verification or item closure.
 
-| Operation / schema | Contract detail to publish or correct |
-| --- | --- |
-| `GET /vehicle-routes/business-date` | Optional `branchId`; response `data.businessDate`, `timezone`, `serverTime`, `nextMidnight`; assigned-only access and branch scope. Add the missing operation. |
-| `PUT /barcodes/{id}` → `barcode.Barcode.route` | `route: null` removes an unfinished assignment; an omitted `route` preserves it. Document delivered-state rejection and source/destination date constraints. |
-| `PUT /invoices/{id}` → `invoice.UpdateInvoiceRequest.invoiceDetails` → `invoice.InvoiceDetail.barcode` / `barcodes[]` | Document the same nullable route semantics for embedded pieces, catalog/embed synchronization and delivered/date constraints. |
-| `PUT /invoices/item/barcode/route/{routeId}` → `invoice.AssignBarcodesRouteRequest.barcodeIds` | Array of 1–200 distinct positive uint32 piece IDs; atomic rejection; duplicate 400, missing 404, delivered/conflict 409. State that successful replay may allocate another trip rather than promise idempotent trip allocation. |
-| `POST /journals/clear` → `journal.ReconcileRequest` | `{requestId, ids}` command, clearance grant, atomic settlement/reconciliation, deferred invoice application, actor/payload-bound replay and all-or-nothing failures. Remove the description claiming clearance never changes reconciliation. |
-| `journal.Journal.reconciliationStatus` and `POST /journals/reconcile` | Include `NOT_REQUIRED` in the enum; document lifecycle exclusions and rejection of standalone reconciliation for unsettled bank journals. |
-| Directory search operations listed under B09, plus `POST /invoices/reserved/search` | Publish each operation's actual filter fields/operators, sort fields/directions, pagination and validation errors. Explicitly document the flat reserved-search `data` array and page metadata separately from GET's cursor-page envelope. |
+## Backend team packets
 
-Additional contracts to publish:
-
-- `/loans/search`: supported sort fields/directions, unsupported sort exclusions
-  and specific filter/sort validation errors.
-- `GET /invoices/reserved`: supported sort fields/directions, deterministic ties
-  and cursor binding to sort/filter/company context.
-- `POST /change-requests/search`: filter/operator/sort allow-lists, pagination,
-  permissions, assignment scope and null-review semantics for status,
-  resourceType, action, requestedBy/reviewedBy IDs/names and createdAt/reviewedAt.
-- Reserved-invoice `receivedAt`: nullable RFC 3339 field, authoritative business
-  timezone, date-only versus timestamp semantics, operators and validation.
-
-### B09 — Directory search field contracts
-
-Each row in the table below identifies a `POST /…/search` operation whose
-filter/sort allow-list needs support or a documented equivalent. Requests use
-`query.Request`: filter leaves `{field, operator, value}`, sort entries
-`{field, direction}`, and `pagination: {page, limit}`. Unsupported candidates
-currently return HTTP 400; publishing a field without implementing it is not
-sufficient. Any alternative wire name must also be mapped in the corresponding
-portal feature adapter.
-
-The 53 remaining directory field/sort candidates are listed below. Loan search
-exclusions require publication under B05.
-
-#### B09: fields needing support
-
-Provide indexed filter/sort support or document equivalent supported fields.
-Agree on wire names for denormalized supplier, holder and crew names.
-
-| Search endpoint | Filters to support | Sorts to support |
+| Send to domain owner | Primary IDs | Work to hand off |
 | --- | --- | --- |
-| `/branches/search` | `address.address1`, `address.country`, `settings.labelPrefix`, `disclaimer` | `address.address1`, `address.country`, `settings.labelPrefix` |
-| `/containers/search` | `barcodeSequence`, `deliverySequence` | `number` |
-| `/customers/search` | `notes`, `receivers` | — |
-| `/employees/search` | `loanBalanceUpdated` | — |
-| `/inventory/dispatches/search` | `supplierName`, `postedAt`, `postedBy.name` | `supplierName`, `fromHolderName`, `postedAt`, `postedBy.name` |
-| `/inventory/receipts/search` | `supplierName`, `postedAt`, `postedBy.name` | `supplierName`, `toHolderName`, `postedAt`, `postedBy.name` |
-| `/inventory/suppliers/search` | — | `name` |
-| `/invoice-descriptions/search` | `createdBy.name`, `updatedBy.name` | — |
-| `/invoices/search` | `invoiceDetails`, `itemCount`, `legacySyncedAt`, `branch.name`, `branch.code` | — |
-| `/journals/search` | `invoice.discount`, `accounts.type`, `transactionBalance`, `currency`, `customer`, `loan` | — |
-| `/pickups/search` | `routeNumber` | `routeNumber` |
-| `/roles/search` | `permissions` | — |
-| `/vehicle-routes/search` | `createdAt`, `driver.name`, `supervisor.name`, `helpers.name` | `driver.name`, `supervisor.name`, `helpers.name` |
-| `/vehicles/search` | `inspectionDate`, `registrationDate` | — |
+| [Finance, accounts, settlement and loans](backend-handoffs/finance-and-loans.md) | B15, B12, V02, V05, V13, I04 | Canonical expense classification, loan replay/lifecycle, settlement rollback, closeout clocks and account allocation |
+| [Barcodes, routes and delivery](backend-handoffs/logistics-and-barcodes.md) | B16, V06, V07, V11, I01 | Branch defaults/status workflow, permanent barcode identity, shared trips and movement/completion atomicity |
+| [Customers and invoices](backend-handoffs/customers-and-invoices.md) | V08, V09, V10, V14 | Deletion/history retention, legacy duplicate identities, invoice registration and reservation cursor/date boundaries |
+| [Inventory / internal supplies](backend-handoffs/inventory.md) | V12 | Stock/valuation/disposition rollback and permission/autoReconcile combinations |
+| [Authorization, approvals and API platform](backend-handoffs/auth-and-approvals.md) | V15, I02; backend portion of F03 | Approval/revocation commit windows, tenant/branch isolation and local-origin/header CORS fixes |
+| [Search and database performance](backend-handoffs/search-and-performance.md) | B09, I07 | Nine selected missing filter/sort capabilities, typed semantics, indexes/plans and representative capacity |
+| [API contract publication](backend-handoffs/api-contract-publication.md) | B05 | Source-schema corrections, served Swagger/Scalar parity, publication and portal API-reference audit coordination |
+| [History and data integration](backend-handoffs/history-and-data-integration.md) | I03, I05, I06 | Persisted history/migrations, historical analytics reconciliation and deployed legacy-service confirmation |
+| [Alerts and notifications](backend-handoffs/alerts-and-notifications.md) | I08 | Complete low-pool and vehicle alert evaluation, scope, counts and inbox delivery |
+| [Complaints](backend-handoffs/complaints.md) | B17, B18, B19 | Three EMSYS complaint types (general, appointment, barcode item delivery) with topics, linked sender/appointment/invoice/barcodes and 0+ employees; customer photo/video uploads; complete case history and an editable solution |
 
-### B12 — Loan increase contract and valid lifecycle
+**Portal work is separate:** [portal/shared follow-up](backend-handoffs/portal-follow-up.md)
+contains verified F02/F03/F04 local status and only remaining acceptance,
+B16 generation fallbacks, and frontend
+rollout dependencies. F03 is intentionally shared: backend owns CORS/API scope;
+portal owns session/client-state behavior and real Firebase/browser acceptance.
+The primary backend packets own the requirements; the historical source review
+and local handoff remain evidence, not parallel replacement backlogs.
 
-- Publish the required requestId schema, capability, payload/actor binding,
-  replay/errors and atomic principal/balance/journal contract for
-  `POST /loans/{id}/increases`.
-- Establish an eligible LOAN account and current period in an isolated fixture
-  branch, then verify issue/increase/payment, replay, concurrency and linked
-  journal invariants. Resolve the account-setup contract: creating a LOAN account
-  in a fixture branch returns 400.
-- Align the gated portal adapter with the agreed requestId contract (F04), and
-  verify the valid lifecycle before enabling the action.
-- References: [requestId validation](backend-gap-controls-2026-11-13.json),
-  [account-creation prerequisite](section3-loan-scoped-evidence-2026-11-13.json).
+## Cross-team dependencies and sequence
 
-### B15 — Resolve the EXPENSE classification account from persisted data
+- V08: block invoice deletion until linked payments are deleted through their
+  supported workflows or reversed. Eligible deletion removes operational invoice
+  data while retaining financial history and the existing barcode sequence counter;
+  deleted printed numbers stay retired.
+- V02 policy confirmed November 14: reconciliation confirms internal receipt
+  without clearance; clearance atomically reconciles too. Backend and portal must
+  allow eligible uncleared bank receipts to reconcile. Closeouts gate daily entry;
+  later status progression does not reopen/move transactions or duplicate income.
 
-- `POST /journals` accepts `account: {id: 5, name: "Gasolina", type: "EXPENSE"}`
-  although persisted account 5 is LOAN RECEIVABLE / ASSET. The saved ledger debits
-  ID 5 under the supplied forged name/type.
-- Resolve `PostEntryRequest.account` within the tenant, enforce transaction-type
-  compatibility/posting eligibility and canonical metadata before any write.
-  Extend the check to create/sync/update and verify rejection preserves financial
-  state and retry identity.
-- Evidence: [final financial matrix](section3-matrix-final-evidence-2026-11-13.json),
-  labels `Persisted ASSET spoofed as EXPENSE category` and its saved readback.
+- V13/I03: legacy closeout periods are handled in a separate one-time migration,
+  as confirmed by the modeler November 14. API backend owners should document
+  scope, historical financial/audit preservation, validation and safe rollout.
+  Do not extend ordinary rollover to finalize legacy periods as a workaround.
+- Address B15 financial integrity before certifying V05. B12's eligible fixture
+  setup and valid loan/replay lifecycle must pass before portal F04 activation.
+- B16 status/configuration and the barcode/shared-trip contract are prerequisites
+  for valid V06/V07/V11 controls. Backend clarification November 16: retain the
+  existing increasing barcode sequence; deletion leaves its counter unchanged,
+  so deleted numbers stay retired. The reservation-table proposal is withdrawn.
+  Verify imports/reseeds preserve the counter and concurrent allocations advance
+  it atomically; migrate identity/history associations before retiring old public IDs.
+- B09 vehicle date support feeds I08. Vehicle alerts begin 10 calendar days
+  before inspection/registration is due, for vehicle-read users within their
+  scope, with red sidebar badge, table alerts and notification inbox delivery.
+- Domain owners update actual wire contracts; B05 owns served publication/parity.
+  Do not publish a future design as deployed behavior. Portal F02 refresh/re-audit
+  follows the authoritative publication.
+- B17–B19 (complaint types, media, case history/solution) are business
+  proposals. The portal keeps the current complaint model until they ship, then
+  follows the portal checklist in the packet. B18 reuses the company document
+  storage that invoice documents use. Tenant overrides of the reused category
+  keys must be migrated during rollout.
+- I01/I02/I03/I04/I07 require backend-controlled fixtures, clocks, failure/race
+  barriers, database/history inspection or representative performance data for
+  their respective assertions. One team's local unit result does not close
+  another team's cross-domain acceptance.
 
-### B16 — New/embedded invoice-piece status persistence
+## Evidence required to close an item
 
-- Newly created pieces omit the documented ALM-NY status. The real embedded
-  update adapter sends `{status: {id: 6, name: "CONDUCE"}}` with the captured
-  If-Match; PUT succeeds, the route persists, but invoice/catalog readbacks omit
-  status.
-- Persist the documented default and supported status changes, or explicitly
-  document/reject unsupported writes. Successful requests must not silently lose
-  the selected status. Then verify real CONDUCE/delivered locks and trip effects.
-- Evidence: [exact requests and readbacks](section3-invoice-final-lifecycle-evidence-2026-11-13.json).
-  This proves missing status in API readbacks; database internals need backend
-  inspection before distinguishing lost persistence from projection defects.
+Return the original ID(s), source commit, deployed revision/environment and exact
+scenario evidence: permissions/actor and company/branch scope, payload and
+response, authoritative saved readback, replay/concurrency outcomes and unchanged
+state on rejection. Include injected-failure/clock controls where required,
+query plans/load/budget evidence where relevant, and schema/publication changes.
+List skipped or blocked cases explicitly; source presence, publication and
+persisted acceptance are different states. Keep credentials out of artifacts.
 
-### Invoice bulk identity/eligibility contract — V06 prerequisite
+Use isolated fixtures and approved non-production environments. Backend integration
+instructions and per-suite URI guards are in the
+[local test prerequisites](backend-gap-local-handoff-2026-11-13.md#local-execution-prerequisites)
+and the API repository's AGENTS.md. Historical production/legacy-service evidence
+requires its own authorized environment and must not become an incidental
+production mutation test. The revalidation report distinguishes newly executed controls from historical
+evidence and records the local ten-day vehicle-warning correction. No existing
+records were deleted and the API clone remains read-only.
 
-Define which numeric identity `PUT /invoices/item/barcode/route/{routeId}`
-resolves and its exact branch/container eligibility. Embedded IDs are local
-sequences and differ from catalog IDs. Matching branch/container fixtures still
-receive eligibility 400; missing-ID mixes return 400 instead of the specified
-404. Establish a valid positive control before certifying bulk atomicity/replay.
+## Reference material
 
-Resolve the bounded 200-row catalog prefix lookup timeout without introducing
-N+1 lookup workarounds. References: [persisted prerequisites](section3-invoice-readback-evidence-2026-11-13.json),
-[RD control](section3-invoice-rd-evidence-2026-11-13.json) and
-[identity lookup attempt](section3-invoice-identity-lifecycle-evidence-2026-11-13.json).
-
-## 2. Portal/API alignment
-
-- **F02 — Table/schema metadata.** Align table fields and schema references,
-  including lifecycle/version fields, journal account/route/inventory metadata
-  and report fields. Mark intentionally hidden fields explicitly.
-- **F04 — Loan increase adapter.** Once the requestId/replay contract is agreed,
-  send a stable operation identity from the currently gated loan-increase flow;
-  verify a valid loan lifecycle before enabling it.
-- **F03 — Authentication and company context.** Verify Firebase login,
-  refresh/logout and company switching. Resolve the origin configuration for
-  local integration at `127.0.0.1:3100` and `localhost:3100`.
-
-## 3. Remaining live API verification
-
-These rows describe remaining live server behavior. Local portal checks do not
-establish those persisted outcomes.
-Many can be invoked through the portal or a programmatic API client once their
-API prerequisites and fixtures are available; they do not all require a backend
-developer to execute them. Database failure injection and commit-time races
-require the backend controls in Section 4.
-
-| ID | Remaining verification |
-| --- | --- |
-| V02 | Injected settlement failure and closed-period/lifecycle transitions |
-| V05 | Fix B15 classification trust; cover inactive/non-posting/cross-company accounts, protected BANK changes, child-account allocation and remaining cash/expense correction paths |
-| V06 | Resolve numeric identity/eligibility prerequisite; verify valid bulk assignment, missing/foreign/delivered atomicity and replay trip allocation |
-| V07 | Fix B16 to establish actual CONDUCE/delivered states; verify nonempty delivery-ID/trip preservation/reset, legacy pieces and completion races |
-| V08 | Full linked financial/history evidence across invoice deletion; preserve financial/audit records |
-| V09 | Address-only changes on seeded legacy duplicate identities with linked history; preserve protected identities and history |
-| V10 | Unpaid-registration completion and assigned invoice ownership/customer negatives, revocation/replay, initial-payment effects, branch 11 and explicit receivedBy variants |
-| V11 | Server enforcement of delivery balance/policy/photo ownership and assigned-only scope under tampered requests, concurrent changes and multiple actors |
-| V12 | Injected inventory failure atomicity, remaining valuation/disposition paths and broader permission/autoReconcile combinations |
-| V13 | Real clock-controlled STALE_OPEN_CLOSEOUT/LATEST_CLOSED transitions and cross-period mutation rejection |
-| V14 | Tenant/branch/filter-bound cursors, mutation/concurrency sort ties and non-null receivedAt business-day boundaries |
-| V15 | Remaining approval actor/reviewer permission combinations, invoice/journal/label/inventory actions, pickup VOID and live cross-company/branch isolation |
-
-## 4. Backend integration and production checks
-
-- **I01 — Transaction boundaries.** Prove complete rollback for invoice/pickup
-  bulk assignment, invoice patches, delivery-versus-movement/removal and midnight
-  crossings, including failures between dependent writes.
-- **I02 — Authorization commit windows.** Verify in-flight grant revocation and
-  the separate crew-membership window. Measure throughput/latency of guarded
-  mutations holding user/role/grants through commit.
-- **I03 — History and lifecycle migration.** Verify commit-before-history
-  ordering, seeded tenant history indexes, deletion history, void/correct paths,
-  reversal entries, critical activity and legacy pending-queue/badge exclusion.
-  Confirm persisted history directly and align it with activity responses.
-- **I04 — Account allocation/migration.** Verify deep ancestry, parent/cycle
-  rules, occupied/exhausted codes, concurrent allocation, protected types and
-  preservation of legacy mappings/historical postings.
-- **I05 — Historical attribution and analytics.** Reconcile production
-  manifests and analytics across legacy invoice/journal snapshots, movement,
-  membership/responsibility changes, joint custody and timezone histograms.
-- **I06 — Deployed legacy service.** Verify real confirmation failure/success,
-  replay and no repeated remote call after confirmation.
-- **I07 — Query capacity.** Verify database indexes/query plans, representative
-  load and performance budgets.
-- **I08 — Complete alerts.** Implement/verify backend low-pool and vehicle
-  inspection/registration due/overdue notifications,
-  business-calendar evaluation, company/branch scope and full directory coverage.
-  Resolve the rejected vehicle date queries; avoid first-200/N+1 coverage limits.
+- [API reference](../.reference/emsys-api/docs/swagger.json) (local `emsys-api` clone; replaces the former `api-docs.json` snapshot); endpoint paths in packets are relative to `/v1`.
+- [Saved public publication audit](backend-gap-publication-audit-2026-11-13.json)
+- [Saved public CORS controls](backend-gap-auth-cors-2026-11-13.json)
+- [API source review and confirmed model decisions](backend-gap-source-review-2026-11-13.md)
+- [Local portal fixes, source test inventory and limits](backend-gap-local-handoff-2026-11-13.md)
+- [Current live and programmatic revalidation](backend-gap-revalidation-2026-11-14.md)
+- [Prior live API verification](backend-gap-follow-up-2026-11-13.md)
+- [Selected table search/filter/sort contract](table-search-contracts.md)

@@ -21,6 +21,7 @@ import {
   Landmark,
   Layers,
   MapPinned,
+  MessageSquareWarning,
   PackageMinus,
   PackageCheck,
   PackageOpen,
@@ -291,6 +292,13 @@ const reportsItem: NavigationItem = {
   permission: PERMISSIONS.reportsView,
 };
 
+const complaintsItem: NavigationItem = {
+  labelKey: "navigation.items.complaints",
+  href: "/complaints",
+  icon: MessageSquareWarning,
+  permission: PERMISSIONS.complaintsView,
+};
+
 const userActivitiesItem: NavigationItem = {
   labelKey: "navigation.items.userActivities",
   href: "/user-activities",
@@ -378,6 +386,7 @@ export const navigationSections: NavigationSection[] = [
       reportsItem,
       inventoryItem,
       containersItem,
+      complaintsItem,
     ].map(navigationItemToGroup),
   },
   {

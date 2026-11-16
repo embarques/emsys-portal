@@ -10,5 +10,5 @@ export const workspaceContentFrameClassName = `${workspaceContentShellClassName}
 /** Horizontal padding aligned with workspace content frame (tab bar, topbar). */
 export const workspaceContentHorizontalPaddingClassName = "px-4 md:px-6 lg:px-8";
 
-/** Tab bar inner row — same max width and horizontal inset as content. */
-export const workspaceTabBarFrameClassName = `${workspaceContentShellClassName} flex items-end ${workspaceContentHorizontalPaddingClassName}`;
+/** Tab bar inner row — flush on the left so the first tab meets the edge; keep right inset for actions. */
+export const workspaceTabBarFrameClassName = `${workspaceContentShellClassName} flex items-end pr-4 md:pr-6 lg:pr-8`;

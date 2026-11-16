@@ -273,9 +273,14 @@ export function BranchForm({
                 <Input
                   id="settings-defaultLabelStatus"
                   type="number"
-                  value={values.settings.defaultLabelStatus}
+                  value={values.settings.defaultLabelStatus || ""}
+                  placeholder={t("branches.form.defaultLabelStatusUnconfigured")}
+                  aria-describedby="settings-defaultLabelStatus-help"
                   onChange={(event) => updateSettingsField("defaultLabelStatus", Number(event.target.value) || 0)}
                 />
+                <p id="settings-defaultLabelStatus-help" className="text-xs text-muted-foreground">
+                  {t("branches.form.defaultLabelStatusHelp")}
+                </p>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="settings-imageResampleBy">{t("branches.form.fields.imageResampleBy")}</Label>

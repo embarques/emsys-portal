@@ -2,7 +2,7 @@
 
 EMSYS list endpoints use a shared query string format.
 
-For **create/update request bodies** (POST/PUT payloads), see [`api-docs.json`](api-docs.json).
+For **create/update request bodies** (POST/PUT payloads), see the API reference [`.reference/emsys-api/docs/swagger.json`](.reference/emsys-api/docs/swagger.json).
 
 ## Parameters
 

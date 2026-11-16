@@ -77,7 +77,7 @@ type ApiContainer = {
   updatedAt?: string;
 };
 
-/** POST/PUT /containers — see api-docs.json */
+/** POST/PUT /containers — see .reference/emsys-api/docs/swagger.json */
 type ApiContainerWritePayload = {
   name: string;
   booking: string;

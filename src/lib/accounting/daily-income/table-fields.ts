@@ -1,7 +1,37 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["journal.Journal"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["journal.Journal"]. */
 export const DAILY_INCOME_JOURNAL_API_TABLE_FIELDS = [
+  // API-owned action/concurrency/lifecycle controls are interpreted by the feature.
+  { field: "allowedActions", column: false },
+  { field: "pendingChange", column: false },
+  { field: "restrictionReason", column: false },
+  { field: "version", column: false },
+  { field: "autoReconcile", column: false },
+  { field: "reversalOf", column: false },
+  { field: "reversedAt", column: false },
+  { field: "reversedTransactionType", column: false },
+  { field: "transactionStatus", column: false },
+  { field: "voidedAt", column: false },
+  // Funding, bank reference and operational attribution use dedicated business renderers/workflows.
+  { field: "branch", column: false },
+  { field: "dailyRoute", column: false },
+  { field: "dailyRouteId", column: false },
+  { field: "paymentAccount", column: false },
+  { field: "paymentReference", column: false },
+  { field: "sourceAccount", column: false },
+  // Inventory links and valuation metadata must not become unformatted money/object columns.
+  { field: "inventoryDirection", column: false },
+  { field: "inventoryDispatchId", column: false },
+  { field: "inventoryHolders", column: false },
+  { field: "inventoryItemId", column: false },
+  { field: "inventoryQuantity", column: false },
+  { field: "inventoryReceiptId", column: false },
+  { field: "inventoryReconciliationId", column: false },
+  { field: "inventorySupplierId", column: false },
+  { field: "inventoryTotal", column: false },
+  { field: "inventoryUnitPrice", column: false },
+  { field: "inventoryWarehouseHolderId", column: false },
  {field: "reconciliationStatus"},
  {field: "clearanceStatus"},
  {field: "clearedAt", format: "date", defaultVisible: false},

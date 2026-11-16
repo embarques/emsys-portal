@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { History } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { buildInvoiceActivityTimeline } from "@/lib/invoices/activity";
@@ -26,6 +27,7 @@ export function InvoiceActivitySection({ invoice }: InvoiceActivitySectionProps)
   return (
     <RecordViewSheetSection
       title={t("invoices.view.activity.title", { count: timeline.length })}
+      icon={History}
     >
       {sortedTimeline.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.activity.empty")}</p>

@@ -5,7 +5,10 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useAppSelector } from "@/lib/store/hooks";
 import { store } from "@/lib/store/store";
-import { createChange, fetchChanges, fetchChangeTarget, reviewChange, type ChangeResource } from "./api";
+import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
+import type { TableFilterFieldOption } from "@/lib/table/filter-builder";
+import { createChange, fetchChangeRequestsPage, fetchChangeTarget, reviewChange, type ChangeRequest, type ChangeResource } from "./api";
+import { CHANGE_REQUEST_TABLE_FILTER_FIELDS } from "./filter-fields";
 import { changeAffectedPrefixes } from "./utils/invalidation";
 
 const key = "change-requests";
@@ -21,13 +24,25 @@ function useChangeScope() {
   };
 }
 
-export function useChanges(page: number) {
+function localizeChangeOption(field: string, option: TableFilterFieldOption, t: (key: string) => string): TableFilterFieldOption {
+  if (field === "status" || field === "action") return { ...option, label: t(`accounting.changeRequests.${option.value.toLowerCase()}`) };
+  if (field === "resourceType") return { ...option, label: t(`accounting.changeRequests.${option.value}`) };
+  return option;
+}
+
+const changeRequestRowId = (row: ChangeRequest) => row.id;
+
+export function useChangeRequestsTable() {
   const { hasPermission, scope, ready } = useChangeScope();
-  return useWorkspaceQuery({
-    queryKey: [key, ...scope, page],
-    queryFn: ({ signal }) => fetchChanges(page, signal),
+  return useCatalogTable({
+    fields: CHANGE_REQUEST_TABLE_FILTER_FIELDS,
+    keyPrefix: "accounting.changeRequests.filters.fields",
+    defaultSort: "createdAt:desc",
+    getRowId: changeRequestRowId,
     enabled: ready && hasPermission("canViewChangeRequest", "change_request"),
-    retry: false,
+    queryKey: (params) => [key, ...scope, "page", params],
+    fetchPage: fetchChangeRequestsPage,
+    localizeOption: localizeChangeOption,
   });
 }
 

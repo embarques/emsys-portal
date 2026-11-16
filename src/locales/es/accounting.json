@@ -660,6 +660,13 @@
       "searchBranches": "Buscar sucursales…",
       "noCloseout": "Sin cierre para esta fecha"
     },
+    "emptyCloseout": {
+      "title": "Sin cierre activo",
+      "loading": "Buscando un cierre…",
+      "descriptionCanCreate": "Abra el cuadre de hoy para esta ubicación y empiece a registrar transacciones.",
+      "descriptionOtherDate": "No hay un cierre para esta fecha. Elija otro día, o abra el cuadre de hoy si aún no está abierto.",
+      "descriptionUnavailable": "No hay un cierre para esta ubicación y fecha. Cambie a su sucursal, o pida a alguien con permiso que abra el cuadre de hoy."
+    },
     "status": {
       "open": "Activo",
       "closed": "Inactivo",
@@ -820,16 +827,17 @@
         "loanAssignment": "Elige el empleado. Para un préstamo existente, selecciona el préstamo que deseas actualizar.",
         "loanDetails": "Ingresa el importe y selecciona las cuentas correspondientes. Verifica los datos del préstamo antes de continuar.",
         "loanReview": "Verifica el empleado, el importe del préstamo y las cuentas. Edita lo que necesites corregir y guarda.",
+        "inventoryDispatch": "Busca el despacho pendiente que vas a cobrar y elige Conciliar para registrar sus resultados y el pago.",
         "inventoryItems": "Ingresa las cantidades de cada resultado por artículo. Verifica las cantidades vendidas, devueltas y perdidas frente al inventario pendiente.",
         "inventoryPayment": "Registra el dinero recibido y su método de pago. Agrega una nota cuando sea necesaria por pérdidas o crédito.",
         "inventoryReview": "Verifica los resultados de los artículos, los pagos y el crédito restante antes de guardar."
       },
       "quickFlow": {
-        "chooseHint": "Elige lo que necesitas registrar. Cada acción abre solo los pasos necesarios.",
         "fullBalance": "Pagar saldo completo · {{amount}}",
         "assignment": "Empleado / préstamo",
         "details": "Monto y detalles",
         "review": "Revisar y guardar",
+        "selectDispatch": "Seleccionar despacho",
         "inventoryItems": "Artículos y resultados",
         "inventoryPayment": "Pago y detalles",
         "noPayment": "Sin pago por ahora",
@@ -856,7 +864,6 @@
         "existingInvoice": "Factura existente",
         "hints": {
           "INITIAL-PAYMENT": "Incluye el primer pago",
-          "PAYMENT": "Pago, descuento o recargo",
           "INVENTORY": "Recibido o despachado",
           "INVENTORY-PAYMENT": "Pago de un despacho",
           "LOAN-PAYMENT": "Abono del empleado"
@@ -864,8 +871,8 @@
         "options": {
           "INITIAL-PAYMENT": "Nueva factura",
           "PAYMENT": "Pago de factura",
-          "DISCOUNT": "Descuento",
-          "SURCHARGE": "Recargo",
+          "DISCOUNT": "Descuento de factura",
+          "SURCHARGE": "Recargo de factura",
           "SALES": "Ingreso",
           "EXPENSE": "Gasto",
           "INVENTORY": "Movimiento de inventario",
@@ -875,8 +882,13 @@
           "LOAN-PAYMENT": "Pago de préstamo",
           "TRANSFER": "Transferir entre cuentas"
         },
+        "groupHints": {
+          "invoicePayment": "Para una factura existente o nueva"
+        },
         "groups": {
-          "invoices": "Facturas",
+          "invoicePayment": "Pago de factura",
+          "invoiceSurcharge": "Recargo de factura",
+          "invoiceDiscount": "Descuento de factura",
           "income": "Ingresos",
           "expenses": "Gastos",
           "inventory": "Inventario",
@@ -968,6 +980,10 @@
     },
     "form": {
       "creatorAssigneeHint": "Si lo deja vacío, usted será responsable de cuadrar esta transacción.",
+      "assigneeSourceHints": {
+        "employee": "Un empleado es responsable",
+        "route": "Una ruta diaria y su supervisor son responsables"
+      },
       "creatorAssignee": "Empleado vinculado al creador",
       "fields": {
         "assignedTo": "Asignado a",
@@ -983,17 +999,16 @@
         "autoClear": "Conciliar automáticamente",
         "autoClearPayment": "Liquidar el pago automáticamente al guardar",
         "bankPaymentClearanceHint": "Los pagos bancarios no se aplican a la factura hasta que se liquidan.",
-        "bankPaymentAutoClearHint": "Por defecto, este pago queda sin liquidar ni conciliar, y no se aplica a la factura hasta que se liquide. Active la liquidación automática solo si tiene la certeza de que los fondos ingresaron en la cuenta bancaria seleccionada; también concilia el pago.",
+        "bankPaymentAutoClearHint": "Por defecto, este pago queda sin liquidar ni conciliar, y no se aplica a la factura hasta que se liquide. Elija Sí solo si tiene la certeza de que los fondos ingresaron en la cuenta bancaria seleccionada; también concilia el pago.",
         "autoClearTransaction": "Liquidar la transacción automáticamente al guardar",
         "bankTransactionClearanceHint": "Las transacciones bancarias permanecen pendientes hasta que se liquidan.",
-        "bankTransactionAutoClearHint": "Deje esta opción desactivada salvo que tenga la certeza de que la transacción se liquidó y ya se refleja en la cuenta bancaria seleccionada. Se liquidará al guardar y se conciliará internamente cuando tenga el permiso correspondiente.",
+        "bankTransactionAutoClearHint": "Elija No salvo que tenga la certeza de que la transacción se liquidó y ya se refleja en la cuenta bancaria seleccionada. Se liquidará al guardar y se conciliará internamente cuando tenga el permiso correspondiente.",
         "autoClearHint": "Concilia esta transacción al guardar. Esto confirma que ya recibió este pago.",
         "autoClearReviewValue": "Conciliado al crear",
         "autoReconcile": "Conciliar automáticamente (marcar como vendido)",
         "autoReconcileHint": "Omite el paso de pendiente: al guardar se completa la entrega y toda la cantidad se concilia como vendida, por lo que no aparece en Transacciones pendientes.",
         "autoReconcileReviewValue": "Conciliado como vendido al guardar",
         "invoice": "Factura",
-        "invoiceAction": "Registrar en esta factura",
         "invoiceNumber": "Número de factura",
         "notes": "Notas",
         "referenceNumber": "Número de referencia interna",
@@ -1001,8 +1016,8 @@
         "referenceNumberModeCustom": "Ingresar el propio",
         "referenceNumberCustom": "Número de referencia interna personalizado",
         "referenceNumberHint": "EMSYS la usa para identificar la transacción.",
-        "referenceNumberSystemHint": "EMSYS generará un número de referencia interna al guardar. Desactívelo para ingresar el suyo.",
-        "referenceNumberCustomHint": "Actívelo para que EMSYS genere el número de referencia interna.",
+        "referenceNumberSystemHint": "EMSYS generará un número de referencia interna al guardar.",
+        "referenceNumberCustomHint": "Ingrese el número de referencia interna que usará esta transacción.",
         "account": "Cuenta",
         "sourceAccount": "Cuenta origen",
         "transferFrom": "Cuenta de origen",
@@ -1018,6 +1033,8 @@
         "paymentChannel": "Efectivo o banco",
         "paymentChannelCash": "Efectivo",
         "paymentChannelBank": "Banco",
+        "paymentChannelCashHint": "Pagado en efectivo",
+        "paymentChannelBankHint": "Cheque, tarjeta, transferencia u otro método bancario",
         "partySkipped": "Omitido",
         "receiverClient": "Cliente destinatario",
         "inventoryDirection": "Recibido o despachado",
@@ -1038,6 +1055,8 @@
       "inventory": {
         "received": "Recibido",
         "dispatched": "Despachado",
+        "receivedHint": "Los insumos llegaron de un proveedor",
+        "dispatchedHint": "Los insumos salieron a una ruta, vehículo o empleados",
         "priceHint": "Complete el precio unitario o el total; el otro monto se actualiza automáticamente.",
         "receivedDescription": "Recibido {{item}} × {{quantity}} de {{supplier}}",
         "receivedDescriptionNoSupplier": "Recibido {{item}} × {{quantity}}",
@@ -1350,7 +1369,8 @@
       "paymentRecorded": "Pago de préstamo registrado."
     },
     "errors": {
-      "openCloseoutRequired": "Se requiere un cuadre de ingresos diario abierto para la sucursal de esta cuenta de préstamo en la fecha seleccionada. Abra o cree ese cuadre abajo e intente de nuevo."
+      "openCloseoutRequired": "Se requiere un cuadre de ingresos diario abierto para la sucursal de esta cuenta de préstamo en la fecha seleccionada. Abra o cree ese cuadre abajo e intente de nuevo.",
+      "increaseUnconfirmed": "No se pudo confirmar el aumento del préstamo. Mantenga esta entrada abierta y vuelva a intentar con los mismos valores."
     },
     "validation": {
       "employeeRequired": "El empleado es obligatorio.",
@@ -1963,7 +1983,20 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "before": "Antes",
-    "after": "Después"
+    "after": "Después",
+    "searchPlaceholder": "Buscar por ID de registro, solicitante o revisor…",
+    "filters": {
+      "fields": {
+        "status": { "label": "Estado" },
+        "action": { "label": "Acción solicitada" },
+        "resourceType": { "label": "Tipo de registro" },
+        "resourceId": { "label": "ID de registro", "placeholder": "Ingrese el ID de registro…" },
+        "requestedBy": { "name": { "label": "Solicitado por", "placeholder": "Ingrese el nombre…" } },
+        "reviewedBy": { "name": { "label": "Revisado por", "placeholder": "Ingrese el nombre…" } },
+        "createdAt": { "label": "Solicitado el", "placeholder": "AAAA-MM-DD" },
+        "reviewedAt": { "label": "Revisado el", "placeholder": "AAAA-MM-DD" }
+      }
+    }
   },
   "journalLifecycle": {
     "void": "Anular",

@@ -136,7 +136,7 @@ type ApiPickupEmployeeRef = {
   active?: boolean;
 };
 
-/** POST/PUT /pickups — see api-docs.json */
+/** POST/PUT /pickups — see .reference/emsys-api/docs/swagger.json */
 type ApiPickupWritePayload = {
   date: string;
   branch: ApiBranchDtoPayload;

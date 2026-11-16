@@ -69,19 +69,55 @@ test("void requests exclude update fields and validation rejects whitespace reas
 
 test("API commands use shared endpoints and never send direct resource updates or deletions", async () => {
   const calls = [];
-  const load = loader({ "@/lib/api/client": { apiClient: { get: async (...args) => calls.push(["GET", ...args]), post: async (...args) => calls.push(["POST", ...args]) } } });
+  const record = (method) => async (...args) => { calls.push([method, ...args]); return { data: [], total: 0 }; };
+  const load = loader({ "@/lib/api/client": { apiClient: { get: record("GET"), post: record("POST") } } });
   const api = load("src/lib/change-requests/api.ts");
   const controller = new AbortController();
-  await api.fetchChanges(2, controller.signal);
+  await api.fetchChangeRequestsPage({ page: 2, limit: 25, sort: "createdAt:desc" }, controller.signal);
   await api.fetchChangeTarget("pickup", "a&b", controller.signal);
   const command = commands.buildChangeCommand(values, target, "retry-id");
   await api.createChange(command);
   await api.reviewChange({ id: "a/b", approve: true, reason: "Approved", resourceType: "pickup" });
-  assert.equal(calls[0][1], "/change-requests?page=2&limit=25&sort=createdAt:desc");
+  assert.equal(calls[0][1], "/change-requests?page=2&limit=25&offset=25&sort=createdAt%3Adesc");
   assert.equal(calls[1][1], "/change-requests/target?resourceType=pickup&resourceId=a%26b");
   assert.equal(calls[0][2].signal, controller.signal);
   assert.deepEqual(calls[2], ["POST", "/change-requests", command]);
   assert.deepEqual(calls[3], ["POST", "/change-requests/a%2Fb/approve", { reason: "Approved" }]);
+});
+
+test("search text and filter rows use POST /change-requests/search with the API's field names", async () => {
+  const calls = [];
+  const load = loader({ "@/lib/api/client": { apiClient: {
+    get: async (...args) => { calls.push(["GET", ...args]); return { data: [], total: 0 }; },
+    post: async (...args) => { calls.push(["POST", ...args]); return { data: [], total: 0 }; },
+  } } });
+  const api = load("src/lib/change-requests/api.ts");
+  await api.fetchChangeRequestsPage({
+    page: 1, limit: 50, sort: "createdAt:desc", query: "Ana",
+    filterRows: [{ id: "r1", field: "status", operator: "eq", value: "PENDING" }],
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], "POST");
+  assert.match(calls[0][1], /^\/change-requests\/search\?/);
+  const body = JSON.stringify(calls[0][2]);
+  for (const field of ["resourceId", "requestedBy.name", "reviewedBy.name", "status"]) assert.ok(body.includes(`"${field}"`), field);
+  assert.ok(body.includes("PENDING"));
+});
+
+test("table pages above the API's 100-row cap are read as consecutive capped pages", async () => {
+  const urls = [];
+  const load = loader({ "@/lib/api/client": { apiClient: {
+    get: async (url) => {
+      urls.push(url);
+      const page = Number(new URL(url, "http://x").searchParams.get("page"));
+      return { data: Array.from({ length: page === 1 ? 100 : 20 }, (_, i) => ({ id: `${page}-${i}` })), total: 120 };
+    },
+  } } });
+  const result = await load("src/lib/change-requests/api.ts").fetchChangeRequestsPage({ page: 1, limit: 200, sort: "createdAt:desc" });
+  assert.equal(urls.length, 2);
+  assert.ok(urls.every((url) => url.includes("limit=100")));
+  assert.equal(result.items.length, 120);
+  assert.equal(result.total, 120);
 });
 
 function hookFixture({ company = "company-a", transportCompany = company, allowed = true } = {}) {
@@ -94,6 +130,7 @@ function hookFixture({ company = "company-a", transportCompany = company, allowe
     "@/lib/store/hooks": { useAppSelector: selector => selector({ auth: transport }) },
     "@/lib/store/store": { store: { getState: () => ({ auth: transport }) } },
     "@/lib/query/use-workspace-query": { useWorkspaceQuery: options => options },
+    "@/lib/table/hooks/use-catalog-table": { useCatalogTable: options => options },
     "@/lib/api/client": { apiClient: {} },
   });
   return { hooks: load("src/lib/change-requests/hooks.ts"), auth, invalidations, transport };
@@ -104,8 +141,10 @@ test("query scopes separate employees and permissions and wait for transport con
   const first = hooks.useChangeTarget("pickup", "1", true);
   auth.user.uid = "employee-2";
   assert.notDeepEqual(hooks.useChangeTarget("pickup", "1", true).queryKey, first.queryKey);
-  assert.equal(hookFixture({ transportCompany: "company-b" }).hooks.useChanges(1).enabled, false);
-  assert.equal(hookFixture({ allowed: false }).hooks.useChanges(1).enabled, false);
+  assert.equal(hookFixture({ transportCompany: "company-b" }).hooks.useChangeRequestsTable().enabled, false);
+  assert.equal(hookFixture({ allowed: false }).hooks.useChangeRequestsTable().enabled, false);
+  assert.equal(hooks.useChangeRequestsTable().enabled, true);
+  assert.deepEqual(hooks.useChangeRequestsTable().queryKey({ page: 1 }).slice(0, 2), ["change-requests", "company-a"]);
   assert.equal(hooks.useChangeTarget("pickup", "1", false).enabled, false);
 });
 

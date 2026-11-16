@@ -117,6 +117,11 @@ export const PERMISSIONS = {
   creditCardPaymentsDelete: { name: "canDeleteCreditCardPayment", resourceType: "credit_card_payment" },
   accountsView: { name: "canViewChartAccount", resourceType: "chart_account" },
   reportsView: { name: "canViewReport", resourceType: "report" },
+  complaintsView: { name: "canViewComplaint", resourceType: "complaint" },
+  complaintsCreate: { name: "canCreateComplaint", resourceType: "complaint" },
+  complaintsUpdate: { name: "canUpdateComplaint", resourceType: "complaint" },
+  /** Also requires complaint update. */
+  complaintsReopen: { name: "canReopenComplaint", resourceType: "complaint_reopen" },
   usersView: { name: "canViewUser", resourceType: "user" },
   /** Roles UI — no seed; gate with user view until API adds role permissions. */
   rolesView: { name: "canViewUser", resourceType: "user" },

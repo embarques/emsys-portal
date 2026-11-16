@@ -39,14 +39,18 @@ verified live. `GET /v1/invoices/reserved` separately returns a cursor page:
 
 ## Received-at business field
 
-Add/document `receivedAt` as a nullable RFC 3339 timestamp for when the invoice
-was received. It is distinct from `reservedAt`, generation, assignment, download
-and record creation. Define the authoritative application/business timezone;
-older missing values must remain null/absent rather than use another timestamp.
+Confirmed business meaning: `receivedAt` is the nullable RFC 3339 server timestamp
+when a device claims/receives the reserved invoice number. It does not mean
+physical receipt of an invoice or merchandise. The source sets it for the current
+device claim and clears it when the device assignment is removed; generation,
+reservation and record creation are not substitutes. No separate physical-receipt
+field is requested by this decision. Missing older values stay null/absent.
+The source uses the company closeout timezone (default America/New_York) for
+date-only comparisons; confirm the served contract and boundary behavior.
 The November 13 `receivedAt >= 2026-11-01` probe is accepted. Returned missing
 values are null; null eq/gte/lte exclusion, neq inclusion and invalid/impossible
-date rejection pass. Non-null timestamp/day-boundary fixtures and the authoritative
-business timezone remain to be established. Invalid reservedAt dates also reject.
+date rejection pass. Non-null timestamp/day-boundary fixtures and deployed
+business-timezone behavior remain to be verified. Invalid reservedAt dates also reject.
 
 Verify these `receivedAt` filter semantics:
 

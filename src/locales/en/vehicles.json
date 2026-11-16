@@ -78,7 +78,7 @@
   "compliance": {
     "bannerTitle_one": "1 inspection or registration date needs attention",
     "bannerTitle_other": "{{count}} inspection or registration dates need attention",
-    "bannerDescription": "These dates are 7 days away or fewer, or already past. Renew them and update the vehicle record.",
+    "bannerDescription": "These dates are 10 calendar days away or fewer, or already past. Renew them and update the vehicle record.",
     "partial": "Only the first {{limit}} vehicles were checked.",
     "entry": "{{name}} · {{kind}} {{timing}}",
     "more": "+{{count}} more",

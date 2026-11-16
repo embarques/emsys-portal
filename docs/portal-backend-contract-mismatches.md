@@ -1,7 +1,7 @@
 # Portal suggestions versus existing backend contracts
 
 Reviewed November 13, 2026 against the current portal source, checked-in
-[OpenAPI schema](../api-docs.json), and recorded
+[OpenAPI schema](../.reference/emsys-api/docs/swagger.json), and recorded
 [November 13 API verification](backend-gap-follow-up-2026-11-13.md).
 
 This document isolates disagreements between portal expectations/proposals,
@@ -15,7 +15,17 @@ document. Runtime findings refer to the saved mock-company evidence, not a new
 production audit. A missing OpenAPI operation does not establish a missing API
 route, and an untested scenario does not establish a backend defect.
 
-## Confirmed mismatches
+## Current disposition
+
+November 14 revalidation supersedes historical missing-work statements below.
+The loan adapter now sends stable requestId and passes local retry/session tests;
+the 26-surface/450-field table metadata mapping passes. Those local tasks are
+complete. B12/F04 lifecycle/activation, B05 publication and concrete unverified
+response parity remain distinct. B09 is narrowed to nine selected capabilities;
+the other 44 historical candidates are out of scope. Current active scope and
+new results are in [the revalidation report](backend-gap-revalidation-2026-11-14.md).
+
+## Historical mismatches (not the active backlog)
 
 | ID / area | Portal expectation or suggestion | Existing contract / observed behavior | Recommended alignment and owner |
 | --- | --- | --- | --- |

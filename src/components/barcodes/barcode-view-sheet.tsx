@@ -94,7 +94,7 @@ export function BarcodeViewSheet({ barcode, open, onOpenChange }: BarcodeViewShe
             </div>
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("barcodes.view.sections.audit")}>
+          <RecordViewSheetSection title={t("barcodes.view.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow
               label={t("common.audit.createdAt")}
               value={formatAuditDateTime(barcode.createdAt ?? "") || dash}

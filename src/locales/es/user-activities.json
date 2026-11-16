@@ -10,7 +10,13 @@
     "origin": "Origen",
     "id": "ID",
     "quantity": "Cantidad",
-    "severity": "Severidad"
+    "severity": "Severidad",
+    "eventType": "Tipo de evento"
+  },
+  "routeChange": {
+    "moved": "Ruta: {{previous}} → {{next}}",
+    "removed": "Retirado de la ruta {{previous}}",
+    "trip": "viaje {{trip}}"
   },
   "severity": {
     "common": "Común",
@@ -56,6 +62,18 @@
       "timestampRange": {
         "label": "Rango de fechas",
         "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "eventType": {
+        "label": "Tipo de evento",
+        "placeholder": "p. ej. BARCODE_DAILY_ROUTE_CHANGED"
+      },
+      "barcodeRouteChange": {
+        "previous": {
+          "id": {
+            "label": "ID de ruta anterior",
+            "placeholder": "Escriba el ID de ruta…"
+          }
+        }
       },
       "activityId": {
         "label": "ID de actividad",

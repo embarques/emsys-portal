@@ -1,6 +1,6 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["branch.Branch"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["branch.Branch"]. */
 export const BRANCH_API_TABLE_FIELDS = [
   { field: "address" },
   { field: "code" },

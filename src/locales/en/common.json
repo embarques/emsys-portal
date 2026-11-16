@@ -39,7 +39,9 @@
     "searching": "Searching…",
     "clearSelection": "Clear selection",
     "openOptions": "Open options",
-    "closeOptions": "Close options"
+    "closeOptions": "Close options",
+    "yes": "Yes",
+    "no": "No"
   },
   "validation": {
     "required": "Required."
@@ -373,7 +375,8 @@
     "icon": "Icon",
     "enabled": "Enabled",
     "sortOrder": "Sort order",
-    "filters": "Filters"
+    "filters": "Filters",
+    "reservedAt": "Reserved At"
   },
   "statuses": {
     "active": "Active",

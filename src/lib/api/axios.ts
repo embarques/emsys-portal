@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 import { logApiErrorDev, normalizeApiError, type ApiError } from "@/lib/api/api-error";
-import { resolveIdToken } from "@/lib/api/auth-transport";
+import { getAuthContextVersion, isAuthContextCurrent, resolveIdToken } from "@/lib/api/auth-transport";
 import { getApiBaseUrl, getConfiguredApiBaseUrl } from "@/lib/api/base-url";
 import { store } from "@/lib/store/store";
 import { setAuthTransport } from "@/lib/store/auth/auth-slice";
@@ -30,14 +30,26 @@ export const axiosInstance = axios.create({
 
 type RetriedAxiosRequestConfig = InternalAxiosRequestConfig & {
   _retriedAfterRefresh?: boolean;
+  _authContextVersion?: number;
 };
 
-axiosInstance.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+function assertRequestContext(config: RetriedAxiosRequestConfig) {
+  if (config._authContextVersion !== undefined && !isAuthContextCurrent(config._authContextVersion)) {
+    throw new axios.CanceledError();
+  }
+}
+
+axiosInstance.interceptors.request.use(async (config: RetriedAxiosRequestConfig) => {
+  config._authContextVersion ??= getAuthContextVersion();
+  assertRequestContext(config);
   config.baseURL = config.useDirectApi ? getConfiguredApiBaseUrl() : getApiBaseUrl();
 
   const idToken = await resolveIdToken(false);
+  assertRequestContext(config);
   const { companyId } = store.getState().auth;
 
+  config.headers.delete("authorization");
+  config.headers.delete("x-company-id");
   if (idToken) {
     config.headers.set("authorization", `Bearer ${idToken}`);
   }
@@ -62,12 +74,16 @@ axiosInstance.interceptors.request.use(async (config: InternalAxiosRequestConfig
 });
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    assertRequestContext(response.config as RetriedAxiosRequestConfig);
+    return response;
+  },
   async (error: AxiosError) => {
     logApiErrorDev(error);
 
     const config = error.config as RetriedAxiosRequestConfig | undefined;
     const status = error.response?.status;
+    if (config) assertRequestContext(config);
 
     // Only retry expired sessions. A 403 is usually a real permission denial.
     if (!config || config._retriedAfterRefresh || status !== 401) {
@@ -75,12 +91,13 @@ axiosInstance.interceptors.response.use(
     }
 
     const refreshedToken = await resolveIdToken(true);
+    assertRequestContext(config);
     if (!refreshedToken) {
       return Promise.reject(error);
     }
 
-    const { companyId } = store.getState().auth;
-    dispatchFreshTransport(refreshedToken, companyId);
+    const { companyId, actorId } = store.getState().auth;
+    dispatchFreshTransport(refreshedToken, companyId, actorId);
 
     config._retriedAfterRefresh = true;
     config.headers.set("authorization", `Bearer ${refreshedToken}`);
@@ -88,11 +105,12 @@ axiosInstance.interceptors.response.use(
   },
 );
 
-function dispatchFreshTransport(idToken: string, companyId: string | null) {
+function dispatchFreshTransport(idToken: string, companyId: string | null, actorId: string | null) {
   store.dispatch(
     setAuthTransport({
       idToken,
       companyId,
+      actorId,
     }),
   );
 }

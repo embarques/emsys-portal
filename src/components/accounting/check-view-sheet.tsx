@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, CheckCircle2 } from "lucide-react";
+import { Banknote, CheckCircle2, Info } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,7 @@ export function CheckViewSheet({
             </RecordViewSheetSection>
           ) : null}
 
-          <RecordViewSheetSection title={t("accounting.checks.view.sections.audit")}>
+          <RecordViewSheetSection title={t("accounting.checks.view.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow
               label={t("common.audit.dateCreated")}
               value={check.createdAt ? formatAuditDateTime(check.createdAt) : dash}

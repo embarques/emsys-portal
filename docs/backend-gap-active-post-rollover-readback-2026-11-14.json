@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-11-14T17:38:27.057Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "approval": "User explicitly allowed normal NY rollover",
+  "results": [
+    {
+      "label": "Approved NY period lifecycle readback",
+      "id": 4,
+      "http": 200,
+      "status": "OPEN",
+      "passed": true
+    },
+    {
+      "label": "Approved NY period lifecycle readback",
+      "id": 32736,
+      "http": 200,
+      "status": "closed",
+      "passed": true
+    },
+    {
+      "label": "Approved NY period lifecycle readback",
+      "id": 32738,
+      "http": 200,
+      "status": "open",
+      "passed": true
+    },
+    {
+      "label": "Today NY current period is 32738",
+      "http": 200,
+      "id": 32738,
+      "passed": true
+    },
+    {
+      "label": "Own loan principal fully repaid with three retained transactions",
+      "http": 200,
+      "loanId": 5,
+      "principal": 1.25,
+      "paid": 1.25,
+      "balance": 0,
+      "status": "PAID",
+      "transactionIds": [
+        9,
+        10,
+        11
+      ],
+      "passed": true
+    },
+    {
+      "label": "Own loan transaction journal retained in current NY period",
+      "transactionId": 9,
+      "journalId": "6af89ad631a295cf38084342",
+      "http": 200,
+      "branchId": 1,
+      "closeoutId": 32738,
+      "passed": true
+    },
+    {
+      "label": "Own loan transaction journal retained in current NY period",
+      "transactionId": 10,
+      "journalId": "6af89ad631a295cf38084344",
+      "http": 200,
+      "branchId": 1,
+      "closeoutId": 32738,
+      "passed": true
+    },
+    {
+      "label": "Own loan transaction journal retained in current NY period",
+      "transactionId": 11,
+      "journalId": "6af89ad831a295cf38084346",
+      "http": 200,
+      "branchId": 1,
+      "closeoutId": 32738,
+      "passed": true
+    },
+    {
+      "label": "Own unpaid registration retained",
+      "path": "/journals/6af89be031a295cf38084354",
+      "http": 200,
+      "payment": 0,
+      "passed": true
+    },
+    {
+      "label": "Own unpaid registration retained",
+      "path": "/invoices/6af89be031a295cf38084353",
+      "http": 200,
+      "registration": "COMPLETED",
+      "payment": 0,
+      "balance": 0.02,
+      "passed": true
+    }
+  ]
+}

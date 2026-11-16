@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { SwitchField } from "@/components/ui/switch-field";
+import { YesNoChoiceField } from "@/components/ui/choice-field";
 import { AUTO_RECONCILE_PERMISSION, isAutoReconcileEligible } from "@/lib/accounting/daily-income/auto-reconcile";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -39,7 +39,7 @@ export function InventoryAutoReconcileField({
   if (!visible) return null;
 
   return (
-    <SwitchField
+    <YesNoChoiceField
       id={id}
       label={t("accounting.dailyIncome.form.fields.autoReconcile")}
       description={t("accounting.dailyIncome.form.fields.autoReconcileHint")}

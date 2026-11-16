@@ -1,6 +1,6 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["role.Role"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["role.Role"]. */
 export const ROLE_API_TABLE_FIELDS = [
   { field: "active" },
   { field: "createdAt", format: "date" },

@@ -1,22 +1,14 @@
 /**
- * POST /containers/search — OR bar search across every container field.
- *
- * The backend accepts `contains` against all fields (numeric `id`/`cost` and the
- * date fields match as stringified values), so the free-text bar searches them all.
+ * POST /containers/search — OR across the selected text identity fields.
+ * Amounts, numeric IDs and dates use typed advanced filters, never text contains.
+ * Broker, company and the legacy seal field remain available as advanced filters.
  */
 export const CONTAINER_BAR_OR_SEARCH_FIELDS = [
   "name",
   "containerNumber",
   "booking",
   "sealNumber",
-  "seal",
   "itn",
-  "broker",
-  "company",
-  "id",
-  "cost",
-  "departureDate",
-  "arrivalDate",
 ] as const;
 
 export type ContainerBarOrSearchField = (typeof CONTAINER_BAR_OR_SEARCH_FIELDS)[number];

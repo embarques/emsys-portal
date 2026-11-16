@@ -1,6 +1,6 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["employee.Employee"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["employee.Employee"]. */
 export const EMPLOYEE_API_TABLE_FIELDS = [
   { field: "active" },
   { field: "address" },

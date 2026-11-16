@@ -5,9 +5,12 @@ import { useMemo } from "react";
 import { createApiListTextSearch } from "@/lib/api/search-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
+import { useComplaintNotifications } from "@/lib/complaints/hooks/use-complaints";
+import type { ComplaintNotification } from "@/lib/complaints/types";
 import { useInvoicePoolLowStock } from "@/lib/invoices/hooks/use-invoice-pool-low-stock";
 import {
   notificationActivityId,
+  notificationComplaintId,
   notificationInvoicePoolLowId,
   notificationVehicleComplianceDueId,
 } from "@/lib/notifications/seen-store";
@@ -30,6 +33,13 @@ export type NotificationItem =
       href: "/invoices/reserved";
       remaining: number;
       threshold: number;
+      createdAt: string;
+    }
+  | {
+      id: string;
+      kind: "complaint";
+      href: "/complaints";
+      complaint: ComplaintNotification;
       createdAt: string;
     }
   | {
@@ -60,6 +70,7 @@ export function useTopbarNotifications(options: { enabled?: boolean } = {}) {
   });
   const invoicePool = useInvoicePoolLowStock();
   const vehicleCompliance = useVehicleComplianceDue({ enabled });
+  const complaintsQuery = useComplaintNotifications(enabled);
 
   const items = useMemo(() => {
     const next: NotificationItem[] = [];
@@ -72,6 +83,16 @@ export function useTopbarNotifications(options: { enabled?: boolean } = {}) {
         href: "/user-activities",
         activity,
         createdAt: activity.timestamp,
+      });
+    }
+
+    for (const complaint of complaintsQuery.data ?? []) {
+      next.push({
+        id: notificationComplaintId(complaint.id),
+        kind: "complaint",
+        href: "/complaints",
+        complaint,
+        createdAt: complaint.notifiedAt,
       });
     }
 
@@ -103,11 +124,11 @@ export function useTopbarNotifications(options: { enabled?: boolean } = {}) {
     }
 
     return next;
-  }, [activitiesQuery.data?.items, enabled, invoicePool.companyId, invoicePool.isLow, invoicePool.remaining, invoicePool.threshold, invoicePool.updatedAt, vehicleCompliance.companyId, vehicleCompliance.items, vehicleCompliance.today, vehicleCompliance.updatedAt]);
+  }, [activitiesQuery.data?.items, complaintsQuery.data, enabled, invoicePool.companyId, invoicePool.isLow, invoicePool.remaining, invoicePool.threshold, invoicePool.updatedAt, vehicleCompliance.companyId, vehicleCompliance.items, vehicleCompliance.today, vehicleCompliance.updatedAt]);
 
   return {
     items,
-    isLoading: canViewActivities && activitiesQuery.isLoading,
+    isLoading: (canViewActivities && activitiesQuery.isLoading) || complaintsQuery.isLoading,
     canViewActivities,
   };
 }

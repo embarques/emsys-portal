@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { SwitchField } from "@/components/ui/switch-field";
+import { YesNoChoiceField } from "@/components/ui/choice-field";
 import { getAutoClearPermission, getPaymentClearancePermission, isAutoClearEligible, isBankInvoicePayment, isBankTransaction } from "@/lib/accounting/daily-income/auto-clear";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -53,7 +53,7 @@ export function PaymentAutoClearField({
   ) : null;
 
   return (
-    <SwitchField
+    <YesNoChoiceField
       id={id}
       label={t(bankTransaction ? (bankInvoicePayment ? "accounting.dailyIncome.form.fields.autoClearPayment" : "accounting.dailyIncome.form.fields.autoClearTransaction") : "accounting.dailyIncome.form.fields.autoClear")}
       description={t(bankTransaction ? (bankInvoicePayment ? "accounting.dailyIncome.form.fields.bankPaymentAutoClearHint" : "accounting.dailyIncome.form.fields.bankTransactionAutoClearHint") : "accounting.dailyIncome.form.fields.autoClearHint")}

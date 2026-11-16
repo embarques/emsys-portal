@@ -37,7 +37,7 @@ These are recheck targets, not claims of a fresh failing run.
   Validate and deduplicate entries, show entries that matched nothing and keep
   the results selectable for bulk update. Add en/es copy for the input, errors
   and empty states. Depends on the backend batch barcode lookup in
-  [backend-api-gaps.md](backend-api-gaps.md#directory-tables-search-filter-sort-and-selection-coverage).
+  [backend-api-gaps.md](backend-api-gaps.md).
 
 ## Tooling
 

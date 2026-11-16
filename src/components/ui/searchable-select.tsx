@@ -43,6 +43,10 @@ export type SearchableSelectOption = {
 export type SearchableSelectProps = {
   /** Opt-in: expose small, complete option sets as buttons. Remote search always keeps its dropdown. */
   inlineOptionsLimit?: number;
+  /** Inline option buttons grow to share the full row width instead of hugging their labels. */
+  stretchInlineOptions?: boolean;
+  /** Inline option buttons only: set false to hide the built-in "Clear selection" control. */
+  clearable?: boolean;
   options: SearchableSelectOption[];
   value: string;
   onValueChange: (value: string) => void;
@@ -263,14 +267,23 @@ function useScrollIsolation() {
   }, []);
 }
 
-export function SearchableSelect(props: SearchableSelectProps) {
-  if (!props.inlineOptionsLimit) return <SearchableSelectDropdown {...props} />;
+/** The options shown as inline buttons, or null when the select renders as a dropdown. */
+export function getInlineSelectOptions(
+  props: Pick<SearchableSelectProps, "inlineOptionsLimit" | "options" | "value" | "placeholder" | "loading" | "manualFiltering" | "onSearchChange">,
+): SearchableSelectOption[] | null {
+  if (!props.inlineOptionsLimit) return null;
   const options = props.options.filter((option) => !isPseudoPlaceholderOption(option, props.placeholder));
-  if (props.inlineOptionsLimit && options.length > 0 && options.length <= props.inlineOptionsLimit &&
+  if (options.length > 0 && options.length <= props.inlineOptionsLimit &&
     !props.loading && !props.manualFiltering && !props.onSearchChange &&
     (!props.value || options.some((option) => option.value === props.value))) {
-    return <SelectOptionButtons {...props} options={options} />;
+    return options;
   }
+  return null;
+}
+
+export function SearchableSelect(props: SearchableSelectProps) {
+  const inlineOptions = getInlineSelectOptions(props);
+  if (inlineOptions) return <SelectOptionButtons {...props} options={inlineOptions} />;
   return <SearchableSelectDropdown {...props} />;
 }
 

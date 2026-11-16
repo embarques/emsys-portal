@@ -1,7 +1,10 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["check.Check"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["check.Check"]. */
 export const CHECK_API_TABLE_FIELDS = [
+  // Settlement/reversal evidence is retained by the lifecycle model, not added as raw columns.
+  { field: "clearedBy", column: false },
+  { field: "reversedAt", column: false },
   { field: "paymentReference", columnId: "checkNumber" },
   { field: "checkNumber" },
   { field: "clearedAt", format: "date" },

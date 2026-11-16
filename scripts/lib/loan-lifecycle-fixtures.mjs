@@ -17,7 +17,7 @@ export async function verifyLoanLifecycle({request, branch, closeout, employee, 
   const loanAccount = accounts.find(a => a.type === "LOAN" && (!a.branch || a.branch.id === branch.id) && !a.nonPosting);
   if (!ok(catalog) || !cash) throw Error("Cash catalog control unavailable");
   if (!loanAccount) {
-    evidence.push({label: "Loan lifecycle prerequisite unavailable", branchId: branch.id, reason: "No eligible LOAN account in the fixture branch; ASSET is rejected and chart-account creation rejects LOAN"});
+    evidence.push({label: "Loan lifecycle prerequisite unavailable", branchId: branch.id, reason: "No eligible LOAN account in the fixture branch; establish a layer-3 parent and available explicit code in 1300-1399 before testing"});
     note("Valid loan lifecycle remains unverified: no eligible LOAN account in the isolated branch. Existing business periods are preserved.");
     return;
   }
@@ -30,26 +30,30 @@ export async function verifyLoanLifecycle({request, branch, closeout, employee, 
     evidence.push({label: "Retained fixture loan", loanId: loan.id, employeeId: employee.id, branchId: branch.id});
     verify("Loan issue persists principal/balance in fixture branch", loan.principalAmount === 1 && loan.balance === 1 && loan.branch?.id === branch.id);
     const values = {...common, referenceNumber: randomUUID(), loanId: loan.id, sourceAccountId: cash.id, sourceAccountName: cash.name, sourceAccountType: cash.type, amount: 0.25};
+    const requestId = randomUUID();
     try {
-      await api.increaseLoan(values);
+      await api.increaseLoan(requestId, values);
       verify("Current portal increase payload is accepted", true);
     } catch (error) {
       verify("Current portal increase payload is accepted", false, {status: error.response?.status, json: error.response?.data});
-      note("Testing the runtime-required requestId separately; portal feature remains gated.");
-      const body = {requestId: randomUUID(), employee: {id: employee.id, name: employee.name}, sourceAccount: {id: cash.id, name: cash.name, type: cash.type}, amount: 0.25, transactionDate: date, referenceNumber: values.referenceNumber, description: marker};
-      const first = await recorded("POST", `/loans/${loan.id}/increases`, body);
-      verify("Keyed loan increase succeeds", ok(first), first);
-      if (ok(first)) {
-        const replay = await recorded("POST", `/loans/${loan.id}/increases`, body);
-        verify("Keyed loan increase replays successfully", ok(replay), replay);
-        const changed = await recorded("POST", `/loans/${loan.id}/increases`, {...body, amount: 0.5});
-        verify("Loan increase key rejects changed payload", changed.status === 409, changed);
-      }
+      // An uncertain adapter result may already be committed: never mint a new key.
+      note("Keeping the original loan-increase UUID and payload for retry; portal feature remains gated.");
     }
+    await api.increaseLoan(requestId, values);
+    await api.increaseLoan(requestId, values);
+    verify("Portal loan increase replays successfully with the original UUID", true);
+    const body = {requestId, ...api.buildLoanIncreasePayload(values), amount: 0.5};
+    const changed = await recorded("POST", `/loans/${loan.id}/increases`, body);
+    verify("Loan increase key rejects changed payload", changed.status === 409, changed);
     const saved = await api.fetchLoan(loan.id);
     verify("Increase and replay apply principal exactly once", saved?.principalAmount === 1.25 && saved.balance === 1.25 && saved.paidAmount === 0);
     const transactions = await api.fetchLoanTransactions(loan.id);
-    verify("Loan has one issue and one linked increase", transactions.filter(t => t.type === "ISSUE").length === 1 && transactions.filter(t => t.type === "INCREASE").length === 1 && transactions.every(t => Boolean(t.journalEntryId)));
+    // The wire type is LOAN for both disbursements; the adapter exposes ISSUE.
+    // Use the independently frozen operation references rather than an invented enum.
+    verify("Loan has one issue and one linked increase", transactions.length === 2 &&
+      transactions.filter(t => t.referenceNumber === common.referenceNumber && t.amount === 1).length === 1 &&
+      transactions.filter(t => t.referenceNumber === values.referenceNumber && t.amount === 0.25).length === 1 &&
+      transactions.every(t => Boolean(t.journalEntryId)));
     evidence.push({label: "Loan linked transaction readback", loan: saved, transactions});
   } finally {
     if (loan?.id) {

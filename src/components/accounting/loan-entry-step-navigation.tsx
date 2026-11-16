@@ -1,37 +1,45 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { ArrowLeft, ArrowRight, Loader2, Save } from "lucide-react";
-import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
-import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
-import { Button } from "@/components/ui/button";
+import { GuidedEntryFooter, GuidedEntryStepper, GuidedStepHeading, type GuidedTypeStep } from "@/components/accounting/guided-entry-chrome";
 import { useTranslation } from "@/lib/i18n";
 
-type Props = { step: number; onStepChange: (step: number) => void; busy: boolean };
+type Props = { step: number; onStepChange: (step: number) => void; busy: boolean; typeStep?: GuidedTypeStep };
 
-export function LoanEntryStepNavigation({ step, onStepChange, busy }: Props) {
+const STEP_KEYS = ["assignment", "details", "review"] as const;
+const HINT_KEYS = ["loanAssignment", "loanDetails", "loanReview"] as const;
+
+function useLoanStepLabels() {
   const { t } = useTranslation();
-  const heading = useRef<HTMLHeadingElement>(null);
-  const labels = ["assignment", "details", "review"].map((key) => t(`accounting.dailyIncome.wizard.quickFlow.${key}`));
-  useEffect(() => { heading.current?.focus(); }, [step]);
-  return <div className="shrink-0 space-y-3 border-b bg-card px-5 py-4">
-    <TransactionWizardStepper step={step} labels={labels} disabled={busy} onSelectStep={onStepChange} />
-    <header className="max-w-2xl space-y-2"><h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{labels[step - 1]}</h2><p className="text-sm leading-relaxed text-muted-foreground">{t(`accounting.dailyIncome.wizard.stepHints.${["loanAssignment", "loanDetails", "loanReview"][step - 1]}`)}</p></header>
-  </div>;
+  return STEP_KEYS.map((key) => t(`accounting.dailyIncome.wizard.quickFlow.${key}`));
 }
 
-export function LoanEntryStepFooter({ step, onStepChange, busy, onCancel, submitLabel, error, warning }: Props & {
-  onCancel: () => void; submitLabel: string; error?: string; warning?: string | null;
+export function LoanEntryStepNavigation({ step, onStepChange, busy, typeStep }: Props) {
+  return <GuidedEntryStepper typeStep={typeStep} labels={useLoanStepLabels()} step={step} busy={busy} onStepChange={onStepChange} />;
+}
+
+export function LoanEntryStepHeading({ step, appearance }: { step: number; appearance?: GuidedTypeStep["appearance"] }) {
+  const { t } = useTranslation();
+  const labels = useLoanStepLabels();
+  return <GuidedStepHeading title={labels[step - 1]} hint={t(`accounting.dailyIncome.wizard.stepHints.${HINT_KEYS[step - 1]}`)} focusKey={step} appearance={appearance} />;
+}
+
+export function LoanEntryStepFooter({ step, onStepChange, busy, onCancel, submitLabel, error, warning, submitDisabled, typeStep }: Props & {
+  onCancel: () => void; submitLabel: string; error?: string; warning?: string | null; submitDisabled?: boolean;
 }) {
   const { t } = useTranslation();
-  return <div className="shrink-0 space-y-3 border-t bg-card px-5 py-3">
-    {error ? <FormFooterNoticeMessage tone="error" message={error} /> : warning ? <FormFooterNoticeMessage tone="warning" message={warning} /> : null}
-    <div className="flex items-center justify-between gap-2">
-      <div>{step > 1 ? <Button type="button" variant="outline" disabled={busy} onClick={() => onStepChange(step - 1)}><ArrowLeft className="size-4" />{t("common.actions.previous")}</Button> : null}</div>
-      <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" disabled={busy} onClick={onCancel}>{t("common.actions.cancel")}</Button>
-        <Button type="submit" disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : step === 3 ? <Save className="size-4" /> : <ArrowRight className="size-4" />}{busy ? t("common.actions.saving") : step === 3 ? submitLabel : t("common.actions.next")}</Button>
-      </div>
-    </div>
-  </div>;
+  const labels = useLoanStepLabels();
+  const final = step === STEP_KEYS.length;
+  return (
+    <GuidedEntryFooter
+      busy={busy}
+      onPrevious={step > 1 ? () => onStepChange(step - 1) : typeStep?.onBack}
+      onCancel={typeStep?.onCancel ?? onCancel}
+      submitLabel={final ? submitLabel : t("accounting.dailyIncome.wizard.continueToStep", { step: labels[step] })}
+      final={final}
+      submitDisabled={submitDisabled}
+      error={error}
+      warning={warning}
+      appearance={typeStep?.appearance}
+    />
+  );
 }

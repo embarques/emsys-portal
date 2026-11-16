@@ -1,5 +1,7 @@
 "use client";
 
+import { Car, Info } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -61,7 +63,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("vehicles.view.sections.vehicle")}>
+          <RecordViewSheetSection title={t("vehicles.view.sections.vehicle")} icon={Car}>
             <RecordViewSheetDetailRow label={t("vehicles.columns.name")} value={vehicle.name} />
             <RecordViewSheetDetailRow label={t("vehicles.columns.vin")} value={vehicle.vin} />
             <RecordViewSheetDetailRow
@@ -91,7 +93,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("vehicles.view.sections.audit")}>
+          <RecordViewSheetSection title={t("vehicles.view.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow label={t("vehicles.view.recordId")} value={vehicle.id} />
             <RecordViewSheetDetailRow label={t("vehicles.view.vehicleId")} value={vehicle.vehicleId} />
             <RecordViewSheetDetailRow

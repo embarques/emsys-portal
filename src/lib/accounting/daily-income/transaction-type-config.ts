@@ -108,9 +108,11 @@ export function buildTransactionEntryOptions(t: TranslateFn): TransactionEntryOp
   return options;
 }
 
-/** Discounts and surcharges are chosen inside the existing-invoice (PAYMENT) form, not in the picker. */
-const ENTRY_GROUPS: Array<{ id: string; icon: LucideIcon; categories: TransactionEntryCategory[] }> = [
-  { id: "invoices", icon: FileText, categories: ["INITIAL-PAYMENT", "PAYMENT"] },
+/** `nested` groups always open their own screen, even where other groups are shown flattened. */
+const ENTRY_GROUPS: Array<{ id: string; icon: LucideIcon; categories: TransactionEntryCategory[]; nested?: boolean }> = [
+  { id: "invoicePayment", icon: Banknote, categories: ["PAYMENT", "INITIAL-PAYMENT"], nested: true },
+  { id: "invoiceSurcharge", icon: Percent, categories: ["SURCHARGE"] },
+  { id: "invoiceDiscount", icon: Tag, categories: ["DISCOUNT"] },
   { id: "income", icon: ArrowUpCircle, categories: ["SALES"] },
   { id: "expenses", icon: Wallet, categories: ["EXPENSE"] },
   { id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"] },
@@ -123,16 +125,10 @@ export function buildTransactionEntryGroups(t: TranslateFn) {
   return ENTRY_GROUPS.map((group) => ({
     id: group.id,
     icon: group.icon,
+    nested: group.nested ?? false,
     label: t(`accounting.dailyIncome.wizard.typeSelector.groups.${group.id}`),
     options: group.categories.flatMap((category) => options.filter((option) => option.value === category)),
   }));
-}
-
-export const INVOICE_ACTION_TYPES = ["PAYMENT", "DISCOUNT", "SURCHARGE"] as const satisfies readonly JournalTransactionType[];
-export type InvoiceActionType = (typeof INVOICE_ACTION_TYPES)[number];
-
-export function isInvoiceActionType(type: string | null | undefined): type is InvoiceActionType {
-  return INVOICE_ACTION_TYPES.includes(type as InvoiceActionType);
 }
 
 export function getTransactionTypeOption(type: JournalTransactionType, t: TranslateFn): TransactionTypeOption {

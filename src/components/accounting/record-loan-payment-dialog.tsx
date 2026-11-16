@@ -26,7 +26,8 @@ import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
 import { useLoanEntrySteps } from "@/lib/accounting/loans/use-loan-entry-steps";
-import { LoanEntryStepNavigation, LoanEntryStepFooter } from "@/components/accounting/loan-entry-step-navigation";
+import { LoanEntryStepFooter, LoanEntryStepHeading, LoanEntryStepNavigation } from "@/components/accounting/loan-entry-step-navigation";
+import type { GuidedTypeStep } from "@/components/accounting/guided-entry-chrome";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +68,7 @@ export function RecordLoanPaymentDialog(props: Props) {
   );
 }
 
-export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange, summaryContainer, guided = false }: Props & { summaryContainer?: HTMLElement | null; guided?: boolean }) {
+export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange, summaryContainer, guided = false, typeStep }: Props & { summaryContainer?: HTMLElement | null; guided?: boolean; typeStep?: GuidedTypeStep }) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.paymentForm.${key}`, values);
   const schema = useMemo(() => createLoanPaymentSchema(t), [t]);
@@ -142,8 +143,9 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
 
   return (
     <form ref={formRef} className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={(event) => flow.advance(event, submit)}>
-      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} /> : <TransactionSectionNavigation formRef={formRef} title={text("title")} />}
-      <FormBody workflow isBusy={busy}>
+      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep} /> : <TransactionSectionNavigation formRef={formRef} title={text("title")} />}
+      <FormBody workflow className={guided ? "lg:p-8" : undefined} isBusy={busy}>
+        {guided ? <LoanEntryStepHeading step={flow.step} appearance={typeStep?.appearance} /> : null}
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           <FormSection
             className={stageClass(1)}
@@ -350,7 +352,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
         [text("date"), watch("transactionDate") || t("common.empty.dash")],
         ...(watch("referenceNumber")?.trim() ? [[text("reference"), watch("referenceNumber")] as [string, string]] : []),
       ]} />, summaryContainer) : null}
-      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy}
+      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep}
         onCancel={() => onOpenChange(false)} submitLabel={text("submit")} error={errors.root?.server?.message}
         warning={noActiveLoans ? text("balances.empty") : null} /> : (
       <FormFooter

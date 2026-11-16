@@ -57,6 +57,8 @@
     }
   },
   "form": {
+    "defaultLabelStatusUnconfigured": "Sin configurar",
+    "defaultLabelStatusHelp": "Un administrador debe configurar un estado predeterminado de etiqueta válido en Sucursales → editar sucursal → Configuración → Estado predeterminado de etiqueta antes de generar etiquetas.",
     "validation": {
       "nameRequired": "El nombre de la sucursal es obligatorio.",
       "nonNegativeWholeNumber": "Use un número entero no negativo."

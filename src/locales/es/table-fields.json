@@ -273,7 +273,9 @@
     "startTime": "Inicio de turno",
     "endTime": "Fin de turno",
     "systemRole": "Rol del sistema",
-    "accountBalance": "Balance de cuenta"
+    "accountBalance": "Balance de cuenta",
+    "eventType": "Tipo de evento",
+    "barcodeRouteChange.previous.id": "ID de ruta anterior"
   },
   "placeholders": {
     "dateFormat": "AAAA-MM-DD",
@@ -323,7 +325,9 @@
     "enterReference": "Ingrese la referencia…",
     "enterExternalReference": "Ingrese la referencia externa…",
     "enterInternalReference": "Ingrese la referencia interna…",
-    "enterCommentText": "Ingrese el texto del comentario…"
+    "enterCommentText": "Ingrese el texto del comentario…",
+    "eventTypeExample": "p. ej. BARCODE_DAILY_ROUTE_CHANGED",
+    "enterRouteId": "Escriba el ID de ruta…"
   },
   "options": {
     "active": {

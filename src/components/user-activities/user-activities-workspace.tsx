@@ -23,6 +23,7 @@ import { useTranslation } from "@/lib/i18n";
 import {
   formatUserActivityOrigin,
   formatUserActivityQuantity,
+  formatUserActivityRoute,
   getUserActivitySeverityClass,
 } from "@/lib/user-activities/display";
 import { useUserActivities } from "@/lib/user-activities/hooks/use-user-activities";
@@ -128,11 +129,24 @@ export function UserActivitiesWorkspace() {
         label: t("userActivities.columns.description"),
         sortField: "description",
         cellClassName: "max-w-[28rem]",
-        renderCell: (row) => (
-          <span className={cn(getUserActivitySeverityClass(row.severity))}>
-            {row.description || dash}
-          </span>
-        ),
+        renderCell: (row) => {
+          const change = row.routeChange;
+          const previous = change?.previous
+            ? `${formatUserActivityRoute(change.previous)}${change.previousTripNumber ? ` · ${t("userActivities.routeChange.trip", { trip: change.previousTripNumber })}` : ""}`
+            : "";
+          return (
+            <span className={cn(getUserActivitySeverityClass(row.severity))}>
+              {row.description || dash}
+              {change ? (
+                <span className="block text-xs text-muted-foreground">
+                  {change.next
+                    ? t("userActivities.routeChange.moved", { previous, next: formatUserActivityRoute(change.next) })
+                    : t("userActivities.routeChange.removed", { previous })}
+                </span>
+              ) : null}
+            </span>
+          );
+        },
       },
       {
         id: "origin",
@@ -141,6 +155,16 @@ export function UserActivitiesWorkspace() {
         renderCell: (row) => (
           <span className={cn(getUserActivitySeverityClass(row.severity))}>
             {formatUserActivityOrigin(row.origin, dash)}
+          </span>
+        ),
+      },
+      {
+        id: "eventType",
+        label: t("userActivities.columns.eventType"),
+        sortField: "eventType",
+        renderCell: (row) => (
+          <span className={cn("font-mono text-xs", getUserActivitySeverityClass(row.severity))}>
+            {row.eventType || dash}
           </span>
         ),
       },

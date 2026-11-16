@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Boxes, PackageCheck, Tag, Truck, Warehouse } from "lucide-react";
 
 import { TableDirectoryTabs } from "@/components/app-shell/table-directory-tabs";
 import {
@@ -82,7 +83,7 @@ export function InventoryViewSheet({
         <RecordViewSheetHeader title={item.name} description={item.sku || t("inventory.submenus.items")} />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("inventory.view.details")}>
+          <RecordViewSheetSection title={t("inventory.view.details")} icon={Tag}>
             <RecordViewSheetDetailRow label={t("inventory.columns.status")} value={<InventoryActiveBadge isActive={item.isActive} />} />
             <RecordViewSheetDetailRow label={t("inventory.columns.category")} value={item.category || dash} />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.unit")} value={item.unitOfMeasure || dash} />
@@ -92,7 +93,7 @@ export function InventoryViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("inventory.view.stock")}>
+          <RecordViewSheetSection title={t("inventory.view.stock")} icon={Boxes}>
             <RecordViewSheetDetailRow label={t("inventory.columns.available")} value={String(summary?.available ?? 0)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.quarantined")} value={String(summary?.quarantined ?? 0)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.reserved")} value={String(summary?.reserved ?? 0)} />
@@ -108,7 +109,7 @@ export function InventoryViewSheet({
           </div>
 
           {activeTab === "stock" ? (
-            <RecordViewSheetSection title={t("inventory.view.stockByHolder")} padding="relaxed">
+            <RecordViewSheetSection title={t("inventory.view.stockByHolder")} icon={Warehouse} padding="relaxed">
               {itemBalances.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("inventory.empty.stockByHolder")}</p>
               ) : (
@@ -138,7 +139,7 @@ export function InventoryViewSheet({
           ) : null}
 
           {activeTab === "receipts" ? (
-            <RecordViewSheetSection title={t("inventory.view.receipts")} padding="relaxed">
+            <RecordViewSheetSection title={t("inventory.view.receipts")} icon={PackageCheck} padding="relaxed">
               {itemReceipts.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("inventory.empty.receipts")}</p>
               ) : (
@@ -164,7 +165,7 @@ export function InventoryViewSheet({
           ) : null}
 
           {activeTab === "dispatches" ? (
-            <RecordViewSheetSection title={t("inventory.view.dispatches")} padding="relaxed">
+            <RecordViewSheetSection title={t("inventory.view.dispatches")} icon={Truck} padding="relaxed">
               {itemDispatches.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("inventory.empty.dispatches")}</p>
               ) : (

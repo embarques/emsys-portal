@@ -1,7 +1,7 @@
 # Inventory — remaining gaps
 
 Inventory means internal supplies, not customer merchandise. Wire models and
-commands are defined in [api-docs.json](../api-docs.json); business meaning is in
+commands are defined in [API reference](../.reference/emsys-api/docs/swagger.json); business meaning is in
 [APP_CONTEXT.md](../APP_CONTEXT.md).
 
 Latest live fixture results: [mock-company follow-up](backend-gap-follow-up-2026-11-12.md).

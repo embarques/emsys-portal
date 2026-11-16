@@ -1,5 +1,7 @@
 "use client";
 
+import { Building2, MapPin, Phone, Settings } from "lucide-react";
+
 import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -75,7 +77,7 @@ export function BranchViewSheet({
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("branches.view.sections.branch")}>
+          <RecordViewSheetSection title={t("branches.view.sections.branch")} icon={Building2}>
             <RecordViewSheetDetailRow
               label={t("branches.view.fields.branchId")}
               value={formatBranchId(branch.id)}
@@ -92,7 +94,7 @@ export function BranchViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("branches.view.sections.contact")}>
+          <RecordViewSheetSection title={t("branches.view.sections.contact")} icon={Phone}>
             {getOrderedRecordPhones(branch.phones).length === 0 ? (
               <RecordViewSheetDetailRow label={t("branches.view.fields.phones")} value={dash} />
             ) : (
@@ -113,7 +115,7 @@ export function BranchViewSheet({
             )}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("branches.view.sections.address")}>
+          <RecordViewSheetSection title={t("branches.view.sections.address")} icon={MapPin}>
             {hasBranchAddress(branch) ? (
               <AddressActionRow
                 label={t("branches.view.fields.fullAddress")}
@@ -124,10 +126,10 @@ export function BranchViewSheet({
             )}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("branches.view.sections.settings")}>
+          <RecordViewSheetSection title={t("branches.view.sections.settings")} icon={Settings}>
             <RecordViewSheetDetailRow
               label={t("branches.view.fields.defaultLabelStatus")}
-              value={String(branch.settings.defaultLabelStatus)}
+              value={branch.settings.defaultLabelStatus ? String(branch.settings.defaultLabelStatus) : t("branches.form.defaultLabelStatusUnconfigured")}
             />
             <RecordViewSheetDetailRow
               label={t("branches.view.fields.roundDecimalPlaces")}

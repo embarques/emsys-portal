@@ -3,10 +3,16 @@
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 
 import { useMemo, useState } from "react";
-import { Pencil, Printer, Tags, Trash2 } from "lucide-react";
+import {
+  Info,
+  Printer,
+  Receipt,
+  Send,
+  Tags,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 
-import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
-import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceLineItemsSection } from "@/components/invoices/invoice-line-items-section";
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceActivitySection } from "@/components/invoices/invoice-activity-section";
@@ -19,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import {
   RecordViewSheet,
+  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -82,9 +89,11 @@ function partyAddressLine(party: Invoice["sender"]): string {
 function PartySection({
   title,
   party,
+  icon,
 }: {
   title: string;
   party: Invoice["sender"];
+  icon: LucideIcon;
 }) {
   const { t } = useTranslation();
   const name = party.name.trim();
@@ -96,34 +105,27 @@ function PartySection({
   if (!name && !documentId && !email && !phones && !addressLine) return null;
 
   return (
-    <RecordViewSheetSection title={title} padding="relaxed">
-      {name ? <p className="text-sm font-medium">{name}</p> : null}
-      {documentId ? (
-        <p className={cn("text-xs text-muted-foreground", name && "mt-1")}>
-          {t("invoices.view.fields.documentId")}: {documentId}
-        </p>
-      ) : null}
-      {email ? <p className="text-xs text-muted-foreground">{email}</p> : null}
-      {phones ? (
-        <div className={cn(name || documentId || email ? "mt-3" : undefined)}>
-          <p className="text-xs font-medium text-primary">
-            {t("invoices.view.fields.phones")}
-          </p>
-          <p className="mt-1 text-sm leading-relaxed">{phones}</p>
-        </div>
-      ) : null}
-      {addressLine ? (
-        <div
-          className={cn(
-            name || documentId || email || phones ? "mt-4" : undefined,
-          )}
-        >
-          <p className="text-xs font-medium text-primary">
-            {t("invoices.view.fields.address")}
-          </p>
-          <p className="mt-1 text-sm leading-relaxed">{addressLine}</p>
-        </div>
-      ) : null}
+    <RecordViewSheetSection title={title} icon={icon}>
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.name")}
+        value={name}
+      />
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.documentId")}
+        value={documentId}
+      />
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.email")}
+        value={email}
+      />
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.phones")}
+        value={phones}
+      />
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.address")}
+        value={addressLine}
+      />
     </RecordViewSheetSection>
   );
 }
@@ -246,22 +248,34 @@ export function InvoiceViewSheet({
       >
         <RecordViewSheetHeader
           title={invoice.invoiceNumber.trim() || empty}
-          meta={
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {formatOrderDateWithWeekday(invoice.date, locale)}
-              </span>
-              <Badge
-                variant="outline"
-                className={
-                  paidStatus === "closed"
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                    : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                }
+          actions={
+            <>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => onManageItems(invoice)}
+                disabled={manageItemsDisabled}
               >
-                {getInvoicePaidStatusLabel(paidStatus, t)}
-              </Badge>
-            </div>
+                <Tags className="h-4 w-4" />
+                {t("invoices.staging.tableAction")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onPrint(invoice)}
+                disabled={isPrinting || printDisabled}
+                className={cn(
+                  "whitespace-nowrap",
+                  tableSelectionActionStyles.print,
+                )}
+              >
+                <Printer className="h-4 w-4" />
+                {isPrinting
+                  ? t("invoices.wizard.actions.preparing")
+                  : t("invoices.wizard.actions.printInvoice")}
+              </Button>
+            </>
           }
         />
 
@@ -346,13 +360,33 @@ export function InvoiceViewSheet({
             </div>
             <RecordViewSheetSection
               title={t("invoices.form.sections.invoiceDetails")}
+              icon={Receipt}
             >
+              <RecordViewSheetDetailRow
+                label={t("invoices.form.fields.date")}
+                value={formatOrderDateWithWeekday(invoice.date, locale)}
+              />
               <RecordViewSheetDetailRow
                 label={t("invoices.form.fields.container")}
                 value={containerLabel}
               />
               <RecordViewSheetDetailRow
-                label={t("invoices.form.fields.paymentLocation")}
+                label={t("invoices.view.fields.paymentStatus")}
+                value={
+                  <Badge
+                    variant="outline"
+                    className={
+                      paidStatus === "closed"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                    }
+                  >
+                    {getInvoicePaidStatusLabel(paidStatus, t)}
+                  </Badge>
+                }
+              />
+              <RecordViewSheetDetailRow
+                label={t("invoices.view.fields.paymentLocation")}
                 value={getPaymentLocationLabel(invoice.paymentLocation)}
               />
               <RecordViewSheetDetailRow
@@ -372,11 +406,13 @@ export function InvoiceViewSheet({
             <PartySection
               title={t("invoices.form.fields.sender")}
               party={invoice.sender}
+              icon={Send}
             />
             {invoice.receiver ? (
               <PartySection
                 title={t("invoices.form.fields.receiver")}
                 party={invoice.receiver}
+                icon={UserRound}
               />
             ) : null}
 
@@ -397,7 +433,7 @@ export function InvoiceViewSheet({
 
             <InvoiceActivitySection invoice={invoice} />
 
-            <RecordViewSheetSection title={t("invoices.view.system")}>
+            <RecordViewSheetSection title={t("invoices.view.system")} icon={Info}>
               <RecordViewSheetDetailRow
                 label={t("invoices.columns.createdBy")}
                 value={invoice.createdBy || empty}
@@ -414,63 +450,16 @@ export function InvoiceViewSheet({
           </RecordViewSheetBody>
         )}
 
-        <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => onManageItems(invoice)}
-              disabled={manageItemsDisabled}
-            >
-              <Tags className="h-4 w-4" />
-              {t("invoices.staging.tableAction")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onPrint(invoice)}
-              disabled={isPrinting || printDisabled}
-              className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-            >
-              <Printer className="h-4 w-4" />
-              {isPrinting
-                ? t("invoices.wizard.actions.preparing")
-                : t("invoices.wizard.actions.print")}
-            </Button>
-            <InvoiceDocumentsButton
-              invoice={invoice}
-              selectedCount={1}
-              onOpenMobile={() => setActiveTab("documents")}
+        <RecordViewSheetActions
+          leading={
+            <RequestChangeButton
+              resourceType="invoice"
+              resourceId={invoice.invoiceId}
             />
-            <RequestChangeButton resourceType="invoice" resourceId={invoice.invoiceId} />
-            {canEdit || canDelete ? <TableSelectionActionDivider /> : null}
-            {canEdit ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(invoice)}
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-              >
-                <Pencil className="h-4 w-4" />
-                {t("common.actions.edit")}
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onDelete(invoice)}
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("common.actions.delete")}
-              </Button>
-            ) : null}
-          </div>
-        </div>
+          }
+          onEdit={canEdit ? () => onEdit(invoice) : undefined}
+          onDelete={canDelete ? () => onDelete(invoice) : undefined}
+        />
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

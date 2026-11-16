@@ -174,11 +174,7 @@ export function SenderOrderHistorySection({
         )}
       >
         <span className="flex min-w-0 items-center gap-2.5">
-          {isView ? (
-            <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
-          ) : (
-            <History className="size-4 shrink-0 text-primary" />
-          )}
+          <History className="size-4 shrink-0 text-primary" />
           <span
             className={cn(
               "truncate uppercase",

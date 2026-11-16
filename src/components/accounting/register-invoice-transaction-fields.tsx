@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ReceiptText, UserRound } from "lucide-react";
+import { ReceiptText, UserRound, UserX } from "lucide-react";
 import type { UseFormSetValue, UseFormTrigger, UseFormWatch, FieldErrors } from "react-hook-form";
 
 import { FieldMessage } from "@/components/forms/field-message";
@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { useCustomerPicker, useCustomerSearch } from "@/lib/customers/hooks/use-customers";
 import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
@@ -379,6 +380,18 @@ export function RegisterInvoiceTransactionFields({
             </Label>
           </div>
           <div data-enter-navigation="field">
+            {activeStep && !inlineInvoiceParties ? (
+              <ChoiceTiles<"skip" | "include">
+                id={id}
+                aria-labelledby={`${id}-label`}
+                value={included ? "include" : "skip"}
+                onValueChange={(next) => setPartyIncluded(side, next === "include")}
+                options={[
+                  { value: "skip", label: t("accounting.dailyIncome.form.fields.partyModeSkip"), icon: UserX },
+                  { value: "include", label: t("accounting.dailyIncome.form.fields.partyModeInclude"), icon: UserRound, iconClassName: "text-blue-600", iconBackgroundClassName: "bg-blue-50 dark:bg-muted" },
+                ]}
+              />
+            ) : (
             <SegmentedControl<"skip" | "include">
               id={id}
               aria-labelledby={`${id}-label`}
@@ -390,6 +403,7 @@ export function RegisterInvoiceTransactionFields({
                 { value: "include", label: t("accounting.dailyIncome.form.fields.partyModeInclude") },
               ]}
             />
+            )}
           </div>
         </div>
         {included ? field : null}
@@ -403,6 +417,7 @@ export function RegisterInvoiceTransactionFields({
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
             inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+            guided={Boolean(activeStep)}
             singleColumn
             employees={employees}
             dailyRoutes={dailyRoutes}
@@ -461,6 +476,7 @@ export function RegisterInvoiceTransactionFields({
   const channelFields = (
     <PaymentChannelFields
       inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+      guided={Boolean(activeStep)}
       paymentMethods={paymentMethods}
       paymentMethodId={paymentMethodId}
       paymentMethodName={paymentMethodName}
@@ -844,7 +860,7 @@ export function RegisterInvoiceTransactionFields({
     const partiesSection = showParties && !quickEntry && !inlineInvoiceParties ? (
       <FormSection
         className={activeStep && activeStep !== "parties" ? "hidden" : undefined}
-        variant="card"
+        variant={activeStep ? "plain" : "card"}
         title={t("accounting.dailyIncome.form.sections.customers")}
       >
         {partiesFields}
@@ -852,7 +868,7 @@ export function RegisterInvoiceTransactionFields({
     ) : null;
 
     const assignmentSection = showEmployee ? (
-      <FormSection className={assignmentStepClassName} variant="card" title={t("accounting.dailyIncome.form.sections.assignment")}>
+      <FormSection className={assignmentStepClassName} variant={activeStep ? "plain" : "card"} title={t("accounting.dailyIncome.form.sections.assignment")}>
         <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           {assigneeFields}
         </div>
@@ -864,7 +880,7 @@ export function RegisterInvoiceTransactionFields({
       <div className="space-y-5">
         {guided ? null : assignmentSection}
         {paymentFirst ? null : invoiceDetailsSection}
-        <FormSection className={!quickEntry && activeStep && activeStep !== "payment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
+        <FormSection className={!quickEntry && activeStep && activeStep !== "payment" ? "hidden" : undefined} variant={activeStep ? "plain" : "card"} title={t("accounting.dailyIncome.form.sections.paymentDetails")}>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             {guided ? channelFields : (
               <div className="grid min-w-0 gap-4 sm:col-span-2 sm:grid-cols-2">

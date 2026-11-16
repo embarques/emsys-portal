@@ -22,7 +22,8 @@ import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
 import { useLoanEntrySteps } from "@/lib/accounting/loans/use-loan-entry-steps";
-import { LoanEntryStepNavigation, LoanEntryStepFooter } from "@/components/accounting/loan-entry-step-navigation";
+import { LoanEntryStepFooter, LoanEntryStepHeading, LoanEntryStepNavigation } from "@/components/accounting/loan-entry-step-navigation";
+import type { GuidedTypeStep } from "@/components/accounting/guided-entry-chrome";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -33,6 +34,7 @@ type Props = {
   onCancel: () => void;
   summaryContainer?: HTMLElement | null;
   guided?: boolean;
+  typeStep?: GuidedTypeStep;
 };
 
 const textareaClassName =
@@ -43,7 +45,7 @@ function accountLabel(account?: { displayName?: string; name: string }) {
 }
 
 /** Adds an amount to an employee's existing active loan (debit loan account, credit source asset). */
-export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, onCancel, summaryContainer, guided = false }: Props) {
+export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, onCancel, summaryContainer, guided = false, typeStep }: Props) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.increaseForm.${key}`, values);
   const schema = useMemo(() => createLoanIncreaseSchema(t), [t]);
@@ -107,8 +109,9 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
 
   return (
     <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={(event) => flow.advance(event, submit)}>
-      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} /> : null}
-      <FormBody workflow isBusy={busy}>
+      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep} /> : null}
+      <FormBody workflow className={guided ? "lg:p-8" : undefined} isBusy={busy}>
+        {guided ? <LoanEntryStepHeading step={flow.step} appearance={typeStep?.appearance} /> : null}
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           <FormSection className={stageClass(1)} variant="card" icon={User} title={text("sections.loan")} description={text("loanHint")}>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -252,7 +255,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
         [text("date"), values.transactionDate || t("common.empty.dash")],
         ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
       ]} />, summaryContainer) : null}
-      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy}
+      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep}
         onCancel={onCancel} submitLabel={text("submit")} error={errors.root?.server?.message}
         warning={noActiveLoans ? text("noActiveLoans") : null} /> : (
       <FormFooter

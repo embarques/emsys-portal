@@ -137,7 +137,8 @@ export function createEmptyBranchAddress(): BranchAddress {
 
 export function createEmptyBranchSettings(): BranchSettings {
   return {
-    defaultLabelStatus: 1,
+    // Zero represents missing configuration; a catalog status must be chosen explicitly.
+    defaultLabelStatus: 0,
     imageResampleBy: 0,
     invoiceCreatedThruIncomeStatement: false,
     labelPrefix: "",

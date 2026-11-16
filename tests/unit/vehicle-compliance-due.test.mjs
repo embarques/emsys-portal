@@ -24,15 +24,17 @@ function vehicle(overrides = {}) {
   return { id: "v1", name: "Unit 1", active: true, inspectionDate: "", registrationDate: "", ...overrides };
 }
 
-test("warns at 7 days or fewer, including today and overdue dates", () => {
-  assert.equal(compliance.daysUntilVehicleDate("2026-11-14", TODAY), 7);
+test("warns at the confirmed 10-calendar-day boundary, including today and overdue dates", () => {
+  assert.equal(compliance.daysUntilVehicleDate("2026-11-17", TODAY), 10);
   assert.equal(compliance.daysUntilVehicleDate("2026-11-07", TODAY), 0);
   assert.equal(compliance.daysUntilVehicleDate("2026-11-04", TODAY), -3);
 
-  for (const date of ["2026-11-14", "2026-11-07", "2026-10-01"]) {
-    assert.ok(compliance.getVehicleComplianceDue(vehicle({ inspectionDate: date }), "inspection", TODAY), date);
+  for (const kind of ["inspection", "registration"]) {
+    for (const date of ["2026-11-17", "2026-11-07", "2026-10-01"]) {
+      assert.ok(compliance.getVehicleComplianceDue(vehicle({ [`${kind}Date`]: date }), kind, TODAY), `${kind} ${date}`);
+    }
+    assert.equal(compliance.getVehicleComplianceDue(vehicle({ [`${kind}Date`]: "2026-11-18" }), kind, TODAY), null);
   }
-  assert.equal(compliance.getVehicleComplianceDue(vehicle({ inspectionDate: "2026-11-15" }), "inspection", TODAY), null);
 });
 
 test("reads RFC3339 dates by calendar day and ignores empty or invalid dates", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Container as ContainerIcon, Ship } from "lucide-react";
+import { Container as ContainerIcon, Info, Ship } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -86,7 +86,7 @@ export function ContainerViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={t("containers.view.sections.audit")}>
+          <RecordViewSheetSection title={t("containers.view.sections.audit")} icon={Info}>
             <RecordViewSheetDetailRow label={t("common.audit.dateCreated")} value={formatAuditDateTime(container.createdAt)} />
             <RecordViewSheetDetailRow label={t("common.audit.dateModified")} value={formatAuditDateTime(container.updatedAt)} />
           </RecordViewSheetSection>

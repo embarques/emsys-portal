@@ -1,6 +1,6 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["vehicle_route.VehicleRoute"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["vehicle_route.VehicleRoute"]. */
 export const ACTIVE_ROUTE_API_TABLE_FIELDS = [
   { field: "active" },
   { field: "supervisor", columnId: "supervisor.name" },

@@ -1,7 +1,14 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Assumed directory coverage mirroring check.Check for clearable payments. */
+/**
+ * Shared directory coverage for the actual payment response schemas:
+ * definitions["deposit.Deposit"], definitions["zelle_payment.ZellePayment"],
+ * definitions["credit_card_payment.CreditCardPayment"].
+ */
 export const CLEARABLE_PAYMENT_API_TABLE_FIELDS = [
+  // Settlement/reversal evidence belongs to the lifecycle model, not raw generated columns.
+  { field: "clearedBy", column: false },
+  { field: "reversedAt", column: false },
   { field: "paymentReference", columnId: "paymentReference" },
   { field: "clearedAt", format: "date" },
   { field: "createdAt", format: "date" },

@@ -282,5 +282,5 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       )}
     </FormTabShell>
   );
-  return <>{isEditing ? wizard : <SessionTransactionsLayout summaryRef={setSummaryContainer} active={entryActive} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
+  return <>{isEditing ? wizard : <SessionTransactionsLayout summaryRef={setSummaryContainer} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
 }

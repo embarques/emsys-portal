@@ -1,0 +1,100 @@
+{
+  "checkedAt": "2026-11-14T02:36:27.448385+00:00",
+  "evidenceKind": "unauthenticated-options-only",
+  "sourceRevision": "4fdef23abcbaa89778d9ea6ca2d8f28b633cd270",
+  "cases": [
+    {
+      "origin": "http://localhost:3100",
+      "url": "https://api.embarqueros.com/v1/invoices",
+      "requestMethod": "OPTIONS",
+      "requestedMethod": "GET",
+      "requestedHeaders": [
+        "authorization",
+        "x-company-id"
+      ],
+      "httpStatus": 403,
+      "allowOrigin": null,
+      "allowHeaders": [],
+      "missingRequestedHeaders": [
+        "authorization",
+        "x-company-id"
+      ]
+    },
+    {
+      "origin": "http://127.0.0.1:3100",
+      "url": "https://api.embarqueros.com/v1/invoices",
+      "requestMethod": "OPTIONS",
+      "requestedMethod": "GET",
+      "requestedHeaders": [
+        "authorization",
+        "x-company-id"
+      ],
+      "httpStatus": 403,
+      "allowOrigin": null,
+      "allowHeaders": [],
+      "missingRequestedHeaders": [
+        "authorization",
+        "x-company-id"
+      ]
+    },
+    {
+      "origin": "http://localhost:3000",
+      "url": "https://api.embarqueros.com/v1/invoices",
+      "requestMethod": "OPTIONS",
+      "requestedMethod": "GET",
+      "requestedHeaders": [
+        "authorization",
+        "x-company-id"
+      ],
+      "httpStatus": 204,
+      "allowOrigin": "http://localhost:3000",
+      "allowHeaders": [
+        "origin",
+        "content-type",
+        "authorization",
+        "default-api-key",
+        "app-id",
+        "api-key",
+        "auth-type",
+        "x-company-id",
+        "x-request-id",
+        "if-match"
+      ],
+      "missingRequestedHeaders": []
+    },
+    {
+      "origin": "http://localhost:3000",
+      "url": "https://api.embarqueros.com/v1/inventory/dispatches",
+      "requestMethod": "OPTIONS",
+      "requestedMethod": "POST",
+      "requestedHeaders": [
+        "authorization",
+        "x-company-id",
+        "if-match",
+        "idempotency-key"
+      ],
+      "httpStatus": 204,
+      "allowOrigin": "http://localhost:3000",
+      "allowHeaders": [
+        "origin",
+        "content-type",
+        "authorization",
+        "default-api-key",
+        "app-id",
+        "api-key",
+        "auth-type",
+        "x-company-id",
+        "x-request-id",
+        "if-match"
+      ],
+      "missingRequestedHeaders": [
+        "idempotency-key"
+      ]
+    }
+  ],
+  "limitations": [
+    "No GET/POST business action, login, credential exchange or mutation was sent.",
+    "This records response declarations; the requested POST was a preflight header, not an executed POST.",
+    "No local API server or real Firebase browser session was tested."
+  ]
+}

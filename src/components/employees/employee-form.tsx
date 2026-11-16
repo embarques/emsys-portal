@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { employeeDateToInputValue, isEmployeeEndDateBeforeToday } from "@/lib/employees/utils/employee-date";
 import { SwitchField } from "@/components/ui/switch-field";
+import { YesNoChoiceField } from "@/components/ui/choice-field";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -48,6 +49,8 @@ type EmployeeFormProps = {
   submitLabel: string;
   isSubmitting?: boolean;
   externalError?: string | null;
+  /** Render on/off settings as "No" / "Yes" buttons instead of switches. */
+  binaryControl?: "switch" | "buttons";
   onSubmit: (values: EmployeeFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -57,6 +60,7 @@ export function EmployeeForm({
   submitLabel,
   isSubmitting = false,
   externalError = null,
+  binaryControl = "switch",
   onSubmit,
   onCancel,
 }: EmployeeFormProps) {
@@ -349,12 +353,21 @@ export function EmployeeForm({
                   </div>
                 </div>
 
-                <SwitchField
-                  id="active"
-                  label={<>{t("employees.form.fields.active")}: {t(values.active ? "employees.enums.status.active" : "employees.enums.status.inactive")}</>}
-                  checked={values.active}
-                  onCheckedChange={(checked) => updateField("active", checked)}
-                />
+                {binaryControl === "buttons" ? (
+                  <YesNoChoiceField
+                    id="active"
+                    label={t("employees.form.fields.active")}
+                    checked={values.active}
+                    onCheckedChange={(checked) => updateField("active", checked)}
+                  />
+                ) : (
+                  <SwitchField
+                    id="active"
+                    label={<>{t("employees.form.fields.active")}: {t(values.active ? "employees.enums.status.active" : "employees.enums.status.inactive")}</>}
+                    checked={values.active}
+                    onCheckedChange={(checked) => updateField("active", checked)}
+                  />
+                )}
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">

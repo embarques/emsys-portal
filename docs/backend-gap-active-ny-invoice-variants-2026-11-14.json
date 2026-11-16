@@ -1,0 +1,2034 @@
+{
+  "checkedAt": "2026-11-14T17:35:29.401Z",
+  "companyId": "64d5c0b0d1eab2aaf30b1819",
+  "marker": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+  "inputFixtureMarker": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+  "owned": [
+    {
+      "path": "/vehicle-routes",
+      "id": "6af89bde31a295cf38084352",
+      "retained": true
+    },
+    {
+      "path": "/journals",
+      "id": "6af89be031a295cf38084354",
+      "retained": true
+    },
+    {
+      "path": "/invoices",
+      "id": "6af89be031a295cf38084353",
+      "retained": true
+    }
+  ],
+  "evidence": [
+    {
+      "method": "GET",
+      "path": "/invoices/6af89af131a295cf38084349",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:979e315b3975694feba5c388640d763e8e124544151d950e7ce3e58359214b1c",
+          "id": "6af89af131a295cf38084349",
+          "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "createdAt": "2026-11-14T17:31:29.83Z",
+          "updatedAt": "2026-11-14T17:31:31.926Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "receivedBy": {
+            "type": "employee",
+            "id": "274",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "employee": {
+              "id": 274,
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+            }
+          },
+          "container": {
+            "id": 1418,
+            "name": "928107-26",
+            "booking": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "containerNumber": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "departureDate": "2026-11-14T17:31:28.286Z",
+            "arrivalDate": "2026-11-14T17:31:28.292Z",
+            "createdAt": "2026-11-14T17:31:28.42Z",
+            "updatedAt": "2026-11-14T17:31:28.42Z",
+            "barcodeSequence": 2,
+            "deliverySequence": 1
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "phones": [
+              {
+                "type": "mobile",
+                "number": "+12027938811",
+                "displayNumber": "(202) 793-8811",
+                "isPrimary": true
+              }
+            ],
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89af131a295cf3808434b",
+              "invoice": {
+                "id": "6af89af131a295cf38084349",
+                "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 1,
+                  "barcodeId": "6af89af131a295cf3808434c",
+                  "number": "ET928107260001",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 2,
+                  "barcodeId": "6af89af131a295cf3808434d",
+                  "number": "ET928107260002",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:31:29.94Z",
+              "updatedAt": "2026-11-14T17:31:31.947Z"
+            }
+          ],
+          "pickupEmployee": {
+            "id": 274,
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+          },
+          "cost": 0.02,
+          "discount": 0,
+          "payment": 0,
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.022471209,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/branches/1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 1,
+          "name": "Embarque Tenares",
+          "code": "NY",
+          "address": {
+            "id": "000000000000000000000000",
+            "address1": "2249 Washington Avenue",
+            "city": "The Bronx",
+            "state": "NY",
+            "zipcode": "10457",
+            "country": "US",
+            "location": {
+              "type": "Point",
+              "coordinates": [
+                -73.8939588,
+                40.854537799999996
+              ]
+            }
+          },
+          "phones": [
+            {
+              "type": "business",
+              "number": "+17185621300",
+              "displayNumber": "(718) 562-1300",
+              "isPrimary": true
+            }
+          ],
+          "logo": "media/logo/tenareslogo.png",
+          "settings": {
+            "labelPrefix": "ET",
+            "printLabelCount": true,
+            "roundDecimalPlaces": 2,
+            "defaultLabelStatus": 1
+          },
+          "createdAt": "2026-09-11T00:13:27.767Z",
+          "updatedAt": "2026-10-20T15:56:53.971Z",
+          "createdBy": {
+            "id": 1,
+            "name": "jpAdmin"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          }
+        },
+        "error": "",
+        "duration": 0.015613125,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/income-statements/context?branchId=1",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Closeout calendar",
+        "data": {
+          "today": "2026-11-14",
+          "serverTimezone": "America/New_York",
+          "serverTime": "2026-11-14T17:35:26.585129758Z",
+          "current": {
+            "businessDate": "2026-11-14",
+            "timezone": "America/New_York",
+            "periodStart": "2026-11-14T05:00:00Z",
+            "periodEnd": "2026-11-15T05:00:00Z",
+            "id": 32738,
+            "date": "2026-11-14T05:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "rate": 1,
+            "currency": "USD",
+            "status": "open",
+            "createdAt": "2026-11-14T17:31:01.226Z",
+            "updatedAt": "2026-11-14T17:31:01.226Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          },
+          "previous": {
+            "businessDate": "2026-11-13",
+            "timezone": "America/New_York",
+            "periodStart": "2026-11-13T05:00:00Z",
+            "periodEnd": "2026-11-14T05:00:00Z",
+            "id": 32736,
+            "date": "2026-11-13T05:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "rate": 1,
+            "currency": "USD",
+            "status": "closed",
+            "summaryTotal": {},
+            "createdAt": "2026-11-13T18:40:00.732Z",
+            "updatedAt": "2026-11-14T17:31:01.226Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            },
+            "updatedBy": {
+              "id": 73,
+              "uid": "O2uwARbv6jV5mwMwWg6DICs0aGC2",
+              "email": "elk@elk.com",
+              "name": "elk@elk.com",
+              "userName": "elk@elk.com",
+              "active": true,
+              "branch": {
+                "id": 1,
+                "name": "Embarque Tenares",
+                "code": "NY"
+              },
+              "role": {
+                "id": 1,
+                "name": "Administrador"
+              },
+              "createdAt": "2026-05-30T07:13:05.689Z",
+              "updatedAt": "2026-05-30T07:13:05.689Z"
+            }
+          },
+          "latest": {
+            "businessDate": "2026-11-14",
+            "timezone": "America/New_York",
+            "periodStart": "2026-11-14T05:00:00Z",
+            "periodEnd": "2026-11-15T05:00:00Z",
+            "id": 32738,
+            "date": "2026-11-14T05:00:00Z",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "rate": 1,
+            "currency": "USD",
+            "status": "open",
+            "createdAt": "2026-11-14T17:31:01.226Z",
+            "updatedAt": "2026-11-14T17:31:01.226Z",
+            "createdBy": {
+              "id": 73,
+              "name": "elk@elk.com"
+            }
+          }
+        },
+        "error": "",
+        "duration": 0,
+        "page": 0,
+        "resultsPerPage": 0,
+        "total": 0,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/employees/272",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": 272,
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "active": true,
+          "createdAt": "2026-11-14T17:22:53.609Z",
+          "updatedAt": "2026-11-14T17:22:53.609Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          }
+        },
+        "error": "",
+        "duration": 0.014606083,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/vehicles/6af898ed31a295cf38084331",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "6af898ed31a295cf38084331",
+          "vehicleId": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "licensePlate": "5b99330d",
+          "year": 2026,
+          "fuelType": "diesel",
+          "branch": {
+            "id": 1,
+            "code": "NY"
+          },
+          "active": true,
+          "createdAt": "2026-11-14T17:22:53.751Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedAt": "2026-11-14T17:22:53.751Z"
+        },
+        "error": "",
+        "duration": 0.014097166,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/vehicle-routes",
+      "body": {
+        "date": "2026-11-14T00:00:00Z",
+        "routeType": "pickup",
+        "branch": {
+          "id": 1,
+          "name": "Embarque Tenares",
+          "code": "NY"
+        },
+        "vehicle": {
+          "id": "6af898ed31a295cf38084331",
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        },
+        "driver": {
+          "id": 272,
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        },
+        "supervisor": {
+          "id": 272,
+          "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        },
+        "helpers": [],
+        "employees": [
+          {
+            "id": 272,
+            "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+            "roles": [
+              "driver",
+              "supervisor"
+            ]
+          }
+        ],
+        "active": true
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "id": "6af89bde31a295cf38084352",
+          "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+          "date": "2026-11-14T00:00:00Z",
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "vehicle": {
+            "id": "6af898ed31a295cf38084331",
+            "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "employees": [
+            {
+              "id": 272,
+              "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+              "role": "driver",
+              "roles": [
+                "driver",
+                "supervisor"
+              ]
+            }
+          ],
+          "driver": {
+            "id": 272,
+            "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+            "role": "driver",
+            "roles": [
+              "driver",
+              "supervisor"
+            ]
+          },
+          "supervisor": {
+            "id": 272,
+            "name": "CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d",
+            "role": "supervisor",
+            "roles": [
+              "driver",
+              "supervisor"
+            ]
+          },
+          "routeType": "pickup",
+          "active": true
+        },
+        "error": "",
+        "duration": 0.155036292,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/6af89af131a295cf38084349",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:979e315b3975694feba5c388640d763e8e124544151d950e7ce3e58359214b1c",
+          "id": "6af89af131a295cf38084349",
+          "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "createdAt": "2026-11-14T17:31:29.83Z",
+          "updatedAt": "2026-11-14T17:31:31.926Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "receivedBy": {
+            "type": "employee",
+            "id": "274",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "employee": {
+              "id": 274,
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+            }
+          },
+          "container": {
+            "id": 1418,
+            "name": "928107-26",
+            "booking": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "containerNumber": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "departureDate": "2026-11-14T17:31:28.286Z",
+            "arrivalDate": "2026-11-14T17:31:28.292Z",
+            "createdAt": "2026-11-14T17:31:28.42Z",
+            "updatedAt": "2026-11-14T17:31:28.42Z",
+            "barcodeSequence": 2,
+            "deliverySequence": 1
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "phones": [
+              {
+                "type": "mobile",
+                "number": "+12027938811",
+                "displayNumber": "(202) 793-8811",
+                "isPrimary": true
+              }
+            ],
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89af131a295cf3808434b",
+              "invoice": {
+                "id": "6af89af131a295cf38084349",
+                "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 1,
+                  "barcodeId": "6af89af131a295cf3808434c",
+                  "number": "ET928107260001",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 2,
+                  "barcodeId": "6af89af131a295cf3808434d",
+                  "number": "ET928107260002",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:31:29.94Z",
+              "updatedAt": "2026-11-14T17:31:31.947Z"
+            }
+          ],
+          "pickupEmployee": {
+            "id": 274,
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+          },
+          "cost": 0.02,
+          "discount": 0,
+          "payment": 0,
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.018752792,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/invoices/6af89af131a295cf38084349",
+      "body": {
+        "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+        "date": "2026-11-14",
+        "branch": {
+          "id": 1,
+          "code": "NY",
+          "name": "Embarque Tenares"
+        },
+        "cost": 0.02,
+        "payment": 0,
+        "balance": 0.02,
+        "surcharge": 0,
+        "paidRegion": "NY",
+        "paidStatus": "UNPAID",
+        "container": {
+          "id": 1418,
+          "name": "928107-26"
+        },
+        "sender": {
+          "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "customerType": 1,
+          "phone1": "+12027938811",
+          "id": "6af89af131a295cf3808434a",
+          "address": {
+            "id": "000000000000000000000000",
+            "address1": "1 Mock Verification St",
+            "city": "Bronx",
+            "state": "NY",
+            "zipcode": "10451",
+            "country": "US"
+          }
+        },
+        "invoiceDetails": [
+          {
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "quantity": 2,
+            "labels": 2,
+            "price": 0.01,
+            "total": 0.02,
+            "id": "6af89af131a295cf3808434b"
+          }
+        ],
+        "receivedBy": {
+          "id": "6af89bde31a295cf38084352",
+          "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        },
+        "route": {
+          "id": "6af89bde31a295cf38084352",
+          "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+        },
+        "routeCrew": null,
+        "employee": null,
+        "pickupEmployee": null,
+        "officeBranch": null,
+        "isVoid": false
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice updated",
+        "data": {
+          "version": "v1:2fc2319e4a583444c724dd022c23f24cf2f2aaa077110a388702469236c50ee6",
+          "id": "6af89af131a295cf38084349",
+          "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "createdAt": "2026-11-14T17:31:29.83Z",
+          "updatedAt": "2026-11-14T17:35:27.3679423Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "receivedBy": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "container": {
+            "id": 1418,
+            "name": "928107-26"
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89af131a295cf3808434b",
+              "invoice": {
+                "id": "6af89af131a295cf38084349",
+                "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 1,
+                  "barcodeId": "6af89af131a295cf3808434c",
+                  "number": "ET928107260001",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 2,
+                  "barcodeId": "6af89af131a295cf3808434d",
+                  "number": "ET928107260002",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:31:29.94Z",
+              "updatedAt": "2026-11-14T17:35:27.388818509Z"
+            }
+          ],
+          "route": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "cost": 0.02,
+          "discount": 0,
+          "payment": 0,
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.269786083,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/6af89af131a295cf38084349",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:2fc2319e4a583444c724dd022c23f24cf2f2aaa077110a388702469236c50ee6",
+          "id": "6af89af131a295cf38084349",
+          "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "createdAt": "2026-11-14T17:31:29.83Z",
+          "updatedAt": "2026-11-14T17:35:27.367Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "receivedBy": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "container": {
+            "id": 1418,
+            "name": "928107-26",
+            "booking": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "containerNumber": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "departureDate": "2026-11-14T17:31:28.286Z",
+            "arrivalDate": "2026-11-14T17:31:28.292Z",
+            "createdAt": "2026-11-14T17:31:28.42Z",
+            "updatedAt": "2026-11-14T17:31:28.42Z",
+            "barcodeSequence": 2,
+            "deliverySequence": 1
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89af131a295cf3808434b",
+              "invoice": {
+                "id": "6af89af131a295cf38084349",
+                "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 1,
+                  "barcodeId": "6af89af131a295cf3808434c",
+                  "number": "ET928107260001",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 2,
+                  "barcodeId": "6af89af131a295cf3808434d",
+                  "number": "ET928107260002",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:31:29.94Z",
+              "updatedAt": "2026-11-14T17:35:27.388Z"
+            }
+          ],
+          "route": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "cost": 0.02,
+          "discount": 0,
+          "payment": 0,
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.018854,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V10 explicit non-DR pickup-route receivedBy survives NY readback",
+      "passed": true
+    },
+    {
+      "label": "V10 route receivedBy has no nested reusable crew",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/6af89af131a295cf38084349",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:2fc2319e4a583444c724dd022c23f24cf2f2aaa077110a388702469236c50ee6",
+          "id": "6af89af131a295cf38084349",
+          "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "createdAt": "2026-11-14T17:31:29.83Z",
+          "updatedAt": "2026-11-14T17:35:27.367Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "receivedBy": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "container": {
+            "id": 1418,
+            "name": "928107-26",
+            "booking": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "containerNumber": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "departureDate": "2026-11-14T17:31:28.286Z",
+            "arrivalDate": "2026-11-14T17:31:28.292Z",
+            "createdAt": "2026-11-14T17:31:28.42Z",
+            "updatedAt": "2026-11-14T17:31:28.42Z",
+            "barcodeSequence": 2,
+            "deliverySequence": 1
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89af131a295cf3808434b",
+              "invoice": {
+                "id": "6af89af131a295cf38084349",
+                "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 1,
+                  "barcodeId": "6af89af131a295cf3808434c",
+                  "number": "ET928107260001",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 2,
+                  "barcodeId": "6af89af131a295cf3808434d",
+                  "number": "ET928107260002",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:31:29.94Z",
+              "updatedAt": "2026-11-14T17:35:27.388Z"
+            }
+          ],
+          "route": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "cost": 0.02,
+          "discount": 0,
+          "payment": 0,
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.018764166,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V10 receivedBy update preserves existing piece identities",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/journals/sync",
+      "body": {
+        "requestId": "4460daff-2fdb-4184-a067-2b53de67795f",
+        "entry": {
+          "branch": {
+            "id": 1
+          },
+          "transactionType": "INITIAL-PAYMENT",
+          "amount": 0,
+          "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "currency": "USD",
+          "rate": 1,
+          "employee": null,
+          "vehicleRoute": null,
+          "route": null,
+          "employeeGroup": null,
+          "invoice": {
+            "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+            "cost": 0.02,
+            "discount": 0
+          },
+          "paymentMethod": {
+            "name": "CASH"
+          },
+          "refNumber": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160"
+        }
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af89be031a295cf38084354",
+          "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "date": "2026-11-14T17:35:27.914776176Z",
+          "refNumber": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "paymentMethod": {
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "INITIAL-PAYMENT",
+          "invoice": {
+            "id": "6af89be031a295cf38084353",
+            "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+            "cost": 0.02,
+            "balance": 0.02
+          },
+          "incomeStatement": {
+            "branch": {
+              "id": 1
+            },
+            "id": 32738
+          },
+          "createdAt": "2026-11-14T17:35:28.107155967Z",
+          "updatedAt": "2026-11-14T17:35:28.107155967Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "debit": 0.02
+            },
+            {
+              "id": 4,
+              "name": "SALES",
+              "type": "REVENUE",
+              "credit": 0.02
+            }
+          ],
+          "incomeStatementSummary": {
+            "invoices": 0.02,
+            "creditCards": 1.25,
+            "accountReceivables": 0.02,
+            "totalIncome": 1.25,
+            "totalGeneral": 0.04,
+            "netIncome": 1.25
+          }
+        },
+        "error": "",
+        "duration": 0.392838542,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/6af89be031a295cf38084353",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:98f728e8540e951353ab296be5ffeff77397fae6972eed36d4febd493a36f6ff",
+          "id": "6af89be031a295cf38084353",
+          "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "createdAt": "2026-11-14T17:35:28.007Z",
+          "updatedAt": "2026-11-14T17:35:28.007Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T17:35:27.914Z",
+          "paidStatus": "OPEN",
+          "itemCount": 0,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "cost": 0.02,
+          "registration": "PENDING",
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.018016667,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V10 zero-payment registration is pending with no applied payment",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/6af89af131a295cf38084349",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:2fc2319e4a583444c724dd022c23f24cf2f2aaa077110a388702469236c50ee6",
+          "id": "6af89af131a295cf38084349",
+          "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "createdAt": "2026-11-14T17:31:29.83Z",
+          "updatedAt": "2026-11-14T17:35:27.367Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "registration": "COMPLETED",
+          "receivedBy": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "container": {
+            "id": 1418,
+            "name": "928107-26",
+            "booking": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "containerNumber": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "departureDate": "2026-11-14T17:31:28.286Z",
+            "arrivalDate": "2026-11-14T17:31:28.292Z",
+            "createdAt": "2026-11-14T17:31:28.42Z",
+            "updatedAt": "2026-11-14T17:31:28.42Z",
+            "barcodeSequence": 2,
+            "deliverySequence": 1
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89af131a295cf3808434b",
+              "invoice": {
+                "id": "6af89af131a295cf38084349",
+                "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 1,
+                  "barcodeId": "6af89af131a295cf3808434c",
+                  "number": "ET928107260001",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 2,
+                  "barcodeId": "6af89af131a295cf3808434d",
+                  "number": "ET928107260002",
+                  "invoice": {
+                    "id": "6af89af131a295cf38084349",
+                    "number": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7"
+                  },
+                  "description": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:31:29.982Z",
+                  "updatedAt": "2026-11-14T17:31:29.982Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:31:29.94Z",
+              "updatedAt": "2026-11-14T17:35:27.388Z"
+            }
+          ],
+          "route": {
+            "id": "6af89bde31a295cf38084352",
+            "name": "2026-11-14_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d_CODEX-NY-INVOICE-b129e163-d71a-4e25-9e25-7b435b99330d"
+          },
+          "cost": 0.02,
+          "discount": 0,
+          "payment": 0,
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.019823458,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/invoices/6af89be031a295cf38084353",
+      "body": {
+        "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+        "date": "2026-11-14",
+        "branch": {
+          "id": 1,
+          "code": "NY",
+          "name": "Embarque Tenares"
+        },
+        "cost": 0.02,
+        "payment": 0,
+        "balance": 0.02,
+        "surcharge": 0,
+        "paidRegion": "NY",
+        "paidStatus": "UNPAID",
+        "container": {
+          "id": 1418,
+          "name": "928107-26"
+        },
+        "sender": {
+          "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+          "customerType": 1,
+          "phone1": "",
+          "id": "6af89af131a295cf3808434a",
+          "address": {
+            "id": "000000000000000000000000",
+            "address1": "1 Mock Verification St",
+            "city": "Bronx",
+            "state": "NY",
+            "zipcode": "10451",
+            "country": "US"
+          }
+        },
+        "invoiceDetails": [
+          {
+            "name": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+            "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+            "quantity": 2,
+            "labels": 2,
+            "price": 0.01,
+            "total": 0.02
+          }
+        ],
+        "isVoid": false
+      },
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice updated",
+        "data": {
+          "version": "v1:72054eb6e99eca42252794da773502be39f6b832a84437bddcf9baab9ecbff3b",
+          "id": "6af89be031a295cf38084353",
+          "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "createdAt": "2026-11-14T17:35:28.007Z",
+          "updatedAt": "2026-11-14T17:35:28.618436968Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "cost": 0.02,
+          "registration": "COMPLETED",
+          "container": {
+            "id": 1418,
+            "name": "928107-26"
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89be031a295cf38084357",
+              "invoice": {
+                "id": "6af89be031a295cf38084353",
+                "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+              "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 3,
+                  "barcodeId": "6af89be031a295cf38084358",
+                  "number": "ET928107260003",
+                  "invoice": {
+                    "id": "6af89be031a295cf38084353",
+                    "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160"
+                  },
+                  "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:35:28.697185468Z",
+                  "updatedAt": "2026-11-14T17:35:28.697185718Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "updatedBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 4,
+                  "barcodeId": "6af89be031a295cf38084359",
+                  "number": "ET928107260004",
+                  "invoice": {
+                    "id": "6af89be031a295cf38084353",
+                    "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160"
+                  },
+                  "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:35:28.697190384Z",
+                  "updatedAt": "2026-11-14T17:35:28.697190593Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "updatedBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:35:28.660467509Z",
+              "updatedAt": "2026-11-14T17:35:28.660467509Z"
+            }
+          ],
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.407681917,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/6af89be031a295cf38084353",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "invoice retrieved",
+        "data": {
+          "version": "v1:72054eb6e99eca42252794da773502be39f6b832a84437bddcf9baab9ecbff3b",
+          "id": "6af89be031a295cf38084353",
+          "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "createdAt": "2026-11-14T17:35:28.007Z",
+          "updatedAt": "2026-11-14T17:35:28.618Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "updatedBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "date": "2026-11-14T00:00:00Z",
+          "paidRegion": "NY",
+          "paidStatus": "OPEN",
+          "itemCount": 2,
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "cost": 0.02,
+          "registration": "COMPLETED",
+          "container": {
+            "id": 1418,
+            "name": "928107-26",
+            "booking": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "containerNumber": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "departureDate": "2026-11-14T17:31:28.286Z",
+            "arrivalDate": "2026-11-14T17:31:28.292Z",
+            "createdAt": "2026-11-14T17:31:28.42Z",
+            "updatedAt": "2026-11-14T17:31:28.42Z",
+            "barcodeSequence": 4,
+            "deliverySequence": 1
+          },
+          "sender": {
+            "id": "6af89af131a295cf3808434a",
+            "name": "CODEX-NY-INVOICE-10b08ba0-1fed-4973-b632-7cc224f634e7",
+            "customerType": 1,
+            "address": {
+              "id": "000000000000000000000000",
+              "address1": "1 Mock Verification St",
+              "city": "Bronx",
+              "state": "NY",
+              "zipcode": "10451",
+              "country": "US"
+            }
+          },
+          "invoiceDetails": [
+            {
+              "id": "6af89be031a295cf38084357",
+              "invoice": {
+                "id": "6af89be031a295cf38084353",
+                "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+                "itemCount": 0
+              },
+              "name": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+              "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+              "quantity": 2,
+              "labels": 2,
+              "price": 0.01,
+              "total": 0.02,
+              "barcodes": [
+                {
+                  "id": 3,
+                  "barcodeId": "6af89be031a295cf38084358",
+                  "number": "ET928107260003",
+                  "invoice": {
+                    "id": "6af89be031a295cf38084353",
+                    "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160"
+                  },
+                  "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:35:28.697Z",
+                  "updatedAt": "2026-11-14T17:35:28.697Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "updatedBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                },
+                {
+                  "id": 4,
+                  "barcodeId": "6af89be031a295cf38084359",
+                  "number": "ET928107260004",
+                  "invoice": {
+                    "id": "6af89be031a295cf38084353",
+                    "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160"
+                  },
+                  "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+                  "status": {
+                    "id": 1,
+                    "name": "ALM-NY"
+                  },
+                  "container": {
+                    "id": 1418,
+                    "name": "928107-26"
+                  },
+                  "createdAt": "2026-11-14T17:35:28.697Z",
+                  "updatedAt": "2026-11-14T17:35:28.697Z",
+                  "createdBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "updatedBy": {
+                    "id": 73,
+                    "name": "elk@elk.com"
+                  },
+                  "scanDate": "0001-01-01T00:00:00Z"
+                }
+              ],
+              "createdAt": "2026-11-14T17:35:28.66Z",
+              "updatedAt": "2026-11-14T17:35:28.66Z"
+            }
+          ],
+          "balance": 0.02
+        },
+        "error": "",
+        "duration": 0.020336417,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V10 unpaid completion preserves original invoice identity and number",
+      "passed": true
+    },
+    {
+      "label": "V10 unpaid completion preserves authoritative zero payment and balance",
+      "passed": true
+    },
+    {
+      "label": "V10 unpaid completion saves two pieces with configured NY default",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "path": "/journals/sync",
+      "body": {
+        "requestId": "4460daff-2fdb-4184-a067-2b53de67795f",
+        "entry": {
+          "branch": {
+            "id": 1
+          },
+          "transactionType": "INITIAL-PAYMENT",
+          "amount": 0,
+          "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "currency": "USD",
+          "rate": 1,
+          "employee": null,
+          "vehicleRoute": null,
+          "route": null,
+          "employeeGroup": null,
+          "invoice": {
+            "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+            "cost": 0.02,
+            "discount": 0
+          },
+          "paymentMethod": {
+            "name": "CASH"
+          },
+          "refNumber": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160"
+        }
+      },
+      "http": 201,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": false,
+            "void": false,
+            "reverse": false,
+            "correct": false,
+            "note": true,
+            "clear": false
+          },
+          "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af89be031a295cf38084354",
+          "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "date": "2026-11-14T17:35:27.914Z",
+          "refNumber": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "paymentMethod": {
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "INITIAL-PAYMENT",
+          "invoice": {
+            "id": "6af89be031a295cf38084353",
+            "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+            "cost": 0.02,
+            "balance": 0.02
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "id": 32738
+          },
+          "createdAt": "2026-11-14T17:35:28.107Z",
+          "updatedAt": "2026-11-14T17:35:28.107Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "debit": 0.02
+            },
+            {
+              "id": 4,
+              "name": "SALES",
+              "type": "REVENUE",
+              "credit": 0.02
+            }
+          ],
+          "incomeStatementSummary": {
+            "invoices": 0.02,
+            "creditCards": 1.25,
+            "accountReceivables": 0.02,
+            "totalIncome": 1.25,
+            "totalGeneral": 0.04,
+            "netIncome": 1.25
+          }
+        },
+        "error": "",
+        "duration": 0.095071917,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V10 original unpaid registration replay keeps committed journal/invoice identities",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "path": "/journals/6af89be031a295cf38084354",
+      "http": 200,
+      "response": {
+        "success": true,
+        "message": "Request successful",
+        "data": {
+          "pendingChange": false,
+          "version": 1,
+          "transactionStatus": "ACTIVE",
+          "clearanceStatus": "NOT_REQUIRED",
+          "clearedAt": null,
+          "clearedBy": null,
+          "allowedActions": {
+            "edit": false,
+            "void": false,
+            "reverse": false,
+            "correct": false,
+            "note": true,
+            "clear": false
+          },
+          "restrictionReason": "Financial history is restricted by period, reconciliation, clearance or lifecycle state",
+          "branch": {
+            "id": 1,
+            "name": "Embarque Tenares",
+            "code": "NY"
+          },
+          "reconciliationStatus": "OUTSTANDING",
+          "reconciledAt": null,
+          "reconciledBy": null,
+          "autoReconciled": false,
+          "id": "6af89be031a295cf38084354",
+          "description": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "date": "2026-11-14T17:35:27.914Z",
+          "refNumber": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+          "paymentMethod": {
+            "name": "CASH"
+          },
+          "currency": "USD",
+          "rate": 1,
+          "transactionType": "INITIAL-PAYMENT",
+          "invoice": {
+            "id": "6af89be031a295cf38084353",
+            "number": "CODEX-NY-VARIANTS-969d75b9-3940-446e-90d7-2b57791a2160",
+            "cost": 0.02,
+            "balance": 0.02
+          },
+          "incomeStatement": {
+            "status": "open",
+            "branch": {
+              "id": 1,
+              "name": "Embarque Tenares",
+              "code": "NY"
+            },
+            "id": 32738
+          },
+          "createdAt": "2026-11-14T17:35:28.107Z",
+          "updatedAt": "2026-11-14T17:35:28.107Z",
+          "createdBy": {
+            "id": 73,
+            "name": "elk@elk.com"
+          },
+          "accounts": [
+            {
+              "id": 1,
+              "name": "CASH ON HAND",
+              "type": "ASSET"
+            },
+            {
+              "id": 2,
+              "name": "ACCOUNTS RECEIVABLE",
+              "type": "ASSET",
+              "debit": 0.02
+            },
+            {
+              "id": 4,
+              "name": "SALES",
+              "type": "REVENUE",
+              "credit": 0.02
+            }
+          ]
+        },
+        "error": "",
+        "duration": 0.017554792,
+        "page": 1,
+        "resultsPerPage": 1,
+        "total": 1,
+        "subtotal": 0
+      }
+    },
+    {
+      "label": "V10 zero registration journal stays in current NY period",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Only new/tagged mock invoices and routes changed; no deletions or rollover.",
+    "Zero registration journal retained; no cash or bank payment collected.",
+    "Assigned-only negatives, other-branch actors, branch 11 and bank initial-payment completion remain separate."
+  ]
+}

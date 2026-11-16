@@ -1,7 +1,7 @@
 import type { Vehicle } from "@/lib/vehicles/types";
 
 /** Warn when a compliance date is this many days away or fewer, including past dates. */
-export const VEHICLE_COMPLIANCE_WARNING_DAYS = 7;
+export const VEHICLE_COMPLIANCE_WARNING_DAYS = 10;
 
 export type VehicleComplianceKind = "inspection" | "registration";
 

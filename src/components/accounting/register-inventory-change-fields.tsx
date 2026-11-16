@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Route, UserPlus, Users, X } from "lucide-react";
+import { Building2, PackagePlus, Route, Truck, UserPlus, Users, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
@@ -12,6 +12,7 @@ import { InventorySupplierForm } from "@/components/inventory/inventory-supplier
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
 import { Button } from "@/components/ui/button";
+import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
@@ -227,6 +228,22 @@ export function RegisterInventoryChangeFields({
     { value: "received", label: t("accounting.dailyIncome.form.inventory.received") },
     { value: "dispatched", label: t("accounting.dailyIncome.form.inventory.dispatched") },
   ];
+
+  function changeDirection(value: InventoryChangeDirection | undefined) {
+    setValue("inventoryDirection", value, { shouldValidate: true });
+    if (value === "received") {
+      setValue("employeeId", undefined, { shouldValidate: true });
+      setValue("employeeName", "");
+      setValue("routeId", undefined, { shouldValidate: true });
+      setValue("routeName", "");
+      setValue("inventoryHolderVehicleId", undefined);
+      setValue("inventoryHolderVehicleName", "");
+      setValue("inventoryHolderEmployees", [], { shouldValidate: true });
+    } else {
+      setValue("inventorySupplierId", undefined, { shouldValidate: true });
+      setValue("inventorySupplierName", "");
+    }
+  }
   const itemOptions = useMemo(
     () =>
       withPinnedSelectOption(
@@ -352,36 +369,35 @@ export function RegisterInventoryChangeFields({
 
   return (
     <div className="space-y-5">
-      <FormSection className={activeStep && activeStep !== "assignment" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.inventoryMovement")}>
+      <FormSection className={activeStep && activeStep !== "assignment" ? "hidden" : undefined} variant={activeStep ? "plain" : "card"} title={t("accounting.dailyIncome.form.sections.inventoryMovement")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
-            <RequiredLabel htmlFor="journal-inventory-direction">
-              {t("accounting.dailyIncome.form.fields.inventoryDirection")}
-            </RequiredLabel>
-            <SearchableSelect
-              inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
-              id="journal-inventory-direction"
-              value={direction ?? ""}
-              onValueChange={(next) => {
-                const value = next === "dispatched" || next === "received" ? (next as InventoryChangeDirection) : undefined;
-                setValue("inventoryDirection", value, { shouldValidate: true });
-                if (value === "received") {
-                  setValue("employeeId", undefined, { shouldValidate: true });
-                  setValue("employeeName", "");
-                  setValue("routeId", undefined, { shouldValidate: true });
-                  setValue("routeName", "");
-                  setValue("inventoryHolderVehicleId", undefined);
-                  setValue("inventoryHolderVehicleName", "");
-                  setValue("inventoryHolderEmployees", [], { shouldValidate: true });
-                } else {
-                  setValue("inventorySupplierId", undefined, { shouldValidate: true });
-                  setValue("inventorySupplierName", "");
-                }
-              }}
-              placeholder={t("accounting.dailyIncome.form.placeholders.selectInventoryDirection")}
-              searchable={false}
-              options={directionOptions}
-            />
+            {activeStep ? (
+              <ChoiceTiles<InventoryChangeDirection>
+                id="journal-inventory-direction"
+                aria-label={t("accounting.dailyIncome.form.fields.inventoryDirection")}
+                value={direction ?? null}
+                onValueChange={changeDirection}
+                options={[
+                  { value: "received", label: t("accounting.dailyIncome.form.inventory.received"), description: t("accounting.dailyIncome.form.inventory.receivedHint"), icon: PackagePlus, iconClassName: "text-teal-700", iconBackgroundClassName: "bg-teal-50 dark:bg-muted" },
+                  { value: "dispatched", label: t("accounting.dailyIncome.form.inventory.dispatched"), description: t("accounting.dailyIncome.form.inventory.dispatchedHint"), icon: Truck, iconClassName: "text-orange-600", iconBackgroundClassName: "bg-orange-50 dark:bg-muted" },
+                ]}
+              />
+            ) : (
+              <>
+                <RequiredLabel htmlFor="journal-inventory-direction">
+                  {t("accounting.dailyIncome.form.fields.inventoryDirection")}
+                </RequiredLabel>
+                <SearchableSelect
+                  id="journal-inventory-direction"
+                  value={direction ?? ""}
+                  onValueChange={(next) => changeDirection(next === "dispatched" || next === "received" ? next : undefined)}
+                  placeholder={t("accounting.dailyIncome.form.placeholders.selectInventoryDirection")}
+                  searchable={false}
+                  options={directionOptions}
+                />
+              </>
+            )}
             {errors.inventoryDirection ? (
               <p className="text-sm text-destructive">{errors.inventoryDirection.message}</p>
             ) : null}
@@ -646,6 +662,7 @@ export function RegisterInventoryChangeFields({
             submitLabel={t("employees.actions.add")}
             isSubmitting={createEmployee.isPending}
             externalError={entityError}
+            binaryControl="buttons"
             onSubmit={saveEmployee}
             onCancel={() => setEntityDialog(null)}
           />

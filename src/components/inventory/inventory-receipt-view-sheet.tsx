@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckCircle2, Info, ListOrdered, PackageCheck } from "lucide-react";
+
 import {
   RecordViewSheet,
   RecordViewSheetBody,
@@ -72,7 +74,7 @@ export function InventoryReceiptViewSheet({
           description={t("inventory.references.receipt")}
         />
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("inventory.form.sections.header")}>
+          <RecordViewSheetSection title={t("inventory.form.sections.header")} icon={PackageCheck}>
             <RecordViewSheetDetailRow label={t("inventory.columns.status")} value={<InventoryDocumentStatusBadge status={receipt.status} />} />
             <RecordViewSheetDetailRow label={t("inventory.columns.warehouse")} value={getHolderNameById(receipt.toHolderId, holders) || dash} />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.receivedAt")} value={formatInventoryDateTime(receipt.receivedAt)} />
@@ -87,7 +89,7 @@ export function InventoryReceiptViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.form.fields.notes")} value={receipt.notes || dash} />
           </RecordViewSheetSection>
           {showConfirmations ? (
-            <RecordViewSheetSection title={t("inventory.confirmations.title")} padding="relaxed">
+            <RecordViewSheetSection title={t("inventory.confirmations.title")} icon={CheckCircle2} padding="relaxed">
               <InventoryConfirmationPanel
                 state={receipt}
                 parties={RECEIPT_PARTIES}
@@ -98,7 +100,7 @@ export function InventoryReceiptViewSheet({
               />
             </RecordViewSheetSection>
           ) : null}
-          <RecordViewSheetSection title={t("inventory.view.lines")}>
+          <RecordViewSheetSection title={t("inventory.view.lines")} icon={ListOrdered}>
             {receipt.lines.map((line, index) => (
               <RecordViewSheetDetailRow
                 key={line.id ?? `${line.itemId}-${index}`}
@@ -113,7 +115,7 @@ export function InventoryReceiptViewSheet({
               valueAlign="end"
             />
           </RecordViewSheetSection>
-          <RecordViewSheetSection title={t("inventory.view.audit")}>
+          <RecordViewSheetSection title={t("inventory.view.audit")} icon={Info}>
             <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDateTime(receipt.createdAt)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.userCreated")} value={receipt.createdBy || dash} />
             <RecordViewSheetDetailRow label={t("inventory.columns.dateModified")} value={formatAuditDateTime(receipt.updatedAt)} />

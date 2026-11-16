@@ -1,7 +1,11 @@
 import type { ApiTableField } from "@/lib/table/api-table-fields";
 
-/** Directory coverage for api-docs.json definitions["invoice.Invoice"]. */
+/** Directory coverage for .reference/emsys-api/docs/swagger.json definitions["invoice.Invoice"]. */
 export const INVOICE_API_TABLE_FIELDS = [
+  // Concurrency/analytics references are not additional Received by or responsibility columns.
+  { field: "version", column: false },
+  { field: "dailyRoute", column: false },
+  { field: "dailyRouteId", column: false },
   { field: "balance" },
   { field: "branch", defaultVisible: false },
   { field: "container" },
@@ -28,6 +32,7 @@ export const INVOICE_API_TABLE_FIELDS = [
   { field: "receivedBy", columnId: "pickupAssignment", defaultVisible: false },
   { field: "receiver", columnId: "receiver.name" },
   { field: "registration", defaultVisible: false },
+  { field: "reservedAt", format: "date", defaultVisible: false },
   { field: "route", columnId: "pickupAssignment", defaultVisible: false },
   { field: "sender", columnId: "sender.name" },
   { field: "surcharge", defaultVisible: false },

@@ -1,6 +1,6 @@
 /**
  * Shared EMSYS API write payload shapes.
- * Canonical wire schema: api-docs.json
+ * Canonical wire schema: .reference/emsys-api/docs/swagger.json
  */
 
 /** GeoJSON Point — coordinates use GeoJSON order: [longitude, latitude]. */
