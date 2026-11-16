@@ -279,6 +279,14 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     ...captureApiTableFields(value, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS),
     id,
     version:typeof raw.version==="number" ? raw.version : undefined,
+    pendingChange: raw.pendingChange === true,
+    loan: (() => {
+      const loan = objectValue(raw.loan);
+      const loanId = firstDefined(loan.id, loan.loanId);
+      if (loanId == null || loanId === "") return undefined;
+      return { id: loanId as string | number, name: stringValue(loan.name) || undefined };
+    })(),
+    sourceSystem: stringValue(raw.sourceSystem) || undefined,
  transactionStatus:raw.transactionStatus==="ACTIVE"||raw.transactionStatus==="VOIDED"||raw.transactionStatus==="REVERSED"?raw.transactionStatus:undefined,
  voidedAt:stringValue(raw.voidedAt)||null,
  reconciliationStatus: raw.reconciliationStatus === "RECONCILED" || raw.reconciliationStatus === "OUTSTANDING" || raw.reconciliationStatus === "NOT_REQUIRED" ? raw.reconciliationStatus : undefined,

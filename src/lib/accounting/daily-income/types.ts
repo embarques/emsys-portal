@@ -112,6 +112,12 @@ export type DailyRouteAttribution = {
 export type DailyIncomeJournal = ApiTableRecord & {
  version?: number; transactionStatus?: "ACTIVE"|"VOIDED"|"REVERSED";voidedAt?:string|null;
   id: string;
+  /** Pending change-request lock; blocks direct PUT while true. */
+  pendingChange?: boolean;
+  /** Present on loan / loan-payment journals; blocks generic journal edit. */
+  loan?: { id?: number | string; name?: string } | null;
+  /** Provenance used by API dedicated-lifecycle checks (e.g. inventory_receipt). */
+  sourceSystem?: string;
   /** NOT_REQUIRED applies to voided/reversed entries. */
   reconciliationStatus?: "NOT_REQUIRED" | "OUTSTANDING" | "RECONCILED";
   /** Independent settlement status; NOT_REQUIRED applies to non-clearable transactions. */
