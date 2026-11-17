@@ -16,7 +16,7 @@
   },
   "noun": "containers",
   "actions": {
-    "add": "Add container",
+    "add": "New container",
     "edit": "Edit container",
     "editNamed": "Edit {{name}}"
   },

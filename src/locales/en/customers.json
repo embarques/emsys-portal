@@ -7,7 +7,7 @@
   },
   "noun": "customers",
   "actions": {
-    "add": "Add customer",
+    "add": "New customer",
     "edit": "Edit customer",
     "editNamed": "Edit {{name}}",
     "selectAtLeastOne": "Select at least one customer."

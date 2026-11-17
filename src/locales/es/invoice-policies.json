@@ -8,7 +8,7 @@
   "title": "Políticas de factura",
   "entity": "Política de factura",
   "description": "Administra el texto de políticas que el cliente acepta y firma al crear una factura.",
-  "add": "Agregar política",
+  "add": "Nueva política",
   "edit": "Editar política",
   "active": "Activa",
   "inactive": "Inactiva",

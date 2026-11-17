@@ -5,7 +5,7 @@
   },
   "placeholder": {
     "description": "Sample {{title}} page inside the same responsive dashboard shell.",
-    "addNew": "Add new",
+    "addNew": "New",
     "stats": {
       "total": {
         "label": "Total",

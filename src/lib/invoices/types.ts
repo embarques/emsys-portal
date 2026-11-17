@@ -541,12 +541,35 @@ export type InvoiceFormSubmitResult = {
   deferClose?: boolean;
 };
 
-export function resetInvoiceFormForNextEntry(previous: InvoiceFormValues): InvoiceFormValues {
-  const empty = createEmptyInvoiceForm(previous.createdBy);
+/** Create-wizard steps that can be thumbtacked for batch continue (not Preview). */
+export type InvoiceBatchContinueStep =
+  | "details"
+  | "parties"
+  | "lineItems"
+  | "payment"
+  | "documents";
 
-  return {
+/**
+ * After save, prepare the next create draft.
+ * - No pin: keep Details fields and return to step 1 (same as add-transaction defaults).
+ * - Pin on Details: clear the form and restart at Details.
+ * - Pin on a later step: keep every field from steps before the pin; clear from the pin onward.
+ */
+export function resetInvoiceFormForNextEntry(
+  previous: InvoiceFormValues,
+  options?: { batchStartKind?: InvoiceBatchContinueStep | null },
+): InvoiceFormValues {
+  const empty = createEmptyInvoiceForm(previous.createdBy);
+  const start = options?.batchStartKind ?? null;
+  const numbering = previous.autoGenerateNumber ?? false;
+
+  if (start === "details") {
+    return { ...empty, autoGenerateNumber: numbering };
+  }
+
+  const withDetails: InvoiceFormValues = {
     ...empty,
-    autoGenerateNumber: previous.autoGenerateNumber ?? false,
+    autoGenerateNumber: numbering,
     date: previous.date,
     containerId: previous.containerId,
     paymentLocation: previous.paymentLocation,
@@ -558,6 +581,30 @@ export function resetInvoiceFormForNextEntry(previous: InvoiceFormValues): Invoi
     officeBranchName: previous.officeBranchName,
     pickupEmployeeId: previous.pickupEmployeeId,
     pickupEmployeeName: previous.pickupEmployeeName,
+  };
+
+  // Default (no pin) and pin on Parties: Details stay filled.
+  if (!start || start === "parties") {
+    return withDetails;
+  }
+
+  const withParties: InvoiceFormValues = {
+    ...withDetails,
+    senderId: previous.senderId,
+    sender: previous.sender,
+    receiverId: previous.receiverId,
+    receiver: previous.receiver,
+  };
+
+  if (start === "lineItems") {
+    return withParties;
+  }
+
+  // Payment / Documents pin: keep Details + Parties + Line items.
+  return {
+    ...withParties,
+    lineItems: previous.lineItems,
+    discount: previous.discount,
   };
 }
 

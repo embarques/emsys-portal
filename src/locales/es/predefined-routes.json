@@ -9,7 +9,7 @@
   "title": "Rutas predefinidas",
   "entity": "Ruta predefinida",
   "description": "Grupos de ciudades y códigos postales para filtrar citas.",
-  "add": "Agregar ruta predefinida",
+  "add": "Nueva ruta predefinida",
   "edit": "Editar ruta predefinida",
   "editNamed": "Editar {{name}}",
   "deleteNamed": "Eliminar {{name}}",

@@ -264,33 +264,22 @@ export function InvoiceViewSheet({
         <RecordViewSheetHeader
           title={invoice.invoiceNumber.trim() || empty}
           actions={
-            <>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => onManageItems(invoice)}
-                disabled={manageItemsDisabled}
-              >
-                <Tags className="h-4 w-4" />
-                {t("invoices.staging.tableAction")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onPrint(invoice)}
-                disabled={isPrinting || printDisabled}
-                className={cn(
-                  "whitespace-nowrap",
-                  tableSelectionActionStyles.print,
-                )}
-              >
-                <Printer className="h-4 w-4" />
-                {isPrinting
-                  ? t("invoices.wizard.actions.preparing")
-                  : t("invoices.wizard.actions.printInvoice")}
-              </Button>
-            </>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onPrint(invoice)}
+              disabled={isPrinting || printDisabled}
+              className={cn(
+                "whitespace-nowrap",
+                tableSelectionActionStyles.print,
+              )}
+            >
+              <Printer className="h-4 w-4" />
+              {isPrinting
+                ? t("invoices.wizard.actions.preparing")
+                : t("invoices.wizard.actions.printInvoice")}
+            </Button>
           }
         />
 
@@ -467,10 +456,20 @@ export function InvoiceViewSheet({
 
         <RecordViewSheetActions
           leading={
-            <RequestChangeButton
-              resourceType="invoice"
-              resourceId={invoice.invoiceId}
-            />
+            <>
+              <Button
+                type="button"
+                onClick={() => onManageItems(invoice)}
+                disabled={manageItemsDisabled}
+              >
+                <Tags className="h-4 w-4" />
+                {t("invoices.staging.tableAction")}
+              </Button>
+              <RequestChangeButton
+                resourceType="invoice"
+                resourceId={invoice.invoiceId}
+              />
+            </>
           }
           onEdit={canEdit ? () => onEdit(invoice) : undefined}
           onDelete={canDelete ? () => onDelete(invoice) : undefined}

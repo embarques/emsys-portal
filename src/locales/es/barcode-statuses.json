@@ -11,7 +11,7 @@
     "previousStatus": "Estado anterior"
   },
   "actions": {
-    "add": "Agregar estado"
+    "add": "Nuevo estado"
   },
   "form": {
     "addTitle": "Agregar estado de código de barras",

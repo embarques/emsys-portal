@@ -8,7 +8,7 @@
   "title": "Invoice policies",
   "entity": "Invoice policy",
   "description": "Manage the policy text customers agree to and sign when creating an invoice.",
-  "add": "Add policy",
+  "add": "New policy",
   "edit": "Edit policy",
   "active": "Active",
   "inactive": "Inactive",

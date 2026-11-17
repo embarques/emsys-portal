@@ -14,7 +14,7 @@
   },
   "noun": "items",
   "actions": {
-    "add": "Add item",
+    "add": "New item",
     "edit": "Edit item",
     "editNamed": "Edit {{name}}"
   },

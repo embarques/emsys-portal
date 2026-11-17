@@ -12,13 +12,20 @@ import { cn } from "@/lib/utils";
 /**
  * The add-transaction wizard's type step. Guided entries rendered inside the wizard prepend it to their
  * own steps so every transaction reads as one workflow with the same stepper, heading and footer.
+ * Hosts that already fixed the type (e.g. loans directory) set `includeInStepper: false`.
  */
 export type GuidedTypeStep = {
   label: string;
   onBack: () => void;
   onCancel: () => void;
   appearance?: "default" | "phone";
+  /** When false, type is already fixed and is omitted from progress. Default true. */
+  includeInStepper?: boolean;
 };
+
+export function typeStepCountsInStepper(typeStep?: GuidedTypeStep | null): boolean {
+  return Boolean(typeStep && typeStep.includeInStepper !== false);
+}
 
 export function GuidedEntryStepper({ typeStep, labels, step, busy, onStepChange }: {
   typeStep?: GuidedTypeStep;
@@ -28,12 +35,13 @@ export function GuidedEntryStepper({ typeStep, labels, step, busy, onStepChange 
   busy: boolean;
   onStepChange: (step: number) => void;
 }) {
-  const offset = typeStep ? 1 : 0;
+  const includeType = typeStepCountsInStepper(typeStep);
+  const offset = includeType ? 1 : 0;
   return (
     <div className="shrink-0 border-b bg-card px-5 py-4">
       <TransactionWizardStepper
         step={step + offset}
-        labels={typeStep ? [typeStep.label, ...labels] : labels}
+        labels={includeType && typeStep ? [typeStep.label, ...labels] : labels}
         disabled={busy}
         appearance={typeStep?.appearance}
         onSelectStep={(next) => next <= offset ? typeStep?.onBack() : onStepChange(next - offset)}

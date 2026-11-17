@@ -151,7 +151,7 @@
     "viewInvoiceFor": "View invoice {{number}}",
     "editInvoice": "Edit invoice",
     "editInvoiceNamed": "Edit invoice {{number}}",
-    "addInvoice": "Add invoice",
+    "addInvoice": "New invoice",
     "untitledTab": "Invoice",
     "invoiceNotFound": "Invoice not found.",
     "loadingAppointment": "Loading appointment…",
@@ -329,6 +329,8 @@
     "goToStep": "Go to {{label}}",
     "progress": "Step {{current}} of {{total}}",
     "phoneProgress": "{{current}} of {{total}}",
+    "batchPinStep": "Resume next invoice from {{step}}",
+    "batchPinnedStatus": "Next invoice starts at {{step}}",
     "steps": {
       "details": "Details",
       "parties": "Parties",

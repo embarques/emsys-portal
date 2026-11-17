@@ -9,6 +9,14 @@ export function formatLoanMoney(value: number, currency = "USD") {
   }).format(Number.isFinite(value) ? value : 0);
 }
 
+/** Outstanding balance (owed) = rose; paid off / zero = emerald. */
+export function getLoanBalanceMoneyClass(amount: number): string {
+  if (amount <= 0) {
+    return "font-semibold tabular-nums text-emerald-700 dark:text-emerald-300";
+  }
+  return "font-semibold tabular-nums text-rose-700 dark:text-rose-300";
+}
+
 export function formatLoanDate(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);

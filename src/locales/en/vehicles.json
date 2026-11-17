@@ -13,7 +13,7 @@
   },
   "noun": "vehicles",
   "actions": {
-    "add": "Add vehicle",
+    "add": "New vehicle",
     "edit": "Edit vehicle",
     "editNamed": "Edit {{name}}"
   },
@@ -155,25 +155,64 @@
   },
   "filters": {
     "fields": {
-      "vehicleId": { "label": "Vehicle ID", "placeholder": "Enter vehicle id…" },
-      "name": { "label": "Name", "placeholder": "Enter name…" },
-      "vin": { "label": "VIN", "placeholder": "Enter vin…" },
-      "licensePlate": { "label": "License plate", "placeholder": "Enter license plate…" },
-      "id": { "label": "Record ID", "placeholder": "Enter record id…" },
+      "vehicleId": {
+        "label": "Vehicle ID",
+        "placeholder": "Enter vehicle id…"
+      },
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter name…"
+      },
+      "vin": {
+        "label": "VIN",
+        "placeholder": "Enter vin…"
+      },
+      "licensePlate": {
+        "label": "License plate",
+        "placeholder": "Enter license plate…"
+      },
+      "id": {
+        "label": "Record ID",
+        "placeholder": "Enter record id…"
+      },
       "createdBy": {
-        "name": { "label": "Created by", "placeholder": "Enter created by…" }
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter created by…"
+        }
       },
-      "fuelType": { "label": "Fuel type", "placeholder": "Select fuel type…" },
+      "fuelType": {
+        "label": "Fuel type",
+        "placeholder": "Select fuel type…"
+      },
       "branch": {
-        "code": { "label": "Branch", "placeholder": "Select branch…" }
+        "code": {
+          "label": "Branch",
+          "placeholder": "Select branch…"
+        }
       },
-      "active": { "label": "Status", "placeholder": "Select status…" },
-      "year": { "label": "Year", "placeholder": "Enter year…" },
+      "active": {
+        "label": "Status",
+        "placeholder": "Select status…"
+      },
+      "year": {
+        "label": "Year",
+        "placeholder": "Enter year…"
+      },
       "updatedBy": {
-        "name": { "label": "Updated by", "placeholder": "Enter name…" }
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter name…"
+        }
       },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
-      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" }
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      }
     }
   }
 }

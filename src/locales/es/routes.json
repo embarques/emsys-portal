@@ -39,7 +39,7 @@
     "searchNoun": "rutas diarias",
     "empty": "Aún no hay rutas diarias.",
     "emptyFiltered": "Ninguna ruta diaria coincide con su búsqueda o filtros.",
-    "setActiveRoute": "Agregar ruta diaria",
+    "setActiveRoute": "Nueva ruta diaria",
     "pagination": "Mostrando {{shown}} de {{total}} rutas diarias",
     "entities": {
       "activeRoute": "ruta diaria",
@@ -87,7 +87,7 @@
     "searchNoun": "rutas de citas",
     "empty": "Aún no hay rutas de citas.",
     "emptyFiltered": "Ninguna ruta de citas coincide con su búsqueda o filtros.",
-    "setActiveRoute": "Agregar ruta de citas",
+    "setActiveRoute": "Nueva ruta de citas",
     "pagination": "Mostrando {{shown}} de {{total}} rutas de citas",
     "entities": {
       "activeRoute": "ruta de citas",
@@ -154,7 +154,7 @@
     "searchNoun": "rutas de entrega",
     "empty": "Aún no hay rutas de entrega.",
     "emptyFiltered": "Ninguna ruta de entrega coincide con su búsqueda o filtros.",
-    "setActiveRoute": "Agregar ruta de entrega",
+    "setActiveRoute": "Nueva ruta de entrega",
     "pagination": "Mostrando {{shown}} de {{total}} rutas de entrega",
     "entities": {
       "activeRoute": "ruta de entrega",
@@ -350,7 +350,7 @@
     "branchFilterSearch": "Buscar sucursales…"
   },
   "actions": {
-    "addRoute": "Agregar cuadrilla de ruta"
+    "addRoute": "Nueva cuadrilla de ruta"
   },
   "viewSheet": {
     "sections": {

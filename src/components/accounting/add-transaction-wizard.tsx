@@ -145,6 +145,7 @@ export function AddTransactionWizard(props: Props) {
     setLiveAmount(Number(values.amount) || 0);
   }, []);
   const [formSessionKey, setFormSessionKey] = useState(0);
+  const [loanSessionKey, setLoanSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
   const [skipAutofocusAfterSave, setSkipAutofocusAfterSave] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
@@ -209,6 +210,7 @@ export function AddTransactionWizard(props: Props) {
     setDetailValues(nextValues);
     setLiveAmount(Number(nextValues.amount) || 0);
     setFormSessionKey(0);
+    setLoanSessionKey(0);
     setFocusSecondFieldSignal(0);
     setSkipAutofocusAfterSave(false);
     // Reset only on opening or changing the edited entry; lookup refetches must preserve the draft.
@@ -243,6 +245,7 @@ export function AddTransactionWizard(props: Props) {
           : continueTransactionValues(continueType, values, props.paymentMethods);
         setDetailValues(continueDraft);
         setLiveAmount(Number(continueDraft.amount) || 0);
+        // Stay on the chosen type; resume at the batch pin or the first step after type selection.
         setActiveStep(markedStep ?? getDefaultBatchContinueStep(continueType));
         setFormSessionKey((key) => key + 1);
         const skipAutofocus = NO_AUTOFOCUS_AFTER_SAVE_TYPES.has(continueType);
@@ -309,7 +312,26 @@ export function AddTransactionWizard(props: Props) {
           <PendingInventoryDispatchesPanel presentation="inline" onBusyChange={setInventoryBusy} typeStep={specialTypeStep} />
         </div>
       ) : (specialType === "LOAN-ISSUE" || specialType === "LOAN-INCREASE" || specialType === "LOAN-PAYMENT") && specialTypeStep ? (
-        <LoanEntryForm entry={loanEntry} employees={props.employees} accounts={props.accounts} summaryContainer={props.summaryContainer} typeStep={specialTypeStep} onComplete={() => { setSpecialType(null); setShowTypePicker(true); }} />
+        <LoanEntryForm
+          key={loanSessionKey}
+          entry={loanEntry}
+          employees={props.employees}
+          accounts={props.accounts}
+          summaryContainer={props.summaryContainer}
+          typeStep={specialTypeStep}
+          onSaved={() => {
+            // Keep the loan type selected and remount at step 1 for the next entry.
+            const kind = specialType;
+            setLoanSessionKey((key) => key + 1);
+            if (kind === "LOAN-ISSUE") loanEntry.openCreate?.();
+            else if (kind === "LOAN-INCREASE") loanEntry.openIncrease?.();
+            else if (kind === "LOAN-PAYMENT") loanEntry.openPayment?.();
+          }}
+          onDismiss={() => {
+            setSpecialType(null);
+            setShowTypePicker(true);
+          }}
+        />
       ) : null}
       {selectedType && !specialType ? (
         <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", !showTypePicker && !specialType ? "flex" : "hidden")}>

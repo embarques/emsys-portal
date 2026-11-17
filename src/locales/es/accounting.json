@@ -1384,10 +1384,10 @@
       "newLoanPaymentFor": "Nuevo pago de préstamo para {{name}}"
     },
     "recordActions": {
-      "payment": "Registrar pago de préstamo",
-      "increase": "Registrar aumento de préstamo",
-      "decrease": "Registrar disminución de préstamo",
-      "increaseTodo": "Registrar un aumento de préstamo aún no está disponible. Esta acción funcionará cuando la API esté lista."
+      "payment": "Realizar pago de préstamo",
+      "increase": "Aumentar capital del préstamo",
+      "decrease": "Disminuir capital del préstamo",
+      "increaseTodo": "Aumentar el capital del préstamo aún no está disponible. Esta acción funcionará cuando la API esté lista."
     },
     "quickLoan": {
       "hint": "Rellene rápidamente el préstamo con el más antiguo o el más reciente del empleado.",

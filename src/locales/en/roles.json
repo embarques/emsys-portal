@@ -15,7 +15,7 @@
   },
   "noun": "roles",
   "actions": {
-    "add": "Add role",
+    "add": "New role",
     "edit": "Edit role",
     "editNamed": "Edit {{name}}",
     "view": "View"

@@ -13,7 +13,7 @@
   },
   "noun": "vehículos",
   "actions": {
-    "add": "Agregar vehículo",
+    "add": "Nuevo vehículo",
     "edit": "Editar vehículo",
     "editNamed": "Editar {{name}}"
   },
@@ -155,25 +155,64 @@
   },
   "filters": {
     "fields": {
-      "vehicleId": { "label": "ID del vehículo", "placeholder": "Ingrese ID del vehículo…" },
-      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
-      "vin": { "label": "VIN", "placeholder": "Ingrese VIN…" },
-      "licensePlate": { "label": "Placa", "placeholder": "Ingrese placa…" },
-      "id": { "label": "ID de registro", "placeholder": "Ingrese ID de registro…" },
+      "vehicleId": {
+        "label": "ID del vehículo",
+        "placeholder": "Ingrese ID del vehículo…"
+      },
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Ingrese nombre…"
+      },
+      "vin": {
+        "label": "VIN",
+        "placeholder": "Ingrese VIN…"
+      },
+      "licensePlate": {
+        "label": "Placa",
+        "placeholder": "Ingrese placa…"
+      },
+      "id": {
+        "label": "ID de registro",
+        "placeholder": "Ingrese ID de registro…"
+      },
       "createdBy": {
-        "name": { "label": "Creado por", "placeholder": "Ingrese creado por…" }
+        "name": {
+          "label": "Creado por",
+          "placeholder": "Ingrese creado por…"
+        }
       },
-      "fuelType": { "label": "Tipo de combustible", "placeholder": "Seleccionar tipo de combustible…" },
+      "fuelType": {
+        "label": "Tipo de combustible",
+        "placeholder": "Seleccionar tipo de combustible…"
+      },
       "branch": {
-        "code": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
+        "code": {
+          "label": "Sucursal",
+          "placeholder": "Seleccionar sucursal…"
+        }
       },
-      "active": { "label": "Estado", "placeholder": "Seleccionar estado…" },
-      "year": { "label": "Año", "placeholder": "Ingrese año…" },
+      "active": {
+        "label": "Estado",
+        "placeholder": "Seleccionar estado…"
+      },
+      "year": {
+        "label": "Año",
+        "placeholder": "Ingrese año…"
+      },
       "updatedBy": {
-        "name": { "label": "Actualizado por", "placeholder": "Escriba el nombre…" }
+        "name": {
+          "label": "Actualizado por",
+          "placeholder": "Escriba el nombre…"
+        }
       },
-      "createdAt": { "label": "Creado", "placeholder": "AAAA-MM-DD" },
-      "updatedAt": { "label": "Actualizado", "placeholder": "AAAA-MM-DD" }
+      "createdAt": {
+        "label": "Creado",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Actualizado",
+        "placeholder": "AAAA-MM-DD"
+      }
     }
   }
 }

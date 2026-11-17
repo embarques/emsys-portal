@@ -15,7 +15,7 @@
   },
   "noun": "roles",
   "actions": {
-    "add": "Agregar rol",
+    "add": "Nuevo rol",
     "edit": "Editar rol",
     "editNamed": "Editar {{name}}",
     "view": "Ver"

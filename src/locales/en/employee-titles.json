@@ -8,7 +8,7 @@
   "title": "Employee titles",
   "entity": "Title",
   "description": "Manage the titles available in employee forms.",
-  "add": "Add title",
+  "add": "New title",
   "edit": "Edit title",
   "name": "Name",
   "active": "Active",

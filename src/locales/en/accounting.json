@@ -1384,10 +1384,10 @@
       "newLoanPaymentFor": "New loan payment for {{name}}"
     },
     "recordActions": {
-      "payment": "Record loan payment",
-      "increase": "Record loan increase",
-      "decrease": "Record loan decrease",
-      "increaseTodo": "Recording a loan increase is not available yet. This action will work once the API is ready."
+      "payment": "Make loan payment",
+      "increase": "Increase loan principal",
+      "decrease": "Decrease loan principal",
+      "increaseTodo": "Increasing loan principal is not available yet. This action will work once the API is ready."
     },
     "quickLoan": {
       "hint": "Quickly fill the loan from this employee’s oldest or newest active loan.",

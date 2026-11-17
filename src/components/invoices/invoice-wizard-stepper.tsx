@@ -1,8 +1,12 @@
 "use client";
 
-import { WorkflowStepper } from "@/components/forms/workflow-stepper";
+import {
+  WorkflowStepper,
+  type WorkflowStepperBatchPin,
+} from "@/components/forms/workflow-stepper";
 
 import { useTranslation } from "@/lib/i18n";
+import type { InvoiceBatchContinueStep } from "@/lib/invoices/types";
 
 export const INVOICE_WIZARD_STEP_ORDER = [1, 2, 3, 4, 5, 6, 7] as const;
 
@@ -38,6 +42,19 @@ const STEP_LABEL_KEYS: Record<InvoiceWizardStepKind, string> = {
   documents: "invoices.documents.title",
   preview: "invoices.wizard.steps.preview",
 };
+
+/** Steps that can be thumbtacked for batch continue (Preview excluded). */
+export function getInvoiceWizardPinnableSteps(
+  layout: InvoiceWizardLayout,
+): InvoiceWizardLayoutStep[] {
+  return layout.steps.filter((entry) => entry.kind !== "preview");
+}
+
+export function toInvoiceBatchContinueStep(
+  kind: InvoiceWizardStepKind,
+): InvoiceBatchContinueStep | null {
+  return kind === "preview" ? null : kind;
+}
 
 export function resolveInvoiceWizardLayout(options: {
   requireDailyIncomeRegistration: boolean;
@@ -93,14 +110,32 @@ type Props = {
   onSelectStep?: (step: InvoiceWizardStep) => void;
   /** When set, upcoming steps are clickable too (not only completed ones). */
   canSelectStep?: (step: InvoiceWizardStep) => boolean;
+  batchPin?: Omit<WorkflowStepperBatchPin, "pinnableStepIds" | "pinLabel" | "pinnedStatusLabel"> & {
+    pinnedStepId: number | null;
+  };
 };
 
-export function InvoiceWizardStepper({ step, layout, onSelectStep, canSelectStep }: Props) {
+export function InvoiceWizardStepper({
+  step,
+  layout,
+  onSelectStep,
+  canSelectStep,
+  batchPin,
+}: Props) {
   const { t } = useTranslation();
+  const stepEntries = layout.steps.map((entry) => ({
+    id: entry.id,
+    label: t(STEP_LABEL_KEYS[entry.kind]),
+  }));
+  const pinnedLabel =
+    batchPin?.pinnedStepId != null
+      ? stepEntries.find((entry) => entry.id === batchPin.pinnedStepId)?.label
+      : null;
+
   return (
     <WorkflowStepper
       step={step}
-      steps={layout.steps.map((entry) => ({ id: entry.id, label: t(STEP_LABEL_KEYS[entry.kind]) }))}
+      steps={stepEntries}
       onSelectStep={onSelectStep ? (id) => {
         const entry = layout.steps.find((item) => item.id === id);
         if (entry) onSelectStep(entry.id);
@@ -115,6 +150,18 @@ export function InvoiceWizardStepper({ step, layout, onSelectStep, canSelectStep
         total: layout.steps.length,
       })}
       goToStepLabel={(label) => t("invoices.wizard.goToStep", { label })}
+      batchPin={
+        batchPin
+          ? {
+              ...batchPin,
+              pinnableStepIds: getInvoiceWizardPinnableSteps(layout).map((entry) => entry.id),
+              pinLabel: (label) => t("invoices.wizard.batchPinStep", { step: label }),
+              pinnedStatusLabel: pinnedLabel
+                ? t("invoices.wizard.batchPinnedStatus", { step: pinnedLabel })
+                : null,
+            }
+          : undefined
+      }
     />
   );
 }

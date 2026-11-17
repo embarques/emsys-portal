@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { createLoanDecreaseSession } from "./loan-decrease-session";
 import { createLoanIncreaseSession } from "./loan-increase-session";
 
 import {
@@ -77,6 +78,18 @@ export function useIncreaseLoan() {
   const { companyId, user } = useAuth();
   const session = useRef<ReturnType<typeof createLoanIncreaseSession> | null>(null);
   if (session.current === null) session.current = createLoanIncreaseSession();
+  return useMutation({
+    mutationFn: (values: LoanIncreaseValues) => session.current!(JSON.stringify([companyId, user?.uid]), values),
+    retry: false,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounting.all }),
+  });
+}
+
+export function useDecreaseLoan() {
+  const queryClient = useQueryClient();
+  const { companyId, user } = useAuth();
+  const session = useRef<ReturnType<typeof createLoanDecreaseSession> | null>(null);
+  if (session.current === null) session.current = createLoanDecreaseSession();
   return useMutation({
     mutationFn: (values: LoanIncreaseValues) => session.current!(JSON.stringify([companyId, user?.uid]), values),
     retry: false,

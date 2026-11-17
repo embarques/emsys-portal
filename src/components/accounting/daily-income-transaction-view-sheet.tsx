@@ -2,10 +2,11 @@
 
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 
-import { Info } from "lucide-react";
+import { Info, Loader2, Printer } from "lucide-react";
 
 import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -102,6 +103,9 @@ export function DailyIncomeTransactionViewSheet({
   const inventoryHolderNames = holders
     ? [holders.vehicle?.name, ...holders.employees.map((employee) => employee.name)].filter(Boolean).join(", ") || undefined
     : undefined;
+  const canPrintReceipt =
+    Boolean(onPrintReceipt) && canPrintPaymentReceipt(resolved);
+  const printReceiptDisabled = !/^[a-f0-9]{24}$/i.test(resolved.id);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -117,6 +121,24 @@ export function DailyIncomeTransactionViewSheet({
             <Badge variant="outline" className={cn("font-medium", transactionTypeBadgeClass(resolved.transactionType))}>
               {typeLabel}
             </Badge>
+          }
+          actions={
+            canPrintReceipt ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={printReceiptDisabled || isPrintingReceipt}
+                onClick={() => onPrintReceipt?.(resolved)}
+              >
+                {isPrintingReceipt ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Printer className="h-4 w-4" />
+                )}
+                {t("accounting.dailyIncome.actions.printReceipt")}
+              </Button>
+            ) : null
           }
         />
 
@@ -222,11 +244,7 @@ export function DailyIncomeTransactionViewSheet({
         <JournalLifecycleActions key={`${resolved.id}:${resolved.version}`} journal={resolved}/>
         <RecordViewSheetActions
           editLabel={t("common.actions.edit")}
-          printLabel={t("accounting.dailyIncome.actions.printReceipt")}
           onEdit={canEdit ? () => onEdit(resolved) : undefined}
-          onPrint={onPrintReceipt && canPrintPaymentReceipt(resolved) ? () => onPrintReceipt(resolved) : undefined}
-          printDisabled={!/^[a-f0-9]{24}$/i.test(resolved.id)}
-          isPrinting={isPrintingReceipt}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

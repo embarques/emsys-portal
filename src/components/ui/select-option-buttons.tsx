@@ -4,17 +4,53 @@ import { useEffect, useId, useRef, type KeyboardEvent } from "react";
 import { Check } from "lucide-react";
 import { ClearSelectionButton } from "@/components/forms/clear-selection-button";
 import type { SearchableSelectProps } from "@/components/ui/searchable-select";
+import {
+  shouldAutoDefaultSelect,
+  useAutoDefaultSingleSelectOption,
+} from "@/components/ui/searchable-select-auto-default";
 import { focusNextFormField, isImeComposing } from "@/hooks/use-form-enter-navigation";
 import { cn } from "@/lib/utils";
 
 /** The same single selection as a dropdown, exposed as a wrapping radio-button group. */
 export function SelectOptionButtons(props: SearchableSelectProps) {
-  const { options, value, onValueChange, disabled, id, name, autoFocus, required, advanceFocusOnSelect = true, clearable = true } = props;
+  const {
+    options,
+    value,
+    onValueChange,
+    disabled,
+    id,
+    name,
+    autoFocus,
+    required,
+    loading,
+    manualFiltering,
+    onSearchChange,
+    advanceFocusOnSelect = true,
+    clearable = true,
+  } = props;
   const descriptionId = useId();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const enabled = options.flatMap((option, index) => !disabled && !option.disabled ? [index] : []);
   const selected = options.findIndex((option) => option.value === value);
   const focusIndex = enabled.includes(selected) ? selected : enabled[0] ?? 0;
+  const hasExplicitEmptyOption = options.some(
+    (option) => option.value === "" && !option.disabled,
+  );
+  const selectableValues = options
+    .filter((option) => option.value !== "" && !option.disabled)
+    .map((option) => option.value);
+
+  useAutoDefaultSingleSelectOption({
+    enabled:
+      shouldAutoDefaultSelect({ required, clearable, hasExplicitEmptyOption }) &&
+      !manualFiltering &&
+      !onSearchChange,
+    disabled,
+    loading,
+    selectableValues,
+    value,
+    onValueChange,
+  });
 
   useEffect(() => {
     if (autoFocus) buttons.current[focusIndex]?.focus();

@@ -231,11 +231,6 @@ export function ComplaintViewSheet({ complaint: row, open, onOpenChange, categor
               {complaint.category ? <Badge variant="secondary">{complaintCategoryLabel(t, complaint.category, categories)}</Badge> : null}
             </>
           }
-          actions={
-            intake && access.canUpdate ? (
-              <WorkflowActions complaint={complaint} workflow={workflow} canReopen={access.canReopen} />
-            ) : undefined
-          }
         />
 
         <RecordViewSheetBody>
@@ -402,6 +397,14 @@ export function ComplaintViewSheet({ complaint: row, open, onOpenChange, categor
             </RecordViewSheetSection>
           ) : null}
         </RecordViewSheetBody>
+
+        {intake && access.canUpdate ? (
+          <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <WorkflowActions complaint={complaint} workflow={workflow} canReopen={access.canReopen} />
+            </div>
+          </div>
+        ) : null}
       </RecordViewSheetContent>
       <ComplaintActionDialog workflow={workflow} />
       <ComplaintTargetsDialog workflow={workflow} canPickEmployees={access.canViewEmployees} />

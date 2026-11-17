@@ -14,7 +14,7 @@
   },
   "noun": "artículos",
   "actions": {
-    "add": "Agregar artículo",
+    "add": "Nuevo artículo",
     "edit": "Editar artículo",
     "editNamed": "Editar {{name}}"
   },

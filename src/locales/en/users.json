@@ -10,7 +10,7 @@
     "details": "View details",
     "select": "Select {{name}}",
     "deselect": "Deselect {{name}}",
-    "add": "Add user",
+    "add": "New user",
     "edit": "Edit user",
     "editNamed": "Edit {{name}}",
     "deactivate": "Deactivate user",

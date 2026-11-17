@@ -9,7 +9,7 @@
   "title": "Predefined routes",
   "entity": "Predefined route",
   "description": "Named groups of cities and ZIP codes used to filter appointments.",
-  "add": "Add predefined route",
+  "add": "New predefined route",
   "edit": "Edit predefined route",
   "editNamed": "Edit {{name}}",
   "deleteNamed": "Delete {{name}}",

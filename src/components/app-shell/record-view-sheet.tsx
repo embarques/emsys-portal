@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Pencil, Printer, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,11 @@ type RecordViewSheetHeaderProps = {
   title: React.ReactNode;
   description?: React.ReactNode;
   meta?: React.ReactNode;
-  /** Record-level shortcuts shown under the title/meta (e.g. Create invoice). */
+  /**
+   * Immutable / read-only shortcuts under the title/meta
+   * (print, download, export, open/view). Put mutating actions in
+   * `RecordViewSheetActions` / the sheet footer instead.
+   */
   actions?: React.ReactNode;
 };
 
@@ -69,17 +73,13 @@ function isPlaceholderValue(value: React.ReactNode): boolean {
 type RecordViewSheetActionsProps = {
   onEdit?: () => void;
   onDelete?: () => void;
-  onPrint?: () => void;
   /** Extra controls rendered before Edit/Delete (e.g. Request a change). */
   leading?: React.ReactNode;
   editLabel?: string;
   deleteLabel?: string;
-  printLabel?: string;
   isDisabled?: boolean;
   editDisabled?: boolean;
   deleteDisabled?: boolean;
-  printDisabled?: boolean;
-  isPrinting?: boolean;
 };
 
 export function RecordViewSheet({ open, onOpenChange, children }: RecordViewSheetProps) {
@@ -201,34 +201,23 @@ export function RecordViewSheetDetailRow({ label, value, valueAlign = "start" }:
 export function RecordViewSheetActions({
   onEdit,
   onDelete,
-  onPrint,
   leading,
   editLabel: editLabelProp,
   deleteLabel: deleteLabelProp,
-  printLabel: printLabelProp,
   isDisabled = false,
   editDisabled = false,
   deleteDisabled = false,
-  printDisabled = false,
-  isPrinting = false,
 }: RecordViewSheetActionsProps) {
   const { t } = useTranslation();
   const editLabel = editLabelProp ?? t("common.actions.edit");
   const deleteLabel = deleteLabelProp ?? t("common.actions.delete");
-  const printLabel = printLabelProp ?? t("common.actions.print");
 
-  if (!onEdit && !onDelete && !onPrint && !leading) return null;
+  if (!onEdit && !onDelete && !leading) return null;
 
   return (
     <div className="shrink-0 border-t border-border bg-card px-6 py-4">
       <div className="flex flex-wrap items-center gap-2">
         {leading}
-        {onPrint ? (
-          <Button variant="outline" onClick={onPrint} disabled={isDisabled || printDisabled || isPrinting}>
-            {isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-            {printLabel}
-          </Button>
-        ) : null}
         {onEdit ? (
           <Button className="flex-1" onClick={onEdit} disabled={isDisabled || editDisabled}>
             <Pencil className="h-4 w-4" />

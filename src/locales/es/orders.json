@@ -18,7 +18,7 @@
   "pickup": "Recogida",
   "pickupNamed": "Recogida {{id}}",
   "actions": {
-    "add": "Agregar cita",
+    "add": "Nueva cita",
     "edit": "Editar cita",
     "editNamed": "Editar {{name}}",
     "editPickup": "Editar cita",
@@ -159,7 +159,6 @@
       "receiverStep": "Seleccionar destinatario(s)",
       "purposeStep": "Propósito y comentarios",
       "next": "Continuar",
-
       "scheduleTitle": "01 · Programa la visita",
       "customersTitle": "02 · Confirma los datos del cliente",
       "receiversScrollHint": "{{count}} destinatarios: desplázate hacia abajo para verlos todos.",

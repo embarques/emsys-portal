@@ -16,7 +16,7 @@
   },
   "noun": "empleados",
   "actions": {
-    "add": "Agregar empleado",
+    "add": "Nuevo empleado",
     "edit": "Editar empleado",
     "editNamed": "Editar {{name}}",
     "addUser": "Agregar usuario del portal"
@@ -185,35 +185,107 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "ID de empleado", "placeholder": "Ingrese ID de empleado…" },
-      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
-      "title": { "label": "Cargo", "placeholder": "Ingrese cargo…" },
-      "email": { "label": "Correo electrónico", "placeholder": "Ingrese correo…" },
-      "phone": { "label": "Teléfono", "placeholder": "Ingrese teléfono…" },
+      "id": {
+        "label": "ID de empleado",
+        "placeholder": "Ingrese ID de empleado…"
+      },
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Ingrese nombre…"
+      },
+      "title": {
+        "label": "Cargo",
+        "placeholder": "Ingrese cargo…"
+      },
+      "email": {
+        "label": "Correo electrónico",
+        "placeholder": "Ingrese correo…"
+      },
+      "phone": {
+        "label": "Teléfono",
+        "placeholder": "Ingrese teléfono…"
+      },
       "address": {
-        "address1": { "label": "Dirección línea 1", "placeholder": "Ingrese dirección línea 1…" },
-        "address2": { "label": "Dirección línea 2", "placeholder": "Ingrese dirección línea 2…" },
-        "apartment": { "label": "Apartamento", "placeholder": "Ingrese apartamento…" },
-        "city": { "label": "Ciudad", "placeholder": "Ingrese ciudad…" },
-        "state": { "label": "Estado", "placeholder": "Ingrese estado…" },
-        "zipcode": { "label": "Código postal", "placeholder": "Ingrese código postal…" },
-        "country": { "label": "País", "placeholder": "Ingrese país…" }
+        "address1": {
+          "label": "Dirección línea 1",
+          "placeholder": "Ingrese dirección línea 1…"
+        },
+        "address2": {
+          "label": "Dirección línea 2",
+          "placeholder": "Ingrese dirección línea 2…"
+        },
+        "apartment": {
+          "label": "Apartamento",
+          "placeholder": "Ingrese apartamento…"
+        },
+        "city": {
+          "label": "Ciudad",
+          "placeholder": "Ingrese ciudad…"
+        },
+        "state": {
+          "label": "Estado",
+          "placeholder": "Ingrese estado…"
+        },
+        "zipcode": {
+          "label": "Código postal",
+          "placeholder": "Ingrese código postal…"
+        },
+        "country": {
+          "label": "País",
+          "placeholder": "Ingrese país…"
+        }
       },
-      "department": { "label": "Departamento", "placeholder": "Seleccionar departamento…" },
-      "active": { "label": "Activo", "placeholder": "Seleccionar estado…" },
+      "department": {
+        "label": "Departamento",
+        "placeholder": "Seleccionar departamento…"
+      },
+      "active": {
+        "label": "Activo",
+        "placeholder": "Seleccionar estado…"
+      },
       "branch": {
-        "code": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
+        "code": {
+          "label": "Sucursal",
+          "placeholder": "Seleccionar sucursal…"
+        }
       },
-      "cost": { "label": "Costo", "placeholder": "Ingrese monto…" },
-      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
-      "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
-      "startDate": { "label": "Fecha de inicio", "placeholder": "AAAA-MM-DD" },
-      "endDate": { "label": "Fecha de salida", "placeholder": "AAAA-MM-DD" },
-      "totalLoanGiven": { "label": "Total de préstamos otorgados", "placeholder": "Escriba el monto…" },
-      "totalPaymentReceived": { "label": "Total de pagos recibidos", "placeholder": "Escriba el monto…" },
-      "loanAmountOwed": { "label": "Saldo de préstamo adeudado", "placeholder": "Escriba el monto…" },
+      "cost": {
+        "label": "Costo",
+        "placeholder": "Ingrese monto…"
+      },
+      "createdAt": {
+        "label": "Creado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Actualizado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "startDate": {
+        "label": "Fecha de inicio",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "endDate": {
+        "label": "Fecha de salida",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "totalLoanGiven": {
+        "label": "Total de préstamos otorgados",
+        "placeholder": "Escriba el monto…"
+      },
+      "totalPaymentReceived": {
+        "label": "Total de pagos recibidos",
+        "placeholder": "Escriba el monto…"
+      },
+      "loanAmountOwed": {
+        "label": "Saldo de préstamo adeudado",
+        "placeholder": "Escriba el monto…"
+      },
       "user": {
-        "name": { "label": "Usuario vinculado", "placeholder": "Escriba el nombre del usuario…" }
+        "name": {
+          "label": "Usuario vinculado",
+          "placeholder": "Escriba el nombre del usuario…"
+        }
       }
     }
   }

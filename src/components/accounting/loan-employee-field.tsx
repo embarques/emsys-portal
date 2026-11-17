@@ -149,6 +149,7 @@ export function LoanEmployeeField({
       <SearchableSelect
         inlineOptionsLimit={inlineOptionsLimit}
         clearable={false}
+        required={required}
         id={id}
         aria-label={label}
         aria-invalid={Boolean(error)}

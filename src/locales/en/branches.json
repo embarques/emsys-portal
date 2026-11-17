@@ -13,7 +13,7 @@
   },
   "noun": "branches",
   "actions": {
-    "add": "Add branch",
+    "add": "New branch",
     "edit": "Edit branch",
     "editNamed": "Edit {{name}}"
   },

@@ -113,9 +113,14 @@ export function getTransactionStepLabelKey(step: TransactionFormStep, type: Jour
   return `accounting.dailyIncome.wizard.workflow.${step}`;
 }
 
-/** Default post-save continue target when no batch-from-step mark is set. */
-export function getDefaultBatchContinueStep(type: JournalTransactionType): TransactionFormStep {
-  return type === "INVENTORY" ? "assignment" : "amounts";
+/**
+ * Default post-save continue target when no batch-from-step mark is set.
+ * Always the first form step after transaction type selection (Assignment).
+ */
+export function getDefaultBatchContinueStep(
+  _type?: JournalTransactionType,
+): TransactionFormStep {
+  return "assignment";
 }
 
 /**

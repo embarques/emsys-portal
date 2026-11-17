@@ -39,7 +39,7 @@
     "searchNoun": "daily routes",
     "empty": "No daily routes yet.",
     "emptyFiltered": "No daily routes match your search or filters.",
-    "setActiveRoute": "Add daily route",
+    "setActiveRoute": "New daily route",
     "pagination": "Showing {{shown}} of {{total}} daily routes",
     "entities": {
       "activeRoute": "daily route",
@@ -87,7 +87,7 @@
     "searchNoun": "appointment routes",
     "empty": "No appointment routes yet.",
     "emptyFiltered": "No appointment routes match your search or filters.",
-    "setActiveRoute": "Add appointment route",
+    "setActiveRoute": "New appointment route",
     "pagination": "Showing {{shown}} of {{total}} appointment routes",
     "entities": {
       "activeRoute": "appointment route",
@@ -154,7 +154,7 @@
     "searchNoun": "delivery routes",
     "empty": "No delivery routes yet.",
     "emptyFiltered": "No delivery routes match your search or filters.",
-    "setActiveRoute": "Add delivery route",
+    "setActiveRoute": "New delivery route",
     "pagination": "Showing {{shown}} of {{total}} delivery routes",
     "entities": {
       "activeRoute": "delivery route",
@@ -350,7 +350,7 @@
     "branchFilterSearch": "Search branches…"
   },
   "actions": {
-    "addRoute": "Add route crew"
+    "addRoute": "New route crew"
   },
   "viewSheet": {
     "sections": {

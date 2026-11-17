@@ -8,7 +8,7 @@
   "title": "Employee departments",
   "entity": "Department",
   "description": "Manage the departments available in employee forms.",
-  "add": "Add department",
+  "add": "New department",
   "edit": "Edit department",
   "name": "Name",
   "active": "Active",

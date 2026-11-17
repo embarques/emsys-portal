@@ -8,7 +8,7 @@
   "title": "Cargos de empleados",
   "entity": "Cargo",
   "description": "Administra los cargos disponibles en los formularios de empleados.",
-  "add": "Agregar cargo",
+  "add": "Nuevo cargo",
   "edit": "Editar cargo",
   "name": "Nombre",
   "active": "Activo",

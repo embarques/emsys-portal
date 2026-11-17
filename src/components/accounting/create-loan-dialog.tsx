@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, ArrowRight, Banknote, Loader2, Save, User } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, Banknote, Loader2, Save, User } from "lucide-react";
 import { FormBody, FormFooterNoticeMessage, FormSection } from "@/components/forms/form-shell";
 import { TransactionWizardStepper } from "./transaction-wizard-stepper";
 import type { GuidedTypeStep } from "./guided-entry-chrome";
@@ -19,11 +19,13 @@ import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
 import { FieldLabelRow } from "@/components/forms/field-label-row";
+import { FieldMessage } from "@/components/forms/field-message";
 import { useCreateLoanForm } from "@/lib/accounting/loans/use-create-loan-form";
 import { formatLoanMoney } from "@/lib/accounting/loans/display";
 import type { LoanCreateValues } from "@/lib/accounting/loans/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
@@ -67,15 +69,23 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
   const stepLabels = [text("steps.employee"), text("steps.details"), text("steps.review")];
   useEffect(() => { heading.current?.focus(); }, [step]);
   const fieldError = (name: keyof LoanCreateValues) => errors[name] ? <p role="alert" className="text-sm text-destructive">{errors[name]?.message}</p> : null;
-  const requiredLabel = (id: string, label: string) => <Label htmlFor={id}>{label}<span className="text-destructive"> *</span></Label>;
+  const requiredLabel = (id: string, label: string) => <Label htmlFor={id}>{label}<span className="text-destructive" aria-hidden="true"> *</span></Label>;
+  const accountRoleBadge = (role: "debit" | "credit") => (
+    <span className={cn(
+      "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+      role === "debit" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground ring-1 ring-inset ring-border",
+    )}>
+      {text(role === "debit" ? "debitRole" : "creditRole")}
+    </span>
+  );
   const review = (rows: Array<[string, string | undefined]>) => <dl className="grid gap-4 sm:grid-cols-2">
     {rows.map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words whitespace-pre-wrap text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}
   </dl>;
   return <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={event => { event.preventDefault(); void state.advance(); }}>
-    {guided ? <LoanEntryStepNavigation step={step} onStepChange={state.setStep} busy={busy} typeStep={typeStep} />
+    {guided ? <LoanEntryStepNavigation kind="issue" step={step} onStepChange={state.setStep} busy={busy} typeStep={typeStep} />
       : !singlePage ? <div className="shrink-0 border-b px-5 py-4"><TransactionWizardStepper step={step} labels={stepLabels} disabled={busy} onSelectStep={state.setStep} /></div> : null}
     <FormBody workflow className={guided ? "lg:p-8" : undefined} isBusy={busy}>
-      {guided ? <LoanEntryStepHeading step={step} appearance={typeStep?.appearance} />
+      {guided ? <LoanEntryStepHeading kind="issue" step={step} appearance={typeStep?.appearance} />
         : !singlePage ? <header className="max-w-2xl space-y-2"><h2 ref={heading} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">{stepLabels[step - 1]}</h2></header> : null}
       <fieldset disabled={busy} className="min-w-0 space-y-4">
         <div className={singlePage || step === 1 ? "space-y-4" : "hidden"}>
@@ -98,35 +108,51 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
           </FormSection>
         </div>
         <div className={singlePage || step === 2 ? "space-y-4" : "hidden"}>
-          <FormSection variant="card" icon={Banknote} title={text("accounts")}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <FieldLabelRow
-                  showClear={Boolean(values.loanAccountId) && loanAccountInline}
-                  onClear={() => { setCloseoutReady(false); setValue("loanAccountId", 0, { shouldValidate: true }); setValue("loanAccountName", ""); setValue("loanAccountType", undefined); window.requestAnimationFrame(() => document.getElementById("loan-account")?.focus()); }}
-                >
-                  {requiredLabel("loan-account", text("loanAccount"))}
-                </FieldLabelRow>
-                <SearchableSelect
-                  inlineOptionsLimit={inlineOptionsLimit} clearable={false} id="loan-account" aria-label={text("loanAccount")} aria-invalid={Boolean(errors.loanAccountId)} value={values.loanAccountId ? String(values.loanAccountId) : ""}
-                  onValueChange={next => { const account = loanAccounts.find(item => item.id === Number(next)); if (account?.id !== values.loanAccountId) setCloseoutReady(false); setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("loanAccountName", account?.displayName ?? account?.name ?? ""); setValue("loanAccountType", account?.type); }}
-                  options={loanAccountOptions}
-                  placeholder={text("selectLoanAccount")} searchPlaceholder={text("searchLoanAccounts")} mobileSheet />
-                {fieldError("loanAccountId")}
+          <FormSection variant="card" icon={Banknote} title={text("accounts")} description={text("accountsHint")}>
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-stretch sm:gap-3">
+              <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-border/80 bg-muted/25 p-3 sm:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  {accountRoleBadge("debit")}
+                </div>
+                <div className="space-y-2">
+                  <FieldLabelRow
+                    showClear={Boolean(values.loanAccountId) && loanAccountInline}
+                    onClear={() => { setCloseoutReady(false); setValue("loanAccountId", 0, { shouldValidate: true }); setValue("loanAccountName", ""); setValue("loanAccountType", undefined); window.requestAnimationFrame(() => document.getElementById("loan-account")?.focus()); }}
+                  >
+                    {requiredLabel("loan-account", text("loanAccount"))}
+                  </FieldLabelRow>
+                  <SearchableSelect
+                    inlineOptionsLimit={inlineOptionsLimit} clearable={false} id="loan-account" aria-label={text("loanAccount")} aria-invalid={Boolean(errors.loanAccountId)} value={values.loanAccountId ? String(values.loanAccountId) : ""}
+                    onValueChange={next => { const account = loanAccounts.find(item => item.id === Number(next)); if (account?.id !== values.loanAccountId) setCloseoutReady(false); setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("loanAccountName", account?.displayName ?? account?.name ?? ""); setValue("loanAccountType", account?.type); }}
+                    options={loanAccountOptions}
+                    placeholder={text("selectLoanAccount")} searchPlaceholder={text("searchLoanAccounts")} mobileSheet
+                    className="min-h-12" />
+                  <FieldMessage error={errors.loanAccountId?.message} hint={text("loanAccountHint")} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <FieldLabelRow
-                  showClear={Boolean(values.sourceAccountId) && sourceAccountInline}
-                  onClear={() => { setValue("sourceAccountId", 0, { shouldValidate: true }); setValue("sourceAccountName", ""); setValue("sourceAccountType", undefined); window.requestAnimationFrame(() => document.getElementById("loan-source-account")?.focus()); }}
-                >
-                  {requiredLabel("loan-source-account", text("sourceAccount"))}
-                </FieldLabelRow>
-                <SearchableSelect
-                  inlineOptionsLimit={inlineOptionsLimit} clearable={false} id="loan-source-account" aria-label={text("sourceAccount")} aria-invalid={Boolean(errors.sourceAccountId)} value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
-                  onValueChange={next => { const account = assetAccounts.find(item => item.id === Number(next)); setValue("sourceAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("sourceAccountName", account?.displayName ?? account?.name ?? ""); setValue("sourceAccountType", account?.type); }}
-                  options={sourceAccountOptions}
-                  placeholder={text("selectSourceAccount")} searchPlaceholder={text("searchAssetAccounts")} mobileSheet />
-                {fieldError("sourceAccountId")}
+              <span aria-hidden="true" className="flex items-center justify-center py-0.5 text-muted-foreground sm:px-0.5">
+                <ArrowDown className="size-4 shrink-0 sm:hidden" />
+                <ArrowLeftRight className="hidden size-4 shrink-0 sm:block" />
+              </span>
+              <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-border/80 bg-muted/25 p-3 sm:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  {accountRoleBadge("credit")}
+                </div>
+                <div className="space-y-2">
+                  <FieldLabelRow
+                    showClear={Boolean(values.sourceAccountId) && sourceAccountInline}
+                    onClear={() => { setValue("sourceAccountId", 0, { shouldValidate: true }); setValue("sourceAccountName", ""); setValue("sourceAccountType", undefined); window.requestAnimationFrame(() => document.getElementById("loan-source-account")?.focus()); }}
+                  >
+                    {requiredLabel("loan-source-account", text("sourceAccount"))}
+                  </FieldLabelRow>
+                  <SearchableSelect
+                    inlineOptionsLimit={inlineOptionsLimit} clearable={false} id="loan-source-account" aria-label={text("sourceAccount")} aria-invalid={Boolean(errors.sourceAccountId)} value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
+                    onValueChange={next => { const account = assetAccounts.find(item => item.id === Number(next)); setValue("sourceAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("sourceAccountName", account?.displayName ?? account?.name ?? ""); setValue("sourceAccountType", account?.type); }}
+                    options={sourceAccountOptions}
+                    placeholder={text("selectSourceAccount")} searchPlaceholder={text("searchAssetAccounts")} mobileSheet
+                    className="min-h-12" />
+                  <FieldMessage error={errors.sourceAccountId?.message} hint={text("sourceAccountHint")} />
+                </div>
               </div>
             </div>
           </FormSection>
@@ -174,7 +200,7 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
       [text("date"), values.transactionDate || t("common.empty.dash")],
       ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
     ]} />, summaryContainer) : null}
-    {guided ? <LoanEntryStepFooter step={step} onStepChange={state.setStep} busy={busy} typeStep={typeStep}
+    {guided ? <LoanEntryStepFooter kind="issue" step={step} onStepChange={state.setStep} busy={busy} typeStep={typeStep}
       onCancel={() => onOpenChange(false)} submitLabel={text("title")} error={errors.root?.server?.message}
       warning={step > 1 && !closeoutReady ? text("closeoutRequired") : null} submitDisabled={step > 1 && !closeoutReady} /> : (
     <div className="shrink-0 space-y-3 border-t bg-card px-5 py-4">

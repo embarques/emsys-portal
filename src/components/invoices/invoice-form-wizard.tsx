@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Printer, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Pin, Printer, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
@@ -21,10 +21,12 @@ import {
   InvoiceWizardSummarySidebar,
 } from "@/components/invoices/invoice-wizard-summary-panel";
 import {
+  getInvoiceWizardPinnableSteps,
   getInvoiceWizardStepKind,
   getInvoiceWizardStepLabelKey,
   InvoiceWizardStepper,
   resolveInvoiceWizardLayout,
+  toInvoiceBatchContinueStep,
   type InvoiceWizardStep,
   type InvoiceWizardFormStep,
 } from "@/components/invoices/invoice-wizard-stepper";
@@ -182,6 +184,9 @@ export function InvoiceFormWizard({
   const [documentsBusy, setDocumentsBusy] = useState(false);
   const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
   const [formSessionKey, setFormSessionKey] = useState(0);
+  const [batchStartStep, setBatchStartStep] = useState<InvoiceWizardStep | null>(null);
+  const batchStartStepRef = useRef<InvoiceWizardStep | null>(null);
+  batchStartStepRef.current = batchStartStep;
   const [stepError, setStepError] = useState<string | null>(null);
   const valuesRef = useRef(values);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -543,14 +548,44 @@ export function InvoiceFormWizard({
 
     if (!resetAfterSave) return;
 
-    setStep(1);
-    const nextValues = resetInvoiceFormForNextEntry(values);
+    // Match add-transaction: resume at the thumbtack, or Details (step 1) by default.
+    const markedAtSubmit = batchStartStepRef.current;
+    const markedEntry =
+      markedAtSubmit != null
+        ? layout.steps.find((entry) => entry.id === markedAtSubmit && entry.kind !== "preview")
+        : null;
+    if (markedAtSubmit && !markedEntry) setBatchStartStep(null);
+    const resumeStep = (markedEntry?.id ?? 1) as InvoiceWizardStep;
+    const batchStartKind = markedEntry ? toInvoiceBatchContinueStep(markedEntry.kind) : null;
+
+    setStep(resumeStep);
+    const nextValues = resetInvoiceFormForNextEntry(values, { batchStartKind });
     setValues(nextValues);
     valuesRef.current = nextValues;
     setFormSessionKey((key) => key + 1);
     setSavedInvoiceId(null);
     setDailyIncomeContext(emptyInvoiceDailyIncomeContext());
   }
+
+  const batchPinEnabled = resetAfterSave && !isEditing;
+  const pinnableSteps = useMemo(
+    () => (batchPinEnabled ? getInvoiceWizardPinnableSteps(layout) : []),
+    [batchPinEnabled, layout],
+  );
+  const currentStepPinnable = pinnableSteps.some((entry) => entry.id === step);
+  const pinnedStepLabel =
+    batchStartStep != null
+      ? layout.steps.find((entry) => entry.id === batchStartStep)
+      : null;
+  const batchPinProps = batchPinEnabled
+    ? {
+        pinnedStepId: batchStartStep,
+        onPinnedStepChange: (stepId: number | null) => {
+          setBatchStartStep(stepId == null ? null : (stepId as InvoiceWizardStep));
+        },
+        disabled: preparingSave || isSubmitting || documentsBusy || documentStage,
+      }
+    : undefined;
 
   const saveAmountPaid = Number(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0) || 0;
   const hasNegativeBalance = getInvoiceFormBalance(values, saveAmountPaid) < 0;
@@ -872,7 +907,29 @@ export function InvoiceFormWizard({
             <p className="min-w-0 truncate text-lg font-semibold">
               {phoneTitle}
             </p>
-            <div className="flex shrink-0 items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2">
+              {batchPinEnabled && currentStepPinnable ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "size-8 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground",
+                    batchStartStep === step && "bg-primary-foreground/15",
+                  )}
+                  disabled={preparingSave || isSubmitting || documentsBusy || documentStage}
+                  aria-pressed={batchStartStep === step}
+                  aria-label={t("invoices.wizard.batchPinStep", { step: phoneTitle })}
+                  onClick={() =>
+                    setBatchStartStep((current) => (current === step ? null : step))
+                  }
+                >
+                  <Pin
+                    className={cn("size-3.5", batchStartStep === step && "fill-current")}
+                    aria-hidden
+                  />
+                </Button>
+              ) : null}
               <p className="text-sm font-semibold">{phoneStepText}</p>
               <Button
                 type="button"
@@ -884,6 +941,13 @@ export function InvoiceFormWizard({
               </Button>
             </div>
           </div>
+          {batchPinEnabled && pinnedStepLabel ? (
+            <p className="mt-2 text-xs text-primary-foreground/80" aria-live="polite">
+              {t("invoices.wizard.batchPinnedStatus", {
+                step: t(getInvoiceWizardStepLabelKey(pinnedStepLabel.kind)),
+              })}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -938,6 +1002,7 @@ export function InvoiceFormWizard({
           layout={layout}
           onSelectStep={handleSelectStep}
           canSelectStep={() => !(preparingSave || isSubmitting || documentsBusy || documentStage)}
+          batchPin={batchPinProps}
         />
       </div>
 

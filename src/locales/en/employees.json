@@ -16,7 +16,7 @@
   },
   "noun": "employees",
   "actions": {
-    "add": "Add employee",
+    "add": "New employee",
     "edit": "Edit employee",
     "editNamed": "Edit {{name}}",
     "addUser": "Add portal user"
@@ -185,35 +185,107 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "Employee ID", "placeholder": "Enter employee ID…" },
-      "name": { "label": "Name", "placeholder": "Enter name…" },
-      "title": { "label": "Title", "placeholder": "Enter title…" },
-      "email": { "label": "Email", "placeholder": "Enter email…" },
-      "phone": { "label": "Phone", "placeholder": "Enter phone…" },
+      "id": {
+        "label": "Employee ID",
+        "placeholder": "Enter employee ID…"
+      },
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter name…"
+      },
+      "title": {
+        "label": "Title",
+        "placeholder": "Enter title…"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Enter email…"
+      },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "Enter phone…"
+      },
       "address": {
-        "address1": { "label": "Address line 1", "placeholder": "Enter address line 1…" },
-        "address2": { "label": "Address line 2", "placeholder": "Enter address line 2…" },
-        "apartment": { "label": "Apartment", "placeholder": "Enter apartment…" },
-        "city": { "label": "City", "placeholder": "Enter city…" },
-        "state": { "label": "State", "placeholder": "Enter state…" },
-        "zipcode": { "label": "Zip code", "placeholder": "Enter zip code…" },
-        "country": { "label": "Country", "placeholder": "Enter country…" }
+        "address1": {
+          "label": "Address line 1",
+          "placeholder": "Enter address line 1…"
+        },
+        "address2": {
+          "label": "Address line 2",
+          "placeholder": "Enter address line 2…"
+        },
+        "apartment": {
+          "label": "Apartment",
+          "placeholder": "Enter apartment…"
+        },
+        "city": {
+          "label": "City",
+          "placeholder": "Enter city…"
+        },
+        "state": {
+          "label": "State",
+          "placeholder": "Enter state…"
+        },
+        "zipcode": {
+          "label": "Zip code",
+          "placeholder": "Enter zip code…"
+        },
+        "country": {
+          "label": "Country",
+          "placeholder": "Enter country…"
+        }
       },
-      "department": { "label": "Department", "placeholder": "Select department…" },
-      "active": { "label": "Active", "placeholder": "Select status…" },
+      "department": {
+        "label": "Department",
+        "placeholder": "Select department…"
+      },
+      "active": {
+        "label": "Active",
+        "placeholder": "Select status…"
+      },
       "branch": {
-        "code": { "label": "Branch", "placeholder": "Select branch…" }
+        "code": {
+          "label": "Branch",
+          "placeholder": "Select branch…"
+        }
       },
-      "cost": { "label": "Cost", "placeholder": "Enter amount…" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
-      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
-      "startDate": { "label": "Start date", "placeholder": "YYYY-MM-DD" },
-      "endDate": { "label": "End date", "placeholder": "YYYY-MM-DD" },
-      "totalLoanGiven": { "label": "Total loans given", "placeholder": "Enter amount…" },
-      "totalPaymentReceived": { "label": "Total payments received", "placeholder": "Enter amount…" },
-      "loanAmountOwed": { "label": "Loan balance owed", "placeholder": "Enter amount…" },
+      "cost": {
+        "label": "Cost",
+        "placeholder": "Enter amount…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "startDate": {
+        "label": "Start date",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "endDate": {
+        "label": "End date",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "totalLoanGiven": {
+        "label": "Total loans given",
+        "placeholder": "Enter amount…"
+      },
+      "totalPaymentReceived": {
+        "label": "Total payments received",
+        "placeholder": "Enter amount…"
+      },
+      "loanAmountOwed": {
+        "label": "Loan balance owed",
+        "placeholder": "Enter amount…"
+      },
       "user": {
-        "name": { "label": "Linked user", "placeholder": "Enter user name…" }
+        "name": {
+          "label": "Linked user",
+          "placeholder": "Enter user name…"
+        }
       }
     }
   }

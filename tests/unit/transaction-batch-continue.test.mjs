@@ -58,9 +58,10 @@ const savedPayment = {
   includeReceiver: false,
 };
 
-test("default batch continue step is amounts except inventory", () => {
-  assert.equal(workflow.getDefaultBatchContinueStep("PAYMENT"), "amounts");
+test("default batch continue step is the first step after type selection", () => {
+  assert.equal(workflow.getDefaultBatchContinueStep("PAYMENT"), "assignment");
   assert.equal(workflow.getDefaultBatchContinueStep("INVENTORY"), "assignment");
+  assert.equal(workflow.getDefaultBatchContinueStep("EXPENSE"), "assignment");
 });
 
 test("batch from amounts keeps assignment fields only", () => {

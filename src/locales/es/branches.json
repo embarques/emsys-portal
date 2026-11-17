@@ -13,7 +13,7 @@
   },
   "noun": "sucursales",
   "actions": {
-    "add": "Agregar sucursal",
+    "add": "Nueva sucursal",
     "edit": "Editar sucursal",
     "editNamed": "Editar {{name}}"
   },

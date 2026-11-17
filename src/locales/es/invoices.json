@@ -151,7 +151,7 @@
     "viewInvoiceFor": "Ver factura {{number}}",
     "editInvoice": "Editar factura",
     "editInvoiceNamed": "Editar factura {{number}}",
-    "addInvoice": "Agregar factura",
+    "addInvoice": "Nueva factura",
     "untitledTab": "Factura",
     "invoiceNotFound": "Factura no encontrada.",
     "loadingAppointment": "Cargando cita…",
@@ -329,6 +329,8 @@
     "goToStep": "Ir a {{label}}",
     "progress": "Paso {{current}} de {{total}}",
     "phoneProgress": "{{current}} de {{total}}",
+    "batchPinStep": "Reanudar la siguiente factura desde {{step}}",
+    "batchPinnedStatus": "La siguiente factura empieza en {{step}}",
     "steps": {
       "details": "Detalles",
       "parties": "Partes",

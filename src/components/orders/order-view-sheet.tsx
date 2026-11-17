@@ -196,7 +196,8 @@ export function OrderViewSheet({
   const showCompletionActions = Boolean(onMarkComplete || onMarkIncomplete) && allowCompletion;
   const showRouteActions =
     canManageRoutes && Boolean(onAssignRoute || onViewRoute || onClearRoute);
-  const showPrimaryOps = Boolean(onCreateInvoice || onMap || onPrint);
+  const showHeaderOps = Boolean(onMap || onPrint);
+  const showFooterPrimaryOps = Boolean(onCreateInvoice);
   const showManageGroups = showCompletionActions || showRouteActions;
 
   return (
@@ -220,6 +221,38 @@ export function OrderViewSheet({
                 {getOrderCompletedLabel(order.completed, t)}
               </Badge>
             </div>
+          }
+          actions={
+            showHeaderOps ? (
+              <>
+                {onMap ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="whitespace-nowrap"
+                    disabled={actionsDisabled}
+                    onClick={() => onMap(order)}
+                  >
+                    <MapIcon className="size-4" />
+                    {t("orders.actions.map")}
+                  </Button>
+                ) : null}
+                {onPrint ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={actionsDisabled || isPrinting}
+                    onClick={() => onPrint(order)}
+                  >
+                    <Printer className="size-4" />
+                    {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
+                  </Button>
+                ) : null}
+              </>
+            ) : null
           }
         />
 
@@ -308,7 +341,7 @@ export function OrderViewSheet({
 
         <div className="shrink-0 border-t border-border bg-card px-6 py-4">
           <div className="flex flex-wrap items-center gap-1.5">
-            {showPrimaryOps && !completionExpanded && !routesExpanded ? (
+            {showFooterPrimaryOps && !completionExpanded && !routesExpanded ? (
               <>
                 {onCreateInvoice ? (
                   <Button
@@ -321,32 +354,6 @@ export function OrderViewSheet({
                   >
                     <Receipt className="size-4" />
                     {t("orders.actions.createInvoice")}
-                  </Button>
-                ) : null}
-                {onMap ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="whitespace-nowrap"
-                    disabled={actionsDisabled}
-                    onClick={() => onMap(order)}
-                  >
-                    <MapIcon className="size-4" />
-                    {t("orders.actions.map")}
-                  </Button>
-                ) : null}
-                {onPrint ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={actionsDisabled || isPrinting}
-                    onClick={() => onPrint(order)}
-                  >
-                    <Printer className="size-4" />
-                    {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
                   </Button>
                 ) : null}
                 {showManageGroups || allowEdit || allowDelete ? <TableSelectionActionDivider /> : null}

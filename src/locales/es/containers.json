@@ -16,7 +16,7 @@
   },
   "noun": "contenedores",
   "actions": {
-    "add": "Agregar contenedor",
+    "add": "Nuevo contenedor",
     "edit": "Editar contenedor",
     "editNamed": "Editar {{name}}"
   },

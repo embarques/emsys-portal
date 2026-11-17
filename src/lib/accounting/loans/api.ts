@@ -344,6 +344,24 @@ export async function increaseLoan(requestId: string, values: LoanIncreaseValues
   return loan;
 }
 
+/** Same payload shape as increase; posts the inverse principal adjustment. */
+export async function decreaseLoan(requestId: string, values: LoanIncreaseValues): Promise<Loan> {
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_LOAN}/${encodeURIComponent(values.loanId)}/decreases`,
+    {
+      requestId,
+      ...buildLoanIncreasePayload(values),
+    },
+  );
+  assertMutation(payload, "Unable to decrease the loan.");
+  const data = objectValue(unwrap(payload));
+  const loan = normalizeLoan(firstDefined(data.loan, data));
+  if (!loan || loan.id !== values.loanId) {
+    throw new Error(translateCurrent("accounting.loans.errors.decreaseUnconfirmed"));
+  }
+  return loan;
+}
+
 export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan | null> {
   const endpoint =
     values.allocationMode === "specific-loan" && values.loanId

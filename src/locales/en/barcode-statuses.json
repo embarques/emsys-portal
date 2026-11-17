@@ -11,7 +11,7 @@
     "previousStatus": "Valid previous statuses"
   },
   "actions": {
-    "add": "Add status"
+    "add": "New status"
   },
   "form": {
     "addTitle": "Add barcode status",

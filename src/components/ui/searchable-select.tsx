@@ -27,6 +27,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  shouldAutoDefaultSelect,
+  useAutoDefaultSingleSelectOption,
+} from "@/components/ui/searchable-select-auto-default";
 
 export const QUICK_SELECT_OPTIONS_LIMIT = 5;
 
@@ -62,6 +66,11 @@ export type SearchableSelectProps = {
   loadingMessage?: string;
   disabled?: boolean;
   searchable?: boolean;
+  /**
+   * Marks the control required. When there is exactly one real option and the
+   * value is empty, that option is selected automatically (same for
+   * `clearable={false}` when there is no explicit empty choice).
+   */
   required?: boolean;
   id?: string;
   name?: string;
@@ -281,6 +290,62 @@ export function getInlineSelectOptions(
   return null;
 }
 
+function listAutoDefaultSelectableValues(
+  options: SearchableSelectOption[],
+  placeholder?: string,
+): string[] {
+  return options
+    .filter(
+      (option) =>
+        option.value !== "" &&
+        !option.disabled &&
+        !isPseudoPlaceholderOption(option, placeholder),
+    )
+    .map((option) => option.value);
+}
+
+function useSearchableSelectAutoDefault(
+  props: Pick<
+    SearchableSelectProps,
+    | "required"
+    | "clearable"
+    | "disabled"
+    | "loading"
+    | "manualFiltering"
+    | "onSearchChange"
+    | "options"
+    | "value"
+    | "onValueChange"
+    | "placeholder"
+  >,
+) {
+  const hasExplicitEmptyOption = props.options.some(
+    (option) =>
+      option.value === "" &&
+      !option.disabled &&
+      !isPseudoPlaceholderOption(option, props.placeholder),
+  );
+  const selectableValues = React.useMemo(
+    () => listAutoDefaultSelectableValues(props.options, props.placeholder),
+    [props.options, props.placeholder],
+  );
+  useAutoDefaultSingleSelectOption({
+    enabled:
+      shouldAutoDefaultSelect({
+        required: props.required,
+        clearable: props.clearable,
+        hasExplicitEmptyOption,
+      }) &&
+      !props.manualFiltering &&
+      !props.onSearchChange,
+    disabled: props.disabled,
+    loading: props.loading,
+    selectableValues,
+    value: props.value,
+    onValueChange: props.onValueChange,
+  });
+}
+
 export function SearchableSelect(props: SearchableSelectProps) {
   const inlineOptions = getInlineSelectOptions(props);
   if (inlineOptions) return <SelectOptionButtons {...props} options={inlineOptions} />;
@@ -301,6 +366,7 @@ function SearchableSelectDropdown({
   disabled = false,
   searchable = true,
   required = false,
+  clearable,
   id,
   name,
   className,
@@ -324,6 +390,18 @@ function SearchableSelectDropdown({
   const placeholder = placeholderProp ?? t("common.ui.selectPlaceholder");
   const emptyMessage = emptyMessageProp ?? t("common.ui.noResults");
   const loadingMessage = loadingMessageProp ?? t("common.ui.searching");
+  useSearchableSelectAutoDefault({
+    required,
+    clearable,
+    disabled,
+    loading,
+    manualFiltering,
+    onSearchChange,
+    options,
+    value,
+    onValueChange,
+    placeholder,
+  });
   const [listboxId, setListboxId] = React.useState<string>();
   const [open, setOpen] = React.useState(defaultOpen);
   const [query, setQuery] = React.useState("");

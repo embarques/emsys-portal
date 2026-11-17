@@ -16,6 +16,7 @@ import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { formatAuditDate } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 function BreakdownTransactionTable({
   entries,
@@ -136,6 +137,111 @@ function emptySection(id: string, label: string, amount = 0): JournalBreakdownNo
   return { id, label, amount, children: [], entries: [] };
 }
 
+function CurrencyBreakdownList({
+  row,
+  format,
+  showTransactions,
+  showNet = true,
+}: {
+  row: JournalCurrencyBreakdown;
+  format: (value: number) => string;
+  showTransactions: boolean;
+  showNet?: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-semibold text-muted-foreground">{row.currency || "—"}</p>
+      <dl className="space-y-3">
+        <BreakdownRows
+          node={row.income}
+          depth={0}
+          tone="income"
+          format={format}
+          showTransactions={showTransactions}
+        />
+        <BreakdownRows
+          node={row.expenses}
+          depth={0}
+          tone="expense"
+          format={format}
+          showTransactions={showTransactions}
+        />
+        {hasBreakdownContent(row.other) ? (
+          <BreakdownRows
+            node={row.other}
+            depth={0}
+            tone="neutral"
+            format={format}
+            showTransactions={showTransactions}
+          />
+        ) : null}
+        {showNet ? (
+          <div className="flex items-baseline justify-between gap-4 border-t pt-3">
+            <dt className="font-semibold">{t("accounting.journalReconciliation.net")}</dt>
+            <dd className="font-semibold tabular-nums">{format(row.net)}</dd>
+          </div>
+        ) : null}
+      </dl>
+    </div>
+  );
+}
+
+function ReconciliationSummaryPanel({
+  rows,
+  loading,
+  format,
+  count,
+  className,
+}: {
+  rows: JournalCurrencyBreakdown[];
+  loading: boolean;
+  format: (value: number) => string;
+  count: number;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <aside
+      aria-label={t("accounting.journalReconciliation.summaryTitle")}
+      className={cn(
+        "flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm",
+        className,
+      )}
+    >
+      <header className="shrink-0 border-b px-4 py-3">
+        <h3 className="text-sm font-semibold">{t("accounting.journalReconciliation.summaryTitle")}</h3>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {t("accounting.journalReconciliation.summarySubtitle", { count })}
+        </p>
+      </header>
+      <div
+        role="region"
+        aria-label={t("accounting.journalReconciliation.summaryTitle")}
+        tabIndex={0}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 text-sm"
+      >
+        {loading ? (
+          <span role="status" className="text-muted-foreground">
+            {t("accounting.dailyIncome.transactions.loadingTitle")}
+          </span>
+        ) : (
+          <div className="space-y-4">
+            {rows.map((row) => (
+              <CurrencyBreakdownList
+                key={row.currency || "currency"}
+                row={row}
+                format={format}
+                showTransactions={false}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
 export function JournalTotals({
   label,
   totals,
@@ -150,8 +256,12 @@ export function JournalTotals({
   journals?: DailyIncomeJournal[];
   chartAccounts?: ChartAccount[];
   loading: boolean;
-  /** `inline` fits the selection toolbar row; `stacked` is the detailed confirm layout. */
-  layout?: "inline" | "stacked";
+  /**
+   * `inline` fits the selection toolbar row.
+   * `stacked` is a single-column confirm layout.
+   * `split` mirrors the transactions workflow: detail list + right-hand summary.
+   */
+  layout?: "inline" | "stacked" | "split";
   /** List individual journals under each category leaf (reconciliation confirm). */
   showTransactions?: boolean;
 }) {
@@ -188,6 +298,10 @@ export function JournalTotals({
       };
     });
   }, [breakdown, totals, t]);
+  const selectedCount = useMemo(
+    () => rows.reduce((sum, row) => sum + (row.count || 0), 0) || journals?.length || 0,
+    [journals?.length, rows],
+  );
 
   if (layout === "inline") {
     return (
@@ -226,6 +340,50 @@ export function JournalTotals({
     );
   }
 
+  if (layout === "split") {
+    return (
+      <div aria-busy={loading} className="space-y-4 text-sm">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="min-w-0 xl:hidden">
+            <ReconciliationSummaryPanel
+              rows={rows}
+              loading={loading}
+              format={number}
+              count={selectedCount}
+            />
+          </div>
+          <div className="min-w-0 space-y-3">
+            <p className="font-medium">{label}</p>
+            {loading ? (
+              <span role="status" className="text-muted-foreground">
+                {t("accounting.dailyIncome.transactions.loadingTitle")}
+              </span>
+            ) : (
+              rows.map((row) => (
+                <CurrencyBreakdownList
+                  key={row.currency || "currency"}
+                  row={row}
+                  format={number}
+                  showTransactions
+                  showNet={false}
+                />
+              ))
+            )}
+          </div>
+          <div className="hidden min-w-0 xl:sticky xl:top-0 xl:block xl:self-start">
+            <ReconciliationSummaryPanel
+              rows={rows}
+              loading={loading}
+              format={number}
+              count={selectedCount}
+              className="max-h-[min(36rem,calc(100dvh-14rem))]"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div aria-busy={loading} className="space-y-3 text-sm">
       <p className="font-medium">{label}</p>
@@ -239,36 +397,11 @@ export function JournalTotals({
             key={row.currency || "currency"}
             className={`space-y-3 overscroll-contain ${showTransactions ? "max-h-[36rem]" : "max-h-64"} overflow-y-auto`}
           >
-            <p className="text-xs font-semibold text-muted-foreground">{row.currency || "—"}</p>
-            <dl className="space-y-3">
-              <BreakdownRows
-                node={row.income}
-                depth={0}
-                tone="income"
-                format={number}
-                showTransactions={showTransactions}
-              />
-              <BreakdownRows
-                node={row.expenses}
-                depth={0}
-                tone="expense"
-                format={number}
-                showTransactions={showTransactions}
-              />
-              {showTransactions && hasBreakdownContent(row.other) ? (
-                <BreakdownRows
-                  node={row.other}
-                  depth={0}
-                  tone="neutral"
-                  format={number}
-                  showTransactions={showTransactions}
-                />
-              ) : null}
-              <div className="flex items-baseline justify-between gap-4 border-t pt-3">
-                <dt className="font-semibold">{t("accounting.journalReconciliation.net")}</dt>
-                <dd className="font-semibold tabular-nums">{number(row.net)}</dd>
-              </div>
-            </dl>
+            <CurrencyBreakdownList
+              row={row}
+              format={number}
+              showTransactions={showTransactions}
+            />
           </div>
         ))
       )}

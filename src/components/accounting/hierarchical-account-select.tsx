@@ -186,6 +186,7 @@ export function HierarchicalAccountSelect({
               <SearchableSelect
                 inlineOptionsLimit={inlineOptionsLimit}
                 clearable={false}
+                required={required && index === 0}
                 id={levelId}
                 value={level.valueId != null ? String(level.valueId) : ""}
                 onValueChange={(next) => {

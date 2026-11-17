@@ -123,17 +123,17 @@ export function BarcodeViewSheet({
   const statusName = barcode.status?.name ?? "";
   const dash = t("common.empty.dash");
   const showHeaderOps = Boolean(
-    (canDeliver && onDeliver) ||
-      (canPrintInvoice && onPrintInvoice) ||
+    (canPrintInvoice && onPrintInvoice) ||
       (canPrint && onPrint) ||
       (canOpenInvoice && onOpenInvoice),
   );
+  const showDeliver = Boolean(canDeliver && onDeliver);
   const showAssignment =
     (canChangeStatus && onChangeStatus) ||
     (canTransferContainer && onTransferContainer) ||
     (canAssignRoute && onAssignRoute);
   const showRecordActions = (canEdit && onEdit) || (canDelete && onDelete);
-  const showFooter = showAssignment || showRecordActions;
+  const showFooter = showDeliver || showAssignment || showRecordActions;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -150,19 +150,6 @@ export function BarcodeViewSheet({
           actions={
             showHeaderOps ? (
               <>
-                {canDeliver && onDeliver ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="whitespace-nowrap"
-                    disabled={actionsDisabled || deliverDisabled}
-                    onClick={() => onDeliver(barcode)}
-                  >
-                    <PackageCheck className="size-4" />
-                    {t("deliveries.deliver.action")}
-                  </Button>
-                ) : null}
                 {canPrintInvoice && onPrintInvoice ? (
                   <Button
                     type="button"
@@ -272,6 +259,23 @@ export function BarcodeViewSheet({
         {showFooter ? (
           <div className="shrink-0 border-t border-border bg-card px-6 py-4">
             <div className="flex flex-wrap items-center gap-1.5">
+              {showDeliver ? (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="whitespace-nowrap"
+                    disabled={actionsDisabled || deliverDisabled}
+                    onClick={() => onDeliver?.(barcode)}
+                  >
+                    <PackageCheck className="size-4" />
+                    {t("deliveries.deliver.action")}
+                  </Button>
+                  {showAssignment || showRecordActions ? <TableSelectionActionDivider /> : null}
+                </>
+              ) : null}
+
               {showAssignment ? (
                 <TableSelectionExpandableActionGroup
                   label={t("barcodes.actions.manageAssignment")}

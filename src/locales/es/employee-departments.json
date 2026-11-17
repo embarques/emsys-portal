@@ -8,7 +8,7 @@
   "title": "Departamentos de empleados",
   "entity": "Departamento",
   "description": "Administra los departamentos disponibles en los formularios de empleados.",
-  "add": "Agregar departamento",
+  "add": "Nuevo departamento",
   "edit": "Editar departamento",
   "name": "Nombre",
   "active": "Activo",

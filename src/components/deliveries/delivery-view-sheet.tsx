@@ -62,6 +62,20 @@ export function DeliveryViewSheet({
             barcode: row.number || dash,
             invoice: row.invoiceNumber || dash,
           })}
+          actions={
+            canPrint ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!row.invoiceId}
+                onClick={() => onPrint(row)}
+              >
+                <Printer className="size-4" />
+                {t("invoices.printSignatures.action")}
+              </Button>
+            ) : null
+          }
         />
 
         <RecordViewSheetBody>
@@ -135,10 +149,10 @@ export function DeliveryViewSheet({
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        {canDeliver || canPrint ? (
+        {canDeliver || (canPrint && !row.invoiceId) ? (
           <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-            <div className="flex gap-2">
-              {canDeliver ? (
+            {canDeliver ? (
+              <div className="flex gap-2">
                 <Button
                   type="button"
                   className="flex-1"
@@ -148,20 +162,8 @@ export function DeliveryViewSheet({
                   <PackageCheck className="size-4" />
                   {t("deliveries.deliver.action")}
                 </Button>
-              ) : null}
-              {canPrint ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={canDeliver ? undefined : "flex-1"}
-                  disabled={!row.invoiceId}
-                  onClick={() => onPrint(row)}
-                >
-                  <Printer className="size-4" />
-                  {t("invoices.printSignatures.action")}
-                </Button>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
             <DeliveryActionNotice row={row} className="max-w-none" />
           </div>
         ) : null}

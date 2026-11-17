@@ -18,7 +18,7 @@
   "pickup": "Pickup",
   "pickupNamed": "Pickup {{id}}",
   "actions": {
-    "add": "Add appointment",
+    "add": "New appointment",
     "edit": "Edit appointment",
     "editNamed": "Edit {{name}}",
     "editPickup": "Edit appointment",
@@ -159,7 +159,6 @@
       "receiverStep": "Select receiver(s)",
       "purposeStep": "Purpose and comments",
       "next": "Continue",
-
       "scheduleTitle": "01 · Schedule the visit",
       "customersTitle": "02 · Confirm customer details",
       "receiversScrollHint": "{{count}} receivers — scroll down to see them all.",

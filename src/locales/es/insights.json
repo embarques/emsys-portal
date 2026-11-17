@@ -5,7 +5,7 @@
   },
   "placeholder": {
     "description": "Página de ejemplo de {{title}} dentro del mismo panel adaptable.",
-    "addNew": "Agregar nuevo",
+    "addNew": "Nuevo",
     "stats": {
       "total": {
         "label": "Total",

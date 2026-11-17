@@ -124,6 +124,7 @@ export function PaymentChannelFields({ paymentMethods, paymentMethodId, paymentM
           <SearchableSelect
             inlineOptionsLimit={inlineOptionsLimit}
             clearable={false}
+            required={required}
             id="journal-payment"
             value={paymentMethodId != null ? String(paymentMethodId) : ""}
             onValueChange={(next) => {

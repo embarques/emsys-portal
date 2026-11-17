@@ -17,7 +17,7 @@ export function useCreateLoanForm(onSubmit: (values: LoanCreateValues) => Promis
   const form = useForm<LoanCreateValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      employeeId: 0, loanAccountId: 0, sourceAccountId: 0, principalAmount: 0,
+      employeeId: 0, loanAccountId: 0, sourceAccountId: 0, principalAmount: undefined,
       transactionDate: new Date().toISOString().slice(0, 10), referenceNumber: "", description: "",
     },
   });
