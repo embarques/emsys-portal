@@ -63,8 +63,9 @@ test("principal decrease cannot exceed the open loan balance", () => {
   "accounting.loans.validation.decreaseExceedsBalance",
  );
  const payment=createLoanPaymentSchema(t,40);
- const pay={employeeId:7,allocationMode:"oldest-first",receivedAccountId:3,amount:40,transactionDate:"2026-11-11",referenceNumber:"",description:""};
+ const pay={employeeId:7,loanId:"42",receivedAccountId:3,amount:40,transactionDate:"2026-11-11",referenceNumber:"",description:""};
  assert.equal(payment.safeParse(pay).success,true);
+ assert.equal(payment.safeParse({...pay,loanId:""}).error.issues[0].message,"accounting.loans.validation.loanRequired");
  assert.equal(payment.safeParse({...pay,amount:40.01}).error.issues[0].message,"accounting.loans.validation.paymentExceedsBalance");
 });
 

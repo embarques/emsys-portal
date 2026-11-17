@@ -836,9 +836,9 @@
         "loanIssueAssignment": "Elige el empleado que recibirá este préstamo nuevo.",
         "loanIssueDetails": "Ingresa el principal y selecciona la cuenta por cobrar del préstamo y la cuenta de activo que lo financia.",
         "loanIssueReview": "Verifica el empleado, el principal y las cuentas. Edita lo que necesites corregir y guarda.",
-        "loanPaymentAssignment": "Elige el empleado. Opcionalmente selecciona un préstamo específico, o aplica al más antiguo primero.",
+        "loanPaymentAssignment": "Elige el empleado y el préstamo activo al que aplicar este pago. Usa el más antiguo o el más reciente para rellenar el préstamo rápidamente.",
         "loanPaymentDetails": "Ingresa el monto del pago y la cuenta que recibió los fondos.",
-        "loanPaymentReview": "Verifica el empleado, el monto del pago y las cuentas. Edita lo que necesites corregir y guarda.",
+        "loanPaymentReview": "Verifica el empleado, el préstamo, el monto del pago y las cuentas. Edita lo que necesites corregir y guarda.",
         "loanIncreaseAssignment": "Elige el empleado y el préstamo activo al que agregarás el monto.",
         "loanIncreaseDetails": "Ingresa el monto adicional y la cuenta de activo de origen.",
         "loanIncreaseReview": "Verifica el empleado, el préstamo, el monto y las cuentas. Edita lo que necesites corregir y guarda.",
@@ -889,6 +889,7 @@
           "SALES": "Fuera de una factura",
           "INVENTORY": "Recibido o despachado",
           "INVENTORY-PAYMENT": "Pago de un despacho",
+          "LOAN-DECREASE": "Reducir principal",
           "LOAN-PAYMENT": "Abono del empleado"
         },
         "options": {
@@ -910,10 +911,10 @@
           "income": "Factura u otro ingreso",
           "expenses": "Gasto en efectivo o banco",
           "inventory": "Movimiento o pago",
-          "loans": "Emitir, aumentar o abonar",
+          "loans": "Emitir, ajustar o abonar",
           "transfers": "Entre cuentas",
           "invoice": "Pago, recargo o descuento",
-          "invoicePayment": "Buscar o crear una factura",
+          "invoicePayment": "Factura existente o nueva",
           "invoiceSurcharge": "Factura existente",
           "invoiceDiscount": "Factura existente",
           "otherIncome": "No proviene de una factura"
@@ -926,8 +927,8 @@
           "transfers": "Transferencia",
           "invoice": "Factura",
           "invoicePayment": "Pago",
-          "invoiceSurcharge": "Recargo de factura",
-          "invoiceDiscount": "Descuento de factura",
+          "invoiceSurcharge": "Recargo",
+          "invoiceDiscount": "Descuento",
           "otherIncome": "Otro"
         }
       },
@@ -952,7 +953,7 @@
         },
         "groupHints": {
           "invoice": "Pago, recargo o descuento",
-          "invoicePayment": "Buscar o crear una factura",
+          "invoicePayment": "Factura existente o nueva",
           "invoiceSurcharge": "Factura existente",
           "invoiceDiscount": "Factura existente",
           "otherIncome": "No proviene de una factura"
@@ -960,8 +961,8 @@
         "groups": {
           "invoice": "Factura",
           "invoicePayment": "Pago",
-          "invoiceSurcharge": "Recargo de factura",
-          "invoiceDiscount": "Descuento de factura",
+          "invoiceSurcharge": "Recargo",
+          "invoiceDiscount": "Descuento",
           "otherIncome": "Otro"
         }
       }
@@ -1034,6 +1035,10 @@
       "loanIncrease": {
         "label": "Registrar monto adicional de préstamo",
         "description": "Prestar más sobre un préstamo existente"
+      },
+      "loanDecrease": {
+        "label": "Registrar disminución de principal del préstamo",
+        "description": "Reducir el principal de un préstamo existente"
       },
       "loanPayment": {
         "label": "Registrar pago de préstamo",
@@ -1504,13 +1509,12 @@
       "description": "Registre un pago que reduce el monto adeudado (aumenta lo pagado y deja el principal igual).",
       "employee": "Empleado",
       "selectEmployee": "Seleccionar empleado",
+      "selectEmployeeFirst": "Seleccione primero un empleado",
       "searchEmployees": "Buscar empleados",
-      "allocationMode": "Modo de aplicación",
-      "oldestFirst": "Más antiguo primero",
-      "specificLoan": "Préstamo específico",
       "loan": "Préstamo",
       "selectLoan": "Seleccionar préstamo",
       "searchLoans": "Buscar préstamos",
+      "loanHint": "Elija el empleado y el préstamo activo. El pago completo se aplica a ese préstamo.",
       "receivedAccount": "Cuenta de efectivo o banco de destino",
       "selectReceivedAccount": "Seleccionar cuenta de efectivo o banco",
       "searchAssetAccounts": "Buscar cuentas de efectivo y banco",
@@ -1521,14 +1525,12 @@
       "notes": "Descripción",
       "notesPlaceholder": "Notas del pago",
       "submit": "Registrar pago",
-      "oldestFirstHint": "El pago se aplica primero al préstamo activo más antiguo del empleado y luego al siguiente.",
-      "specificLoanHint": "El pago completo se aplica al préstamo que seleccione.",
       "loanOptionDescription": "Abierto {{opened}} · Saldo {{balance}}",
       "journalDebit": "Débito · Efectivo o banco de destino",
       "journalCredit": "Crédito · Cuenta por cobrar del préstamo",
       "sections": {
-        "employee": "Empleado y aplicación",
-        "balances": "Saldos de préstamos",
+        "employee": "Empleado y préstamo",
+        "balances": "Saldo del préstamo",
         "payment": "Detalles del pago",
         "notes": "Referencia y notas",
         "journal": "Resumen del asiento contable"
@@ -1539,9 +1541,6 @@
         "currentBalance": "Saldo actual",
         "thisPayment": "Este pago",
         "balanceAfter": "Saldo después del pago",
-        "loan": "Préstamo (más antiguo primero)",
-        "opened": "Abierto {{date}}",
-        "totalsHint": "Totales de {{count}} préstamo(s) activo(s). El pago se aplica en el orden siguiente.",
         "selectEmployee": "Seleccione un empleado para ver sus préstamos activos.",
         "selectLoan": "Seleccione un préstamo para ver su saldo.",
         "loading": "Cargando préstamos activos…",
@@ -2204,7 +2203,7 @@
     "void": "Anular",
     "reverse": "Revertir",
     "correct": "Corregir con revisión",
-    "note": "Editar nota",
+    "note": "Editar descripción",
     "request": "Solicitar cambio",
     "warning": "Se creará un asiento compensatorio auditado. No reembolsa pagos bancarios ni elimina la conciliación o liquidación original.",
     "noteDescription": "Solo cambia la descripción. Los montos y el historial de verificación se conservan.",

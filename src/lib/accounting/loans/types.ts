@@ -94,13 +94,10 @@ export type LoanCreateValues = {
   description: string;
 };
 
-export type LoanPaymentAllocationMode = "oldest-first" | "specific-loan";
-
 export type LoanPaymentValues = {
   employeeId: number;
   employeeName?: string;
-  allocationMode: LoanPaymentAllocationMode;
-  loanId?: string;
+  loanId: string;
   receivedAccountId: number;
   receivedAccountName?: string;
   receivedAccountType?: string;
