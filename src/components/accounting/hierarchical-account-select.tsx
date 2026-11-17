@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { ClearSelectionButton } from "@/components/forms/clear-selection-button";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { FieldMessage } from "@/components/forms/field-message";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
@@ -117,13 +117,12 @@ export function HierarchicalAccountSelect({
 
   return (
     <fieldset aria-labelledby={legendId} className={className ?? "min-w-0 space-y-2"}>
-      <div className="flex min-h-9 items-center justify-between gap-2">
+      <FieldLabelRow showClear={showClear} onClear={clearSelection}>
         <span id={legendId} className="text-sm font-medium leading-5">
           {label}
           {required ? <span className="text-destructive"> *</span> : null}
         </span>
-        {showClear ? <ClearSelectionButton onClick={clearSelection} /> : null}
-      </div>
+      </FieldLabelRow>
       <div className="space-y-3">
         {levels.map((level, index) => {
           const parent = level.parentId != null ? byId.get(level.parentId) : undefined;

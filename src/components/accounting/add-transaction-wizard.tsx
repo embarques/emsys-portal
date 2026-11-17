@@ -131,7 +131,9 @@ export function AddTransactionWizard(props: Props) {
   const [batchStartStep, setBatchStartStep] = useState<TransactionFormStep | null>(null);
   const batchStartStepRef = useRef<TransactionFormStep | null>(null);
   batchStartStepRef.current = batchStartStep;
-  const [specialType, setSpecialType] = useState<"INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-INCREASE" | "LOAN-PAYMENT" | null>(null);
+  const [specialType, setSpecialType] = useState<
+    "INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-INCREASE" | "LOAN-DECREASE" | "LOAN-PAYMENT" | null
+  >(null);
   const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(
     isEdit ? props.initialValues.transactionType : null,
   );
@@ -262,13 +264,21 @@ export function AddTransactionWizard(props: Props) {
   function handleTypeChange(type: TransactionEntryCategory) {
     if (isSubmitting) return;
     setSkipAutofocusAfterSave(false);
-    if (type === "LOAN-ISSUE" || type === "LOAN-INCREASE" || type === "LOAN-PAYMENT" || type === "INVENTORY-PAYMENT") {
+    if (
+      type === "LOAN-ISSUE" ||
+      type === "LOAN-INCREASE" ||
+      type === "LOAN-DECREASE" ||
+      type === "LOAN-PAYMENT" ||
+      type === "INVENTORY-PAYMENT"
+    ) {
       if (type === "INVENTORY-PAYMENT" && !inventoryPaymentEnabled) return;
       if (type === "LOAN-ISSUE" && !loanEntry.openCreate) return;
       if (type === "LOAN-INCREASE" && !loanEntry.openIncrease) return;
+      if (type === "LOAN-DECREASE" && !loanEntry.openDecrease) return;
       if (type === "LOAN-PAYMENT" && !loanEntry.openPayment) return;
       if (type === "LOAN-ISSUE") loanEntry.openCreate?.();
       if (type === "LOAN-INCREASE") loanEntry.openIncrease?.();
+      if (type === "LOAN-DECREASE") loanEntry.openDecrease?.();
       if (type === "LOAN-PAYMENT") loanEntry.openPayment?.();
       setSpecialType(type);
       setShowTypePicker(false);
@@ -311,7 +321,12 @@ export function AddTransactionWizard(props: Props) {
         <div className="flex min-h-0 flex-1 flex-col">
           <PendingInventoryDispatchesPanel presentation="inline" onBusyChange={setInventoryBusy} typeStep={specialTypeStep} />
         </div>
-      ) : (specialType === "LOAN-ISSUE" || specialType === "LOAN-INCREASE" || specialType === "LOAN-PAYMENT") && specialTypeStep ? (
+      ) : (
+        specialType === "LOAN-ISSUE" ||
+        specialType === "LOAN-INCREASE" ||
+        specialType === "LOAN-DECREASE" ||
+        specialType === "LOAN-PAYMENT"
+      ) && specialTypeStep ? (
         <LoanEntryForm
           key={loanSessionKey}
           entry={loanEntry}
@@ -325,6 +340,7 @@ export function AddTransactionWizard(props: Props) {
             setLoanSessionKey((key) => key + 1);
             if (kind === "LOAN-ISSUE") loanEntry.openCreate?.();
             else if (kind === "LOAN-INCREASE") loanEntry.openIncrease?.();
+            else if (kind === "LOAN-DECREASE") loanEntry.openDecrease?.();
             else if (kind === "LOAN-PAYMENT") loanEntry.openPayment?.();
           }}
           onDismiss={() => {
@@ -479,6 +495,7 @@ export function AddTransactionWizard(props: Props) {
                 inventoryPaymentEnabled={inventoryPaymentEnabled}
                 loanIssueEnabled={Boolean(loanEntry.openCreate)}
                 loanIncreaseEnabled={Boolean(loanEntry.openIncrease)}
+                loanDecreaseEnabled={Boolean(loanEntry.openDecrease)}
                 loanPaymentEnabled={Boolean(loanEntry.openPayment)}
               >
                 {entryContent}

@@ -629,13 +629,15 @@ export function RegisterInvoiceTransactionFields({
     <>
       {isCheck ? (
         <div className="space-y-2 min-w-0">
-          {paymentDetailsRequired ? (
-            <RequiredLabel htmlFor="journal-check-number">
-              {t("accounting.dailyIncome.form.fields.checkNumber")}
-            </RequiredLabel>
-          ) : (
-            <Label htmlFor="journal-check-number">{t("accounting.dailyIncome.form.fields.checkNumber")}</Label>
-          )}
+          <FieldLabelRow>
+            {paymentDetailsRequired ? (
+              <RequiredLabel htmlFor="journal-check-number">
+                {t("accounting.dailyIncome.form.fields.checkNumber")}
+              </RequiredLabel>
+            ) : (
+              <Label htmlFor="journal-check-number">{t("accounting.dailyIncome.form.fields.checkNumber")}</Label>
+            )}
+          </FieldLabelRow>
           <Input
             id="journal-check-number"
             placeholder={t("accounting.dailyIncome.form.placeholders.enterCheckNumber")}
@@ -696,7 +698,9 @@ export function RegisterInvoiceTransactionFields({
   const externalReferenceFields = isCheck || isCashPaymentMethod(paymentMethodName) ? null : (
     <>
       <div className="space-y-2 min-w-0">
-        <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
+        <FieldLabelRow>
+          <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
+        </FieldLabelRow>
         <Input
           id="journal-external-reference"
           autoComplete="off"

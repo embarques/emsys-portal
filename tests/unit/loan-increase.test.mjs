@@ -69,14 +69,14 @@ test("principal decrease cannot exceed the open loan balance", () => {
  assert.equal(payment.safeParse({...pay,amount:40.01}).error.issues[0].message,"accounting.loans.validation.paymentExceedsBalance");
 });
 
-test("the entry stays hidden until the increase lifecycle is verified", () => {
+test("the increase entry stays hidden until the increase lifecycle is verified", () => {
  const previous=process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED;
  try {
   delete process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED;
   const loans=()=>loader()("src/lib/accounting/daily-income/transaction-type-config.ts").buildTransactionEntryGroups(t).find(group=>group.id==="loans").options.map(option=>option.value);
-  assert.deepEqual(loans(),["LOAN-ISSUE","LOAN-PAYMENT"]);
+  assert.deepEqual(loans(),["LOAN-ISSUE","LOAN-DECREASE","LOAN-PAYMENT"]);
   process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED="true";
-  assert.deepEqual(loans(),["LOAN-ISSUE","LOAN-INCREASE","LOAN-PAYMENT"]);
+  assert.deepEqual(loans(),["LOAN-ISSUE","LOAN-INCREASE","LOAN-DECREASE","LOAN-PAYMENT"]);
  } finally {
   if (previous === undefined) delete process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED; else process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED=previous;
  }
