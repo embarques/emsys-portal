@@ -28,11 +28,11 @@ export function LoanQuickLoanButtons({ loans, disabled = false, onSelect }: Prop
   if (!oldest || !newest) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 gap-2">
       <Button
         type="button"
-        size="sm"
         variant="outline"
+        className="h-10 w-full max-md:min-h-12"
         disabled={disabled}
         onClick={() => onSelect(oldest)}
       >
@@ -40,8 +40,8 @@ export function LoanQuickLoanButtons({ loans, disabled = false, onSelect }: Prop
       </Button>
       <Button
         type="button"
-        size="sm"
         variant="outline"
+        className="h-10 w-full max-md:min-h-12"
         disabled={disabled}
         onClick={() => onSelect(newest)}
       >

@@ -171,7 +171,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             title={text("sections.employee")}
             description={text("loanHint")}
           >
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-4">
               <LoanEmployeeField
                 id="loan-payment-employee"
                 label={text("employee")}
@@ -257,7 +257,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
           </FormSection>
 
           <FormSection variant="card" className={cn("p-4 [&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground", stageClass(2))} icon={ReceiptText} title={text("sections.payment")}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-4">
               <div className="space-y-2">
                 <FieldLabelRow
                   showClear={Boolean(receivedAccountId) && receivedAccountInline}
@@ -291,8 +291,15 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                 {fieldError("receivedAccountId")}
               </div>
               <div className="space-y-2">
-                {requiredLabel("loan-payment-date", text("date"))}
-                <DateInput id="loan-payment-date" aria-invalid={Boolean(errors.transactionDate)} {...register("transactionDate")} />
+                <FieldLabelRow>
+                  {requiredLabel("loan-payment-date", text("date"))}
+                </FieldLabelRow>
+                <DateInput
+                  id="loan-payment-date"
+                  aria-invalid={Boolean(errors.transactionDate)}
+                  className="h-10 min-h-10 rounded-lg border-2 border-foreground/60 shadow-none max-md:min-h-12 max-md:rounded-xl max-md:border max-md:border-input max-md:shadow-xs"
+                  {...register("transactionDate")}
+                />
                 {fieldError("transactionDate")}
               </div>
             </div>
