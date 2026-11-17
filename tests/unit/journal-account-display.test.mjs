@@ -16,17 +16,27 @@ function load(filename) {
   return loadedModule.exports;
 }
 
-const { buildChartAccountsById, isChartAccountType, resolveJournalAccount, resolveJournalRowAccount } = load(
-  path.join(root, "src/lib/accounting/daily-income/journal-account.ts"),
-);
+const {
+  buildChartAccountsById,
+  isChartAccountType,
+  pickJournalPrimaryAccountLine,
+  resolveJournalAccount,
+  resolveJournalRowAccount,
+} = load(path.join(root, "src/lib/accounting/daily-income/journal-account.ts"));
 const chart = buildChartAccountsById([{ id: 7, name: "SALES", displayName: "Sales income", type: "REVENUE" }]);
 
 test("resolveJournalAccount prefers the chart of accounts entry by id", () => {
-  assert.deepEqual(resolveJournalAccount({ id: 7, name: "SALES", type: "INCOME" }, chart), { name: "Sales income", type: "REVENUE" });
+  assert.deepEqual(resolveJournalAccount({ id: 7, name: "SALES", type: "INCOME" }, chart), {
+    name: "Sales income",
+    type: "REVENUE",
+  });
 });
 
 test("resolveJournalAccount falls back to the journal snapshot", () => {
-  assert.deepEqual(resolveJournalAccount({ id: 99, name: "FUEL", type: "expense" }, chart), { name: "FUEL", type: "EXPENSE" });
+  assert.deepEqual(resolveJournalAccount({ id: 99, name: "FUEL", type: "expense" }, chart), {
+    name: "FUEL",
+    type: "EXPENSE",
+  });
   assert.deepEqual(resolveJournalAccount({ id: 0, name: "Petty cash" }), { name: "Petty cash", type: "" });
   assert.equal(resolveJournalAccount(undefined, chart), null);
 });
@@ -36,9 +46,54 @@ test("resolveJournalRowAccount falls back to the debited line for payments", () 
     { id: 2, name: "ACCOUNTS RECEIVABLE", type: "ASSET", debit: 0, credit: 10 },
     { id: 1, name: "CASH ON HAND", type: "ASSET", debit: 10, credit: 0 },
   ];
-  assert.deepEqual(resolveJournalRowAccount({ accounts }), { name: "CASH ON HAND", type: "ASSET" });
-  assert.deepEqual(resolveJournalRowAccount({ account: { id: 7, name: "SALES" }, accounts }, chart), { name: "Sales income", type: "REVENUE" });
+  assert.deepEqual(resolveJournalRowAccount({ transactionType: "PAYMENT", accounts }), {
+    name: "CASH ON HAND",
+    type: "ASSET",
+  });
+  assert.deepEqual(
+    resolveJournalRowAccount({ account: { id: 7, name: "SALES" }, accounts }, chart),
+    { name: "Sales income", type: "REVENUE" },
+  );
   assert.equal(resolveJournalRowAccount({ accounts: [] }), null);
+});
+
+test("initial payment with discount prefers cash/bank over SALES DISCOUNTS", () => {
+  const accounts = [
+    { id: 1, name: "CASH ON HAND", type: "ASSET", debit: 80, credit: 0 },
+    { id: 2, name: "ACCOUNTS RECEIVABLE", type: "ASSET", debit: 20, credit: 20 },
+    { id: 5, name: "SALES DISCOUNTS", type: "CONTRA-REVENUE", debit: 20, credit: 0 },
+    { id: 7, name: "SALES", type: "REVENUE", debit: 0, credit: 100 },
+  ];
+
+  assert.equal(pickJournalPrimaryAccountLine(accounts, "INITIAL-PAYMENT")?.name, "CASH ON HAND");
+  assert.deepEqual(
+    resolveJournalRowAccount({
+      transactionType: "INITIAL-PAYMENT",
+      account: { id: 5, name: "SALES DISCOUNTS", type: "CONTRA-REVENUE" },
+      accounts,
+    }),
+    { name: "CASH ON HAND", type: "ASSET" },
+  );
+  assert.deepEqual(
+    resolveJournalRowAccount({
+      transactionType: "INITIAL-PAYMENT",
+      account: { id: 5, name: "SALES DISCOUNTS", type: "CONTRA-REVENUE" },
+      paymentAccount: { id: 8, name: "Bank Chase", type: "BANK" },
+      accounts: accounts.map((line) =>
+        line.name === "CASH ON HAND" ? { ...line, id: 8, name: "Bank Chase", type: "BANK" } : line,
+      ),
+    }),
+    { name: "Bank Chase", type: "BANK" },
+  );
+});
+
+test("discount-only initial payment still surfaces SALES DISCOUNTS", () => {
+  const accounts = [
+    { id: 2, name: "ACCOUNTS RECEIVABLE", type: "ASSET", debit: 100, credit: 20 },
+    { id: 5, name: "SALES DISCOUNTS", type: "CONTRA-REVENUE", debit: 20, credit: 0 },
+    { id: 7, name: "SALES", type: "REVENUE", debit: 0, credit: 100 },
+  ];
+  assert.equal(pickJournalPrimaryAccountLine(accounts, "INITIAL-PAYMENT")?.name, "SALES DISCOUNTS");
 });
 
 test("isChartAccountType only accepts chart of accounts types", () => {

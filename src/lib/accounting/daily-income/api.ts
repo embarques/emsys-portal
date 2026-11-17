@@ -12,6 +12,7 @@ import { inventoryHoldersFromValues } from "./inventory-change";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { isExpensePaidByMethod, isFixedCashTransactionType } from "./transaction-workflow";
 import { isCashAccountSelectable, isPaymentAccountsEnabled } from "./payment-accounts";
+import { pickJournalPrimaryAccountLine } from "./journal-account";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import {
@@ -263,7 +264,8 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
         };
       })
     : [];
-  const primaryLine = accountLines.find((account) => !["CASH ON HAND", "ACCOUNTS RECEIVABLE"].includes(account.name));
+  const transactionType = (stringValue(firstDefined(raw.transactionType, raw.transType)) || "SALES") as JournalTransactionType;
+  const primaryLine = pickJournalPrimaryAccountLine(accountLines, transactionType);
   const sourceLine = accountLines.find((account) => account.credit > 0 && account.id !== primaryLine?.id);
   const route = normalizeJournalRoute(raw);
   const employee = normalizeLookup(raw.employee);
@@ -309,7 +311,7 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     reversalOf: stringValue(raw.reversalOf) || null,
     incomeStatementId: numberValue(firstDefined(raw.incomeStatementId, objectValue(raw.incomeStatement).id)),
     date: stringValue(raw.date).slice(0, 10),
-    transactionType: (stringValue(firstDefined(raw.transactionType, raw.transType)) || "SALES") as JournalTransactionType,
+    transactionType,
     amount: numberValue(firstDefined(raw.transactionAmount, raw.amount)),
     refNumber: stringValue(raw.refNumber),
     externalReferenceNumber: stringValue(raw.external_reference_number ?? raw.externalReferenceNumber),

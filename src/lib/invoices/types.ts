@@ -156,8 +156,9 @@ export type Invoice = ApiTableRecord & {
   containerName?: string;
   paymentLocation: InvoicePaymentLocation;
   /**
-   * Authoritative financial/ops daily-route snapshot on the invoice (journal posts
-   * inherit this). Distinct from received-by when delivery later assigns a route.
+   * NY receive-route snapshot for recordkeeping / insights when `receivedBy` is a
+   * daily route. Not financial ownership for later payments, surcharges, or discounts.
+   * RD delivery routes live on barcode labels, not here.
    */
   dailyRouteId?: string;
   dailyRouteName?: string;
@@ -167,10 +168,10 @@ export type Invoice = ApiTableRecord & {
     date?: string;
     supervisor?: { id: number; name: string } | null;
   };
-  /** Daily pickup route (`vehicle-routes`) when `receivedBy` is a route. */
+  /** NY daily pickup route id when `receivedBy` is a route (mirrors receivedBy). */
   routeId?: string;
   routeName?: string;
-  /** Nested crew on the daily route — shown in the Received by column. */
+  /** Nested crew on the NY receive route — shown in the Received by column. */
   routeCrewId?: string;
   routeCrewName?: string;
   /** Warehouse/office branch when the pickup was created in-house instead of on a route. */

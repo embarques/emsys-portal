@@ -1,4 +1,37 @@
-# Daily-route accountability — remaining gaps
+# Daily-route accountability
+
+## Three distinct route concepts
+
+| Concept | Owner | Branch | Purpose | Financial ownership? |
+| --- | --- | --- | --- | --- |
+| Invoice **`receivedBy`** | Invoice | **NY** | Who received the merchandise: a **daily route** or a **single employee** | No by itself |
+| Invoice **`dailyRoute`** | Invoice snapshot | **NY** | Recordkeeping / insights when receive was via a route (often derived from `receivedBy` when type is route) | **No** for later journals |
+| Barcode / label **`route`** | Each merchandise label | **RD** | Delivery daily vehicle-route | No |
+
+`createdBy` remains who digitized the invoice and is never a substitute for Received by.
+
+## Journal accountability (case by case)
+
+1. **INITIAL-PAYMENT** (invoice creation): the assignee chosen on that transaction
+   (employee, daily-route supervisor, or creator-linked employee) is financially
+   accountable for that initial payment. The invoice may still store NY
+   `receivedBy` / `dailyRoute` for history and insights.
+2. **Later PAYMENT / SURCHARGE / DISCOUNT**: each journal chooses its own assignee.
+   Do **not** inherit `invoice.dailyRoute` for reconciliation ownership.
+3. When a journal itself selects a daily route, that route’s **supervisor** is
+   accountable for **that journal only**. A different employee must not be sent
+   with a conflicting route id (`INVALID_DAILY_ROUTE`).
+
+## API contract notes
+
+- `journal.attributeFinancialRoute` must use only the route selected on the
+  journal entry (`dailyRouteId` / `vehicleRoute`). It must not pull
+  `invoice.dailyRoute` onto later posts.
+- Portal Daily Income Assignment for surcharge/payment/discount is independent
+  of the invoice’s NY receive route.
+- Barcode route filters and assignment UIs use RD daily routes only.
+
+## Remaining gaps
 
 ## Route-page integration and contract gaps
 
@@ -29,6 +62,9 @@
   employee/branch/method aggregation; define unsupported aggregation explicitly.
 - Complete the scoped approval/controlled-correction matrix in
   [financial-controls.md](financial-controls.md).
+- Pending INITIAL-PAYMENT invoices still map journal `employee` onto
+  `receivedBy` in places; confirm that path does not conflate financial assignee
+  with NY receive history when both differ.
 
 See [inventory gaps](inventory-workflow.md) and
 [backend gaps](backend-api-gaps.md).
