@@ -85,13 +85,23 @@ Our workers digitize the information from our physical invoices into the system 
 
 An invoice represents the merchandise collected as part of a client's shipment.
 
-**Received by** (`receivedBy`) is who took in the merchandise. It replaces legacy `employee` (`core.User`). The value is either the selected **non-DR daily route** or a **single employee from a non-DR branch**, defined when creating or editing the invoice. The invoice table shows Received by, not a separate Route field. **Received via** (route / warehouse / office) is portal-only so the form can pick which of those to save; do not persist it.
+**Received by** (`receivedBy`) is who took in the merchandise in **NY** (pickup / receive). It replaces legacy `employee` (`core.User`). The value is either a **non-DR (NY) daily route** or a **single employee from a non-DR branch**, set when creating or editing the invoice. The invoice table shows Received by, not a separate Route field. **Received via** (route / warehouse / office) is portal-only so the form can pick which of those to save; do not persist it.
+
+Do not confuse these three route concepts:
+
+| Concept | Where | Branch / meaning | Financial accountability? |
+| --- | --- | --- | --- |
+| **`receivedBy`** | Invoice | NY — who received the merchandise (employee **or** NY daily route) | No by itself. Only the **INITIAL-PAYMENT** journal’s chosen assignee is accountable for that first payment. |
+| **`invoice.dailyRoute`** | Invoice snapshot | NY — recordkeeping / insights copy when receive was via a daily route (often derived from `receivedBy` when it is a route) | **No** for later payments, surcharges, or discounts. Insights / history only. |
+| **Barcode `route`** | Each label / invoice item | **RD** — delivery daily vehicle-route | No. Operational delivery assignment only. |
+
+Later Daily Income journals (payment / surcharge / discount) choose their own assignee (employee, daily-route supervisor, or “me”) case by case. They must **not** inherit `invoice.dailyRoute` for reconciliation ownership. If a later journal selects a daily route, that journal’s supervisor is accountable for **that transaction only**.
 
 TODO (backend) — invoice `receivedBy` (portal now follows this; align API + legacy data):
 
 Replace invoice **`employee`** (`core.User`) with **`receivedBy`**.
 
-**Route:** `receivedBy` is the selected daily vehicle-route (`id` + `name`) with nested crew ref `route` (`id` + `name`), or a single employee (like the current/legacy system).
+**Route:** `receivedBy` is the selected NY daily vehicle-route (`id` + `name`) with nested crew ref `route` (`id` + `name`), or a single employee (like the current/legacy system).
 
 Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is the date/time the invoice was digitized. **`updatedAt` / `updatedBy`** are the last user who updated it.
 
@@ -663,9 +673,11 @@ The goal is to turn the operational and financial data collected throughout the 
 **Daily route = operational attribution and analytics. Supervisor = financial accountability and reconciliation. Inventory holders = one or more employees and/or a vehicle jointly responsible for one inventory assignment.** These stay independent; referencing a daily route never makes every crew member or the vehicle responsible for a record. Contract: `docs/daily-route-accountability.md`.
 
 - **Inventory:** dispatched supplies keep the optional daily route for analytics and require at least one holder (single employee, several employees, a vehicle, or a vehicle with employees). "Use route vehicle and crew" is only a shortcut; users decide who is responsible. All holders share one assignment (20 boxes to a vehicle and two employees is 20 boxes, not 60); reconciliation clears it once for all holders and keeps the route reference.
-- **Appointments and invoices** keep their daily-route association for analytics only; an appointment creates no financial accountability unless a payment is recorded.
-- **Payments, income and expenses** attributed to a daily route are registered under the route's **responsible supervisor** (pre-selected when the route has exactly one; chosen explicitly when it has several), never the whole crew. The recorded supervisor survives later route edits.
-- **Accounting → Pending Transactions** reconciles per supervisor (`employee`), payment method and collection date, and shows the original daily route.
+- **Appointments and invoices** keep their NY daily-route / `receivedBy` association for analytics and receive history only; an appointment creates no financial accountability unless a payment is recorded. Invoice `dailyRoute` must not own later invoice journals.
+- **INITIAL-PAYMENT** (invoice creation) uses the assignee chosen at creation (employee or route supervisor). The invoice may still store the NY receive route for recordkeeping / insights.
+- **Later payments, surcharges, discounts, income and expenses** choose their own assignee per transaction. When attributed to a daily route, they register under that route's **responsible supervisor** (pre-selected when the route has exactly one; chosen explicitly when it has several), never the whole crew. The recorded supervisor survives later route edits and is independent of the invoice’s creation route.
+- **Barcode / invoice-item routes** are RD delivery routes and are separate from invoice `receivedBy` / `dailyRoute`.
+- **Accounting → Pending Transactions** reconciles per supervisor (`employee`), payment method and collection date, and shows the journal’s own daily route when present.
 
 The inventory ledger dispatch documents (`/inventory` workflow) still use a single destination holder; joint holders there await a backend ledger design.
 

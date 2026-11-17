@@ -77,6 +77,27 @@ test("route payments keep the route attribution and let the API set the snapshot
   assert.equal(sent.employee, null);
 });
 
+test("later surcharge posts keep the transaction assignee and do not send the invoice route", async () => {
+  let sent;
+  const api = loadFeature("src/lib/accounting/daily-income/api.ts", {
+    post: async (_url, body) => { sent = body; return { success: true, data: { id: "journal-surcharge" } }; },
+  });
+  await api.createDailyIncomeJournal(statement, {
+    transactionType: "SURCHARGE",
+    amount: 25,
+    invoiceId: "inv-1",
+    assigneeSource: "employee",
+    employeeId: 99,
+    employeeName: "ALEX",
+    paymentMethodName: "CASH",
+    refNumber: "",
+    description: "",
+  });
+  assert.deepEqual(sent.employee, { id: 99, name: "ALEX" });
+  assert.equal(sent.vehicleRoute, null);
+  assert.equal(sent.route, null);
+});
+
 test("inventory dispatch sends joint holders and route attribution, never a journal employee", async () => {
   let sent;
   const api = loadFeature("src/lib/accounting/daily-income/api.ts", {
@@ -179,6 +200,7 @@ for (const language of ["en", "es"]) {
     for (const key of ["responsibleSupervisor", "inventoryHolders", "holderVehicle", "holderEmployees", "inventoryDailyRoute"]) assert.ok(form.fields[key], key);
     for (const key of ["supervisorRequired", "inventoryHoldersRequired"]) assert.ok(form.validation[key], key);
     for (const key of ["routeSupervisorAccountability", "inventoryHolders", "inventoryDailyRoute"]) assert.ok(form.hints[key], key);
+    assert.ok(messages.dailyIncome.errors.invalidDailyRoute);
     assert.ok(messages.financialActivity.dailyRoute);
   });
 }
