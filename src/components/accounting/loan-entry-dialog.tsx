@@ -15,7 +15,7 @@ type Props = {
   accounts: ChartAccount[];
   /** Prefills loan payment / increase when opened from a selected loan. */
   initialLoan?: Loan | null;
-  /** Prefills payment employee when reducing loans without a specific loan. */
+  /** Prefills payment employee when reducing loans without a preselected loan. */
   initialEmployee?: { id: number; name: string } | null;
 };
 

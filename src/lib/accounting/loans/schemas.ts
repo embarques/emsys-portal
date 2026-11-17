@@ -78,8 +78,7 @@ export function createLoanPaymentSchema(t: TranslateFn, maxOutstanding?: number)
     .object({
       employeeId: z.number().positive(t("accounting.loans.validation.employeeRequired")),
       employeeName: z.string().optional(),
-      allocationMode: z.enum(["oldest-first", "specific-loan"]),
-      loanId: z.string().optional(),
+      loanId: z.string().min(1, t("accounting.loans.validation.loanRequired")),
       receivedAccountId: z.number().positive(t("accounting.loans.validation.receivedAccountRequired")),
       receivedAccountName: z.string().optional(),
       receivedAccountType: z.string().optional(),
@@ -91,13 +90,6 @@ export function createLoanPaymentSchema(t: TranslateFn, maxOutstanding?: number)
       description: z.string().trim().max(500, t("accounting.loans.validation.descriptionTooLong")),
     })
     .superRefine((values, context) => {
-      if (values.allocationMode === "specific-loan" && !values.loanId) {
-        context.addIssue({
-          code: "custom",
-          path: ["loanId"],
-          message: t("accounting.loans.validation.loanRequired"),
-        });
-      }
       if (maxOutstanding == null || !Number.isFinite(maxOutstanding)) return;
       if (toCents(values.amount) > toCents(Math.max(0, maxOutstanding))) {
         context.addIssue({

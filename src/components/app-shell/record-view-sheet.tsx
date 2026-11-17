@@ -30,7 +30,7 @@ type RecordViewSheetHeaderProps = {
   description?: React.ReactNode;
   meta?: React.ReactNode;
   /**
-   * Immutable / read-only shortcuts under the title/meta
+   * Immutable / read-only shortcuts on the meta row, right-aligned
    * (print, download, export, open/view). Put mutating actions in
    * `RecordViewSheetActions` / the sheet footer instead.
    */
@@ -124,8 +124,14 @@ export function RecordViewSheetHeader({ title, description, meta, actions, compa
             {description}
           </SheetDescription>
         ) : null}
-        {meta ? <div className="flex flex-wrap items-center gap-2 pt-1">{meta}</div> : null}
-        {actions ? <div className="flex flex-wrap items-center gap-2 pt-1">{actions}</div> : null}
+        {meta || actions ? (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {meta ? <div className="flex min-w-0 flex-wrap items-center gap-2">{meta}</div> : null}
+            {actions ? (
+              <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{actions}</div>
+            ) : null}
+          </div>
+        ) : null}
       </SheetHeader>
     </div>
   );

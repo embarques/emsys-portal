@@ -47,6 +47,7 @@ test("loan entry uses dedicated create/payment mutations and retains failed paym
     dialog = page.getByRole("dialog");
     await dialog.locator("#loan-payment-employee").click();
     await page.getByRole("option", { name: "Ana", exact: true }).click();
+    await dialog.getByRole("button", { name: "Use oldest loan", exact: true }).click();
     await dialog.locator("#loan-payment-received-account").click();
     await page.getByRole("option", { name: "Cash", exact: true }).click();
     await dialog.locator("#loan-payment-amount").fill("25");
@@ -63,6 +64,6 @@ test("loan entry uses dedicated create/payment mutations and retains failed paym
     assert.equal(requests[2].values.employeeId, 1);
     assert.equal(requests[2].values.amount, 25);
     assert.equal(requests[2].values.receivedAccountId, 3);
-    assert.equal(requests[2].values.allocationMode, "oldest-first");
+    assert.equal(requests[2].values.loanId, "loan-1");
   } finally { await browser?.close(); await rm(directory, { recursive: true, force: true }); }
 });

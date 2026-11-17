@@ -836,9 +836,9 @@
         "loanIssueAssignment": "Choose the employee who will receive this new loan.",
         "loanIssueDetails": "Enter the principal and select the loan receivable and the asset account that funds it.",
         "loanIssueReview": "Check the employee, principal and accounts. Edit any section that needs a correction, then save.",
-        "loanPaymentAssignment": "Choose the employee. Optionally select a specific loan, or apply oldest first.",
+        "loanPaymentAssignment": "Choose the employee and the active loan to apply this payment to. Use oldest or newest to fill the loan quickly.",
         "loanPaymentDetails": "Enter the payment amount and the account that received the funds.",
-        "loanPaymentReview": "Check the employee, payment amount and accounts. Edit any section that needs a correction, then save.",
+        "loanPaymentReview": "Check the employee, loan, payment amount and accounts. Edit any section that needs a correction, then save.",
         "loanIncreaseAssignment": "Choose the employee and the active loan to add to.",
         "loanIncreaseDetails": "Enter the additional amount and the source asset account.",
         "loanIncreaseReview": "Check the employee, loan, amount and accounts. Edit any section that needs a correction, then save.",
@@ -889,6 +889,7 @@
           "SALES": "Not from an invoice",
           "INVENTORY": "Received or dispatched",
           "INVENTORY-PAYMENT": "Pay for a dispatch",
+          "LOAN-DECREASE": "Reduce principal",
           "LOAN-PAYMENT": "Employee repayment"
         },
         "options": {
@@ -910,10 +911,10 @@
           "income": "Invoice or other income",
           "expenses": "Cash or bank expense",
           "inventory": "Movement or payment",
-          "loans": "Issue, increase, or repay",
+          "loans": "Issue, adjust, or repay",
           "transfers": "Between accounts",
           "invoice": "Payment, surcharge, or discount",
-          "invoicePayment": "Search or create an invoice",
+          "invoicePayment": "Existing or new invoice",
           "invoiceSurcharge": "Existing invoice",
           "invoiceDiscount": "Existing invoice",
           "otherIncome": "Not from an invoice"
@@ -926,8 +927,8 @@
           "transfers": "Transfer",
           "invoice": "Invoice",
           "invoicePayment": "Payment",
-          "invoiceSurcharge": "Invoice surcharge",
-          "invoiceDiscount": "Invoice discount",
+          "invoiceSurcharge": "Surcharge",
+          "invoiceDiscount": "Discount",
           "otherIncome": "Other"
         }
       },
@@ -952,7 +953,7 @@
         },
         "groupHints": {
           "invoice": "Payment, surcharge, or discount",
-          "invoicePayment": "Search or create an invoice",
+          "invoicePayment": "Existing or new invoice",
           "invoiceSurcharge": "Existing invoice",
           "invoiceDiscount": "Existing invoice",
           "otherIncome": "Not from an invoice"
@@ -960,8 +961,8 @@
         "groups": {
           "invoice": "Invoice",
           "invoicePayment": "Payment",
-          "invoiceSurcharge": "Invoice surcharge",
-          "invoiceDiscount": "Invoice discount",
+          "invoiceSurcharge": "Surcharge",
+          "invoiceDiscount": "Discount",
           "otherIncome": "Other"
         }
       }
@@ -1034,6 +1035,10 @@
       "loanIncrease": {
         "label": "Register additional loan amount",
         "description": "Lend more on an existing loan"
+      },
+      "loanDecrease": {
+        "label": "Register loan principal decrease",
+        "description": "Reduce principal on an existing loan"
       },
       "loanPayment": {
         "label": "Register loan payment",
@@ -1504,13 +1509,12 @@
       "description": "Record a repayment that reduces the amount owed (raises paid, leaves principal unchanged).",
       "employee": "Employee",
       "selectEmployee": "Select employee",
+      "selectEmployeeFirst": "Select an employee first",
       "searchEmployees": "Search employees",
-      "allocationMode": "Allocation mode",
-      "oldestFirst": "Oldest first",
-      "specificLoan": "Specific loan",
       "loan": "Loan",
       "selectLoan": "Select loan",
       "searchLoans": "Search loans",
+      "loanHint": "Choose the employee and the active loan. The full payment is applied to that loan.",
       "receivedAccount": "Destination cash or bank account",
       "selectReceivedAccount": "Select cash or bank account",
       "searchAssetAccounts": "Search cash and bank accounts",
@@ -1521,14 +1525,12 @@
       "notes": "Description",
       "notesPlaceholder": "Payment notes",
       "submit": "Record payment",
-      "oldestFirstHint": "The payment is applied to the employee's oldest active loan first, then to the next one.",
-      "specificLoanHint": "The full payment is applied to the loan you choose.",
       "loanOptionDescription": "Opened {{opened}} · Balance {{balance}}",
       "journalDebit": "Debit · Destination cash or bank",
       "journalCredit": "Credit · Loan receivable",
       "sections": {
-        "employee": "Employee and allocation",
-        "balances": "Loan balances",
+        "employee": "Employee and loan",
+        "balances": "Loan balance",
         "payment": "Payment details",
         "notes": "Reference and notes",
         "journal": "Journal entry summary"
@@ -1539,9 +1541,6 @@
         "currentBalance": "Current balance",
         "thisPayment": "This payment",
         "balanceAfter": "Balance after payment",
-        "loan": "Loan (oldest first)",
-        "opened": "Opened {{date}}",
-        "totalsHint": "Totals across {{count}} active loan(s). The payment is applied in the order below.",
         "selectEmployee": "Select an employee to see their active loans.",
         "selectLoan": "Select a loan to see its balance.",
         "loading": "Loading active loans…",
@@ -2204,7 +2203,7 @@
     "void": "Void",
     "reverse": "Reverse",
     "correct": "Correct with review",
-    "note": "Edit note",
+    "note": "Edit description",
     "request": "Request a change",
     "warning": "This creates an audited offsetting entry. It does not refund a bank payment or undo the original reconciliation or clearance evidence.",
     "noteDescription": "Only the description changes. Financial amounts and verification history remain unchanged.",

@@ -363,22 +363,21 @@ export async function decreaseLoan(requestId: string, values: LoanIncreaseValues
 }
 
 export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan | null> {
-  const endpoint =
-    values.allocationMode === "specific-loan" && values.loanId
-      ? `${API_ENDPOINTS.ACCOUNTING_LOAN}/${encodeURIComponent(values.loanId)}/payments`
-      : `${API_ENDPOINTS.ACCOUNTING_LOAN}/payments`;
-  const payload = await apiClient.post<ApiEnvelope>(endpoint, {
-    employee: values.employeeId ? { id: values.employeeId, name: values.employeeName ?? "" } : undefined,
-    allocationMode: values.allocationMode,
-    loanId: values.loanId,
-    receivedAccount: values.receivedAccountId
-      ? { id: values.receivedAccountId, name: values.receivedAccountName ?? "", type: values.receivedAccountType }
-      : undefined,
-    amount: values.amount,
-    transactionDate: values.transactionDate,
-    referenceNumber: values.referenceNumber,
-    description: values.description,
-  });
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_LOAN}/${encodeURIComponent(values.loanId)}/payments`,
+    {
+      employee: values.employeeId ? { id: values.employeeId, name: values.employeeName ?? "" } : undefined,
+      allocationMode: "specific-loan",
+      loanId: values.loanId,
+      receivedAccount: values.receivedAccountId
+        ? { id: values.receivedAccountId, name: values.receivedAccountName ?? "", type: values.receivedAccountType }
+        : undefined,
+      amount: values.amount,
+      transactionDate: values.transactionDate,
+      referenceNumber: values.referenceNumber,
+      description: values.description,
+    },
+  );
   assertMutation(payload, "Unable to record loan payment.");
   const data = objectValue(unwrap(payload));
   const loans = Array.isArray(data.loans) ? data.loans : unwrapArray(payload);

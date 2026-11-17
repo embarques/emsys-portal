@@ -11,6 +11,7 @@ import {TableAdvancedFilterPanel} from "@/components/app-shell/table-advanced-fi
 import {TableSearchInput} from "@/components/app-shell/table-search-input";
 import {TablePaginationControls} from "@/components/app-shell/table-pagination-controls";
 import {TableSelectionToolbar} from "@/components/app-shell/table-selection-toolbar";
+import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
 import {JournalTotals} from "@/components/accounting/journal-totals";
 import {Card, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
@@ -96,8 +97,21 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const searchSummary = buildToolbarSearchSummary({isFiltered: hasActiveSearch, query, isSearchPending: query.trim() !== debouncedQuery.trim(), matched: total, noun, isLoading: rowsQuery.isFetching && rows.length === 0}, t);
   const chartAccountsQuery = useChartAccounts({page: 1, limit: 500}, hasPermission("canViewChartAccount", "chart_account"));
   const chartAccountsById = useMemo(() => buildChartAccountsById(chartAccountsQuery.data?.items ?? []), [chartAccountsQuery.data]);
-  const columns = useMemo(() => journalTableColumns(t, chartAccountsById).map(column => ({...column, sortable: column.id === "date" || column.id === "createdAt"})), [t, chartAccountsById]);
-  const layout = useApiTableColumns("journal-transactions-v1", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
+  const tableVariant = clearance ? "clearance" : pending ? "reconciliation" : "closeout";
+  const columnStorageKey =
+    tableVariant === "clearance"
+      ? "journal-clearance-v2"
+      : tableVariant === "reconciliation"
+        ? "journal-reconciliation-v2"
+        : "journal-transactions-v2";
+  const columns = useMemo(
+    () => journalTableColumns(t, chartAccountsById, tableVariant).map((column) => ({
+      ...column,
+      sortable: column.id === "date" || column.id === "createdAt",
+    })),
+    [t, chartAccountsById, tableVariant],
+  );
+  const layout = useApiTableColumns(columnStorageKey, columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
   const batchKey = ids.length ? getJournalBatchSelectionKey(selected[ids[0]]) : undefined;
   function selectionBlockReason(row: DailyIncomeJournal): SelectionBlockReason | null {
     if (ids.includes(row.id)) return null;
@@ -223,6 +237,14 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
         : <JournalTotals layout="inline" label={text("selectedTotals")} totals={selectedTotals.data} journals={ids.map(id => selected[id])} chartAccounts={chartAccountsQuery.data?.items ?? []} loading={selectedTotals.isFetching}/>}
       actions={<>
         {canProcess ? <Button size="sm" disabled={!ready} onClick={openConfirm}><CheckCircle2 className="size-4" aria-hidden="true"/>{actionLabel}</Button> : null}
+        {ids.length === 1 ? (
+          <JournalLifecycleActions
+            key={`selection-lifecycle:${ids[0]}:${selected[ids[0]]?.version ?? 0}`}
+            journal={selected[ids[0]]}
+            variant="toolbar"
+            onCompleted={() => setSelected({})}
+          />
+        ) : null}
         {ids.length === 1 && onPrintReceipt && canPrintPaymentReceipt(selected[ids[0]]) ? <Button size="sm" variant="outline" disabled={isPrintingReceipt} onClick={() => onPrintReceipt(selected[ids[0]])}><Printer className="size-4" aria-hidden="true"/>{t("accounting.dailyIncome.actions.printReceipt")}</Button> : null}
       </>}
     />

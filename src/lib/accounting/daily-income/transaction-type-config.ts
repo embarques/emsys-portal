@@ -3,6 +3,7 @@ import {
   ArrowUpCircle,
   BadgePlus,
   Banknote,
+  CircleMinus,
   FileText,
   Landmark,
   HandCoins,
@@ -62,7 +63,13 @@ const LEGACY_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
   { value: "LOAN", icon: Landmark, iconClassName: "text-indigo-700", iconBackgroundClassName: "bg-indigo-50" },
 ];
 
-export type TransactionEntryCategory = JournalTransactionType | "INVENTORY-PAYMENT" | "LOAN-ISSUE" | "LOAN-INCREASE" | "LOAN-PAYMENT";
+export type TransactionEntryCategory =
+  | JournalTransactionType
+  | "INVENTORY-PAYMENT"
+  | "LOAN-ISSUE"
+  | "LOAN-INCREASE"
+  | "LOAN-DECREASE"
+  | "LOAN-PAYMENT";
 export type TransactionEntryOption = Omit<TransactionTypeOption, "value"> & { value: TransactionEntryCategory };
 
 type EntryChooserNode = {
@@ -101,7 +108,12 @@ const ENTRY_CHOOSER_TREE: EntryChooserNode[] = [
   {
     id: "loans",
     icon: Landmark,
-    categories: ["LOAN-ISSUE", ...(isLoanIncreaseEnabled() ? (["LOAN-INCREASE"] as const) : []), "LOAN-PAYMENT"],
+    categories: [
+      "LOAN-ISSUE",
+      ...(isLoanIncreaseEnabled() ? (["LOAN-INCREASE"] as const) : []),
+      "LOAN-DECREASE",
+      "LOAN-PAYMENT",
+    ],
   },
   { id: "transfers", icon: ArrowLeftRight, categories: ["TRANSFER"] },
 ];
@@ -139,6 +151,7 @@ export function buildTransactionEntryOptions(t: TranslateFn): TransactionEntryOp
   for (const [value, key, icon] of [
     ["LOAN-ISSUE", "loanIssue", Landmark],
     ...(isLoanIncreaseEnabled() ? [["LOAN-INCREASE", "loanIncrease", BadgePlus] as const] : []),
+    ["LOAN-DECREASE", "loanDecrease", CircleMinus],
     ["LOAN-PAYMENT", "loanPayment", HandCoins],
   ] as const) {
     options.push({ value, label: t(`accounting.dailyIncome.transactionTypes.${key}.label`),

@@ -1070,9 +1070,11 @@ export function DailyIncomeTransactionForm({
 
         {isCheck ? (
           <div className="space-y-2 min-w-0">
-            <RequiredLabel htmlFor="journal-check-number">
-              {t("accounting.dailyIncome.form.fields.checkNumber")}
-            </RequiredLabel>
+            <FieldLabelRow>
+              <RequiredLabel htmlFor="journal-check-number">
+                {t("accounting.dailyIncome.form.fields.checkNumber")}
+              </RequiredLabel>
+            </FieldLabelRow>
             <Input
               id="journal-check-number"
               placeholder={t("accounting.dailyIncome.form.placeholders.enterCheckNumber")}
@@ -1084,7 +1086,9 @@ export function DailyIncomeTransactionForm({
         ) : null}
 
         {!isCheck && !isCashPaymentMethod(paymentMethodName) ? <div className="space-y-2 min-w-0">
-          <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
+          <FieldLabelRow>
+            <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
+          </FieldLabelRow>
           <Input
             id="journal-external-reference"
             autoComplete="off"

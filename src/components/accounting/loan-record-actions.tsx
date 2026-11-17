@@ -71,7 +71,13 @@ export function LoanRecordActions({
   if (actions.length === 0) return null;
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", fullWidth && "w-full", className)}>
+    <div
+      className={cn(
+        "flex gap-2",
+        fullWidth ? "w-full flex-col items-stretch" : "flex-wrap items-center",
+        className,
+      )}
+    >
       {actions.map(({ action, label }) => {
         const Icon = ACTION_ICONS[action];
         return (
@@ -80,11 +86,11 @@ export function LoanRecordActions({
             type="button"
             size="sm"
             variant={action === "payment" ? "default" : "outline"}
-            className={cn(fullWidth && "min-w-0 flex-1")}
+            className={cn(fullWidth && "w-full")}
             disabled={disabled}
             onClick={() => onAction(action)}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-4 w-4" aria-hidden />
             {label}
           </Button>
         );

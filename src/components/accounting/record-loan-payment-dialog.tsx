@@ -18,13 +18,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useEmployeeActiveLoans } from "@/lib/accounting/loans/hooks";
 import { formatLoanDate, formatLoanMoney } from "@/lib/accounting/loans/display";
 import { allocateLoanPayment, sortLoansOldestFirst, type LoanPaymentAllocation } from "@/lib/accounting/loans/payment-allocation";
 import { createLoanPaymentSchema } from "@/lib/accounting/loans/schemas";
-import type { Loan, LoanPaymentAllocationMode, LoanPaymentValues } from "@/lib/accounting/loans/types";
+import type { Loan, LoanPaymentValues } from "@/lib/accounting/loans/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
@@ -43,7 +42,7 @@ type Props = {
   onSubmit: (values: LoanPaymentValues) => Promise<void>;
   pending: boolean;
   initialLoan: Loan | null;
-  /** When set without initialLoan, opens oldest-first payment for this employee. */
+  /** When set without initialLoan, opens payment with this employee preselected. */
   initialEmployee?: { id: number; name: string } | null;
 };
 
@@ -85,8 +84,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
     resolver: async (values, context, options) =>
       zodResolver(createLoanPaymentSchema(t, maxOutstandingRef.current))(values, context, options),
     defaultValues: {
-      allocationMode: initialLoan ? "specific-loan" : "oldest-first",
-      loanId: initialLoan?.id,
+      loanId: initialLoan?.id ?? "",
       employeeId: initialLoan?.employee.id ?? initialEmployee?.id ?? 0,
       employeeName: initialLoan?.employee.name ?? initialEmployee?.name,
       receivedAccountId: 0,
@@ -98,9 +96,8 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
   });
   const { register, setValue, watch, formState: { errors } } = form;
   const busy = pending || form.formState.isSubmitting;
-  const flow = useLoanEntrySteps(form, ["employeeId", "allocationMode", "loanId"], guided);
+  const flow = useLoanEntrySteps(form, ["employeeId", "loanId"], guided);
   const stageClass = (stage: number) => guided && flow.step !== stage ? "hidden" : undefined;
-  const allocationMode = watch("allocationMode");
   const selectedEmployeeId = watch("employeeId");
   const selectedLoanId = watch("loanId");
   const receivedAccountId = watch("receivedAccountId");
@@ -119,15 +116,13 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
   const selectedLoan =
     loanOptionsSource.find((loan) => loan.id === selectedLoanId) ??
     (selectedLoanId && initialLoan?.id === selectedLoanId ? initialLoan : undefined);
-  const allocationLoans = allocationMode === "specific-loan" ? (selectedLoan ? [selectedLoan] : []) : employeeLoans;
+  const allocationLoans = selectedLoan ? [selectedLoan] : [];
   const allocation = allocateLoanPayment(allocationLoans, amount);
   const previewReady = allocationLoans.length > 0 && !employeeLoansQuery.isError;
   maxOutstandingRef.current = previewReady ? allocation.totals.balance : undefined;
-  const creditedLoans = allocation.rows.filter((row) => row.applied > 0).map((row) => row.loan);
-  const creditAccountName = Array.from(
-    new Set((creditedLoans.length > 0 ? creditedLoans : allocationLoans.slice(0, 1)).map((loan) => accountLabel(loan.loanAccount)).filter(Boolean)),
-  ).join(", ");
+  const creditAccountName = accountLabel(selectedLoan?.loanAccount);
   const noActiveLoans = selectedEmployeeId > 0 && employeeLoansQuery.isSuccess && employeeLoans.length === 0;
+  const loanPlaceholder = selectedEmployeeId ? text("selectLoan") : text("selectEmployeeFirst");
 
   const inlineOptionsLimit = guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
   const loanOptions = loanOptionsSource.map((loan) => ({
@@ -135,7 +130,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
     label: `${loan.employee.name} - ${loan.description || t("accounting.loans.fallbackDescription")}`,
     keywords: [loan.employee.name, loan.description, loan.referenceNumber],
   }));
-  const loanInline = getInlineSelectOptions({ inlineOptionsLimit, options: loanOptions, value: selectedLoanId ?? "", placeholder: text("selectLoan") }) !== null;
+  const loanInline = getInlineSelectOptions({ inlineOptionsLimit, options: loanOptions, value: selectedLoanId || "", placeholder: loanPlaceholder }) !== null;
 
   const receivedAccountOptions = assetAccounts.map((account) => ({
     value: String(account.id),
@@ -174,7 +169,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
             variant="card"
             icon={User}
             title={text("sections.employee")}
-            description={allocationMode === "specific-loan" ? text("specificLoanHint") : text("oldestFirstHint")}
+            description={text("loanHint")}
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <LoanEmployeeField
@@ -190,90 +185,72 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                 onChange={(employee) => {
                   setValue("employeeId", employee?.id ?? 0, { shouldValidate: true });
                   setValue("employeeName", employee?.name ?? "");
-                  setValue("loanId", undefined, { shouldValidate: allocationMode === "specific-loan" });
+                  setValue("loanId", "", { shouldValidate: true });
                 }}
               />
               <div className="space-y-2">
-                {requiredLabel("loan-payment-allocation", text("allocationMode"))}
-                <SegmentedControl<LoanPaymentAllocationMode>
-                  id="loan-payment-allocation"
-                  aria-label={text("allocationMode")}
-                  value={allocationMode}
-                  disabled={busy}
-                  options={[
-                    { value: "oldest-first", label: text("oldestFirst") },
-                    { value: "specific-loan", label: text("specificLoan") },
-                  ]}
-                  onValueChange={(next) => setValue("allocationMode", next, { shouldValidate: true })}
+                <FieldLabelRow
+                  showClear={Boolean(selectedLoanId) && loanInline}
+                  onClear={() => {
+                    setValue("loanId", "", { shouldValidate: true });
+                    window.requestAnimationFrame(() => document.getElementById("loan-payment-loan")?.focus());
+                  }}
+                >
+                  {requiredLabel("loan-payment-loan", text("loan"))}
+                </FieldLabelRow>
+                <SearchableSelect
+                  inlineOptionsLimit={inlineOptionsLimit}
+                  clearable={false}
+                  id="loan-payment-loan"
+                  aria-label={text("loan")}
+                  aria-invalid={Boolean(errors.loanId)}
+                  value={selectedLoanId || ""}
+                  onValueChange={(next) => {
+                    const loan = loanOptionsSource.find((item) => item.id === next);
+                    setValue("loanId", loan?.id ?? "", { shouldValidate: true });
+                    if (loan) {
+                      setValue("employeeId", loan.employee.id, { shouldValidate: true });
+                      setValue("employeeName", loan.employee.name);
+                    }
+                  }}
+                  options={loanOptionsSource.map((loan) => ({
+                    value: loan.id,
+                    label: `${loan.employee.name} - ${loan.description || t("accounting.loans.fallbackDescription")}`,
+                    description: text("loanOptionDescription", {
+                      opened: formatLoanDate(loan.openedAt) || t("common.empty.dash"),
+                      balance: formatLoanMoney(loan.balance),
+                    }),
+                    keywords: [loan.employee.name, loan.description, loan.referenceNumber],
+                  }))}
+                  placeholder={loanPlaceholder}
+                  searchPlaceholder={text("searchLoans")}
+                  emptyMessage={text("balances.empty")}
+                  loading={selectedEmployeeId > 0 && employeeLoansQuery.isPending}
+                  disabled={!selectedEmployeeId}
+                  mobileSheet
                 />
-              </div>
-              {selectedEmployeeId > 0 && employeeLoans.length > 0 ? (
-                <div className="space-y-2 sm:col-span-2">
-                  <p className="text-xs text-muted-foreground">{t("accounting.loans.quickLoan.hint")}</p>
+                {selectedEmployeeId > 0 && employeeLoans.length > 0 ? (
                   <LoanQuickLoanButtons
                     loans={employeeLoans}
                     disabled={busy}
                     onSelect={(loan) => {
-                      setValue("allocationMode", "specific-loan", { shouldValidate: true });
                       setValue("loanId", loan.id, { shouldValidate: true });
                       setValue("employeeId", loan.employee.id, { shouldValidate: true });
                       setValue("employeeName", loan.employee.name);
                     }}
                   />
-                </div>
-              ) : null}
-              {allocationMode === "specific-loan" ? (
-                <div className="space-y-2 sm:col-span-2">
-                  <FieldLabelRow
-                    showClear={Boolean(selectedLoanId) && loanInline}
-                    onClear={() => {
-                      setValue("loanId", undefined, { shouldValidate: true });
-                      window.requestAnimationFrame(() => document.getElementById("loan-payment-loan")?.focus());
-                    }}
-                  >
-                    {requiredLabel("loan-payment-loan", text("loan"))}
-                  </FieldLabelRow>
-                  <SearchableSelect
-                    inlineOptionsLimit={inlineOptionsLimit}
-                    clearable={false}
-                    id="loan-payment-loan"
-                    aria-label={text("loan")}
-                    aria-invalid={Boolean(errors.loanId)}
-                    value={selectedLoanId ?? ""}
-                    onValueChange={(next) => {
-                      const loan = loanOptionsSource.find((item) => item.id === next);
-                      setValue("loanId", loan?.id, { shouldValidate: true });
-                      if (loan && !selectedEmployeeId) {
-                        setValue("employeeId", loan.employee.id, { shouldValidate: true });
-                        setValue("employeeName", loan.employee.name);
-                      }
-                    }}
-                    options={loanOptionsSource.map((loan) => ({
-                      value: loan.id,
-                      label: `${loan.employee.name} - ${loan.description || t("accounting.loans.fallbackDescription")}`,
-                      description: text("loanOptionDescription", {
-                        opened: formatLoanDate(loan.openedAt) || t("common.empty.dash"),
-                        balance: formatLoanMoney(loan.balance),
-                      }),
-                      keywords: [loan.employee.name, loan.description, loan.referenceNumber],
-                    }))}
-                    placeholder={text("selectLoan")}
-                    searchPlaceholder={text("searchLoans")}
-                    loading={selectedEmployeeId > 0 && employeeLoansQuery.isPending}
-                    mobileSheet
-                  />
-                  {fieldError("loanId")}
-                </div>
-              ) : null}
+                ) : null}
+                {fieldError("loanId")}
+              </div>
             </div>
           </FormSection>
 
           <FormSection className={guided && flow.step === 1 ? "hidden" : undefined} variant="card" icon={Landmark} title={text("sections.balances")}>
             <LoanBalancesSummary
               allocation={allocation}
-              mode={allocationMode}
               amount={amount}
               employeeSelected={selectedEmployeeId > 0}
+              loanSelected={Boolean(selectedLoan)}
               loading={selectedEmployeeId > 0 && employeeLoansQuery.isPending && allocationLoans.length === 0}
               error={employeeLoansQuery.isError}
             />
@@ -380,7 +357,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
           {guided && flow.step === 3 ? <FormSection variant="card" title={t("accounting.dailyIncome.wizard.quickFlow.review")} action={<Button type="button" variant="ghost" onClick={() => flow.setStep(2)}>{t("common.actions.edit")}</Button>}>
             <dl className="grid gap-4 sm:grid-cols-2">{[
               [text("employee"), watch("employeeName")],
-              [text("allocationMode"), allocationMode === "specific-loan" ? selectedLoan?.description || text("specificLoan") : text("oldestFirst")],
+              [text("loan"), selectedLoan?.description || t("accounting.loans.fallbackDescription")],
               [text("receivedAccount"), receivedAccountName], [text("amount"), formatLoanMoney(amount)],
               [text("date"), watch("transactionDate")], [text("reference"), watch("referenceNumber")], [text("notes"), watch("description")],
             ].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}</dl>
@@ -389,9 +366,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
       </FormBody>
       {summaryContainer ? createPortal(<CurrentTransactionSummary typeLabel={t("accounting.dailyIncome.wizard.typeSelector.options.LOAN-PAYMENT")} rows={[
         [text("employee"), watch("employeeName") || t("common.empty.dash")],
-        [text("allocationMode"), allocationMode === "specific-loan"
-          ? selectedLoan?.description || (selectedLoan ? t("accounting.loans.fallbackDescription") : text("specificLoan"))
-          : text("oldestFirst")],
+        [text("loan"), selectedLoan?.description || (selectedLoanId ? t("accounting.loans.fallbackDescription") : t("common.empty.dash"))],
         [text("journalDebit"), <JournalSummaryLine key="debit" account={receivedAccountName} amount={amount} />],
         [text("journalCredit"), <JournalSummaryLine key="credit" account={creditAccountName} amount={amount} />],
         [text("date"), watch("transactionDate") || t("common.empty.dash")],
@@ -436,16 +411,16 @@ export function BalanceTile({ label, value, emphasis = false }: { label: string;
 
 function LoanBalancesSummary({
   allocation,
-  mode,
   amount,
   employeeSelected,
+  loanSelected,
   loading,
   error,
 }: {
   allocation: LoanPaymentAllocation;
-  mode: LoanPaymentAllocationMode;
   amount: number;
   employeeSelected: boolean;
+  loanSelected: boolean;
   loading: boolean;
   error: boolean;
 }) {
@@ -456,58 +431,21 @@ function LoanBalancesSummary({
   if (error && rows.length === 0) return <p role="alert" className="text-sm text-destructive">{text("loadError")}</p>;
   if (loading) return <p className="text-sm text-muted-foreground">{text("loading")}</p>;
   if (rows.length === 0) {
-    const message = mode === "specific-loan" ? text("selectLoan") : employeeSelected ? text("empty") : text("selectEmployee");
+    const message = !employeeSelected
+      ? text("selectEmployee")
+      : loanSelected
+        ? text("empty")
+        : text("selectLoan");
     return <p className="text-sm text-muted-foreground">{message}</p>;
   }
 
-  const showBreakdown = mode === "oldest-first";
-
   return (
     <div className="space-y-4">
-      {showBreakdown ? <p className="text-sm text-muted-foreground">{text("totalsHint", { count: rows.length })}</p> : null}
       <div className="grid gap-3 sm:grid-cols-3">
         <BalanceTile label={text("originalAmount")} value={totals.principalAmount} />
         <BalanceTile label={text("paidSoFar")} value={totals.paidAmount} />
         <BalanceTile label={text("currentBalance")} value={totals.balance} emphasis />
       </div>
-
-      {showBreakdown ? (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-muted/40 text-xs text-muted-foreground">
-              <tr>
-                <th scope="col" className="px-3 py-2 text-left font-medium">{text("loan")}</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">{text("originalAmount")}</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">{text("paidSoFar")}</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">{text("currentBalance")}</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">{text("thisPayment")}</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">{text("balanceAfter")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map(({ loan, applied, balanceAfter }, index) => (
-                <tr key={loan.id} className={cn(applied > 0 && "bg-primary/5")}>
-                  <td className="px-3 py-2">
-                    <p className="font-medium">
-                      {index + 1}. {loan.description || t("accounting.loans.fallbackDescription")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {text("opened", { date: formatLoanDate(loan.openedAt) || t("common.empty.dash") })}
-                    </p>
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatLoanMoney(loan.principalAmount)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatLoanMoney(loan.paidAmount)}</td>
-                  <td className="px-3 py-2 text-right font-semibold tabular-nums">{formatLoanMoney(loan.balance)}</td>
-                  <td className={cn("px-3 py-2 text-right tabular-nums", applied > 0 ? "font-semibold text-primary" : "text-muted-foreground")}>
-                    {formatLoanMoney(applied)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatLoanMoney(balanceAfter)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
 
       {amount > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">

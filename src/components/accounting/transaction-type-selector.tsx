@@ -21,6 +21,7 @@ const OPTIONS_WITH_HINT = new Set<TransactionEntryCategory>([
   "SALES",
   "INVENTORY",
   "INVENTORY-PAYMENT",
+  "LOAN-DECREASE",
   "LOAN-PAYMENT",
 ]);
 
@@ -51,6 +52,7 @@ type Props = {
   inventoryPaymentEnabled?: boolean;
   loanIssueEnabled?: boolean;
   loanIncreaseEnabled?: boolean;
+  loanDecreaseEnabled?: boolean;
   loanPaymentEnabled?: boolean;
 };
 
@@ -67,6 +69,7 @@ export function TransactionTypeSelector({
   inventoryPaymentEnabled = true,
   loanIssueEnabled = true,
   loanIncreaseEnabled = true,
+  loanDecreaseEnabled = true,
   loanPaymentEnabled = true,
 }: Props) {
   const { t } = useTranslation();
@@ -75,6 +78,7 @@ export function TransactionTypeSelector({
     isBusy || (category === "INVENTORY-PAYMENT" && !inventoryPaymentEnabled) ||
     (category === "LOAN-ISSUE" && !loanIssueEnabled) ||
     (category === "LOAN-INCREASE" && !loanIncreaseEnabled) ||
+    (category === "LOAN-DECREASE" && !loanDecreaseEnabled) ||
     (category === "LOAN-PAYMENT" && !loanPaymentEnabled);
 
   // One shell for type drill-down and form steps: only title/content swap; picker stays mounted.

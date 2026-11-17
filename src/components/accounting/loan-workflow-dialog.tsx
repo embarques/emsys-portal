@@ -23,7 +23,7 @@ type Props = {
   entry: ReturnType<typeof useLoanEntry>;
   /** Prefills payment allocation when opened from a selected loan. Cleared after the first save. */
   initialLoan?: Loan | null;
-  /** When set without initialLoan, payment opens in oldest-first mode for this employee. */
+  /** When set without initialLoan, payment opens with this employee preselected. */
   initialEmployee?: { id: number; name: string } | null;
   employees: Array<{ id: number; name: string }>;
   accounts: ChartAccount[];
