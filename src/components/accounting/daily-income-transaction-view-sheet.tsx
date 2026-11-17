@@ -1,7 +1,5 @@
 "use client";
 
-import { RequestChangeButton } from "@/components/change-requests/request-change-button";
-
 import { Info, Loader2, Printer } from "lucide-react";
 
 import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
@@ -247,8 +245,6 @@ export function DailyIncomeTransactionViewSheet({
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
-        <RequestChangeButton resourceType="journal" resourceId={resolved.id} inSheet />
-
         <JournalLifecycleActions key={`${resolved.id}:${resolved.version}`} journal={resolved}/>
         <RecordViewSheetActions
           editLabel={t("common.actions.edit")}
