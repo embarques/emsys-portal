@@ -110,7 +110,12 @@ export type LoanPaymentValues = {
   description: string;
 };
 
-/** Adds to an existing loan's principal: debit its loan account, credit the source asset account. */
+/**
+ * Shared payload for principal adjustments.
+ * Increase: raises principal and amount owed (debit loan AR, credit source).
+ * Decrease: lowers principal and amount owed, never above the open balance
+ * (debit source, credit loan AR).
+ */
 export type LoanIncreaseValues = {
   employeeId: number;
   employeeName?: string;

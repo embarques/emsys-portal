@@ -10,6 +10,7 @@ import { useScrollFocusedSectionToTop } from "@/hooks/use-scroll-focused-section
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { JournalSummaryLine } from "@/components/accounting/loan-journal-summary-line";
 import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
+import { LoanQuickLoanButtons } from "@/components/accounting/loan-quick-loan-buttons";
 import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
 import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { DateInput } from "@/components/ui/date-input";
@@ -42,6 +43,8 @@ type Props = {
   onSubmit: (values: LoanPaymentValues) => Promise<void>;
   pending: boolean;
   initialLoan: Loan | null;
+  /** When set without initialLoan, opens oldest-first payment for this employee. */
+  initialEmployee?: { id: number; name: string } | null;
 };
 
 const textareaClassName =
@@ -70,21 +73,22 @@ export function RecordLoanPaymentDialog(props: Props) {
   );
 }
 
-export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, pending, onSubmit, onOpenChange, summaryContainer, guided = false, typeStep }: Props & { summaryContainer?: HTMLElement | null; guided?: boolean; typeStep?: GuidedTypeStep }) {
+export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initialLoan, initialEmployee = null, pending, onSubmit, onOpenChange, summaryContainer, guided = false, typeStep }: Props & { summaryContainer?: HTMLElement | null; guided?: boolean; typeStep?: GuidedTypeStep }) {
   const { t } = useTranslation();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.paymentForm.${key}`, values);
-  const schema = useMemo(() => createLoanPaymentSchema(t), [t]);
   const handleEnterNavigation = useFormEnterNavigation();
   const submitting = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const maxOutstandingRef = useRef<number | undefined>(undefined);
   useScrollFocusedSectionToTop(formRef);
   const form = useForm<LoanPaymentValues>({
-    resolver: zodResolver(schema),
+    resolver: async (values, context, options) =>
+      zodResolver(createLoanPaymentSchema(t, maxOutstandingRef.current))(values, context, options),
     defaultValues: {
       allocationMode: initialLoan ? "specific-loan" : "oldest-first",
       loanId: initialLoan?.id,
-      employeeId: initialLoan?.employee.id ?? 0,
-      employeeName: initialLoan?.employee.name,
+      employeeId: initialLoan?.employee.id ?? initialEmployee?.id ?? 0,
+      employeeName: initialLoan?.employee.name ?? initialEmployee?.name,
       receivedAccountId: 0,
       amount: 0,
       transactionDate: todayInputValue(),
@@ -118,6 +122,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
   const allocationLoans = allocationMode === "specific-loan" ? (selectedLoan ? [selectedLoan] : []) : employeeLoans;
   const allocation = allocateLoanPayment(allocationLoans, amount);
   const previewReady = allocationLoans.length > 0 && !employeeLoansQuery.isError;
+  maxOutstandingRef.current = previewReady ? allocation.totals.balance : undefined;
   const creditedLoans = allocation.rows.filter((row) => row.applied > 0).map((row) => row.loan);
   const creditAccountName = Array.from(
     new Set((creditedLoans.length > 0 ? creditedLoans : allocationLoans.slice(0, 1)).map((loan) => accountLabel(loan.loanAccount)).filter(Boolean)),
@@ -160,9 +165,9 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
 
   return (
     <form ref={formRef} className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={(event) => flow.advance(event, submit)}>
-      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep} /> : <TransactionSectionNavigation formRef={formRef} title={text("title")} />}
+      {guided ? <LoanEntryStepNavigation kind="payment" step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep} /> : <TransactionSectionNavigation formRef={formRef} title={text("title")} />}
       <FormBody workflow className={guided ? "lg:p-8" : undefined} isBusy={busy}>
-        {guided ? <LoanEntryStepHeading step={flow.step} appearance={typeStep?.appearance} /> : null}
+        {guided ? <LoanEntryStepHeading kind="payment" step={flow.step} appearance={typeStep?.appearance} /> : null}
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           <FormSection
             className={stageClass(1)}
@@ -202,6 +207,21 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                   onValueChange={(next) => setValue("allocationMode", next, { shouldValidate: true })}
                 />
               </div>
+              {selectedEmployeeId > 0 && employeeLoans.length > 0 ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-xs text-muted-foreground">{t("accounting.loans.quickLoan.hint")}</p>
+                  <LoanQuickLoanButtons
+                    loans={employeeLoans}
+                    disabled={busy}
+                    onSelect={(loan) => {
+                      setValue("allocationMode", "specific-loan", { shouldValidate: true });
+                      setValue("loanId", loan.id, { shouldValidate: true });
+                      setValue("employeeId", loan.employee.id, { shouldValidate: true });
+                      setValue("employeeName", loan.employee.name);
+                    }}
+                  />
+                </div>
+              ) : null}
               {allocationMode === "specific-loan" ? (
                 <div className="space-y-2 sm:col-span-2">
                   <FieldLabelRow
@@ -317,6 +337,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                 id="loan-payment-amount"
                 type="number"
                 min="0.01"
+                max={previewReady ? allocation.totals.balance : undefined}
                 step="0.01"
                 aria-invalid={Boolean(errors.amount)}
                 className="col-start-2 row-start-2 h-10 text-center text-lg font-semibold tabular-nums md:text-lg [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -376,7 +397,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
         [text("date"), watch("transactionDate") || t("common.empty.dash")],
         ...(watch("referenceNumber")?.trim() ? [[text("reference"), watch("referenceNumber")] as [string, string]] : []),
       ]} />, summaryContainer) : null}
-      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep}
+      {guided ? <LoanEntryStepFooter kind="payment" step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep}
         onCancel={() => onOpenChange(false)} submitLabel={text("submit")} error={errors.root?.server?.message}
         warning={noActiveLoans ? text("balances.empty") : null} /> : (
       <FormFooter

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { TranslateFn } from "@/lib/feedback/messages";
 
+const toCents = (value: number) => Math.round((Number.isFinite(value) ? value : 0) * 100);
+
 export function createLoanFormSchema(t: TranslateFn) {
   return z.object({
     employeeId: z.number().positive(t("accounting.loans.validation.employeeRequired")),
@@ -20,6 +22,7 @@ export function createLoanFormSchema(t: TranslateFn) {
   });
 }
 
+/** Increase raises principal and amount owed. */
 export function createLoanIncreaseSchema(t: TranslateFn) {
   return z.object({
     employeeId: z.number().positive(t("accounting.loans.validation.employeeRequired")),
@@ -37,7 +40,40 @@ export function createLoanIncreaseSchema(t: TranslateFn) {
   });
 }
 
-export function createLoanPaymentSchema(t: TranslateFn) {
+/**
+ * Decrease lowers principal and amount owed. When `maxBalance` is known, the
+ * reduction cannot exceed the open balance (principal − paid).
+ */
+export function createLoanDecreaseSchema(t: TranslateFn, maxBalance?: number) {
+  return z
+    .object({
+      employeeId: z.number().positive(t("accounting.loans.validation.employeeRequired")),
+      employeeName: z.string().optional(),
+      loanId: z.string().min(1, t("accounting.loans.validation.loanRequired")),
+      sourceAccountId: z.number().positive(t("accounting.loans.validation.sourceAccountRequired")),
+      sourceAccountName: z.string().optional(),
+      sourceAccountType: z.string().optional(),
+      amount: z
+        .number({ error: t("accounting.loans.validation.decreaseAmountRequired") })
+        .positive(t("accounting.loans.validation.decreaseAmountPositive")),
+      transactionDate: z.string().min(1, t("accounting.loans.validation.dateRequired")),
+      referenceNumber: z.string().trim().max(40, t("accounting.loans.validation.referenceTooLong")),
+      description: z.string().trim().max(500, t("accounting.loans.validation.descriptionTooLong")),
+    })
+    .superRefine((values, context) => {
+      if (maxBalance == null || !Number.isFinite(maxBalance)) return;
+      if (toCents(values.amount) > toCents(Math.max(0, maxBalance))) {
+        context.addIssue({
+          code: "custom",
+          path: ["amount"],
+          message: t("accounting.loans.validation.decreaseExceedsBalance"),
+        });
+      }
+    });
+}
+
+/** Payment raises paid amount and lowers amount owed; cannot exceed open balance. */
+export function createLoanPaymentSchema(t: TranslateFn, maxOutstanding?: number) {
   return z
     .object({
       employeeId: z.number().positive(t("accounting.loans.validation.employeeRequired")),
@@ -60,6 +96,14 @@ export function createLoanPaymentSchema(t: TranslateFn) {
           code: "custom",
           path: ["loanId"],
           message: t("accounting.loans.validation.loanRequired"),
+        });
+      }
+      if (maxOutstanding == null || !Number.isFinite(maxOutstanding)) return;
+      if (toCents(values.amount) > toCents(Math.max(0, maxOutstanding))) {
+        context.addIssue({
+          code: "custom",
+          path: ["amount"],
+          message: t("accounting.loans.validation.paymentExceedsBalance"),
         });
       }
     });
