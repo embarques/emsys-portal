@@ -199,9 +199,11 @@ Receipts and dispatches are versioned documents: created as **DRAFT**, edited wi
 
 Daily Income **Add transaction categories** are Income (Invoice, Other, Invoice payment, Surcharge, Discount), Expense, Inventory (Inventory movement, Inventory payment), Loan (New loan, Additional loan amount when enabled, Loan payment), and Transfer. On wide layouts the chooser uses a two-column grid (Income|Expense, Inventory|Loan, Transfer full width); multi-option groups open a second step before the type is chosen. Narrow layouts keep the list drill-down. Journal creation uses Assignment → type-specific details → payment when applicable → optional sender/receiver for new invoices → Review. Assignment selection advances automatically after validation; Next validates the current step, Previous preserves the draft, and Save appears only at review. Invoice payments offer a full-balance shortcut; discounts and surcharges retain their amount presets. Saving another journal retains shared defaults and returns to details. Loan creation, increases, and repayments use assignment, details, and review stages inside transaction entry. Inventory payments keep the pending-dispatch chooser and use items/outcomes, payment/details, and review inside reconciliation; the standalone inventory page retains its existing flow. In guided entry, complete option sets of five or fewer render as wrapping single-choice buttons; larger lists, loading lists, and remote-search fields retain searchable dropdowns. Placeholder prompts do not count toward the cutoff. No API contracts or financial rules change.
 
-**Register new loan / Register loan payment** reuse the dedicated loan creation and employee loan-payment dialogs and existing loan APIs, including the existing payment allocation rules. They do not post a generic `LOAN` journal directly. The chooser reuses its employee/account lookups, and payment loans load only after selecting an employee. Loan actions inherit the Add transaction journal-create and income-statement-view gates; the API remains authoritative for loan permissions.
+**Register new loan / Register loan payment** reuse the dedicated loan creation and employee loan-payment dialogs and existing loan APIs, including the existing payment allocation rules. They do not post a generic `LOAN` journal directly. The chooser reuses its employee/account lookups, and payment loans load only after selecting an employee. Loan actions inherit the Add transaction journal-create and income-statement-view gates; the API remains authoritative for loan permissions. New-loan journals debit the selected **loan receivable** for the full principal and credit only a **cash or bank funding account** (never accounts receivable as the funding source).
 
-**Additional loan amount** adds to an employee's existing active loan (like a surcharge on the loan): debit the loan's account, credit a source asset account, and raise the loan principal and balance. The portal adapter sends a stable UUID `requestId` to `POST /loans/{id}/increases`; within the mounted entry session, uncertain identical submissions retain their UUID and payload, and concurrent identical submissions share one request. Missing/mismatched loan responses remain unconfirmed. The action stays hidden behind `NEXT_PUBLIC_LOAN_INCREASE_ENABLED` pending valid deployed lifecycle/replay acceptance (B12/F04 in `docs/backend-api-gaps.md`). Browser-reload recovery is not established.
+**Additional loan amount** adds to an employee's existing active loan: debit the loan's account, credit a source asset account, and **raise principal and amount owed**. The portal adapter sends a stable UUID `requestId` to `POST /loans/{id}/increases`; within the mounted entry session, uncertain identical submissions retain their UUID and payload, and concurrent identical submissions share one request. Missing/mismatched loan responses remain unconfirmed. The action stays hidden behind `NEXT_PUBLIC_LOAN_INCREASE_ENABLED` pending valid deployed lifecycle/replay acceptance (B12/F04 in `docs/backend-api-gaps.md`). Browser-reload recovery is not established.
+
+**Loan principal decrease** lowers principal and amount owed (funds returned to a source asset/bank account) and **cannot exceed the open balance** (principal − paid). **Loan payment** raises paid amount and lowers amount owed without changing principal, and also cannot exceed the open balance.
 
 **Register new invoice** starts an `INITIAL-PAYMENT`; **Register invoice payment** starts a `PAYMENT` for an existing invoice. Both retain Assignment → Invoice details → Payment & references → Review. Their invoice mode is fixed by the chosen category. Existing invoices display sender, receiver, total, discount, paid, and balance read-only above the payment amount. New invoices allow system or custom numbers, optional sender/receiver, and Total/Discount/Paid with the calculated Balance. After saving, the same category remains active and shared employee/daily-route and payment-method selections carry forward.
 
@@ -338,19 +340,24 @@ Only explicitly authorized actions are available; role names do not grant access
 Reconciliation never applies invoice receipts. Clearance applies deferred bank
 receipts once without changing the original ledger date or period.
 
-**Confirmed reconciliation/clearance policy (November 14, 2026):** reconciliation
-confirms internal receipt by the responsible party and never clears a payment.
-Bank receipts can therefore be reconciled while clearance remains outstanding.
-Clearance confirms actual payment posting and atomically reconciles the record
-as well; if already reconciled, retain the original confirmation actor/time and
-record clearance actor/time separately. Clearance applies deferred invoice
-payments exactly once; reconciliation alone does not apply them. Separate action
-permissions remain enforced. The earlier API/portal rule blocking reconciliation
-until bank clearance requires alignment; this decision is not a deployed change.
+**Confirmed reconciliation/clearance policy (November 14, 2026; portal aligned
+November 17, 2026):** reconciliation confirms internal receipt by the responsible
+party and never clears a payment. Bank receipts can therefore be reconciled while
+clearance remains outstanding. Clearance confirms actual payment posting and
+atomically reconciles the record as well; if already reconciled, retain the
+original confirmation actor/time and record clearance actor/time separately.
+Clearance applies deferred invoice payments exactly once; reconciliation alone
+does not apply them. Separate action permissions remain enforced. The portal
+Pending Reconciliation queue no longer blocks uncleared bank rows.
 
 Queries, advanced filters and pagination run on the server. Matching and selected
 Income / Expenses / Net totals use `/journals/summary`, preserve currency groups,
-and do not substitute a current-page total for all matching records.
+and do not substitute a current-page total for all matching records. Batch
+reconcile/clear selection is limited to one payment method and one cash/bank
+money account (`sourceAccount`, else `paymentAccount`). Loan issues/increases and
+loan payments may share a batch only when that money account matches; loan AR is
+not the batch key. The reconciliation confirm summary keeps loans under Other and
+splits them into Issued / increased vs Payments received.
 
 **Register inventory change** records company supplies as received or dispatched.
 Received entries select supplier/item/quantity/cost and link an expense journal

@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Banknote, Landmark, ReceiptText, User } from "lucide-react";
 import { JournalSummaryLine } from "@/components/accounting/loan-journal-summary-line";
 import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
+import { LoanQuickLoanButtons } from "@/components/accounting/loan-quick-loan-buttons";
 import { BalanceTile } from "@/components/accounting/record-loan-payment-dialog";
 import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
 import { FieldLabelRow } from "@/components/forms/field-label-row";
@@ -18,8 +19,8 @@ import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useEmployeeActiveLoans } from "@/lib/accounting/loans/hooks";
 import { formatLoanDate, formatLoanMoney } from "@/lib/accounting/loans/display";
-import { createLoanIncreaseSchema } from "@/lib/accounting/loans/schemas";
-import type { LoanIncreaseValues } from "@/lib/accounting/loans/types";
+import { createLoanDecreaseSchema, createLoanIncreaseSchema } from "@/lib/accounting/loans/schemas";
+import type { Loan, LoanIncreaseValues } from "@/lib/accounting/loans/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
@@ -31,6 +32,10 @@ import { Button } from "@/components/ui/button";
 type Props = {
   employees: Array<{ id: number; name: string }>;
   assetAccounts: ChartAccount[];
+  /** Prefills employee and loan when opened from a selected loan. */
+  initialLoan?: Loan | null;
+  /** Principal increase (default) or decrease; shares the same payload shape. */
+  mode?: "increase" | "decrease";
   pending: boolean;
   onSubmit: (values: LoanIncreaseValues) => Promise<void>;
   onCancel: () => void;
@@ -47,17 +52,25 @@ function accountLabel(account?: { displayName?: string; name: string }) {
 }
 
 /** Adds an amount to an employee's existing active loan (debit loan account, credit source asset). */
-export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, onCancel, summaryContainer, guided = false, typeStep }: Props) {
+export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null, mode = "increase", pending, onSubmit, onCancel, summaryContainer, guided = false, typeStep }: Props) {
   const { t } = useTranslation();
-  const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.increaseForm.${key}`, values);
-  const schema = useMemo(() => createLoanIncreaseSchema(t), [t]);
+  const formNamespace = mode === "decrease" ? "decreaseForm" : "increaseForm";
+  const text = (key: string, values?: Record<string, string | number>) => t(`accounting.loans.${formNamespace}.${key}`, values);
   const handleEnterNavigation = useFormEnterNavigation();
   const submitting = useRef(false);
+  const openBalanceRef = useRef<number | undefined>(initialLoan ? Math.max(0, initialLoan.balance) : undefined);
   const form = useForm<LoanIncreaseValues>({
-    resolver: zodResolver(schema),
+    resolver: async (values, context, options) => {
+      const schema =
+        mode === "decrease"
+          ? createLoanDecreaseSchema(t, openBalanceRef.current)
+          : createLoanIncreaseSchema(t);
+      return zodResolver(schema)(values, context, options);
+    },
     defaultValues: {
-      employeeId: 0,
-      loanId: "",
+      employeeId: initialLoan?.employee.id ?? 0,
+      employeeName: initialLoan?.employee.name,
+      loanId: initialLoan?.id ?? "",
       sourceAccountId: 0,
       amount: 0,
       transactionDate: new Date().toISOString().slice(0, 10),
@@ -73,7 +86,11 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
   const amount = Number(values.amount) || 0;
   const loansQuery = useEmployeeActiveLoans(values.employeeId);
   const loans = loansQuery.data?.items ?? [];
-  const selectedLoan = loans.find((loan) => loan.id === values.loanId);
+  const selectedLoan =
+    loans.find((loan) => loan.id === values.loanId) ??
+    (values.loanId && initialLoan?.id === values.loanId ? initialLoan : undefined);
+  const openBalance = selectedLoan ? Math.max(0, selectedLoan.balance) : undefined;
+  openBalanceRef.current = openBalance;
   const loanAccountName = accountLabel(selectedLoan?.loanAccount);
   const noActiveLoans = values.employeeId > 0 && loansQuery.isSuccess && loans.length === 0;
 
@@ -108,24 +125,36 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
     }
   });
 
+  const debitAccount = mode === "decrease" ? values.sourceAccountName : loanAccountName;
+  const creditAccount = mode === "decrease" ? loanAccountName : values.sourceAccountName;
+  const balanceAfter = selectedLoan
+    ? mode === "decrease"
+      ? Math.max(0, selectedLoan.balance - amount)
+      : selectedLoan.balance + amount
+    : 0;
+  const principalAfter = selectedLoan
+    ? mode === "decrease"
+      ? Math.max(0, selectedLoan.principalAmount - amount)
+      : selectedLoan.principalAmount + amount
+    : 0;
   const journalSummary = (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">{text("journalDebit")}</p>
-        <JournalSummaryLine account={loanAccountName} amount={amount} />
+        <JournalSummaryLine account={debitAccount} amount={amount} />
       </div>
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">{text("journalCredit")}</p>
-        <JournalSummaryLine account={values.sourceAccountName} amount={amount} />
+        <JournalSummaryLine account={creditAccount} amount={amount} />
       </div>
     </div>
   );
 
   return (
     <form className="flex min-h-0 flex-1 flex-col" noValidate onKeyDown={handleEnterNavigation} onSubmit={(event) => flow.advance(event, submit)}>
-      {guided ? <LoanEntryStepNavigation step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep} /> : null}
+      {guided ? <LoanEntryStepNavigation kind={mode} step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep} /> : null}
       <FormBody workflow className={guided ? "lg:p-8" : undefined} isBusy={busy}>
-        {guided ? <LoanEntryStepHeading step={flow.step} appearance={typeStep?.appearance} /> : null}
+        {guided ? <LoanEntryStepHeading kind={mode} step={flow.step} appearance={typeStep?.appearance} /> : null}
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           <FormSection className={stageClass(1)} variant="card" icon={User} title={text("sections.loan")} description={text("loanHint")}>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -179,6 +208,13 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
                   disabled={!values.employeeId}
                   mobileSheet
                 />
+                {values.employeeId > 0 && loans.length > 0 ? (
+                  <LoanQuickLoanButtons
+                    loans={loans}
+                    disabled={busy}
+                    onSelect={(loan) => setValue("loanId", loan.id, { shouldValidate: true })}
+                  />
+                ) : null}
                 {fieldError("loanId")}
               </div>
             </div>
@@ -186,10 +222,11 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
 
           {selectedLoan ? (
             <FormSection className={guided && flow.step === 1 ? "hidden" : undefined} variant="card" icon={Landmark} title={text("sections.balance")}>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <BalanceTile label={text("originalAmount")} value={selectedLoan.principalAmount} />
+                <BalanceTile label={text("principalAfter")} value={principalAfter} />
                 <BalanceTile label={text("currentBalance")} value={selectedLoan.balance} />
-                <BalanceTile label={text("balanceAfter")} value={selectedLoan.balance + amount} emphasis />
+                <BalanceTile label={text("balanceAfter")} value={balanceAfter} emphasis />
               </div>
             </FormSection>
           ) : null}
@@ -234,10 +271,14 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
                   id="loan-increase-amount"
                   type="number"
                   min="0.01"
+                  max={mode === "decrease" && openBalance != null ? openBalance : undefined}
                   step="0.01"
                   aria-invalid={Boolean(errors.amount)}
                   {...register("amount", { setValueAs: (value) => (value === "" ? undefined : Number(value)) })}
                 />
+                {mode === "decrease" && openBalance != null ? (
+                  <p className="text-xs text-muted-foreground">{text("maxDecrease", { amount: formatLoanMoney(openBalance) })}</p>
+                ) : null}
                 {fieldError("amount")}
               </div>
               <div className="space-y-2">
@@ -275,16 +316,16 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
           </FormSection> : null}
         </fieldset>
       </FormBody>
-      {summaryContainer ? createPortal(<CurrentTransactionSummary typeLabel={t("accounting.dailyIncome.wizard.typeSelector.options.LOAN-INCREASE")} rows={[
+      {summaryContainer ? createPortal(<CurrentTransactionSummary typeLabel={t(mode === "decrease" ? "accounting.dailyIncome.wizard.typeSelector.options.LOAN-DECREASE" : "accounting.dailyIncome.wizard.typeSelector.options.LOAN-INCREASE")} rows={[
         [text("employee"), values.employeeName || t("common.empty.dash")],
         [text("loan"), selectedLoan ? selectedLoan.description || t("accounting.loans.fallbackDescription") : t("common.empty.dash")],
-        ...(selectedLoan ? [[text("balanceAfter"), formatLoanMoney(selectedLoan.balance + amount)] as [string, string]] : []),
-        [text("journalDebit"), <JournalSummaryLine key="debit" account={loanAccountName} amount={amount} />],
-        [text("journalCredit"), <JournalSummaryLine key="credit" account={values.sourceAccountName} amount={amount} />],
+        ...(selectedLoan ? [[text("balanceAfter"), formatLoanMoney(mode === "decrease" ? Math.max(0, selectedLoan.balance - amount) : selectedLoan.balance + amount)] as [string, string]] : []),
+        [text("journalDebit"), <JournalSummaryLine key="debit" account={mode === "decrease" ? values.sourceAccountName : loanAccountName} amount={amount} />],
+        [text("journalCredit"), <JournalSummaryLine key="credit" account={mode === "decrease" ? loanAccountName : values.sourceAccountName} amount={amount} />],
         [text("date"), values.transactionDate || t("common.empty.dash")],
         ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
       ]} />, summaryContainer) : null}
-      {guided ? <LoanEntryStepFooter step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep}
+      {guided ? <LoanEntryStepFooter kind={mode} step={flow.step} onStepChange={flow.setStep} busy={busy} typeStep={typeStep}
         onCancel={onCancel} submitLabel={text("submit")} error={errors.root?.server?.message}
         warning={noActiveLoans ? text("noActiveLoans") : null} /> : (
       <FormFooter

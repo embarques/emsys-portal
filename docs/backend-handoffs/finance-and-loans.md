@@ -182,6 +182,16 @@ already reconciled, retain the original receipt-confirmation actor/time and
 record clearance actor/time separately. Failed commands leave all dependent
 states consistent and retries do not duplicate effects.
 
+**Batch selection (November 17, 2026):** `POST /journals/reconcile` (and clearance
+batches) accept 1–200 IDs with one payment method **and** one cash/bank money
+account. Resolve money account as `sourceAccount.id` when present, otherwise
+`paymentAccount.id`. Loan issue/increase and loan payment journals store the
+cash/bank side on `sourceAccount` (credit on issue, debit on payment); they may
+share a batch only when those IDs match. Mixed money accounts return 422 with
+`selected journals must have the same cash or bank account`. Loan AR is never
+the batch key. Portal selection mirrors this rule; summary breakdown splits loan
+journals under Other into issued/increased vs payments received.
+
 **Closeout purpose:** the closeout is a daily entry window and operational income/
 expense summary. Closing it prevents new entries into that day; existing records
 may still be reconciled or cleared. Keep the original journal date/period and

@@ -35,7 +35,7 @@ export const DAILY_INCOME_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {field: "employee.id", label: "Employee ID", operators: text, valueType: "text"},
   {field: "date", label: "Date", operators: ["gte", "lte"], valueType: "text", placeholder: "YYYY-MM-DD"},
   {field: "dateRange", label: "Date range", operators: ["eq"], valueType: "range"},
-  {field: "transactionType", label: "Transaction", operators: ["eq", "neq"], valueType: "select", options: ["INITIAL-PAYMENT", "PAYMENT", "SALES", "EXPENSE", "INVENTORY", "DISCOUNT", "SURCHARGE", "TRANSFER", "LOAN"].map(value => ({value, label: value}))},
+  {field: "transactionType", label: "Transaction", operators: ["eq", "neq"], valueType: "select", options: ["INITIAL-PAYMENT", "PAYMENT", "SALES", "EXPENSE", "INVENTORY", "DISCOUNT", "SURCHARGE", "TRANSFER", "LOAN", "LOAN-PAYMENT"].map(value => ({value, label: value}))},
   {field: "paymentMethod.name", label: "Payment method", operators: ["eq", "neq"], valueType: "select", options: ["CASH", "CHECK", "ZELLE", "DEPOSIT", "CREDIT-CARD"].map(value => ({value, label: value}))},
   {field: "reconciliationStatus", label: "Reconciliation", operators: ["eq", "neq"], valueType: "select", options: ["NOT_REQUIRED", "OUTSTANDING", "RECONCILED"].map(value => ({value, label: value}))},
   {field: "clearanceStatus", label: "Clearance", operators: ["eq", "neq"], valueType: "select", options: ["NOT_REQUIRED", "OUTSTANDING", "CLEARED"].map(value => ({value, label: value}))},

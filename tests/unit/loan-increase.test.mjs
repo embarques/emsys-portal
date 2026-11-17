@@ -52,6 +52,22 @@ test("additional loan amount requires a loan and a positive amount", () => {
  assert.equal(zero.error.issues[0].message,"accounting.loans.validation.increaseAmountPositive");
 });
 
+test("principal decrease cannot exceed the open loan balance", () => {
+ const {createLoanDecreaseSchema,createLoanPaymentSchema}=loader()("src/lib/accounting/loans/schemas.ts");
+ const decrease=createLoanDecreaseSchema(t,100);
+ const valid={employeeId:7,loanId:"42",sourceAccountId:3,amount:100,transactionDate:"2026-11-11",referenceNumber:"",description:""};
+ assert.equal(decrease.safeParse(valid).success,true);
+ assert.equal(decrease.safeParse({...valid,amount:100.01}).success,false);
+ assert.equal(
+  decrease.safeParse({...valid,amount:100.01}).error.issues[0].message,
+  "accounting.loans.validation.decreaseExceedsBalance",
+ );
+ const payment=createLoanPaymentSchema(t,40);
+ const pay={employeeId:7,allocationMode:"oldest-first",receivedAccountId:3,amount:40,transactionDate:"2026-11-11",referenceNumber:"",description:""};
+ assert.equal(payment.safeParse(pay).success,true);
+ assert.equal(payment.safeParse({...pay,amount:40.01}).error.issues[0].message,"accounting.loans.validation.paymentExceedsBalance");
+});
+
 test("the entry stays hidden until the increase lifecycle is verified", () => {
  const previous=process.env.NEXT_PUBLIC_LOAN_INCREASE_ENABLED;
  try {
