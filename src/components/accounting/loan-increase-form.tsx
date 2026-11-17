@@ -9,11 +9,12 @@ import { JournalSummaryLine } from "@/components/accounting/loan-journal-summary
 import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
 import { BalanceTile } from "@/components/accounting/record-loan-payment-dialog";
 import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useEmployeeActiveLoans } from "@/lib/accounting/loans/hooks";
 import { formatLoanDate, formatLoanMoney } from "@/lib/accounting/loans/display";
@@ -76,6 +77,18 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
   const loanAccountName = accountLabel(selectedLoan?.loanAccount);
   const noActiveLoans = values.employeeId > 0 && loansQuery.isSuccess && loans.length === 0;
 
+  const inlineOptionsLimit = guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+  const loanOptions = loans.map((loan) => ({
+    value: loan.id,
+    label: loan.description || t("accounting.loans.fallbackDescription"),
+    keywords: [loan.description, loan.referenceNumber],
+  }));
+  const loanPlaceholder = values.employeeId ? text("selectLoan") : text("selectEmployeeFirst");
+  const loanInline = getInlineSelectOptions({ inlineOptionsLimit, options: loanOptions, value: values.loanId, placeholder: loanPlaceholder }) !== null;
+
+  const sourceAccountOptions = assetAccounts.map((account) => ({ value: String(account.id), label: accountLabel(account), keywords: [account.name, account.displayName ?? ""] }));
+  const sourceAccountInline = getInlineSelectOptions({ inlineOptionsLimit, options: sourceAccountOptions, value: values.sourceAccountId ? String(values.sourceAccountId) : "", placeholder: text("selectSourceAccount") }) !== null;
+
   const fieldError = (name: keyof LoanIncreaseValues) =>
     errors[name] ? <p role="alert" className="text-sm text-destructive">{errors[name]?.message}</p> : null;
   const requiredLabel = (id: string, label: string) => (
@@ -133,9 +146,18 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
                 }}
               />
               <div className="space-y-2">
-                {requiredLabel("loan-increase-loan", text("loan"))}
+                <FieldLabelRow
+                  showClear={Boolean(values.loanId) && loanInline}
+                  onClear={() => {
+                    setValue("loanId", "", { shouldValidate: true });
+                    window.requestAnimationFrame(() => document.getElementById("loan-increase-loan")?.focus());
+                  }}
+                >
+                  {requiredLabel("loan-increase-loan", text("loan"))}
+                </FieldLabelRow>
                 <SearchableSelect
-                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                  inlineOptionsLimit={inlineOptionsLimit}
+                  clearable={false}
                   id="loan-increase-loan"
                   aria-label={text("loan")}
                   aria-invalid={Boolean(errors.loanId)}
@@ -150,7 +172,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
                     }),
                     keywords: [loan.description, loan.referenceNumber],
                   }))}
-                  placeholder={values.employeeId ? text("selectLoan") : text("selectEmployeeFirst")}
+                  placeholder={loanPlaceholder}
                   searchPlaceholder={text("searchLoans")}
                   emptyMessage={text("noActiveLoans")}
                   loading={values.employeeId > 0 && loansQuery.isPending}
@@ -175,9 +197,20 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
           <FormSection className={stageClass(2)} variant="card" icon={ReceiptText} title={text("sections.amount")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                {requiredLabel("loan-increase-source-account", text("sourceAccount"))}
+                <FieldLabelRow
+                  showClear={Boolean(values.sourceAccountId) && sourceAccountInline}
+                  onClear={() => {
+                    setValue("sourceAccountId", 0, { shouldValidate: true });
+                    setValue("sourceAccountName", "");
+                    setValue("sourceAccountType", undefined);
+                    window.requestAnimationFrame(() => document.getElementById("loan-increase-source-account")?.focus());
+                  }}
+                >
+                  {requiredLabel("loan-increase-source-account", text("sourceAccount"))}
+                </FieldLabelRow>
                 <SearchableSelect
-                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                  inlineOptionsLimit={inlineOptionsLimit}
+                  clearable={false}
                   id="loan-increase-source-account"
                   aria-label={text("sourceAccount")}
                   aria-invalid={Boolean(errors.sourceAccountId)}
@@ -188,7 +221,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, pending, onSubmit, 
                     setValue("sourceAccountName", accountLabel(account));
                     setValue("sourceAccountType", account?.type);
                   }}
-                  options={assetAccounts.map((account) => ({ value: String(account.id), label: accountLabel(account), keywords: [account.name, account.displayName ?? ""] }))}
+                  options={sourceAccountOptions}
                   placeholder={text("selectSourceAccount")}
                   searchPlaceholder={text("searchAssetAccounts")}
                   mobileSheet

@@ -406,6 +406,7 @@
     },
     "errors": {
       "notConfigured": "Google Maps no está configurado para esta empresa.",
+      "missingApiKey": "Falta la clave de API de Google Maps. Pida a un administrador que la configure.",
       "loadFailed": "No se pudo cargar Google Maps.",
       "loadOrdersFailed": "No se pudieron cargar las recogidas para el mapa."
     }
@@ -420,7 +421,9 @@
       "longitude": "Longitud",
       "latitude": "Latitud",
       "invalidLongitude": "Ingrese una longitud entre −180 y 180.",
-      "invalidLatitude": "Ingrese una latitud entre −90 y 90."
+      "invalidLatitude": "Ingrese una latitud entre −90 y 90.",
+      "searchAddress": "Buscar direcciones…",
+      "selectAddress": "Seleccione una dirección"
     },
     "success": "Ruta optimizada: {{count}} parada ordenada ({{distance}}).",
     "success_plural": "Ruta optimizada: {{count}} paradas ordenadas ({{distance}}).",

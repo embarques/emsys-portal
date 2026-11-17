@@ -183,6 +183,7 @@
   },
   "errors": {
     "fallback": "Algo salió mal. Inténtelo de nuevo.",
+    "forbidden": "No tiene permiso para ver esta página.",
     "api": {
       "unreachable": "No se pudo conectar con la API. El servidor puede estar fuera de servicio o inaccesible. Inténtelo más tarde.",
       "temporaryUnavailable": "El servidor de la API no está disponible temporalmente (HTTP {{status}}). Inténtelo en unos momentos.",

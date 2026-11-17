@@ -2,9 +2,10 @@
 
 import { useMemo } from "react";
 
+import { ClearSelectionButton } from "@/components/forms/clear-selection-button";
 import { FieldMessage } from "@/components/forms/field-message";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import {
   accountPathLabel,
@@ -76,13 +77,53 @@ export function HierarchicalAccountSelect({
 
   const selectPlaceholder = placeholder ?? t("accounting.dailyIncome.form.placeholders.selectAccount");
   const searchText = searchPlaceholder ?? t("accounting.dailyIncome.form.placeholders.searchAccounts");
+  const legendId = `${id}-legend`;
+
+  const rootSelectOptions = useMemo(() => {
+    const level = levels[0];
+    if (!level) return [];
+    return withPinnedSelectOption(
+      level.options.map((account) => {
+        const path = accountPathLabel(account, pathById);
+        const childCount = listPostingChildren(pool, account.id).length;
+        return {
+          value: String(account.id),
+          label: path,
+          description:
+            childCount > 0
+              ? t("accounting.dailyIncome.form.hints.accountHasSubcategories", { count: childCount })
+              : undefined,
+          keywords: [account.displayName, account.name, path].filter(Boolean) as string[],
+        };
+      }),
+      level.valueId,
+      valueName,
+    );
+  }, [levels, pathById, pool, t, valueName]);
+
+  const rootInline =
+    getInlineSelectOptions({
+      inlineOptionsLimit,
+      options: rootSelectOptions,
+      value: levels[0]?.valueId != null ? String(levels[0].valueId) : "",
+      placeholder: selectPlaceholder,
+    }) !== null;
+  const showClear = value != null && rootInline;
+
+  function clearSelection() {
+    onChange(undefined);
+    window.requestAnimationFrame(() => document.getElementById(id)?.focus());
+  }
 
   return (
-    <fieldset className={className ?? "min-w-0 space-y-2"}>
-      <legend className="mb-2 block text-sm font-medium leading-5">
-        {label}
-        {required ? <span className="text-destructive"> *</span> : null}
-      </legend>
+    <fieldset aria-labelledby={legendId} className={className ?? "min-w-0 space-y-2"}>
+      <div className="flex min-h-9 items-center justify-between gap-2">
+        <span id={legendId} className="text-sm font-medium leading-5">
+          {label}
+          {required ? <span className="text-destructive"> *</span> : null}
+        </span>
+        {showClear ? <ClearSelectionButton onClick={clearSelection} /> : null}
+      </div>
       <div className="space-y-3">
         {levels.map((level, index) => {
           const parent = level.parentId != null ? byId.get(level.parentId) : undefined;
@@ -105,26 +146,31 @@ export function HierarchicalAccountSelect({
                   },
                 ]
               : [];
-          const options = withPinnedSelectOption(
-            [
-              ...keepParentOption,
-              ...level.options.map((account) => {
-                const path = accountPathLabel(account, pathById);
-                const childCount = listPostingChildren(pool, account.id).length;
-                return {
-                  value: String(account.id),
-                  label: index === 0 ? path : account.displayName || account.name,
-                  description:
-                    childCount > 0
-                      ? t("accounting.dailyIncome.form.hints.accountHasSubcategories", { count: childCount })
-                      : undefined,
-                  keywords: [account.displayName, account.name, path].filter(Boolean) as string[],
-                };
-              }),
-            ],
-            level.valueId,
-            index === levels.length - 1 ? valueName : undefined,
-          );
+          const options =
+            index === 0
+              ? rootSelectOptions
+              : withPinnedSelectOption(
+                  [
+                    ...keepParentOption,
+                    ...level.options.map((account) => {
+                      const path = accountPathLabel(account, pathById);
+                      const childCount = listPostingChildren(pool, account.id).length;
+                      return {
+                        value: String(account.id),
+                        label: account.displayName || account.name,
+                        description:
+                          childCount > 0
+                            ? t("accounting.dailyIncome.form.hints.accountHasSubcategories", {
+                                count: childCount,
+                              })
+                            : undefined,
+                        keywords: [account.displayName, account.name, path].filter(Boolean) as string[],
+                      };
+                    }),
+                  ],
+                  level.valueId,
+                  index === levels.length - 1 ? valueName : undefined,
+                );
 
           return (
             <div key={levelId} className="min-w-0 space-y-2">
@@ -139,6 +185,7 @@ export function HierarchicalAccountSelect({
               )}
               <SearchableSelect
                 inlineOptionsLimit={inlineOptionsLimit}
+                clearable={false}
                 id={levelId}
                 value={level.valueId != null ? String(level.valueId) : ""}
                 onValueChange={(next) => {

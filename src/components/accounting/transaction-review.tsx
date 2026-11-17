@@ -25,7 +25,7 @@ export function TransactionReview({ values: v, onEdit, compact = false, currency
   const { t } = useTranslation();
   const inventory = v.transactionType === "INVENTORY";
   const registerInvoice = v.transactionType === "INITIAL-PAYMENT";
-  const paymentDetails = hasPaymentDetailsStep(v.transactionType);
+  const paymentDetails = hasPaymentDetailsStep(v.transactionType, v.amount);
   const expensePaidByMethod = isExpensePaidByMethod(v.transactionType);
   const money = (value: number | undefined) => value == null || !Number.isFinite(value) ? undefined : currency ? formatDailyIncomeMoney(value, currency) : formatAccountingMoney(value);
   const dispatched = inventory && v.inventoryDirection === "dispatched";

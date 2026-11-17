@@ -3,10 +3,11 @@
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { Banknote, Landmark } from "lucide-react";
 
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { FieldMessage } from "@/components/forms/field-message";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { findCashPaymentMethod, isCashPaymentMethod, matchPaymentMethod, type AccountingLookup } from "@/lib/accounting/daily-income/types";
@@ -100,12 +101,29 @@ export function PaymentChannelFields({ paymentMethods, paymentMethodId, paymentM
       </div>
       {channel === "bank" ? (
         <div className="min-w-0 space-y-2">
-          <Label htmlFor="journal-payment">
-            {t("accounting.dailyIncome.form.fields.paymentMethod")}
-            {required ? <span className="text-destructive"> *</span> : null}
-          </Label>
+          <FieldLabelRow
+            showClear={
+              paymentMethodId != null &&
+              getInlineSelectOptions({
+                inlineOptionsLimit,
+                options: bankOptions,
+                value: String(paymentMethodId),
+                placeholder: t("accounting.dailyIncome.form.placeholders.selectPaymentMethod"),
+              }) !== null
+            }
+            onClear={() => {
+              onMethodChange(undefined);
+              window.requestAnimationFrame(() => document.getElementById("journal-payment")?.focus());
+            }}
+          >
+            <Label htmlFor="journal-payment">
+              {t("accounting.dailyIncome.form.fields.paymentMethod")}
+              {required ? <span className="text-destructive"> *</span> : null}
+            </Label>
+          </FieldLabelRow>
           <SearchableSelect
             inlineOptionsLimit={inlineOptionsLimit}
+            clearable={false}
             id="journal-payment"
             value={paymentMethodId != null ? String(paymentMethodId) : ""}
             onValueChange={(next) => {

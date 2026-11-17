@@ -2,17 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ReceiptText, UserPlus, UserRound, UserX } from "lucide-react";
-import type { UseFormSetValue, UseFormTrigger, UseFormWatch, FieldErrors } from "react-hook-form";
+import type {
+  UseFormClearErrors,
+  UseFormSetValue,
+  UseFormTrigger,
+  UseFormWatch,
+  FieldErrors,
+} from "react-hook-form";
 
 import { FieldMessage } from "@/components/forms/field-message";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { FormSection } from "@/components/forms/form-shell";
 import { getInvoiceBalanceInputClassName, getInvoiceBalanceTextClassName } from "@/components/accounting/invoice-balance-tone";
 import { PaymentAutoClearField } from "@/components/accounting/payment-auto-clear-field";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { PaymentAccountSelect } from "@/components/accounting/payment-account-select";
 import { PaymentChannelFields } from "@/components/accounting/payment-channel-fields";
-import { Button } from "@/components/ui/button";
 import { applyMoneyAccount, findDefaultCashAccount, isCashAccountSelectable, listCashAccounts, listSelectableBankAccounts, resolveDefaultBankAccount } from "@/lib/accounting/daily-income/payment-accounts";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { selectFormFieldTextOnFocus, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
@@ -21,7 +27,7 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { InvoiceNumberModeFields } from "@/components/invoices/invoice-number-switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
@@ -104,6 +110,7 @@ type Props = {
   watch: UseFormWatch<DailyIncomeJournalValues>;
   /** Revalidates dependent amount fields so cross-field errors refresh as amounts change. */
   trigger?: UseFormTrigger<DailyIncomeJournalValues>;
+  clearErrors?: UseFormClearErrors<DailyIncomeJournalValues>;
   /** Hide employee assignee (still required in form values when hidden). */
   showEmployee?: boolean;
   /** Group Daily Income entry into desktop workflow sections. */
@@ -150,6 +157,7 @@ export function RegisterInvoiceTransactionFields({
   setValue,
   watch,
   trigger,
+  clearErrors,
   grouped = false,
   quickEntry = false,
   activeStep,
@@ -556,18 +564,30 @@ export function RegisterInvoiceTransactionFields({
     />
   );
 
+  const paymentMethodInlineLimit = activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+  const paymentMethodInline = getInlineSelectOptions({ inlineOptionsLimit: paymentMethodInlineLimit, options: paymentMethodOptions, value: paymentMethodId != null ? String(paymentMethodId) : "", placeholder: t("accounting.dailyIncome.form.placeholders.selectPaymentMethod") }) !== null;
+
   const methodFields = (
     <>
       <div className={cn("space-y-2 min-w-0", !compact && "sm:col-span-2")}>
-        {paymentDetailsRequired ? (
-          <RequiredLabel htmlFor="journal-payment">
-            {t("accounting.dailyIncome.form.fields.paymentMethod")}
-          </RequiredLabel>
-        ) : (
-          <Label htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</Label>
-        )}
+        <FieldLabelRow
+          showClear={Boolean(paymentMethodId) && paymentMethodInline}
+          onClear={() => {
+            changePaymentMethod(undefined);
+            window.requestAnimationFrame(() => document.getElementById("journal-payment")?.focus());
+          }}
+        >
+          {paymentDetailsRequired ? (
+            <RequiredLabel htmlFor="journal-payment">
+              {t("accounting.dailyIncome.form.fields.paymentMethod")}
+            </RequiredLabel>
+          ) : (
+            <Label htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</Label>
+          )}
+        </FieldLabelRow>
         <SearchableSelect
-          inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+          inlineOptionsLimit={paymentMethodInlineLimit}
+          clearable={false}
           id="journal-payment"
           value={paymentMethodId != null ? String(paymentMethodId) : ""}
           onValueChange={(next) => changePaymentMethod(paymentMethods.find((item) => item.id === Number(next)))}
@@ -641,21 +661,33 @@ export function RegisterInvoiceTransactionFields({
             variant="segmented"
             compact
             showModeLabel
-            modeLabelIcon={<ReceiptText aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />}
+            modeLabelIcon={
+              <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ReceiptText className="size-3.5" />
+              </span>
+            }
             autoGenerate={automaticNumber}
             invoiceNumber={watch("invoiceNumber") ?? ""}
             canUseManualNumber={canUseManualNumber}
             onModeChange={(nextAutoGenerate) => {
-              setValue("autoGenerateInvoiceNumber", nextAutoGenerate, { shouldValidate: true, shouldDirty: true });
+              setValue("autoGenerateInvoiceNumber", nextAutoGenerate, { shouldDirty: true });
               if (nextAutoGenerate) {
-                setValue("invoiceNumber", "", { shouldValidate: true, shouldDirty: true });
+                setValue("invoiceNumber", "", { shouldDirty: true });
+                clearErrors?.("invoiceNumber");
+                void trigger?.(["autoGenerateInvoiceNumber", "invoiceNumber"]);
+                return;
               }
+              // Do not validate immediately on "Enter your own" — only when the custom input stays empty on continue/submit.
+              clearErrors?.("invoiceNumber");
             }}
             onInvoiceNumberChange={(next) => {
               setValue("invoiceNumber", next, { shouldValidate: true, shouldDirty: true });
             }}
           />
-          <FieldMessage error={errors.invoiceNumber?.message} className="mt-2" />
+          <FieldMessage
+            error={automaticNumber ? undefined : errors.invoiceNumber?.message}
+            className="mt-2"
+          />
         </div>
       ) : null}
     </>
@@ -819,14 +851,14 @@ export function RegisterInvoiceTransactionFields({
   const hasInvoiceTotal = (Number(invoiceCost) || 0) > 0;
   const balanceFields = hasInvoiceTotal ? (
     <>
-      <div className={stackedAmounts ? "min-w-0 space-y-1" : amountRowClassName}>
+      <div className={stackedAmounts ? "ml-auto min-w-0 space-y-1 text-right" : amountRowClassName}>
         <Label htmlFor="journal-invoice-balance">{t("accounting.dailyIncome.form.fields.balance")}</Label>
         <Input
           id="journal-invoice-balance"
           readOnly
           tabIndex={-1}
           value={balance == null ? "" : formatMoneyFormDisplayValue(balance)}
-          className={cn("tabular-nums", stackedAmounts ? cn("border-0 bg-transparent p-0 text-left text-2xl font-semibold shadow-none max-md:text-2xl md:text-2xl", getInvoiceBalanceTextClassName(balance)) : getInvoiceBalanceInputClassName(balance))}
+          className={cn("tabular-nums", stackedAmounts ? cn("border-0 bg-transparent p-0 text-right text-2xl font-semibold shadow-none max-md:text-2xl md:text-2xl", getInvoiceBalanceTextClassName(balance)) : getInvoiceBalanceInputClassName(balance))}
           aria-invalid={balance != null && balance < 0}
         />
         <FieldMessage
@@ -893,26 +925,18 @@ export function RegisterInvoiceTransactionFields({
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {showInvoiceNumber ? <div className="border-b border-border bg-muted/25 px-4 py-3">{invoiceFields}</div> : null}
             {inlineInvoiceParties ? partiesFields : null}
-            <div className="flex items-center gap-3 border-t border-border bg-muted/50 px-4 py-2.5">
+            <div className="flex min-h-7 items-center gap-2 border-t border-border bg-muted/50 px-4 py-2.5">
               <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <ReceiptText className="size-5" />
+                <ReceiptText className="size-3.5" />
               </span>
-              <h4 className="text-xs font-medium text-muted-foreground">{t("accounting.dailyIncome.form.sections.invoiceAmount")}</h4>
+              <h4 className="text-xs font-medium leading-4 text-muted-foreground">{t("accounting.dailyIncome.form.sections.invoiceAmount")}</h4>
             </div>
             <div className="grid min-w-0 grid-cols-3 gap-x-3 gap-y-1 bg-muted/35 px-4 py-3 sm:gap-x-6">
               {costFields}
               {discountFields}
               {amountFields}
             </div>
-            {balanceFields ? <div className="border-t border-border px-4 py-3">{balanceFields}</div> : null}
-            {activeStep === "amounts" ? <div className="flex flex-wrap gap-2 border-t px-4 py-3">
-              <Button type="button" size="sm" variant="outline" onClick={() => { setAmountDraft(null); setInvoiceAmountValue("amount", 0); }}>
-                {t("accounting.dailyIncome.wizard.quickFlow.noPayment")}
-              </Button>
-              <Button type="button" size="sm" variant="outline" disabled={!invoiceCost || invoiceCost - (invoiceDiscount ?? 0) <= 0} onClick={() => { setAmountDraft(null); setInvoiceAmountValue("amount", Math.max(0, (invoiceCost ?? 0) - (invoiceDiscount ?? 0))); }}>
-                {t("accounting.dailyIncome.wizard.quickFlow.paidInFull")}
-              </Button>
-            </div> : null}
+            {balanceFields ? <div className="flex border-t border-border px-4 py-3">{balanceFields}</div> : null}
           </div>
         </div>
       </FormSection>

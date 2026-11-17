@@ -406,6 +406,7 @@
     },
     "errors": {
       "notConfigured": "Google Maps is not configured for this company.",
+      "missingApiKey": "Google Maps API key is missing. Ask an administrator to configure it.",
       "loadFailed": "Failed to load Google Maps.",
       "loadOrdersFailed": "Failed to load pickups for the map."
     }
@@ -420,7 +421,9 @@
       "longitude": "Longitude",
       "latitude": "Latitude",
       "invalidLongitude": "Enter a longitude from −180 to 180.",
-      "invalidLatitude": "Enter a latitude from −90 to 90."
+      "invalidLatitude": "Enter a latitude from −90 to 90.",
+      "searchAddress": "Search addresses…",
+      "selectAddress": "Select an address"
     },
     "success": "Route optimized: {{count}} stop in order ({{distance}}).",
     "success_plural": "Route optimized: {{count}} stops in order ({{distance}}).",

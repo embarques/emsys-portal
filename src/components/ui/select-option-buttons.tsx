@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef, type KeyboardEvent } from "react";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
+import { ClearSelectionButton } from "@/components/forms/clear-selection-button";
 import type { SearchableSelectProps } from "@/components/ui/searchable-select";
 import { focusNextFormField, isImeComposing } from "@/hooks/use-form-enter-navigation";
-import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** The same single selection as a dropdown, exposed as a wrapping radio-button group. */
 export function SelectOptionButtons(props: SearchableSelectProps) {
   const { options, value, onValueChange, disabled, id, name, autoFocus, required, advanceFocusOnSelect = true, clearable = true } = props;
-  const { t } = useTranslation();
   const descriptionId = useId();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const enabled = options.flatMap((option, index) => !disabled && !option.disabled ? [index] : []);
@@ -80,12 +79,17 @@ export function SelectOptionButtons(props: SearchableSelectProps) {
           </button>;
         })}
       </div>
-      {clearable && value !== "" && !options.some((option) => option.value === "") ? <button type="button" disabled={disabled}
-        aria-label={t("common.ui.clearSelection")} title={t("common.ui.clearSelection")}
-        onClick={() => { onValueChange(""); buttons.current[enabled[0] ?? 0]?.focus(); }}
-        className="mt-1 flex min-h-9 items-center gap-1 rounded-md px-1 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
-        <X aria-hidden="true" className="size-3" />{t("common.ui.clearSelection")}
-      </button> : null}
+      {/* Prefer parent FieldLabelRow clear via clearable={false}. Fallback for call sites not yet migrated. */}
+      {clearable && value !== "" && !options.some((option) => option.value === "") ? (
+        <ClearSelectionButton
+          disabled={disabled}
+          className="mt-1"
+          onClick={() => {
+            onValueChange("");
+            buttons.current[enabled[0] ?? 0]?.focus();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -15,9 +15,10 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { useCreateLoanForm } from "@/lib/accounting/loans/use-create-loan-form";
 import { formatLoanMoney } from "@/lib/accounting/loans/display";
 import type { LoanCreateValues } from "@/lib/accounting/loans/types";
@@ -56,6 +57,11 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
   const { register, setValue, watch, formState: { errors } } = form;
   const values = watch();
   const selectedAccount = loanAccounts.find(account => account.id === values.loanAccountId);
+  const inlineOptionsLimit = guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+  const loanAccountOptions = loanAccounts.map(account => ({ value: String(account.id), label: `${account.displayName ?? account.name}${account.branch?.name ? ` (${account.branch.name})` : ""}`, keywords: [account.name, account.displayName ?? "", account.branch?.name ?? ""] }));
+  const loanAccountInline = getInlineSelectOptions({ inlineOptionsLimit, options: loanAccountOptions, value: values.loanAccountId ? String(values.loanAccountId) : "", placeholder: text("selectLoanAccount") }) !== null;
+  const sourceAccountOptions = assetAccounts.map(account => ({ value: String(account.id), label: account.displayName ?? account.name, keywords: [account.name, account.displayName ?? ""] }));
+  const sourceAccountInline = getInlineSelectOptions({ inlineOptionsLimit, options: sourceAccountOptions, value: values.sourceAccountId ? String(values.sourceAccountId) : "", placeholder: text("selectSourceAccount") }) !== null;
   const heading = useRef<HTMLHeadingElement>(null);
   const handleEnterNavigation = useFormEnterNavigation();
   const stepLabels = [text("steps.employee"), text("steps.details"), text("steps.review")];
@@ -94,19 +100,31 @@ export function CreateLoanForm({ employees, loanAccounts, assetAccounts, pending
         <div className={singlePage || step === 2 ? "space-y-4" : "hidden"}>
           <FormSection variant="card" icon={Banknote} title={text("accounts")}>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">{requiredLabel("loan-account", text("loanAccount"))}
+              <div className="space-y-2">
+                <FieldLabelRow
+                  showClear={Boolean(values.loanAccountId) && loanAccountInline}
+                  onClear={() => { setCloseoutReady(false); setValue("loanAccountId", 0, { shouldValidate: true }); setValue("loanAccountName", ""); setValue("loanAccountType", undefined); window.requestAnimationFrame(() => document.getElementById("loan-account")?.focus()); }}
+                >
+                  {requiredLabel("loan-account", text("loanAccount"))}
+                </FieldLabelRow>
                 <SearchableSelect
-                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="loan-account" aria-label={text("loanAccount")} aria-invalid={Boolean(errors.loanAccountId)} value={values.loanAccountId ? String(values.loanAccountId) : ""}
+                  inlineOptionsLimit={inlineOptionsLimit} clearable={false} id="loan-account" aria-label={text("loanAccount")} aria-invalid={Boolean(errors.loanAccountId)} value={values.loanAccountId ? String(values.loanAccountId) : ""}
                   onValueChange={next => { const account = loanAccounts.find(item => item.id === Number(next)); if (account?.id !== values.loanAccountId) setCloseoutReady(false); setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("loanAccountName", account?.displayName ?? account?.name ?? ""); setValue("loanAccountType", account?.type); }}
-                  options={loanAccounts.map(account => ({ value: String(account.id), label: `${account.displayName ?? account.name}${account.branch?.name ? ` (${account.branch.name})` : ""}`, keywords: [account.name, account.displayName ?? "", account.branch?.name ?? ""] }))}
+                  options={loanAccountOptions}
                   placeholder={text("selectLoanAccount")} searchPlaceholder={text("searchLoanAccounts")} mobileSheet />
                 {fieldError("loanAccountId")}
               </div>
-              <div className="space-y-2">{requiredLabel("loan-source-account", text("sourceAccount"))}
+              <div className="space-y-2">
+                <FieldLabelRow
+                  showClear={Boolean(values.sourceAccountId) && sourceAccountInline}
+                  onClear={() => { setValue("sourceAccountId", 0, { shouldValidate: true }); setValue("sourceAccountName", ""); setValue("sourceAccountType", undefined); window.requestAnimationFrame(() => document.getElementById("loan-source-account")?.focus()); }}
+                >
+                  {requiredLabel("loan-source-account", text("sourceAccount"))}
+                </FieldLabelRow>
                 <SearchableSelect
-                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="loan-source-account" aria-label={text("sourceAccount")} aria-invalid={Boolean(errors.sourceAccountId)} value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
+                  inlineOptionsLimit={inlineOptionsLimit} clearable={false} id="loan-source-account" aria-label={text("sourceAccount")} aria-invalid={Boolean(errors.sourceAccountId)} value={values.sourceAccountId ? String(values.sourceAccountId) : ""}
                   onValueChange={next => { const account = assetAccounts.find(item => item.id === Number(next)); setValue("sourceAccountId", account?.id ?? 0, { shouldValidate: true }); setValue("sourceAccountName", account?.displayName ?? account?.name ?? ""); setValue("sourceAccountType", account?.type); }}
-                  options={assetAccounts.map(account => ({ value: String(account.id), label: account.displayName ?? account.name, keywords: [account.name, account.displayName ?? ""] }))}
+                  options={sourceAccountOptions}
                   placeholder={text("selectSourceAccount")} searchPlaceholder={text("searchAssetAccounts")} mobileSheet />
                 {fieldError("sourceAccountId")}
               </div>

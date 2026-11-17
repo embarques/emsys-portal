@@ -12,11 +12,12 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { DispatchReconciliationEntry } from "@/components/accounting/dispatch-reconciliation-entry";
 import { ReconcileDispatchPayments } from "@/components/accounting/reconcile-dispatch-payments";
 import { InventoryConfirmationDialog } from "@/components/inventory/inventory-confirmation-dialog";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import { useAccountingPaymentMethods } from "@/lib/accounting/daily-income/hooks";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -204,11 +205,20 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                 </div>
                 {collectsSales && incomeOptions.length ? (
                   <div className="space-y-2">
-                    <Label htmlFor="reconcile-income-employee">{text("incomeEmployee")}</Label>
-                    <Controller control={form.control} name="incomeEmployeeId" render={({ field }) => (
-                      <SearchableSelect inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="reconcile-income-employee" options={incomeOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectIncomeEmployee")} searchPlaceholder={text("searchEmployees")} emptyMessage={text("noEmployees")} aria-invalid={Boolean(errors.incomeEmployeeId)} mobileSheet />
-                    )} />
-                    {errors.incomeEmployeeId?.message ? <p role="alert" className="text-xs text-destructive">{t(errors.incomeEmployeeId.message)}</p> : null}
+                    <Controller control={form.control} name="incomeEmployeeId" render={({ field }) => {
+                      const inlineOptionsLimit = guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+                      const incomeEmployeeInline = getInlineSelectOptions({ inlineOptionsLimit, options: incomeOptions, value: field.value, placeholder: text("selectIncomeEmployee") }) !== null;
+                      return <>
+                        <FieldLabelRow
+                          showClear={Boolean(field.value) && incomeEmployeeInline}
+                          onClear={() => { field.onChange(""); window.requestAnimationFrame(() => document.getElementById("reconcile-income-employee")?.focus()); }}
+                        >
+                          <Label htmlFor="reconcile-income-employee">{text("incomeEmployee")}</Label>
+                        </FieldLabelRow>
+                        <SearchableSelect inlineOptionsLimit={inlineOptionsLimit} clearable={false} id="reconcile-income-employee" options={incomeOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectIncomeEmployee")} searchPlaceholder={text("searchEmployees")} emptyMessage={text("noEmployees")} aria-invalid={Boolean(errors.incomeEmployeeId)} mobileSheet />
+                        {errors.incomeEmployeeId?.message ? <p role="alert" className="text-xs text-destructive">{t(errors.incomeEmployeeId.message)}</p> : null}
+                      </>;
+                    }} />
                   </div>
                 ) : null}
                 <div className={cn("space-y-2 sm:col-span-2", collectsSales && incomeOptions.length > 0 && "lg:col-span-1")}>
@@ -250,10 +260,19 @@ export function ReconcileDispatchDialog({ dispatch, canReconcile, onClose, onBus
                       <Input id={`reconcile-${index}-revenue`} inputMode="decimal" placeholder="0.00" aria-invalid={Boolean(lineErrors?.revenue)} {...form.register(`lines.${index}.revenue`)} />
                     </div> : null}
                     {damaged ? <div className="space-y-1">
-                      <Label htmlFor={`reconcile-${index}-resolution`} className="text-xs">{text("damageResolution")}</Label>
-                      <Controller control={form.control} name={`lines.${index}.damageResolution`} render={({ field }) => (
-                        <SearchableSelect inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id={`reconcile-${index}-resolution`} options={resolutionOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectResolution")} searchPlaceholder={text("searchResolutions")} emptyMessage={text("noResolutions")} aria-invalid={Boolean(lineErrors?.damageResolution)} mobileSheet />
-                      )} />
+                      <Controller control={form.control} name={`lines.${index}.damageResolution`} render={({ field }) => {
+                        const inlineOptionsLimit = guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+                        const resolutionInline = getInlineSelectOptions({ inlineOptionsLimit, options: resolutionOptions, value: field.value ?? "", placeholder: text("selectResolution") }) !== null;
+                        return <>
+                          <FieldLabelRow
+                            showClear={Boolean(field.value) && resolutionInline}
+                            onClear={() => { field.onChange(""); window.requestAnimationFrame(() => document.getElementById(`reconcile-${index}-resolution`)?.focus()); }}
+                          >
+                            <Label htmlFor={`reconcile-${index}-resolution`} className="text-xs">{text("damageResolution")}</Label>
+                          </FieldLabelRow>
+                          <SearchableSelect inlineOptionsLimit={inlineOptionsLimit} clearable={false} id={`reconcile-${index}-resolution`} options={resolutionOptions} value={field.value} onValueChange={field.onChange} placeholder={text("selectResolution")} searchPlaceholder={text("searchResolutions")} emptyMessage={text("noResolutions")} aria-invalid={Boolean(lineErrors?.damageResolution)} mobileSheet />
+                        </>;
+                      }} />
                     </div> : null}
                   </div> : null}
                   {messages.map((message) => <p key={message} role="alert" className="text-xs text-destructive">{t(message)}</p>)}

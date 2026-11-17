@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Route, UserCheck, UserPlus, UserRound, X } from "lucide-react";
+import { Route, UserCheck, UserPlus, UserRound } from "lucide-react";
 
+import { ClearSelectionButton } from "@/components/forms/clear-selection-button";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Label } from "@/components/ui/label";
@@ -215,6 +217,20 @@ export function TransactionAssigneeSelect({
   }, [selectedRoute, setValue, source, supervisorId]);
 
   const employeeValue = getTransactionAssigneeSelectValue(employeeId);
+
+  const employeeInline = getInlineSelectOptions({
+    inlineOptionsLimit,
+    options: employeeOptions,
+    value: employeeValue,
+    placeholder: t("accounting.dailyIncome.form.placeholders.selectEmployee"),
+  }) !== null;
+
+  const routeInline = getInlineSelectOptions({
+    inlineOptionsLimit,
+    options: routeOptions,
+    value: routeId ?? "",
+    placeholder: t("accounting.dailyIncome.form.placeholders.selectRoute"),
+  }) !== null;
   const sourceOptions: { value: DailyIncomeAssigneeSource; label: string }[] = allowDailyRoute
     ? [
         { value: "creator", label: t("accounting.dailyIncome.form.creatorAssignee") },
@@ -359,18 +375,29 @@ export function TransactionAssigneeSelect({
 
       {showRoutePicker ? (
         <div className="space-y-2 sm:col-span-2">
-          {onAddRoute ? (
+          {(routeInline && routeId) || onAddRoute ? (
             <div className="flex items-center justify-end gap-2">
-              <FieldEntityActions
-                hasSelection={Boolean(routeId)}
-                onAdd={onAddRoute}
-                onEdit={onEditRoute}
-                addIcon={Route}
-              />
+              {routeInline && routeId ? (
+                <ClearSelectionButton
+                  onClick={() => {
+                    handleRouteChange("");
+                    window.requestAnimationFrame(() => document.getElementById("journal-route")?.focus());
+                  }}
+                />
+              ) : null}
+              {onAddRoute ? (
+                <FieldEntityActions
+                  hasSelection={Boolean(routeId)}
+                  onAdd={onAddRoute}
+                  onEdit={onEditRoute}
+                  addIcon={Route}
+                />
+              ) : null}
             </div>
           ) : null}
           <SearchableSelect
             inlineOptionsLimit={inlineOptionsLimit}
+            clearable={false}
             id="journal-route"
             aria-label={t("accounting.dailyIncome.form.fields.route")}
             value={routeId ?? ""}
@@ -394,21 +421,18 @@ export function TransactionAssigneeSelect({
 
       {showRoutePicker ? (
         <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:col-span-2">
-          <div className="flex min-h-9 items-center justify-between gap-2">
+          <FieldLabelRow
+            showClear={Boolean(supervisorInline && supervisorId)}
+            clearDisabled={!routeId}
+            onClear={() => {
+              handleSupervisorChange("");
+              window.requestAnimationFrame(() => document.getElementById(`${id}-supervisor`)?.focus());
+            }}
+          >
             <Label htmlFor={`${id}-supervisor`} className="font-semibold text-foreground">
               {t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
             </Label>
-            {supervisorInline && supervisorId ? (
-              <button type="button" disabled={!routeId}
-                onClick={() => {
-                  handleSupervisorChange("");
-                  window.requestAnimationFrame(() => document.getElementById(`${id}-supervisor`)?.focus());
-                }}
-                className="flex min-h-9 items-center gap-1 rounded-md px-1 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
-                <X aria-hidden="true" className="size-3" />{t("common.ui.clearSelection")}
-              </button>
-            ) : null}
-          </div>
+          </FieldLabelRow>
           <SearchableSelect
             inlineOptionsLimit={inlineOptionsLimit}
             stretchInlineOptions
@@ -432,18 +456,29 @@ export function TransactionAssigneeSelect({
 
       {showEmployeePicker ? (
         <div className="space-y-2 sm:col-span-2">
-          {onAddEmployee ? (
+          {(employeeInline && employeeId) || onAddEmployee ? (
             <div className="flex items-center justify-end gap-2">
-              <FieldEntityActions
-                hasSelection={Boolean(employeeId)}
-                onAdd={onAddEmployee}
-                onEdit={onEditEmployee}
-                addIcon={UserPlus}
-              />
+              {employeeInline && employeeId ? (
+                <ClearSelectionButton
+                  onClick={() => {
+                    handleEmployeeChange("");
+                    window.requestAnimationFrame(() => document.getElementById(id)?.focus());
+                  }}
+                />
+              ) : null}
+              {onAddEmployee ? (
+                <FieldEntityActions
+                  hasSelection={Boolean(employeeId)}
+                  onAdd={onAddEmployee}
+                  onEdit={onEditEmployee}
+                  addIcon={UserPlus}
+                />
+              ) : null}
             </div>
           ) : null}
           <SearchableSelect
             inlineOptionsLimit={inlineOptionsLimit}
+            clearable={false}
             id={id}
             aria-label={t("accounting.dailyIncome.form.fields.employee")}
             value={employeeValue}

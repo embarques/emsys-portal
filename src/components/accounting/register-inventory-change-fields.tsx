@@ -7,6 +7,7 @@ import type { FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form
 import { FormSection } from "@/components/forms/form-shell";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { InventoryAutoReconcileField } from "@/components/accounting/inventory-auto-reconcile-field";
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
@@ -17,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
@@ -376,6 +377,12 @@ export function RegisterInventoryChangeFields({
     setEntityDialog("vehicle");
   }
 
+  const inlineOptionsLimit = activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+  const supplierInline = getInlineSelectOptions({ inlineOptionsLimit, options: supplierOptions, value: supplierId ?? "", placeholder: t("inventory.form.placeholders.supplier") }) !== null;
+  const routeInline = getInlineSelectOptions({ inlineOptionsLimit, options: routeOptions, value: routeId || NO_SELECTION, placeholder: t("accounting.dailyIncome.form.placeholders.selectRoute") }) !== null;
+  const vehicleInline = getInlineSelectOptions({ inlineOptionsLimit, options: vehicleOptions, value: holderVehicleId || NO_SELECTION, placeholder: t("accounting.dailyIncome.form.placeholders.selectHolderVehicle") }) !== null;
+  const itemInline = getInlineSelectOptions({ inlineOptionsLimit, options: itemOptions, value: itemId ?? "", placeholder: t("inventory.form.placeholders.item") }) !== null;
+
   function openEditVehicle() {
     if (!selectedVehicle) return;
     setEditingVehicle(selectedVehicle);
@@ -488,19 +495,29 @@ export function RegisterInventoryChangeFields({
 
           {direction === "received" ? (
             <div className="space-y-2 sm:col-span-2">
-              <div className="flex items-center justify-between gap-2">
+              <FieldLabelRow
+                showClear={Boolean(supplierId) && supplierInline}
+                onClear={() => {
+                  setValue("inventorySupplierId", undefined, { shouldValidate: true });
+                  setValue("inventorySupplierName", "");
+                  window.requestAnimationFrame(() => document.getElementById("journal-inventory-supplier")?.focus());
+                }}
+                actions={
+                  <FieldEntityActions
+                    hasSelection={Boolean(supplierId)}
+                    onAdd={openAddSupplier}
+                    onEdit={openEditSupplier}
+                    addIcon={Building2}
+                  />
+                }
+              >
                 <RequiredLabel htmlFor="journal-inventory-supplier">
                   {t("inventory.form.fields.supplier")}
                 </RequiredLabel>
-                <FieldEntityActions
-                  hasSelection={Boolean(supplierId)}
-                  onAdd={openAddSupplier}
-                  onEdit={openEditSupplier}
-                  addIcon={Building2}
-                />
-              </div>
+              </FieldLabelRow>
               <SearchableSelect
-                inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                inlineOptionsLimit={inlineOptionsLimit}
+                clearable={false}
                 id="journal-inventory-supplier"
                 value={supplierId ?? ""}
                 onValueChange={(next) => {
@@ -522,17 +539,26 @@ export function RegisterInventoryChangeFields({
           {dispatched ? (
             <>
               <div className="space-y-2 sm:col-span-2">
-                <div className="flex items-center justify-between gap-2">
+                <FieldLabelRow
+                  showClear={Boolean(routeId) && routeInline}
+                  onClear={() => {
+                    handleRouteChange(NO_SELECTION);
+                    window.requestAnimationFrame(() => document.getElementById("journal-route")?.focus());
+                  }}
+                  actions={
+                    <FieldEntityActions
+                      hasSelection={Boolean(routeId)}
+                      onAdd={openAddRoute}
+                      onEdit={openEditRoute}
+                      addIcon={Route}
+                    />
+                  }
+                >
                   <Label htmlFor="journal-route">{t("accounting.dailyIncome.form.fields.inventoryDailyRoute")}</Label>
-                  <FieldEntityActions
-                    hasSelection={Boolean(routeId)}
-                    onAdd={openAddRoute}
-                    onEdit={openEditRoute}
-                    addIcon={Route}
-                  />
-                </div>
+                </FieldLabelRow>
                 <SearchableSelect
-                  inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                  inlineOptionsLimit={inlineOptionsLimit}
+                  clearable={false}
                   id="journal-route"
                   value={routeId || NO_SELECTION}
                   onValueChange={handleRouteChange}
@@ -560,19 +586,28 @@ export function RegisterInventoryChangeFields({
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
+                    <FieldLabelRow
+                      showClear={Boolean(holderVehicleId) && vehicleInline}
+                      onClear={() => {
+                        handleVehicleChange(NO_SELECTION);
+                        window.requestAnimationFrame(() => document.getElementById("journal-inventory-holder-vehicle")?.focus());
+                      }}
+                      actions={
+                        <FieldEntityActions
+                          hasSelection={Boolean(holderVehicleId)}
+                          onAdd={openAddVehicle}
+                          onEdit={openEditVehicle}
+                          addIcon={Car}
+                        />
+                      }
+                    >
                       <Label htmlFor="journal-inventory-holder-vehicle">
                         {t("accounting.dailyIncome.form.fields.holderVehicle")}
                       </Label>
-                      <FieldEntityActions
-                        hasSelection={Boolean(holderVehicleId)}
-                        onAdd={openAddVehicle}
-                        onEdit={openEditVehicle}
-                        addIcon={Car}
-                      />
-                    </div>
+                    </FieldLabelRow>
                     <SearchableSelect
-                      inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                      inlineOptionsLimit={inlineOptionsLimit}
+                      clearable={false}
                       id="journal-inventory-holder-vehicle"
                       value={holderVehicleId || NO_SELECTION}
                       onValueChange={handleVehicleChange}
@@ -637,17 +672,27 @@ export function RegisterInventoryChangeFields({
       <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t("accounting.dailyIncome.form.sections.inventoryAmounts")}>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2 sm:col-span-3">
-            <div className="flex items-center justify-between gap-2">
+            <FieldLabelRow
+              showClear={Boolean(itemId) && itemInline}
+              onClear={() => {
+                setValue("inventoryItemId", undefined, { shouldValidate: true });
+                setValue("inventoryItemName", "");
+                window.requestAnimationFrame(() => document.getElementById("journal-inventory-item")?.focus());
+              }}
+              actions={
+                <FieldEntityActions
+                  hasSelection={Boolean(itemId)}
+                  onAdd={openAddItem}
+                  onEdit={openEditItem}
+                  addIcon={PackagePlus}
+                />
+              }
+            >
               <RequiredLabel htmlFor="journal-inventory-item">{t("inventory.form.fields.item")}</RequiredLabel>
-              <FieldEntityActions
-                hasSelection={Boolean(itemId)}
-                onAdd={openAddItem}
-                onEdit={openEditItem}
-                addIcon={PackagePlus}
-              />
-            </div>
+            </FieldLabelRow>
             <SearchableSelect
-              inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+              inlineOptionsLimit={inlineOptionsLimit}
+              clearable={false}
               id="journal-inventory-item"
               value={itemId ?? ""}
               onValueChange={(next) => {

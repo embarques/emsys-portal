@@ -355,8 +355,8 @@ const TRANSACTION_TYPE_CHOOSER_PATH: Record<string, string[]> = {
   "register-payment": ["Income", "Invoice", "Payment"],
   "register-expense": ["Expense"],
   "register-income": ["Income", "Other"],
-  "apply-discount": ["Income", "Invoice", "Discount"],
-  "apply-surcharge": ["Income", "Invoice", "Surcharge"],
+  "apply-discount": ["Income", "Invoice", "Invoice discount"],
+  "apply-surcharge": ["Income", "Invoice", "Invoice surcharge"],
   "transfer-account": ["Transfer"],
 };
 

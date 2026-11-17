@@ -312,6 +312,7 @@
         "paymentReference": "Referencia Zelle",
         "paymentAmount": "Monto",
         "datePosted": "Fecha de registro",
+        "notes": "Notas",
         "referenceNumber": "Número de referencia interna",
         "createdBy": "Creado por",
         "clearedAt": "Cobrado el"
@@ -863,6 +864,7 @@
         "ariaLabel": "Tipo de transacción",
         "prompt": "Seleccione el tipo de transacción",
         "back": "Volver a todos los tipos de transacción",
+        "backTo": "Volver a {{group}}",
         "hints": {
           "INITIAL-PAYMENT": "Incluye el primer pago",
           "SALES": "Fuera de una factura",
@@ -904,8 +906,8 @@
           "transfers": "Transferencia",
           "invoice": "Factura",
           "invoicePayment": "Pago",
-          "invoiceSurcharge": "Recargo",
-          "invoiceDiscount": "Descuento",
+          "invoiceSurcharge": "Recargo de factura",
+          "invoiceDiscount": "Descuento de factura",
           "otherIncome": "Otro"
         }
       },
@@ -938,8 +940,8 @@
         "groups": {
           "invoice": "Factura",
           "invoicePayment": "Pago",
-          "invoiceSurcharge": "Recargo",
-          "invoiceDiscount": "Descuento",
+          "invoiceSurcharge": "Recargo de factura",
+          "invoiceDiscount": "Descuento de factura",
           "otherIncome": "Otro"
         }
       }
@@ -1244,6 +1246,9 @@
         "balanceNegative": "El saldo no puede ser negativo.",
         "supervisorRequired": "Seleccione el supervisor de la ruta diaria responsable de esta transacción.",
         "inventoryHoldersRequired": "Seleccione un vehículo o al menos un empleado responsable de este inventario."
+      },
+      "actions": {
+        "manageAccounts": "Administrar cuentas"
       },
       "sections": {
         "assignment": "Asignado a",

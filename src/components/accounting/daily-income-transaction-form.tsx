@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
@@ -24,12 +25,13 @@ import { TransactionAssigneeSelect } from "@/components/accounting/transaction-a
 import { useTransactionAssigneeEntityActions } from "@/components/accounting/use-transaction-assignee-entity-actions";
 import { TransactionReferenceNumberFields } from "@/components/accounting/transaction-reference-number-fields";
 import { TransactionTypeSummary } from "@/components/accounting/transaction-type-summary";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { FieldMessage } from "@/components/forms/field-message";
 import { FormBody, FormFooterNoticeMessage, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { focusWithoutOpeningCombobox, getNavigableFormFields, isDesktopFormNavigation, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useScrollFocusedSectionToTop } from "@/hooks/use-scroll-focused-section-to-top";
@@ -55,6 +57,8 @@ import { queryKeys } from "@/lib/query/query-keys";
 import type { Employee } from "@/lib/employees/types";
 import { useInvoiceSearch } from "@/lib/invoices/hooks/use-invoices";
 import { createInvoiceSearchFilter, getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useTranslation } from "@/lib/i18n";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { cn } from "@/lib/utils";
@@ -186,6 +190,11 @@ export function DailyIncomeTransactionForm({
   summaryCurrency,
 }: Props) {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
+  const canViewChartAccounts = hasPermission(
+    PERMISSIONS.accountsView.name,
+    PERMISSIONS.accountsView.resourceType,
+  );
   const initialTransactionType = transactionType;
   const formRef = useRef<HTMLFormElement>(null);
   const savingRef = useRef(false);
@@ -253,6 +262,7 @@ export function DailyIncomeTransactionForm({
     register,
     reset,
     setValue,
+    clearErrors,
     watch,
   } = useForm<DailyIncomeJournalValues>({
     resolver: zodResolver(schema),
@@ -495,7 +505,7 @@ export function DailyIncomeTransactionForm({
   const isInventoryChange = type === "INVENTORY";
   const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
   const needsPaymentMethod = needsExistingInvoice || isRegisterInvoice || type === "SALES" || expensePaidByMethod;
-  const showPaymentDetails = hasPaymentDetailsStep(type);
+  const showPaymentDetails = hasPaymentDetailsStep(type, amount);
   const needsSourceAccount = (type === "TRANSFER" || type === "EXPENSE" || type === "LOAN") && !expensePaidByMethod;
   const isInvoiceAdjustment = type === "DISCOUNT" || type === "SURCHARGE";
   const showExistingInvoiceDetails =
@@ -511,17 +521,20 @@ export function DailyIncomeTransactionForm({
   function applyExistingInvoice(invoice: Invoice) {
     setSelectedInvoiceCache(invoice);
     setInvoiceQuery("");
-    setValue("transactionType", "PAYMENT", { shouldValidate: true, shouldDirty: true });
-    setValue("invoiceId", invoice.invoiceId, { shouldValidate: true, shouldDirty: true });
-    setValue("invoiceNumber", invoice.invoiceNumber, { shouldValidate: true, shouldDirty: true });
+    // Set id + balance together before validating so a prior paid-off invoice cannot leave a stale error.
+    clearErrors("invoiceId");
+    setValue("transactionType", "PAYMENT", { shouldDirty: true });
+    setValue("invoiceId", invoice.invoiceId, { shouldDirty: true });
+    setValue("invoiceNumber", invoice.invoiceNumber, { shouldDirty: true });
     setValue("autoGenerateInvoiceNumber", undefined);
-    setValue("invoiceBalance", getInvoiceBalanceAmount(invoice), { shouldValidate: true, shouldDirty: true });
+    setValue("invoiceBalance", getInvoiceBalanceAmount(invoice), { shouldDirty: true });
     setValue("invoiceCost", undefined);
     setValue("invoiceDiscount", undefined);
     setValue("includeSender", false);
     setValue("includeReceiver", false);
     setValue("senderId", undefined);
     setValue("receiverId", undefined);
+    void trigger(["invoiceId", "invoiceBalance"]);
     // Flush before the wizard syncs type + resets from initialValues.
     onValuesChange?.(getValues());
     onTransactionTypeChange?.("PAYMENT");
@@ -530,12 +543,14 @@ export function DailyIncomeTransactionForm({
   function applyCreateNewInvoice() {
     setSelectedInvoiceCache(null);
     setInvoiceQuery("");
-    setValue("transactionType", "INITIAL-PAYMENT", { shouldValidate: true, shouldDirty: true });
-    setValue("invoiceId", "", { shouldValidate: true, shouldDirty: true });
-    setValue("invoiceNumber", "", { shouldValidate: true, shouldDirty: true });
-    setValue("autoGenerateInvoiceNumber", true, { shouldValidate: true, shouldDirty: true });
+    clearErrors("invoiceId");
+    setValue("transactionType", "INITIAL-PAYMENT", { shouldDirty: true });
+    setValue("invoiceId", "", { shouldDirty: true });
+    setValue("invoiceNumber", "", { shouldDirty: true });
+    setValue("autoGenerateInvoiceNumber", true, { shouldDirty: true });
     setValue("invoiceBalance", undefined);
     setValue("amount", 0, { shouldDirty: true });
+    void trigger(["invoiceId", "invoiceBalance", "autoGenerateInvoiceNumber"]);
     onValuesChange?.(getValues());
     onTransactionTypeChange?.("INITIAL-PAYMENT");
   }
@@ -561,14 +576,16 @@ export function DailyIncomeTransactionForm({
           }
           setSelectedInvoiceCache(invoice ?? null);
           setInvoiceQuery("");
-          setValue("invoiceId", invoice?.invoiceId ?? "", { shouldValidate: true });
+          // Avoid validating invoiceId against the previous balance (stale paid-off error).
+          clearErrors("invoiceId");
+          setValue("invoiceId", invoice?.invoiceId ?? "");
           setValue("invoiceNumber", invoice?.invoiceNumber ?? "");
           setValue(
             "invoiceBalance",
             invoice ? getInvoiceBalanceAmount(invoice) : undefined,
-            { shouldValidate: true },
           );
           if (!invoice) setValue("amount", 0, { shouldDirty: true });
+          void trigger(["invoiceId", "invoiceBalance", "amount"]);
         }}
         onSearchChange={setInvoiceQuery}
         manualFiltering
@@ -587,7 +604,10 @@ export function DailyIncomeTransactionForm({
         mobileSheet
         options={invoiceOptions}
       />
-      <FieldMessage error={errors.invoiceId?.message} className="sm:col-start-2" />
+      <FieldMessage
+        error={selectedInvoicePaidOff ? undefined : errors.invoiceId?.message}
+        className="sm:col-start-2"
+      />
       {selectedInvoicePaidOff ? (
         <FormFooterNoticeMessage
           tone="error"
@@ -1234,6 +1254,7 @@ export function DailyIncomeTransactionForm({
               setValue={setValue}
               watch={watch}
               trigger={trigger}
+              clearErrors={clearErrors}
               onAddEmployee={assigneeEntityActions.onAddEmployee}
               onEditEmployee={assigneeEntityActions.onEditEmployee}
               onAddRoute={assigneeEntityActions.onAddRoute}
@@ -1288,7 +1309,18 @@ export function DailyIncomeTransactionForm({
                 </div>
               </FormSection>
             ) : (
-            <FormSection className={activeStep && activeStep !== "amounts" ? "hidden" : undefined} variant="card" title={t(needsExistingInvoice ? "accounting.dailyIncome.form.sections.invoiceDetails" : isTransfer ? "accounting.dailyIncome.form.sections.transferDetails" : "accounting.dailyIncome.form.sections.amounts")}>
+            <FormSection
+              className={activeStep && activeStep !== "amounts" ? "hidden" : undefined}
+              variant="card"
+              title={t(needsExistingInvoice ? "accounting.dailyIncome.form.sections.invoiceDetails" : isTransfer ? "accounting.dailyIncome.form.sections.transferDetails" : "accounting.dailyIncome.form.sections.amounts")}
+              action={
+                canViewChartAccounts && (needsAccount || needsSourceAccount || isTransfer) ? (
+                  <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs font-medium">
+                    <Link href="/accounting/accounts">{t("accounting.dailyIncome.form.actions.manageAccounts")}</Link>
+                  </Button>
+                ) : undefined
+              }
+            >
               {isTransfer ? (
                 <div className="grid gap-4">
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start sm:gap-3">
@@ -1348,29 +1380,6 @@ export function DailyIncomeTransactionForm({
                 ) : null}
 
                 <div className="grid grid-cols-1 gap-4 sm:col-span-2">
-                  {needsAccount ? (
-                    <div className="space-y-2">
-                      <RequiredLabel htmlFor="journal-account">{t("accounting.dailyIncome.form.fields.account")}</RequiredLabel>
-                      <SearchableSelect
-                        inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
-                        id="journal-account"
-                        value={accountId != null ? String(accountId) : ""}
-                        onValueChange={(next) => {
-                          const account = accountSelectAccounts.find((item) => item.id === Number(next));
-                          setValue("accountId", account?.id, { shouldValidate: true });
-                          setValue("accountName", account?.displayName ?? "");
-                          setValue("accountType", account?.type);
-                        }}
-                        placeholder={t("accounting.dailyIncome.form.placeholders.selectAccount")}
-                        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
-                        selectAllOnFocus
-                        mobileSheet
-                        options={accountOptions}
-                      />
-                      <FieldMessage error={errors.accountId?.message} hint={type === "EXPENSE" ? t("accounting.dailyIncome.form.hints.expenseAccount") : undefined} />
-                    </div>
-                  ) : null}
-
                   {needsSourceAccount ? (
                     <HierarchicalAccountSelect
                       inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
@@ -1392,6 +1401,48 @@ export function DailyIncomeTransactionForm({
                         setValue("sourceAccountType", account?.type);
                       }}
                     />
+                  ) : null}
+
+                  {needsAccount ? (
+                    <div className="space-y-2">
+                      <FieldLabelRow
+                        showClear={
+                          accountId != null &&
+                          getInlineSelectOptions({
+                            inlineOptionsLimit: activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined,
+                            options: accountOptions,
+                            value: String(accountId),
+                            placeholder: t("accounting.dailyIncome.form.placeholders.selectAccount"),
+                          }) !== null
+                        }
+                        onClear={() => {
+                          setValue("accountId", undefined, { shouldValidate: true });
+                          setValue("accountName", "");
+                          setValue("accountType", undefined);
+                          window.requestAnimationFrame(() => document.getElementById("journal-account")?.focus());
+                        }}
+                      >
+                        <RequiredLabel htmlFor="journal-account">{t("accounting.dailyIncome.form.fields.account")}</RequiredLabel>
+                      </FieldLabelRow>
+                      <SearchableSelect
+                        inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                        clearable={false}
+                        id="journal-account"
+                        value={accountId != null ? String(accountId) : ""}
+                        onValueChange={(next) => {
+                          const account = accountSelectAccounts.find((item) => item.id === Number(next));
+                          setValue("accountId", account?.id, { shouldValidate: true });
+                          setValue("accountName", account?.displayName ?? "");
+                          setValue("accountType", account?.type);
+                        }}
+                        placeholder={t("accounting.dailyIncome.form.placeholders.selectAccount")}
+                        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                        selectAllOnFocus
+                        mobileSheet
+                        options={accountOptions}
+                      />
+                      <FieldMessage error={errors.accountId?.message} hint={type === "EXPENSE" ? t("accounting.dailyIncome.form.hints.expenseAccount") : undefined} />
+                    </div>
                   ) : null}
 
                   {amountField}

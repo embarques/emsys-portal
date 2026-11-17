@@ -251,7 +251,7 @@ function incomePath(
       group("inventory"),
       {
         id: "inventory:dispatched",
-        label: t("accounting.dailyIncome.inventory.dispatched"),
+        label: t("accounting.dailyIncome.form.inventory.dispatched"),
       },
     ];
   }
@@ -268,7 +268,7 @@ function expenseFallbackPath(item: ClassifiableJournal, t: TranslateFn): Array<{
       group("inventory"),
       {
         id: "inventory:received",
-        label: t("accounting.dailyIncome.inventory.received"),
+        label: t("accounting.dailyIncome.form.inventory.received"),
       },
     ];
   }

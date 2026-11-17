@@ -139,15 +139,17 @@ export function AddTransactionWizard(props: Props) {
     isEdit ? props.initialValues : emptyTransaction("INITIAL-PAYMENT", props.paymentMethods),
   );
   const currentValuesRef = useRef<DailyIncomeJournalValues | null>(null);
+  const [liveAmount, setLiveAmount] = useState(() => Number(detailValues.amount) || 0);
   const rememberFormValues = useCallback((values: DailyIncomeJournalValues) => {
     currentValuesRef.current = values;
+    setLiveAmount(Number(values.amount) || 0);
   }, []);
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
   const [skipAutofocusAfterSave, setSkipAutofocusAfterSave] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const footerError = stepError || props.error;
-  const steps = getTransactionFormSteps(selectedType);
+  const steps = getTransactionFormSteps(selectedType, liveAmount);
   const stepIndex = steps.indexOf(activeStep);
   // Choosing the type is step 1 of the add workflow; the form's own steps follow it.
   const stepperLabels = [
@@ -192,6 +194,7 @@ export function AddTransactionWizard(props: Props) {
       setShowTypePicker(false);
       setSelectedType(editInitialValues.transactionType);
       setDetailValues(editInitialValues);
+      setLiveAmount(Number(editInitialValues.amount) || 0);
       return;
     }
 
@@ -202,7 +205,9 @@ export function AddTransactionWizard(props: Props) {
     setStepError(null);
     setSpecialType(null);
     setSelectedType(null);
-    setDetailValues(emptyTransaction("INITIAL-PAYMENT", props.paymentMethods));
+    const nextValues = emptyTransaction("INITIAL-PAYMENT", props.paymentMethods);
+    setDetailValues(nextValues);
+    setLiveAmount(Number(nextValues.amount) || 0);
     setFormSessionKey(0);
     setFocusSecondFieldSignal(0);
     setSkipAutofocusAfterSave(false);
@@ -224,7 +229,8 @@ export function AddTransactionWizard(props: Props) {
       if (!isEdit && selectedType) {
         // Payment discovery always restarts on search (PAYMENT); create-new is chosen again if needed.
         const continueType = selectedType === "INITIAL-PAYMENT" ? "PAYMENT" : selectedType;
-        const continueSteps = getTransactionFormSteps(continueType);
+        // Continue drafts clear amount; use 0 so unpaid INITIAL-PAYMENT pins stay valid against the next type's steps.
+        const continueSteps = getTransactionFormSteps(continueType, 0);
         // Read the ref so a long save/duplicate confirm still uses the mark from submit time.
         const markedAtSubmit = batchStartStepRef.current;
         const markedStep = markedAtSubmit && continueSteps.includes(markedAtSubmit) ? markedAtSubmit : null;
@@ -232,11 +238,11 @@ export function AddTransactionWizard(props: Props) {
         // Batch continue keeps the chosen transaction type; never bounce back to the type picker.
         setShowTypePicker(false);
         setSelectedType(continueType);
-        setDetailValues(
-          markedStep
-            ? continueTransactionValuesFromStep(continueType, values, markedStep, props.paymentMethods)
-            : continueTransactionValues(continueType, values, props.paymentMethods),
-        );
+        const continueDraft = markedStep
+          ? continueTransactionValuesFromStep(continueType, values, markedStep, props.paymentMethods)
+          : continueTransactionValues(continueType, values, props.paymentMethods);
+        setDetailValues(continueDraft);
+        setLiveAmount(Number(continueDraft.amount) || 0);
         setActiveStep(markedStep ?? getDefaultBatchContinueStep(continueType));
         setFormSessionKey((key) => key + 1);
         const skipAutofocus = NO_AUTOFOCUS_AFTER_SAVE_TYPES.has(continueType);
@@ -270,9 +276,10 @@ export function AddTransactionWizard(props: Props) {
       // Capture the current form before changing its key and mounting another form.
       const nextValues = clearTypeSpecificFields(currentValuesRef.current ?? detailValues, type, props.paymentMethods);
       setDetailValues(nextValues);
+      setLiveAmount(Number(nextValues.amount) || 0);
       setSelectedType(type);
       setActiveStep("assignment");
-      const nextSteps = getTransactionFormSteps(type);
+      const nextSteps = getTransactionFormSteps(type, Number(nextValues.amount) || 0);
       setBatchStartStep((current) => (current && nextSteps.includes(current) ? current : null));
     }
     setStepError(null);

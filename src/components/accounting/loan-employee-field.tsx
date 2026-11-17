@@ -5,9 +5,10 @@ import { useMemo, useState } from "react";
 
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
 import {
   useCreateEmployee,
@@ -120,22 +121,34 @@ export function LoanEmployeeField({
     }
   }
 
+  const inlineOptionsLimit = guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+  const isInline = getInlineSelectOptions({ inlineOptionsLimit, options, value: value ? String(value) : "", placeholder }) !== null;
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
+      <FieldLabelRow
+        showClear={Boolean(value) && isInline}
+        onClear={() => {
+          onChange(null);
+          window.requestAnimationFrame(() => document.getElementById(id)?.focus());
+        }}
+        actions={
+          <FieldEntityActions
+            hasSelection={Boolean(value)}
+            onAdd={openAdd}
+            onEdit={openEdit}
+            addIcon={UserPlus}
+          />
+        }
+      >
         <Label htmlFor={id}>
           {label}
           {required ? <span className="text-destructive"> *</span> : null}
         </Label>
-        <FieldEntityActions
-          hasSelection={Boolean(value)}
-          onAdd={openAdd}
-          onEdit={openEdit}
-          addIcon={UserPlus}
-        />
-      </div>
+      </FieldLabelRow>
       <SearchableSelect
-        inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+        inlineOptionsLimit={inlineOptionsLimit}
+        clearable={false}
         id={id}
         aria-label={label}
         aria-invalid={Boolean(error)}

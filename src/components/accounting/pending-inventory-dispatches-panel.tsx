@@ -7,10 +7,11 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { GuidedEntryFooter, GuidedEntryStepper, GuidedStepHeading, type GuidedTypeStep } from "@/components/accounting/guided-entry-chrome";
 import { inventoryPaymentSteps, ReconcileDispatchDialog } from "@/components/accounting/reconcile-dispatch-dialog";
 import { FormBody } from "@/components/forms/form-shell";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -69,7 +70,20 @@ export function PendingInventoryDispatchesPanel({ presentation = "page", onBusyC
   const list = <div className={inline ? "space-y-4" : "space-y-6"}>
     {/* Flex, not grid: SearchableSelect's full-height wrapper overflows bottom-aligned grid cells. */}
     <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4">
-      <div className="min-w-0 flex-[2_1_14rem] space-y-2"><Label htmlFor="pending-inventory-holder">{text("holder")}</Label><SearchableSelect inlineOptionsLimit={presentation === "inline" ? QUICK_SELECT_OPTIONS_LIMIT : undefined} id="pending-inventory-holder" value={filters.holder || ALL_VALUE} onValueChange={(value) => filter("holder", value === ALL_VALUE ? "" : value)} options={holderOptions} loading={holdersQuery.isLoading} placeholder={text("selectHolder")} searchPlaceholder={text("searchHolders")} emptyMessage={text("noHoldersFound")} mobileSheet /></div>
+      <div className="min-w-0 flex-[2_1_14rem] space-y-2">{(() => {
+        const holderInlineLimit = presentation === "inline" ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+        const holderValue = filters.holder || ALL_VALUE;
+        const holderInline = getInlineSelectOptions({ inlineOptionsLimit: holderInlineLimit, options: holderOptions, value: holderValue, placeholder: text("selectHolder"), loading: holdersQuery.isLoading }) !== null;
+        return <>
+          <FieldLabelRow
+            showClear={Boolean(filters.holder) && holderInline}
+            onClear={() => { filter("holder", ""); window.requestAnimationFrame(() => document.getElementById("pending-inventory-holder")?.focus()); }}
+          >
+            <Label htmlFor="pending-inventory-holder">{text("holder")}</Label>
+          </FieldLabelRow>
+          <SearchableSelect inlineOptionsLimit={holderInlineLimit} clearable={false} id="pending-inventory-holder" value={holderValue} onValueChange={(value) => filter("holder", value === ALL_VALUE ? "" : value)} options={holderOptions} loading={holdersQuery.isLoading} placeholder={text("selectHolder")} searchPlaceholder={text("searchHolders")} emptyMessage={text("noHoldersFound")} mobileSheet />
+        </>;
+      })()}</div>
       {DATE_FILTERS.map((name) => <div key={name} className="min-w-0 flex-[1_1_10rem] space-y-2"><Label htmlFor={`pending-inventory-${name}`}>{text(name)}</Label><Input id={`pending-inventory-${name}`} type="date" value={filters[name]} onChange={(event) => filter(name, event.target.value)} /></div>)}
       <div className="min-w-0 flex-[1_1_10rem] space-y-2"><Label htmlFor="pending-inventory-age">{text("age")}</Label><Input id="pending-inventory-age" type="number" min={0} value={filters.age} onChange={(event) => filter("age", event.target.value)} /></div>
       <Button variant="outline" onClick={() => { setFilters(initialFilters); setPage(1); }}>{text("reset")}</Button>

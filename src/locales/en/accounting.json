@@ -864,6 +864,7 @@
         "ariaLabel": "Transaction type",
         "prompt": "Select your transaction type",
         "back": "Back to all transaction types",
+        "backTo": "Back to {{group}}",
         "hints": {
           "INITIAL-PAYMENT": "Includes first payment",
           "SALES": "Not from an invoice",
@@ -905,8 +906,8 @@
           "transfers": "Transfer",
           "invoice": "Invoice",
           "invoicePayment": "Payment",
-          "invoiceSurcharge": "Surcharge",
-          "invoiceDiscount": "Discount",
+          "invoiceSurcharge": "Invoice surcharge",
+          "invoiceDiscount": "Invoice discount",
           "otherIncome": "Other"
         }
       },
@@ -939,8 +940,8 @@
         "groups": {
           "invoice": "Invoice",
           "invoicePayment": "Payment",
-          "invoiceSurcharge": "Surcharge",
-          "invoiceDiscount": "Discount",
+          "invoiceSurcharge": "Invoice surcharge",
+          "invoiceDiscount": "Invoice discount",
           "otherIncome": "Other"
         }
       }
@@ -1245,6 +1246,9 @@
         "balanceNegative": "Balance cannot be negative.",
         "supervisorRequired": "Select the daily-route supervisor responsible for this transaction.",
         "inventoryHoldersRequired": "Select a vehicle or at least one employee responsible for this inventory."
+      },
+      "actions": {
+        "manageAccounts": "Manage accounts"
       },
       "sections": {
         "assignment": "Assigned to",

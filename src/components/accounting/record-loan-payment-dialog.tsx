@@ -11,11 +11,12 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { JournalSummaryLine } from "@/components/accounting/loan-journal-summary-line";
 import { LoanEmployeeField } from "@/components/accounting/loan-employee-field";
 import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useEmployeeActiveLoans } from "@/lib/accounting/loans/hooks";
@@ -123,6 +124,21 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
   ).join(", ");
   const noActiveLoans = selectedEmployeeId > 0 && employeeLoansQuery.isSuccess && employeeLoans.length === 0;
 
+  const inlineOptionsLimit = guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined;
+  const loanOptions = loanOptionsSource.map((loan) => ({
+    value: loan.id,
+    label: `${loan.employee.name} - ${loan.description || t("accounting.loans.fallbackDescription")}`,
+    keywords: [loan.employee.name, loan.description, loan.referenceNumber],
+  }));
+  const loanInline = getInlineSelectOptions({ inlineOptionsLimit, options: loanOptions, value: selectedLoanId ?? "", placeholder: text("selectLoan") }) !== null;
+
+  const receivedAccountOptions = assetAccounts.map((account) => ({
+    value: String(account.id),
+    label: accountLabel(account),
+    keywords: [account.name, account.displayName ?? ""],
+  }));
+  const receivedAccountInline = getInlineSelectOptions({ inlineOptionsLimit, options: receivedAccountOptions, value: receivedAccountId ? String(receivedAccountId) : "", placeholder: text("selectReceivedAccount") }) !== null;
+
   const fieldError = (name: keyof LoanPaymentValues) =>
     errors[name] ? <p role="alert" className="text-sm text-destructive">{errors[name]?.message}</p> : null;
   const requiredLabel = (id: string, label: string) => (
@@ -188,9 +204,18 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
               </div>
               {allocationMode === "specific-loan" ? (
                 <div className="space-y-2 sm:col-span-2">
-                  {requiredLabel("loan-payment-loan", text("loan"))}
+                  <FieldLabelRow
+                    showClear={Boolean(selectedLoanId) && loanInline}
+                    onClear={() => {
+                      setValue("loanId", undefined, { shouldValidate: true });
+                      window.requestAnimationFrame(() => document.getElementById("loan-payment-loan")?.focus());
+                    }}
+                  >
+                    {requiredLabel("loan-payment-loan", text("loan"))}
+                  </FieldLabelRow>
                   <SearchableSelect
-                    inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                    inlineOptionsLimit={inlineOptionsLimit}
+                    clearable={false}
                     id="loan-payment-loan"
                     aria-label={text("loan")}
                     aria-invalid={Boolean(errors.loanId)}
@@ -237,9 +262,20 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
           <FormSection variant="card" className={cn("p-4 [&_label]:min-h-0 [&_label]:text-xs [&_label]:font-medium [&_label]:leading-4 [&_label]:text-muted-foreground", stageClass(2))} icon={ReceiptText} title={text("sections.payment")}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                {requiredLabel("loan-payment-received-account", text("receivedAccount"))}
+                <FieldLabelRow
+                  showClear={Boolean(receivedAccountId) && receivedAccountInline}
+                  onClear={() => {
+                    setValue("receivedAccountId", 0, { shouldValidate: true });
+                    setValue("receivedAccountName", undefined);
+                    setValue("receivedAccountType", undefined);
+                    window.requestAnimationFrame(() => document.getElementById("loan-payment-received-account")?.focus());
+                  }}
+                >
+                  {requiredLabel("loan-payment-received-account", text("receivedAccount"))}
+                </FieldLabelRow>
                 <SearchableSelect
-                  inlineOptionsLimit={guided ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
+                  inlineOptionsLimit={inlineOptionsLimit}
+                  clearable={false}
                   id="loan-payment-received-account"
                   aria-label={text("receivedAccount")}
                   aria-invalid={Boolean(errors.receivedAccountId)}
@@ -250,11 +286,7 @@ export function RecordLoanPaymentForm({ employees, loans, assetAccounts, initial
                     setValue("receivedAccountName", accountLabel(account));
                     setValue("receivedAccountType", account?.type);
                   }}
-                  options={assetAccounts.map((account) => ({
-                    value: String(account.id),
-                    label: accountLabel(account),
-                    keywords: [account.name, account.displayName ?? ""],
-                  }))}
+                  options={receivedAccountOptions}
                   placeholder={text("selectReceivedAccount")}
                   searchPlaceholder={text("searchAssetAccounts")}
                   mobileSheet

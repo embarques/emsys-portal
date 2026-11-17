@@ -39,9 +39,20 @@ export const TRANSACTION_STEP_FIELDS: Record<Exclude<TransactionFormStep, "revie
  * Discounts and surcharges only adjust the invoice total, so they skip payment details: the request
  * always posts Cash with a system reference. Expenses do the same until the payment-accounts contract
  * is enabled; then they choose a method and the cash or bank account the money comes from.
+ *
+ * Unpaid invoice registration (`INITIAL-PAYMENT` with amount 0) also skips the step: the API posts
+ * Cash automatically. Pass `amount` so the wizard can hide Payment & references until a payment is entered.
+ * Omit `amount` when only the transaction type is known (e.g. field ownership).
  */
-export function hasPaymentDetailsStep(type: JournalTransactionType | null): boolean {
-  return type !== "INVENTORY" && !isFixedCashTransactionType(type);
+export function hasPaymentDetailsStep(
+  type: JournalTransactionType | null,
+  amount?: number | null,
+): boolean {
+  if (type == null || type === "INVENTORY" || isFixedCashTransactionType(type)) return false;
+  if (type === "INITIAL-PAYMENT" && amount !== undefined && (Number(amount) || 0) <= 0) {
+    return false;
+  }
+  return true;
 }
 
 export function isFixedCashTransactionType(type: JournalTransactionType | null | undefined): boolean {
@@ -58,11 +69,14 @@ export function hasPartiesStep(type: JournalTransactionType | null): boolean {
   return type === "INITIAL-PAYMENT";
 }
 
-export function getTransactionFormSteps(type: JournalTransactionType | null): TransactionFormStep[] {
+export function getTransactionFormSteps(
+  type: JournalTransactionType | null,
+  amount?: number | null,
+): TransactionFormStep[] {
   return [
     "assignment",
     "amounts",
-    ...(hasPaymentDetailsStep(type) ? ["payment" as const] : []),
+    ...(hasPaymentDetailsStep(type, amount) ? ["payment" as const] : []),
     ...(hasPartiesStep(type) ? ["parties" as const] : []),
     "review",
   ];

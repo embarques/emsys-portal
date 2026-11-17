@@ -3,10 +3,11 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Controller, useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 
+import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { isCheckPaymentMethod, requiresBankAccount, type AccountingLookup } from "@/lib/accounting/daily-income/types";
 import { useTranslation } from "@/lib/i18n";
@@ -65,27 +66,41 @@ export function ReconcileDispatchPayments({ form, paymentMethods, bankAccounts, 
             <legend className="sr-only">{text("paymentNumber", { number: index + 1 })}</legend>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor={`reconcile-payment-${index}-method`} className="text-xs">{text("paymentMethod")}</Label>
-                <Controller control={form.control} name={`payments.${index}.paymentMethodId`} render={({ field: methodField }) => (
-                  <SearchableSelect
-                    inlineOptionsLimit={inlineOptionsLimit}
-                    id={`reconcile-payment-${index}-method`}
-                    options={methodOptions}
-                    value={methodField.value}
-                    loading={loading}
-                    onValueChange={(value) => {
-                      const method = paymentMethods.find((entry) => String(entry.id) === value);
-                      methodField.onChange(value);
-                      form.setValue(`payments.${index}.paymentMethodName`, method?.name ?? "");
-                      if (!method || !requiresBankAccount(method.name)) form.setValue(`payments.${index}.paymentAccountId`, "");
-                    }}
-                    placeholder={text("selectPaymentMethod")}
-                    searchPlaceholder={text("searchPaymentMethods")}
-                    emptyMessage={text("noPaymentMethods")}
-                    aria-invalid={Boolean(paymentErrors?.paymentMethodId)}
-                    mobileSheet
-                  />
-                )} />
+                <Controller control={form.control} name={`payments.${index}.paymentMethodId`} render={({ field: methodField }) => {
+                  const methodInline = getInlineSelectOptions({ inlineOptionsLimit, options: methodOptions, value: methodField.value, placeholder: text("selectPaymentMethod") }) !== null;
+                  return <>
+                    <FieldLabelRow
+                      showClear={Boolean(methodField.value) && methodInline}
+                      onClear={() => {
+                        methodField.onChange("");
+                        form.setValue(`payments.${index}.paymentMethodName`, "");
+                        form.setValue(`payments.${index}.paymentAccountId`, "");
+                        window.requestAnimationFrame(() => document.getElementById(`reconcile-payment-${index}-method`)?.focus());
+                      }}
+                    >
+                      <Label htmlFor={`reconcile-payment-${index}-method`} className="text-xs">{text("paymentMethod")}</Label>
+                    </FieldLabelRow>
+                    <SearchableSelect
+                      inlineOptionsLimit={inlineOptionsLimit}
+                      clearable={false}
+                      id={`reconcile-payment-${index}-method`}
+                      options={methodOptions}
+                      value={methodField.value}
+                      loading={loading}
+                      onValueChange={(value) => {
+                        const method = paymentMethods.find((entry) => String(entry.id) === value);
+                        methodField.onChange(value);
+                        form.setValue(`payments.${index}.paymentMethodName`, method?.name ?? "");
+                        if (!method || !requiresBankAccount(method.name)) form.setValue(`payments.${index}.paymentAccountId`, "");
+                      }}
+                      placeholder={text("selectPaymentMethod")}
+                      searchPlaceholder={text("searchPaymentMethods")}
+                      emptyMessage={text("noPaymentMethods")}
+                      aria-invalid={Boolean(paymentErrors?.paymentMethodId)}
+                      mobileSheet
+                    />
+                  </>;
+                }} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor={`reconcile-payment-${index}-amount`} className="text-xs">{text("amount")}</Label>
@@ -93,22 +108,34 @@ export function ReconcileDispatchPayments({ form, paymentMethods, bankAccounts, 
               </div>
               {needsAccount ? (
                 <div className="space-y-1">
-                  <Label htmlFor={`reconcile-payment-${index}-account`} className="text-xs">{text("bankAccount")}</Label>
-                  <Controller control={form.control} name={`payments.${index}.paymentAccountId`} render={({ field: accountField }) => (
-                    <SearchableSelect
-                      inlineOptionsLimit={inlineOptionsLimit}
-                      id={`reconcile-payment-${index}-account`}
-                      options={accountOptions}
-                      value={accountField.value}
-                      loading={loading}
-                      onValueChange={accountField.onChange}
-                      placeholder={text("selectBankAccount")}
-                      searchPlaceholder={text("searchBankAccounts")}
-                      emptyMessage={text("noBankAccounts")}
-                      aria-invalid={Boolean(paymentErrors?.paymentAccountId)}
-                      mobileSheet
-                    />
-                  )} />
+                  <Controller control={form.control} name={`payments.${index}.paymentAccountId`} render={({ field: accountField }) => {
+                    const accountInline = getInlineSelectOptions({ inlineOptionsLimit, options: accountOptions, value: accountField.value, placeholder: text("selectBankAccount") }) !== null;
+                    return <>
+                      <FieldLabelRow
+                        showClear={Boolean(accountField.value) && accountInline}
+                        onClear={() => {
+                          accountField.onChange("");
+                          window.requestAnimationFrame(() => document.getElementById(`reconcile-payment-${index}-account`)?.focus());
+                        }}
+                      >
+                        <Label htmlFor={`reconcile-payment-${index}-account`} className="text-xs">{text("bankAccount")}</Label>
+                      </FieldLabelRow>
+                      <SearchableSelect
+                        inlineOptionsLimit={inlineOptionsLimit}
+                        clearable={false}
+                        id={`reconcile-payment-${index}-account`}
+                        options={accountOptions}
+                        value={accountField.value}
+                        loading={loading}
+                        onValueChange={accountField.onChange}
+                        placeholder={text("selectBankAccount")}
+                        searchPlaceholder={text("searchBankAccounts")}
+                        emptyMessage={text("noBankAccounts")}
+                        aria-invalid={Boolean(paymentErrors?.paymentAccountId)}
+                        mobileSheet
+                      />
+                    </>;
+                  }} />
                 </div>
               ) : null}
               {isCheck ? (

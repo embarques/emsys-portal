@@ -257,7 +257,8 @@ export function createDailyIncomeJournalSchema(
       }
 
       if (values.transactionType === "INITIAL-PAYMENT") {
-        if (!values.invoiceNumber?.trim() && !values.autoGenerateInvoiceNumber) {
+        // Match InvoiceNumberModeFields: unset/true = system generated; only "Enter your own" requires a number.
+        if (values.autoGenerateInvoiceNumber === false && !values.invoiceNumber?.trim()) {
           context.addIssue({ code: "custom", path: ["invoiceNumber"], message: messages.invoiceRequired });
         }
         if (!values.invoiceCost || values.invoiceCost <= 0) {
