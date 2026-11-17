@@ -177,6 +177,14 @@ export function DailyIncomeTransactionViewSheet({
               value={invoice?.cost != null && invoice.cost !== 0 ? formatDailyIncomeMoney(invoice.cost, displayCurrency) : undefined}
             />
             <RecordViewSheetDetailRow
+              label={t("accounting.dailyIncome.form.invoiceSummary.discount")}
+              value={
+                invoice?.discount != null && invoice.discount !== 0
+                  ? formatDailyIncomeMoney(invoice.discount, displayCurrency)
+                  : undefined
+              }
+            />
+            <RecordViewSheetDetailRow
               label={t("accounting.dailyIncome.form.invoiceSummary.paid")}
               value={invoice?.payment != null && invoice.payment !== 0 ? formatDailyIncomeMoney(invoice.payment, displayCurrency) : undefined}
             />

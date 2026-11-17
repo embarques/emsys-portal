@@ -1,5 +1,5 @@
 import { CHART_ACCOUNT_TYPES, type ChartAccount, type ChartAccountType } from "@/lib/accounting/chart-accounts/types";
-import type { AccountingLookup, DailyIncomeJournal } from "./types";
+import type { AccountingLookup, DailyIncomeJournal, JournalTransactionType } from "./types";
 
 export type ChartAccountsById = ReadonlyMap<number, Pick<ChartAccount, "name" | "displayName" | "type">>;
 
@@ -8,7 +8,25 @@ export type JournalAccountDisplay = {
   type: string;
 };
 
+export type JournalAccountLine = {
+  id: number;
+  name: string;
+  type: string;
+  debit: number;
+  credit: number;
+};
+
 const CHART_ACCOUNT_TYPE_VALUES = new Set<string>(CHART_ACCOUNT_TYPES.map((option) => option.value));
+
+/** Receipt journals that may also post SALES DISCOUNTS on the same entry. */
+const RECEIPT_TRANSACTION_TYPES = new Set<JournalTransactionType>(["INITIAL-PAYMENT", "PAYMENT"]);
+
+/** Lines that are never the money-in destination for a receipt. */
+const NON_PAYMENT_DESTINATION_NAMES = new Set([
+  "ACCOUNTS RECEIVABLE",
+  "SALES",
+  "SALES DISCOUNTS",
+]);
 
 export function isChartAccountType(value: string): value is ChartAccountType {
   return CHART_ACCOUNT_TYPE_VALUES.has(value);
@@ -36,13 +54,70 @@ export function resolveJournalAccount(
 }
 
 /**
- * Payments only post CASH ON HAND / ACCOUNTS RECEIVABLE lines, so they have no
- * primary `account`; show the debited line (where the money landed) instead.
+ * Pick the account line that should represent the journal in tables/detail.
+ *
+ * INITIAL-PAYMENT with cash/bank + discount posts both an asset destination and
+ * SALES DISCOUNTS on one journal. Prefer the payment destination so the row is
+ * not mislabeled as contra-revenue-only.
+ */
+export function pickJournalPrimaryAccountLine(
+  accounts: readonly JournalAccountLine[] | undefined,
+  transactionType?: string,
+): JournalAccountLine | undefined {
+  if (!accounts?.length) return undefined;
+
+  if (transactionType && RECEIPT_TRANSACTION_TYPES.has(transactionType as JournalTransactionType)) {
+    const paymentDestination = accounts.find(
+      (account) => account.debit > 0 && !NON_PAYMENT_DESTINATION_NAMES.has(account.name),
+    );
+    if (paymentDestination) return paymentDestination;
+
+    const discountLine = accounts.find(
+      (account) => account.name === "SALES DISCOUNTS" && account.debit > 0,
+    );
+    if (discountLine) return discountLine;
+  }
+
+  return (
+    accounts.find((account) => !["CASH ON HAND", "ACCOUNTS RECEIVABLE"].includes(account.name)) ??
+    accounts[0]
+  );
+}
+
+/**
+ * Payments post cash/bank + AR (and optionally SALES DISCOUNTS). Prefer the
+ * payment destination over a misleading primary `account` snapshot.
  */
 export function resolveJournalRowAccount(
-  row: Pick<DailyIncomeJournal, "account" | "accounts">,
+  row: Pick<DailyIncomeJournal, "account" | "accounts" | "transactionType" | "paymentAccount">,
   chartAccountsById?: ChartAccountsById,
 ): JournalAccountDisplay | null {
-  const line = row.account ?? row.accounts?.find((account) => account.debit > 0) ?? row.accounts?.[0];
+  const primaryFromAccounts = pickJournalPrimaryAccountLine(row.accounts, row.transactionType);
+  const isReceipt = Boolean(
+    row.transactionType && RECEIPT_TRANSACTION_TYPES.has(row.transactionType),
+  );
+
+  if (
+    isReceipt &&
+    primaryFromAccounts &&
+    primaryFromAccounts.name !== "SALES DISCOUNTS" &&
+    (!row.account || row.account.name === "SALES DISCOUNTS")
+  ) {
+    return resolveJournalAccount(
+      {
+        id: primaryFromAccounts.id,
+        name: primaryFromAccounts.name,
+        type: primaryFromAccounts.type,
+      },
+      chartAccountsById,
+    );
+  }
+
+  if (isReceipt && row.paymentAccount && (!row.account || row.account.name === "SALES DISCOUNTS")) {
+    const paymentDisplay = resolveJournalAccount(row.paymentAccount, chartAccountsById);
+    if (paymentDisplay) return paymentDisplay;
+  }
+
+  const line = row.account ?? primaryFromAccounts ?? row.accounts?.[0];
   return resolveJournalAccount(line, chartAccountsById);
 }
