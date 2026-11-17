@@ -55,6 +55,8 @@ test("clearance scope is independent of reconciliation and cannot be bypassed wi
  assert.equal(paths.length,1);
  assert.ok(paths[0].every(operator=>operator==="and"));
  assert.ok(!leaves(body.filters).some(f=>f.field==="incomeStatement.id"));
+ assert.ok(leaves(body.filters).some(f=>f.field==="clearanceStatus"&&f.operator==="eq"&&f.value==="OUTSTANDING"));
+ assert.ok(leaves(body.filters).some(f=>f.field==="transactionStatus"&&f.operator==="notIn"&&Array.isArray(f.value)&&f.value.includes("VOIDED")&&f.value.includes("REVERSED")));
  assert.deepEqual(body.pagination,{page:2,limit:50,offset:50});
 });
 
@@ -109,7 +111,10 @@ test("clearance command and badge use their own endpoint and filter with a stabl
  await api.clearJournals(command); await api.clearJournals(command);
  assert.equal(await api.fetchOutstandingJournalCount(undefined,"clearance"),3);
  assert.deepEqual(calls.slice(0,2),[["/journals/clear",command],["/journals/clear",command]]);
- assert.deepEqual(calls[2][1].filters,[{field:"clearanceStatus",operator:"eq",value:"OUTSTANDING"}]);
+ assert.deepEqual(calls[2][1].filters,[
+  {field:"clearanceStatus",operator:"eq",value:"OUTSTANDING"},
+  {field:"transactionStatus",operator:"notIn",value:["VOIDED","REVERSED"]},
+ ]);
  assert.equal(calls[2][1].pagination.limit,1);
 });
 test("daily filters preserve closeout, leading-zero check numbers and numeric coercion", () => {
