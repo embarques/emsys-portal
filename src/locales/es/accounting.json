@@ -2,23 +2,27 @@
   "pendingTasksAlert": "{{count}} tareas contables pendientes",
   "journalClearance": {
     "title": "Liquidación pendiente",
-    "description": "Transacciones pendientes de liquidación o verificación por su canal de pago, de todos los cierres. Las transacciones bancarias se concilian al liquidarse. La liquidación no reabre períodos cerrados.",
+    "description": "Transacciones pendientes de liquidación o verificación por su canal de pago, de todos los cierres.",
     "status": "Liquidación",
     "NOT_REQUIRED": "No requerida",
     "OUTSTANDING": "Pendiente",
     "CLEARED": "Liquidado",
     "selectedTotals": "Transacciones seleccionadas",
+    "selectedTotalsCount": "{{count}} transacciones seleccionadas",
     "selectedCount": "Seleccionadas:",
     "clearSelected": "Marcar como liquidado",
-    "sameMethod": "Seleccione hasta 200 transacciones autorizadas con el mismo método de pago. Solo se pueden liquidar las transacciones autorizadas por la API.",
+    "sameMethod": "Seleccione hasta 200 transacciones con el mismo método de pago y la misma cuenta de efectivo/banco. Los préstamos otorgados y los pagos pueden compartir un lote solo si afectan esa misma cuenta.",
+    "empty": "No hay transacciones pendientes de liquidar en los cierres.",
+    "emptyFiltered": "Ninguna transacción pendiente de liquidación coincide con su búsqueda.",
     "blocked": {
       "inactive": "Esta transacción fue anulada o revertida, por lo que no se puede liquidar.",
       "notOutstanding": "Esta transacción no está pendiente de liquidación.",
       "notAuthorized": "La API no ha autorizado la liquidación de esta transacción.",
       "paymentMethod": "Solo se pueden agregar transacciones de {{method}} a la selección actual.",
+      "moneyAccount": "Solo se pueden agregar transacciones de {{account}} a la selección actual.",
       "limit": "Puede liquidar hasta 200 transacciones a la vez.",
-      "awaitingClearance": "Las transacciones bancarias se concilian al liquidarse. Primero liquídela en Liquidación pendiente.",
-      "noMethod": "sin método de pago"
+      "noMethod": "sin método de pago",
+      "noMoneyAccount": "sin cuenta de efectivo/banco"
     },
     "confirmList": {
       "caption": "Transacciones por marcar como liquidadas",
@@ -32,6 +36,8 @@
     "batchUnconfirmed": "Hay resultados sin confirmar. Reintenta el lote original para recuperar el resultado. Una transacción omitida no se considera fallida.",
     "confirmed": "Confirmada",
     "unconfirmed": "Sin confirmar",
+    "confirmedCount": "{{count}} confirmadas",
+    "unconfirmedCount": "{{count}} sin confirmar",
     "confirmMissingSelection": "Las transacciones seleccionadas ya no están disponibles. Vuelva a Liquidación pendiente y selecciónelas de nuevo."
   },
   "pages": {
@@ -44,7 +50,7 @@
     "entity": "Cuenta",
     "searchPlaceholder": "Buscar cuentas",
     "empty": "Ninguna cuenta coincide con su búsqueda.",
-    "addAccount": "Agregar cuenta",
+    "addAccount": "Nueva cuenta",
     "loading": "Cargando cuentas…",
     "card": {
       "title": "Cuentas",
@@ -634,13 +640,13 @@
     "noun": "transacciones",
     "transactionNoun": "transacción",
     "actions": {
-      "createCloseout": "Crear cierre",
+      "createCloseout": "Nuevo cierre",
       "editCloseout": "Editar cierre",
       "printReceipt": "Imprimir recibo",
       "printReport": "Imprimir reporte",
       "closeDay": "Cerrar día",
       "reopenDay": "Reabrir día",
-      "addTransaction": "Agregar transacción",
+      "addTransaction": "Nueva transacción",
       "editTransaction": "Editar transacción",
       "deleteTransaction": "Eliminar transacción"
     },
@@ -883,6 +889,7 @@
           "INVENTORY-PAYMENT": "Pago de inventario",
           "LOAN-ISSUE": "Préstamo a empleado",
           "LOAN-INCREASE": "Monto adicional de préstamo",
+          "LOAN-DECREASE": "Disminución de principal del préstamo",
           "LOAN-PAYMENT": "Pago de préstamo",
           "TRANSFER": "Transferir entre cuentas"
         },
@@ -1042,10 +1049,10 @@
         "autoClear": "Conciliar automáticamente",
         "autoClearPayment": "Liquidar el pago automáticamente al guardar",
         "bankPaymentClearanceHint": "Los pagos bancarios no se aplican a la factura hasta que se liquidan.",
-        "bankPaymentAutoClearHint": "Por defecto, este pago queda sin liquidar ni conciliar, y no se aplica a la factura hasta que se liquide. Elija Sí solo si tiene la certeza de que los fondos ingresaron en la cuenta bancaria seleccionada; también concilia el pago.",
+        "bankPaymentAutoClearHint": "Por defecto, este pago queda sin liquidar y no se aplica a la factura hasta que se liquide. Aun así puede conciliarlo internamente mientras la liquidación esté pendiente. Elija Sí solo si tiene la certeza de que los fondos ingresaron en la cuenta bancaria seleccionada; eso lo liquida y lo concilia al guardar.",
         "autoClearTransaction": "Liquidar la transacción automáticamente al guardar",
-        "bankTransactionClearanceHint": "Las transacciones bancarias permanecen pendientes hasta que se liquidan.",
-        "bankTransactionAutoClearHint": "Elija No salvo que tenga la certeza de que la transacción se liquidó y ya se refleja en la cuenta bancaria seleccionada. Se liquidará al guardar y se conciliará internamente cuando tenga el permiso correspondiente.",
+        "bankTransactionClearanceHint": "Las transacciones bancarias permanecen sin liquidar hasta el cobro. Aun así pueden conciliarse mientras la liquidación esté pendiente.",
+        "bankTransactionAutoClearHint": "Elija No salvo que tenga la certeza de que la transacción se liquidó y ya se refleja en la cuenta bancaria seleccionada. La liquidación automática la liquida y la concilia al guardar.",
         "autoClearHint": "Concilia esta transacción al guardar. Esto confirma que ya recibió este pago.",
         "autoClearReviewValue": "Conciliado al crear",
         "autoReconcile": "Conciliar automáticamente (marcar como vendido)",
@@ -1173,8 +1180,7 @@
         "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. El supervisor es responsable de cuadrar esta transacción.",
         "inventoryHolders": "Los responsables comparten una sola asignación: 20 cajas para un vehículo y dos empleados son 20 cajas en total.",
         "inventoryDailyRoute": "Solo se usa para reportes. No hace responsable a la tripulación de la ruta.",
-        "noHolderEmployees": "No hay empleados seleccionados.",
-        "expenseSourceAccount": "Efectivo en caja (u otra cuenta de efectivo bajo ella), o una cuenta bancaria para métodos que no son efectivo. Cuentas por cobrar y préstamos por cobrar no pueden financiar gastos."
+        "noHolderEmployees": "No hay empleados seleccionados."
       },
       "warnings": {
         "staleDailyRoute": "Esta ruta diaria tiene fecha {{date}}, que no es hoy ni ayer. Confirme que es la ruta correcta antes de continuar."
@@ -1364,6 +1370,16 @@
       "newLoanPayment": "Nuevo pago de préstamo",
       "newLoanPaymentFor": "Nuevo pago de préstamo para {{name}}"
     },
+    "recordActions": {
+      "payment": "Registrar pago de préstamo",
+      "increase": "Registrar aumento de préstamo",
+      "decrease": "Registrar disminución de préstamo"
+    },
+    "quickLoan": {
+      "hint": "Rellene rápidamente el préstamo con el más antiguo o el más reciente del empleado.",
+      "oldest": "Usar préstamo más antiguo",
+      "newest": "Usar préstamo más reciente"
+    },
     "page": {
       "title": "Préstamos",
       "description": "Dé seguimiento a los saldos, pagos y movimientos contables de los préstamos a empleados.",
@@ -1423,15 +1439,28 @@
       "lastActivity": "Última actividad",
       "paidAmount": "{{amount}} pagado"
     },
+    "view": {
+      "sections": {
+        "loan": "Detalles del préstamo",
+        "employee": "Empleado",
+        "payments": "Pagos",
+        "audit": "Auditoría"
+      },
+      "reference": "Número de referencia",
+      "branch": "Sucursal",
+      "morePayments": "{{count}} pago(s) más"
+    },
     "toasts": {
       "created": "Préstamo creado.",
       "createdFor": "Préstamo creado para {{name}}.",
       "increased": "Monto adicional de préstamo registrado.",
+      "decreased": "Principal del préstamo disminuido.",
       "paymentRecorded": "Pago de préstamo registrado."
     },
     "errors": {
       "openCloseoutRequired": "Se requiere un cuadre de ingresos diario abierto para la sucursal de esta cuenta de préstamo en la fecha seleccionada. Abra o cree ese cuadre abajo e intente de nuevo.",
-      "increaseUnconfirmed": "No se pudo confirmar el aumento del préstamo. Mantenga esta entrada abierta y vuelva a intentar con los mismos valores."
+      "increaseUnconfirmed": "No se pudo confirmar el aumento del préstamo. Mantenga esta entrada abierta y vuelva a intentar con los mismos valores.",
+      "decreaseUnconfirmed": "No se pudo confirmar la disminución del préstamo. Mantenga esta entrada abierta y vuelva a intentar con los mismos valores."
     },
     "validation": {
       "employeeRequired": "El empleado es obligatorio.",
@@ -1537,6 +1566,40 @@
       "journalCredit": "Crédito · Cuenta de activo de origen",
       "submit": "Agregar al préstamo"
     },
+    "decreaseForm": {
+      "sections": {
+        "loan": "Empleado y préstamo",
+        "balance": "Saldo del préstamo",
+        "amount": "Monto a disminuir",
+        "notes": "Referencia y notas",
+        "journal": "Resumen del asiento"
+      },
+      "loanHint": "Elija el empleado y el préstamo activo a disminuir.",
+      "employee": "Empleado",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados",
+      "loan": "Préstamo",
+      "selectLoan": "Seleccionar préstamo",
+      "selectEmployeeFirst": "Seleccione un empleado primero",
+      "searchLoans": "Buscar préstamos",
+      "noActiveLoans": "Este empleado no tiene préstamos activos.",
+      "loanOptionDescription": "Apertura {{opened}} · Saldo {{balance}}",
+      "originalAmount": "Monto original",
+      "currentBalance": "Saldo actual",
+      "balanceAfter": "Saldo después",
+      "sourceAccount": "Cuenta de activo de origen",
+      "selectSourceAccount": "Seleccionar cuenta de activo de origen",
+      "searchAssetAccounts": "Buscar cuentas de activo",
+      "amount": "Monto a disminuir",
+      "date": "Fecha",
+      "reference": "Número de referencia",
+      "optional": "Opcional",
+      "notes": "Descripción",
+      "notesPlaceholder": "Motivo de la disminución del principal",
+      "journalDebit": "Débito · Cuenta de activo de origen",
+      "journalCredit": "Crédito · Cuenta de préstamo",
+      "submit": "Disminuir préstamo"
+    },
     "payments": {
       "title": "Pagos",
       "subtitle": "Todos los pagos de este préstamo",
@@ -1595,8 +1658,13 @@
       "selectEmployee": "Seleccionar empleado",
       "searchEmployees": "Buscar empleados",
       "accounts": "Cuentas",
+      "accountsHint": "Debite la cuenta por cobrar del préstamo y acredite la cuenta de activo que lo financia.",
       "loanAccount": "Cuenta de préstamo",
+      "loanAccountHint": "Cuenta por cobrar que mantendrá el saldo del préstamo del empleado.",
       "sourceAccount": "Cuenta de activo de origen",
+      "sourceAccountHint": "Cuenta de efectivo o banco de donde salen los fondos.",
+      "debitRole": "Débito",
+      "creditRole": "Crédito",
       "selectLoanAccount": "Seleccionar cuenta de préstamo",
       "searchLoanAccounts": "Buscar cuentas de préstamo",
       "selectSourceAccount": "Seleccionar cuenta de activo de origen",
@@ -1870,7 +1938,7 @@
     "selectedTitle": "Transacciones seleccionadas",
     "clearSelection": "Limpiar selección",
     "reconcileSelected": "Conciliar seleccionadas",
-    "selectionHelp": "Seleccione hasta 200 transacciones con el mismo método de pago, entre páginas. Seleccionar todo agrega las filas compatibles de esta página. Los totales se muestran por moneda.",
+    "selectionHelp": "Seleccione hasta 200 transacciones con el mismo método de pago y la misma cuenta de efectivo/banco, entre páginas. Seleccionar todo agrega las filas compatibles de esta página. Los totales se muestran por moneda.",
     "confirmDescription": "Revise las transacciones seleccionadas y los totales. La conciliación es definitiva y libera la responsabilidad del empleado. No cambia los pagos ni los saldos de las facturas.",
     "confirm": "Conciliar todas las seleccionadas",
     "cancel": "Cancelar",
@@ -1883,22 +1951,39 @@
   },
   "journalReconciliation": {
     "title": "Conciliación pendiente",
-    "description": "Transacciones pendientes de verificación de dinero o documentos, de todos los cierres. Las transacciones bancarias no se pueden conciliar aquí hasta que se liquiden; al liquidarse se concilian.",
+    "description": "Transacciones pendientes de verificación en todos los cierres.",
     "createdAt": "Creado el",
     "status": "Conciliación",
     "NOT_REQUIRED": "No requerida",
     "OUTSTANDING": "Pendiente",
     "RECONCILED": "Conciliado",
     "selectedTotals": "Transacciones seleccionadas",
+    "selectedTotalsCount": "{{count}} transacciones seleccionadas",
     "income": "Ingresos",
     "expenses": "Gastos",
     "otherTransactions": "Otras transacciones",
+    "loanIssued": "Otorgados / aumentados",
+    "loanPayments": "Pagos recibidos",
     "net": "Ingreso neto",
+    "summaryTitle": "Resumen de conciliación",
+    "summarySubtitle": "{{count}} seleccionadas · totales de cuentas principales y subcuentas",
     "selectedCount": "Seleccionadas:",
     "totalCount": "Transacciones:",
     "clearSelection": "Quitar selección",
     "reconcileSelected": "Conciliar selección",
-    "sameMethod": "Selecciona hasta 200 transacciones con el mismo método de pago.",
+    "sameMethod": "Seleccione hasta 200 transacciones con el mismo método de pago y la misma cuenta de efectivo/banco. Los préstamos otorgados y los pagos pueden compartir un lote solo si afectan esa misma cuenta.",
+    "empty": "No hay transacciones pendientes de conciliar en los cierres.",
+    "emptyFiltered": "Ninguna transacción pendiente de conciliación coincide con su búsqueda.",
+    "blocked": {
+      "inactive": "Esta transacción fue anulada o revertida, por lo que no se puede conciliar.",
+      "notOutstanding": "Esta transacción no está pendiente de conciliación.",
+      "notAuthorized": "La API no ha autorizado la conciliación de esta transacción.",
+      "paymentMethod": "Solo se pueden agregar transacciones de {{method}} a la selección actual.",
+      "moneyAccount": "Solo se pueden agregar transacciones de {{account}} a la selección actual.",
+      "limit": "Puede conciliar hasta 200 transacciones a la vez.",
+      "noMethod": "sin método de pago",
+      "noMoneyAccount": "sin cuenta de efectivo/banco"
+    },
     "confirmTitle": "¿Conciliar las transacciones seleccionadas?",
     "confirmDescription": "Confirme que se ha verificado el dinero o la documentación. Libera la responsabilidad del encargado y conserva el historial de conciliación. No cambia la liquidación, los saldos de facturas ni los importes del cierre.",
     "confirmMissingSelection": "Las transacciones seleccionadas ya no están disponibles. Vuelva a Conciliación pendiente y selecciónelas de nuevo.",
@@ -2007,6 +2092,8 @@
     "batchUnconfirmed": "Hay resultados sin confirmar. Reintenta el lote original para recuperar el resultado. Una transacción omitida no se considera fallida.",
     "confirmed": "Confirmada",
     "unconfirmed": "Sin confirmar",
+    "confirmedCount": "{{count}} confirmadas",
+    "unconfirmedCount": "{{count}} sin confirmar",
     "confirmList": {
       "caption": "Transacciones seleccionadas para conciliación",
       "invoiceOrExternalRef": "Factura / ref. externa",

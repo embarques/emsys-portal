@@ -338,19 +338,24 @@ Only explicitly authorized actions are available; role names do not grant access
 Reconciliation never applies invoice receipts. Clearance applies deferred bank
 receipts once without changing the original ledger date or period.
 
-**Confirmed reconciliation/clearance policy (November 14, 2026):** reconciliation
-confirms internal receipt by the responsible party and never clears a payment.
-Bank receipts can therefore be reconciled while clearance remains outstanding.
-Clearance confirms actual payment posting and atomically reconciles the record
-as well; if already reconciled, retain the original confirmation actor/time and
-record clearance actor/time separately. Clearance applies deferred invoice
-payments exactly once; reconciliation alone does not apply them. Separate action
-permissions remain enforced. The earlier API/portal rule blocking reconciliation
-until bank clearance requires alignment; this decision is not a deployed change.
+**Confirmed reconciliation/clearance policy (November 14, 2026; portal aligned
+November 17, 2026):** reconciliation confirms internal receipt by the responsible
+party and never clears a payment. Bank receipts can therefore be reconciled while
+clearance remains outstanding. Clearance confirms actual payment posting and
+atomically reconciles the record as well; if already reconciled, retain the
+original confirmation actor/time and record clearance actor/time separately.
+Clearance applies deferred invoice payments exactly once; reconciliation alone
+does not apply them. Separate action permissions remain enforced. The portal
+Pending Reconciliation queue no longer blocks uncleared bank rows.
 
 Queries, advanced filters and pagination run on the server. Matching and selected
 Income / Expenses / Net totals use `/journals/summary`, preserve currency groups,
-and do not substitute a current-page total for all matching records.
+and do not substitute a current-page total for all matching records. Batch
+reconcile/clear selection is limited to one payment method and one cash/bank
+money account (`sourceAccount`, else `paymentAccount`). Loan issues/increases and
+loan payments may share a batch only when that money account matches; loan AR is
+not the batch key. The reconciliation confirm summary keeps loans under Other and
+splits them into Issued / increased vs Payments received.
 
 **Register inventory change** records company supplies as received or dispatched.
 Received entries select supplier/item/quantity/cost and link an expense journal

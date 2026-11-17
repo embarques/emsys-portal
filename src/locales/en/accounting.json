@@ -2,23 +2,27 @@
   "pendingTasksAlert": "{{count}} pending accounting tasks",
   "journalClearance": {
     "title": "Pending Clearance",
-    "description": "Transactions awaiting financial settlement or verification through their payment channel, across all closeouts. Bank transactions are reconciled when they clear. Clearance does not reopen a closed period.",
+    "description": "Transactions awaiting financial settlement or verification through their payment channel, across all closeouts.",
     "status": "Clearance",
     "NOT_REQUIRED": "Not required",
     "OUTSTANDING": "Pending",
     "CLEARED": "Cleared",
     "selectedTotals": "Selected transactions",
+    "selectedTotalsCount": "{{count}} selected transactions",
     "selectedCount": "Selected:",
     "clearSelected": "Mark cleared",
-    "sameMethod": "Select up to 200 eligible transactions with the same payment method. Only transactions the API authorizes for clearance can be cleared.",
+    "sameMethod": "Select up to 200 transactions with the same payment method and the same cash/bank account. Loan issues and loan payments may share a batch only when they hit that same account.",
+    "empty": "No pending transactions to be cleared across closeouts.",
+    "emptyFiltered": "No pending clearance transactions match your search.",
     "blocked": {
       "inactive": "This transaction was voided or reversed, so it can't be cleared.",
       "notOutstanding": "This transaction isn't pending clearance.",
       "notAuthorized": "The API hasn't authorized clearing this transaction.",
       "paymentMethod": "Only {{method}} transactions can be added to the current selection.",
+      "moneyAccount": "Only transactions for {{account}} can be added to the current selection.",
       "limit": "You can clear up to 200 transactions at a time.",
-      "awaitingClearance": "Bank transactions are reconciled when they clear. Clear it in Pending Clearance first.",
-      "noMethod": "no payment method"
+      "noMethod": "no payment method",
+      "noMoneyAccount": "no cash/bank account"
     },
     "confirmList": {
       "caption": "Transactions to mark as cleared",
@@ -32,6 +36,8 @@
     "batchUnconfirmed": "Some results are unconfirmed. Retry the original batch to retrieve its result; no omitted transaction is labeled as failed.",
     "confirmed": "Confirmed",
     "unconfirmed": "Not confirmed",
+    "confirmedCount": "{{count}} confirmed",
+    "unconfirmedCount": "{{count}} not confirmed",
     "confirmMissingSelection": "The selected transactions are no longer available. Return to Pending Clearance and select them again."
   },
   "pages": {
@@ -44,7 +50,7 @@
     "entity": "Account",
     "searchPlaceholder": "Search accounts",
     "empty": "No accounts match your search.",
-    "addAccount": "Add account",
+    "addAccount": "New account",
     "loading": "Loading accounts…",
     "card": {
       "title": "Accounts",
@@ -634,13 +640,13 @@
     "noun": "transactions",
     "transactionNoun": "transaction",
     "actions": {
-      "createCloseout": "Create closeout",
+      "createCloseout": "New closeout",
       "editCloseout": "Edit closeout",
       "printReceipt": "Print receipt",
       "printReport": "Print report",
       "closeDay": "Close day",
       "reopenDay": "Reopen day",
-      "addTransaction": "Add transaction",
+      "addTransaction": "New transaction",
       "editTransaction": "Edit transaction",
       "deleteTransaction": "Delete transaction"
     },
@@ -883,6 +889,7 @@
           "INVENTORY-PAYMENT": "Inventory payment",
           "LOAN-ISSUE": "Employee loan",
           "LOAN-INCREASE": "Additional loan amount",
+          "LOAN-DECREASE": "Loan principal decrease",
           "LOAN-PAYMENT": "Loan payment",
           "TRANSFER": "Transfer between accounts"
         },
@@ -1042,10 +1049,10 @@
         "autoClear": "Auto-reconcile",
         "autoClearPayment": "Auto-clear payment on save",
         "bankPaymentClearanceHint": "Bank payments are not applied to the invoice until they are cleared.",
-        "bankPaymentAutoClearHint": "By default, this payment stays uncleared and unreconciled, and is not applied to the invoice until it is cleared. Choose Yes only if you are certain the funds have arrived in the selected bank account; it also reconciles the payment.",
+        "bankPaymentAutoClearHint": "By default, this payment stays uncleared and is not applied to the invoice until it is cleared. You can still reconcile it internally while clearance is pending. Choose Yes only if you are certain the funds have arrived in the selected bank account; that clears and reconciles it on save.",
         "autoClearTransaction": "Auto-clear transaction on save",
-        "bankTransactionClearanceHint": "Bank transactions remain pending until they are cleared.",
-        "bankTransactionAutoClearHint": "Choose No unless you are certain the transaction has settled and is already reflected in the selected bank account. Auto-clear clears it on save; internal reconciliation follows when permitted.",
+        "bankTransactionClearanceHint": "Bank transactions remain uncleared until settlement. They can still be reconciled while clearance is pending.",
+        "bankTransactionAutoClearHint": "Choose No unless you are certain the transaction has settled and is already reflected in the selected bank account. Auto-clear clears and reconciles it on save.",
         "autoClearHint": "Reconcile this transaction when saved. This confirms you already received this payment.",
         "autoClearReviewValue": "Reconciled on creation",
         "autoReconcile": "Auto-reconcile (mark as sold)",
@@ -1173,8 +1180,7 @@
         "routeSupervisorAccountability": "The daily route is kept for reporting. The supervisor is responsible for reconciling this transaction.",
         "inventoryHolders": "Holders share one assignment: 20 boxes for a vehicle and two employees is 20 boxes in total.",
         "inventoryDailyRoute": "Kept for reporting only. It does not make the route crew responsible.",
-        "noHolderEmployees": "No employees selected.",
-        "expenseSourceAccount": "Cash on hand (or another cash account under it), or a bank account for non-cash methods. Accounts receivable and loan receivable cannot fund expenses."
+        "noHolderEmployees": "No employees selected."
       },
       "warnings": {
         "staleDailyRoute": "This daily route is dated {{date}}, which is not today or yesterday. Confirm it is the correct route before continuing."
@@ -1364,6 +1370,16 @@
       "newLoanPayment": "New loan payment",
       "newLoanPaymentFor": "New loan payment for {{name}}"
     },
+    "recordActions": {
+      "payment": "Record loan payment",
+      "increase": "Record loan increase",
+      "decrease": "Record loan decrease"
+    },
+    "quickLoan": {
+      "hint": "Quickly fill the loan from this employee’s oldest or newest active loan.",
+      "oldest": "Use oldest loan",
+      "newest": "Use newest loan"
+    },
     "page": {
       "title": "Loans",
       "description": "Track employee loan balances, payments, and journal activity.",
@@ -1423,15 +1439,28 @@
       "lastActivity": "Last activity",
       "paidAmount": "{{amount}} paid"
     },
+    "view": {
+      "sections": {
+        "loan": "Loan details",
+        "employee": "Employee",
+        "payments": "Payments",
+        "audit": "Audit"
+      },
+      "reference": "Reference number",
+      "branch": "Branch",
+      "morePayments": "{{count}} more payment(s)"
+    },
     "toasts": {
       "created": "Loan created.",
       "createdFor": "Loan created for {{name}}.",
       "increased": "Additional loan amount recorded.",
+      "decreased": "Loan principal decreased.",
       "paymentRecorded": "Loan payment recorded."
     },
     "errors": {
       "openCloseoutRequired": "An open Daily Income closeout is required for this loan account's branch on the selected date. Open or create that closeout below, then try again.",
-      "increaseUnconfirmed": "The loan increase could not be confirmed. Keep this entry open and retry the same values."
+      "increaseUnconfirmed": "The loan increase could not be confirmed. Keep this entry open and retry the same values.",
+      "decreaseUnconfirmed": "The loan decrease could not be confirmed. Keep this entry open and retry the same values."
     },
     "validation": {
       "employeeRequired": "Employee is required.",
@@ -1537,6 +1566,40 @@
       "journalCredit": "Credit · Source asset account",
       "submit": "Add to loan"
     },
+    "decreaseForm": {
+      "sections": {
+        "loan": "Employee and loan",
+        "balance": "Loan balance",
+        "amount": "Decrease amount",
+        "notes": "Reference and notes",
+        "journal": "Journal entry summary"
+      },
+      "loanHint": "Choose the employee and the active loan to decrease.",
+      "employee": "Employee",
+      "selectEmployee": "Select employee",
+      "searchEmployees": "Search employees",
+      "loan": "Loan",
+      "selectLoan": "Select loan",
+      "selectEmployeeFirst": "Select an employee first",
+      "searchLoans": "Search loans",
+      "noActiveLoans": "This employee has no active loans.",
+      "loanOptionDescription": "Opened {{opened}} · Balance {{balance}}",
+      "originalAmount": "Original amount",
+      "currentBalance": "Current balance",
+      "balanceAfter": "Balance after",
+      "sourceAccount": "Source asset account",
+      "selectSourceAccount": "Select source asset account",
+      "searchAssetAccounts": "Search asset accounts",
+      "amount": "Decrease amount",
+      "date": "Date",
+      "reference": "Reference number",
+      "optional": "Optional",
+      "notes": "Description",
+      "notesPlaceholder": "Reason for the principal decrease",
+      "journalDebit": "Debit · Source asset account",
+      "journalCredit": "Credit · Loan account",
+      "submit": "Decrease loan"
+    },
     "payments": {
       "title": "Payments",
       "subtitle": "All payment entries for this loan",
@@ -1595,8 +1658,13 @@
       "selectEmployee": "Select employee",
       "searchEmployees": "Search employees",
       "accounts": "Accounts",
+      "accountsHint": "Debit the loan receivable and credit the asset account that funds it.",
       "loanAccount": "Loan account",
+      "loanAccountHint": "Receivable that will hold this employee’s loan balance.",
       "sourceAccount": "Source asset account",
+      "sourceAccountHint": "Cash or bank account the funds come from.",
+      "debitRole": "Debit",
+      "creditRole": "Credit",
       "selectLoanAccount": "Select loan account",
       "searchLoanAccounts": "Search loan accounts",
       "selectSourceAccount": "Select source asset account",
@@ -1870,7 +1938,7 @@
     "selectedTitle": "Selected transactions",
     "clearSelection": "Clear selection",
     "reconcileSelected": "Reconcile selected",
-    "selectionHelp": "Select up to 200 transactions with the same payment method, across pages. Select all adds matching rows on this page. Totals are shown separately for each currency.",
+    "selectionHelp": "Select up to 200 transactions with the same payment method and the same cash/bank account, across pages. Select all adds matching rows on this page. Totals are shown separately for each currency.",
     "confirmDescription": "Review the selected transactions and totals. Reconciliation is final and releases the employee’s responsibility. It does not change invoice payments or balances.",
     "confirm": "Reconcile all selected",
     "cancel": "Cancel",
@@ -1883,22 +1951,39 @@
   },
   "journalReconciliation": {
     "title": "Pending Reconciliation",
-    "description": "Transactions awaiting verification of money or supporting documents across all closeouts. Bank transactions can't be reconciled here until they clear; clearing reconciles them.",
+    "description": "Transactions awaiting verification across all closeouts.",
     "createdAt": "Created at",
     "status": "Reconciliation",
     "NOT_REQUIRED": "Not required",
     "OUTSTANDING": "Outstanding",
     "RECONCILED": "Reconciled",
     "selectedTotals": "Selected transactions",
+    "selectedTotalsCount": "{{count}} selected transactions",
     "income": "Income",
     "expenses": "Expenses",
     "otherTransactions": "Other transactions",
+    "loanIssued": "Issued / increased",
+    "loanPayments": "Payments received",
     "net": "Net income",
+    "summaryTitle": "Reconciliation summary",
+    "summarySubtitle": "{{count}} selected · main and sub-account totals",
     "selectedCount": "Selected:",
     "totalCount": "Transactions:",
     "clearSelection": "Clear selection",
     "reconcileSelected": "Reconcile selected",
-    "sameMethod": "Select up to 200 transactions with the same payment method.",
+    "sameMethod": "Select up to 200 transactions with the same payment method and the same cash/bank account. Loan issues and loan payments may share a batch only when they hit that same account.",
+    "empty": "No pending transactions to reconcile across closeouts.",
+    "emptyFiltered": "No pending reconciliation transactions match your search.",
+    "blocked": {
+      "inactive": "This transaction was voided or reversed, so it can't be reconciled.",
+      "notOutstanding": "This transaction isn't pending reconciliation.",
+      "notAuthorized": "The API hasn't authorized reconciling this transaction.",
+      "paymentMethod": "Only {{method}} transactions can be added to the current selection.",
+      "moneyAccount": "Only transactions for {{account}} can be added to the current selection.",
+      "limit": "You can reconcile up to 200 transactions at a time.",
+      "noMethod": "no payment method",
+      "noMoneyAccount": "no cash/bank account"
+    },
     "confirmTitle": "Reconcile selected transactions?",
     "confirmDescription": "Confirm that money or supporting documents have been accounted for. This releases the assignee’s responsibility and retains the reconciliation history. Clearance status, invoice balances and closeout amounts stay unchanged.",
     "confirmMissingSelection": "The selected transactions are no longer available. Return to Pending Reconciliation and select them again.",
@@ -2007,6 +2092,8 @@
     "batchUnconfirmed": "Some results are unconfirmed. Retry the original batch to retrieve its result; no omitted transaction is labeled as failed.",
     "confirmed": "Confirmed",
     "unconfirmed": "Not confirmed",
+    "confirmedCount": "{{count}} confirmed",
+    "unconfirmedCount": "{{count}} not confirmed",
     "confirmList": {
       "caption": "Transactions selected for reconciliation",
       "invoiceOrExternalRef": "Invoice / external ref",

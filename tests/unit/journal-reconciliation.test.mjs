@@ -55,6 +55,8 @@ test("clearance scope is independent of reconciliation and cannot be bypassed wi
  assert.equal(paths.length,1);
  assert.ok(paths[0].every(operator=>operator==="and"));
  assert.ok(!leaves(body.filters).some(f=>f.field==="incomeStatement.id"));
+ assert.ok(leaves(body.filters).some(f=>f.field==="clearanceStatus"&&f.operator==="eq"&&f.value==="OUTSTANDING"));
+ assert.ok(leaves(body.filters).some(f=>f.field==="transactionStatus"&&f.operator==="notIn"&&Array.isArray(f.value)&&f.value.includes("VOIDED")&&f.value.includes("REVERSED")));
  assert.deepEqual(body.pagination,{page:2,limit:50,offset:50});
 });
 
@@ -69,6 +71,7 @@ test("clearance action requires explicit server eligibility independently of rec
  assert.equal(isJournalQueueActionable({...row,clearanceStatus:"NOT_REQUIRED"},"clearance"),false);
  assert.equal(isJournalQueueActionable({...row,reversedAt:"2026-11-04"},"clearance"),false);
  assert.equal(isJournalQueueActionable({...row,reconciliationStatus:"OUTSTANDING",clearanceStatus:"CLEARED"},"reconciliation"),true);
+ assert.equal(isJournalQueueActionable({...row,reconciliationStatus:"OUTSTANDING",clearanceStatus:"OUTSTANDING"},"reconciliation"),true);
 });
 
 test("queue block reasons explain why a row cannot be processed", () => {
@@ -80,7 +83,7 @@ test("queue block reasons explain why a row cannot be processed", () => {
  assert.equal(getJournalQueueBlockReason({...row,clearanceStatus:"CLEARED"},"clearance"),"notOutstanding");
  assert.equal(getJournalQueueBlockReason({...row,transactionStatus:"VOIDED"},"clearance"),"inactive");
  assert.equal(getJournalQueueBlockReason(row,"reconciliation"),"notOutstanding");
- assert.equal(getJournalQueueBlockReason({...row,reconciliationStatus:"OUTSTANDING"},"reconciliation"),"awaitingClearance");
+ assert.equal(getJournalQueueBlockReason({...row,reconciliationStatus:"OUTSTANDING"},"reconciliation"),null);
  assert.equal(getJournalQueueBlockReason({...row,reconciliationStatus:"OUTSTANDING",clearanceStatus:"CLEARED"},"reconciliation"),null);
  assert.equal(getJournalQueueBlockReason({...row,reconciliationStatus:"OUTSTANDING",clearanceStatus:"NOT_REQUIRED"},"reconciliation"),null);
 });
@@ -109,7 +112,10 @@ test("clearance command and badge use their own endpoint and filter with a stabl
  await api.clearJournals(command); await api.clearJournals(command);
  assert.equal(await api.fetchOutstandingJournalCount(undefined,"clearance"),3);
  assert.deepEqual(calls.slice(0,2),[["/journals/clear",command],["/journals/clear",command]]);
- assert.deepEqual(calls[2][1].filters,[{field:"clearanceStatus",operator:"eq",value:"OUTSTANDING"}]);
+ assert.deepEqual(calls[2][1].filters,[
+  {field:"clearanceStatus",operator:"eq",value:"OUTSTANDING"},
+  {field:"transactionStatus",operator:"notIn",value:["VOIDED","REVERSED"]},
+ ]);
  assert.equal(calls[2][1].pagination.limit,1);
 });
 test("daily filters preserve closeout, leading-zero check numbers and numeric coercion", () => {
@@ -243,4 +249,99 @@ test("bank income and expenses clear instead of auto-reconciling on creation", a
   assert.deepEqual(calls,["create","clear"]);
   assert.equal(cleared.clearanceStatus,"CLEARED");
  }
+});
+
+test("batch selection locks payment method and cash/bank money account together", () => {
+ const {
+  getJournalBatchSelectionKey,
+  getJournalBatchSelectionBlockReason,
+  resolveJournalMoneyAccount,
+ } = loader()("src/lib/accounting/daily-income/journal-batch-selection.ts");
+ const cashLoanIssue = {
+  transactionType: "LOAN",
+  paymentMethod: { id: 1, name: "CASH" },
+  sourceAccount: { id: 10, name: "Cash drawer A", type: "ASSET" },
+  accounts: [
+   { id: 7, name: "LOAN RECEIVABLE", type: "LOAN", debit: 100, credit: 0 },
+   { id: 10, name: "Cash drawer A", type: "ASSET", debit: 0, credit: 100 },
+  ],
+ };
+ const cashLoanPayment = {
+  transactionType: "LOAN-PAYMENT",
+  paymentMethod: { id: 1, name: "CASH" },
+  sourceAccount: { id: 10, name: "Cash drawer A", type: "ASSET" },
+  accounts: [
+   { id: 10, name: "Cash drawer A", type: "ASSET", debit: 40, credit: 0 },
+   { id: 7, name: "LOAN RECEIVABLE", type: "LOAN", debit: 0, credit: 40 },
+  ],
+ };
+ const bankLoanPayment = {
+  ...cashLoanPayment,
+  sourceAccount: { id: 22, name: "Chase", type: "BANK" },
+  accounts: [
+   { id: 22, name: "Chase", type: "BANK", debit: 40, credit: 0 },
+   { id: 7, name: "LOAN RECEIVABLE", type: "LOAN", debit: 0, credit: 40 },
+  ],
+ };
+ const zelleReceipt = {
+  transactionType: "PAYMENT",
+  paymentMethod: { id: 4, name: "ZELLE" },
+  paymentAccount: { id: 22, name: "Chase", type: "BANK" },
+  accounts: [{ id: 22, name: "Chase", type: "BANK", debit: 50, credit: 0 }],
+ };
+
+ assert.equal(resolveJournalMoneyAccount(cashLoanIssue)?.id, 10);
+ assert.equal(resolveJournalMoneyAccount(cashLoanPayment)?.id, 10);
+ assert.equal(resolveJournalMoneyAccount(zelleReceipt)?.id, 22);
+
+ const key = getJournalBatchSelectionKey(cashLoanIssue);
+ assert.equal(getJournalBatchSelectionBlockReason(key, cashLoanPayment), null);
+ assert.equal(getJournalBatchSelectionBlockReason(key, bankLoanPayment), "moneyAccount");
+ assert.equal(getJournalBatchSelectionBlockReason(key, zelleReceipt), "paymentMethod");
+});
+
+test("reconciliation breakdown splits loan issues and loan payments under other", () => {
+ const { summarizeJournalBreakdown } = loader()("src/lib/accounting/daily-income/journal-classification.ts");
+ const t = (key) => key;
+ const rows = summarizeJournalBreakdown([
+  {
+   id: "loan-1",
+   date: "2026-11-17",
+   transactionType: "LOAN",
+   amount: 100,
+   currency: "USD",
+   refNumber: "L-1",
+   sourceAccount: { id: 10, name: "Cash drawer A", type: "ASSET" },
+   accounts: [
+    { id: 7, name: "LOAN RECEIVABLE", type: "LOAN", debit: 100, credit: 0 },
+    { id: 10, name: "Cash drawer A", type: "ASSET", debit: 0, credit: 100 },
+   ],
+  },
+  {
+   id: "loan-2",
+   date: "2026-11-17",
+   transactionType: "LOAN-PAYMENT",
+   amount: 40,
+   currency: "USD",
+   refNumber: "LP-1",
+   sourceAccount: { id: 10, name: "Cash drawer A", type: "ASSET" },
+   accounts: [
+    { id: 10, name: "Cash drawer A", type: "ASSET", debit: 40, credit: 0 },
+    { id: 7, name: "LOAN RECEIVABLE", type: "LOAN", debit: 0, credit: 40 },
+   ],
+  },
+ ], t);
+ assert.equal(rows.length, 1);
+ assert.equal(rows[0].income.amount, 0);
+ assert.equal(rows[0].expenses.amount, 0);
+ assert.equal(rows[0].other.amount, 140);
+ const loans = rows[0].other.children.find((child) => child.id === "group:loans");
+ assert.ok(loans);
+ assert.deepEqual(
+  loans.children.map((child) => [child.id, child.amount, child.entries[0]?.account]),
+  [
+   ["loan:issued", 100, "Cash drawer A"],
+   ["loan:payment", 40, "Cash drawer A"],
+  ],
+ );
 });

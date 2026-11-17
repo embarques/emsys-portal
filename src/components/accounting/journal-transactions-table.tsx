@@ -26,6 +26,11 @@ import {DAILY_INCOME_TABLE_FILTER_FIELDS, PENDING_JOURNAL_TABLE_FILTER_FIELDS} f
 import {DAILY_INCOME_JOURNAL_API_TABLE_FIELDS} from "@/lib/accounting/daily-income/table-fields";
 import {useJournalRows, useJournalSummary} from "@/lib/accounting/daily-income/reconciliation";
 import {getJournalQueueBlockReason, isJournalQueueActionable, type JournalQueueBlockReason} from "@/lib/accounting/daily-income/journal-queue";
+import {
+  getJournalBatchSelectionBlockReason,
+  getJournalBatchSelectionKey,
+  journalsShareBatchSelection,
+} from "@/lib/accounting/daily-income/journal-batch-selection";
 import type {DailyIncomeJournal} from "@/lib/accounting/daily-income/types";
 import {canPrintPaymentReceipt} from "@/lib/accounting/daily-income/print-payment-receipt";
 import {buildChartAccountsById} from "@/lib/accounting/daily-income/journal-account";
@@ -50,7 +55,7 @@ type JournalTransactionsTableProps = {
   onPrintReceipt?: (row: DailyIncomeJournal) => void;
 };
 
-type SelectionBlockReason = JournalQueueBlockReason | "paymentMethod" | "limit";
+type SelectionBlockReason = JournalQueueBlockReason | "paymentMethod" | "moneyAccount" | "limit";
 
 export function JournalTransactionsTable(props: JournalTransactionsTableProps) {
   const {companyId,user,email,roleId} = useAuth();
@@ -93,14 +98,14 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const chartAccountsById = useMemo(() => buildChartAccountsById(chartAccountsQuery.data?.items ?? []), [chartAccountsQuery.data]);
   const columns = useMemo(() => journalTableColumns(t, chartAccountsById).map(column => ({...column, sortable: column.id === "date" || column.id === "createdAt"})), [t, chartAccountsById]);
   const layout = useApiTableColumns("journal-transactions-v1", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
-  const method = ids.length ? selected[ids[0]].paymentMethod?.name ?? "" : undefined;
+  const batchKey = ids.length ? getJournalBatchSelectionKey(selected[ids[0]]) : undefined;
   function selectionBlockReason(row: DailyIncomeJournal): SelectionBlockReason | null {
     if (ids.includes(row.id)) return null;
     if (ids.length >= 200) return "limit";
     if (!canProcess) return null;
     const reason = getJournalQueueBlockReason(row, queue);
     if (reason) return reason;
-    return method === undefined || method === (row.paymentMethod?.name ?? "") ? null : "paymentMethod";
+    return getJournalBatchSelectionBlockReason(batchKey, row);
   }
   const canSelect = (row: DailyIncomeJournal) => selectionBlockReason(row) === null;
   const selectablePageIds = rows.filter(canSelect).map(row => row.id);
@@ -123,8 +128,12 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   }
   function renderBlockedHint(row: DailyIncomeJournal) {
     const reason = selectionBlockReason(row);
-    if (!reason || (!clearance && reason !== "awaitingClearance")) return null;
-    const label = t(`accounting.journalClearance.blocked.${reason}`, {method: method || t("accounting.journalClearance.blocked.noMethod")});
+    if (!reason) return null;
+    const scope = clearance ? "journalClearance" : "journalReconciliation";
+    const label = t(`accounting.${scope}.blocked.${reason}`, {
+      method: batchKey?.paymentMethod || t(`accounting.${scope}.blocked.noMethod`),
+      account: batchKey?.moneyAccountName || t(`accounting.${scope}.blocked.noMoneyAccount`),
+    });
     return <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" className="size-7 text-muted-foreground" aria-label={label}><Info className="size-4" aria-hidden="true"/></Button></TooltipTrigger><TooltipContent className="max-w-xs">{label}</TooltipContent></Tooltip>;
   }
   function toggle(id: string, checked: boolean) {
@@ -142,10 +151,22 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   function togglePage(checked: boolean) {
     setSelected(current => {
       const next = {...current};
-      const selectedMethod = method ?? (canProcess ? rows.find(row => isJournalQueueActionable(row, queue))?.paymentMethod?.name ?? "" : undefined);
+      const pageKey =
+        batchKey ??
+        (canProcess
+          ? (() => {
+              const first = rows.find((row) => isJournalQueueActionable(row, queue));
+              return first ? getJournalBatchSelectionKey(first) : undefined;
+            })()
+          : undefined);
       for (const row of rows) {
         if (!checked) delete next[row.id];
-        else if (Object.keys(next).length < 200 && (!canProcess || (isJournalQueueActionable(row, queue) && (row.paymentMethod?.name ?? "") === selectedMethod))) next[row.id] = row;
+        else if (
+          Object.keys(next).length < 200 &&
+          (!canProcess || (isJournalQueueActionable(row, queue) && journalsShareBatchSelection(pageKey, row)))
+        ) {
+          next[row.id] = row;
+        }
       }
       return next;
     });
@@ -214,7 +235,13 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       allPageSelected={rows.length > 0 && rows.every(row => ids.includes(row.id))}
       onToggleSelect={toggle} onToggleSelectAll={togglePage} onRowClick={onView}
       sort={sort} onSortChange={(field, direction) => {setSort(`${field}:${direction}`); setPage(1);}}
-      emptyState={<p role="status">{rowsQuery.isLoading ? t("accounting.dailyIncome.transactions.loadingTitle") : t("accounting.dailyIncome.transactions.empty")}</p>}
+      emptyState={
+        <p role="status" className="text-muted-foreground">
+          {isQueue
+            ? (hasActiveSearch ? text("emptyFiltered") : text("empty"))
+            : t("accounting.dailyIncome.transactions.empty")}
+        </p>
+      }
     />}
     <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{listSummary}</p><TablePaginationControls allowAll={false} page={page} totalPages={Math.max(1, Math.ceil(total / pageLimit))} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={changePageSize} disabled={rowsQuery.isFetching}/></div>
   </Card>;

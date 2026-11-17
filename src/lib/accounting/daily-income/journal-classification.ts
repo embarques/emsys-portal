@@ -19,6 +19,7 @@ type ClassifiableJournal = Pick<
   | "route"
   | "employeeGroup"
   | "account"
+  | "sourceAccount"
   | "accounts"
   | "apiTableValues"
   | "transactionType"
@@ -125,14 +126,21 @@ function journalInvoiceOrExternalRef(item: ClassifiableJournal): string {
   );
 }
 
+function loanMoneyAccountName(item: ClassifiableJournal): string | undefined {
+  if (item.transactionType !== "LOAN" && item.transactionType !== "LOAN-PAYMENT") return undefined;
+  return item.sourceAccount?.displayName?.trim() || item.sourceAccount?.name?.trim() || undefined;
+}
+
 function buildJournalBreakdownEntry(
   item: ClassifiableJournal,
   amount: number,
   chartById: ReadonlyMap<number, ChartAccountNode>,
   accountOverride?: { id?: number; name?: string },
 ): JournalBreakdownEntry {
+  const loanMoney = loanMoneyAccountName(item);
   const resolved =
     accountOverride?.name?.trim() ||
+    loanMoney ||
     resolveJournalRowAccount(
       {
         account: accountOverride?.id
@@ -302,7 +310,21 @@ function otherPath(
     case "TRANSFER":
       return [group("transfers"), typeLabel("transfer")];
     case "LOAN":
-      return [group("loans"), typeLabel("loan")];
+      return [
+        group("loans"),
+        {
+          id: "loan:issued",
+          label: t("accounting.journalReconciliation.loanIssued"),
+        },
+      ];
+    case "LOAN-PAYMENT":
+      return [
+        group("loans"),
+        {
+          id: "loan:payment",
+          label: t("accounting.journalReconciliation.loanPayments"),
+        },
+      ];
     case "INVENTORY":
       return [
         group("inventory"),

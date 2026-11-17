@@ -1,6 +1,7 @@
 import {apiClient} from "@/lib/api/client";
 import {API_ENDPOINTS} from "@/lib/api/endpoints";
-import type {buildJournalSearchBody} from "./journal-search";
+import type {JournalQueue} from "./journal-queue";
+import {outstandingJournalQueueFilters, type buildJournalSearchBody} from "./journal-search";
 export type JournalCurrencySummary = {currency: string; income: number; expenses: number; net: number; count: number};
 export type JournalSummaryInput = {ids: string[]} | {filters: ReturnType<typeof buildJournalSearchBody>["filters"]};
 const endpoint = API_ENDPOINTS.ACCOUNTING_JOURNALS;
@@ -25,9 +26,9 @@ export async function fetchIncomeStatementJournalCount(incomeStatementId: number
  return response.total;
 }
 
-export async function fetchOutstandingJournalCount(signal?: AbortSignal, queue: "reconciliation" | "clearance" = "reconciliation"): Promise<number> {
+export async function fetchOutstandingJournalCount(signal?: AbortSignal, queue: JournalQueue = "reconciliation"): Promise<number> {
  const response = await apiClient.post<{total: number}>(`${endpoint}/search`, {
-  filters: [{field: queue === "clearance" ? "clearanceStatus" : "reconciliationStatus", operator:"eq", value:"OUTSTANDING"}],
+  filters: outstandingJournalQueueFilters(queue),
   pagination: {page:1, limit:1}, sort:[{field:"createdAt",direction:"desc"}]
  }, {signal});
  return response.total;
