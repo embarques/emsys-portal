@@ -70,7 +70,11 @@ export function ActiveRouteViewSheet({
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader title={title} />
+        <RecordViewSheetHeader
+          icon={RouteIcon}
+          eyebrow={t("routes.activeRoute.title")}
+          title={title}
+        />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("routes.activeRouteForm.sections.schedule")} icon={CalendarDays}>

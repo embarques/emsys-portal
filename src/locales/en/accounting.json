@@ -443,6 +443,7 @@
   },
   "checks": {
     "title": "Checks",
+    "entity": "Check",
     "description": "View payment records. Payments apply to invoices when recorded; status follows journal reconciliation.",
     "noun": "checks",
     "searchPlaceholder": "Search checks…",

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronsUpDown, ChevronUp, PackageCheck, Printer } from "l
 import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
@@ -14,6 +15,7 @@ import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
 import { DeliveryViewSheet } from "@/components/deliveries/delivery-view-sheet";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
 import { getPrimarySortSpec } from "@/lib/api/list-query";
@@ -30,7 +32,7 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { tableSelectionActionMenuStyles, tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 function SortableHeader({
@@ -186,40 +188,39 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
             pageRowIds={table.selection.pageRowIds}
             totalCount={table.total}
             onSelectedIdsChange={table.selection.setSelectedIds}
-            actions={access.canDeliver || access.canPrint ? <>
-              {access.canDeliver ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-                  disabled={selectedActionDisabled}
-                  onClick={() => { if (selectedRow) setDeliverRow(selectedRow); }}
-                >
-                  <PackageCheck className="h-4 w-4" />
-                  {t("deliveries.deliver.action")}
-                </Button>
-              ) : null}
-              {access.canPrint ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                  disabled={!selectedRow?.invoiceId}
-                  onClick={() => { if (selectedRow) setPrintRow(selectedRow); }}
-                >
-                  <Printer className="h-4 w-4" />
-                  {t("invoices.printSignatures.action")}
-                </Button>
-              ) : null}
-            </> : undefined}
+            actions={access.canDeliver || access.canPrint ? (
+              <>
+                {access.canPrint ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={!selectedRow?.invoiceId}
+                    onClick={() => { if (selectedRow) setPrintRow(selectedRow); }}
+                  >
+                    <Printer className="h-4 w-4" />
+                    {t("invoices.printSignatures.action")}
+                  </Button>
+                ) : null}
+                <TableSelectionActionsMenu hidden={!access.canDeliver}>
+                  <DropdownMenuItem
+                    disabled={selectedActionDisabled}
+                    onSelect={() => { if (selectedRow) setDeliverRow(selectedRow); }}
+                    className={tableSelectionActionMenuStyles.deliver}
+                  >
+                    <PackageCheck className="size-4" />
+                    {t("deliveries.deliver.action")}
+                  </DropdownMenuItem>
+                </TableSelectionActionsMenu>
+              </>
+            ) : undefined}
           />
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left">
                 <tr>
-                  <th className="w-10 py-3 pl-4 pr-2">
+                  <th className="w-px whitespace-nowrap py-3 pl-4 pr-1">
                     <input
                       type="checkbox"
                       aria-label={t("tableFields.table.selectAllOnPage")}
@@ -228,7 +229,7 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
                         if (element) element.indeterminate = !table.selection.allPageSelected && selectedRows.length > 0;
                       }}
                       onChange={(event) => table.selection.toggleAll(event.target.checked)}
-                      className="size-4 rounded border-input"
+                      className="size-4 shrink-0 rounded border-input"
                     />
                   </th>
                   {headers.map(({ key, sortField }) => {
@@ -258,13 +259,13 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
                         openRow(row);
                       }}
                     >
-                      <td className="py-3 pl-4 pr-2" onClick={(event) => event.stopPropagation()}>
+                      <td className="w-px whitespace-nowrap py-3 pl-4 pr-1" onClick={(event) => event.stopPropagation()}>
                         <input
                           type="checkbox"
                           aria-label={t("tableFields.table.selectRow", { row: row.number || key })}
                           checked={selectedIds.includes(key)}
                           onChange={(event) => table.selection.toggle(key, event.target.checked)}
-                          className="size-4 rounded border-input"
+                          className="size-4 shrink-0 rounded border-input"
                         />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums">{row.number}</td>

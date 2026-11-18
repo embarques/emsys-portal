@@ -32,7 +32,7 @@ export function TableSelectionToolbar({
         <Button
           variant="ghost"
           size="sm"
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
+          className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
           disabled={!canSelectAllOthers(pageRowIds, selectedIds)}
           onClick={() => onSelectedIdsChange(selectAllOthers(pageRowIds, selectedIds))}
         >

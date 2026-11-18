@@ -1,25 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 
 import {
+  CalendarDays,
   CheckCircle2,
+  Eye,
+  FilePenLine,
   Info,
   Map as MapIcon,
   MapPin,
   MessageSquare,
-  Pencil,
   Phone as PhoneIcon,
   Printer,
   Receipt,
   Route as RouteIcon,
   RouteOff,
-  Trash2,
   UserRound,
   XCircle,
-  Eye,
 } from "lucide-react";
 
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
@@ -27,25 +26,28 @@ import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  TableSelectionActionDivider,
-  TableSelectionExpandableActionGroup,
-} from "@/components/app-shell/table-selection-action-group";
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   RecordViewSheet,
+  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { formatAuditDateTime } from "@/lib/audit/display";
+import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 import {
+  formatOrderCommentsSummary,
   formatOrderDateWithWeekday,
   formatOrderId,
   formatOrderRouteName,
-  formatPickupCommentSummary,
   formatUserSummary,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
@@ -53,8 +55,11 @@ import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pic
 import { coreAddressHasContent, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { getOrderPartyAddressAtIndex, getOrderReceivers, type Order } from "@/lib/orders/types";
 import { useTranslation } from "@/lib/i18n";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 type OrderViewSheetProps = {
   order: Order | null;
@@ -175,15 +180,6 @@ export function OrderViewSheet({
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: loadRouteDetails && Boolean(order) });
-  const [completionExpanded, setCompletionExpanded] = useState(false);
-  const [routesExpanded, setRoutesExpanded] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setCompletionExpanded(false);
-      setRoutesExpanded(false);
-    }
-  }, [open]);
 
   if (!order) return null;
 
@@ -191,23 +187,38 @@ export function OrderViewSheet({
   const allowEdit = canEdit ?? hasPermission("canUpdatePickup", "pickup");
   const allowDelete = Boolean(onDelete) && hasPermission("canDeletePickup", "pickup");
   const allowCompletion = canManageCompletion ?? allowEdit;
+  const allowRequestChange = hasPermission("canCreateChangeRequest", "change_request");
   const hasRoute = Boolean(order.routeId?.trim());
   const canClearRoute = hasRoute && !order.completed;
-  const showCompletionActions = Boolean(onMarkComplete || onMarkIncomplete) && allowCompletion;
-  const showRouteActions =
-    canManageRoutes && Boolean(onAssignRoute || onViewRoute || onClearRoute);
-  const showHeaderOps = Boolean(onMap || onPrint);
-  const showFooterPrimaryOps = Boolean(onCreateInvoice);
-  const showManageGroups = showCompletionActions || showRouteActions;
+  const showMarkComplete = Boolean(onMarkComplete) && allowCompletion && !order.completed;
+  const showMarkIncomplete = Boolean(onMarkIncomplete) && allowCompletion && order.completed;
+  const showAssignRoute = canManageRoutes && Boolean(onAssignRoute);
+  const showViewRoute = canManageRoutes && Boolean(onViewRoute);
+  const showClearRoute = canManageRoutes && Boolean(onClearRoute);
+  const showRouteActions = showAssignRoute || showViewRoute || showClearRoute;
+  const showSecondaryActionsMenu = Boolean(
+    onCreateInvoice ||
+      showMarkComplete ||
+      showMarkIncomplete ||
+      showRouteActions ||
+      onMap ||
+      allowRequestChange,
+  );
+  const showFooter = Boolean(
+    showSecondaryActionsMenu || onPrint || allowEdit || allowDelete,
+  );
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={CalendarDays}
+          eyebrow={t("orders.entity")}
           title={order.sender.name.trim() || t("orders.history.defaultSenderName")}
           meta={
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <CalendarDays className="size-3.5 shrink-0 opacity-70" aria-hidden />
                 {formatOrderDateWithWeekday(order.date, locale)}
               </span>
               <Badge
@@ -222,38 +233,6 @@ export function OrderViewSheet({
               </Badge>
             </div>
           }
-          actions={
-            showHeaderOps ? (
-              <>
-                {onMap ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="whitespace-nowrap"
-                    disabled={actionsDisabled}
-                    onClick={() => onMap(order)}
-                  >
-                    <MapIcon className="size-4" />
-                    {t("orders.actions.map")}
-                  </Button>
-                ) : null}
-                {onPrint ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={actionsDisabled || isPrinting}
-                    onClick={() => onPrint(order)}
-                  >
-                    <Printer className="size-4" />
-                    {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
-                  </Button>
-                ) : null}
-              </>
-            ) : null
-          }
         />
 
         <RecordViewSheetBody>
@@ -262,25 +241,17 @@ export function OrderViewSheet({
             partyLabel={t("orders.columns.sender")}
           />
 
-          <RecordViewSheetSection
-            title={t("orders.comments.title")}
-            icon={MessageSquare}
-            padding="relaxed"
-          >
-            {order.comments.length > 0 ? (
-              <ul className="space-y-2">
-                {order.comments.map((comment, index) => (
-                  <li
-                    key={`comment-${index}`}
-                    className="rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-sm leading-relaxed"
-                  >
-                    {formatPickupCommentSummary(comment)}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t("orders.empty.noComments")}</p>
-            )}
+          <RecordViewSheetSection title={t("orders.columns.purpose")} icon={MessageSquare}>
+            <div className="border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
+              <p className="text-xs font-medium leading-snug text-muted-foreground">
+                {t("orders.columns.comments")}
+              </p>
+              <p className="text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
+                {order.comments.length > 0
+                  ? formatOrderCommentsSummary(order)
+                  : t("common.empty.dash")}
+              </p>
+            </div>
           </RecordViewSheetSection>
 
           {receivers.length > 0 ? (
@@ -339,153 +310,129 @@ export function OrderViewSheet({
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {showFooterPrimaryOps && !completionExpanded && !routesExpanded ? (
+        {showFooter ? (
+          <RecordViewSheetActions
+            isDisabled={actionsDisabled}
+            onEdit={allowEdit ? () => onEdit(order) : undefined}
+            onDelete={allowDelete && onDelete ? () => onDelete(order) : undefined}
+            leading={
               <>
-                {onCreateInvoice ? (
+                {onPrint ? (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="whitespace-nowrap"
-                    disabled={actionsDisabled}
-                    onClick={() => onCreateInvoice(order)}
+                    disabled={actionsDisabled || isPrinting}
+                    onClick={() => onPrint(order)}
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
                   >
-                    <Receipt className="size-4" />
-                    {t("orders.actions.createInvoice")}
+                    <Printer className="size-4" />
+                    {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
                   </Button>
                 ) : null}
-                {showManageGroups || allowEdit || allowDelete ? <TableSelectionActionDivider /> : null}
-              </>
-            ) : null}
-
-            {showCompletionActions && !routesExpanded ? (
-              <>
-                <TableSelectionExpandableActionGroup
-                  label={t("orders.actions.manageCompletion")}
-                  icon={CheckCircle2}
-                  expanded={completionExpanded}
-                  onExpandedChange={setCompletionExpanded}
+                <TableSelectionActionsMenu
+                  hidden={!showSecondaryActionsMenu}
                   disabled={actionsDisabled}
-                  aria-label={t("orders.actions.completionGroup")}
+                  triggerClassName="w-full justify-between sm:w-auto"
                 >
-                  {onMarkComplete ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={actionsDisabled || order.completed}
-                      onClick={() => onMarkComplete(order)}
-                      className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+                  {onCreateInvoice ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled}
+                      onSelect={() => onCreateInvoice(order)}
+                      className={tableSelectionActionMenuStyles.create}
+                    >
+                      <Receipt className="size-4" />
+                      {t("orders.actions.createInvoice")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showMarkComplete && onMarkComplete ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled}
+                      onSelect={() => onMarkComplete(order)}
+                      className={tableSelectionActionMenuStyles.complete}
                     >
                       <CheckCircle2 className="size-4" />
                       {t("orders.actions.markComplete")}
-                    </Button>
+                    </DropdownMenuItem>
                   ) : null}
-                  {onMarkIncomplete ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={actionsDisabled || !order.completed}
-                      onClick={() => onMarkIncomplete(order)}
-                      className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                  {showMarkIncomplete && onMarkIncomplete ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled}
+                      onSelect={() => onMarkIncomplete(order)}
+                      className={tableSelectionActionMenuStyles.caution}
                     >
                       <XCircle className="size-4" />
                       {t("orders.actions.markIncomplete")}
-                    </Button>
+                    </DropdownMenuItem>
                   ) : null}
-                </TableSelectionExpandableActionGroup>
-                {showRouteActions || allowEdit || allowDelete ? <TableSelectionActionDivider /> : null}
+
+                  {showRouteActions &&
+                  (onCreateInvoice || showMarkComplete || showMarkIncomplete) ? (
+                    <DropdownMenuSeparator />
+                  ) : null}
+
+                  {showAssignRoute && onAssignRoute ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled}
+                      onSelect={() => onAssignRoute(order)}
+                      className={tableSelectionActionMenuStyles.assign}
+                    >
+                      <RouteIcon className="size-4" />
+                      {t("orders.actions.assignRoute")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showViewRoute && onViewRoute ? (
+                    <DropdownMenuItem
+                      disabled={!hasRoute}
+                      onSelect={() => onViewRoute(order)}
+                      className={tableSelectionActionMenuStyles.view}
+                    >
+                      <Eye className="size-4" />
+                      {t("orders.actions.viewRoute")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showClearRoute && onClearRoute ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled || !canClearRoute}
+                      onSelect={() => onClearRoute(order)}
+                      className={tableSelectionActionMenuStyles.caution}
+                    >
+                      <RouteOff className="size-4" />
+                      {t("orders.actions.clearRoute")}
+                    </DropdownMenuItem>
+                  ) : null}
+
+                  {(onMap || allowRequestChange) &&
+                  (onCreateInvoice ||
+                    showMarkComplete ||
+                    showMarkIncomplete ||
+                    showRouteActions) ? (
+                    <DropdownMenuSeparator />
+                  ) : null}
+
+                  {onMap ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled}
+                      onSelect={() => onMap(order)}
+                      className={tableSelectionActionMenuStyles.map}
+                    >
+                      <MapIcon className="size-4" />
+                      {t("orders.actions.map")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {allowRequestChange ? (
+                    <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+                      <Link href={changeRequestHref("pickup", String(order.id))}>
+                        <FilePenLine className="size-4" />
+                        {t("accounting.journalLifecycle.request")}
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : null}
+                </TableSelectionActionsMenu>
               </>
-            ) : null}
-
-            {showRouteActions ? (
-              <TableSelectionExpandableActionGroup
-                label={t("orders.actions.manageRoutes")}
-                icon={RouteIcon}
-                expanded={routesExpanded}
-                onExpandedChange={(expanded) => {
-                  setRoutesExpanded(expanded);
-                  if (expanded) setCompletionExpanded(false);
-                }}
-                disabled={actionsDisabled}
-                aria-label={t("orders.actions.routeGroup")}
-              >
-                {onAssignRoute ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={actionsDisabled}
-                    onClick={() => onAssignRoute(order)}
-                  >
-                    <RouteIcon className="size-4" />
-                    {t("orders.actions.assignRoute")}
-                  </Button>
-                ) : null}
-                {onViewRoute ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={!hasRoute}
-                    onClick={() => onViewRoute(order)}
-                    className={tableSelectionActionStyles.view}
-                  >
-                    <Eye className="size-4" />
-                    {t("orders.actions.viewRoute")}
-                  </Button>
-                ) : null}
-                {onClearRoute ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={actionsDisabled || !canClearRoute}
-                    onClick={() => onClearRoute(order)}
-                    className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
-                  >
-                    <RouteOff className="size-4" />
-                    {t("orders.actions.clearRoute")}
-                  </Button>
-                ) : null}
-              </TableSelectionExpandableActionGroup>
-            ) : null}
-
-            <RequestChangeButton resourceType="pickup" resourceId={String(order.id)} />
-
-            {allowEdit || allowDelete ? <TableSelectionActionDivider /> : null}
-
-            {allowEdit ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={actionsDisabled}
-                onClick={() => onEdit(order)}
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-              >
-                <Pencil className="size-4" />
-                {t("orders.actions.editPickup")}
-              </Button>
-            ) : null}
-            {allowDelete && onDelete ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={actionsDisabled}
-                onClick={() => onDelete(order)}
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-              >
-                <Trash2 className="size-4" />
-                {t("common.actions.delete")}
-              </Button>
-            ) : null}
-          </div>
-        </div>
+            }
+          />
+        ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

@@ -3,20 +3,23 @@
 import { Banknote, CheckCircle2, Info } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
+  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getCheckStatusBadgeClass } from "@/lib/accounting/checks/display";
 import { checkStatusI18nKey, type Check } from "@/lib/accounting/checks/types";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type CheckViewSheetProps = {
@@ -46,6 +49,8 @@ export function CheckViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={Banknote}
+          eyebrow={t("accounting.checks.entity")}
           title={check.checkNumber || dash}
           meta={
             <Badge variant="outline" className={cn("font-medium", getCheckStatusBadgeClass(check.status))}>
@@ -106,16 +111,20 @@ export function CheckViewSheet({
         </RecordViewSheetBody>
 
         {canMarkCleared && check.status === "OUTSTANDING" && onMarkCleared ? (
-          <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-            <Button
-              className="w-full"
-              disabled={isMarkingCleared}
-              onClick={() => onMarkCleared(check)}
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              {t("accounting.checks.actions.markCleared")}
-            </Button>
-          </div>
+          <RecordViewSheetActions
+            leading={
+              <TableSelectionActionsMenu>
+                <DropdownMenuItem
+                  disabled={isMarkingCleared}
+                  onSelect={() => onMarkCleared(check)}
+                  className={tableSelectionActionMenuStyles.complete}
+                >
+                  <CheckCircle2 className="size-4" />
+                  {t("accounting.checks.actions.markCleared")}
+                </DropdownMenuItem>
+              </TableSelectionActionsMenu>
+            }
+          />
         ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>

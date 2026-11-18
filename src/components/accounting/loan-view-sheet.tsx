@@ -6,14 +6,17 @@ import {
   LoanRecordActions,
   type LoanRecordAction,
 } from "@/components/accounting/loan-record-actions";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
+  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -25,7 +28,10 @@ import {
 } from "@/lib/accounting/loans/display";
 import type { Loan, LoanTransaction } from "@/lib/accounting/loans/types";
 import { useTranslation } from "@/lib/i18n";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 function loanStatusClassName(status: Loan["status"]) {
@@ -82,56 +88,23 @@ export function LoanViewSheet({
   const dash = t("common.empty.dash");
   const paymentEntries = payments.filter((entry) => entry.type === "PAYMENT");
   const isActive = loan.status === "ACTIVE";
-  // Print / Excel are read-only exports — always available for ACTIVE, PAID, and VOID.
-  const headerActions =
-    onPrint || onExportExcel ? (
-      <>
-        {onPrint ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-            disabled={isPrinting}
-            onClick={() => onPrint(loan)}
-          >
-            <Printer className="h-4 w-4" />
-            {isPrinting
-              ? t("accounting.loans.payments.printPreparing")
-              : t("accounting.loans.payments.print")}
-          </Button>
-        ) : null}
-        {onExportExcel ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="whitespace-nowrap"
-            disabled={isPrinting}
-            onClick={() => onExportExcel(loan)}
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            {isPrinting
-              ? t("accounting.loans.payments.excelPreparing")
-              : t("accounting.loans.payments.excel")}
-          </Button>
-        ) : null}
-      </>
-    ) : null;
   const footerCanPay = Boolean(onAction) && canPay && isActive;
   const footerCanIncrease = Boolean(onAction) && canIncrease && isActive;
   const footerCanDecrease = Boolean(onAction) && canDecrease && isActive;
   const footerShowIncreaseTodo = Boolean(onAction) && showIncreaseTodo && isActive;
   const showFooterActions =
     footerCanPay || footerCanIncrease || footerCanDecrease || footerShowIncreaseTodo;
+  const showSecondaryActionsMenu = Boolean(onExportExcel) || showFooterActions;
+  const showFooter = Boolean(onPrint) || showSecondaryActionsMenu;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           compact
+          icon={Banknote}
+          eyebrow={t("accounting.loans.fallbackDescription")}
           title={loan.employee.name.trim() || dash}
-          actions={headerActions}
         />
 
         <RecordViewSheetBody>
@@ -258,17 +231,52 @@ export function LoanViewSheet({
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        {showFooterActions ? (
-          <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-            <LoanRecordActions
-              fullWidth
-              canPay={footerCanPay}
-              canIncrease={footerCanIncrease}
-              canDecrease={footerCanDecrease}
-              showIncreaseTodo={footerShowIncreaseTodo}
-              onAction={(action) => onAction?.(loan, action)}
-            />
-          </div>
+        {showFooter ? (
+          <RecordViewSheetActions
+            leading={
+              <>
+                <TableSelectionActionsMenu hidden={!showSecondaryActionsMenu}>
+                  {onExportExcel ? (
+                    <DropdownMenuItem
+                      disabled={isPrinting}
+                      onSelect={() => onExportExcel(loan)}
+                      className={tableSelectionActionMenuStyles.export}
+                    >
+                      <FileSpreadsheet className="size-4" />
+                      {isPrinting
+                        ? t("accounting.loans.payments.excelPreparing")
+                        : t("accounting.loans.payments.excel")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showFooterActions ? (
+                    <LoanRecordActions
+                      variant="menu"
+                      canPay={footerCanPay}
+                      canIncrease={footerCanIncrease}
+                      canDecrease={footerCanDecrease}
+                      showIncreaseTodo={footerShowIncreaseTodo}
+                      onAction={(action) => onAction?.(loan, action)}
+                    />
+                  ) : null}
+                </TableSelectionActionsMenu>
+                {onPrint ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={isPrinting}
+                    onClick={() => onPrint(loan)}
+                  >
+                    <Printer className="size-4" />
+                    {isPrinting
+                      ? t("accounting.loans.payments.printPreparing")
+                      : t("accounting.loans.payments.print")}
+                  </Button>
+                ) : null}
+              </>
+            }
+          />
         ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>

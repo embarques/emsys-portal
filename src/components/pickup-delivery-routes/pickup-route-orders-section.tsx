@@ -24,6 +24,7 @@ import {
 } from "@/lib/orders/display";
 import { usePickupsByRoute } from "@/lib/orders/hooks/use-orders";
 import { useUnassignPickupsFromRoute } from "@/lib/orders/hooks/use-orders";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type PickupRouteOrdersSectionProps = {
@@ -153,6 +154,7 @@ export function PickupRouteOrdersSection({
               size="sm"
               disabled={effectiveSelectedIds.length === 0 || isUnassigning}
               onClick={() => void handleUnassign()}
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
             >
               {isUnassigning ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -184,10 +186,10 @@ export function PickupRouteOrdersSection({
               <thead>
                 <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
                   {editable ? (
-                    <th className="w-10 px-3 py-2">
+                    <th className="w-px whitespace-nowrap px-3 py-2">
                       <input
                         type="checkbox"
-                        className="size-4 rounded border-input"
+                        className="size-4 shrink-0 rounded border-input"
                         checked={allSelected}
                         ref={(element) => {
                           if (element) {
@@ -224,10 +226,10 @@ export function PickupRouteOrdersSection({
                       )}
                     >
                       {editable ? (
-                        <td className="px-3 py-2">
+                        <td className="w-px whitespace-nowrap px-3 py-2">
                           <input
                             type="checkbox"
-                            className="size-4 rounded border-input"
+                            className="size-4 shrink-0 rounded border-input"
                             checked={isSelected}
                             disabled={order.completed || isUnassigning}
                             onChange={() => toggleOrder(order.id)}

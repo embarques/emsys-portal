@@ -299,6 +299,14 @@ export function OrdersMapView({
     () => selectedStops.filter((stop) => Boolean(stop.routeId?.trim()) && !stop.completed),
     [selectedStops],
   );
+  /** Uniform selection → one route action; mixed → show assign and unassign. */
+  const selectedAssignmentState = useMemo(() => {
+    if (selectedStops.length === 0) return null;
+    const assignedCount = selectedStops.filter((stop) => Boolean(stop.routeId?.trim())).length;
+    if (assignedCount === 0) return "unassigned" as const;
+    if (assignedCount === selectedStops.length) return "assigned" as const;
+    return "mixed" as const;
+  }, [selectedStops]);
   /** Optimizing needs 2+ stops, every one assigned to the same route. */
   const selectionOnSingleRoute = useMemo(() => {
     if (selectedStops.length < 2) return false;
@@ -345,7 +353,7 @@ export function OrdersMapView({
     }
   }
 
-  // Default every mapped stop to selected on first load, then keep selection pruned to the plotted set.
+  // Keep map selection empty by default on first load, then prune it to the plotted set.
   useEffect(() => {
     const ids = mappedStops.map((stop) => stop.orderRecordId);
     if (ids.length === 0) {
@@ -355,7 +363,6 @@ export function OrdersMapView({
     }
     if (!initializedSelectionRef.current) {
       initializedSelectionRef.current = true;
-      setMapSelectedIds(ids);
       return;
     }
     setMapSelectedIds((prev) => prev.filter((id) => ids.includes(id)));
@@ -670,6 +677,14 @@ export function OrdersMapView({
   const isOptimizing = optimizeRouteMutation.isPending;
   const isFinalizing = finalizeRouteOrderMutation.isPending;
   const isMutating = isUnassigning || isOptimizing || isFinalizing;
+  const showAssignRoute =
+    allowRouteManagement &&
+    !routeOrderingEnabled &&
+    (selectedAssignmentState === "unassigned" || selectedAssignmentState === "mixed");
+  const showUnassignRoute =
+    allowRouteManagement &&
+    (selectedAssignmentState === "assigned" || selectedAssignmentState === "mixed");
+  const showRouteActions = showAssignRoute || showUnassignRoute;
 
   return (
     <>
@@ -704,7 +719,7 @@ export function OrdersMapView({
 
           <div className="flex min-w-0 w-full flex-wrap items-center gap-2 lg:w-auto [&_button]:min-h-11 lg:[&_button]:min-h-8">
             <TableSelectionActionGroup
-              className="max-w-full flex-wrap [&>button]:flex-auto [&>button]:whitespace-nowrap [&>button]:px-2 [&>button]:text-xs sm:[&>button]:text-sm"
+              className="h-11 max-w-full flex-wrap lg:h-8 [&>button]:flex-auto [&>button]:whitespace-nowrap [&>button]:px-2 [&>button]:text-xs sm:[&>button]:text-sm"
               aria-label={t("common.table.selectionActionsGroup")}
             >
               <Button
@@ -735,9 +750,12 @@ export function OrdersMapView({
                 {t("common.table.selectAllOthers")}
               </Button>
             </TableSelectionActionGroup>
-            <TableSelectionActionDivider />
+            {routeOrderingEnabled || showRouteActions ? <TableSelectionActionDivider /> : null}
             {routeOrderingEnabled ? (
-              <TableSelectionActionGroup aria-label={t("orders.map.legend.stopOrder")}>
+              <TableSelectionActionGroup
+                className="h-11 lg:h-8"
+                aria-label={t("orders.map.legend.stopOrder")}
+              >
                 <Button
                   variant="outline"
                   size="sm"
@@ -758,6 +776,7 @@ export function OrdersMapView({
                     size="sm"
                     disabled={isMutating}
                     onClick={() => updateStopOrder(null)}
+                    className={tableSelectionActionStyles.caution}
                   >
                     <Eraser className="h-4 w-4" />
                     {t("orders.optimize.clearOrder")}
@@ -765,30 +784,38 @@ export function OrdersMapView({
                 ) : null}
               </TableSelectionActionGroup>
             ) : null}
-            {routeOrderingEnabled ? <TableSelectionActionDivider /> : null}
-            {allowRouteManagement ? <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
-              {!routeOrderingEnabled ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={selectedStops.length === 0 || isMutating}
-                  onClick={openAssignRouteDialog}
-                >
-                  <RouteIcon className="h-4 w-4" />
-                  {t("orders.actions.assignRoute")}
-                </Button>
-              ) : null}
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={selectedAssignedStops.length === 0 || isMutating}
-                onClick={openUnassignDialog}
-                className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+            {routeOrderingEnabled && showRouteActions ? <TableSelectionActionDivider /> : null}
+            {showRouteActions ? (
+              <TableSelectionActionGroup
+                className="h-11 lg:h-8"
+                aria-label={t("orders.actions.routeGroup")}
               >
-                <RouteOff className="h-4 w-4" />
-                {t("orders.actions.unassignRoute")}
-              </Button>
-            </TableSelectionActionGroup> : null}
+                {showAssignRoute ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isMutating}
+                    onClick={openAssignRouteDialog}
+                    className={tableSelectionActionStyles.assign}
+                  >
+                    <RouteIcon className="h-4 w-4" />
+                    {t("orders.actions.assignRoute")}
+                  </Button>
+                ) : null}
+                {showUnassignRoute ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={selectedAssignedStops.length === 0 || isMutating}
+                    onClick={openUnassignDialog}
+                    className={tableSelectionActionStyles.caution}
+                  >
+                    <RouteOff className="h-4 w-4" />
+                    {t("orders.actions.unassignRoute")}
+                  </Button>
+                ) : null}
+              </TableSelectionActionGroup>
+            ) : null}
           </div>
         </div>
 

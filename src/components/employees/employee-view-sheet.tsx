@@ -64,6 +64,8 @@ export function EmployeeViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={UserIcon}
+          eyebrow={t("employees.entity")}
           title={employee.name.trim() || dash}
           meta={
             <div className="flex flex-wrap items-center gap-2">

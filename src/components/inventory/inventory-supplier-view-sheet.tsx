@@ -53,7 +53,11 @@ export function InventorySupplierViewSheet({
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader title={supplier.companyName} description={t("inventory.submenus.suppliers")} />
+        <RecordViewSheetHeader
+          icon={Building2}
+          eyebrow={t("inventory.columns.supplier")}
+          title={supplier.companyName}
+        />
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.form.sections.supplier")} icon={Building2}>
             <RecordViewSheetDetailRow label={t("inventory.columns.status")} value={<InventoryActiveBadge isActive={supplier.isActive} />} />

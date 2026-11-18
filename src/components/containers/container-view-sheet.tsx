@@ -45,6 +45,8 @@ export function ContainerViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={ContainerIcon}
+          eyebrow={t("containers.entity")}
           title={container.containerNumber.trim() || dash}
         />
 

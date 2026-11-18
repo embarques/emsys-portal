@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type RecordViewSheetProps = {
@@ -29,6 +30,16 @@ type RecordViewSheetHeaderProps = {
   title: React.ReactNode;
   description?: React.ReactNode;
   meta?: React.ReactNode;
+  /**
+   * Optional leading icon in a soft chip — matches section-card icon treatment.
+   * Decorative only (`aria-hidden`); keep meaning in the title / eyebrow.
+   */
+  icon?: React.ComponentType<{ className?: string }>;
+  /**
+   * Small uppercase label above the title (e.g. entity type), matching
+   * `RecordViewSheetSection` header typography.
+   */
+  eyebrow?: React.ReactNode;
   /**
    * Immutable / read-only shortcuts on the meta row, right-aligned
    * (print, download, export, open/view). Put mutating actions in
@@ -73,8 +84,10 @@ function isPlaceholderValue(value: React.ReactNode): boolean {
 type RecordViewSheetActionsProps = {
   onEdit?: () => void;
   onDelete?: () => void;
-  /** Extra controls rendered before Edit/Delete (e.g. Request a change). */
+  /** Extra controls rendered before Edit/Delete (e.g. Actions menu + Print). */
   leading?: React.ReactNode;
+  /** Optional content below the action buttons (e.g. delivery notices). */
+  children?: React.ReactNode;
   editLabel?: string;
   deleteLabel?: string;
   isDisabled?: boolean;
@@ -114,18 +127,58 @@ export function RecordViewSheetContent({ children, className }: RecordViewSheetC
   );
 }
 
-export function RecordViewSheetHeader({ title, description, meta, actions, compact = false }: RecordViewSheetHeaderProps) {
+export function RecordViewSheetHeader({
+  title,
+  description,
+  meta,
+  icon: Icon,
+  eyebrow,
+  actions,
+  compact = false,
+}: RecordViewSheetHeaderProps) {
   return (
-    <div className={cn("shrink-0 border-b border-border bg-card", compact ? "px-5 py-3" : "px-6 pb-4 pt-6")}>
-      <SheetHeader className={cn("pr-10 text-left", compact ? "space-y-1.5" : "space-y-2.5")}>
-        <SheetTitle className="text-xl font-semibold leading-tight tracking-tight">{title}</SheetTitle>
-        {description ? (
-          <SheetDescription className="text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </SheetDescription>
-        ) : null}
+    <div
+      className={cn(
+        "relative shrink-0 overflow-hidden border-b border-border",
+        "bg-gradient-to-br from-muted/70 via-card to-card",
+        compact ? "px-5 py-3" : "px-6 pb-4 pt-5",
+      )}
+    >
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/70 via-primary/40 to-transparent"
+        aria-hidden
+      />
+      <SheetHeader className={cn("relative pr-10 text-left", compact ? "space-y-2" : "space-y-3")}>
+        <div className="flex items-start gap-3">
+          {Icon ? (
+            <div
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-lg border border-border/80 bg-background/90 text-primary shadow-sm",
+                compact ? "size-9" : "size-10",
+              )}
+              aria-hidden
+            >
+              <Icon className={compact ? "size-4" : "size-5"} />
+            </div>
+          ) : null}
+          <div className="min-w-0 flex-1 space-y-1">
+            {eyebrow ? (
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/75">
+                {eyebrow}
+              </p>
+            ) : null}
+            <SheetTitle className="text-xl font-semibold leading-tight tracking-tight [overflow-wrap:anywhere]">
+              {title}
+            </SheetTitle>
+            {description ? (
+              <SheetDescription className="text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </SheetDescription>
+            ) : null}
+          </div>
+        </div>
         {meta || actions ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
             {meta ? <div className="flex min-w-0 flex-wrap items-center gap-2">{meta}</div> : null}
             {actions ? (
               <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{actions}</div>
@@ -208,6 +261,7 @@ export function RecordViewSheetActions({
   onEdit,
   onDelete,
   leading,
+  children,
   editLabel: editLabelProp,
   deleteLabel: deleteLabelProp,
   isDisabled = false,
@@ -218,30 +272,44 @@ export function RecordViewSheetActions({
   const editLabel = editLabelProp ?? t("common.actions.edit");
   const deleteLabel = deleteLabelProp ?? t("common.actions.delete");
 
-  if (!onEdit && !onDelete && !leading) return null;
+  if (!onEdit && !onDelete && !leading && !children) return null;
 
   return (
-    <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {leading}
-        {onEdit ? (
-          <Button className="flex-1" onClick={onEdit} disabled={isDisabled || editDisabled}>
-            <Pencil className="h-4 w-4" />
-            {editLabel}
-          </Button>
-        ) : null}
-        {onDelete ? (
-          <Button
-            variant="outline"
-            disabled={isDisabled || deleteDisabled}
-            className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-            {deleteLabel}
-          </Button>
-        ) : null}
-      </div>
+    <div className="flex min-h-12 shrink-0 flex-col justify-center gap-3 border-t border-border bg-card px-6 py-2">
+      {onEdit || onDelete || leading ? (
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {leading ? (
+            <div className="mr-auto flex min-w-0 flex-wrap items-center gap-1.5">{leading}</div>
+          ) : null}
+          {onEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+              onClick={onEdit}
+              disabled={isDisabled || editDisabled}
+            >
+              <Pencil className="h-4 w-4" />
+              {editLabel}
+            </Button>
+          ) : null}
+          {onDelete ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isDisabled || deleteDisabled}
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleteLabel}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {children ? <div>{children}</div> : null}
     </div>
   );
 }

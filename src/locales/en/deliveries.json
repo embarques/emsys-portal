@@ -5,6 +5,7 @@
     "completionMismatch": "Completion does not match the selected delivery."
   },
   "title": "Route Deliveries",
+  "entity": "Delivery",
   "description": "Deliver route barcodes and print their invoices. Your permissions determine which deliveries are available.",
   "searchPlaceholder": "Search barcode, invoice, item, receiver, province, or container…",
   "empty": "You have no pending deliveries.",

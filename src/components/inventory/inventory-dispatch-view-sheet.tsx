@@ -65,8 +65,9 @@ export function InventoryDispatchViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={Truck}
+          eyebrow={t("inventory.references.dispatch")}
           title={getHolderNameById(dispatch.toHolderId, holders) || t("inventory.references.dispatch")}
-          description={t("inventory.references.dispatch")}
         />
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.form.sections.header")} icon={Truck}>

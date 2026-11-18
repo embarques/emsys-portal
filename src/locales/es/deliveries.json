@@ -5,6 +5,7 @@
     "completionMismatch": "La confirmación no coincide con la entrega seleccionada."
   },
   "title": "Entregas de ruta",
+  "entity": "Entrega",
   "description": "Entregue códigos de ruta e imprima sus facturas. Sus permisos determinan las entregas disponibles.",
   "searchPlaceholder": "Buscar código, factura, artículo, destinatario, provincia o contenedor…",
   "empty": "No tienes entregas pendientes.",

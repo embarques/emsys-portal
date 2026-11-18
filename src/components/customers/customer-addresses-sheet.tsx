@@ -87,6 +87,8 @@ export function CustomerAddressesSheet({
       <RecordViewSheet open={open} onOpenChange={onOpenChange}>
         <RecordViewSheetContent>
           <RecordViewSheetHeader
+            icon={MapPin}
+            eyebrow={t("customers.addresses.sheetTitle")}
             title={
               <span className="flex flex-wrap items-center gap-2">
                 <span>{resolvedCustomer?.name ?? customer.name}</span>
@@ -97,7 +99,7 @@ export function CustomerAddressesSheet({
                 ) : null}
               </span>
             }
-            description={phone || t("customers.addresses.sheetTitle")}
+            description={phone || undefined}
           />
 
           <RecordViewSheetBody>

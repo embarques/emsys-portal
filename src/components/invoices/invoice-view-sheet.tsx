@@ -1,9 +1,10 @@
 "use client";
 
-import { RequestChangeButton } from "@/components/change-requests/request-change-button";
+import Link from "next/link";
 
 import { useMemo, useState } from "react";
 import {
+  FilePenLine,
   Info,
   MapPin,
   Phone as PhoneIcon,
@@ -14,6 +15,11 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
+
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 
 import { InvoiceLineItemsSection } from "@/components/invoices/invoice-line-items-section";
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
@@ -26,7 +32,10 @@ import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -238,7 +247,9 @@ export function InvoiceViewSheet({
   onAddComment,
 }: InvoiceViewSheetProps) {
   const { t, locale } = useTranslation();
+  const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const allowRequestChange = hasPermission("canCreateChangeRequest", "change_request");
   const totals = useMemo(() => {
     if (!invoice) return null;
     const subtotal = getInvoiceSubtotal(invoice);
@@ -262,25 +273,9 @@ export function InvoiceViewSheet({
         className={activeTab === "documents" ? "sm:max-w-6xl" : undefined}
       >
         <RecordViewSheetHeader
+          icon={Receipt}
+          eyebrow={t("invoices.entity")}
           title={invoice.invoiceNumber.trim() || empty}
-          actions={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onPrint(invoice)}
-              disabled={isPrinting || printDisabled}
-              className={cn(
-                "whitespace-nowrap",
-                tableSelectionActionStyles.print,
-              )}
-            >
-              <Printer className="h-4 w-4" />
-              {isPrinting
-                ? t("invoices.wizard.actions.preparing")
-                : t("invoices.wizard.actions.printInvoice")}
-            </Button>
-          }
         />
 
         <div
@@ -459,16 +454,35 @@ export function InvoiceViewSheet({
             <>
               <Button
                 type="button"
-                onClick={() => onManageItems(invoice)}
-                disabled={manageItemsDisabled}
+                variant="outline"
+                size="sm"
+                onClick={() => onPrint(invoice)}
+                disabled={isPrinting || printDisabled}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
               >
-                <Tags className="h-4 w-4" />
-                {t("invoices.staging.tableAction")}
+                <Printer className="size-4" />
+                {isPrinting
+                  ? t("invoices.wizard.actions.preparing")
+                  : t("invoices.wizard.actions.printInvoice")}
               </Button>
-              <RequestChangeButton
-                resourceType="invoice"
-                resourceId={invoice.invoiceId}
-              />
+              <TableSelectionActionsMenu>
+                <DropdownMenuItem
+                  disabled={manageItemsDisabled}
+                  onSelect={() => onManageItems(invoice)}
+                  className={tableSelectionActionMenuStyles.documents}
+                >
+                  <Tags className="size-4" />
+                  {t("invoices.staging.tableAction")}
+                </DropdownMenuItem>
+                {allowRequestChange ? (
+                  <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+                    <Link href={changeRequestHref("invoice", invoice.invoiceId)}>
+                      <FilePenLine className="size-4" />
+                      {t("accounting.journalLifecycle.request")}
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
+              </TableSelectionActionsMenu>
             </>
           }
           onEdit={canEdit ? () => onEdit(invoice) : undefined}

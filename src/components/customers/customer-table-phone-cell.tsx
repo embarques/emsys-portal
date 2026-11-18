@@ -79,6 +79,8 @@ function CustomerPhonesSheet({ customer, open, onOpenChange }: CustomerPhonesShe
       <RecordViewSheet open={open} onOpenChange={onOpenChange}>
         <RecordViewSheetContent>
           <RecordViewSheetHeader
+            icon={PhoneIcon}
+            eyebrow={t("phones.sheetTitle")}
             title={
               <span className="flex flex-wrap items-center gap-2">
                 <span>{resolvedCustomer?.name ?? customer.name}</span>
@@ -89,7 +91,6 @@ function CustomerPhonesSheet({ customer, open, onOpenChange }: CustomerPhonesShe
                 ) : null}
               </span>
             }
-            description={t("phones.sheetTitle")}
           />
 
           <RecordViewSheetBody>

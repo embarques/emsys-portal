@@ -54,10 +54,7 @@ import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
 import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 import { NewAppointmentsStatCard } from "@/components/orders/new-appointments-stat-card";
 
-import {
-  TableSelectionActionDivider,
-  TableSelectionExpandableActionGroup,
-} from "@/components/app-shell/table-selection-action-group";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { ORDER_API_TABLE_FIELDS } from "@/lib/orders/table-fields";
@@ -72,6 +69,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -147,7 +148,10 @@ import {
 } from "@/lib/customers/utils/address-utils";
 import type { Customer } from "@/lib/customers/types";
 import { cn } from "@/lib/utils";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -376,8 +380,6 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const [completionConfirm, setCompletionConfirm] = useState<boolean | null>(null);
   /** When set, completion / route dialogs act on these orders instead of table selection. */
   const [bulkActionOrders, setBulkActionOrders] = useState<Order[] | null>(null);
-  const [completionExpanded, setCompletionExpanded] = useState(false);
-  const [routesExpanded, setRoutesExpanded] = useState(false);
   const listParams = useMemo(
     () =>
       buildOrderListParams({
@@ -485,6 +487,14 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     [orders, selectedIds],
   );
   const selectedCount = selectedOrders.length;
+  /** Uniform selection → offer the opposite status; mixed → manage both. */
+  const selectedCompletionState = useMemo(() => {
+    if (selectedOrders.length === 0) return null;
+    const completedCount = selectedOrders.filter((order) => order.completed).length;
+    if (completedCount === 0) return "incomplete" as const;
+    if (completedCount === selectedOrders.length) return "complete" as const;
+    return "mixed" as const;
+  }, [selectedOrders]);
   const actionOrders = bulkActionOrders ?? selectedOrders;
   const selectedOrdersWithRoute = useMemo(
     () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
@@ -1082,6 +1092,96 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     t,
   );
 
+  const selectionPrintButton = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={() => void printSelectedOrders()}
+      disabled={isPrinting}
+      className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+    >
+      <Printer className="h-4 w-4" />
+      {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
+    </Button>
+  );
+
+  const selectionSecondaryActions = (
+    <TableSelectionActionsMenu disabled={isSaving}>
+      {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
+        <DropdownMenuItem
+          onSelect={() => createInvoiceFromOrder(selectedOrders[0])}
+          className={tableSelectionActionMenuStyles.create}
+        >
+          <Receipt className="size-4" />
+          {t("orders.actions.createInvoice")}
+        </DropdownMenuItem>
+      ) : null}
+      <DropdownMenuItem onSelect={() => openMapView()} className={tableSelectionActionMenuStyles.map}>
+        <MapIcon className="size-4" />
+        {t("orders.actions.map")}
+      </DropdownMenuItem>
+      {selectedCompletionState === "incomplete" || selectedCompletionState === "mixed" ? (
+        <DropdownMenuItem
+          disabled={routeMode && !routeAccess.canUpdate}
+          onSelect={() => openCompletionConfirm(true)}
+          className={tableSelectionActionMenuStyles.complete}
+        >
+          <CheckCircle2 className="size-4" />
+          {t("orders.actions.markComplete")}
+        </DropdownMenuItem>
+      ) : null}
+      {selectedCompletionState === "complete" || selectedCompletionState === "mixed" ? (
+        <DropdownMenuItem
+          disabled={routeMode && !routeAccess.canUpdate}
+          onSelect={() => openCompletionConfirm(false)}
+          className={tableSelectionActionMenuStyles.caution}
+        >
+          <XCircle className="size-4" />
+          {t("orders.actions.markIncomplete")}
+        </DropdownMenuItem>
+      ) : null}
+      {!routeMode ? (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={routeMode && !routeAccess.canUpdate}
+            onSelect={() => openAssignRoute()}
+            className={tableSelectionActionMenuStyles.assign}
+          >
+            <RouteIcon className="size-4" />
+            {t("orders.actions.assignRoute")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={selectedOrdersWithRoute.length === 0}
+            onSelect={() => viewSelectedRoute()}
+            className={tableSelectionActionMenuStyles.view}
+          >
+            <Eye className="size-4" />
+            {t("orders.actions.viewRoute")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={selectedOrdersToUnassign.length === 0}
+            onSelect={() => openClearRoute()}
+            className={tableSelectionActionMenuStyles.caution}
+          >
+            <RouteOff className="size-4" />
+            {clearRouteMutation.isPending
+              ? t("orders.actions.clearingRoute")
+              : t("orders.actions.clearRoute")}
+          </DropdownMenuItem>
+        </>
+      ) : null}
+    </TableSelectionActionsMenu>
+  );
+
+  const selectionToolbarActions = (
+    <>
+      {selectionPrintButton}
+      {selectionSecondaryActions}
+    </>
+  );
+
   return (
     <>
     <PredefinedRouteDialog state={predefinedRouteCreate} />
@@ -1200,101 +1300,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             canDelete={!routeMode}
             canEdit={!routeMode || routeAccess.canUpdate}
             deleteDisabled={isSaving}
-            actions={<>
-              {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="whitespace-nowrap"
-                  onClick={() => createInvoiceFromOrder(selectedOrders[0])}
-                >
-                  <Receipt className="size-4" />
-                  {t("orders.actions.createInvoice")}
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap"
-                onClick={() => openMapView()}
-              >
-                <MapIcon className="size-4" />
-                {t("orders.actions.map")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className={cn(
-                  "whitespace-nowrap",
-                  tableSelectionActionStyles.print,
-                )}
-                variant="outline"
-                onClick={() => void printSelectedOrders()}
-                disabled={isPrinting}
-              >
-                <Printer className="size-4" />
-                {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="bg-emerald-500/5 text-emerald-700 whitespace-nowrap hover:bg-emerald-500/10 hover:text-emerald-700"
-                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                onClick={() => openCompletionConfirm(true)}
-              >
-                <CheckCircle2 className="size-4" />
-                {t("orders.actions.markComplete")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
-                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                onClick={() => openCompletionConfirm(false)}
-              >
-                <XCircle className="size-4" />
-                {t("orders.actions.markIncomplete")}
-              </Button>
-              {!routeMode ? <><Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="whitespace-nowrap"
-                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                onClick={() => openAssignRoute()}
-              >
-                <RouteIcon className="size-4" />
-                {t("orders.actions.assignRoute")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
-                disabled={selectedOrdersWithRoute.length === 0}
-                onClick={() => viewSelectedRoute()}
-              >
-                <Eye className="size-4" />
-                {t("orders.actions.viewRoute")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="bg-amber-500/5 text-amber-700 whitespace-nowrap hover:bg-amber-500/10 hover:text-amber-700"
-                disabled={isSaving || selectedOrdersToUnassign.length === 0}
-                onClick={() => openClearRoute()}
-              >
-                <RouteOff className="size-4" />
-                {clearRouteMutation.isPending
-                  ? t("orders.actions.clearingRoute")
-                  : t("orders.actions.clearRoute")}
-              </Button></> : null}
-            </>}
+            actions={selectionToolbarActions}
           />
         ) : null}
 
@@ -1464,116 +1470,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
           canDelete={!routeMode}
           canEdit={!routeMode || routeAccess.canUpdate}
           deleteDisabled={isSaving}
-          actions={
-            <>
-              {!completionExpanded && !routesExpanded ? (
-                <>
-                  {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="whitespace-nowrap"
-                      onClick={() => createInvoiceFromOrder(selectedOrders[0])}
-                    >
-                      <Receipt className="h-4 w-4" />
-                      {t("orders.actions.createInvoice")}
-                    </Button>
-                  ) : null}
-                  <Button variant="outline" size="sm" onClick={() => openMapView()}>
-                    <MapIcon className="h-4 w-4" />
-                    {t("orders.actions.map")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void printSelectedOrders()}
-                    disabled={isPrinting}
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                  >
-                    <Printer className="h-4 w-4" />
-                    {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
-                  </Button>
-                  <TableSelectionActionDivider />
-                </>
-              ) : null}
-              {!routesExpanded ? (
-                <>
-                  <TableSelectionExpandableActionGroup
-                    label={t("orders.actions.manageCompletion")}
-                    icon={CheckCircle2}
-                    expanded={completionExpanded}
-                    onExpandedChange={setCompletionExpanded}
-                    aria-label={t("orders.actions.completionGroup")}
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                      onClick={() => openCompletionConfirm(true)}
-                      className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      {t("orders.actions.markComplete")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                      onClick={() => openCompletionConfirm(false)}
-                      className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
-                    >
-                      <XCircle className="h-4 w-4" />
-                      {t("orders.actions.markIncomplete")}
-                    </Button>
-                  </TableSelectionExpandableActionGroup>
-                  <TableSelectionActionDivider />
-                </>
-              ) : null}
-              {!routeMode ? <TableSelectionExpandableActionGroup
-                label={t("orders.actions.manageRoutes")}
-                icon={RouteIcon}
-                expanded={routesExpanded}
-                onExpandedChange={(expanded) => {
-                  setRoutesExpanded(expanded);
-                  // Completion sits to the left — collapse it when routes takes the row.
-                  if (expanded) setCompletionExpanded(false);
-                }}
-                aria-label={t("orders.actions.routeGroup")}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                  onClick={() => openAssignRoute()}
-                >
-                  <RouteIcon className="h-4 w-4" />
-                  {t("orders.actions.assignRoute")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={selectedOrdersWithRoute.length === 0}
-                  onClick={() => viewSelectedRoute()}
-                  className={tableSelectionActionStyles.view}
-                >
-                  <Eye className="h-4 w-4" />
-                  {t("orders.actions.viewRoute")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSaving || selectedOrdersToUnassign.length === 0}
-                  onClick={() => openClearRoute()}
-                  className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
-                >
-                  <RouteOff className="h-4 w-4" />
-                  {clearRouteMutation.isPending
-                    ? t("orders.actions.clearingRoute")
-                    : t("orders.actions.clearRoute")}
-                </Button>
-              </TableSelectionExpandableActionGroup> : null}
-            </>
-          }
+          actions={selectionToolbarActions}
         />
 
         {isLoading ? (

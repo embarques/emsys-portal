@@ -1,26 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Container as ContainerIcon,
+  FilePenLine,
   FileText,
   Info,
   PackageCheck,
-  Pencil,
   Printer,
   Route as RouteIcon,
   ScanBarcode,
   Tag,
-  Trash2,
 } from "lucide-react";
 
-import { RequestChangeButton } from "@/components/change-requests/request-change-button";
-import {
-  TableSelectionActionDivider,
-  TableSelectionExpandableActionGroup,
-} from "@/components/app-shell/table-selection-action-group";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
+  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -29,6 +26,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   formatBarcodeContainer,
   formatBarcodeDeliveryRoute,
@@ -38,8 +36,12 @@ import {
 } from "@/lib/barcodes/display";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import type { Barcode } from "@/lib/barcodes/types";
+import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 import { useTranslation } from "@/lib/i18n";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type BarcodeViewSheetProps = {
@@ -112,84 +114,43 @@ export function BarcodeViewSheet({
   onDelete,
 }: BarcodeViewSheetProps) {
   const { t } = useTranslation();
-  const [assignmentExpanded, setAssignmentExpanded] = useState(false);
-
-  useEffect(() => {
-    if (!open) setAssignmentExpanded(false);
-  }, [open]);
+  const { hasPermission } = useAuth();
 
   if (!barcode) return null;
 
   const statusName = barcode.status?.name ?? "";
   const dash = t("common.empty.dash");
-  const showHeaderOps = Boolean(
-    (canPrintInvoice && onPrintInvoice) ||
-      (canPrint && onPrint) ||
-      (canOpenInvoice && onOpenInvoice),
-  );
+  const allowRequestChange = hasPermission("canCreateChangeRequest", "change_request");
   const showDeliver = Boolean(canDeliver && onDeliver);
-  const showAssignment =
-    (canChangeStatus && onChangeStatus) ||
-    (canTransferContainer && onTransferContainer) ||
-    (canAssignRoute && onAssignRoute);
+  const showOpenInvoice = Boolean(canOpenInvoice && onOpenInvoice);
+  const showChangeStatus = Boolean(canChangeStatus && onChangeStatus);
+  const showTransferContainer = Boolean(canTransferContainer && onTransferContainer);
+  const showAssignRoute = Boolean(canAssignRoute && onAssignRoute);
+  const showPrintInvoice = Boolean(canPrintInvoice && onPrintInvoice);
+  const showPrint = Boolean(canPrint && onPrint);
+  const showSecondaryActionsMenu =
+    showDeliver ||
+    showOpenInvoice ||
+    showChangeStatus ||
+    showTransferContainer ||
+    showAssignRoute ||
+    allowRequestChange;
   const showRecordActions = (canEdit && onEdit) || (canDelete && onDelete);
-  const showFooter = showDeliver || showAssignment || showRecordActions;
+  const showFooter =
+    showPrintInvoice || showPrint || showSecondaryActionsMenu || showRecordActions;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={ScanBarcode}
+          eyebrow={t("barcodes.entity")}
           title={barcode.number}
           meta={
             statusName ? (
               <Badge variant="outline" className={getBarcodeStatusBadgeClass(statusName)}>
                 {formatBarcodeStatus(barcode.status, t)}
               </Badge>
-            ) : null
-          }
-          actions={
-            showHeaderOps ? (
-              <>
-                {canPrintInvoice && onPrintInvoice ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="whitespace-nowrap"
-                    disabled={actionsDisabled || printInvoiceDisabled}
-                    onClick={() => onPrintInvoice(barcode)}
-                  >
-                    <Printer className="size-4" />
-                    {t("invoices.printSignatures.action")}
-                  </Button>
-                ) : null}
-                {canPrint && onPrint ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={actionsDisabled || printDisabled || isPrinting}
-                    onClick={() => onPrint(barcode)}
-                  >
-                    <Printer className="size-4" />
-                    {t(isPrinting ? "barcodes.print.preparing" : "barcodes.print.action")}
-                  </Button>
-                ) : null}
-                {canOpenInvoice && onOpenInvoice ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
-                    disabled={actionsDisabled || openInvoiceDisabled}
-                    onClick={() => onOpenInvoice(barcode)}
-                  >
-                    <FileText className="size-4" />
-                    {t("barcodes.bulk.openInvoice")}
-                  </Button>
-                ) : null}
-              </>
             ) : null
           }
         />
@@ -257,116 +218,112 @@ export function BarcodeViewSheet({
         </RecordViewSheetBody>
 
         {showFooter ? (
-          <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {showDeliver ? (
-                <>
+          <RecordViewSheetActions
+            isDisabled={actionsDisabled}
+            editDisabled={editDisabled}
+            deleteDisabled={deleteDisabled}
+            onEdit={canEdit && onEdit ? () => onEdit(barcode) : undefined}
+            onDelete={canDelete && onDelete ? () => onDelete(barcode) : undefined}
+            leading={
+              <>
+                <TableSelectionActionsMenu
+                  hidden={!showSecondaryActionsMenu}
+                  disabled={actionsDisabled}
+                >
+                  {showDeliver ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled || deliverDisabled}
+                      onSelect={() => onDeliver?.(barcode)}
+                      className={tableSelectionActionMenuStyles.deliver}
+                    >
+                      <PackageCheck className="size-4" />
+                      {t("deliveries.deliver.action")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showOpenInvoice ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled || openInvoiceDisabled}
+                      onSelect={() => onOpenInvoice?.(barcode)}
+                      className={tableSelectionActionMenuStyles.view}
+                    >
+                      <FileText className="size-4" />
+                      {t("barcodes.bulk.openInvoice")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showChangeStatus ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled || changeStatusDisabled}
+                      onSelect={() => onChangeStatus?.(barcode)}
+                      className={tableSelectionActionMenuStyles.status}
+                    >
+                      <Tag className="size-4" />
+                      {t("barcodes.bulk.changeStatus")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showTransferContainer ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled || transferContainerDisabled}
+                      onSelect={() => onTransferContainer?.(barcode)}
+                      className={tableSelectionActionMenuStyles.transfer}
+                    >
+                      <ContainerIcon className="size-4" />
+                      {t("barcodes.bulk.changeContainer")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {showAssignRoute ? (
+                    <DropdownMenuItem
+                      disabled={actionsDisabled || assignRouteDisabled}
+                      onSelect={() => onAssignRoute?.(barcode)}
+                      className={tableSelectionActionMenuStyles.assign}
+                    >
+                      <RouteIcon className="size-4" />
+                      {t("barcodes.bulk.assignRoute")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {allowRequestChange ? (
+                    <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+                      <Link
+                        href={changeRequestHref(
+                          "labels",
+                          String(barcode.barcodeId || barcode.id),
+                        )}
+                      >
+                        <FilePenLine className="size-4" />
+                        {t("accounting.journalLifecycle.request")}
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : null}
+                </TableSelectionActionsMenu>
+                {showPrintInvoice ? (
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="whitespace-nowrap"
-                    disabled={actionsDisabled || deliverDisabled}
-                    onClick={() => onDeliver?.(barcode)}
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={actionsDisabled || printInvoiceDisabled}
+                    onClick={() => onPrintInvoice?.(barcode)}
                   >
-                    <PackageCheck className="size-4" />
-                    {t("deliveries.deliver.action")}
+                    <Printer className="size-4" />
+                    {t("invoices.printSignatures.action")}
                   </Button>
-                  {showAssignment || showRecordActions ? <TableSelectionActionDivider /> : null}
-                </>
-              ) : null}
-
-              {showAssignment ? (
-                <TableSelectionExpandableActionGroup
-                  label={t("barcodes.actions.manageAssignment")}
-                  icon={Tag}
-                  expanded={assignmentExpanded}
-                  onExpandedChange={setAssignmentExpanded}
-                  disabled={actionsDisabled}
-                  aria-label={t("barcodes.actions.assignmentGroup")}
-                >
-                  {canChangeStatus && onChangeStatus ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={actionsDisabled || changeStatusDisabled}
-                      onClick={() => onChangeStatus(barcode)}
-                    >
-                      <Tag className="size-4" />
-                      {t("barcodes.bulk.changeStatus")}
-                    </Button>
-                  ) : null}
-                  {canTransferContainer && onTransferContainer ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={actionsDisabled || transferContainerDisabled}
-                      onClick={() => onTransferContainer(barcode)}
-                    >
-                      <ContainerIcon className="size-4" />
-                      {t("barcodes.bulk.changeContainer")}
-                    </Button>
-                  ) : null}
-                  {canAssignRoute && onAssignRoute ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={actionsDisabled || assignRouteDisabled}
-                      onClick={() => onAssignRoute(barcode)}
-                    >
-                      <RouteIcon className="size-4" />
-                      {t("barcodes.bulk.assignRoute")}
-                    </Button>
-                  ) : null}
-                </TableSelectionExpandableActionGroup>
-              ) : null}
-
-              <RequestChangeButton
-                resourceType="labels"
-                resourceId={String(barcode.barcodeId || barcode.id)}
-                size="sm"
-              />
-
-              {showRecordActions ? <TableSelectionActionDivider /> : null}
-
-              {canEdit && onEdit ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={actionsDisabled || editDisabled}
-                  onClick={() => onEdit(barcode)}
-                  className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-                >
-                  <Pencil className="size-4" />
-                  {t("common.actions.edit")}
-                </Button>
-              ) : null}
-              {canDelete && onDelete ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={actionsDisabled || deleteDisabled}
-                  onClick={() => onDelete(barcode)}
-                  className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-                >
-                  <Trash2 className="size-4" />
-                  {t("common.actions.delete")}
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <RequestChangeButton
-            resourceType="labels"
-            resourceId={String(barcode.barcodeId || barcode.id)}
-            inSheet
+                ) : null}
+                {showPrint ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={actionsDisabled || printDisabled || isPrinting}
+                    onClick={() => onPrint?.(barcode)}
+                  >
+                    <Printer className="size-4" />
+                    {t(isPrinting ? "barcodes.print.preparing" : "barcodes.print.action")}
+                  </Button>
+                ) : null}
+              </>
+            }
           />
-        )}
+        ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

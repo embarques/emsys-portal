@@ -45,6 +45,8 @@ export function RoleViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={Shield}
+          eyebrow={t("roles.entity")}
           title={role.name}
           description={t("roles.view.permissionsAssigned", { count: role.permissions.length })}
         />
