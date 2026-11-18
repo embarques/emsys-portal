@@ -60,7 +60,7 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
   computeRoleKpis,
   formatPermissionsSummary,
@@ -380,19 +380,6 @@ export function RolesWorkspace() {
   const columnVisibility = useApiTableColumns("roles", tableColumns, ROLE_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, roleFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalRoles,
-      catalogTotal: roleStats.total,
-      noun: t("roles.noun"),
-      isLoading: rolesQuery.isFetching && roles.length === 0,
-      catalogLoading: roleStats.isLoading,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: pageRoles.length,
@@ -499,7 +486,7 @@ export function RolesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}
@@ -525,10 +512,6 @@ export function RolesWorkspace() {
           pageRowIds={pageRoles.map((role) => role.roleId)}
           totalCount={totalRoles}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => {
-            const role = pageRoles.find((entry) => entry.roleId === selectedIds[0]);
-            if (role) setViewRole(role);
-          }}
           onEdit={() => {
             const role = pageRoles.find((entry) => entry.roleId === selectedIds[0]);
             if (role) openEditForm(role);

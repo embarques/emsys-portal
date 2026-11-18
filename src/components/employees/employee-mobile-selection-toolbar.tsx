@@ -10,7 +10,6 @@ type EmployeeMobileSelectionToolbarProps = {
   singleSelectedEmployee?: Employee;
   isSaving: boolean;
   onSelectedIdsChange: (ids: string[]) => void;
-  onView: (employee: Employee) => void;
   onEdit: (employee: Employee) => void;
   onDeleteSelected: () => void;
 };
@@ -22,7 +21,6 @@ export function EmployeeMobileSelectionToolbar({
   singleSelectedEmployee,
   isSaving,
   onSelectedIdsChange,
-  onView,
   onEdit,
   onDeleteSelected,
 }: EmployeeMobileSelectionToolbarProps) {
@@ -32,9 +30,7 @@ export function EmployeeMobileSelectionToolbar({
       pageRowIds={pageRowIds}
       totalCount={totalCount}
       onSelectedIdsChange={onSelectedIdsChange}
-      onView={() => singleSelectedEmployee && onView(singleSelectedEmployee)}
       onEdit={() => singleSelectedEmployee && onEdit(singleSelectedEmployee)}
-      viewDisabled={!singleSelectedEmployee}
       editDisabled={!singleSelectedEmployee}
       onDelete={onDeleteSelected}
       deleteDisabled={isSaving}

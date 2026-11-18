@@ -41,7 +41,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
@@ -166,17 +166,6 @@ export function ChecksWorkspace() {
   );
 
   const columnLayout = useApiTableColumns("accounting-checks-v3", columns, CHECK_API_TABLE_FIELDS);
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveSearch,
-      query,
-      isSearchPending,
-      matched: total,
-      noun: t("accounting.checks.noun"),
-      isLoading: isFetching && checks.length === 0,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: checks.length,
@@ -272,7 +261,7 @@ export function ChecksWorkspace() {
               />
             }
             columnLayout={columnLayout}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={query}
@@ -291,11 +280,6 @@ export function ChecksWorkspace() {
           pageRowIds={pageRowIds}
           totalCount={total}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => {
-            const check = selectedChecks[0];
-            if (check) setViewCheck(check);
-          }}
-          canView={canViewChecks}
           canEdit={false}
           canDelete={false}
           actions={
@@ -350,7 +334,7 @@ export function ChecksWorkspace() {
             onRowClick={canViewChecks ? setViewCheck : undefined}
             activeRowId={viewCheck?.id}
             emptyState={
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {hasActiveSearch ? t("accounting.checks.empty") : t("accounting.checks.emptyNone")}
               </p>
             }

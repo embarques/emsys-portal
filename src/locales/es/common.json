@@ -87,9 +87,6 @@
     "all": "Todos"
   },
   "listSummary": {
-    "searching": "Buscando {{noun}}…",
-    "matching": "{{matched}} {{noun}} coincidentes",
-    "matchedOf": "{{matched}} de {{total}} {{noun}}",
     "refreshing": "Actualizando {{noun}}…",
     "noNoun": "Sin {{noun}}",
     "noMatching": "Ningún {{noun}} coincide",

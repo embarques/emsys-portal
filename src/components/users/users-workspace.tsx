@@ -55,7 +55,7 @@ import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import type { DataTableColumn } from "@/lib/table/types";
-import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
   formatUserBranchLabel,
   getUserActiveBadgeClass,
@@ -386,19 +386,6 @@ export function UsersWorkspace() {
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows, userFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalUsers,
-      catalogTotal: stats.total,
-      noun: t("users.noun"),
-      isLoading: isFetching && users.length === 0,
-      catalogLoading: stats.isLoading,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: pageUsers.length,
@@ -497,7 +484,7 @@ export function UsersWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}

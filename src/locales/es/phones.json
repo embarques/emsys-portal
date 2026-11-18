@@ -19,6 +19,8 @@
   "addNew": "Agregar nuevo teléfono",
   "countBadge": "{{count}} teléfonos",
   "countBadgeOne": "1 teléfono",
+  "viewMore": "Ver más",
+  "viewMoreAria": "Ver más teléfonos",
   "sheetTitle": "Teléfonos del cliente",
   "loading": "Cargando teléfonos…",
   "aria": {

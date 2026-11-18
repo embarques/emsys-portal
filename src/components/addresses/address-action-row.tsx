@@ -18,7 +18,7 @@ import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils
 type AddressActionRowProps = {
   label: string;
   address: CustomerCoreAddress;
-  /** When true, show a star instead of a "Primary" text label. */
+  /** When true, show a star to the left of the label (and "Primary" when `label` is empty). */
   isPrimary?: boolean;
   className?: string;
   labelAction?: ReactNode;
@@ -43,9 +43,9 @@ export function AddressActionRow({
   const { notifySuccess, notifyError } = useFeedback();
   const lines = formatCoreAddressLines(address);
   const query = buildCoreAddressMapsQuery(address);
-  const actionLabel =
-    label.trim() ||
-    (isPrimary ? t("customers.form.address.primary") : t("customers.addresses.labels.other"));
+  const displayLabel =
+    label.trim() || (isPrimary ? t("customers.addresses.labels.primary") : "");
+  const actionLabel = displayLabel || t("customers.addresses.labels.other");
 
   if (lines.length === 0) return null;
 
@@ -63,90 +63,95 @@ export function AddressActionRow({
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-3 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
+        "border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
         className,
       )}
     >
-      <div className="min-w-0 flex-1">
+      {displayLabel || labelAction || isPrimary ? (
         <div className="flex items-center gap-1">
-          {isPrimary ? (
-            <Star
-              className="size-3.5 shrink-0 fill-current text-amber-500"
-              aria-label={t("customers.form.address.primary")}
-            />
-          ) : null}
-          {label.trim() ? (
-            <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
+          {displayLabel || isPrimary ? (
+            <p className="flex items-center gap-1 text-xs font-medium leading-snug text-muted-foreground">
+              {isPrimary ? (
+                <Star
+                  className="size-3.5 shrink-0 fill-current text-amber-500"
+                  aria-label={t("customers.addresses.labels.primary")}
+                />
+              ) : null}
+              {displayLabel ? <span>{displayLabel}</span> : null}
+            </p>
           ) : null}
           {labelAction}
         </div>
-        <div className={cn("text-sm font-medium leading-snug text-foreground", ADDRESS_TEXT_WRAP_CLASSNAME)}>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3">
+        <div className={cn("min-w-0 flex-1 text-sm font-medium leading-snug text-foreground", ADDRESS_TEXT_WRAP_CLASSNAME)}>
           {lines.map((line, index) => (
             <p key={index}>{line}</p>
           ))}
         </div>
-      </div>
 
-      <div className="flex shrink-0 items-center gap-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              aria-label={t("customers.address.copyAria", { label: actionLabel })}
-              onClick={handleCopy}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t("customers.address.copyTooltip")}</TooltipContent>
-        </Tooltip>
-        {query ? (
-          <>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300"
-                >
-                  <a
-                    href={buildMapsSearchHref(query)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t("customers.address.openMapsAria", { label: actionLabel })}
+        <div className="flex shrink-0 items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                aria-label={t("customers.address.copyAria", { label: actionLabel })}
+                onClick={handleCopy}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t("customers.address.copyTooltip")}</TooltipContent>
+          </Tooltip>
+          {query ? (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300"
                   >
-                    <MapPin className="h-4 w-4" />
-                  </a>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("customers.address.viewOnMaps")}</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  <a
-                    href={buildMapsDirectionsHref(query)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t("customers.address.directionsAria", { label: actionLabel })}
+                    <a
+                      href={buildMapsSearchHref(query)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={t("customers.address.openMapsAria", { label: actionLabel })}
+                    >
+                      <MapPin className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("customers.address.viewOnMaps")}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    <Navigation className="h-4 w-4" />
-                  </a>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("customers.address.directions")}</TooltipContent>
-            </Tooltip>
-          </>
-        ) : null}
+                    <a
+                      href={buildMapsDirectionsHref(query)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={t("customers.address.directionsAria", { label: actionLabel })}
+                    >
+                      <Navigation className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("customers.address.directions")}</TooltipContent>
+              </Tooltip>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );

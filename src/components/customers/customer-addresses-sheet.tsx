@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, MapPin, Plus } from "lucide-react";
 
 import { AddressActionRow } from "@/components/addresses/address-action-row";
+import { TableStreetAddress } from "@/components/addresses/table-street-address";
 import { CustomerUnverifiedAddressAction } from "@/components/customers/customer-unverified-address-action";
 
 import {
@@ -23,9 +24,7 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useCustomer } from "@/lib/customers/hooks/use-customers";
 import type { Customer } from "@/lib/customers/types";
 import {
-  formatCoreAddressLines,
   getAddressLabelKey,
-  getAddressViewLabelKey,
   ADDRESS_TEXT_WRAP_CLASSNAME,
   getPrimaryAddress,
   orderAddressesForDisplay,
@@ -115,9 +114,7 @@ export function CustomerAddressesSheet({
               ) : null}
 
               {addresses.map((address, index) => {
-                const viewLabelKey = getAddressViewLabelKey(address, index);
-                const label = viewLabelKey ? t(viewLabelKey) : "";
-                const actionLabel = label || t(getAddressLabelKey(address, index));
+                const label = t(getAddressLabelKey(address, index));
 
                 return (
                   <AddressActionRow
@@ -129,7 +126,7 @@ export function CustomerAddressesSheet({
                       <CustomerUnverifiedAddressAction
                         customer={resolvedCustomer}
                         address={address}
-                        label={actionLabel}
+                        label={label}
                         onBeforeEdit={() => onOpenChange(false)}
                       />
                     ) : null}
@@ -171,49 +168,39 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
   const resolvedCustomer = detailQuery.data ?? customer;
   const total = resolveCustomerAddressCount(resolvedCustomer);
   const primary = getPrimaryAddress(resolvedCustomer);
-  const addressLines = primary ? formatCoreAddressLines(primary) : [];
-  const addressTitle = addressLines.length > 0 ? addressLines.join(", ") : "—";
+  // Table already has City / State / Zip columns — Address is street only.
 
   function openSheet(event: React.MouseEvent) {
     event.stopPropagation();
     setSheetOpen(true);
   }
 
-  const addressCountLabel = t("customers.addresses.countBadge", { count: total });
-
   return (
     <>
       <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME, className)}>
-        {addressLines.length > 0 ? (
-          <div className="flex items-start gap-1">
-            <div className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "flex-1 leading-snug")} title={addressTitle}>
-              {addressLines.map((line, index) => (
-                <p key={index} className={ADDRESS_TEXT_WRAP_CLASSNAME}>
-                  {line}
-                </p>
-              ))}
-            </div>
-            {primary ? (
+        <TableStreetAddress
+          address={primary}
+          action={
+            primary ? (
               <CustomerUnverifiedAddressAction
                 customer={resolvedCustomer}
                 address={primary}
                 label={t(getAddressLabelKey(primary, 0))}
               />
-            ) : null}
-          </div>
-        ) : (
-          <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")}>—</p>
-        )}
+            ) : null
+          }
+        />
         {detailQuery.isFetching && total <= 1 ? (
           <p className="mt-0.5 text-xs text-muted-foreground">{t("customers.addresses.loadingAddresses")}</p>
         ) : null}
         {!detailQuery.isFetching && total > 1 ? (
           <button
             type="button"
+            aria-label={t("customers.addresses.viewMoreAria")}
             className="mt-0.5 text-left text-xs font-medium text-primary hover:underline"
             onClick={openSheet}
           >
-            {addressCountLabel}
+            {t("customers.addresses.viewMore")}
           </button>
         ) : null}
       </div>

@@ -57,13 +57,13 @@ import {
   type SupplierFormValues,
 } from "@/lib/inventory/types/suppliers";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -100,7 +100,6 @@ export function InventorySuppliersWorkspace() {
   );
   const activeFilterCount = countCompleteFilterRows(filterRows, filterFields);
   const hasActiveFilters = Boolean(query.trim()) || activeFilterCount > 0;
-
 
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const directoryParams = useMemo(
@@ -146,13 +145,19 @@ export function InventorySuppliersWorkspace() {
   ];
 
   const columnVisibility = useApiTableColumns("inventory-suppliers", columns, INVENTORY_SUPPLIER_API_TABLE_FIELDS);
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query,
-    matched: totalMatched,
-    catalogTotal: suppliers.length,
-    noun: t("inventory.submenus.suppliers").toLowerCase(),
-  });
+  const isSearchPending = query.trim() !== debouncedQuery.trim();
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: pageRows.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalMatched,
+      noun: t("inventory.submenus.suppliers").toLowerCase(),
+      isFiltered: hasActiveFilters,
+      isLoading: directoryQuery.isFetching,
+    },
+    t,
+  );
 
   function openAddForm() {
     if (!canCreate) return;
@@ -231,12 +236,13 @@ export function InventorySuppliersWorkspace() {
         />
       </div>
 
-      <InventorySupplierMobileList isSearching={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+      <InventorySupplierMobileList isSearching={directoryQuery.isFetching || isSearchPending}
         query={query}
         suppliers={suppliers}
         pageRows={pageRows}
         selectedIds={selectedIds}
         isLoading={isLoading}
+        hasActiveFilters={hasActiveFilters}
         page={currentPage}
         totalPages={totalPages}
         onQueryChange={setQuery}
@@ -256,16 +262,17 @@ export function InventorySuppliersWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || isSearchPending}
                 presetScope="inventory-suppliers"
                 open={filtersOpen}
                 rows={filterRows}
                 fields={filterFields}
+                resultSummary={listSummary}
                 onRowsChange={(rows) => {
                   setFilterRows(rows);
                   setPage(1);
@@ -282,7 +289,7 @@ export function InventorySuppliersWorkspace() {
               />
             }
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={query}
@@ -325,7 +332,7 @@ export function InventorySuppliersWorkspace() {
             ]}
           />
         ) : (
-          <DataTable isPageDataPending={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+          <DataTable isPageDataPending={directoryQuery.isFetching || isSearchPending}
             columns={columnVisibility.columns}
             rows={pageRows}
             page={currentPage}
@@ -351,19 +358,17 @@ export function InventorySuppliersWorkspace() {
             onRowClick={setViewSupplier}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewSupplier?.id}
-            emptyState={<p className="text-muted-foreground">{t("inventory.empty.suppliers")}</p>}
+            emptyState={
+              <p className="text-sm text-muted-foreground">
+                {hasActiveFilters ? t("inventory.empty.suppliers") : t("inventory.empty.suppliersNone")}
+              </p>
+            }
           />
         )}
 
         {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", {
-                count: pageRows.length,
-                total: totalMatched,
-                noun: t("inventory.submenus.suppliers").toLowerCase(),
-              })}
-            </p>
+            <p className="text-sm text-muted-foreground">{listSummary}</p>
             <TablePaginationControls
               page={currentPage}
               totalPages={totalPages}

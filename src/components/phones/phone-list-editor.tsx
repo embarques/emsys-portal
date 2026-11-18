@@ -101,8 +101,14 @@ export function PhoneListEditor({
 
   if (compact) {
     return (
-      <div className="flex flex-col gap-3">
-        <div className={cn("space-y-2.5", listClassName)}>
+      <div className="flex min-h-0 flex-col gap-3">
+        <div
+          className={cn(
+            // Cap growth so sibling form sections (e.g. addresses) are not squeezed.
+            "-m-1 max-h-56 space-y-2.5 overflow-y-auto p-1",
+            listClassName,
+          )}
+        >
           {entries.map((phone, index) => {
             const isOnly = entries.length <= 1;
             const isUnsaved = isUnsavedPhone(phone);

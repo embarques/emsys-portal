@@ -25,6 +25,9 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { TableStreetAddress } from "@/components/addresses/table-street-address";
+import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
+import { CustomerUnverifiedAddressAction } from "@/components/customers/customer-unverified-address-action";
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
@@ -80,7 +83,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
@@ -136,6 +139,7 @@ import { useTableSort } from "@/lib/table/use-table-sort";
 import {
   ADDRESS_TEXT_WRAP_CLASSNAME,
   formatAddressLine,
+  getAddressLabelKey,
   getPrimaryAddress,
 } from "@/lib/customers/utils/address-utils";
 import type { Customer } from "@/lib/customers/types";
@@ -146,15 +150,25 @@ import { useTranslation } from "@/lib/i18n";
 
 const PICKUP_ACCESS_UNAVAILABLE_PREFIX = "Pickup access unavailable.";
 
-function formatStreetAndApt(customer: Customer, dash: string) {
+function OrderTableAddressCell({ customer }: { customer: Customer }) {
+  const { t } = useTranslation();
   const primary = getPrimaryAddress(customer);
-  if (!primary) return dash;
 
-  const line = [primary.address1, primary.apartment]
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(" ");
-  return line || dash;
+  return (
+    <TableStreetAddress
+      address={primary}
+      emptyLabel={t("common.empty.dash")}
+      action={
+        primary ? (
+          <CustomerUnverifiedAddressAction
+            customer={customer}
+            address={primary}
+            label={t(getAddressLabelKey(primary, 0))}
+          />
+        ) : null
+      }
+    />
+  );
 }
 
 function formatAddressPart(
@@ -934,8 +948,10 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       id: "sender.phone",
       label: t("orders.tableColumns.senderPhone"),
       sortField: "sender.phone1",
-      defaultWidth: 128,
-      renderCell: (order) => getCustomerPrimaryPhone(order.sender, t("common.empty.dash")),
+      defaultWidth: 180,
+      truncateCell: false,
+      cellClassName: "align-top",
+      renderCell: (order) => <CustomerTablePhoneCell customer={order.sender} />,
     },
     {
       id: "sender.name",
@@ -952,7 +968,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       defaultWidth: 240,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
-      renderCell: (order) => formatStreetAndApt(order.sender, t("common.empty.dash")),
+      renderCell: (order) => <OrderTableAddressCell customer={order.sender} />,
     },
     {
       id: "sender.city",
@@ -1042,17 +1058,6 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const isListFiltered = hasActiveFilters;
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: isListFiltered,
-      query: filters.query,
-      isSearchPending,
-      matched: totalOrders,
-      noun: t("orders.noun"),
-      isLoading: isFetching && orders.length === 0,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: orders.length,
@@ -1178,7 +1183,6 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             pageRowIds={orders.map((order) => getOrderRecordId(order))}
             totalCount={totalOrders}
             onSelectedIdsChange={setSelectedIds}
-            onView={() => { if (selectedOrders[0]) openViewOrder(selectedOrders[0]); }}
             onEdit={() => { if (selectedOrders[0]) openEditForm(selectedOrders[0]); }}
             editDisabled={isSaving}
             onDelete={() => setDeleteTarget(selectedOrders)}
@@ -1313,7 +1317,9 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             </div>
           ) : orders.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">{t("orders.empty.noMatch")}</p>
+              <p className="text-sm text-muted-foreground">
+                {hasActiveFilters ? t("orders.empty.noMatch") : t("orders.empty.noneYet")}
+              </p>
               {!routeMode ? <Button className="mt-4 h-11 rounded-xl" onClick={openAddForm}>
                 <Plus className="size-4" />
                 {t("orders.actions.add")}
@@ -1373,7 +1379,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}
@@ -1439,10 +1445,6 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
           pageRowIds={orders.map((order) => getOrderRecordId(order))}
           totalCount={totalOrders}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => {
-            const order = orders.find((entry) => getOrderRecordId(entry) === selectedIds[0]);
-            if (order) openViewOrder(order);
-          }}
           onEdit={() => {
             const order = orders.find((entry) => getOrderRecordId(entry) === selectedIds[0]);
             if (order) openEditForm(order);
@@ -1610,7 +1612,9 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             activeRowId={viewOrder ? getOrderRecordId(viewOrder) : undefined}
             emptyState={
               <>
-                <p className="text-muted-foreground">{t("orders.empty.noMatch")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {hasActiveFilters ? t("orders.empty.noMatch") : t("orders.empty.noneYet")}
+                </p>
                 {!routeMode ? <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
                   {t("orders.actions.add")}

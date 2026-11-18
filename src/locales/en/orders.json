@@ -136,6 +136,7 @@
   },
   "empty": {
     "noMatch": "No appointments match your search or filters.",
+    "noneYet": "No appointments yet.",
     "noReceiver": "No receiver on this pickup.",
     "noComments": "No comments yet.",
     "noPickupHistory": "No appointment history yet."

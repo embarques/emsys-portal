@@ -50,6 +50,7 @@ export function TablePhoneCell({ phones, className, callable = false, onShowAll 
           type="button"
           data-stop-row-click
           aria-expanded={onShowAll ? undefined : expanded}
+          aria-label={t("phones.viewMoreAria")}
           className="mt-0.5 text-left text-xs font-medium text-primary hover:underline"
           onClick={(event) => {
             event.stopPropagation();
@@ -57,7 +58,7 @@ export function TablePhoneCell({ phones, className, callable = false, onShowAll 
             else setExpanded((value) => !value);
           }}
         >
-          {t("phones.countBadge", { count: entries.length })}
+          {t("phones.viewMore")}
         </button>
       ) : null}
     </div>

@@ -136,6 +136,7 @@
   },
   "empty": {
     "noMatch": "Ninguna cita coincide con su búsqueda o filtros.",
+    "noneYet": "Aún no hay citas.",
     "noReceiver": "No hay destinatario en esta recogida.",
     "noComments": "Aún no hay comentarios.",
     "noPickupHistory": "Aún no hay historial de citas."

@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Eye, Pencil, Trash2, X } from "lucide-react";
+import { Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
@@ -20,20 +20,17 @@ export type TableSelectionBarProps = {
   meta?: ReactNode;
   /** Total selectable records (across pages). Falls back to the selected count. */
   totalCount?: number;
-  onView?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  /** Feature-specific bulk actions rendered before View/Edit/Delete. */
+  /** Feature-specific bulk actions rendered before Edit/Delete. */
   actions?: ReactNode;
   /**
-   * Hide View/Edit/Delete. Prefer hiding only actions to the left of an
-   * expanded group so View/Edit/Delete (to the right) stay available.
+   * Hide Edit/Delete. Prefer hiding only actions to the left of an
+   * expanded group so Edit/Delete (to the right) stay available.
    */
   hideStandardActions?: boolean;
-  canView?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
-  viewDisabled?: boolean;
   editDisabled?: boolean;
   deleteDisabled?: boolean;
   deleteLabel?: string;
@@ -48,7 +45,9 @@ export type TableSelectionBarProps = {
  * Grouped by purpose:
  *  - Left "selection island": what's selected + how to manage the selection.
  *  - Right "record actions": operations performed on the selected records,
- *    with View/Edit/Delete kept together in a stable order.
+ *    with Edit/Delete kept together in a stable order.
+ *
+ * View is intentionally omitted: open a record by clicking/tapping the row.
  */
 export function TableSelectionBar({
   selectedCount,
@@ -56,15 +55,12 @@ export function TableSelectionBar({
   selectionActions,
   meta,
   totalCount,
-  onView,
   onEdit,
   onDelete,
   actions,
   hideStandardActions = false,
-  canView = true,
   canEdit = true,
   canDelete = true,
-  viewDisabled = false,
   editDisabled = false,
   deleteDisabled = false,
   deleteLabel,
@@ -77,10 +73,9 @@ export function TableSelectionBar({
 
   const total = totalCount ?? selectedCount;
 
-  const showView = Boolean(onView && canView && !hideStandardActions);
   const showEdit = Boolean(onEdit && canEdit && !hideStandardActions);
   const showDelete = Boolean(onDelete && canDelete && !hideStandardActions);
-  const hasRecordActions = Boolean(showView || showEdit || actions || showDelete);
+  const hasRecordActions = Boolean(showEdit || actions || showDelete);
 
   return (
     <div
@@ -122,21 +117,8 @@ export function TableSelectionBar({
       {hasRecordActions ? (
         <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5">
           {actions ? <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">{actions}</div> : null}
-          {actions && (showView || showEdit || showDelete) ? <TableSelectionActionDivider /> : null}
+          {actions && (showEdit || showDelete) ? <TableSelectionActionDivider /> : null}
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
-            {showView ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={selectedCount !== 1 || viewDisabled}
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
-                onClick={onView}
-              >
-                <Eye className="h-4 w-4" />
-                {t("common.actions.view")}
-              </Button>
-            ) : null}
             {showEdit ? (
               <Button
                 type="button"

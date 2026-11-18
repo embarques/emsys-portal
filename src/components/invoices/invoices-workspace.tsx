@@ -95,7 +95,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { buildInvoiceBarcodesHref } from "@/lib/barcodes/invoice-search";
 import { mapInvoiceJournalsToPayments } from "@/lib/invoices/invoice-journals";
 import {
@@ -937,14 +937,18 @@ export function InvoicesWorkspace() {
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalInvoices,
-    noun: "invoices",
-    isLoading: isFetching && invoices.length === 0,
-  });
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: invoices.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalInvoices,
+      noun: t("invoices.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: isFetching,
+    },
+    t,
+  );
 
   return (
     <div>
@@ -1001,10 +1005,7 @@ export function InvoicesWorkspace() {
 
         {mobileFiltersOpen ? (
           <TableFilterPanel isLoading={isFetching || isSearchPending}
-            resultSummary={t("invoices.workspace.showing", {
-              count: invoices.length,
-              total: totalInvoices,
-            })}
+            resultSummary={listSummary}
             className="rounded-xl shadow-sm"
             presets={{
               storageKey: "invoices",
@@ -1066,7 +1067,6 @@ export function InvoicesWorkspace() {
             pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
             totalCount={totalInvoices}
             onSelectedIdsChange={setSelectedIds}
-            onView={() => { if (selectedInvoices[0]) openView(selectedInvoices[0]); }}
             onEdit={() => { if (selectedInvoices[0]) openEditForm(selectedInvoices[0]); }}
             onDelete={() => setDeleteTarget(selectedInvoices)}
             canEdit={canUpdateInvoices}
@@ -1154,7 +1154,7 @@ export function InvoicesWorkspace() {
             onFiltersOpenChange={setDesktopFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <div className="min-w-0 flex-1 space-y-2">
                 <TableSearchInput
@@ -1169,10 +1169,7 @@ export function InvoicesWorkspace() {
             }
             filterPanel={
               <TableFilterPanel isLoading={isFetching || isSearchPending}
-                resultSummary={t("invoices.workspace.showing", {
-                  count: invoices.length,
-                  total: totalInvoices,
-                })}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "invoices",
                   rows: filters.rows,
@@ -1213,10 +1210,6 @@ export function InvoicesWorkspace() {
           pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
           totalCount={totalInvoices}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => {
-            const invoice = selectedInvoices[0];
-            if (invoice) openView(invoice);
-          }}
           onEdit={() => {
             const invoice = selectedInvoices[0];
             if (invoice) openEditForm(invoice);
@@ -1272,23 +1265,16 @@ export function InvoicesWorkspace() {
             onRowDoubleClick={canUpdateInvoices ? openEditForm : undefined}
             activeRowId={viewInvoiceId ?? undefined}
             emptyState={
-              <p className="text-muted-foreground">{t("invoices.workspace.empty")}</p>
+              <p className="text-sm text-muted-foreground">
+                {hasActiveFilters ? t("invoices.workspace.empty") : t("invoices.workspace.emptyNone")}
+              </p>
             }
           />
         )}
 
         {!isLoading && !isError ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">
-                {isFetching
-                  ? t("invoices.workspace.refreshing")
-                  : t("invoices.workspace.showing", {
-                      count: invoices.length,
-                      total: totalInvoices,
-                    })}
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground">{listSummary}</p>
             <TablePaginationControls
               page={currentPage}
               totalPages={totalPages}

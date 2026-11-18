@@ -19,6 +19,8 @@
   "addNew": "Add new phone",
   "countBadge": "{{count}} phones",
   "countBadgeOne": "1 phone",
+  "viewMore": "View more",
+  "viewMoreAria": "View more phones",
   "sheetTitle": "Customer phones",
   "loading": "Loading phones…",
   "aria": {

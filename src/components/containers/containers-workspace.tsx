@@ -72,8 +72,8 @@ import {
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -336,16 +336,16 @@ export function ContainersWorkspace() {
   const columnVisibility = useApiTableColumns("containers-v2", tableColumns, CONTAINER_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, containerFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const noun = t("containers.noun");
-  const searchSummary = buildToolbarSearchSummary(
+  const listSummary = formatPaginatedListSummary(
     {
+      itemCountOnPage: containers.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalContainers,
+      noun: t("containers.noun"),
       isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalContainers,
+      isLoading: isFetching,
       catalogTotal: stats.total,
-      noun,
-      isLoading: isFetching && containers.length === 0,
       catalogLoading: stats.isLoading,
     },
     t,
@@ -382,7 +382,7 @@ export function ContainersWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}
@@ -395,11 +395,7 @@ export function ContainersWorkspace() {
             }
             filterPanel={
               <TableFilterPanel isLoading={isFetching || isSearchPending}
-                resultSummary={t("common.pagination.showingOf", {
-                  count: containers.length,
-                  total: totalContainers,
-                  noun,
-                })}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "containers",
                   rows: filters.rows,
@@ -485,7 +481,7 @@ export function ContainersWorkspace() {
             activeRowId={viewContainer ? String(viewContainer.id) : undefined}
             emptyState={
               <>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {hasActiveFilters ? t("containers.empty.noMatch") : t("containers.empty.none")}
                 </p>
                 <Button className="mt-4" onClick={openAddForm}>
@@ -499,13 +495,7 @@ export function ContainersWorkspace() {
 
         {!isLoading && !isError ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {t("common.pagination.showingOf", {
-              count: containers.length,
-              total: totalContainers,
-              noun,
-            })}
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <TablePaginationControls
             page={currentPage}
             totalPages={totalPages}

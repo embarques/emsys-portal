@@ -64,9 +64,7 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import {
-  buildToolbarSearchSummary,
-  formatPaginatedListSummary,
-} from "@/lib/table/list-summary";
+  formatPaginatedListSummary,} from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -383,18 +381,6 @@ export function ChartOfAccountsWorkspace() {
   );
   const columnLayout = useApiTableColumns("chart-of-accounts-v2", columns, CHART_ACCOUNT_API_TABLE_FIELDS);
 
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query,
-      isSearchPending,
-      matched: total,
-      noun,
-      isLoading: accountsQuery.isFetching && rows.length === 0,
-    },
-    t,
-  );
-
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: rows.length,
@@ -607,7 +593,7 @@ export function ChartOfAccountsWorkspace() {
                 />
               }
               columnLayout={columnLayout}
-              searchSummary={searchSummary}
+
               search={
                 <TableSearchInput
                   value={query}
@@ -666,8 +652,10 @@ export function ChartOfAccountsWorkspace() {
                 onToggleSelectAll={toggleSelectAll}
                 onToggleSelect={toggleSelect}
                 emptyState={
-                  <p className="text-muted-foreground">
-                    {t("accounting.chartOfAccounts.empty")}
+                  <p className="text-sm text-muted-foreground">
+                    {hasActiveFilters
+                      ? t("accounting.chartOfAccounts.empty")
+                      : t("accounting.chartOfAccounts.emptyNone")}
                   </p>
                 }
               />

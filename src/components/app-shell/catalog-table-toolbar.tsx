@@ -32,7 +32,6 @@ export function CatalogTableToolbar<T>({ state, presetScope, searchPlaceholder, 
       filtersOpen={state.open}
       onFiltersOpenChange={state.setOpen}
       activeFilterCount={state.activeFilterCount}
-      searchSummary={summary}
       columnLayout={columnLayout}
       filterPanel={
         <TableAdvancedFilterPanel
@@ -130,10 +129,17 @@ export function CatalogDataTable<T>({
 
 /** Pagination footer for server-filtered catalog tables. */
 export function CatalogTablePagination<T>({ state }: { state: CatalogTableState<T> }) {
+  const { t } = useTranslation();
+
   if (state.isLoading || state.isError) return null;
 
+  const summary = state.hasActiveFilters
+    ? t("common.table.matchCount", { count: state.total })
+    : undefined;
+
   return (
-    <div className="flex justify-end border-t px-6 py-4">
+    <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+      {summary ? <p className="text-sm text-muted-foreground">{summary}</p> : <span className="hidden sm:block" />}
       <TablePaginationControls
         page={state.pagination.page}
         totalPages={state.pagination.totalPages}

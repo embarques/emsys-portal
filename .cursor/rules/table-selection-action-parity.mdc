@@ -9,42 +9,44 @@ alwaysApply: true
 In sidebar directory/list workspaces, every record action exposed on a **table
 row** (desktop row buttons, mobile row actions, or row overflow menu) must also
 be available on the **selection header** (`TableSelectionToolbar` /
-`TableSelectionBar`) when rows are selected.
+`TableSelectionBar`) when rows are selected — **except View**.
 
-Do not leave actions only on the row. Selection is a first-class way to act on
-records; the header must offer the same set.
+**View is via row click/tap**, not the selection header. Do not pass `onView` to
+`TableSelectionToolbar` / `TableSelectionBar` (those props were removed).
+
+Do not leave other actions only on the row. Selection is a first-class way to
+act on records; the header must offer the same non-view set.
 
 ## Rules
 
-1. **Parity** — If a user can View / Edit / Delete / Print / Map / Sync / etc.
-   from a row, wire the same capability into `TableSelectionToolbar` (`onView`,
-   `onEdit`, `onDelete`, and/or `actions`).
+1. **Parity** — If a user can Edit / Delete / Print / Map / Sync / etc. from a
+   row, wire the same capability into `TableSelectionToolbar` (`onEdit`,
+   `onDelete`, and/or `actions`). Do **not** add a selection-header View button.
 2. **Selection validity** — Show only actions that make sense for the current
    selection:
-   - **Single-select only** (View, Edit, “create from this record”, …): render
-     when `selectedCount === 1`; **hide** when multi-select (do not leave a
+   - **Single-select only** (Edit, “create from this record”, …): render when
+     `selectedCount === 1`; **hide** when multi-select (do not leave a
      permanently disabled control cluttering the bar).
    - **Multi-select capable** (Delete, Print, bulk status, …): show for
      `selectedCount >= 1`.
-   - Shared standard View/Edit already disable when `selectedCount !== 1` inside
+   - Shared standard Edit already disables when `selectedCount !== 1` inside
      `TableSelectionBar`; feature `actions` should **hide** single-only buttons
      instead of always rendering them disabled.
-3. **Permissions / feature gates** — Still honor `canView` / `canEdit` /
-   `canDelete` and feature flags. Hide actions the user cannot use, same as the
-   row.
+3. **Permissions / feature gates** — Still honor `canEdit` / `canDelete` and
+   feature flags. Hide actions the user cannot use, same as the row.
 4. **Same handler semantics** — Selection actions should call the same open /
-   mutate helpers as the row (e.g. `openViewX(selected[0])`, bulk delete with
+   mutate helpers as the row (e.g. `openEditX(selected[0])`, bulk delete with
    all selected ids). Do not invent a second code path with different behavior.
 5. **Mobile + desktop** — If the workspace has both a desktop table and a mobile
-   list, keep row actions and both selection toolbars in sync.
+   list, keep row actions and both selection toolbars in sync (still excluding
+   View from the selection header).
 
 ```tsx
-// ✅ GOOD — row action also on selection header; single-only action hidden when multi
+// ✅ GOOD — row action also on selection header; View omitted (row click opens view)
 <TableSelectionToolbar
   selectedIds={selectedIds}
   pageRowIds={pageIds}
   onSelectedIdsChange={setSelectedIds}
-  onView={() => selected[0] && openView(selected[0])}
   onEdit={() => selected[0] && openEdit(selected[0])}
   onDelete={() => requestDelete(selected)}
   canEdit={canUpdate}
@@ -61,14 +63,15 @@ records; the header must offer the same set.
 ```
 
 ```tsx
-// ❌ BAD — print/sync only on the row; selection header has View/Edit/Delete only
-<TableSelectionToolbar onView={…} onEdit={…} onDelete={…} />
+// ❌ BAD — print/sync only on the row; selection header has Edit/Delete only
+<TableSelectionToolbar onEdit={…} onDelete={…} />
 // row still has Print / Retry sync / Map with no selection equivalents
 ```
 
 ## Checklist
 
-- [ ] Every row action has a selection-header counterpart
+- [ ] Every non-view row action has a selection-header counterpart
+- [ ] Selection header has no View button (row click/tap opens view)
 - [ ] Single-only actions hidden when `selectedCount !== 1`
 - [ ] Multi actions work on the full selection
 - [ ] Permission gates match the row

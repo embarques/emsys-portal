@@ -17,6 +17,7 @@ type InventorySupplierMobileListProps = {
   selectedIds: string[];
   isLoading: boolean;
   isSearching?: boolean;
+  hasActiveFilters?: boolean;
   page: number;
   totalPages: number;
   onQueryChange: (query: string) => void;
@@ -35,6 +36,7 @@ export function InventorySupplierMobileList({
   selectedIds,
   isLoading,
   isSearching = false,
+  hasActiveFilters = false,
   page,
   totalPages,
   onQueryChange,
@@ -140,7 +142,9 @@ export function InventorySupplierMobileList({
             />
           ))
         ) : (
-          <p className="py-8 text-center text-muted-foreground">{t("inventory.empty.suppliers")}</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {hasActiveFilters ? t("inventory.empty.suppliers") : t("inventory.empty.suppliersNone")}
+          </p>
         )}
       </div>
     </section>

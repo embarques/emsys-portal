@@ -8,7 +8,6 @@ import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet
 import type { Customer } from "@/lib/customers/types";
 import {
   getAddressLabelKey,
-  getAddressViewLabelKey,
   getAllAddresses,
   orderAddressesForDisplay,
   resolveCustomerAddressCount,
@@ -46,9 +45,8 @@ export function FlippableCustomerAddresses({
         </div>
       ) : (
         orderedAddresses.map((address, index) => {
-          const viewLabelKey = getAddressViewLabelKey(address, index);
-          const label = viewLabelKey ? t(viewLabelKey) : "";
-          const actionLabel = label || t(getAddressLabelKey(address, index));
+          const labelKey = getAddressLabelKey(address, index);
+          const label = t(labelKey);
 
           return (
             <AddressActionRow
@@ -60,7 +58,7 @@ export function FlippableCustomerAddresses({
                 <CustomerUnverifiedAddressAction
                   customer={customer}
                   address={address}
-                  label={actionLabel}
+                  label={label}
                   onBeforeEdit={onBeforeAddressEdit}
                 />
               }

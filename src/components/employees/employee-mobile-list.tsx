@@ -194,7 +194,6 @@ export function EmployeeMobileList({
         singleSelectedEmployee={singleSelectedEmployee}
         isSaving={isSaving}
         onSelectedIdsChange={onSelectedIdsChange}
-        onView={onView}
         onEdit={onEdit}
         onDeleteSelected={onDeleteSelected}
       />

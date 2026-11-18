@@ -74,7 +74,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -321,19 +321,6 @@ export function BranchesWorkspace() {
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows, branchFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalBranches,
-      catalogTotal: stats.total,
-      noun: t("branches.noun"),
-      isLoading: isFetching && branches.length === 0,
-      catalogLoading: stats.isLoading,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: branches.length,
@@ -382,7 +369,7 @@ export function BranchesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}

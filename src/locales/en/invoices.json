@@ -55,6 +55,7 @@
     "usersDenied": "You need permission to view users to select an assignee."
   },
   "title": "Invoices",
+  "noun": "invoices",
   "entity": "Invoice",
   "registrationStatus": {
     "pending": "Pending",
@@ -168,6 +169,7 @@
     "refreshing": "Refreshing invoices…",
     "outstandingReceivables": "Outstanding receivables",
     "empty": "No invoices match your search or filters.",
+    "emptyNone": "No invoices yet.",
     "loader": {
       "title": "Loading invoices",
       "description": "Syncing customers, balances, and payment status…",

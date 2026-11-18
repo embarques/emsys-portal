@@ -142,10 +142,6 @@ export function RoleMobileList({
         canViewOrEdit={selectedIds.length === 1}
         deleteDisabled={selectedRoles.some((role) => role.systemRole)}
         onSelectedIdsChange={onSelectedIdsChange}
-        onView={() => {
-          const role = selectedRoles[0];
-          if (role) onOpen(role);
-        }}
         onEdit={() => {
           const role = selectedRoles[0];
           if (role) onEdit(role);

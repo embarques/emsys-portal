@@ -219,7 +219,6 @@ function ReservedInvoicePoolPanel() {
           </label>
           <TableDirectoryToolbar isLoading={model.query.isFetching || model.searchPending}
             search={<TableSearchInput value={model.numberSearch} onChange={model.setNumberSearch} maxLength={100} placeholder={text("search")} disabled={busy || model.pending} />}
-            searchSummary={remaining}
             columnLayout={columnLayout}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}

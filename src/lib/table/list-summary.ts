@@ -2,12 +2,6 @@ import type { TranslateFn } from "@/lib/feedback/messages";
 
 function englishSummary(key: string, params: Record<string, string | number>): string {
   switch (key) {
-    case "searching":
-      return `Searching ${params.noun}…`;
-    case "matching":
-      return `${params.matched} matching ${params.noun}`;
-    case "matchedOfTotal":
-      return `${params.matched} of ${params.total} ${params.noun}`;
     case "refreshing":
       return `Refreshing ${params.noun}…`;
     case "noNoun":
@@ -32,67 +26,6 @@ function resolveSummary(
     return t(`common.listSummary.${key}`, params);
   }
   return englishSummary(key, params);
-}
-
-export function formatFilteredCountSummary(
-  input: {
-    matched: number;
-    catalogTotal?: number;
-    noun: string;
-    isLoading?: boolean;
-    catalogLoading?: boolean;
-  },
-  t?: TranslateFn,
-): string {
-  const { matched, catalogTotal, noun, isLoading, catalogLoading } = input;
-
-  if (isLoading && matched === 0) {
-    return resolveSummary(t, "searching", { noun });
-  }
-
-  const matchedLabel = matched.toLocaleString();
-
-  if (catalogTotal === undefined || catalogLoading) {
-    return resolveSummary(t, "matching", { matched: matchedLabel, noun });
-  }
-
-  return resolveSummary(t, "matchedOf", {
-    matched: matchedLabel,
-    total: catalogTotal.toLocaleString(),
-    noun,
-  });
-}
-
-/** Compact toolbar badge: search + filter on the left, this summary + columns on the right. */
-export function buildToolbarSearchSummary(
-  input: {
-    isFiltered: boolean;
-    query?: string;
-    isSearchPending?: boolean;
-    matched: number;
-    catalogTotal?: number;
-    noun: string;
-    isLoading?: boolean;
-    catalogLoading?: boolean;
-  },
-  t?: TranslateFn,
-): string | undefined {
-  if (!input.isFiltered) return undefined;
-
-  if (input.query?.trim() && input.isSearchPending) {
-    return resolveSummary(t, "searching", { noun: input.noun });
-  }
-
-  return formatFilteredCountSummary(
-    {
-      matched: input.matched,
-      catalogTotal: input.catalogTotal,
-      noun: input.noun,
-      isLoading: input.isLoading,
-      catalogLoading: input.catalogLoading,
-    },
-    t,
-  );
 }
 
 export function formatPaginatedListSummary(

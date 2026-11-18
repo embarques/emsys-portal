@@ -322,7 +322,7 @@ export function OrderForm({
       <FormBody isBusy={isSubmitting} className="@container min-h-0 min-w-0 space-y-5 overflow-x-hidden bg-background p-4 py-5 md:bg-muted/35 md:p-6">
         <fieldset disabled={isSubmitting} className="min-w-0 @3xl:h-full">
           <div className="grid items-start gap-5 @3xl:h-full @3xl:grid-cols-2 @3xl:grid-rows-[minmax(0,1fr)]">
-            <div className="flex min-w-0 flex-col gap-5 @3xl:min-h-0 @3xl:self-stretch">
+            <div className="flex min-w-0 flex-col gap-5 @3xl:min-h-0 @3xl:self-stretch @3xl:overflow-hidden">
               <FormSection
                 variant="card"
                 icon={CalendarDays}
@@ -471,9 +471,10 @@ export function OrderForm({
 
               <FormSection
                 variant="card"
+                fill={values.receivers.length > 0}
                 icon={Users}
                 title={`03 · ${t("orders.form.workflow.receiverStep")}`}
-                className={values.receivers.length > 0 ? "flex flex-col @3xl:flex-1" : "shrink-0"}
+                className={values.receivers.length > 0 ? "@3xl:min-h-0 @3xl:flex-1" : "shrink-0"}
                 action={(
                   <Button ref={addReceiverButtonRef} type="button" variant="outline" size="sm" onClick={addReceiver}>
                     <UserPlus className="size-4" />{t("orders.form.partyActions.addReceiver")}
@@ -483,7 +484,7 @@ export function OrderForm({
                 {values.receivers.length > 0 ? (
                   <div
                     ref={receiverPanelRef}
-                    className="-m-1 max-h-[28rem] min-h-0 space-y-3 overflow-y-auto p-1 @3xl:max-h-none @3xl:min-h-48 @3xl:grow @3xl:basis-48"
+                    className="-m-1 max-h-[28rem] min-h-0 flex-1 space-y-3 overflow-y-auto p-1 @3xl:max-h-none @3xl:min-h-0"
                   >
                     {values.receivers.map((row, index) => (
                       <div key={row.key} className="min-w-0 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
@@ -529,10 +530,11 @@ export function OrderForm({
 
             <FormSection
               variant="card"
+              fill
               icon={ClipboardList}
               title={`04 · ${t("orders.form.workflow.purposeStep")}`}
               required
-              className="flex flex-col @3xl:min-h-0 @3xl:self-stretch"
+              className="@3xl:min-h-0 @3xl:self-stretch"
             >
               <OrderCommentsEditor
                 quickEntry

@@ -49,7 +49,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
-import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatAccountBalance,
@@ -449,20 +449,6 @@ export function CustomersWorkspace() {
   const isListFiltered =
     Boolean(debouncedQuery.trim()) || countCompleteFilterRows(filters.rows) > 0;
 
-  const searchResultHint = buildToolbarSearchSummary(
-    {
-      isFiltered: isListFiltered,
-      query: filters.query,
-      isSearchPending,
-      matched: totalCustomers,
-      catalogTotal: stats.total,
-      noun: t("customers.noun"),
-      isLoading: isFetching && customers.length === 0,
-      catalogLoading: stats.isLoading,
-    },
-    t,
-  );
-
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: customers.length,
@@ -565,7 +551,7 @@ export function CustomersWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchResultHint ?? undefined}
+
             search={
               <TableSearchInput
                 value={filters.query}
@@ -624,10 +610,6 @@ export function CustomersWorkspace() {
           pageRowIds={customers.map((customer) => customer.id)}
           totalCount={totalCustomers}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => {
-            const customer = customers.find((entry) => entry.id === selectedIds[0]);
-            if (customer) openViewCustomer(customer);
-          }}
           onEdit={() => {
             const customer = customers.find((entry) => entry.id === selectedIds[0]);
             if (customer) openEditForm(customer);
@@ -667,7 +649,9 @@ export function CustomersWorkspace() {
             activeRowId={viewCustomer?.id}
             emptyState={
               <>
-                <p className="text-muted-foreground">{t("customers.empty.noMatch")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {hasActiveFilters ? t("customers.empty.noMatch") : t("customers.empty.noneYet")}
+                </p>
                 {canCreateCustomers ? (
                   <Button className="mt-4" onClick={openAddForm}>
                     <Plus className="h-4 w-4" />

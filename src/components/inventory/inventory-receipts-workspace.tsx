@@ -70,8 +70,8 @@ import {
   type ReceiptFormValues,
 } from "@/lib/inventory/types/documents";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useTableRowSelection } from "@/lib/table/hooks/use-table-row-selection";
 
@@ -253,13 +253,19 @@ export function InventoryReceiptsWorkspace() {
   ];
 
   const columnVisibility = useApiTableColumns("inventory-receipts", columns, INVENTORY_RECEIPT_API_TABLE_FIELDS);
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query,
-    matched: totalMatched,
-    catalogTotal: receipts.length,
-    noun: t("inventory.submenus.receipts").toLowerCase(),
-  });
+  const isSearchPending = query.trim() !== debouncedQuery.trim();
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: pageRows.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalMatched,
+      noun: t("inventory.submenus.receipts").toLowerCase(),
+      isFiltered: hasActiveFilters,
+      isLoading: directoryQuery.isFetching,
+    },
+    t,
+  );
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -276,12 +282,12 @@ export function InventoryReceiptsWorkspace() {
         />
       </div>
 
-      <InventoryDocumentMobileList isSearching={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+      <InventoryDocumentMobileList isSearching={directoryQuery.isFetching || isSearchPending}
         title={t("inventory.submenus.receipts")}
         description={t("inventory.pages.receipts")}
         addLabel={t("inventory.actions.newReceipt")}
         searchPlaceholder={t("inventory.search.receipts")}
-        emptyMessage={t("inventory.empty.receipts")}
+        emptyMessage={hasActiveFilters ? t("inventory.empty.receipts") : t("inventory.empty.receiptsNone")}
         loadingTitle={t("inventory.loading.receipts.title")}
         loadingDescription={t("inventory.loading.receipts.description")}
         loadingColumns={[t("inventory.columns.supplier"), t("inventory.columns.lines"), t("inventory.columns.status")]}
@@ -315,17 +321,18 @@ export function InventoryReceiptsWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || isSearchPending}
                 presetScope="inventory-receipts"
                 dynamicOptions={dynamicOptions}
                 open={filtersOpen}
                 rows={filterRows}
                 fields={filterFields}
+                resultSummary={listSummary}
                 onRowsChange={(rows) => {
                   setFilterRows(rows);
                   setPage(1);
@@ -342,7 +349,7 @@ export function InventoryReceiptsWorkspace() {
               />
             }
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={query}
@@ -361,7 +368,6 @@ export function InventoryReceiptsWorkspace() {
           pageRowIds={selection.pageRowIds}
           totalCount={totalMatched}
           onSelectedIdsChange={selection.setSelectedIds}
-          onView={() => { if (selectedReceipt) setViewReceipt(selectedReceipt); }}
           onEdit={canUpdate ? () => { if (selectedReceipt) openEditForm(selectedReceipt); } : undefined}
           editDisabled={selectedReceipt?.status !== "DRAFT"}
         />
@@ -376,7 +382,7 @@ export function InventoryReceiptsWorkspace() {
             columns={[t("inventory.columns.supplier"), t("inventory.columns.lines"), t("inventory.columns.status")]}
           />
         ) : (
-          <DataTable isPageDataPending={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+          <DataTable isPageDataPending={directoryQuery.isFetching || isSearchPending}
             columns={columnVisibility.columns}
             rows={pageRows}
             page={currentPage}
@@ -394,15 +400,17 @@ export function InventoryReceiptsWorkspace() {
             onRowClick={setViewReceipt}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewReceipt?.id}
-            emptyState={<p className="text-muted-foreground">{t("inventory.empty.receipts")}</p>}
+            emptyState={
+              <p className="text-sm text-muted-foreground">
+                {hasActiveFilters ? t("inventory.empty.receipts") : t("inventory.empty.receiptsNone")}
+              </p>
+            }
           />
         )}
 
         {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", { count: pageRows.length, total: totalMatched, noun: t("inventory.submenus.receipts").toLowerCase() })}
-            </p>
+            <p className="text-sm text-muted-foreground">{listSummary}</p>
             <TablePaginationControls
               page={currentPage}
               totalPages={totalPages}

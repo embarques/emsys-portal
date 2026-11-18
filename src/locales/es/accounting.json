@@ -50,6 +50,7 @@
     "entity": "Cuenta",
     "searchPlaceholder": "Buscar cuentas",
     "empty": "Ninguna cuenta coincide con su búsqueda.",
+    "emptyNone": "Aún no hay cuentas.",
     "addAccount": "Nueva cuenta",
     "loading": "Cargando cuentas…",
     "card": {
@@ -1444,7 +1445,8 @@
       "loadingTitle": "Cargando préstamos",
       "loadingDescription": "Preparando los saldos de préstamos de empleados.",
       "loading": "Cargando préstamos...",
-      "empty": "Ningún préstamo coincide con los filtros actuales."
+      "empty": "Ningún préstamo coincide con los filtros actuales.",
+      "emptyNone": "Aún no hay préstamos."
     },
     "details": {
       "title": "Préstamo seleccionado",

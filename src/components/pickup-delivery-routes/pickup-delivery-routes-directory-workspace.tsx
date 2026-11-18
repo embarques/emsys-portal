@@ -515,7 +515,7 @@ export function ActiveRoutesDirectoryWorkspace({
             activeRowId={viewActiveRoute?.id}
             emptyState={
               <>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {hasActiveRouteFilters || hasBranchScope
                     ? t(`routes.${copyPrefix}.emptyFiltered`)
                     : t(`routes.${copyPrefix}.empty`)}
@@ -530,12 +530,7 @@ export function ActiveRoutesDirectoryWorkspace({
         )}
 
         <div className="flex shrink-0 flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {t(`routes.${copyPrefix}.pagination`, {
-              shown: activeRoutes.length,
-              total: totalActiveRoutes,
-            })}
-          </p>
+          <p className="text-sm text-muted-foreground">{activeRouteListSummary}</p>
           <TablePaginationControls
             page={currentActiveRoutePage}
             totalPages={totalActiveRoutePages}

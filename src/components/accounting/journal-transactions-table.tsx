@@ -42,7 +42,7 @@ import {
 import {useChartAccounts} from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import {useWorkspaceTabs} from "@/lib/layout/hooks/use-workspace-tabs";
 import {journalTableColumns} from "./journal-table-columns";
-import {buildToolbarSearchSummary, formatPaginatedListSummary} from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 
 type JournalTransactionsTableProps = {
   incomeStatementId?: number;
@@ -94,7 +94,6 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
   const hasActiveSearch = Boolean(query.trim()) || activeFilterCount > 0;
   const noun = t("accounting.dailyIncome.noun");
   const listSummary = formatPaginatedListSummary({itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun, isFiltered: hasActiveSearch, isLoading: rowsQuery.isFetching}, t);
-  const searchSummary = buildToolbarSearchSummary({isFiltered: hasActiveSearch, query, isSearchPending: query.trim() !== debouncedQuery.trim(), matched: total, noun, isLoading: rowsQuery.isFetching && rows.length === 0}, t);
   const chartAccountsQuery = useChartAccounts({page: 1, limit: 500}, hasPermission("canViewChartAccount", "chart_account"));
   const chartAccountsById = useMemo(() => buildChartAccountsById(chartAccountsQuery.data?.items ?? []), [chartAccountsQuery.data]);
   const tableVariant = clearance ? "clearance" : pending ? "reconciliation" : "closeout";
@@ -217,7 +216,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
     </div>
     <TableDirectoryToolbar isLoading={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} columnLayout={layout}
       filtersOpen={filtersOpen} onFiltersOpenChange={setFiltersOpen}
-      activeFilterCount={activeFilterCount} searchSummary={searchSummary}
+      activeFilterCount={activeFilterCount}
       filterPanel={<TableAdvancedFilterPanel isLoading={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} presetScope={clearance ? "pending-clearance" : pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} resultSummary={listSummary} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}
       search={<TableSearchInput value={query} onChange={value => {setQuery(value); setPage(1); setSelected({});}} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}/>}
     />
@@ -227,8 +226,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       pageRowIds={selectablePageIds}
       totalCount={total}
       onSelectedIdsChange={applySelectedIds}
-      onView={onView ? () => onView(selected[ids[0]]) : undefined}
-      viewDisabled={false} canDelete={false}
+      canDelete={false}
       onEdit={onEdit ? () => onEdit(selected[ids[0]]) : undefined}
       canEdit={Boolean(onEdit && canEditRow)}
       editDisabled={ids.length !== 1 || !canEditRow?.(selected[ids[0]])}
@@ -258,7 +256,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       onToggleSelect={toggle} onToggleSelectAll={togglePage} onRowClick={onView}
       sort={sort} onSortChange={(field, direction) => {setSort(`${field}:${direction}`); setPage(1);}}
       emptyState={
-        <p role="status" className="text-muted-foreground">
+        <p role="status" className="text-sm text-muted-foreground">
           {isQueue
             ? (hasActiveSearch ? text("emptyFiltered") : text("empty"))
             : t("accounting.dailyIncome.transactions.empty")}

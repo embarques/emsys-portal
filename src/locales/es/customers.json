@@ -23,6 +23,8 @@
     "primaryPrefix": "Principal:",
     "countBadge": "{{count}} direcciones",
     "countBadgeOne": "1 dirección",
+    "viewMore": "Ver más",
+    "viewMoreAria": "Ver más direcciones",
     "moreOne": "+1 dirección más",
     "moreMany": "+{{count}} direcciones más",
     "searchPlaceholder": "Buscar clientes",
@@ -123,10 +125,11 @@
     "title": "Cargando clientes",
     "description": "Reuniendo perfiles, datos de contacto y saldos…",
     "customer": "Cargando cliente…",
-    "columns": "Tipo, Cliente, Teléfono, Dirección, Saldo"
+    "columns": "Cliente, Tipo, Teléfono, Dirección, Saldo"
   },
   "empty": {
-    "noMatch": "Ningún cliente coincide con su búsqueda o filtros."
+    "noMatch": "Ningún cliente coincide con su búsqueda o filtros.",
+    "noneYet": "Aún no hay clientes."
   },
   "form": {
     "addTitle": "Agregar cliente",

@@ -23,6 +23,8 @@
     "primaryPrefix": "Primary:",
     "countBadge": "{{count}} addresses",
     "countBadgeOne": "1 address",
+    "viewMore": "View more",
+    "viewMoreAria": "View more addresses",
     "moreOne": "+1 more address",
     "moreMany": "+{{count}} more addresses",
     "searchPlaceholder": "Search customers",
@@ -123,10 +125,11 @@
     "title": "Loading customers",
     "description": "Gathering profiles, contact details, and account balances…",
     "customer": "Loading customer…",
-    "columns": "Type, Customer, Phone, Address, Balance"
+    "columns": "Customer, Type, Phone, Address, Balance"
   },
   "empty": {
-    "noMatch": "No customers match your search or filters."
+    "noMatch": "No customers match your search or filters.",
+    "noneYet": "No customers yet."
   },
   "form": {
     "addTitle": "Add customer",

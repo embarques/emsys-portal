@@ -93,8 +93,8 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
@@ -583,16 +583,16 @@ export function BarcodesWorkspace() {
   ]);
   const activeFilterCount = countCompleteFilterRows(filters.rows, barcodeFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const noun = t("barcodes.noun");
-  const searchSummary = buildToolbarSearchSummary(
+  const listSummary = formatPaginatedListSummary(
     {
+      itemCountOnPage: barcodes.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalBarcodes,
+      noun: t("barcodes.noun"),
       isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalBarcodes,
+      isLoading: isFetching,
       catalogTotal: stats.total,
-      noun,
-      isLoading: isFetching && barcodes.length === 0,
       catalogLoading: stats.isLoading,
     },
     t,
@@ -615,7 +615,7 @@ export function BarcodesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}
@@ -628,11 +628,7 @@ export function BarcodesWorkspace() {
             }
             filterPanel={
               <TableFilterPanel isLoading={isFetching || isSearchPending}
-                resultSummary={t("common.pagination.showingOf", {
-                  count: barcodes.length,
-                  total: totalBarcodes,
-                  noun,
-                })}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "barcodes",
                   rows: filters.rows,
@@ -670,7 +666,6 @@ export function BarcodesWorkspace() {
           pageRowIds={barcodes.map(barcodeSelectionKey)}
           totalCount={totalBarcodes}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => setViewBarcode(selectedBarcodes[0] ?? null)}
           onEdit={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
           onDelete={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
           canEdit={canUpdateInvoices}
@@ -813,7 +808,7 @@ export function BarcodesWorkspace() {
             onRowClick={setViewBarcode}
             activeRowId={viewBarcode ? barcodeSelectionKey(viewBarcode) : undefined}
             emptyState={
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {hasActiveFilters ? t("barcodes.empty.noMatch") : t("barcodes.empty.none")}
               </p>
             }
@@ -822,13 +817,7 @@ export function BarcodesWorkspace() {
 
         {!isLoading && !isError ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", {
-                count: barcodes.length,
-                total: totalBarcodes,
-                noun,
-              })}
-            </p>
+            <p className="text-sm text-muted-foreground">{listSummary}</p>
             <TablePaginationControls
               page={currentPage}
               totalPages={totalPages}

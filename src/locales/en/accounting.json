@@ -50,6 +50,7 @@
     "entity": "Account",
     "searchPlaceholder": "Search accounts",
     "empty": "No accounts match your search.",
+    "emptyNone": "No accounts yet.",
     "addAccount": "New account",
     "loading": "Loading accounts…",
     "card": {
@@ -1444,7 +1445,8 @@
       "loadingTitle": "Loading loans",
       "loadingDescription": "Preparing employee loan balances.",
       "loading": "Loading loans...",
-      "empty": "No loans match the current filters."
+      "empty": "No loans match the current filters.",
+      "emptyNone": "No loans yet."
     },
     "details": {
       "title": "Selected loan",

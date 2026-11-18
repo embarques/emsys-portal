@@ -34,7 +34,7 @@ import {
 } from "@/lib/user-activities/types";
 import { buildTableSelectionResetKey, useResolvedPaginatedItems } from "@/lib/table/directory-table-state";
 import { useTableRowSelection } from "@/lib/table/hooks/use-table-row-selection";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
@@ -203,17 +203,6 @@ export function UserActivitiesWorkspace() {
   );
 
   const columnLayout = useApiTableColumns("user-activities-v1", columns, USER_ACTIVITY_API_TABLE_FIELDS);
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveSearch,
-      query,
-      isSearchPending,
-      matched: total,
-      noun: t("userActivities.noun"),
-      isLoading: isFetching && activities.length === 0,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: activities.length,
@@ -279,7 +268,7 @@ export function UserActivitiesWorkspace() {
               />
             }
             columnLayout={columnLayout}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={query}

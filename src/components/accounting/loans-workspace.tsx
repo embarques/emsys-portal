@@ -227,11 +227,11 @@ export function LoansWorkspace() {
       pageSize: PAGE_SIZE,
       total: totalLoans,
       noun: t("accounting.loans.noun"),
+      isFiltered: hasActiveFilters,
       isLoading: loansQuery.isFetching,
     },
     t,
   );
-  const searchResultHint = hasActiveFilters ? listSummary : undefined;
   const stats = [
     {
       label: t("accounting.loans.stats.outstandingBalance"),
@@ -424,7 +424,7 @@ export function LoansWorkspace() {
               onFiltersOpenChange={setFiltersOpen}
               activeFilterCount={activeFilterCount}
               columnLayout={columnVisibility}
-              searchSummary={searchResultHint}
+
               search={
                 <TableSearchInput
                   value={filters.query}
@@ -470,7 +470,6 @@ export function LoansWorkspace() {
             pageRowIds={pageRowIds}
             totalCount={totalLoans}
             onSelectedIdsChange={setSelectedIds}
-            canView={false}
             canEdit={false}
             canDelete={false}
           />
@@ -518,7 +517,11 @@ export function LoansWorkspace() {
               activeRowId={viewLoan?.id}
               emptyState={
                 <div className="py-10 text-center">
-                  <p className="text-muted-foreground">{t("accounting.loans.table.empty")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {hasActiveFilters
+                      ? t("accounting.loans.table.empty")
+                      : t("accounting.loans.table.emptyNone")}
+                  </p>
                   <Button className="mt-4" disabled={!loanEntry.openCreate} onClick={openNewLoan}>
                     <Plus className="h-4 w-4" />
                     {t("accounting.loans.actions.newLoan")}
@@ -593,7 +596,6 @@ export function LoansWorkspace() {
           />
           <div className="mt-3">
             <TableDirectoryToolbar
-              isLoading={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
               search={<div />}
               filtersOpen={filtersOpen}
               onFiltersOpenChange={setFiltersOpen}
@@ -660,7 +662,9 @@ export function LoansWorkspace() {
             </div>
           ) : loans.length === 0 ? (
             <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">
-              {t("accounting.loans.table.empty")}
+              {hasActiveFilters
+                ? t("accounting.loans.table.empty")
+                : t("accounting.loans.table.emptyNone")}
             </div>
           ) : (
             loans.map((loan) => (

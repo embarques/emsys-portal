@@ -42,7 +42,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
-import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
@@ -449,19 +449,6 @@ export function EmployeesWorkspace() {
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows, employeeFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalEmployees,
-      catalogTotal: stats.total,
-      noun: t("employees.noun"),
-      isLoading: isFetching && employees.length === 0,
-      catalogLoading: stats.isLoading,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: employees.length,
@@ -546,7 +533,7 @@ export function EmployeesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}
@@ -604,10 +591,6 @@ export function EmployeesWorkspace() {
           pageRowIds={employees.map((employee) => String(employee.id))}
           totalCount={totalEmployees}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => {
-            const employee = employees.find((entry) => String(entry.id) === selectedIds[0]);
-            if (employee) setViewEmployee(employee);
-          }}
           onEdit={() => {
             const employee = employees.find((entry) => String(entry.id) === selectedIds[0]);
             if (employee) openEditForm(employee);

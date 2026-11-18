@@ -873,7 +873,7 @@ export function CustomerForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting} className="@container min-h-0 space-y-5 p-4 sm:p-6">
-        <div className="grid items-start gap-5 @3xl:h-full @3xl:grid-cols-2 @3xl:grid-rows-[minmax(0,1fr)]">
+        <div className="grid items-start gap-5 @3xl:min-h-full @3xl:grid-cols-2 @3xl:grid-rows-[minmax(min-content,1fr)]">
           <FormSection variant="card" icon={User} title={`01 · ${t("customers.form.sections.general")}`}>
             <div className="grid gap-2.5">
               <div className="space-y-1">
@@ -966,7 +966,6 @@ export function CustomerForm({
                 phones={values.phones}
                 required
                 compact
-                listClassName="-m-1 max-h-56 overflow-y-auto p-1"
                 savedPhones={isEditing ? initialValues?.phones : undefined}
                 onChange={(phones) => updateField("phones", phones)}
               />
@@ -974,9 +973,10 @@ export function CustomerForm({
 
             <FormSection
               variant="card"
+              fill
               icon={MapPin}
               title={`03 · ${t("customers.form.sections.addresses")}`}
-              className="flex flex-col @3xl:min-h-0 @3xl:flex-1"
+              className="@3xl:min-h-min @3xl:flex-1"
             >
               <div className="flex min-h-0 flex-1 flex-col gap-3">
                 {!showAddresses ? (
@@ -989,7 +989,7 @@ export function CustomerForm({
                   </div>
                 ) : null}
                 {showAddresses ? (
-                  <div className="-m-1 max-h-[32rem] min-h-0 space-y-3 overflow-y-auto p-1 @3xl:max-h-none @3xl:min-h-48 @3xl:flex-1">
+                  <div className="-m-1 max-h-[32rem] min-h-0 space-y-3 overflow-y-auto p-1 @3xl:max-h-none @3xl:min-h-0 @3xl:flex-1">
                     {values.addresses.map((address, index) => {
                       const isPrimary = address.isPrimary;
                       const isUnsaved =
@@ -1005,9 +1005,9 @@ export function CustomerForm({
                             isUnsaved && "border-dashed border-primary/50 bg-primary/[0.03]",
                           )}
                         >
-                          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <div className="mb-3 flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                              <p className="text-[11px] font-semibold uppercase leading-7 tracking-wide text-muted-foreground">
                                 {t("customers.form.address.label", { index: index + 1 })}
                               </p>
                               {isPrimary ? (
@@ -1022,7 +1022,7 @@ export function CustomerForm({
                                 </span>
                               ) : null}
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex h-7 shrink-0 items-center gap-1">
                               <Button
                                 type="button"
                                 variant="ghost"

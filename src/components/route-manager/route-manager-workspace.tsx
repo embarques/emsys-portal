@@ -456,7 +456,7 @@ export function RouteManagerWorkspace() {
             activeRowId={viewAssignment?.id}
             emptyState={
               <>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {hasActiveFilters
                     ? t("routes.table.emptyFiltered")
                     : t("routes.table.empty")}
@@ -471,12 +471,7 @@ export function RouteManagerWorkspace() {
         )}
 
         <div className="flex shrink-0 flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {t("routes.table.pagination", {
-              shown: assignments.length,
-              total: totalAssignments,
-            })}
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <TablePaginationControls
             page={currentPage}
             totalPages={totalPages}

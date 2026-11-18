@@ -193,22 +193,19 @@ type TableDirectoryToolbarProps = {
   search: ReactNode;
   /** Waiting for debounce or fetching fresh results, including cached-data refetches. */
   isLoading?: boolean;
-  /** Compact count/summary shown inline beside search (keeps toolbar one row tall). */
-  searchSummary?: string;
   filtersOpen?: boolean;
   onFiltersOpenChange?: (open: boolean) => void;
   activeFilterCount?: number;
   showFilterToggle?: boolean;
   filterPanel?: ReactNode;
   columnLayout?: TableColumnLayout;
-  /** Optional actions rendered beside the search summary and column menu. */
+  /** Optional actions rendered beside the column menu. */
   actions?: ReactNode;
 };
 
 export function TableDirectoryToolbar({
   search,
   isLoading = false,
-  searchSummary,
   filtersOpen = false,
   onFiltersOpenChange,
   activeFilterCount = 0,
@@ -219,7 +216,7 @@ export function TableDirectoryToolbar({
 }: TableDirectoryToolbarProps) {
   const { t } = useTranslation();
   const showFilter = showFilterToggle && onFiltersOpenChange;
-  const showRightCluster = searchSummary || columnLayout || actions;
+  const showRightCluster = Boolean(columnLayout || actions);
 
   return (
     <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2">
@@ -244,14 +241,6 @@ export function TableDirectoryToolbar({
 
       {showRightCluster ? (
         <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
-          {searchSummary && !isLoading ? (
-            <span
-              className="hidden shrink-0 items-center rounded-full border border-border/70 bg-muted/50 px-2.5 py-1 text-xs font-medium tabular-nums text-muted-foreground sm:inline-flex"
-              aria-live="polite"
-            >
-              {searchSummary}
-            </span>
-          ) : null}
           {columnLayout ? <ColumnVisibilityMenu columnLayout={columnLayout} /> : null}
           {actions}
         </div>

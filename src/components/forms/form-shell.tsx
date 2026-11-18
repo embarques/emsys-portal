@@ -25,6 +25,11 @@ type FormSectionProps = {
   required?: boolean;
   /** Optional control rendered on the right of the section header (e.g. an add button). */
   action?: React.ReactNode;
+  /**
+   * Fill remaining height in a flex/grid parent and clip overflow so nested
+   * scroll regions (lists + sticky add buttons) stay inside the card.
+   */
+  fill?: boolean;
   className?: string;
   children: React.ReactNode;
 };
@@ -36,14 +41,25 @@ export function FormSection({
   description,
   required = false,
   action,
+  fill = false,
   className,
   children,
 }: FormSectionProps) {
   const sectionId = useId();
   return (
-    <section id={sectionId} data-form-section tabIndex={-1} className={cn("space-y-2.5", variant === "card" && "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm", className)}>
+    <section
+      id={sectionId}
+      data-form-section
+      tabIndex={-1}
+      className={cn(
+        "space-y-2.5",
+        variant === "card" && "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm",
+        fill && "flex min-h-0 flex-col overflow-hidden",
+        className,
+      )}
+    >
       {title || action ? (
-        <div className="flex min-h-7 items-center justify-between gap-2">
+        <div className={cn("flex min-h-7 items-center justify-between gap-2", fill && "shrink-0")}>
           <div className="flex items-center gap-2">
             {Icon ? <Icon className="size-4 shrink-0 text-primary" /> : null}
             {title ? (
@@ -56,8 +72,12 @@ export function FormSection({
           {action}
         </div>
       ) : null}
-      {description ? <p className="text-sm leading-relaxed text-muted-foreground">{description}</p> : null}
-      {children}
+      {description ? (
+        <p className={cn("text-sm leading-relaxed text-muted-foreground", fill && "shrink-0")}>
+          {description}
+        </p>
+      ) : null}
+      {fill ? <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div> : children}
     </section>
   );
 }
@@ -77,7 +97,14 @@ export function FormBody({ className, workflow = false, isBusy = false, busyLabe
   const { t } = useTranslation();
 
   return (
-    <div data-form-body className={cn("relative min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", workflow && "@container space-y-5 p-4 sm:p-6", className)}>
+    <div
+      data-form-body
+      className={cn(
+        "relative min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain bg-muted/35 px-5 py-4",
+        workflow && "@container space-y-5 p-4 sm:p-6",
+        className,
+      )}
+    >
       {children}
       {isBusy ? (
         <div

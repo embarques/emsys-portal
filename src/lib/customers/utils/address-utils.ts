@@ -286,20 +286,6 @@ export function getAddressLabelKey(address: CustomerCoreAddress, index: number):
   return ADDRESS_LABEL_KEYS[label] ?? "customers.addresses.labels.other";
 }
 
-/**
- * View-row label key. Returns null when the only label would be the synthetic
- * "Primary" text — callers show a star instead.
- */
-export function getAddressViewLabelKey(
-  address: CustomerCoreAddress,
-  index: number,
-): string | null {
-  if (!address.label?.trim() && (address.isPrimary || index === 0)) {
-    return null;
-  }
-  return getAddressLabelKey(address, index);
-}
-
 export function countCustomerAddresses(customer: Pick<Customer, "addresses">): number {
   return getAllAddresses(customer).length;
 }

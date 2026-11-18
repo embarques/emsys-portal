@@ -9,7 +9,6 @@ type RoleMobileSelectionToolbarProps = {
   canViewOrEdit: boolean;
   deleteDisabled?: boolean;
   onSelectedIdsChange: (ids: string[]) => void;
-  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 };
@@ -21,7 +20,6 @@ export function RoleMobileSelectionToolbar({
   canViewOrEdit,
   deleteDisabled = false,
   onSelectedIdsChange,
-  onView,
   onEdit,
   onDelete,
 }: RoleMobileSelectionToolbarProps) {
@@ -31,9 +29,7 @@ export function RoleMobileSelectionToolbar({
       pageRowIds={pageRowIds}
       totalCount={totalCount}
       onSelectedIdsChange={onSelectedIdsChange}
-      onView={onView}
       onEdit={onEdit}
-      viewDisabled={!canViewOrEdit}
       editDisabled={!canViewOrEdit}
       onDelete={onDelete}
       deleteDisabled={deleteDisabled}

@@ -44,7 +44,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
@@ -183,17 +183,6 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
   );
 
   const columnLayout = useApiTableColumns(config.columnStorageKey, columns, CLEARABLE_PAYMENT_API_TABLE_FIELDS);
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveSearch,
-      query,
-      isSearchPending,
-      matched: total,
-      noun: t(`${i18n}.noun`),
-      isLoading: isFetching && payments.length === 0,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: payments.length,
@@ -288,7 +277,7 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
               />
             }
             columnLayout={columnLayout}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={query}
@@ -307,11 +296,6 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
           pageRowIds={pageRowIds}
           totalCount={total}
           onSelectedIdsChange={setSelectedIds}
-          onView={() => {
-            const payment = selectedPayments[0];
-            if (payment) setViewPayment(payment);
-          }}
-          canView={canView}
           canEdit={false}
           canDelete={false}
           actions={
@@ -368,7 +352,7 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
             onRowClick={canView ? setViewPayment : undefined}
             activeRowId={viewPayment?.id}
             emptyState={
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {hasActiveSearch ? t(`${i18n}.empty`) : t(`${i18n}.emptyNone`)}
               </p>
             }

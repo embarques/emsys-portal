@@ -39,7 +39,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
-import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
@@ -369,17 +369,6 @@ export function VehiclesWorkspace() {
   const columnVisibility = useApiTableColumns("vehicles-v2", tableColumns, VEHICLE_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, vehicleFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalVehicles,
-      noun: t("vehicles.noun"),
-      isLoading: isFetching && vehicles.length === 0,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: vehicles.length,
@@ -422,7 +411,7 @@ export function VehiclesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}

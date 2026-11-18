@@ -333,10 +333,8 @@ export function CustomerMobileList({
         pageRowIds={customers.map((customer) => customer.id)}
         totalCount={totalCount}
         onSelectedIdsChange={onSelectedIdsChange}
-        onView={() => singleSelectedCustomer && onView(singleSelectedCustomer)}
         onEdit={() => singleSelectedCustomer && onEdit(singleSelectedCustomer)}
         canEdit={canUpdate}
-        viewDisabled={!singleSelectedCustomer}
         editDisabled={!singleSelectedCustomer}
         onDelete={onDeleteSelected}
         canDelete={canDelete}
@@ -358,7 +356,9 @@ export function CustomerMobileList({
         />
       ) : customers.length === 0 ? (
         <div className="rounded-2xl border border-dashed bg-card p-6 text-center">
-          <p className="text-muted-foreground">{t("customers.empty.noMatch")}</p>
+          <p className="text-sm text-muted-foreground">
+            {hasActiveFilters ? t("customers.empty.noMatch") : t("customers.empty.noneYet")}
+          </p>
           {canCreate ? (
             <Button className="mt-4 rounded-2xl" onClick={onAdd}>
               <Plus className="size-4" />

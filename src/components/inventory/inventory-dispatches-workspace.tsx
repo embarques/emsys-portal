@@ -67,8 +67,8 @@ import {
   type InventoryDispatch,
 } from "@/lib/inventory/types/documents";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useTableRowSelection } from "@/lib/table/hooks/use-table-row-selection";
 
@@ -259,13 +259,19 @@ export function InventoryDispatchesWorkspace() {
   ];
 
   const columnVisibility = useApiTableColumns("inventory-dispatches", columns, INVENTORY_DISPATCH_API_TABLE_FIELDS);
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query,
-    matched: totalMatched,
-    catalogTotal: dispatches.length,
-    noun: t("inventory.submenus.dispatches").toLowerCase(),
-  });
+  const isSearchPending = query.trim() !== debouncedQuery.trim();
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: pageRows.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalMatched,
+      noun: t("inventory.submenus.dispatches").toLowerCase(),
+      isFiltered: hasActiveFilters,
+      isLoading: directoryQuery.isFetching,
+    },
+    t,
+  );
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -282,12 +288,12 @@ export function InventoryDispatchesWorkspace() {
         />
       </div>
 
-      <InventoryDocumentMobileList isSearching={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+      <InventoryDocumentMobileList isSearching={directoryQuery.isFetching || isSearchPending}
         title={t("inventory.submenus.dispatches")}
         description={t("inventory.pages.dispatches")}
         addLabel={t("inventory.actions.newDispatch")}
         searchPlaceholder={t("inventory.search.dispatches")}
-        emptyMessage={t("inventory.empty.dispatches")}
+        emptyMessage={hasActiveFilters ? t("inventory.empty.dispatches") : t("inventory.empty.dispatchesNone")}
         loadingTitle={t("inventory.loading.dispatches.title")}
         loadingDescription={t("inventory.loading.dispatches.description")}
         loadingColumns={[t("inventory.form.fields.toHolder"), t("inventory.columns.lines"), t("inventory.columns.status")]}
@@ -322,17 +328,18 @@ export function InventoryDispatchesWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || isSearchPending}
                 presetScope="inventory-dispatches"
                 dynamicOptions={dynamicOptions}
                 open={filtersOpen}
                 rows={filterRows}
                 fields={filterFields}
+                resultSummary={listSummary}
                 onRowsChange={(rows) => {
                   setFilterRows(rows);
                   setPage(1);
@@ -349,7 +356,7 @@ export function InventoryDispatchesWorkspace() {
               />
             }
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={query}
@@ -368,7 +375,6 @@ export function InventoryDispatchesWorkspace() {
           pageRowIds={selection.pageRowIds}
           totalCount={totalMatched}
           onSelectedIdsChange={selection.setSelectedIds}
-          onView={() => { if (selectedDispatch) setViewDispatch(selectedDispatch); }}
           onEdit={canUpdate ? () => { if (selectedDispatch) openEditForm(selectedDispatch); } : undefined}
           editDisabled={selectedDispatch?.status !== "DRAFT"}
         />
@@ -383,7 +389,7 @@ export function InventoryDispatchesWorkspace() {
             columns={[t("inventory.form.fields.toHolder"), t("inventory.columns.lines"), t("inventory.columns.status")]}
           />
         ) : (
-          <DataTable isPageDataPending={directoryQuery.isFetching || query.trim() !== debouncedQuery.trim()}
+          <DataTable isPageDataPending={directoryQuery.isFetching || isSearchPending}
             columns={columnVisibility.columns}
             rows={pageRows}
             page={currentPage}
@@ -401,15 +407,17 @@ export function InventoryDispatchesWorkspace() {
             onRowClick={setViewDispatch}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewDispatch?.id}
-            emptyState={<p className="text-muted-foreground">{t("inventory.empty.dispatches")}</p>}
+            emptyState={
+              <p className="text-sm text-muted-foreground">
+                {hasActiveFilters ? t("inventory.empty.dispatches") : t("inventory.empty.dispatchesNone")}
+              </p>
+            }
           />
         )}
 
         {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", { count: pageRows.length, total: totalMatched, noun: t("inventory.submenus.dispatches").toLowerCase() })}
-            </p>
+            <p className="text-sm text-muted-foreground">{listSummary}</p>
             <TablePaginationControls
               page={currentPage}
               totalPages={totalPages}

@@ -110,7 +110,7 @@ export function InventoryDocumentMobileList<T extends { id: string }>({
         ) : pageRows.length > 0 ? (
           pageRows.map((row) => renderRow(row))
         ) : (
-          <p className="py-8 text-center text-muted-foreground">{emptyMessage}</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>
         )}
       </div>
     </section>

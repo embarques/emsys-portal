@@ -68,13 +68,13 @@ import {
   inventoryItemToFormValues,
 } from "@/lib/inventory/types";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
 
 const defaultFilters: InventoryFilterState = { query: "" };
@@ -298,13 +298,19 @@ export function InventoryItemsWorkspace() {
   ];
 
   const columnVisibility = useApiTableColumns("inventory-items", tableColumns, INVENTORY_ITEM_API_TABLE_FIELDS);
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    matched: totalMatched,
-    catalogTotal: items.length,
-    noun: t("inventory.noun"),
-  });
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: pageItems.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total: totalMatched,
+      noun: t("inventory.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: directoryQuery.isFetching,
+    },
+    t,
+  );
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -338,13 +344,14 @@ export function InventoryItemsWorkspace() {
         <StatCards items={stats} />
       </div>
 
-      <InventoryItemMobileList isSearching={directoryQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
+      <InventoryItemMobileList isSearching={directoryQuery.isFetching || isSearchPending}
         query={filters.query}
         items={items}
         pageItems={pageItems}
         summaries={summaries}
         selectedIds={selectedIds}
         isLoading={isLoading}
+        hasActiveFilters={hasActiveFilters}
         page={currentPage}
         totalPages={totalPages}
         onQueryChange={(query) => {
@@ -370,16 +377,17 @@ export function InventoryItemsWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
+          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             filterPanel={
-              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
+              <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || isSearchPending}
                 presetScope="inventory-items"
                 open={filtersOpen}
                 rows={filterRows}
                 fields={filterFields}
+                resultSummary={listSummary}
                 onRowsChange={(rows) => {
                   setFilterRows(rows);
                   setPage(1);
@@ -396,7 +404,7 @@ export function InventoryItemsWorkspace() {
               />
             }
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}
@@ -439,7 +447,7 @@ export function InventoryItemsWorkspace() {
             ]}
           />
         ) : (
-          <DataTable isPageDataPending={directoryQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
+          <DataTable isPageDataPending={directoryQuery.isFetching || isSearchPending}
             columns={columnVisibility.columns}
             rows={pageItems}
             page={currentPage}
@@ -465,19 +473,17 @@ export function InventoryItemsWorkspace() {
             onRowClick={setViewItem}
             onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewItem?.id}
-            emptyState={<p className="text-muted-foreground">{t("inventory.empty.items")}</p>}
+            emptyState={
+              <p className="text-sm text-muted-foreground">
+                {hasActiveFilters ? t("inventory.empty.items") : t("inventory.empty.itemsNone")}
+              </p>
+            }
           />
         )}
 
         {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", {
-                count: pageItems.length,
-                total: totalMatched,
-                noun: t("inventory.noun"),
-              })}
-            </p>
+            <p className="text-sm text-muted-foreground">{listSummary}</p>
             <TablePaginationControls
               page={currentPage}
               totalPages={totalPages}

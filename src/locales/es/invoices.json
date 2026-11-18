@@ -55,6 +55,7 @@
     "usersDenied": "Necesita permiso para ver usuarios y seleccionar a quién asignar."
   },
   "title": "Facturas",
+  "noun": "facturas",
   "entity": "Factura",
   "registrationStatus": {
     "pending": "Pendiente",
@@ -168,6 +169,7 @@
     "refreshing": "Actualizando facturas…",
     "outstandingReceivables": "Cuentas por cobrar pendientes",
     "empty": "Ninguna factura coincide con su búsqueda o filtros.",
+    "emptyNone": "Aún no hay facturas.",
     "loader": {
       "title": "Cargando facturas",
       "description": "Sincronizando clientes, saldos y estado de pago…",

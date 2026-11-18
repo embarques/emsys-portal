@@ -70,7 +70,7 @@ import {
 } from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -285,19 +285,6 @@ export function ItemsWorkspace() {
   const columnVisibility = useApiTableColumns("items-v2", tableColumns, ITEM_API_TABLE_FIELDS);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, itemFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalItems,
-      catalogTotal: stats.total,
-      noun: t("items.noun"),
-      isLoading: isFetching && items.length === 0,
-      catalogLoading: stats.isLoading,
-    },
-    t,
-  );
   const listSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: items.length,
@@ -335,7 +322,7 @@ export function ItemsWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={advancedFilterCount}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
+
             search={
               <TableSearchInput
                 value={filters.query}

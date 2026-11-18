@@ -61,6 +61,8 @@ import {
   normalizeCustomerFormValues,
   isCustomerAddressOnlyEdit,
   getCustomerPrimaryCoreAddress,
+  getCustomerAddressDuplicateKey,
+  isAddressVerified,
   coreAddressHasContent,
   validateCustomerFormValues,
   type CustomerListParams,
@@ -759,30 +761,102 @@ async function resolveCreatedCustomer(
   throw new Error(message?.trim() || "Unable to create customer.");
 }
 
+/**
+ * Create posts address scalars only, then stamps Google location/verification.
+ * Dedicated `/address/location` and `/address/google-verification` endpoints only
+ * update the primary address — non-primary rows must be synced via PUT addresses[].
+ */
 async function applyCustomerAddressMetadataAfterCreate(
   customer: Customer,
-  address: CustomerCoreAddress,
+  formAddresses: CustomerCoreAddress[],
 ): Promise<Customer> {
   let result = customer;
-  const { location, verification } = address;
+  const normalizedForm = normalizeCustomerAddresses(formAddresses).filter(coreAddressHasContent);
+  const primaryForm = getCustomerPrimaryCoreAddress({ addresses: normalizedForm });
 
-  if (location) {
+  if (primaryForm.location) {
     try {
-      result = await updateCustomerAddressLocation(result.id, location, result.version);
+      result = await updateCustomerAddressLocation(result.id, primaryForm.location, result.version);
     } catch (error) {
       logApiErrorDev(error, { step: "createCustomer.addressLocation", customerId: result.id });
     }
   }
 
-  if (verification) {
+  if (primaryForm.verification) {
     try {
-      result = await updateCustomerAddressGoogleVerification(result.id, verification, result.version);
+      result = await updateCustomerAddressGoogleVerification(
+        result.id,
+        primaryForm.verification,
+        result.version,
+      );
     } catch (error) {
       logApiErrorDev(error, { step: "createCustomer.addressVerification", customerId: result.id });
     }
   }
 
-  return result;
+  return syncNonPrimaryAddressMetadataAfterCreate(result, normalizedForm);
+}
+
+function addressNeedsMetadataSync(
+  created: CustomerCoreAddress,
+  form: CustomerCoreAddress,
+): boolean {
+  const formHasLocation = Boolean(form.location);
+  const formHasVerification = form.verification?.isVerified === true;
+  if (!formHasLocation && !formHasVerification) return false;
+
+  const locationMissing = formHasLocation && !created.location;
+  const verificationMissing = formHasVerification && !isAddressVerified(created);
+  return locationMissing || verificationMissing;
+}
+
+/** Persist Google location/verification on non-primary addresses after create. */
+async function syncNonPrimaryAddressMetadataAfterCreate(
+  customer: Customer,
+  formAddresses: CustomerCoreAddress[],
+): Promise<Customer> {
+  const formByKey = new Map(
+    formAddresses.map((address) => [getCustomerAddressDuplicateKey(address), address] as const),
+  );
+
+  let needsWrite = false;
+  const merged = customer.addresses.map((created) => {
+    const form = formByKey.get(getCustomerAddressDuplicateKey(created));
+    if (!form || form.isPrimary) return created;
+    if (!addressNeedsMetadataSync(created, form)) return created;
+
+    needsWrite = true;
+    return {
+      ...created,
+      location: created.location ?? form.location ?? null,
+      verification: isAddressVerified(created)
+        ? created.verification
+        : (form.verification ?? created.verification),
+    };
+  });
+
+  if (!needsWrite) return customer;
+
+  try {
+    const addressesPayload = merged
+      .filter(coreAddressHasContent)
+      .map((entry) => buildCustomerAddressWriteEntry(entry, false))
+      .filter((entry): entry is ApiAddressPayload => entry != null);
+
+    const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+      `${API_ENDPOINTS.CUSTOMERS}/${customer.id}`,
+      { id: customer.id, addresses: addressesPayload },
+      { headers: mutationVersionHeaders(customer.version) },
+    );
+    assertMutationSuccess(response, "Unable to update address verification.");
+    return fetchCustomerById(customer.id);
+  } catch (error) {
+    logApiErrorDev(error, {
+      step: "createCustomer.nonPrimaryAddressMetadata",
+      customerId: customer.id,
+    });
+    return customer;
+  }
 }
 
 export async function createCustomer(values: CustomerFormValues): Promise<Customer> {
@@ -805,10 +879,7 @@ export async function createCustomer(values: CustomerFormValues): Promise<Custom
   assertMutationSuccess(response, "Unable to create customer.");
 
   const customer = await resolveCreatedCustomer(syncedValues, response);
-  return applyCustomerAddressMetadataAfterCreate(
-    customer,
-    getCustomerPrimaryCoreAddress(syncedValues),
-  );
+  return applyCustomerAddressMetadataAfterCreate(customer, syncedValues.addresses);
 }
 
 export async function updateCustomer(
