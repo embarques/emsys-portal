@@ -29,11 +29,14 @@ import { TableStreetAddress } from "@/components/addresses/table-street-address"
 import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { CustomerUnverifiedAddressAction } from "@/components/customers/customer-unverified-address-action";
 import { OrderForm } from "@/components/orders/order-form";
+import { DuplicatePendingAppointmentDialog } from "@/components/orders/duplicate-pending-appointment-dialog";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
 import { AppointmentInvoiceDialogs } from "@/components/orders/appointment-invoice-dialogs";
 import { useRouteAppointmentsAccess } from "@/lib/orders/hooks/use-route-appointments-access";
 import { useCreateAppointmentInvoice } from "@/lib/orders/hooks/use-create-appointment-invoice";
+import { DuplicatePendingAppointmentCancelledError } from "@/lib/orders/duplicate-pending-appointment";
+import { useDuplicatePendingAppointmentConfirmation } from "@/lib/orders/hooks/use-duplicate-pending-appointment-confirmation";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -405,6 +408,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const retryLegacySyncMutation = useRetryOrderLegacySync();
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
+  const duplicateConfirmation = useDuplicatePendingAppointmentConfirmation(!routeMode);
   const appointmentInvoice = useCreateAppointmentInvoice(routeMode ? "/route-appointments" : "/appointments");
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: !routeMode });
   const predefinedRouteFilter = usePredefinedRouteFilterOptions(
@@ -453,6 +457,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     deleteOrdersMutation.isPending ||
     setOrdersCompletedMutation.isPending ||
     retryLegacySyncMutation.isPending ||
+    duplicateConfirmation.isConfirming ||
     clearRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
 
@@ -608,7 +613,10 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         });
         notifyUpdated(t("orders.entity"), formatOrderId(nextOrder));
       } else {
-        const nextOrder = await createOrderMutation.mutateAsync(values);
+        const nextOrder = await duplicateConfirmation.submit(values, (formValues, options) =>
+          createOrderMutation.mutateAsync({ values: formValues, options }),
+        );
+        if (!nextOrder) return { error: null };
         notifySuccess(t("orders.toasts.addedFor", { name: getOrderFeedbackName(nextOrder) }));
       }
 
@@ -617,6 +625,9 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       setPage(1);
       return { error: null };
     } catch (mutationError) {
+      if (mutationError instanceof DuplicatePendingAppointmentCancelledError) {
+        return { error: null };
+      }
       const message = normalizeApiError(mutationError).message;
       notifyError(message);
       return { error: message };
@@ -1717,6 +1728,13 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
           />
         </DialogContent>
       </Dialog>
+
+      <DuplicatePendingAppointmentDialog
+        open={Boolean(duplicateConfirmation.pendingExisting)}
+        existing={duplicateConfirmation.pendingExisting ?? []}
+        onConfirm={() => duplicateConfirmation.respond(true)}
+        onCancel={() => duplicateConfirmation.respond(false)}
+      />
 
       <AssignAppointmentRouteDialog
         open={assignRouteOpen}

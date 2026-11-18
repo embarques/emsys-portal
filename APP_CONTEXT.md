@@ -59,6 +59,8 @@ Customers are associated with both appointments and invoices so the company has 
 
 Appointments are created when a client contacts us and schedules a visit for a specific purpose (pickup, taking supplies for future packaging, collecting payment, or giving them an estimate).
 
+Creating a pending appointment for the **same sender id and selected sender address** is blocked with a confirmation step: the user sees the existing appointment’s date and purpose, then can cancel (same appointment) or confirm override (different appointment). The same sender with a **different** selected address is allowed. Override resubmits with `allowDuplicatePendingAppointment: true`.
+
 Each appointment stores structured comments (`purpose`, `unit`, `quantity`, `description`). The printed pickup manifest (`POST /reports/pickups`) is rendered by the backend from those fields.
 
 TODO (backend): make pickup-manifest comment lines readable for drivers. Today the PDF dumps raw field values in ALL CAPS, e.g. `OTHER PICKUP RECOGER 1 CAJA; OTHER TAKE LLEVAR 2 CAJAS`.

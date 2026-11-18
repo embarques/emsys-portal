@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { OrderForm } from "@/components/orders/order-form";
+import { DuplicatePendingAppointmentDialog } from "@/components/orders/duplicate-pending-appointment-dialog";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { DuplicatePendingAppointmentCancelledError } from "@/lib/orders/duplicate-pending-appointment";
 import { useCreateOrder, useOrder, useUpdateOrder } from "@/lib/orders/hooks/use-orders";
+import { useDuplicatePendingAppointmentConfirmation } from "@/lib/orders/hooks/use-duplicate-pending-appointment-confirmation";
 import {
   createEmptyOrderForm,
   getOrderRecordId,
@@ -35,6 +38,7 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
   const createMutation = useCreateOrder();
   const updateMutation = useUpdateOrder();
   const detailQuery = useOrder(isEditing ? (entityId ?? null) : null);
+  const duplicateConfirmation = useDuplicatePendingAppointmentConfirmation(!isEditing);
 
   const [, setFormError] = useState<string | null>(null);
 
@@ -75,10 +79,16 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
         return { error: null };
       }
 
-      const next = await createMutation.mutateAsync(values);
+      const next = await duplicateConfirmation.submit(values, (formValues, options) =>
+        createMutation.mutateAsync({ values: formValues, options }),
+      );
+      if (!next) return { error: null };
       notifySuccess(t("orders.toasts.addedFor", { name: getOrderFeedbackName(next) }));
       return { error: null };
     } catch (mutationError) {
+      if (mutationError instanceof DuplicatePendingAppointmentCancelledError) {
+        return { error: null };
+      }
       const message = normalizeApiError(mutationError).message;
       setFormError(message);
       return { error: message };
@@ -124,10 +134,18 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
         isEditing={isEditing}
         updatedAt={editing?.updatedAt}
         submitLabel={isEditing ? t("common.actions.saveChanges") : t("orders.actions.add")}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        isSubmitting={
+          createMutation.isPending || updateMutation.isPending || duplicateConfirmation.isConfirming
+        }
         onSubmit={save}
         onFormErrorChange={setFormError}
         onCancel={() => closeFormTabAndReturn(tabId)}
+      />
+      <DuplicatePendingAppointmentDialog
+        open={Boolean(duplicateConfirmation.pendingExisting)}
+        existing={duplicateConfirmation.pendingExisting ?? []}
+        onConfirm={() => duplicateConfirmation.respond(true)}
+        onCancel={() => duplicateConfirmation.respond(false)}
       />
     </FormTabShell>
   );

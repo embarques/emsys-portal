@@ -1055,10 +1055,24 @@ export async function fetchOrderById(orderId: string): Promise<Order> {
   return order;
 }
 
-export async function createOrder(values: OrderFormValues): Promise<Order> {
+export type CreateOrderOptions = {
+  allowDuplicatePendingAppointment?: boolean;
+};
+
+export async function createOrder(
+  values: OrderFormValues,
+  options: CreateOrderOptions = {},
+): Promise<Order> {
+  const payload = {
+    ...buildPickupWritePayload(values),
+    ...(options.allowDuplicatePendingAppointment === true
+      ? { allowDuplicatePendingAppointment: true }
+      : {}),
+  };
+
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.PICKUPS,
-    buildPickupWritePayload(values),
+    payload,
   );
 
   assertMutationSuccess(response, "Unable to create pickup.");
