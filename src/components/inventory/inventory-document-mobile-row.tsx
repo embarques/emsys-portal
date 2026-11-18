@@ -64,7 +64,11 @@ export function InventoryDocumentMobileRow({
             </Button>
           ) : null}
           {onPost ? (
-            <Button onClick={onPost}>
+            <Button
+              variant="outline"
+              className={tableSelectionActionStyles.complete}
+              onClick={onPost}
+            >
               <Send className="size-4" />
               {t("inventory.actions.post")}
             </Button>

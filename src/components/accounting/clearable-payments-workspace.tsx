@@ -8,7 +8,7 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
@@ -17,6 +17,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { CLEARABLE_PAYMENT_API_TABLE_FIELDS } from "@/lib/accounting/clearable-payments/table-fields";
 import { CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS } from "@/lib/accounting/clearable-payments/filter-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -49,6 +50,7 @@ import { countCompleteFilterRows, type TableFilterRowState } from "@/lib/table/f
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
+import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -299,21 +301,19 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
           canEdit={false}
           canDelete={false}
           actions={
-            canUpdate && selectedOutstanding.length > 0 ? (
-              <>
-                <TableSelectionActionDivider />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSaving}
-                  onClick={() => markPaymentsCleared(selectedOutstanding)}
-                  className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {t(`${i18n}.actions.markCleared`)}
-                </Button>
-              </>
-            ) : null
+            <TableSelectionActionsMenu
+              disabled={isSaving}
+              hidden={!(canUpdate && selectedOutstanding.length > 0)}
+            >
+              <DropdownMenuItem
+                disabled={isSaving}
+                onSelect={() => markPaymentsCleared(selectedOutstanding)}
+                className={tableSelectionActionMenuStyles.complete}
+              >
+                <CheckCircle2 className="size-4" />
+                {t(`${i18n}.actions.markCleared`)}
+              </DropdownMenuItem>
+            </TableSelectionActionsMenu>
           }
         />
 

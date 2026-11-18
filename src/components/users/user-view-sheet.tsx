@@ -45,6 +45,8 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={KeyRound}
+          eyebrow={t("users.entity")}
           title={user.name}
           meta={
             <>

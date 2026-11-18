@@ -21,8 +21,10 @@ import {
 
 import { ComplaintActionDialog } from "@/components/complaints/complaint-action-dialog";
 import { ComplaintAttachmentDialog, ComplaintTargetsDialog } from "@/components/complaints/complaint-edit-dialogs";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
+  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -31,6 +33,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
@@ -59,6 +62,10 @@ import {
   type ComplaintStatus,
 } from "@/lib/complaints/types";
 import { useTranslation } from "@/lib/i18n";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 
@@ -139,28 +146,86 @@ function WorkflowActions({
   complaint,
   workflow,
   canReopen,
+  variant = "buttons",
 }: {
   complaint: Complaint;
   workflow: ReturnType<typeof useComplaintWorkflow>;
   canReopen: boolean;
+  variant?: "buttons" | "menu";
 }) {
   const { t } = useTranslation();
   const status = isComplaintStatus(complaint.status) ? complaint.status : null;
   if (!status) return null;
 
   const transitions = COMPLAINT_STATUS_TRANSITIONS[status];
+
+  if (variant === "menu") {
+    return (
+      <>
+        {transitions.map((next) => {
+          const Icon = TRANSITION_ICONS[next];
+          const label = t(`complaints.workflow.actions.${status}.${next}`);
+          const isPrimary = next === "resolved" || (status === "open" && next === "in_progress");
+          return (
+            <DropdownMenuItem
+              key={next}
+              disabled={workflow.busy}
+              onSelect={() =>
+                next === "resolved" ? workflow.openDialog("resolve") : workflow.transition(next)
+              }
+              className={
+                isPrimary
+                  ? tableSelectionActionMenuStyles.complete
+                  : tableSelectionActionMenuStyles.status
+              }
+            >
+              <Icon className="size-4" />
+              {label}
+            </DropdownMenuItem>
+          );
+        })}
+        {status === "closed" && canReopen ? (
+          <DropdownMenuItem
+            disabled={workflow.busy}
+            onSelect={() => workflow.openDialog("reopen")}
+            className={tableSelectionActionMenuStyles.caution}
+          >
+            <RotateCcw className="size-4" />
+            {t("complaints.workflow.reopen")}
+          </DropdownMenuItem>
+        ) : null}
+        {status !== "closed" ? (
+          <DropdownMenuItem
+            disabled={workflow.busy}
+            onSelect={() => workflow.openDialog("note")}
+            className={tableSelectionActionMenuStyles.note}
+          >
+            <MessageSquarePlus className="size-4" />
+            {t("complaints.workflow.addNote")}
+          </DropdownMenuItem>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <>
       {transitions.map((next) => {
         const Icon = TRANSITION_ICONS[next];
         const label = t(`complaints.workflow.actions.${status}.${next}`);
+        const isPrimary = next === "resolved" || (status === "open" && next === "in_progress");
         return (
           <Button
             key={next}
             size="sm"
-            variant={next === "resolved" || (status === "open" && next === "in_progress") ? "default" : "outline"}
+            variant="outline"
             disabled={workflow.busy}
             onClick={() => (next === "resolved" ? workflow.openDialog("resolve") : workflow.transition(next))}
+            className={
+              isPrimary
+                ? tableSelectionActionStyles.complete
+                : tableSelectionActionStyles.status
+            }
           >
             <Icon className="size-4" />
             {label}
@@ -168,13 +233,25 @@ function WorkflowActions({
         );
       })}
       {status === "closed" && canReopen ? (
-        <Button size="sm" variant="outline" disabled={workflow.busy} onClick={() => workflow.openDialog("reopen")}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={workflow.busy}
+          onClick={() => workflow.openDialog("reopen")}
+          className={tableSelectionActionStyles.caution}
+        >
           <RotateCcw className="size-4" />
           {t("complaints.workflow.reopen")}
         </Button>
       ) : null}
       {status !== "closed" ? (
-        <Button size="sm" variant="outline" disabled={workflow.busy} onClick={() => workflow.openDialog("note")}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={workflow.busy}
+          onClick={() => workflow.openDialog("note")}
+          className={tableSelectionActionStyles.note}
+        >
           <MessageSquarePlus className="size-4" />
           {t("complaints.workflow.addNote")}
         </Button>
@@ -218,6 +295,8 @@ export function ComplaintViewSheet({ complaint: row, open, onOpenChange, categor
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={MessageSquareWarning}
+          eyebrow={t("complaints.entity")}
           title={complaint.subject || complaint.number || dash}
           meta={
             <>
@@ -399,11 +478,18 @@ export function ComplaintViewSheet({ complaint: row, open, onOpenChange, categor
         </RecordViewSheetBody>
 
         {intake && access.canUpdate ? (
-          <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <WorkflowActions complaint={complaint} workflow={workflow} canReopen={access.canReopen} />
-            </div>
-          </div>
+          <RecordViewSheetActions
+            leading={
+              <TableSelectionActionsMenu>
+                <WorkflowActions
+                  variant="menu"
+                  complaint={complaint}
+                  workflow={workflow}
+                  canReopen={access.canReopen}
+                />
+              </TableSelectionActionsMenu>
+            }
+          />
         ) : null}
       </RecordViewSheetContent>
       <ComplaintActionDialog workflow={workflow} />

@@ -82,7 +82,7 @@ export function TableSelectionBar({
       role="toolbar"
       aria-label={t("common.table.selectionActionsGroup")}
       className={cn(
-        "sticky top-20 z-30 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-primary/[0.06] px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-primary/[0.05] sm:px-6",
+        "sticky top-20 z-30 flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-primary/[0.06] px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-primary/[0.05] sm:px-6",
         "animate-in fade-in slide-in-from-top-2 duration-200",
         className,
       )}
@@ -92,20 +92,20 @@ export function TableSelectionBar({
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+          size="icon-sm"
+          className="rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
           aria-label={t("common.table.clearSelection")}
           title={t("common.table.clearSelection")}
           onClick={onClear}
         >
           <X className="h-4 w-4" />
         </Button>
-        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
+        <span className="inline-flex h-8 items-center whitespace-nowrap rounded-md bg-primary/10 px-2.5 text-xs font-semibold tabular-nums text-primary">
           {t("common.table.selected", { count: selectedCount, total })}
         </span>
         {selectionActions ? (
           <>
-            <span className="mx-1 h-5 w-px bg-primary/20" aria-hidden />
+            <span className="mx-1 h-8 w-px bg-primary/20" aria-hidden />
             {selectionActions}
           </>
         ) : null}

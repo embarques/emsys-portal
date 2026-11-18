@@ -5,6 +5,7 @@ import { Eye, Loader2, Map, Printer, RouteOff } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { normalizeApiError } from "@/lib/api/axios";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
@@ -28,7 +30,7 @@ import { resolveActiveRouteReportIds } from "@/lib/pickup-delivery-routes/displa
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { useClearPickupRoute } from "@/lib/orders/hooks/use-orders";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { tableSelectionActionMenuStyles, tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type PickupRoutesSelectionActionsProps = {
@@ -200,34 +202,6 @@ export function PickupRoutesSelectionActions({
       <Button
         variant="outline"
         size="sm"
-        className={cn("whitespace-nowrap", tableSelectionActionStyles.optimize)}
-        onClick={() => void mapSelectedPickupRoute()}
-        disabled={actionsDisabled || !singleSelectedRouteId || isBusy}
-      >
-        {isOpeningMap ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Map className="h-4 w-4" />
-        )}
-        {isOpeningMap
-          ? t("routes.pickupRoutes.actions.loadingMap")
-          : t("routes.pickupRoutes.actions.mapRoute")}
-      </Button>
-      {singleSelectedRouteId || actionsDisabled ? (
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
-          onClick={viewSelectedPickupRoute}
-          disabled={actionsDisabled || isPrinting || isClearing}
-        >
-          <Eye className="h-4 w-4" />
-          {t("routes.pickupRoutes.actions.viewRoute")}
-        </Button>
-      ) : null}
-      <Button
-        variant="outline"
-        size="sm"
         className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
         onClick={() => void printSelectedPickupRoutes()}
         disabled={actionsDisabled || isPrinting || isClearing}
@@ -237,23 +211,44 @@ export function PickupRoutesSelectionActions({
           ? t("routes.pickupRoutes.actions.preparing")
           : t("routes.pickupRoutes.actions.print")}
       </Button>
-      {singleSelectedRouteId || actionsDisabled ? (
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn(
-            "whitespace-nowrap",
-            "border-amber-500/30 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300",
-          )}
-          onClick={() => setClearRouteOpen(true)}
-          disabled={actionsDisabled || isPrinting || isClearing}
+      <TableSelectionActionsMenu disabled={isBusy}>
+        <DropdownMenuItem
+          onSelect={() => void mapSelectedPickupRoute()}
+          disabled={actionsDisabled || !singleSelectedRouteId || isBusy}
+          className={tableSelectionActionMenuStyles.map}
         >
-          <RouteOff className="h-4 w-4" />
-          {isClearing
-            ? t("routes.pickupRoutes.actions.clearing")
-            : t("routes.pickupRoutes.actions.clearRoute")}
-        </Button>
-      ) : null}
+          {isOpeningMap ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Map className="size-4" />
+          )}
+          {isOpeningMap
+            ? t("routes.pickupRoutes.actions.loadingMap")
+            : t("routes.pickupRoutes.actions.mapRoute")}
+        </DropdownMenuItem>
+        {singleSelectedRouteId || actionsDisabled ? (
+          <DropdownMenuItem
+            onSelect={viewSelectedPickupRoute}
+            disabled={actionsDisabled || isPrinting || isClearing}
+            className={tableSelectionActionMenuStyles.view}
+          >
+            <Eye className="size-4" />
+            {t("routes.pickupRoutes.actions.viewRoute")}
+          </DropdownMenuItem>
+        ) : null}
+        {singleSelectedRouteId || actionsDisabled ? (
+          <DropdownMenuItem
+            onSelect={() => setClearRouteOpen(true)}
+            disabled={actionsDisabled || isPrinting || isClearing}
+            className={tableSelectionActionMenuStyles.caution}
+          >
+            <RouteOff className="size-4" />
+            {isClearing
+              ? t("routes.pickupRoutes.actions.clearing")
+              : t("routes.pickupRoutes.actions.clearRoute")}
+          </DropdownMenuItem>
+        ) : null}
+      </TableSelectionActionsMenu>
 
       <Dialog
         open={clearRouteOpen}

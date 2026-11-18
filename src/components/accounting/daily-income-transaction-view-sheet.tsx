@@ -2,7 +2,8 @@
 
 import { Info, Loader2, Printer } from "lucide-react";
 
-import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
+import { JournalLifecycleActions } from "@/components/accounting/journal-lifecycle-actions";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
 import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
@@ -24,6 +26,7 @@ import { getTransactionTypeOption } from "@/lib/accounting/daily-income/transact
 import type { DailyIncomeJournal, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { formatAccountingDate } from "@/lib/accounting/display";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type DailyIncomeTransactionViewSheetProps = {
@@ -82,6 +85,7 @@ export function DailyIncomeTransactionViewSheet({
   canEdit = true,
 }: DailyIncomeTransactionViewSheetProps) {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const detailQuery = useDailyIncomeJournal(open && journal ? journal.id : null);
   const resolved = detailQuery.data ?? journal;
 
@@ -101,14 +105,24 @@ export function DailyIncomeTransactionViewSheet({
   const inventoryHolderNames = holders
     ? [holders.vehicle?.name, ...holders.employees.map((employee) => employee.name)].filter(Boolean).join(", ") || undefined
     : undefined;
-  const canPrintReceipt =
+  const showPrintReceipt =
     Boolean(onPrintReceipt) && canPrintPaymentReceipt(resolved);
   const printReceiptDisabled = !/^[a-f0-9]{24}$/i.test(resolved.id);
+  const actions = resolved.allowedActions;
+  const isRouteOperator =
+    hasPermission("canOperateDailyRoute", "daily_route_work") &&
+    !hasPermission("canManageDailyRouteRecords", "daily_route_work");
+  const showLifecycle = Boolean(actions && resolved.version && !isRouteOperator);
+  const canRequest = hasPermission("canCreateChangeRequest", "change_request");
+  const showLifecycleMenu = showLifecycle || canRequest;
+  const showFooter = canEdit || showPrintReceipt || showLifecycleMenu;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={typeOption.icon}
+          eyebrow={t("accounting.dailyIncome.transactionNoun")}
           title={title}
           description={
             <span className={cn("font-semibold tabular-nums", transactionAmountClassName(resolved))}>
@@ -119,24 +133,6 @@ export function DailyIncomeTransactionViewSheet({
             <Badge variant="outline" className={cn("font-medium", transactionTypeBadgeClass(resolved.transactionType))}>
               {typeLabel}
             </Badge>
-          }
-          actions={
-            canPrintReceipt ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={printReceiptDisabled || isPrintingReceipt}
-                onClick={() => onPrintReceipt?.(resolved)}
-              >
-                {isPrintingReceipt ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Printer className="h-4 w-4" />
-                )}
-                {t("accounting.dailyIncome.actions.printReceipt")}
-              </Button>
-            ) : null
           }
         />
 
@@ -245,11 +241,40 @@ export function DailyIncomeTransactionViewSheet({
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
-        <JournalLifecycleActions key={`${resolved.id}:${resolved.version}`} journal={resolved}/>
-        <RecordViewSheetActions
-          editLabel={t("common.actions.edit")}
-          onEdit={canEdit ? () => onEdit(resolved) : undefined}
-        />
+        {showFooter ? (
+          <RecordViewSheetActions
+            editLabel={t("common.actions.edit")}
+            onEdit={canEdit ? () => onEdit(resolved) : undefined}
+            leading={
+              <>
+                <TableSelectionActionsMenu hidden={!showLifecycleMenu}>
+                  <JournalLifecycleActions
+                    key={`${resolved.id}:${resolved.version}`}
+                    journal={resolved}
+                    variant="menu"
+                  />
+                </TableSelectionActionsMenu>
+                {showPrintReceipt ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={printReceiptDisabled || isPrintingReceipt}
+                    onClick={() => onPrintReceipt?.(resolved)}
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                  >
+                    {isPrintingReceipt ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Printer className="size-4" />
+                    )}
+                    {t("accounting.dailyIncome.actions.printReceipt")}
+                  </Button>
+                ) : null}
+              </>
+            }
+          />
+        ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

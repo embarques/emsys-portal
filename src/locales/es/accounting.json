@@ -443,6 +443,7 @@
   },
   "checks": {
     "title": "Cheques",
+    "entity": "Cheque",
     "description": "Consulta los pagos. Se aplican a las facturas al registrarlos; el estado corresponde a la conciliación del asiento.",
     "noun": "cheques",
     "searchPlaceholder": "Buscar cheques…",

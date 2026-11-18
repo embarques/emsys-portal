@@ -51,6 +51,8 @@ export function RouteViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={ClipboardList}
+          eyebrow={t("routes.viewSheet.sections.route")}
           title={formatRouteName(assignment)}
           description={<span className="font-mono text-xs">{assignment.routeId}</span>}
         />

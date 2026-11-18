@@ -15,10 +15,13 @@ import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advance
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { INVOICE_POOL_FILTER_FIELDS } from "@/lib/invoices/invoice-pool-filters";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -246,10 +249,24 @@ function ReservedInvoicePoolPanel() {
         </CardHeader>
 
         {model.selected.length > 0 && <fieldset disabled={model.selectionLocked}>
-          <TableSelectionToolbar selectedIds={model.selected.map(item => item.id)} pageRowIds={model.selectable.map(item => item.id)} totalCount={model.query.data?.remaining} onSelectedIdsChange={model.setSelectedIds} hideStandardActions actions={<>
-            <Button variant="outline" size="sm" disabled={model.selectionLocked || !model.canAssign || !model.canAssignSelection} onClick={openAssign}>{text("assign")}</Button>
-            <Button variant="outline" size="sm" disabled={model.selectionLocked || !model.canAssign || !model.canReturnSelection} onClick={() => model.act("return")}>{text("return")}</Button>
-          </>} />
+          <TableSelectionToolbar selectedIds={model.selected.map(item => item.id)} pageRowIds={model.selectable.map(item => item.id)} totalCount={model.query.data?.remaining} onSelectedIdsChange={model.setSelectedIds} hideStandardActions actions={
+            <TableSelectionActionsMenu disabled={model.selectionLocked}>
+              <DropdownMenuItem
+                disabled={model.selectionLocked || !model.canAssign || !model.canAssignSelection}
+                onSelect={openAssign}
+                className={tableSelectionActionMenuStyles.assign}
+              >
+                {text("assign")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={model.selectionLocked || !model.canAssign || !model.canReturnSelection}
+                onSelect={() => model.act("return")}
+                className={tableSelectionActionMenuStyles.caution}
+              >
+                {text("return")}
+              </DropdownMenuItem>
+            </TableSelectionActionsMenu>
+          } />
         </fieldset>}
 
         {model.query.isError ? <p role="alert" className="px-6 py-8 text-sm text-destructive">{normalizeApiError(model.query.error).message}</p> : loading ? (

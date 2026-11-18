@@ -55,6 +55,8 @@ export function BranchViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={Building2}
+          eyebrow={t("branches.entity")}
           title={branch.name.trim() || dash}
           meta={
             <div className="flex flex-wrap items-center gap-2">

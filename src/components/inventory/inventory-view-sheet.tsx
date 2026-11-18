@@ -80,7 +80,12 @@ export function InventoryViewSheet({
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent className="sm:max-w-xl">
-        <RecordViewSheetHeader title={item.name} description={item.sku || t("inventory.submenus.items")} />
+        <RecordViewSheetHeader
+          icon={Tag}
+          eyebrow={t("inventory.entity")}
+          title={item.name}
+          description={item.sku || undefined}
+        />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.view.details")} icon={Tag}>

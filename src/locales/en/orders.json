@@ -360,6 +360,18 @@
     "deleteOne": "This will permanently remove this appointment. {{cannotBeUndone}}",
     "deleteMany": "This will permanently remove {{count}} selected appointments. {{cannotBeUndone}}"
   },
+  "duplicatePending": {
+    "title": "Pending appointment already exists",
+    "description": "This sender already has a pending appointment at the selected address. Review the existing date and purpose. Continue only if this is a different appointment.",
+    "unknownExisting": "A pending appointment already exists for this sender and address.",
+    "cancel": "No, keep the existing one",
+    "confirm": "Yes, add another appointment",
+    "fields": {
+      "id": "Appointment #",
+      "date": "Date",
+      "purpose": "Purpose"
+    }
+  },
   "toasts": {
     "addedFor": "Appointment for \"{{name}}\" was added.",
     "markedComplete": "{{count}} appointment marked complete.",

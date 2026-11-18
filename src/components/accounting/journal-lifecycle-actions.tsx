@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { FilePenLine } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -19,7 +21,8 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
 import { createRandomId } from "@/lib/utils/id";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
+import { tableSelectionActionMenuStyles, tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { useJournalLifecycle } from "@/lib/accounting/daily-income/lifecycle-hooks";
@@ -28,8 +31,8 @@ type Action = "reverse" | "void" | "note";
 
 type JournalLifecycleActionsProps = {
   journal: DailyIncomeJournal;
-  /** Sheet footer vs compact selection-toolbar buttons. */
-  variant?: "sheet" | "toolbar";
+  /** Sheet footer, compact toolbar buttons, or selection Actions menu items. */
+  variant?: "sheet" | "toolbar" | "menu";
   /** Called after a successful void / reverse / note (e.g. clear table selection). */
   onCompleted?: () => void;
 };
@@ -86,86 +89,8 @@ export function JournalLifecycleActions({
     );
   });
 
-  const buttons = (
-    <>
-      {canRequest ? (
-        <RequestChangeButton
-          resourceType="journal"
-          resourceId={journal.id}
-          size={size}
-          className={buttonClass}
-        />
-      ) : null}
-      {showLifecycle && actions?.void ? (
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          className={buttonClass}
-          onClick={() => open("void")}
-        >
-          {text("void")}
-        </Button>
-      ) : null}
-      {showLifecycle && actions?.reverse ? (
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          className={buttonClass}
-          onClick={() => open("reverse")}
-        >
-          {text("reverse")}
-        </Button>
-      ) : null}
-      {showLifecycle && actions?.correct && canRequest ? (
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          className={cn(buttonClass, variant === "toolbar" && tableSelectionActionStyles.request)}
-          asChild
-        >
-          <Link
-            href={`/change-requests?${new URLSearchParams({
-              resourceType: "journal",
-              resourceId: journal.id,
-              action: "UPDATE",
-            })}`}
-          >
-            {text("correct")}
-          </Link>
-        </Button>
-      ) : null}
-      {showLifecycle && actions?.note ? (
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          className={buttonClass}
-          onClick={() => open("note")}
-        >
-          {text("note")}
-        </Button>
-      ) : null}
-    </>
-  );
-
-  return (
-    <>
-      <div
-        className={
-          variant === "toolbar"
-            ? "flex flex-wrap items-center justify-end gap-1.5"
-            : "flex flex-wrap gap-2 border-t px-6 py-4"
-        }
-      >
-        {buttons}
-        {variant === "sheet" && journal.restrictionReason ? (
-          <p className="w-full text-sm text-muted-foreground">{journal.restrictionReason}</p>
-        ) : null}
-      </div>
-      <Dialog
+  const dialog = (
+    <Dialog
         open={Boolean(action)}
         onOpenChange={(openState) => {
           if (!openState && !mutation.isPending) setAction(null);
@@ -232,6 +157,132 @@ export function JournalLifecycleActions({
           </form>
         </DialogContent>
       </Dialog>
+  );
+
+  if (variant === "menu") {
+    return (
+      <>
+        {canRequest ? (
+          <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+            <Link href={changeRequestHref("journal", journal.id)}>
+              <FilePenLine className="size-4" />
+              {text("request")}
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
+        {showLifecycle && actions?.void ? (
+          <DropdownMenuItem onSelect={() => open("void")} className={tableSelectionActionMenuStyles.delete}>
+            {text("void")}
+          </DropdownMenuItem>
+        ) : null}
+        {showLifecycle && actions?.reverse ? (
+          <DropdownMenuItem onSelect={() => open("reverse")} className={tableSelectionActionMenuStyles.caution}>
+            {text("reverse")}
+          </DropdownMenuItem>
+        ) : null}
+        {showLifecycle && actions?.correct && canRequest ? (
+          <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+            <Link
+              href={`/change-requests?${new URLSearchParams({
+                resourceType: "journal",
+                resourceId: journal.id,
+                action: "UPDATE",
+              })}`}
+            >
+              {text("correct")}
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
+        {showLifecycle && actions?.note ? (
+          <DropdownMenuItem onSelect={() => open("note")} className={tableSelectionActionMenuStyles.note}>
+            {text("note")}
+          </DropdownMenuItem>
+        ) : null}
+        {dialog}
+      </>
+    );
+  }
+
+  const buttons = (
+    <>
+      {canRequest ? (
+        <RequestChangeButton
+          resourceType="journal"
+          resourceId={journal.id}
+          size={size}
+          className={buttonClass}
+        />
+      ) : null}
+      {showLifecycle && actions?.void ? (
+        <Button
+          type="button"
+          variant="outline"
+          size={size}
+          className={cn(buttonClass, tableSelectionActionStyles.delete)}
+          onClick={() => open("void")}
+        >
+          {text("void")}
+        </Button>
+      ) : null}
+      {showLifecycle && actions?.reverse ? (
+        <Button
+          type="button"
+          variant="outline"
+          size={size}
+          className={cn(buttonClass, tableSelectionActionStyles.caution)}
+          onClick={() => open("reverse")}
+        >
+          {text("reverse")}
+        </Button>
+      ) : null}
+      {showLifecycle && actions?.correct && canRequest ? (
+        <Button
+          type="button"
+          variant="outline"
+          size={size}
+          className={cn(buttonClass, tableSelectionActionStyles.request)}
+          asChild
+        >
+          <Link
+            href={`/change-requests?${new URLSearchParams({
+              resourceType: "journal",
+              resourceId: journal.id,
+              action: "UPDATE",
+            })}`}
+          >
+            {text("correct")}
+          </Link>
+        </Button>
+      ) : null}
+      {showLifecycle && actions?.note ? (
+        <Button
+          type="button"
+          variant="outline"
+          size={size}
+          className={cn(buttonClass, tableSelectionActionStyles.note)}
+          onClick={() => open("note")}
+        >
+          {text("note")}
+        </Button>
+      ) : null}
+    </>
+  );
+
+  return (
+    <>
+      <div
+        className={
+          variant === "toolbar"
+            ? "flex flex-wrap items-center justify-end gap-1.5"
+            : "flex flex-wrap gap-2 border-t px-6 py-4"
+        }
+      >
+        {buttons}
+        {variant === "sheet" && journal.restrictionReason ? (
+          <p className="w-full text-sm text-muted-foreground">{journal.restrictionReason}</p>
+        ) : null}
+      </div>
+      {dialog}
     </>
   );
 }

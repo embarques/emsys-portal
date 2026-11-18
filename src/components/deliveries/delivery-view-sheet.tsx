@@ -2,8 +2,10 @@
 
 import { MapPin, PackageCheck, Phone as PhoneIcon, Printer, ScanBarcode, Send, UserRound } from "lucide-react";
 
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
+  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -15,6 +17,7 @@ import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-no
 import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { formatBarcodeDeliveryRoute } from "@/lib/barcodes/display";
 import {
   toDeliveryReceiverCoreAddress,
@@ -23,6 +26,8 @@ import {
 } from "@/lib/deliveries/types";
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionMenuStyles, tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 type DeliveryViewSheetProps = {
   row: AssignedDeliveryBarcode | null;
@@ -52,30 +57,19 @@ export function DeliveryViewSheet({
   const receiverPhones = getOrderedRecordPhones(toDeliveryRecordPhones(row.receiver?.phones));
   const senderPhones = getOrderedRecordPhones(toDeliveryRecordPhones(row.sender?.phones));
   const receiverAddress = toDeliveryReceiverCoreAddress(row.receiver);
+  const showFooter = canDeliver || canPrint;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={PackageCheck}
+          eyebrow={t("deliveries.entity")}
           title={t("deliveries.view.title")}
           description={t("deliveries.view.description", {
             barcode: row.number || dash,
             invoice: row.invoiceNumber || dash,
           })}
-          actions={
-            canPrint ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!row.invoiceId}
-                onClick={() => onPrint(row)}
-              >
-                <Printer className="size-4" />
-                {t("invoices.printSignatures.action")}
-              </Button>
-            ) : null
-          }
         />
 
         <RecordViewSheetBody>
@@ -149,23 +143,40 @@ export function DeliveryViewSheet({
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        {canDeliver || (canPrint && !row.invoiceId) ? (
-          <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-            {canDeliver ? (
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  className="flex-1"
-                  disabled={actionDisabled}
-                  onClick={() => onDeliver(row)}
-                >
-                  <PackageCheck className="size-4" />
-                  {t("deliveries.deliver.action")}
-                </Button>
-              </div>
+        {showFooter ? (
+          <RecordViewSheetActions
+            leading={
+              <>
+                <TableSelectionActionsMenu hidden={!canDeliver}>
+                  <DropdownMenuItem
+                    disabled={actionDisabled}
+                    onSelect={() => onDeliver(row)}
+                    className={tableSelectionActionMenuStyles.deliver}
+                  >
+                    <PackageCheck className="size-4" />
+                    {t("deliveries.deliver.action")}
+                  </DropdownMenuItem>
+                </TableSelectionActionsMenu>
+                {canPrint ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!row.invoiceId}
+                    onClick={() => onPrint(row)}
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                  >
+                    <Printer className="size-4" />
+                    {t("invoices.printSignatures.action")}
+                  </Button>
+                ) : null}
+              </>
+            }
+          >
+            {!row.invoiceId || !row.delivery?.id ? (
+              <DeliveryActionNotice row={row} className="max-w-none" />
             ) : null}
-            <DeliveryActionNotice row={row} className="max-w-none" />
-          </div>
+          </RecordViewSheetActions>
         ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>

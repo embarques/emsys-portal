@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Tags } from "lucide-react";
 import { RecordViewSheet, RecordViewSheetBody, RecordViewSheetContent, RecordViewSheetHeader } from "@/components/app-shell/record-view-sheet";
 import { InvoiceLineItemsSection } from "@/components/invoices/invoice-line-items-section";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ function InvoiceLineItemsSheet({ invoice }: { invoice: Invoice }) {
   return (
     <RecordViewSheetContent>
       <RecordViewSheetHeader
+        icon={Tags}
+        eyebrow={t("invoices.entity")}
         title={t("invoices.view.lineItems.title")}
         description={t("invoices.view.lineItems.invoice", { number: invoice.invoiceNumber || t("common.empty.dash") })}
       />

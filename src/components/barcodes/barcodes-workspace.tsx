@@ -29,6 +29,7 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -41,6 +42,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -95,7 +97,7 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { tableSelectionActionMenuStyles, tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -674,26 +676,12 @@ export function BarcodesWorkspace() {
           deleteDisabled={!selectedInvoiceTarget || isUpdating}
           actions={
             <>
-              {deliveryAccess.canDeliver ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={selectedBarcodes.length !== 1 || !canStartBarcodeDelivery(selectedBarcodes[0]) || isUpdating || isFetching}
-                  onClick={() => {
-                    const barcode = selectedBarcodes[0];
-                    if (canStartBarcodeDelivery(barcode)) setDeliveryTarget({ scope: deliveryScope, barcode });
-                  }}
-                >
-                  <PackageCheck className="size-4" />
-                  {t("deliveries.deliver.action")}
-                </Button>
-              ) : null}
               {deliveryAccess.canPrint ? (
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
+                  className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
                   disabled={!selectedBarcodes.length || selectedBarcodes.length !== selectedIds.length || selectedBarcodes.some((barcode) => !barcode.invoiceId) || isUpdating || isFetching}
                   onClick={() => setInvoicePrintTarget({ scope: deliveryScope, ids: [...new Set(selectedBarcodes.flatMap((barcode) => barcode.invoiceId ? [barcode.invoiceId] : []))] })}
                 >
@@ -712,62 +700,81 @@ export function BarcodesWorkspace() {
                 <Printer className="h-4 w-4" />
                 {t(isPrinting ? "barcodes.print.preparing" : "barcodes.print.action")}
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
-                disabled={!canUpdateInvoices || !selectedInvoiceTarget || isUpdating}
-                onClick={() => openSelectedInvoice()}
+              <TableSelectionActionsMenu
+                disabled={isUpdating || isFetching}
+                hidden={
+                  !deliveryAccess.canDeliver &&
+                  !canUpdateInvoices &&
+                  selectedIds.length === 0
+                }
               >
-                <FileText className="h-4 w-4" />
-                {t("barcodes.bulk.openInvoice")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="whitespace-nowrap"
-                disabled={selectedIds.length === 0 || isUpdating}
-                onClick={() => {
-                  setBulkError(null);
-                  setNewStatus(
-                    barcodeStatusOptions[0]?.name ??
-                      FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ??
-                      "CREATED",
-                  );
-                  setStatusDialogOpen(true);
-                }}
-              >
-                <Tag className="h-4 w-4" />
-                {t("barcodes.bulk.changeStatus")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="whitespace-nowrap"
-                disabled={selectedIds.length === 0 || isUpdating}
-                onClick={() => {
-                  setBulkError(null);
-                  setNewContainerId(containers[0] ? String(containers[0].id) : "");
-                  setContainerDialogOpen(true);
-                }}
-              >
-                <ContainerIcon className="h-4 w-4" />
-                {t("barcodes.bulk.changeContainer")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="whitespace-nowrap"
-                disabled={assignRouteBarcodes.length === 0 || isUpdating}
-                onClick={() => setRouteDialogOpen(true)}
-              >
-                <RouteIcon className="h-4 w-4" />
-                {t("barcodes.bulk.assignRoute")}
-              </Button>
+                {deliveryAccess.canDeliver ? (
+                  <DropdownMenuItem
+                    disabled={
+                      selectedBarcodes.length !== 1 ||
+                      !canStartBarcodeDelivery(selectedBarcodes[0]) ||
+                      isUpdating ||
+                      isFetching
+                    }
+                    onSelect={() => {
+                      const barcode = selectedBarcodes[0];
+                      if (canStartBarcodeDelivery(barcode)) {
+                        setDeliveryTarget({ scope: deliveryScope, barcode });
+                      }
+                    }}
+                    className={tableSelectionActionMenuStyles.deliver}
+                  >
+                    <PackageCheck className="size-4" />
+                    {t("deliveries.deliver.action")}
+                  </DropdownMenuItem>
+                ) : null}
+                {canUpdateInvoices ? (
+                  <DropdownMenuItem
+                    disabled={!selectedInvoiceTarget || isUpdating}
+                    onSelect={() => openSelectedInvoice()}
+                    className={tableSelectionActionMenuStyles.view}
+                  >
+                    <FileText className="size-4" />
+                    {t("barcodes.bulk.openInvoice")}
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem
+                  disabled={selectedIds.length === 0 || isUpdating}
+                  onSelect={() => {
+                    setBulkError(null);
+                    setNewStatus(
+                      barcodeStatusOptions[0]?.name ??
+                        FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ??
+                        "CREATED",
+                    );
+                    setStatusDialogOpen(true);
+                  }}
+                  className={tableSelectionActionMenuStyles.status}
+                >
+                  <Tag className="size-4" />
+                  {t("barcodes.bulk.changeStatus")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={selectedIds.length === 0 || isUpdating}
+                  onSelect={() => {
+                    setBulkError(null);
+                    setNewContainerId(containers[0] ? String(containers[0].id) : "");
+                    setContainerDialogOpen(true);
+                  }}
+                  className={tableSelectionActionMenuStyles.transfer}
+                >
+                  <ContainerIcon className="size-4" />
+                  {t("barcodes.bulk.changeContainer")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={assignRouteBarcodes.length === 0 || isUpdating}
+                  onSelect={() => setRouteDialogOpen(true)}
+                  className={tableSelectionActionMenuStyles.assign}
+                >
+                  <RouteIcon className="size-4" />
+                  {t("barcodes.bulk.assignRoute")}
+                </DropdownMenuItem>
+              </TableSelectionActionsMenu>
             </>
           }
         />

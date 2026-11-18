@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
-import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
+import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { InvoiceLineItemsCell } from "@/components/invoices/invoice-line-items-cell";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
@@ -41,6 +41,8 @@ import {
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -563,13 +565,23 @@ export function InvoicesWorkspace() {
     setViewOverlay(null);
   }
 
-  const documentsButton = (
-    <InvoiceDocumentsButton
-      invoice={selectedInvoices[0]}
-      selectedCount={selectedCount}
-      onOpen={(invoice) => openView(invoice, { documents: true })}
-    />
-  );
+  const canViewInvoices = hasPermission(PERMISSIONS.invoicesView.name, PERMISSIONS.invoicesView.resourceType);
+  const documentsSelectionAction = canViewInvoices ? (
+    <TableSelectionActionsMenu>
+      <DropdownMenuItem
+        disabled={selectedCount !== 1 || !selectedInvoices[0]}
+        onSelect={() => {
+          const invoice = selectedInvoices[0];
+          if (!invoice || selectedCount !== 1) return;
+          openView(invoice, { documents: true });
+        }}
+        className={tableSelectionActionMenuStyles.documents}
+      >
+        <FileText className="size-4" />
+        {t("invoices.documents.title")}
+      </DropdownMenuItem>
+    </TableSelectionActionsMenu>
+  ) : null;
 
   function addInvoiceComment(invoiceId: string, description: string) {
     const comment = createInvoiceComment(description);
@@ -1072,7 +1084,7 @@ export function InvoicesWorkspace() {
             canEdit={canUpdateInvoices}
             canDelete={canDeleteInvoices}
             deleteDisabled={isDeleting}
-            actions={documentsButton}
+            actions={documentsSelectionAction}
           />
         ) : null}
 
@@ -1220,7 +1232,7 @@ export function InvoicesWorkspace() {
           canEdit={canUpdateInvoices}
           canDelete={canDeleteInvoices}
           deleteDisabled={isDeleting}
-          actions={documentsButton}
+          actions={documentsSelectionAction}
         />
 
         {isError ? (

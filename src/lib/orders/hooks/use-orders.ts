@@ -22,6 +22,7 @@ import {
   unassignOrdersFromRoutes,
   unassignPickupsFromRoute,
   updateOrder,
+  type CreateOrderOptions,
   type PickupOrderNumberUpdate,
 } from "@/lib/orders/api/orders-api";
 import {
@@ -316,7 +317,13 @@ export function useCreateOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (values: OrderFormValues) => createOrder(values),
+    mutationFn: ({
+      values,
+      options,
+    }: {
+      values: OrderFormValues;
+      options?: CreateOrderOptions;
+    }) => createOrder(values, options),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }

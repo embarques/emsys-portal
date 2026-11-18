@@ -66,7 +66,11 @@ export function CustomerViewSheet({
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader title={resolvedCustomer.name.trim() || dash} />
+        <RecordViewSheetHeader
+          icon={User}
+          eyebrow={t("customers.entity")}
+          title={resolvedCustomer.name.trim() || dash}
+        />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("customers.view.general")} icon={User}>

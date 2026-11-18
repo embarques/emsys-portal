@@ -46,6 +46,8 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={Car}
+          eyebrow={t("vehicles.entity")}
           title={vehicle.name}
           meta={
             <>

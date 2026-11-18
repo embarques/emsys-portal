@@ -33,7 +33,11 @@ export function ItemViewSheet({ item, open, onOpenChange, onEdit, onDelete }: It
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader title={item.description.trim() || dash} />
+        <RecordViewSheetHeader
+          icon={Package}
+          eyebrow={t("items.entity")}
+          title={item.description.trim() || dash}
+        />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("items.view.details")} icon={Package}>

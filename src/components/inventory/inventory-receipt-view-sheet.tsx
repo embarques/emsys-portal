@@ -70,8 +70,9 @@ export function InventoryReceiptViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
+          icon={PackageCheck}
+          eyebrow={t("inventory.references.receipt")}
           title={getSupplierNameById(receipt.supplierId, suppliers) || t("inventory.references.receipt")}
-          description={t("inventory.references.receipt")}
         />
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.form.sections.header")} icon={PackageCheck}>

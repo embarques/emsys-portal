@@ -360,6 +360,18 @@
     "deleteOne": "Esto eliminará permanentemente esta cita. {{cannotBeUndone}}",
     "deleteMany": "Esto eliminará permanentemente {{count}} citas seleccionadas. {{cannotBeUndone}}"
   },
+  "duplicatePending": {
+    "title": "Ya existe una cita pendiente",
+    "description": "Este remitente ya tiene una cita pendiente en la dirección seleccionada. Revise la fecha y el propósito existentes. Continúe solo si esta es una cita distinta.",
+    "unknownExisting": "Ya existe una cita pendiente para este remitente y dirección.",
+    "cancel": "No, conservar la existente",
+    "confirm": "Sí, agregar otra cita",
+    "fields": {
+      "id": "Cita n.º",
+      "date": "Fecha",
+      "purpose": "Propósito"
+    }
+  },
   "toasts": {
     "addedFor": "Se agregó una cita para \"{{name}}\".",
     "markedComplete": "{{count}} cita marcada como completada.",

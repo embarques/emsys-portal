@@ -21,9 +21,45 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
-const SELECT_COLUMN_WIDTH_PX = 40;
-/** Checkbox + edit/delete icon buttons (DirectoryTableRowActions) in one fixed cell. */
-const SELECT_ACTIONS_COLUMN_WIDTH_PX = 112;
+/** pl-4 (16) + checkbox size-4 (16) + pr-1 (4). Locked so stretch cannot widen it. */
+const SELECT_COLUMN_WIDTH_PX = 36;
+/**
+ * Fallback when row actions are present but not yet measured:
+ * checkbox column + gap-1 + two size-7 icon buttons + gap-0.5 between them.
+ */
+const SELECT_ACTIONS_COLUMN_WIDTH_PX = 100;
+
+function measureSelectColumnWidth(table: HTMLTableElement): number {
+  let maxWidth = SELECT_COLUMN_WIDTH_PX;
+
+  table.querySelectorAll("thead tr > :first-child, tbody tr > :first-child").forEach((cell) => {
+    if (!(cell instanceof HTMLTableCellElement) || cell.colSpan > 1) return;
+
+    const styles = window.getComputedStyle(cell);
+    const padding =
+      (Number.parseFloat(styles.paddingLeft) || 0) + (Number.parseFloat(styles.paddingRight) || 0);
+
+    const contentRoot =
+      cell.querySelector(":scope > div") ?? cell.querySelector("input[type='checkbox']");
+    if (!(contentRoot instanceof HTMLElement)) {
+      maxWidth = Math.max(maxWidth, SELECT_COLUMN_WIDTH_PX);
+      return;
+    }
+
+    // Sum children so overflow-hidden cells still report the natural content width.
+    const parts = contentRoot.matches("input[type='checkbox']")
+      ? [contentRoot]
+      : Array.from(contentRoot.children).filter((node): node is HTMLElement => node instanceof HTMLElement);
+    const gap = parts.length > 1 ? (Number.parseFloat(window.getComputedStyle(contentRoot).columnGap) || 4) : 0;
+    const contentWidth = parts.reduce((sum, part, index) => {
+      return sum + part.getBoundingClientRect().width + (index > 0 ? gap : 0);
+    }, 0);
+
+    maxWidth = Math.max(maxWidth, Math.ceil(padding + contentWidth));
+  });
+
+  return maxWidth;
+}
 
 type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
@@ -121,6 +157,7 @@ function DataTableContent<T>({
   const rowPointerRef = useRef<RowPointerState | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+  const [measuredSelectColumnWidth, setMeasuredSelectColumnWidth] = useState<number | null>(null);
   const lastAutoFitSignatureRef = useRef<string | null>(null);
   const autoFitPassRef = useRef(0);
   const autoFitContextRef = useRef({ pageKey: -1, visibleColumnKey: "" });
@@ -247,6 +284,31 @@ function DataTableContent<T>({
     };
   }, [rows, columns, visibleColumnKey, selectable]);
 
+  // Keep the checkbox/actions column only as wide as its content (never absorb stretch).
+  useLayoutEffect(() => {
+    if (!selectable) {
+      setMeasuredSelectColumnWidth(null);
+      return;
+    }
+
+    const table = tableRef.current;
+    if (!table) return;
+
+    const update = () => {
+      const nextWidth = measureSelectColumnWidth(table);
+      setMeasuredSelectColumnWidth((current) => (current === nextWidth ? current : nextWidth));
+    };
+    update();
+
+    let cancelled = false;
+    document.fonts?.ready.then(() => {
+      if (!cancelled) update();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectable, rows, visibleColumnKey, renderSelectCellActions]);
+
   // Measure the scroll container so short tables can stretch to the card width
   // and empty-state copy stays pinned to the visible viewport.
   useLayoutEffect(() => {
@@ -296,10 +358,14 @@ function DataTableContent<T>({
     renderSelectCellActions && rows.some((row) => renderSelectCellActions(row)),
   );
   const selectColumnWidth = selectable
-    ? hasSelectCellActions
-      ? SELECT_ACTIONS_COLUMN_WIDTH_PX
-      : SELECT_COLUMN_WIDTH_PX
+    ? measuredSelectColumnWidth ??
+      (hasSelectCellActions ? SELECT_ACTIONS_COLUMN_WIDTH_PX : SELECT_COLUMN_WIDTH_PX)
     : 0;
+  const selectColumnStyle = {
+    width: selectColumnWidth,
+    minWidth: selectColumnWidth,
+    maxWidth: selectColumnWidth,
+  };
   const baseColumnWidths = Object.fromEntries(
     visibleColumns.map((column) => [column.id, getColumnWidth(column.id)]),
   );
@@ -331,12 +397,18 @@ function DataTableContent<T>({
         className="w-full table-fixed text-sm"
         style={{ width: tableWidth, minWidth: tableWidth }}
       >
+        <colgroup>
+          {selectable ? <col style={selectColumnStyle} /> : null}
+          {visibleColumns.map((column) => (
+            <col key={column.id} style={{ width: getDisplayColumnWidth(column.id) }} />
+          ))}
+        </colgroup>
         <thead>
           <tr className="border-b bg-muted/30 text-left">
             {selectable ? (
               <th
-                style={{ width: selectColumnWidth }}
-                className="overflow-hidden py-3 pl-4 pr-2 align-middle"
+                style={selectColumnStyle}
+                className="overflow-hidden py-3 pl-4 pr-1 align-middle"
                 aria-label={hasSelectCellActions ? t("tableFields.table.selectAndActions") : undefined}
               >
                 <input
@@ -346,7 +418,7 @@ function DataTableContent<T>({
                   ref={(element) => { if (element) element.indeterminate = selectAllIndeterminate; }}
                   checked={allPageSelected}
                   onChange={(event) => onToggleSelectAll?.(event.target.checked)}
-                  className="size-4 rounded border-input"
+                  className="size-4 shrink-0 rounded border-input"
                 />
               </th>
             ) : null}
@@ -496,11 +568,11 @@ function DataTableContent<T>({
                 >
                   {selectable ? (
                     <td
-                      style={{ width: selectColumnWidth }}
-                      className="overflow-hidden py-3 pl-4 pr-2 align-middle"
+                      style={selectColumnStyle}
+                      className="overflow-hidden py-3 pl-4 pr-1 align-middle"
                       onClick={(event) => event.stopPropagation()}
                     >
-                      <div className="flex items-center gap-1 whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1 whitespace-nowrap">
                         <input
                           type="checkbox"
                           aria-label={t("tableFields.table.selectRow", { row: rowLabel?.(row) ?? id })}

@@ -3,7 +3,12 @@
 import { CircleMinus, CirclePlus, HandCoins, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "@/lib/i18n";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 export type LoanRecordAction = "payment" | "increase" | "decrease";
@@ -21,6 +26,8 @@ type Props = {
   className?: string;
   /** Stretch buttons to full width (footer). */
   fullWidth?: boolean;
+  /** Sheet footer buttons or Actions menu items. */
+  variant?: "buttons" | "menu";
   onAction: (action: LoanRecordAction) => void;
 };
 
@@ -42,6 +49,7 @@ export function LoanRecordActions({
   showIncreaseTodo = false,
   className,
   fullWidth = false,
+  variant = "buttons",
   onAction,
 }: Props) {
   const { t } = useTranslation();
@@ -70,6 +78,33 @@ export function LoanRecordActions({
 
   if (actions.length === 0) return null;
 
+  const actionStyle = (action: LoanRecordAction) => {
+    if (action === "payment") return "complete" as const;
+    if (action === "increase") return "create" as const;
+    return "caution" as const;
+  };
+
+  if (variant === "menu") {
+    return (
+      <>
+        {actions.map(({ action, label }) => {
+          const Icon = ACTION_ICONS[action];
+          return (
+            <DropdownMenuItem
+              key={action}
+              disabled={disabled}
+              onSelect={() => onAction(action)}
+              className={tableSelectionActionMenuStyles[actionStyle(action)]}
+            >
+              <Icon className="size-4" aria-hidden />
+              {label}
+            </DropdownMenuItem>
+          );
+        })}
+      </>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -85,8 +120,11 @@ export function LoanRecordActions({
             key={action}
             type="button"
             size="sm"
-            variant={action === "payment" ? "default" : "outline"}
-            className={cn(fullWidth && "w-full")}
+            variant="outline"
+            className={cn(
+              fullWidth && "w-full",
+              tableSelectionActionStyles[actionStyle(action)],
+            )}
             disabled={disabled}
             onClick={() => onAction(action)}
           >

@@ -10,11 +10,13 @@ import {TableDirectoryToolbar} from "@/components/app-shell/table-directory-tool
 import {TableAdvancedFilterPanel} from "@/components/app-shell/table-advanced-filter-panel";
 import {TableSearchInput} from "@/components/app-shell/table-search-input";
 import {TablePaginationControls} from "@/components/app-shell/table-pagination-controls";
+import {TableSelectionActionsMenu} from "@/components/app-shell/table-selection-actions-menu";
 import {TableSelectionToolbar} from "@/components/app-shell/table-selection-toolbar";
 import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
 import {JournalTotals} from "@/components/accounting/journal-totals";
 import {Card, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
+import {DropdownMenuItem} from "@/components/ui/dropdown-menu";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useLocalizedFilterFields} from "@/lib/table/hooks/use-localized-filter-fields";
 import {createRandomId} from "@/lib/utils/id";
@@ -22,6 +24,8 @@ import {useAuth} from "@/lib/auth/hooks/use-auth";
 import {useTranslation} from "@/lib/i18n";
 import {normalizeApiError} from "@/lib/api/axios";
 import {useTablePageSize} from "@/lib/table/hooks/use-table-page-size";
+import {tableSelectionActionMenuStyles, tableSelectionActionStyles} from "@/lib/table/selection-action-styles";
+import {cn} from "@/lib/utils";
 import {countCompleteFilterRows, type TableFilterRowState} from "@/lib/table/filter-builder";
 import {DAILY_INCOME_TABLE_FILTER_FIELDS, PENDING_JOURNAL_TABLE_FILTER_FIELDS} from "@/lib/accounting/daily-income/journal-search";
 import {DAILY_INCOME_JOURNAL_API_TABLE_FIELDS} from "@/lib/accounting/daily-income/table-fields";
@@ -234,16 +238,36 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
         ? <p role="alert" className="text-sm text-destructive">{normalizeApiError(selectedTotals.error).message}</p>
         : <JournalTotals layout="inline" label={text("selectedTotals")} totals={selectedTotals.data} journals={ids.map(id => selected[id])} chartAccounts={chartAccountsQuery.data?.items ?? []} loading={selectedTotals.isFetching}/>}
       actions={<>
-        {canProcess ? <Button size="sm" disabled={!ready} onClick={openConfirm}><CheckCircle2 className="size-4" aria-hidden="true"/>{actionLabel}</Button> : null}
-        {ids.length === 1 ? (
-          <JournalLifecycleActions
-            key={`selection-lifecycle:${ids[0]}:${selected[ids[0]]?.version ?? 0}`}
-            journal={selected[ids[0]]}
-            variant="toolbar"
-            onCompleted={() => setSelected({})}
-          />
+        {ids.length === 1 && onPrintReceipt && canPrintPaymentReceipt(selected[ids[0]]) ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isPrintingReceipt}
+            onClick={() => onPrintReceipt(selected[ids[0]])}
+            className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+          >
+            <Printer className="size-4" aria-hidden="true"/>
+            {t("accounting.dailyIncome.actions.printReceipt")}
+          </Button>
         ) : null}
-        {ids.length === 1 && onPrintReceipt && canPrintPaymentReceipt(selected[ids[0]]) ? <Button size="sm" variant="outline" disabled={isPrintingReceipt} onClick={() => onPrintReceipt(selected[ids[0]])}><Printer className="size-4" aria-hidden="true"/>{t("accounting.dailyIncome.actions.printReceipt")}</Button> : null}
+        {canProcess || ids.length === 1 ? (
+          <TableSelectionActionsMenu>
+            {canProcess ? (
+              <DropdownMenuItem disabled={!ready} onSelect={openConfirm} className={tableSelectionActionMenuStyles.complete}>
+                <CheckCircle2 className="size-4" aria-hidden="true"/>
+                {actionLabel}
+              </DropdownMenuItem>
+            ) : null}
+            {ids.length === 1 ? (
+              <JournalLifecycleActions
+                key={`selection-lifecycle:${ids[0]}:${selected[ids[0]]?.version ?? 0}`}
+                journal={selected[ids[0]]}
+                variant="menu"
+                onCompleted={() => setSelected({})}
+              />
+            ) : null}
+          </TableSelectionActionsMenu>
+        ) : null}
       </>}
     />
     {canProcess ? <p className="border-b px-6 py-3 text-sm text-muted-foreground">{text("sameMethod")}</p> : null}
