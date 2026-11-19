@@ -212,6 +212,7 @@ export type OrderFormValues = {
 
 export type OrderFormSubmitResult = {
   error: string | null;
+  cancelled?: boolean;
 };
 
 export type OrderBranchFilter = number | "all";

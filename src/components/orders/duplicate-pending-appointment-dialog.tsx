@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,7 +48,7 @@ export function DuplicatePendingAppointmentDialog({
   onCancel,
 }: DuplicatePendingAppointmentDialogProps) {
   const { t, locale } = useTranslation();
-  const cancelButtonId = "duplicate-pending-appointment-cancel";
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <Dialog
@@ -58,7 +60,7 @@ export function DuplicatePendingAppointmentDialog({
       <DialogContent
         onOpenAutoFocus={(event) => {
           event.preventDefault();
-          document.getElementById(cancelButtonId)?.focus();
+          cancelButtonRef.current?.focus();
         }}
       >
         <DialogHeader>
@@ -93,7 +95,7 @@ export function DuplicatePendingAppointmentDialog({
         )}
 
         <DialogFooter>
-          <Button id={cancelButtonId} type="button" variant="outline" onClick={onCancel}>
+          <Button ref={cancelButtonRef} type="button" variant="outline" onClick={onCancel}>
             {t("orders.duplicatePending.cancel")}
           </Button>
           <Button type="button" onClick={onConfirm}>
