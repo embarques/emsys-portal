@@ -19,29 +19,16 @@ function accountName(account?: AccountingLookup | null): string {
 /**
  * Cash/bank account the batch is confirming — not loan AR / expense categories.
  * Loans store the money side on `sourceAccount` (issue credits it; payment debits it).
- * Invoice receipts and other income use `paymentAccount`.
+ * Match the API: sourceAccount first, then paymentAccount. Ledger lines are
+ * display fallbacks, not persisted money-account metadata for batch validation.
  */
 export function resolveJournalMoneyAccount(
   row: Pick<DailyIncomeJournal, "transactionType" | "sourceAccount" | "paymentAccount" | "accounts">,
 ): AccountingLookup | undefined {
   const source = row.sourceAccount;
   const payment = row.paymentAccount;
-  if (row.transactionType === "LOAN" || row.transactionType === "LOAN-PAYMENT") {
-    return accountId(source) ? source : undefined;
-  }
-  if (accountId(payment)) return payment;
   if (accountId(source)) return source;
-
-  const fundingLine = row.accounts?.find((line) => {
-    const type = (line.type || "").toUpperCase();
-    if (type !== "ASSET" && type !== "BANK") return false;
-    const name = (line.name || "").toUpperCase();
-    if (name === "ACCOUNTS RECEIVABLE" || name.includes("LOAN")) return false;
-    return line.debit > 0 || line.credit > 0;
-  });
-  return fundingLine
-    ? { id: fundingLine.id, name: fundingLine.name, type: fundingLine.type, displayName: fundingLine.name }
-    : undefined;
+  return accountId(payment) ? payment : undefined;
 }
 
 export function getJournalBatchSelectionKey(

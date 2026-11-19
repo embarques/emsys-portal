@@ -97,6 +97,10 @@ export function resolveJournalRowAccount(
     row.transactionType && RECEIPT_TRANSACTION_TYPES.has(row.transactionType),
   );
 
+  if (isReceipt && row.paymentAccount) {
+    return resolveJournalAccount(row.paymentAccount, chartAccountsById);
+  }
+
   if (
     isReceipt &&
     primaryFromAccounts &&
@@ -111,11 +115,6 @@ export function resolveJournalRowAccount(
       },
       chartAccountsById,
     );
-  }
-
-  if (isReceipt && row.paymentAccount && (!row.account || row.account.name === "SALES DISCOUNTS")) {
-    const paymentDisplay = resolveJournalAccount(row.paymentAccount, chartAccountsById);
-    if (paymentDisplay) return paymentDisplay;
   }
 
   const line = row.account ?? primaryFromAccounts ?? row.accounts?.[0];

@@ -32,6 +32,29 @@ breakdowns may update with clear labels and audit history. Do not require a froz
 accounting-period snapshot or duplicate income merely for clearance. This is a
 confirmed target, not a claim that implementation/deployment already matches.
 
+## Invoice registration — API PRs #384 and #383
+
+[API #384](https://github.com/embarques/emsys-api/pull/384) keeps collected money
+and the invoice discount on one `INITIAL-PAYMENT`. Send the gross invoice cost,
+the discount and the collected amount in that single command; do not generate
+separate `PAYMENT` and `DISCOUNT` commands. For a $100 invoice with $80 collected
+and a $20 discount, income/net collected is $80 and operational expenses are $0.
+Unpaid registration sends amount zero without a payment method or destination;
+the API omits the zero receipt line. The discount still reduces receivables.
+
+Use returned `paymentAccount` to label receipts, with ledger-line fallback for
+older responses. For batch eligibility under
+[API #383](https://github.com/embarques/emsys-api/pull/383), use persisted
+`sourceAccount.id`, else `paymentAccount.id`, else zero, alongside the payment
+method. Do not invent source metadata from SALES/AR credits or infer a batch key
+from ledger lines. Legacy edit defaults may still infer their source locally.
+Older rows without money-account metadata therefore stay separate from new rows
+with a known destination; the portal does not migrate accounting records.
+
+Local portal regression coverage: `tests/unit/initial-payment-contract.test.mjs`.
+Backend Go tests and authenticated registration/clearance checks still need to
+run in an environment with Go and non-production Firebase/API credentials.
+
 ## Journal lifecycle and migration
 
 - Verify payment-method/account corrections and remaining lifecycle concurrency.

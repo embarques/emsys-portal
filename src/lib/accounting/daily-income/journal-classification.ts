@@ -20,6 +20,7 @@ type ClassifiableJournal = Pick<
   | "employeeGroup"
   | "account"
   | "sourceAccount"
+  | "paymentAccount"
   | "accounts"
   | "apiTableValues"
   | "transactionType"
@@ -147,6 +148,8 @@ function buildJournalBreakdownEntry(
           ? { id: accountOverride.id, name: accountOverride.name || "" }
           : item.account,
         accounts: item.accounts,
+        transactionType: item.transactionType,
+        paymentAccount: item.paymentAccount,
       },
       chartById,
     )?.name ||
