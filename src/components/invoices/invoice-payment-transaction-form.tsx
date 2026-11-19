@@ -6,10 +6,8 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "rea
 import { useForm, type FieldErrors } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
-import { useTransactionAssigneeEntityActions } from "@/components/accounting/use-transaction-assignee-entity-actions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
-import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
@@ -28,16 +26,14 @@ import {
   type DailyIncomeJournalValues,
   type DailyIncomeStatement,
 } from "@/lib/accounting/daily-income/types";
-import { normalizeApiError } from "@/lib/api/axios";
-import { useEmployees } from "@/lib/employees/hooks/use-employees";
+import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
-import { dailyRouteSupervisors, resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
+import { resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
 import { buildInvoiceDailyIncomeAssigneeDefaults } from "@/lib/invoices/schemas/invoice-daily-income.schema";
 import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
-import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 const EMPTY_PAYMENT_METHODS: AccountingLookup[] = [];
 const EMPTY_BANK_ACCOUNTS: ChartAccount[] = [];
@@ -82,19 +78,6 @@ function buildInitialValues(
   };
 }
 
-function resolveEmployeeForCurrentUser(
-  user: { id: number; email: string; name: string },
-  employees: Array<{ id: number; name: string; email: string; user?: { id: number } | null }>,
-) {
-  const normalizedEmail = user.email.trim().toLowerCase();
-  return (
-    employees.find((item) => item.user?.id === user.id) ??
-    employees.find((item) => item.email.trim().toLowerCase() === normalizedEmail) ??
-    employees.find((item) => item.name.trim().toLowerCase() === user.name.trim().toLowerCase()) ??
-    null
-  );
-}
-
 function getFirstValidationMessage(errors: FieldErrors<DailyIncomeJournalValues>): string | null {
   for (const error of Object.values(errors)) {
     if (!error) continue;
@@ -104,10 +87,6 @@ function getFirstValidationMessage(errors: FieldErrors<DailyIncomeJournalValues>
   }
 
   return null;
-}
-
-function hasJournalAssignee(values: Pick<DailyIncomeJournalValues, "employeeId" | "routeId">) {
-  return Boolean(values.employeeId) || Boolean(values.routeId?.trim());
 }
 
 export function InvoicePaymentTransactionForm({
@@ -120,19 +99,12 @@ export function InvoicePaymentTransactionForm({
 }: Props) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
-  const isMobileLayout = useIsMobileViewport();
   const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const currentUserQuery = useCurrentUser();
-  const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc", active: true });
   const paymentMethodsQuery = useAccountingPaymentMethods(true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, isPaymentAccountsEnabled());
   const createJournal = useCreateDailyIncomeJournal();
-  const employees = useMemo(
-    () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
-    [employeesQuery.data?.items],
-  );
   const paymentMethods = paymentMethodsQuery.data ?? EMPTY_PAYMENT_METHODS;
   const bankAccounts = bankAccountsQuery.data?.items ?? EMPTY_BANK_ACCOUNTS;
   const accounts = accountsQuery.data?.items ?? EMPTY_BANK_ACCOUNTS;
@@ -140,12 +112,9 @@ export function InvoicePaymentTransactionForm({
     () => buildInvoiceDailyIncomeAssigneeDefaults(invoice),
     [invoice],
   );
-  const hasStep1Assignee = hasJournalAssignee(step1AssigneeSeed);
-  // Desktop hides assignee when step 1 already chose one; load routes when the picker is shown.
-  const showAssignee = isMobileLayout || !hasStep1Assignee;
+  // The invoice workflow owns creation responsibility on every viewport.
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
-    enabled:
-      showAssignee || (invoice.pickupSource === "route" && Boolean(invoice.routeId.trim())),
+    enabled: Boolean(step1AssigneeSeed.routeId),
   });
   const dailyRoutes = pickupRoutesQuery.data?.items ?? EMPTY_DAILY_ROUTES;
   const routeNameById = useMemo(
@@ -175,6 +144,7 @@ export function InvoicePaymentTransactionForm({
         senderRequired: t("accounting.dailyIncome.form.validation.senderRequired"),
         receiverRequired: t("accounting.dailyIncome.form.validation.receiverRequired"),
         amountExceedsBalance: t("accounting.dailyIncome.form.validation.amountExceedsBalance"),
+        invoicePaidOff: t("accounting.dailyIncome.form.validation.invoicePaidOff"),
         accountRequired: t("accounting.dailyIncome.form.validation.accountRequired"),
         sourceAccountRequired: t("accounting.dailyIncome.form.validation.sourceAccountRequired"),
         inventoryRequired: t("accounting.dailyIncome.form.validation.inventoryRequired"),
@@ -276,23 +246,6 @@ export function InvoicePaymentTransactionForm({
     setValue,
   ]);
 
-  // Unless the route has exactly one supervisor, the user must choose one even when step 1 set the route.
-  const step1RouteId = step1AssigneeSeed.routeId?.trim();
-  const step1Route = step1RouteId ? dailyRoutes.find((item) => item.id === step1RouteId) : undefined;
-  const needsSupervisorChoice = Boolean(step1RouteId) && pickupRoutesQuery.isSuccess
-    && (!step1Route || dailyRouteSupervisors(step1Route).length !== 1);
-  const assigneeVisible = showAssignee || needsSupervisorChoice;
-  const employeeId = watch("employeeId");
-  const routeId = watch("routeId");
-  const assigneeEntityActions = useTransactionAssigneeEntityActions({
-    setValue,
-    employees,
-    dailyRoutes,
-    statementDate: statement.date,
-    employeeId,
-    routeId,
-  });
-
   // Default Cash once methods load, only if the user has not chosen a method yet.
   useEffect(() => {
     if (getValues("paymentMethodId") || paymentMethods.length === 0) return;
@@ -319,19 +272,6 @@ export function InvoicePaymentTransactionForm({
     setValue("routeName", nextName, { shouldValidate: false });
   }, [dailyRoutes, getValues, setValue]);
 
-  // Fallback only when step 1 left assignee empty.
-  useEffect(() => {
-    const user = currentUserQuery.data;
-    if (!user || employees.length === 0) return;
-    if (getValues("employeeId") || getValues("routeId")?.trim()) return;
-    if (getValues("assigneeSource") === "route") return;
-    const employee = resolveEmployeeForCurrentUser(user, employees);
-    if (!employee) return;
-    setValue("assigneeSource", "employee", { shouldValidate: true });
-    setValue("employeeId", employee.id, { shouldValidate: true });
-    setValue("employeeName", employee.name, { shouldValidate: true });
-  }, [currentUserQuery.data, employees, getValues, setValue]);
-
   useEffect(() => {
     const description = t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription");
     if (getValues("description") === description) return;
@@ -343,20 +283,6 @@ export function InvoicePaymentTransactionForm({
       setSubmitError(null);
 
       const assignedToRoute = Boolean(values.routeId?.trim());
-      const user = currentUserQuery.data;
-      const employee =
-        (!assignedToRoute && values.employeeId
-          ? employees.find((item) => item.id === values.employeeId)
-          : null) ??
-        (!assignedToRoute && user ? resolveEmployeeForCurrentUser(user, employees) : null);
-
-      if (!assignedToRoute && !employee) {
-        const message = t("invoices.wizard.dailyIncome.dialog.employeeUnavailable");
-        setSubmitError(message);
-        notifyError(message);
-        return;
-      }
-
       const amount = Number.isFinite(values.amount) ? Number(values.amount) : 0;
       const paymentDetailsRequired = amount > 0;
       const cash = findCashPaymentMethod(paymentMethods);
@@ -374,9 +300,9 @@ export function InvoicePaymentTransactionForm({
           ...values,
           transactionType: "INITIAL-PAYMENT",
           amount,
-          assigneeSource: assignedToRoute ? "route" : "employee",
-          employeeId: assignedToRoute ? undefined : employee?.id,
-          employeeName: assignedToRoute ? undefined : employee?.name,
+          assigneeSource: assignedToRoute ? "route" : values.employeeId ? "employee" : "creator",
+          employeeId: assignedToRoute ? undefined : values.employeeId,
+          employeeName: assignedToRoute ? undefined : values.employeeName,
           routeId: assignedToRoute ? values.routeId : undefined,
           routeName: assignedToRoute ? values.routeName : undefined,
           routeCrewId: assignedToRoute ? values.routeCrewId : undefined,
@@ -418,7 +344,7 @@ export function InvoicePaymentTransactionForm({
       );
       await onRegistered(journal);
     } catch (error) {
-      const message = normalizeApiError(error).message;
+      const message = normalizeDailyIncomeJournalError(error);
       setSubmitError(message);
       notifyError(message);
     }
@@ -469,7 +395,7 @@ export function InvoicePaymentTransactionForm({
       {skipPayment ? null : (
         <RegisterInvoiceTransactionFields
           grouped
-          employees={employees}
+          employees={[]}
           dailyRoutes={dailyRoutes}
           statementBranchId={statement.branch?.id}
           accounts={accounts}
@@ -479,19 +405,14 @@ export function InvoicePaymentTransactionForm({
           register={register}
           setValue={setValue}
           watch={watch}
-          showEmployee={assigneeVisible}
-          allowDailyRoute={assigneeVisible}
+          showEmployee={false}
+          allowDailyRoute={false}
           showInvoiceNumber={false}
           showParties={false}
           invoiceCostReadOnly
           paymentSectionFirst
-          onAddEmployee={assigneeEntityActions.onAddEmployee}
-          onEditEmployee={assigneeEntityActions.onEditEmployee}
-          onAddRoute={assigneeEntityActions.onAddRoute}
-          onEditRoute={assigneeEntityActions.onEditRoute}
         />
       )}
-      {skipPayment ? null : assigneeEntityActions.entityDialogs}
 
       {createJournal.isPending ? (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">

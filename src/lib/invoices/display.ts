@@ -27,6 +27,7 @@ export function getPaymentLocationLabel(location: InvoicePaymentLocation): strin
 }
 
 const PICKUP_SOURCE_LABEL_KEYS = {
+  creator: "invoices.form.fields.pickupSourceCreator",
   route: "invoices.form.fields.pickupSourceRoute",
   warehouse: "invoices.form.fields.pickupSourceWarehouse",
   office: "invoices.form.fields.pickupSourceOffice",

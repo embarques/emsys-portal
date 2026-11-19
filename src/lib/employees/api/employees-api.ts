@@ -418,9 +418,9 @@ export async function fetchEmployeeByUserId(userId: number): Promise<Employee | 
 
   const searchBody = buildStripeStyleSearchBody({
     sort: DEFAULT_EMPLOYEE_LIST_PARAMS.sort,
-    filterGroups: [{ operator: "and", filters: [{ field: "user.id", operator: "eq", value: userId }] }],
+    filterGroups: [{ operator: "and", filters: [{ field: "user.id", operator: "eq", value: userId }, { field: "active", operator: "neq", value: false }] }],
   });
-  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 5, offset: 0 });
+  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 2, offset: 0 });
   const payload = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.EMPLOYEES}/search?${paginationQuery}`,
     searchBody,
@@ -429,7 +429,8 @@ export async function fetchEmployeeByUserId(userId: number): Promise<Employee | 
   const linked = normalizePaginatedEmployees(payload).items.filter(
     (employee) => employee.user?.id === userId,
   );
-  return linked.find((employee) => employee.active) ?? linked[0] ?? null;
+  const active = linked.filter((employee) => employee.active);
+  return active.length === 1 ? active[0] : null;
 }
 
 export async function fetchEmployeeById(employeeId: string): Promise<Employee> {

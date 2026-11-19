@@ -353,6 +353,7 @@ export function AddTransactionWizard(props: Props) {
         <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", !showTypePicker && !specialType ? "flex" : "hidden")}>
           <fieldset disabled={isSubmitting} className="contents">
             <DailyIncomeTransactionForm
+              editing={isEdit}
               key={`${
                 selectedType === "PAYMENT" || selectedType === "INITIAL-PAYMENT" ? "invoice-payment" : selectedType
               }-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}

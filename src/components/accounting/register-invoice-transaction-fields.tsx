@@ -1,5 +1,6 @@
 "use client";
 
+import { useResponsibilityAccess } from "@/lib/accounting/daily-income/use-responsibility-access";
 import { useEffect, useMemo, useState } from "react";
 import { ReceiptText, UserPlus, UserRound, UserX } from "lucide-react";
 import type {
@@ -180,6 +181,7 @@ export function RegisterInvoiceTransactionFields({
   onAssigneeComplete,
 }: Props) {
   const { t } = useTranslation();
+  const responsibility = useResponsibilityAccess("INITIAL-PAYMENT");
   const { openFormTab } = useWorkspaceTabs();
   const { hasPermission } = useAuth();
   const canUseManualNumber = hasPermission(
@@ -491,6 +493,8 @@ export function RegisterInvoiceTransactionFields({
       {showEmployee ? (
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
+            canAssignResponsibility={responsibility.canAssign}
+            ownEmployeeId={responsibility.ownEmployee?.id}
             inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
             guided={Boolean(activeStep)}
             singleColumn

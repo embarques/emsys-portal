@@ -200,6 +200,7 @@
     }
   },
   "form": {
+    "hints": { "selfResponsibility": "La responsabilidad se asigna a tu empleado activo vinculado. El pago inicial usa la misma responsabilidad." },
     "design": {
       "backToInvoices": "Volver a facturas",
       "createDescription": "Ingresa los datos del envío, confirma los clientes y la mercancía y revisa el pago y los totales antes de guardar.",
@@ -221,6 +222,7 @@
       "pickupReference": "Referencia de recogida",
       "pickupReceiver": "Destinatario de esta recogida",
       "pickupSource": "Recibido en",
+      "pickupSourceCreator": "Yo (empleado vinculado)",
       "pickupSourceRoute": "Ruta",
       "pickupSourceWarehouse": "Almacén",
       "pickupSourceOffice": "Oficina",

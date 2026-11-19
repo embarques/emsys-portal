@@ -497,6 +497,7 @@
       },
       "placeholders": {
         "invoice": "Select an invoice",
+        "exactInvoiceNumber": "Enter the exact invoice number",
         "searchInvoices": "Search invoices…",
         "checkNumber": "4521",
         "referenceNumber": "REF-1001"
@@ -792,6 +793,10 @@
       "reportReady": "Daily income report ready."
     },
     "errors": {
+      "useLoanPaymentWorkflow": "Record loan payments through the loan payment workflow.",
+      "paymentInvoiceAmbiguous": "More than one invoice has this number. Ask an administrator to resolve the duplicate before recording payment.",
+      "paymentInvoiceInvalid": "The invoice reference could not be verified. Enter the exact invoice number and retry.",
+      "responsibilityRequired": "Link an active employee to your user, or ask an authorized operator to select responsibility. Your entry has not been saved.",
       "noCloseoutLoaded": "No closeout loaded.",
       "transactionNotFound": "This transaction could not be found.",
       "closeoutNotFound": "This daily closeout could not be found.",
@@ -1188,6 +1193,8 @@
         "useExistingInvoice": "Use existing invoice"
       },
       "hints": {
+        "paymentLookupUnavailable": "Company-wide payment lookup is awaiting the API update. These results use your existing invoice-view access.",
+        "selfResponsibility": "Responsibility defaults to your linked employee. You can select a daily route only when you are its responsible supervisor.",
         "balanceAfterClearance": "New balance is a preview after this payment is applied. Pending payments affect the invoice balance when cleared.",
         "expenseAccount": "The expense category this spending belongs to.",
         "expenseSourceAccount": "Cash on hand (or another cash account under it), or a bank account for non-cash methods. Accounts receivable and loan receivable cannot fund expenses.",

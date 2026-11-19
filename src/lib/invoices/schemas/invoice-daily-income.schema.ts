@@ -145,7 +145,7 @@ export function buildInvoiceDailyIncomeAssigneeDefaults(
   }
 
   return {
-    assigneeSource: "employee",
+    assigneeSource: "creator",
     employeeId: undefined,
     employeeName: "",
     routeId: undefined,

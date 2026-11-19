@@ -42,7 +42,7 @@ const employee = (overrides = {}) => ({
 const dailyRoute = (overrides = {}) => ({
   id: "route-1", name: "Truck 1 · 10/23", routeType: "pickup", active: true, date: DATE,
   branch: { id: 2, code: "NY" },
-  employees: [{ id: 5, name: "Jane Driver", role: "driver" }], ...overrides,
+  employees: [{ id: 5, name: "Jane Driver", role: "supervisor" }], ...overrides,
 });
 const base = {
   date: DATE,
@@ -51,7 +51,7 @@ const base = {
   branches: [{ id: 2, code: "NY", name: "New York", type: "office" }, { id: 3, code: "WH", name: "Warehouse", type: "warehouse" }],
 };
 
-test("crew on today's pickup route is received via that route with the latest container", () => {
+test("supervisor on today's pickup route is received via that route with the latest container", () => {
   const context = assigned.resolveAssignedInvoiceContext({ ...base, employee: employee(), routes: [dailyRoute()] });
   assert.deepEqual(context.receivedBy, {
     source: "route", dailyRoute: { id: "route-1", name: "Truck 1 · 10/23" },
@@ -121,4 +121,11 @@ test("save context reuses the resolved assignment instead of re-reading it", () 
   );
   assert.deepEqual(office.employee, { id: 5, name: "Jane Driver", userName: "jane@x.com", fullName: "Jane Driver" });
   assert.equal(office.pickupAssignment.source, "office");
+});
+
+
+test("crew membership alone never attributes an invoice to another supervisor", () => {
+ const context = assigned.resolveAssignedInvoiceContext({ ...base, employee: employee(), routes: [dailyRoute({ employees: [{ id:5, name:"Jane Driver", role:"driver" }, { id:99, name:"Other", role:"supervisor" }] })] });
+ assert.equal(context.receivedBy.source, "office");
+ assert.equal(context.receivedBy.employee.id, 5);
 });

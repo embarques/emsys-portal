@@ -2,6 +2,8 @@ import type { Permission } from "@/lib/auth/types/permission";
 
 /** Portal page gates — aligned with emsys-api permission seed where applicable. */
 export const PERMISSIONS = {
+  invoiceResponsibilityAssign: { name: "canAssignInvoiceResponsibility", resourceType: "invoice_responsibility" },
+  paymentResponsibilityAssign: { name: "canAssignPaymentResponsibility", resourceType: "payment_responsibility" },
  journalsView: {name:"canViewJournal", resourceType:"journal"},
  journalsReconcile: {name:"canReconcileJournal", resourceType:"journal"},
  journalsClear: {name:"canClearJournal", resourceType:"journal"},

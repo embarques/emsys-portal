@@ -39,6 +39,7 @@ const TRANSACTION_TYPE_I18N_KEYS: Record<JournalTransactionType, string> = {
   SURCHARGE: "surcharge",
   TRANSFER: "transfer",
   LOAN: "loan",
+  "LOAN-PAYMENT": "loanPayment",
 };
 
 type TransactionTypeMeta = Pick<

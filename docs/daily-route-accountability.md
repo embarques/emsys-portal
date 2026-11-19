@@ -68,3 +68,33 @@
 
 See [inventory gaps](inventory-workflow.md) and
 [backend gaps](backend-api-gaps.md).
+
+## Responsibility grants and creation workflow (2026-11-18)
+
+Invoice responsibility and INITIAL-PAYMENT use the same creation-time party.
+`canAssignInvoiceResponsibility` on `invoice_responsibility` permits another
+employee/route selection; `canAssignPaymentResponsibility` on
+`payment_responsibility` controls later PAYMENT/DISCOUNT/SURCHARGE (and API REFUND).
+Route management and employee CRUD are not substitutes. Administrators receive
+both through the API seed; existing tenants require additive seeding and session
+permission refresh. These changes depend on API PR #388.
+
+Without the relevant grant, the Portal offers the creator-linked employee default
+and routes only when an exact active link establishes that the user is supervisor.
+It never identifies self by name/email or by scanning a directory page. The API
+resolves the default; missing/ambiguous links reject creation. The invoice wizard
+uses one responsibility choice across desktop/mobile, then applies the committed
+journal party to completion and locks responsibility after registration. Later
+payments never copy responsibility from the invoice.
+
+Operators with scoped invoice access use `GET /journals/payment-invoice/lookup?number=<exact-number>` from API
+PR #388. This exact, case-sensitive company lookup returns only id/number/current
+payment totals and excludes reserved records. It does not expose customer details,
+expand invoice browsing, or permit another company's invoices. DISCOUNT/SURCHARGE
+continue using ordinary invoice access. Until the endpoint is deployed, a missing
+route (404 without the API's invoice-not-found response) uses existing scoped
+invoice search and displays an availability notice. Forbidden/error responses
+never trigger that fallback. Full database/authenticated acceptance runs after
+the API merge/deployment; a Portal dev push does not establish those results.
+
+Users who already have company-wide invoice-view access retain ordinary number/name/phone search. The narrow exact-number endpoint supplements payment access for scoped/no-invoice-view operators.

@@ -97,6 +97,14 @@ Do not confuse these three route concepts:
 | **`invoice.dailyRoute`** | Invoice snapshot | NY — recordkeeping / insights copy when receive was via a daily route (often derived from `receivedBy` when it is a route) | **No** for later payments, surcharges, or discounts. Insights / history only. |
 | **Barcode `route`** | Each label / invoice item | **RD** — delivery daily vehicle-route | No. Operational delivery assignment only. |
 
+Creation responsibility and INITIAL-PAYMENT must use the same employee/daily route.
+When omitted, the API resolves the digitizing user's unique active linked employee
+for both; it rejects a missing/ambiguous link. Assignment to another party requires
+`canAssignInvoiceResponsibility`; later payment responsibility assignment requires
+`canAssignPaymentResponsibility`. Without the relevant grant, use self or a route
+for which self is responsible supervisor. Route membership alone is insufficient.
+The committed initial journal's returned responsibility is used for invoice completion.
+
 Later Daily Income journals (payment / surcharge / discount) choose their own assignee (employee, daily-route supervisor, or “me”) case by case. They must **not** inherit `invoice.dailyRoute` for reconciliation ownership. If a later journal selects a daily route, that journal’s supervisor is accountable for **that transaction only**.
 
 TODO (backend) — invoice `receivedBy` (portal now follows this; align API + legacy data):

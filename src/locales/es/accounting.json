@@ -497,6 +497,7 @@
       },
       "placeholders": {
         "invoice": "Seleccione una factura",
+        "exactInvoiceNumber": "Escribe el número exacto de la factura",
         "searchInvoices": "Buscar facturas…",
         "checkNumber": "4521",
         "referenceNumber": "REF-1001"
@@ -792,6 +793,10 @@
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
+      "useLoanPaymentWorkflow": "Registra los pagos de préstamos desde el flujo de pago de préstamos.",
+      "paymentInvoiceAmbiguous": "Más de una factura tiene este número. Pide a un administrador que resuelva el duplicado antes de registrar el pago.",
+      "paymentInvoiceInvalid": "No se pudo verificar la factura. Escribe el número exacto e inténtalo de nuevo.",
+      "responsibilityRequired": "Vincula un empleado activo a tu usuario o pide a un operador autorizado que asigne la responsabilidad. El registro no se ha guardado.",
       "noCloseoutLoaded": "No hay cierre cargado.",
       "transactionNotFound": "No se encontró esta transacción.",
       "closeoutNotFound": "No se encontró este cierre diario.",
@@ -1188,6 +1193,8 @@
         "useExistingInvoice": "Usar factura existente"
       },
       "hints": {
+        "paymentLookupUnavailable": "La búsqueda de facturas de toda la empresa para pagos está pendiente de la actualización de la API. Estos resultados usan tu acceso actual a facturas.",
+        "selfResponsibility": "La responsabilidad se asigna a tu empleado vinculado. Puedes elegir una ruta diaria solo si eres su supervisor responsable.",
         "balanceAfterClearance": "El nuevo saldo es una vista previa después de aplicar este pago. Los pagos pendientes afectan el saldo de la factura cuando se liquidan.",
         "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
         "expenseSourceAccount": "Efectivo en caja (u otra cuenta de efectivo bajo ella), o una cuenta bancaria para métodos que no son efectivo. Cuentas por cobrar y préstamos por cobrar no pueden financiar gastos.",

@@ -200,6 +200,7 @@
     }
   },
   "form": {
+    "hints": { "selfResponsibility": "Responsibility defaults to your active linked employee. The initial payment uses the same responsibility." },
     "design": {
       "backToInvoices": "Back to invoices",
       "createDescription": "Enter shipment details, confirm customers and merchandise, then review payment and totals before saving.",
@@ -221,6 +222,7 @@
       "pickupReference": "Pickup Reference",
       "pickupReceiver": "Receiver from this pickup",
       "pickupSource": "Received via",
+      "pickupSourceCreator": "Me (linked employee)",
       "pickupSourceRoute": "Route",
       "pickupSourceWarehouse": "Warehouse",
       "pickupSourceOffice": "Office",

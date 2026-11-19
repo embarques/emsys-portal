@@ -62,6 +62,7 @@ export const API_ENDPOINTS = {
   INVOICE_DESCRIPTIONS: "/invoice-descriptions",
   ACCOUNTING_INCOME_STATEMENTS: "/income-statements",
   ACCOUNTING_INCOME_STATEMENT: "/income-statements",
+  ACCOUNTING_PAYMENT_INVOICE: "/journals/payment-invoice/lookup",
   ACCOUNTING_JOURNALS: "/journals",
   /** Independent settlement command; remaining acceptance: docs/financial-controls.md. */
   ACCOUNTING_JOURNAL_CLEARANCE: "/journals/clear",

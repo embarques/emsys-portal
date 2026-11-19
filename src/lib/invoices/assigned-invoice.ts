@@ -1,3 +1,4 @@
+import { canSelectResponsibleRoute } from "@/lib/accounting/daily-income/responsibility";
 import { resolveUserBranchRef } from "@/lib/branches/user-branch";
 import type { Branch } from "@/lib/branches/types";
 import type { Container } from "@/lib/containers/types";
@@ -83,7 +84,7 @@ export function findEmployeeDailyRoute(
         route.active &&
         (route.date === isoDate || route.date.startsWith(isoDate)) &&
         !isDeliveryBranchCode(route.branch?.code) &&
-        route.employees.some((member) => member.id === employeeId),
+        canSelectResponsibleRoute(route, false, employeeId),
     ) ?? null
   );
 }

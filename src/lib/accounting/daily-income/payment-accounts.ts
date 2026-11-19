@@ -148,7 +148,7 @@ export function buildAccountHierarchyChain<T extends AccountNode>(
     seen.add(current.id);
     chain.unshift(current);
     if (rootIds.has(current.id)) break;
-    const parentId = current.parentAccount?.id;
+    const parentId: number | undefined = current.parentAccount?.id;
     current = parentId ? byId.get(parentId) : undefined;
   }
   if (!chain.length) return [];
@@ -167,7 +167,7 @@ export function buildAccountHierarchyLevels<T extends AccountNode>(
 ): { parentId: number | null; options: T[]; valueId?: number }[] {
   const chain = buildAccountHierarchyChain(accounts, roots, selectedId);
   const levels: { parentId: number | null; options: T[]; valueId?: number }[] = [
-    { parentId: null, options: roots, valueId: chain[0]?.id },
+    { parentId: null, options: [...roots], valueId: chain[0]?.id },
   ];
   for (let index = 0; index < chain.length; index += 1) {
     const children = listPostingChildren(accounts, chain[index].id);

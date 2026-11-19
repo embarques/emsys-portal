@@ -1,5 +1,7 @@
 "use client";
 
+import { applyRegisteredInvoiceResponsibility } from "@/lib/invoices/responsibility";
+
 import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Pin, Printer, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -308,7 +310,7 @@ export function InvoiceFormWizard({
     }
     setValues((current) => {
       const next = {
-        ...current,
+        ...(context.registration ? applyRegisteredInvoiceResponsibility(current, context.registration) : current),
         ...(current.autoGenerateNumber && context.registration?.invoice?.number
           ? {
               invoiceNumber: context.registration.invoice.number,
@@ -679,6 +681,7 @@ export function InvoiceFormWizard({
     <InvoiceForm
       key={`invoice-wizard-form-${formSessionKey}`}
       appearance={isMobileLayout ? "phoneWizard" : "wizard"}
+      isEditing={isEditing}
       wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
       wizardTotalSteps={previewStep}
       showFooter={false}
@@ -693,6 +696,7 @@ export function InvoiceFormWizard({
       requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
       defaultToLatestContainer={!isEditing}
       assignedMode={assignedMode}
+      responsibilityLocked={Boolean(dailyIncomeContext.registration)}
     />
   );
 

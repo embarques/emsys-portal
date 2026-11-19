@@ -1,5 +1,10 @@
 "use client";
 
+import { useResponsibilityAccess } from "@/lib/accounting/daily-income/use-responsibility-access";
+import { canSelectResponsibleRoute, selfResponsibility, needsCompanyPaymentLookup } from "@/lib/accounting/daily-income/responsibility";
+import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
+import { usePaymentInvoice } from "@/lib/accounting/daily-income/use-payment-invoice";
+import type { InvoicePaymentChoice } from "@/lib/accounting/daily-income/payment-invoice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -75,6 +80,7 @@ const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 type Props = {
+  editing?: boolean;
   summaryContainer?: HTMLElement | null;
   summaryCurrency?: string;
   onValuesChange?: (values: DailyIncomeJournalValues) => void;
@@ -152,6 +158,7 @@ function isUserRevenueAccount(account: ChartAccount) {
 }
 
 export function DailyIncomeTransactionForm({
+  editing = false,
   quickEntry = false,
   invoiceDiscovery = false,
   onTransactionTypeChange,
@@ -190,7 +197,7 @@ export function DailyIncomeTransactionForm({
   summaryCurrency,
 }: Props) {
   const { t } = useTranslation();
-  const { hasPermission } = useAuth();
+  const { hasPermission, permissions } = useAuth();
   const canViewChartAccounts = hasPermission(
     PERMISSIONS.accountsView.name,
     PERMISSIONS.accountsView.resourceType,
@@ -210,10 +217,13 @@ export function DailyIncomeTransactionForm({
   useScrollFocusedSectionToTop(formRef, showSectionNavigation);
   const [sourceAccountDefaultCleared, setSourceAccountDefaultCleared] = useState(false);
   const [invoiceQuery, setInvoiceQuery] = useState("");
-  const [selectedInvoiceCache, setSelectedInvoiceCache] = useState<Invoice | null>(null);
+  const [selectedInvoiceCache, setSelectedInvoiceCache] = useState<InvoicePaymentChoice | null>(null);
   const debouncedInvoiceQuery = useDebouncedValue(invoiceQuery.trim(), 300);
+  const paymentReferenceLookup = needsCompanyPaymentLookup(transactionType, invoiceDiscovery, permissions, hasPermission(PERMISSIONS.invoicesView.name, PERMISSIONS.invoicesView.resourceType));
+  const paymentInvoice = usePaymentInvoice(debouncedInvoiceQuery, paymentReferenceLookup);
+  const legacyInvoiceSearch = !paymentReferenceLookup || paymentInvoice.data?.unavailable === true;
   const invoiceSearch = useInvoiceSearch(createInvoiceSearchFilter(debouncedInvoiceQuery), {
-    enabled: Boolean(debouncedInvoiceQuery),
+    enabled: Boolean(debouncedInvoiceQuery) && legacyInvoiceSearch,
     limit: 40,
   });
   const schema = useMemo(
@@ -360,6 +370,15 @@ export function DailyIncomeTransactionForm({
   }, [invalidField, activeStep, errors]);
 
   const type = watch("transactionType");
+  const responsibility = useResponsibilityAccess(type);
+  useEffect(() => {
+    if (editing || !responsibility.ready || responsibility.canAssign) return;
+    const route = dailyRoutes.find((item) => item.id === getValues("routeId"));
+    if (route && canSelectResponsibleRoute(route, false, responsibility.ownEmployee?.id)) return;
+    for (const [key, value] of Object.entries(selfResponsibility())) {
+      setValue(key as keyof ReturnType<typeof selfResponsibility>, value, { shouldValidate: false });
+    }
+  }, [editing, initialValues, responsibility.ready, responsibility.canAssign, responsibility.ownEmployee?.id, dailyRoutes, getValues, setValue]);
   const employeeId = watch("employeeId");
   const employeeName = watch("employeeName");
   const routeId = watch("routeId");
@@ -394,9 +413,10 @@ export function DailyIncomeTransactionForm({
   const clearPaymentOnSave = watch("clearPaymentOnSave");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
-  const invoiceResults = useMemo(
-    () => (debouncedInvoiceQuery ? (invoiceSearch.data?.items ?? []) : invoices),
-    [debouncedInvoiceQuery, invoiceSearch.data?.items, invoices],
+  const invoiceResults = useMemo<InvoicePaymentChoice[]>(
+    () => !debouncedInvoiceQuery ? invoices : !legacyInvoiceSearch
+      ? (paymentInvoice.data?.invoice ? [paymentInvoice.data.invoice] : []) : invoiceSearch.data?.items ?? [],
+    [debouncedInvoiceQuery, legacyInvoiceSearch, paymentInvoice.data, invoiceSearch.data?.items, invoices],
   );
   const selectedInvoice = useMemo(() => {
     if (!invoiceId) return undefined;
@@ -518,7 +538,7 @@ export function DailyIncomeTransactionForm({
     return invoices.find((invoice) => invoice.invoiceNumber.trim().toLowerCase() === needle) ?? null;
   }, [autoGenerateInvoiceNumber, creatingDiscoveredInvoice, invoiceNumber, invoices]);
 
-  function applyExistingInvoice(invoice: Invoice) {
+  function applyExistingInvoice(invoice: InvoicePaymentChoice) {
     setSelectedInvoiceCache(invoice);
     setInvoiceQuery("");
     // Set id + balance together before validating so a prior paid-off invoice cannot leave a stale error.
@@ -589,13 +609,13 @@ export function DailyIncomeTransactionForm({
         }}
         onSearchChange={setInvoiceQuery}
         manualFiltering
-        loading={Boolean(debouncedInvoiceQuery) && invoiceSearch.isFetching}
+        loading={Boolean(debouncedInvoiceQuery) && (paymentInvoice.isFetching || invoiceSearch.isFetching)}
         placeholder={t(
           allowInvoiceDiscovery
             ? "accounting.dailyIncome.form.placeholders.selectInvoiceMode"
             : "accounting.dailyIncome.form.placeholders.selectInvoice",
         )}
-        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchInvoices")}
+        searchPlaceholder={t(paymentReferenceLookup ? "accounting.dailyIncome.form.placeholders.exactInvoiceNumber" : "accounting.dailyIncome.form.placeholders.searchInvoices")}
         emptyMessage={
           allowInvoiceDiscovery
             ? t("accounting.dailyIncome.form.placeholders.createNewInvoice")
@@ -608,6 +628,12 @@ export function DailyIncomeTransactionForm({
         error={selectedInvoicePaidOff ? undefined : errors.invoiceId?.message}
         className="sm:col-start-2"
       />
+      {paymentReferenceLookup && debouncedInvoiceQuery && paymentInvoice.data?.unavailable ? (
+        <p role="status" className="text-sm text-muted-foreground">{t("accounting.dailyIncome.form.hints.paymentLookupUnavailable")}</p>
+      ) : null}
+      {paymentReferenceLookup && paymentInvoice.isError ? (
+        <p role="alert" className="text-sm text-destructive">{normalizeDailyIncomeJournalError(paymentInvoice.error)}</p>
+      ) : null}
       {selectedInvoicePaidOff ? (
         <FormFooterNoticeMessage
           tone="error"
@@ -745,7 +771,7 @@ export function DailyIncomeTransactionForm({
     );
     return (
       <div className={cn("grid grid-cols-2 gap-x-4 gap-y-2 rounded-md bg-muted/70 px-3 py-2.5 text-sm", showAmounts && "sm:grid-cols-4")}>
-        {showParties ? (
+        {showParties && "sender" in selectedInvoice ? (
           <>
             {detail(t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice.sender?.name || t("common.empty.dash"), undefined, "journal-invoice-sender")}
             {detail(t("accounting.dailyIncome.form.fields.receiverClient"), getInvoicePrimaryReceiver(selectedInvoice)?.name || t("common.empty.dash"), undefined, "journal-invoice-receiver")}
@@ -987,6 +1013,9 @@ export function DailyIncomeTransactionForm({
   const assignmentSection = (
     <FormSection className={activeStep && activeStep !== "assignment" ? "hidden" : undefined} variant={activeStep ? "plain" : "card"} title={t("accounting.dailyIncome.form.sections.assignment")}>
       <TransactionAssigneeSelect
+        canAssignResponsibility={responsibility.canAssign}
+        ownEmployeeId={responsibility.ownEmployee?.id}
+        readOnly={editing && !responsibility.canAssign}
         inlineOptionsLimit={activeStep ? QUICK_SELECT_OPTIONS_LIMIT : undefined}
         guided={Boolean(activeStep)}
         singleColumn
@@ -1289,10 +1318,10 @@ export function DailyIncomeTransactionForm({
                     {invoiceSelectRow(null, true)}
                     {selectedInvoice ? (
                     <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-xs">
-                      <dl className="grid min-w-0 grid-cols-2 gap-4 px-4 py-3">
+                      {"sender" in selectedInvoice ? <dl className="grid min-w-0 grid-cols-2 gap-4 px-4 py-3">
                         {invoiceTextRow("journal-invoice-sender", t("accounting.dailyIncome.form.fields.senderClient"), selectedInvoice?.sender?.name)}
                         {invoiceTextRow("journal-invoice-receiver", t("accounting.dailyIncome.form.fields.receiverClient"), selectedInvoice ? getInvoicePrimaryReceiver(selectedInvoice)?.name : null)}
-                      </dl>
+                      </dl> : null}
                       <dl className="grid min-w-0 grid-cols-2 gap-4 border-y border-border bg-muted/35 px-4 py-3 tabular-nums sm:grid-cols-4">
                         {invoiceTextRow("journal-invoice-total", t("accounting.dailyIncome.form.sections.invoiceAmount"), selectedInvoice ? formatAccountingMoney(getInvoiceTotal(selectedInvoice)) : null)}
                         {invoiceSummaryRow("journal-invoice-discount", t("accounting.dailyIncome.form.invoiceSummary.discount"), selectedInvoice?.discount ?? null)}

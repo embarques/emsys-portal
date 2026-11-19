@@ -24,9 +24,10 @@ import {
 export type InvoicePaymentLocation = string;
 
 /** Where the pickup was handled: on a route, or by an employee at a warehouse or office. */
-export type InvoicePickupSource = "route" | "warehouse" | "office";
+export type InvoicePickupSource = "creator" | "route" | "warehouse" | "office";
 
 export const INVOICE_PICKUP_SOURCES = [
+  { value: "creator" as const, labelKey: "invoices.form.fields.pickupSourceCreator" },
   { value: "route" as const, labelKey: "invoices.form.fields.pickupSourceRoute" },
   { value: "warehouse" as const, labelKey: "invoices.form.fields.pickupSourceWarehouse" },
   { value: "office" as const, labelKey: "invoices.form.fields.pickupSourceOffice" },
@@ -311,7 +312,7 @@ export function getInvoiceRecordId(invoice: Pick<Invoice, "invoiceId">): string 
 }
 
 export function getInvoicePrimaryReceiver(
-  invoice: Pick<Invoice, "receiver">,
+  invoice: Partial<Pick<Invoice, "receiver">>,
 ): OrderParty | undefined {
   return invoice.receiver ?? undefined;
 }
@@ -369,8 +370,8 @@ export function mapPaymentLocationToPaidRegion(location: InvoicePaymentLocation)
   return code;
 }
 
-export function getInvoiceTotal(invoice: Invoice): number {
-  if (invoice.lineItems.length > 0) {
+export function getInvoiceTotal(invoice: Pick<Invoice, "cost"> & Partial<Pick<Invoice, "lineItems">>): number {
+  if (invoice.lineItems && invoice.lineItems.length > 0) {
     return computeInvoiceSubtotal(invoice.lineItems);
   }
   return Number(invoice.cost ?? 0);
@@ -423,7 +424,7 @@ export function normalizeApiInvoiceMoney(input: {
   return { cost, discount, amountPaid: 0, balance };
 }
 
-export function getInvoiceBalanceAmount(invoice: Invoice): number {
+export function getInvoiceBalanceAmount(invoice: Pick<Invoice, "cost" | "balance" | "discount" | "amountPaid"> & Partial<Pick<Invoice, "lineItems">>): number {
   if (invoice.balance != null && Number.isFinite(invoice.balance)) {
     return Math.max(0, Math.round(invoice.balance * 100) / 100);
   }
@@ -515,7 +516,7 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
     pickupId: "",
     containerId: "",
     paymentLocation: "usa",
-    pickupSource: "route",
+    pickupSource: "creator",
     routeId: "",
     routeCrewId: "",
     routeCrewName: "",
@@ -792,7 +793,7 @@ function normalizeInvoicePickupSource(
   source: InvoicePickupSource | string | undefined,
   officeBranchId?: string,
 ): InvoicePickupSource {
-  if (source === "route" || source === "warehouse" || source === "office") {
+  if (source === "creator" || source === "route" || source === "warehouse" || source === "office") {
     return source;
   }
 

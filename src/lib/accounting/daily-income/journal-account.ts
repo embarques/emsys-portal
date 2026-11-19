@@ -89,7 +89,7 @@ export function pickJournalPrimaryAccountLine(
  * payment destination over a misleading primary `account` snapshot.
  */
 export function resolveJournalRowAccount(
-  row: Pick<DailyIncomeJournal, "account" | "accounts" | "transactionType" | "paymentAccount">,
+  row: Pick<DailyIncomeJournal, "account" | "accounts" | "paymentAccount"> & Partial<Pick<DailyIncomeJournal, "transactionType">>,
   chartAccountsById?: ChartAccountsById,
 ): JournalAccountDisplay | null {
   const primaryFromAccounts = pickJournalPrimaryAccountLine(row.accounts, row.transactionType);

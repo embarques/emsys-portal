@@ -1510,7 +1510,7 @@ function applyInvoicePickupAssignment(
   assignment: InvoiceWriteContext["pickupAssignment"],
   isUpdate: boolean,
 ) {
-  if (!assignment) return;
+  if (!assignment || assignment.source === "creator") return;
 
   if (assignment.source === "route") {
     const dailyRoute = assignment.dailyRoute;

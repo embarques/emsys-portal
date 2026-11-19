@@ -1,4 +1,6 @@
 "use client";
+import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
+import { applyRegisteredInvoiceResponsibility, registeredInvoicePickupAssignment } from "@/lib/invoices/responsibility";
 import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
 import { isStaleMutation } from "@/lib/api/mutation-version";
 
@@ -13,7 +15,6 @@ import {
 } from "@/components/invoices/invoice-wizard-typography";
 import { useFormViewport } from "@/hooks/use-form-viewport";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
 import type { InvoiceFormSubmitContext } from "@/lib/invoices/invoice-daily-income-context";
 import { fetchBranches } from "@/lib/branches/api/branches-api";
 import { resolveUserBranchRef } from "@/lib/branches/user-branch";
@@ -172,6 +173,7 @@ const employeeToWriteRef = employeeToInvoiceWriteRef;
 async function resolveInvoicePickupAssignment(
   values: InvoiceFormValues,
 ): Promise<InvoiceWriteContext["pickupAssignment"]> {
+  if (values.pickupSource === "creator") return undefined;
   if (values.pickupSource === "route") {
     const routeId = values.routeId.trim();
     if (!routeId) return { source: "route" };
@@ -209,7 +211,7 @@ async function resolveInvoicePickupAssignment(
   return { source: values.pickupSource };
 }
 
-async function buildInvoiceWriteContext(values: InvoiceFormValues): Promise<InvoiceWriteContext> {
+async function buildInvoiceWriteContext(values: InvoiceFormValues, registeredAssignment?: InvoiceWriteContext["pickupAssignment"]): Promise<InvoiceWriteContext> {
   const currentUser = await fetchCurrentUser();
   const containerId = Number(values.containerId);
 
@@ -217,7 +219,7 @@ async function buildInvoiceWriteContext(values: InvoiceFormValues): Promise<Invo
     throw new Error("A container is required.");
   }
 
-  const pickupAssignment = await resolveInvoicePickupAssignment(values);
+  const pickupAssignment = registeredAssignment ?? await resolveInvoicePickupAssignment(values);
   const container = await fetchContainerById(containerId);
   const branches = await fetchBranches({ page: 1, limit: 200 });
   const resolvedBranch = resolveUserBranchRef(currentUser.branch, branches.items);
@@ -307,11 +309,12 @@ export function InvoiceCreateWizard({
     submitContext?: InvoiceFormSubmitContext,
   ): Promise<InvoiceFormSubmitResult> {
     try {
-      const context =
-        isAssignedOnly && assignedContext
-          ? buildAssignedInvoiceWriteContext(assignedContext)
-          : await buildInvoiceWriteContext(values);
       const registration = submitContext?.dailyIncomeRegistration ?? null;
+      const savingValues = registration ? applyRegisteredInvoiceResponsibility(values, registration) : values;
+      const registeredAssignment = registration ? registeredInvoicePickupAssignment(savingValues, registration) : undefined;
+      const context = isAssignedOnly && assignedContext
+        ? { ...buildAssignedInvoiceWriteContext(assignedContext), pickupAssignment: registeredAssignment ?? await resolveInvoicePickupAssignment(savingValues) }
+        : await buildInvoiceWriteContext(savingValues, registeredAssignment);
       const incomeStatementId = submitContext?.incomeStatementId ?? registration?.incomeStatementId ?? 0;
       const registeredInvoiceTotals =
         registration?.invoice && Number.isFinite(registration.invoice.cost)
@@ -331,7 +334,7 @@ export function InvoiceCreateWizard({
             }
           : undefined;
       const created = await createMutation.mutateAsync({
-        values,
+        values: savingValues,
         context: {
           ...context,
           customerSignature: submitContext?.customerSignature,
@@ -345,7 +348,7 @@ export function InvoiceCreateWizard({
         savedInvoiceId: created.invoiceId,
       };
     } catch (error) {
-      return { error: normalizeApiError(error).message };
+      return { error: normalizeDailyIncomeJournalError(error) };
     }
   }
 
@@ -357,7 +360,7 @@ export function InvoiceCreateWizard({
         : isAssignedOnly && assignedContextQuery.isError
           ? assignedContextQuery.error instanceof AssignedInvoiceContextError
             ? t(`invoices.assigned.errors.${assignedContextQuery.error.code}`)
-            : normalizeApiError(assignedContextQuery.error).message
+            : normalizeDailyIncomeJournalError(assignedContextQuery.error)
           : null;
 
   if (blockedMessage) {
@@ -522,7 +525,7 @@ export function InvoiceEditWizard({
         savedInvoiceId: updated.invoiceId,
       };
     } catch (error) {
-      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeApiError(error).message };
+      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeDailyIncomeJournalError(error) };
     } finally {
       setIsSyncingBarcodes(false);
       setPendingValues(null);
@@ -560,7 +563,7 @@ export function InvoiceEditWizard({
 
       return await saveInvoiceWithBarcodeSync(submitted, plan, {});
     } catch (error) {
-      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeApiError(error).message };
+      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeDailyIncomeJournalError(error) };
     }
   }
 
