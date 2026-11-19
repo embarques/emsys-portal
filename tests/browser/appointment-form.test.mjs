@@ -99,6 +99,34 @@ test("appointment form shows every section on one page and saves without receive
 });
 
 
+test("duplicate cancellation preserves the draft and confirmation retries once on desktop and mobile", async () => {
+  for (const width of [1280, 390]) {
+    const page = await fixture(width, "appointment", { emptyReceivers: "true", duplicateConfirmation: "true" });
+    try {
+      await page.getByRole("group", { name: "Purpose" }).getByRole("button", { name: "Estimate", exact: true }).click();
+      await page.getByRole("button", { name: "Save appointment", exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: "Pending appointment already exists" });
+      await dialog.waitFor();
+      assert.equal(await dialog.getByRole("button", { name: "No, keep the existing one" }).evaluate((button) => button === document.activeElement), true);
+      if (width === 390) await dialog.getByRole("button", { name: "No, keep the existing one" }).click();
+      else await page.keyboard.press("Escape");
+      await dialog.waitFor({ state: "hidden" });
+      await page.getByRole("button", { name: "Save appointment", exact: true }).waitFor({ state: "visible" });
+      assert.equal(await page.locator("#appointment-attempts").textContent(), "1");
+      assert.equal(await page.locator("#appointment-saved").textContent(), "null");
+      await page.getByRole("button", { name: "Edit purpose 1: Estimate", exact: true }).waitFor();
+      await page.getByRole("button", { name: "Save appointment", exact: true }).click();
+      await dialog.waitFor();
+      await dialog.getByRole("button", { name: "Yes, add another appointment" }).click();
+      await page.waitForFunction(() => document.getElementById("appointment-saved").textContent !== "null");
+      assert.equal(await page.locator("#appointment-attempts").textContent(), "3");
+      const saved = JSON.parse(await page.locator("#appointment-saved").textContent());
+      assert.equal(saved.comments[0].purpose, "ESTIMATE");
+      assert.equal(saved.senderId.length > 0, true);
+    } finally { await page.close(); }
+  }
+});
+
 test("take/pickup items ask only for quantity and Enter saves; the Other item asks only for a comment", async () => {
   const page = await fixture(1280, "appointment");
   try {

@@ -626,7 +626,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         const nextOrder = await duplicateConfirmation.submit(values, (formValues, options) =>
           createOrderMutation.mutateAsync({ values: formValues, options }),
         );
-        if (!nextOrder) return { error: null };
+        if (!nextOrder) return { error: null, cancelled: true };
         notifySuccess(t("orders.toasts.addedFor", { name: getOrderFeedbackName(nextOrder) }));
       }
 
@@ -636,7 +636,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       return { error: null };
     } catch (mutationError) {
       if (mutationError instanceof DuplicatePendingAppointmentCancelledError) {
-        return { error: null };
+        return { error: null, cancelled: true };
       }
       const message = normalizeApiError(mutationError).message;
       notifyError(message);

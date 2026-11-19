@@ -307,7 +307,7 @@ export function OrderForm({
     try {
       const result = await onSubmit(values);
       onFormErrorChange?.(result.error);
-      if (!result.error && !isEditing) {
+      if (!result.error && !result.cancelled && !isEditing) {
         setValues(resetOrderFormForNextEntry(values));
         setHistorySenderId(null);
         setReceiverToFocus(null);

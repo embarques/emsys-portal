@@ -82,12 +82,12 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
       const next = await duplicateConfirmation.submit(values, (formValues, options) =>
         createMutation.mutateAsync({ values: formValues, options }),
       );
-      if (!next) return { error: null };
+      if (!next) return { error: null, cancelled: true };
       notifySuccess(t("orders.toasts.addedFor", { name: getOrderFeedbackName(next) }));
       return { error: null };
     } catch (mutationError) {
       if (mutationError instanceof DuplicatePendingAppointmentCancelledError) {
-        return { error: null };
+        return { error: null, cancelled: true };
       }
       const message = normalizeApiError(mutationError).message;
       setFormError(message);
