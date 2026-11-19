@@ -268,7 +268,6 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     : [];
   const transactionType = (stringValue(firstDefined(raw.transactionType, raw.transType)) || "SALES") as JournalTransactionType;
   const primaryLine = pickJournalPrimaryAccountLine(accountLines, transactionType);
-  const sourceLine = accountLines.find((account) => account.credit > 0 && account.id !== primaryLine?.id);
   const route = normalizeJournalRoute(raw);
   const employee = normalizeLookup(raw.employee);
   const employeeGroupRaw = normalizePartyRef(raw.employeeGroup);
@@ -327,7 +326,7 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     ...(route ? { dailyRoute: normalizeDailyRouteAttribution(raw.dailyRoute, route) } : {}),
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     paymentAccount: normalizeLookup(raw.paymentAccount),
-    sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
+    sourceAccount: normalizeLookup(raw.sourceAccount),
     paymentMethod: normalizeLookup(raw.paymentMethod),
     // UI "Check number" ← API paymentReference (legacy checkNumber still accepted).
     checkNumber: resolveJournalCheckNumberFromApi(raw),
@@ -602,17 +601,15 @@ export async function fetchDailyIncomeInvoiceRegistration(
   return row ? normalizeJournal(row) : null;
 }
 
-/** Invoice-payment journals always need paymentMethod.name, including $0 INITIAL-PAYMENT. */
+/** Unpaid registration has no receipt and needs no payment method. */
 function resolveJournalPaymentMethod(values: DailyIncomeJournalValues): { id?: number; name: string } | undefined {
   const amount = Number(values.amount) || 0;
-  const isInvoicePayment =
-    values.transactionType === "INITIAL-PAYMENT" || values.transactionType === "PAYMENT";
+  if (values.transactionType === "INITIAL-PAYMENT" && amount === 0) return undefined;
   const apiName = toApiPaymentMethodName(values.paymentMethodName);
 
-  // Unpaid registration still posts an invoice-payment entry; always classify as Cash.
   // Surcharges only raise the invoice total and expenses are paid from their source account,
   // so the method is irrelevant and always Cash.
-  if ((isInvoicePayment && amount === 0) || isFixedCashTransactionType(values.transactionType)) {
+  if ((values.transactionType === "PAYMENT" && amount === 0) || isFixedCashTransactionType(values.transactionType)) {
     return {
       ...(values.paymentMethodId && apiName === "CASH" ? { id: values.paymentMethodId } : {}),
       name: "CASH",

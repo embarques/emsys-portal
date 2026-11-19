@@ -5,6 +5,7 @@ import {
 } from "@/lib/accounting/daily-income/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
+import { pickJournalPrimaryAccountLine } from "./journal-account";
 
 const TRANSACTION_TYPE_I18N_KEYS: Record<string, string> = {
   "INITIAL-PAYMENT": "initialPayment",
@@ -100,6 +101,12 @@ export function withPinnedSelectOption<T extends { value: string; label: string;
 }
 
 export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournalValues {
+  // Preserve legacy editor defaults without inventing persisted source metadata
+  // in the query record used for reconciliation/clearance batch validation.
+  const primaryLine = pickJournalPrimaryAccountLine(row.accounts, row.transactionType);
+  const sourceAccount: DailyIncomeJournal["sourceAccount"] = row.sourceAccount ?? row.accounts?.find(
+    (account) => account.credit > 0 && account.id !== primaryLine?.id,
+  );
   const routeId = row.route?.id != null && String(row.route.id).trim() ? String(row.route.id) : undefined;
   const assignedToRoute = Boolean(routeId);
   const invoiceId = row.invoice?.id != null && String(row.invoice.id).trim() ? String(row.invoice.id) : undefined;
@@ -138,9 +145,9 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     paymentAccountId: lookupId(row.paymentAccount?.id),
     paymentAccountName: row.paymentAccount?.displayName ?? row.paymentAccount?.name,
     paymentAccountType: row.paymentAccount?.type ?? (row.paymentAccount ? "BANK" : undefined),
-    sourceAccountId: lookupId(row.sourceAccount?.id),
-    sourceAccountName: row.sourceAccount?.displayName ?? row.sourceAccount?.name,
-    sourceAccountType: accountTypeFromLines(row, row.sourceAccount?.id, row.sourceAccount?.type),
+    sourceAccountId: lookupId(sourceAccount?.id),
+    sourceAccountName: sourceAccount?.displayName ?? sourceAccount?.name,
+    sourceAccountType: accountTypeFromLines(row, sourceAccount?.id, sourceAccount?.type),
     invoiceId,
     invoiceNumber: row.invoice?.number ?? "",
     invoiceCost: row.invoice?.cost,
