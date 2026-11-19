@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from
 import { useForm } from "react-hook-form";
 
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
+import type { InvoicePaymentDraft } from "@/lib/invoices/invoice-daily-income-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,7 @@ import { useOpenInvoiceCloseout } from "@/lib/invoices/hooks/use-open-invoice-cl
 import { cn } from "@/lib/utils";
 
 type Props = {
+  paymentDraftRef: MutableRefObject<InvoicePaymentDraft | null>;
   values: InvoiceFormValues;
   onContextChange: (context: InvoiceDailyIncomeContext) => void;
   /** Payment posted or skipped ($0): continue to the next wizard step with this context. */
@@ -193,6 +195,7 @@ function CloseoutCurrencyForm({
 }
 
 export function InvoiceDailyIncomeStep({
+  paymentDraftRef,
   values,
   onContextChange,
   onContinue,
@@ -312,6 +315,7 @@ export function InvoiceDailyIncomeStep({
         onCheckedChange={setSkipPayment}
       />
       <InvoicePaymentTransactionForm
+        draftRef={paymentDraftRef}
         statement={statement}
         invoice={values}
         onRegistered={handlePaymentPosted}

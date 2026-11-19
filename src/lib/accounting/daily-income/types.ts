@@ -153,6 +153,9 @@ export type DailyIncomeJournal = ApiTableRecord & {
   paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
   invoice?: {
+    supervisor?: AccountingLookup;
+    dailyRoute?: DailyRouteAttribution;
+    dailyRouteId?: string;
     id?: string | number;
     number?: string;
     cost?: number;
@@ -317,6 +320,8 @@ export type DailyIncomeJournalValues = {
   sourceAccountType?: string;
   invoiceId?: string;
   invoiceNumber?: string;
+  /** Merchandise responsibility for a new invoice; independent of this journal's collector. */
+  invoiceResponsibility?: { employee?: AccountingLookup; dailyRouteId?: string };
   autoGenerateInvoiceNumber?: boolean;
   invoiceCost?: number;
   invoiceDiscount?: number;

@@ -200,7 +200,7 @@
     }
   },
   "form": {
-    "hints": { "selfResponsibility": "Responsibility defaults to your active linked employee. The initial payment uses the same responsibility." },
+    "hints": { "selfResponsibility": "Invoice responsibility defaults to your active linked employee. The payment collector is assigned separately." },
     "design": {
       "backToInvoices": "Back to invoices",
       "createDescription": "Enter shipment details, confirm customers and merchandise, then review payment and totals before saving.",
@@ -210,6 +210,7 @@
       "totals": "Totals"
     },
     "fields": {
+      "supervisor": "Invoice supervisor",
       "date": "Date",
       "invoiceNumber": "Invoice number",
       "container": "Container",

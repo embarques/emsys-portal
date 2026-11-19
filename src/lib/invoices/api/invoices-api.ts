@@ -212,6 +212,8 @@ type ApiInvoice = {
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
   employee?: ApiInvoiceUser;
+  supervisor?: ApiInvoiceUser;
+  driver?: ApiInvoiceUser;
   receivedBy?: ApiInvoiceReceivedBy;
   createdBy?: ApiInvoiceUser;
   updatedBy?: ApiInvoiceUser;
@@ -575,7 +577,7 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
     item.vehicleRoute?.route,
   );
 
-  const legacyEmployee = item.pickupEmployee ?? item.employee;
+  const legacyEmployee = item.supervisor ?? item.driver ?? item.pickupEmployee ?? item.employee;
   const employeeRaw: ApiInvoiceUser | undefined = receivedByIsEmployee
     ? receivedBy
     : receivedByEmpty
@@ -643,6 +645,8 @@ function normalizeInvoice(raw: unknown): Invoice | null {
   const officeBranchId = item.officeBranch?.id != null ? String(item.officeBranch.id) : undefined;
   const officeBranchName = String(item.officeBranch?.name ?? "").trim();
   const dailyRouteFields = normalizeInvoiceDailyRoute(item);
+  const supervisorRaw = item.supervisor ?? item.driver ?? item.dailyRoute?.supervisor;
+  const supervisorId = Number(supervisorRaw?.id ?? receivedBy.pickupEmployeeId);
 
   return {
     ...captureApiTableFields(raw, INVOICE_API_TABLE_FIELDS),
@@ -664,6 +668,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     pickupEmployeeId: receivedBy.pickupEmployeeId,
     pickupEmployeeName: receivedBy.pickupEmployeeName,
     ...dailyRouteFields,
+    supervisor: Number.isInteger(supervisorId) && supervisorId > 0 ? { id: supervisorId, name: supervisorRaw?.name?.trim() || receivedBy.pickupEmployeeName || "" } : undefined,
     routeId: receivedBy.routeId,
     routeName: receivedBy.routeName,
     routeCrewId: receivedBy.routeCrewId,
@@ -1403,6 +1408,7 @@ type ApiInvoiceWritePayload = {
   paidRegion: string;
   paidStatus: string;
   employee?: InvoiceWriteEmployeeRef | null;
+  supervisor?: InvoiceWriteEmployeeRef | null;
   receivedBy?: ApiInvoiceReceivedByWrite | null;
   container: InvoiceWriteContext["container"];
   sender: ApiInvoiceCustomerWriteRef;
@@ -1519,6 +1525,7 @@ function applyInvoicePickupAssignment(
       : null;
 
     payload.receivedBy = dailyRouteRef;
+    payload.supervisor = isUpdate ? null : undefined;
     payload.route = dailyRouteRef;
     // Daily routes no longer carry a route crew; clear any legacy crew on update.
     payload.routeCrew = isUpdate ? null : undefined;
@@ -1537,6 +1544,7 @@ function applyInvoicePickupAssignment(
   // ReceivedByRef uses string IDs; legacy employee fields still require numbers.
   payload.receivedBy = employee ? { ...employee, id: String(employee.id) } : null;
   payload.employee = employee;
+  payload.supervisor = employee;
   payload.pickupEmployee = employee;
   payload.officeBranch = assignment.officeBranch
     ? buildApiBranchDto(assignment.officeBranch)

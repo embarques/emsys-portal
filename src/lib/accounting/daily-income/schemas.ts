@@ -71,6 +71,10 @@ export function createDailyIncomeJournalSchema(
 ) {
   return z
     .object({
+      invoiceResponsibility: z.object({
+        employee: z.object({ id: z.number(), name: z.string() }).optional(),
+        dailyRouteId: z.string().optional(),
+      }).optional(),
       transactionType: z.enum([
         "INITIAL-PAYMENT",
         "PAYMENT",

@@ -45,6 +45,7 @@ export function TransactionReview({ values: v, onEdit, compact = false, currency
   const groups: { step: TransactionFormStep; rows: [string, string | number | undefined][]; invoiceSummary?: { invoice: [string, string | undefined]; payment: [string, string | undefined][] } }[] = [
     {
       step: "assignment", rows: [
+        ["accounting.dailyIncome.form.sections.invoiceResponsibility", registerInvoice ? v.invoiceResponsibility?.employee?.name || v.invoiceResponsibility?.employee?.id || v.invoiceResponsibility?.dailyRouteId || t("accounting.dailyIncome.form.creatorAssignee") : undefined],
         ["accounting.dailyIncome.form.fields.assignedTo", inventory ? undefined : v.routeName || v.employeeName || v.routeId || v.employeeId || (compact ? undefined : t("accounting.dailyIncome.form.creatorAssignee"))],
         ["accounting.dailyIncome.form.fields.responsibleSupervisor", !inventory && v.routeId ? v.supervisorName || v.supervisorId : undefined],
         ["accounting.dailyIncome.form.fields.inventoryDirection", inventory && v.inventoryDirection ? t(`accounting.dailyIncome.form.inventory.${v.inventoryDirection}`) : undefined],

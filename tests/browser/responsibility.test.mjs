@@ -12,6 +12,7 @@ before(async () => {
  const compiler = webpackPackage.webpack({ mode:"development", devtool:false,
   entry:path.resolve("tests/browser/fixtures/responsibility.tsx"), output:{path:directory,filename:"fixture.js"},
   resolve:{extensions:[".tsx",".ts",".js"],alias:{
+   "@/lib/accounting/daily-income/use-responsibility-access$":path.resolve("tests/browser/fixtures/responsibility-access.ts"),
    "@/lib/i18n$":path.resolve("tests/browser/fixtures/responsibility-i18n.ts"),"@":path.resolve("src")}},
   module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:path.resolve("tests/browser/fixtures/typescript-loader.mjs")}]},
  });
@@ -57,4 +58,23 @@ test("read-only attribution preserves the saved person and offers no reassignmen
   assert.equal(await page.getByRole("combobox").count(),0);
   assert.equal(await page.getByRole("radio").count(),0);
  }finally{await page.close();}
+});
+
+test("invoice and payment selectors obey their separate assignment grants", async () => {
+ for (const grant of ["invoice-grant", "payment-grant"]) {
+  const page = await fixture(`split-${grant}`);
+  try {
+   const invoice = page.getByRole("region", { name: "Invoice responsibility" });
+   const payment = page.getByRole("region", { name: "Payment responsibility" });
+   const allowed = grant === "invoice-grant" ? invoice : payment;
+   const restricted = grant === "invoice-grant" ? payment : invoice;
+   assert.equal(await restricted.getByRole("radio", { name: /Employee/ }).count(), 0);
+   await allowed.getByRole("radio", { name: /Employee/ }).click();
+   await allowed.getByRole("combobox").first().click();
+   await page.getByRole("option", { name: "Other employee", exact: true }).click();
+   const values = JSON.parse(await page.locator("#values").textContent());
+   if (grant === "invoice-grant") { assert.equal(values.invoice.employee.id, 99); assert.equal(values.payment.employeeId, undefined); }
+   else { assert.deepEqual(values.invoice, {}); assert.equal(values.payment.employeeId, 99); }
+  } finally { await page.close(); }
+ }
 });

@@ -99,17 +99,31 @@ Do not confuse these three route concepts:
 
 | Concept | Where | Branch / meaning | Financial accountability? |
 | --- | --- | --- | --- |
-| **`receivedBy`** | Invoice | NY — who received the merchandise (employee **or** NY daily route) | No by itself. Only the **INITIAL-PAYMENT** journal’s chosen assignee is accountable for that first payment. |
+| **`receivedBy`** | Invoice | NY — who received the merchandise (employee **or** NY daily route) | No by itself. Each payment journal’s chosen collector is accountable for that payment, including INITIAL-PAYMENT. |
 | **`invoice.dailyRoute`** | Invoice snapshot | NY — recordkeeping / insights copy when receive was via a daily route (often derived from `receivedBy` when it is a route) | **No** for later payments, surcharges, or discounts. Insights / history only. |
 | **Barcode `route`** | Each label / invoice item | **RD** — delivery daily vehicle-route | No. Operational delivery assignment only. |
 
-Creation responsibility and INITIAL-PAYMENT must use the same employee/daily route.
-When omitted, the API resolves the digitizing user's unique active linked employee
-for both; it rejects a missing/ambiguous link. Assignment to another party requires
-`canAssignInvoiceResponsibility`; later payment responsibility assignment requires
-`canAssignPaymentResponsibility`. Without the relevant grant, use self or a route
-for which self is responsible supervisor. Route membership alone is insufficient.
-The committed initial journal's returned responsibility is used for invoice completion.
+**Confirmed responsibility policy (2026-11-19):** invoice merchandise responsibility
+and every payment's collector are independent, including INITIAL-PAYMENT. Invoice
+`supervisor` is an employee entity snapshot; `dailyRoute` is optional. Selecting
+an invoice daily route extracts its supervisor for the invoice. Legacy invoice
+`driver` means this supervisor. `createdBy` is the user who digitized the invoice.
+
+Invoice assignment uses `canAssignInvoiceResponsibility`; initial and subsequent
+payment assignment use `canAssignPaymentResponsibility`. Without the corresponding
+grant, default to the digitizer's unique active linked employee. A route is
+eligible without reassignment authority only when self is its responsible
+supervisor; membership alone is insufficient. The API rejects missing or
+ambiguous employee links.
+
+The initial-payment selector defaults to the invoice party when payment assignment
+is authorized. It stays editable and retains an explicit collector choice through
+wizard navigation and directory refreshes. Changing the payment party never
+changes the invoice party; changing the invoice never reassigns an existing
+payment. Completion saves the invoice's merchandise party independently. All
+reassignments need the matching grant and an audit trail. Invoice amounts belong
+to operational reporting; collected amounts belong to their actual collector.
+Responsibility changes do not post revenue or change invoice balances.
 
 Later Daily Income journals (payment / surcharge / discount) choose their own assignee (employee, daily-route supervisor, or “me”) case by case. They must **not** inherit `invoice.dailyRoute` for reconciliation ownership. If a later journal selects a daily route, that journal’s supervisor is accountable for **that transaction only**.
 

@@ -39,14 +39,28 @@ const { createEmptyInvoiceForm } = loadFeature("src/lib/invoices/types.ts");
 const route = (supervisorId) => ({ id:"650000000000000000000001", employees:[{id:supervisorId,name:"Supervisor",role:"supervisor"},{id:9,name:"Driver",role:"driver"}] });
 
 test("invoice registration and later payments require different exact assignment grants", () => {
- assert.deepEqual(policy.responsibilityPermission("INITIAL-PAYMENT"), { name:"canAssignInvoiceResponsibility",resourceType:"invoice_responsibility" });
- for (const type of ["PAYMENT","DISCOUNT","SURCHARGE","REFUND"]) assert.deepEqual(policy.responsibilityPermission(type), { name:"canAssignPaymentResponsibility",resourceType:"payment_responsibility" });
+ assert.deepEqual(policy.responsibilityPermission("INVOICE"), { name:"canAssignInvoiceResponsibility",resourceType:"invoice_responsibility" });
+ for (const type of ["INITIAL-PAYMENT","PAYMENT","DISCOUNT","SURCHARGE","REFUND"]) assert.deepEqual(policy.responsibilityPermission(type), { name:"canAssignPaymentResponsibility",resourceType:"payment_responsibility" });
  for (const type of ["EXPENSE","SALES","INVENTORY"]) assert.equal(policy.responsibilityPermission(type),null);
  const { permissionKey, permissionIsGranted }=loadFeature("src/lib/auth/permissions.ts");
  for (const permission of [policy.responsibilityPermission("PAYMENT"),policy.responsibilityPermission("INITIAL-PAYMENT")]) {
   assert.equal(permissionIsGranted(permission,new Set(["daily_route_work:canmanagedailyrouterecords","employee:canupdateemployee"])),false);
   assert.equal(permissionIsGranted(permission,new Set([permissionKey(permission)])),true);
  }
+});
+
+test("responsibility assignment rejects a matching name on the wrong resource", () => {
+ const { PERMISSIONS, permissionKey, permissionIsGranted } = loadFeature("src/lib/auth/permissions.ts");
+ for (const required of [PERMISSIONS.invoiceResponsibilityAssign, PERMISSIONS.paymentResponsibilityAssign]) {
+  for (const resourceType of ["invoice", "journal", "daily_route_work", "invoice_responsibility", "payment_responsibility"]) {
+   const keys = new Set([permissionKey({ name: required.name, resourceType })]);
+   assert.equal(permissionIsGranted(required, keys), resourceType === required.resourceType, `${required.name} on ${resourceType}`);
+  }
+  assert.equal(permissionIsGranted(required, new Set(["*:*"])), true, "existing superuser grant remains supported");
+  const other = required === PERMISSIONS.invoiceResponsibilityAssign ? PERMISSIONS.paymentResponsibilityAssign : PERMISSIONS.invoiceResponsibilityAssign;
+  assert.equal(permissionIsGranted(required, new Set([permissionKey({ name: other.name, resourceType: required.resourceType })])), false, "wrong name on the expected resource is rejected");
+ }
+ assert.equal(permissionIsGranted(PERMISSIONS.invoicesView, new Set(["invoiceitem:canviewinvoiceitem"])), true, "legacy invoice view alias remains supported");
 });
 
 test("membership does not permit assigning another supervisor", () => {
@@ -65,17 +79,36 @@ test("self attribution removes stale employee, route and supervisor before posti
  assert.equal(payload.invoiceId,"invoice1");
 });
 
-test("returned initial-payment employee replaces stale creation selection", () => {
- const input={...createEmptyInvoiceForm(),pickupSource:"route",routeId:route(99).id,routeCrewName:"Old route",pickupEmployeeId:"99"};
- const result=invoicePolicy.applyRegisteredInvoiceResponsibility(input,{employee:{id:5,name:"Responsible"}});
- assert.equal(result.pickupEmployeeId,"5"); assert.equal(result.pickupEmployeeName,"Responsible"); assert.equal(result.routeId,"");
- assert.equal(input.routeId,route(99).id,"caller draft is not mutated");
+test("invoice wire responsibility is independent of payment selection", () => {
+ const input={...createEmptyInvoiceForm(),pickupSource:"route",routeId:route(88).id,routeCrewName:"Merchandise route",pickupEmployeeId:"99"};
+ assert.deepEqual(invoicePolicy.buildInvoiceResponsibilityInput(input),{dailyRouteId:route(88).id});
+ assert.deepEqual(invoicePolicy.buildInvoiceResponsibilityInput({...input,pickupSource:"office",pickupEmployeeId:"88",pickupEmployeeName:"Merchandise employee"}),{employee:{id:88,name:"Merchandise employee"}});
+ assert.deepEqual(invoicePolicy.buildInvoiceResponsibilityInput({...input,pickupSource:"creator"}),{});
+ assert.equal(input.pickupEmployeeId,"99","building invoice payload never mutates the draft");
 });
 
-test("returned initial-payment route remains creation attribution independent of old employee", () => {
- const input={...createEmptyInvoiceForm(),pickupSource:"office",pickupEmployeeId:"99"};
- const result=invoicePolicy.applyRegisteredInvoiceResponsibility(input,{employee:{id:5,name:"Supervisor"},route:{id:route(5).id,name:"Chosen route"}});
- assert.equal(result.pickupSource,"route"); assert.equal(result.routeId,route(5).id); assert.equal(result.pickupEmployeeId,"");
+test("invoice route defaults extract its supervisor for the initial collector", () => {
+ const defaults = policy.paymentDefaultsFromInvoiceResponsibility({ dailyRouteId: route(5).id }, [route(5)]);
+ assert.equal(defaults.routeId, route(5).id); assert.equal(defaults.supervisorId, 5); assert.equal(defaults.employeeId, undefined);
+ assert.equal(policy.paymentDefaultsFromInvoiceResponsibility({ employee: { id: 88, name: "Merchandise" } }, []).employeeId, 88);
+});
+
+test("invoice supervisor supports canonical and legacy driver employee readback", async () => {
+ for (const field of ["supervisor", "driver"]) {
+  const api = loadFeature("src/lib/invoices/api/invoices-api.ts", { get: async () => ({ data: { id: "invoice1", number: "00042", [field]: { id: 88, name: "Merchandise supervisor" }, employee: { id: 73, name: "Digitizer" } } }) });
+  const invoice = await api.fetchInvoiceById("invoice1");
+  assert.deepEqual(invoice.supervisor, { id: 88, name: "Merchandise supervisor" });
+  assert.equal(invoice.pickupEmployeeId, "88");
+ }
+});
+
+test("initial-payment sends invoice and collector responsibility separately", async () => {
+ let payload;
+ const api=loadFeature("src/lib/accounting/daily-income/api.ts",{post:async(_url,body)=>{payload=body;return {data:{id:"journal1",employee:{id:99,name:"Collector"}}};}});
+ const result=await api.createDailyIncomeJournal({id:1,branch:{id:2},currency:"USD",rate:1},{transactionType:"INITIAL-PAYMENT",amount:10,invoiceNumber:"00042",invoiceCost:100,invoiceResponsibility:{employee:{id:88,name:"Merchandise employee"}},employeeId:99,employeeName:"Collector",refNumber:"",description:"",paymentMethodName:"CASH"});
+ assert.deepEqual(payload.invoice.responsibility,{employee:{id:88,name:"Merchandise employee"}});
+ assert.equal(payload.employee.id,99); assert.equal(result.employee.id,99);
+ assert.equal(payload.invoice.cost,100); assert.equal(payload.amount,10);
 });
 
 test("payment lookup preserves leading zeros and exposes only reference/totals", async () => {
@@ -136,19 +169,16 @@ test("generic journal form continues rejecting the separate loan payment workflo
 });
 
 
-test("invoice completion sends committed initial responsibility despite a different draft selection", async () => {
- const journal={employee:{id:5,name:"Committed employee"}};
+test("invoice completion retains merchandise party when the collector differs", async () => {
  const types=loadFeature("src/lib/invoices/types.ts");
  const customers=loadFeature("src/lib/customers/types.ts");
- const stale={...createEmptyInvoiceForm(),pickupSource:"office",pickupEmployeeId:"99",pickupEmployeeName:"Stale",invoiceNumber:"00042",sender:{...customers.createEmptyCustomerForm(),id:"customer1",name:"Sender"},lineItems:[{...types.createEmptyInvoiceLineItem(),itemName:"Box",quantity:"1",labelCount:"1",unitPrice:"80",lineTotal:"80"}]};
- const values=invoicePolicy.applyRegisteredInvoiceResponsibility(stale,journal);
- const assignment=invoicePolicy.registeredInvoicePickupAssignment(values,journal);
+ const values={...createEmptyInvoiceForm(),pickupSource:"office",pickupEmployeeId:"88",pickupEmployeeName:"Merchandise employee",invoiceNumber:"00042",sender:{...customers.createEmptyCustomerForm(),id:"customer1",name:"Sender"},lineItems:[{...types.createEmptyInvoiceLineItem(),itemName:"Box",quantity:"1",labelCount:"1",unitPrice:"100",lineTotal:"100"}]};
  let payload;const stop=new Error("captured");
  const api=loadFeature("src/lib/invoices/api/invoices-api.ts",{post:async(_url,body)=>{payload=body;throw stop;}});
- await assert.rejects(api.createInvoice(values,{branch:{id:1,name:"NY",code:"NY"},container:{id:1,name:"Test"},pickupAssignment:assignment}),e=>e===stop);
- assert.equal(payload.receivedBy.id,"5");assert.equal(payload.employee.id,5);assert.equal(payload.receivedBy.name,"Committed employee");
+ await assert.rejects(api.createInvoice(values,{branch:{id:1,name:"NY",code:"NY"},container:{id:1,name:"Test"},registeredInvoiceTotals:{cost:100,payment:10,balance:90},pickupAssignment:{source:"office",pickupEmployee:{id:88,name:"Merchandise employee"}}}),e=>e===stop);
+ assert.equal(payload.receivedBy.id,"88");assert.equal(payload.employee.id,88);
+ assert.equal(payload.cost,100);assert.equal(payload.payment,10);assert.equal(payload.balance,90);
 });
-
 
 test("company lookup preserves full invoice search for administrators and limits the exception to payments",()=>{
  const op=[{name:"canOperateDailyRoute",resourceType:"daily_route_work"}];

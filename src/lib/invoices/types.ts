@@ -162,6 +162,8 @@ export type Invoice = ApiTableRecord & {
    * RD delivery routes live on barcode labels, not here.
    */
   dailyRouteId?: string;
+  /** Merchandise supervisor (employee entity), independent of payment collectors. */
+  supervisor?: { id: number; name: string };
   dailyRouteName?: string;
   dailyRoute?: {
     id: string;
