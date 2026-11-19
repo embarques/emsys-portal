@@ -230,6 +230,8 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const id = stringValue(firstDefined(raw.id, raw._id));
   if (!id) return null;
   const invoiceRaw = objectValue(raw.invoice);
+  const invoiceSupervisor = normalizeLookup(invoiceRaw.supervisor);
+  const invoiceRoute = normalizePartyRef(invoiceRaw.dailyRoute);
   const invoiceId = firstDefined(invoiceRaw.id, invoiceRaw._id, raw.invoiceId);
   const invoiceNumber = stringValue(
     firstDefined(invoiceRaw.number, invoiceRaw.invoiceNumber, raw.invoiceNumber),
@@ -370,6 +372,9 @@ export function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     accounts: accountLines,
     invoice: hasInvoice
       ? {
+          ...(invoiceSupervisor ? { supervisor: invoiceSupervisor } : {}),
+          ...(invoiceRoute ? { dailyRoute: normalizeDailyRouteAttribution(invoiceRaw.dailyRoute, invoiceRoute) } : {}),
+          ...(invoiceRaw.dailyRouteId ? { dailyRouteId: stringValue(invoiceRaw.dailyRouteId) } : {}),
           id: invoiceId as string | number | undefined,
           number: invoiceNumber,
           cost: invoiceCost,
@@ -665,6 +670,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
             : { number: values.invoiceNumber?.trim() }),
           cost: values.invoiceCost,
           discount: values.invoiceDiscount ?? 0,
+          responsibility: values.invoiceResponsibility ?? {},
         }
       : undefined;
 

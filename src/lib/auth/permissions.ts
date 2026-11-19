@@ -307,6 +307,12 @@ export function permissionIsGranted(
   if (grantedKeys.has("*:*")) return true;
 
   const requiredKey = permissionKey(required);
+  // Responsibility assignment has no legacy name-only or route-operation fallback.
+  if (
+    requiredKey === permissionKey(PERMISSIONS.invoiceResponsibilityAssign) ||
+    requiredKey === permissionKey(PERMISSIONS.paymentResponsibilityAssign)
+  ) return grantedKeys.has(requiredKey);
+
   const scoped = grantedKeys.has("daily_route_work:canoperatedailyroute") && !grantedKeys.has("daily_route_work:canmanagedailyrouterecords");
   if (scoped && requiredKey === "change_request:canapprovechangerequest") return false;
   if(scoped && ["pickup","invoice","journal","labels","inventory_dispatch"].includes(required.resourceType.toLowerCase())) {

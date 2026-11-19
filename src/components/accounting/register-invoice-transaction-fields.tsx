@@ -1,7 +1,9 @@
 "use client";
 
 import { useResponsibilityAccess } from "@/lib/accounting/daily-income/use-responsibility-access";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { InvoiceResponsibilitySelect } from "./invoice-responsibility-select";
+import { paymentDefaultsFromInvoiceResponsibility } from "@/lib/accounting/daily-income/responsibility";
 import { ReceiptText, UserPlus, UserRound, UserX } from "lucide-react";
 import type {
   UseFormClearErrors,
@@ -182,6 +184,8 @@ export function RegisterInvoiceTransactionFields({
 }: Props) {
   const { t } = useTranslation();
   const responsibility = useResponsibilityAccess("INITIAL-PAYMENT");
+  const paymentAssigneeEdited = useRef(false);
+  const invoiceResponsibility = watch("invoiceResponsibility");
   const { openFormTab } = useWorkspaceTabs();
   const { hasPermission } = useAuth();
   const canUseManualNumber = hasPermission(
@@ -490,6 +494,18 @@ export function RegisterInvoiceTransactionFields({
 
   const assigneeFields = (
     <>
+      {showEmployee && showInvoiceNumber ? <div className="space-y-3 sm:col-span-2">
+        <h3 className="font-medium">{t("accounting.dailyIncome.form.sections.invoiceResponsibility")}</h3>
+        <InvoiceResponsibilitySelect value={invoiceResponsibility ?? {}} employees={employees} dailyRoutes={dailyRoutes} branchId={statementBranchId}
+          onChange={(value) => {
+            setValue("invoiceResponsibility", value, { shouldDirty: true });
+            if (!responsibility.canAssign || paymentAssigneeEdited.current) return;
+            const defaults = paymentDefaultsFromInvoiceResponsibility(value, dailyRoutes);
+            for (const [name, next] of Object.entries(defaults)) setValue(name as keyof typeof defaults, next, { shouldValidate: false });
+          }} />
+        <h3 className="font-medium">{t("accounting.dailyIncome.form.sections.paymentResponsibility")}</h3>
+        <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.form.hints.independentResponsibility")}</p>
+      </div> : null}
       {showEmployee ? (
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
@@ -511,7 +527,10 @@ export function RegisterInvoiceTransactionFields({
             allowDailyRoute={allowDailyRoute}
             error={errors.employeeId?.message ?? errors.routeId?.message}
             supervisorError={errors.supervisorId?.message}
-            setValue={setValue}
+            setValue={(name, value, options) => {
+              if (["assigneeSource", "employeeId", "routeId"].includes(name) && options?.shouldValidate) paymentAssigneeEdited.current = true;
+              setValue(name, value, options);
+            }}
             onAddEmployee={onAddEmployee}
             onEditEmployee={onEditEmployee}
             onAddRoute={onAddRoute}

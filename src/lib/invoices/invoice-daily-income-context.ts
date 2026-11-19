@@ -1,5 +1,8 @@
 import type { CustomerSignature } from "@/lib/invoices/schemas/customer-signature.schema";
-import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
+import type { DailyIncomeJournal, DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+
+/** Navigation snapshot of the RHF payment form; never a second source of server data. */
+export type InvoicePaymentDraft = { statementId: number; values: DailyIncomeJournalValues; assigneeEdited: boolean };
 
 /** Payment / Cuadre outcome from the invoice create wizard payment step. */
 export type InvoiceDailyIncomeContext = {

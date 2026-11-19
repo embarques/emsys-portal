@@ -4,6 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
+import { useResponsibilityAccess } from "@/lib/accounting/daily-income/use-responsibility-access";
+import { canSelectResponsibleRoute, selfResponsibility } from "@/lib/accounting/daily-income/responsibility";
+import { useEmployees } from "@/lib/employees/hooks/use-employees";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { buildInvoiceResponsibilityInput } from "@/lib/invoices/responsibility";
+import type { InvoicePaymentDraft } from "@/lib/invoices/invoice-daily-income-context";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -40,6 +47,7 @@ const EMPTY_BANK_ACCOUNTS: ChartAccount[] = [];
 const EMPTY_DAILY_ROUTES: ActiveRoute[] = [];
 
 type Props = {
+  draftRef: MutableRefObject<InvoicePaymentDraft | null>;
   statement: DailyIncomeStatement;
   invoice: InvoiceFormValues;
   onRegistered: (journal: DailyIncomeJournal) => void | Promise<void>;
@@ -68,6 +76,7 @@ function buildInitialValues(
     autoGenerateInvoiceNumber: Boolean(invoice.autoGenerateNumber && !invoice.generatedInvoiceNumber),
     invoiceCost: Math.max(0, invoiceSubtotal),
     invoiceDiscount: discount,
+    invoiceResponsibility: buildInvoiceResponsibilityInput(invoice),
     includeSender: Boolean(invoice.sender),
     senderId: invoice.sender?.id || undefined,
     senderName: invoice.sender?.name || undefined,
@@ -90,6 +99,7 @@ function getFirstValidationMessage(errors: FieldErrors<DailyIncomeJournalValues>
 }
 
 export function InvoicePaymentTransactionForm({
+  draftRef,
   statement,
   invoice,
   onRegistered,
@@ -101,6 +111,11 @@ export function InvoicePaymentTransactionForm({
   const { notifySuccess, notifyError } = useFeedback();
   const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const responsibility = useResponsibilityAccess("INITIAL-PAYMENT");
+  const { hasPermission } = useAuth();
+  const employeesQuery = useEmployees({ page: 1, limit: 200, active: true, sort: "name:asc" }, {
+    enabled: responsibility.canAssign && hasPermission(PERMISSIONS.employeesView.name, PERMISSIONS.employeesView.resourceType),
+  });
   const paymentMethodsQuery = useAccountingPaymentMethods(true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, isPaymentAccountsEnabled());
@@ -112,9 +127,9 @@ export function InvoicePaymentTransactionForm({
     () => buildInvoiceDailyIncomeAssigneeDefaults(invoice),
     [invoice],
   );
-  // The invoice workflow owns creation responsibility on every viewport.
+  // The invoice party is a default; the collector remains independently editable.
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
-    enabled: Boolean(step1AssigneeSeed.routeId),
+    enabled: responsibility.canAssign || Boolean(step1AssigneeSeed.routeId || responsibility.ownEmployee?.id),
   });
   const dailyRoutes = pickupRoutesQuery.data?.items ?? EMPTY_DAILY_ROUTES;
   const routeNameById = useMemo(
@@ -184,11 +199,13 @@ export function InvoicePaymentTransactionForm({
     register,
     reset,
     setValue,
+    subscribe,
     watch,
   } = useForm<DailyIncomeJournalValues>({
     resolver: zodResolver(schema),
     defaultValues: initialValues,
   });
+  const paymentAssigneeEdited = useRef(false);
 
   // Full reset only when the Cuadre statement changes — never wipe payment fields when
   // routes/payment methods finish loading or when translation identity changes.
@@ -202,17 +219,37 @@ export function InvoicePaymentTransactionForm({
   }, [routeNameById]);
 
   useEffect(() => {
+    const draft = draftRef.current;
+    if (draft?.statementId === statement.id) {
+      paymentAssigneeEdited.current = draft.assigneeEdited;
+      reset(draft.values);
+      return;
+    }
+    paymentAssigneeEdited.current = false;
     reset(
       withDefaultCashPaymentMethod(
         buildInitialValues(invoiceRef.current, routeNameByIdRef.current),
         paymentMethodsRef.current,
       ),
     );
-  }, [reset, statement.id]);
+  }, [draftRef, reset, statement.id]);
 
-  // Keep assignee in sync with invoice step 1 without resetting amount / payment method.
   useEffect(() => {
-    const assignee = buildInvoiceDailyIncomeAssigneeDefaults(invoiceRef.current, routeNameById);
+    const saveDraft = () => { draftRef.current = { statementId: statement.id, values: getValues(), assigneeEdited: paymentAssigneeEdited.current }; };
+    const unsubscribe = subscribe({ formState: { values: true }, callback: saveDraft });
+    return () => { saveDraft(); unsubscribe(); };
+  }, [draftRef, getValues, statement.id, subscribe]);
+
+  // Seed from the invoice once authorized; async directory results must not replace a chosen collector.
+  useEffect(() => {
+    if (!responsibility.ready || responsibility.canAssign && paymentAssigneeEdited.current) return;
+    if (!responsibility.canAssign && paymentAssigneeEdited.current) {
+      const selected = dailyRoutes.find((route) => route.id === getValues("routeId"));
+      if (selected && canSelectResponsibleRoute(selected, false, responsibility.ownEmployee?.id)) return;
+    }
+    const assignee = responsibility.canAssign
+      ? buildInvoiceDailyIncomeAssigneeDefaults(invoiceRef.current, routeNameById)
+      : selfResponsibility();
     const sameRoute = Boolean(assignee.routeId) && getValues("routeId") === assignee.routeId;
     const chosenSupervisorId = sameRoute ? getValues("supervisorId") : undefined;
     const route = assignee.routeId ? dailyRoutes.find((item) => item.id === assignee.routeId) : undefined;
@@ -244,6 +281,9 @@ export function InvoicePaymentTransactionForm({
     invoice.routeId,
     routeNameById,
     setValue,
+    responsibility.ready,
+    responsibility.canAssign,
+    responsibility.ownEmployee?.id,
   ]);
 
   // Default Cash once methods load, only if the user has not chosen a method yet.
@@ -313,6 +353,7 @@ export function InvoicePaymentTransactionForm({
           autoGenerateInvoiceNumber: Boolean(invoice.autoGenerateNumber && !invoice.generatedInvoiceNumber),
           invoiceCost: invoiceLineItemsTotal,
           invoiceDiscount,
+          invoiceResponsibility: buildInvoiceResponsibilityInput(invoice),
           includeSender: Boolean(invoice.sender),
           senderId: invoice.sender?.id,
           senderName: invoice.sender?.name,
@@ -360,7 +401,7 @@ export function InvoicePaymentTransactionForm({
   const submittingRef = useRef(false);
 
   async function postPaymentOrSkip() {
-    if (submittingRef.current || statement.status !== "OPEN") return;
+    if (submittingRef.current || statement.status !== "OPEN" || !responsibility.ready) return;
     const amount = Number(getValues("amount"));
     if (skipPayment || !Number.isFinite(amount) || amount <= 0) {
       setSubmitError(null);
@@ -395,7 +436,7 @@ export function InvoicePaymentTransactionForm({
       {skipPayment ? null : (
         <RegisterInvoiceTransactionFields
           grouped
-          employees={[]}
+          employees={employeesQuery.data?.items ?? []}
           dailyRoutes={dailyRoutes}
           statementBranchId={statement.branch?.id}
           accounts={accounts}
@@ -403,10 +444,13 @@ export function InvoicePaymentTransactionForm({
           paymentMethods={paymentMethods}
           errors={errors}
           register={register}
-          setValue={setValue}
+          setValue={(name, value, options) => {
+            if (["assigneeSource", "employeeId", "routeId"].includes(name) && options?.shouldValidate) paymentAssigneeEdited.current = true;
+            setValue(name, value, options);
+          }}
           watch={watch}
-          showEmployee={false}
-          allowDailyRoute={false}
+          showEmployee
+          allowDailyRoute
           showInvoiceNumber={false}
           showParties={false}
           invoiceCostReadOnly

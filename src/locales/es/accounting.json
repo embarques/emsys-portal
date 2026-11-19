@@ -1194,6 +1194,7 @@
       },
       "hints": {
         "paymentLookupUnavailable": "La búsqueda de facturas de toda la empresa para pagos está pendiente de la actualización de la API. Estos resultados usan tu acceso actual a facturas.",
+        "independentResponsibility": "La persona que cobra puede ser distinta de quien responde por la mercancía. Cambiar una asignación no cambia la otra.",
         "selfResponsibility": "La responsabilidad se asigna a tu empleado vinculado. Puedes elegir una ruta diaria solo si eres su supervisor responsable.",
         "balanceAfterClearance": "El nuevo saldo es una vista previa después de aplicar este pago. Los pagos pendientes afectan el saldo de la factura cuando se liquidan.",
         "expenseAccount": "La categoría de gasto a la que corresponde este gasto.",
@@ -1285,6 +1286,8 @@
       },
       "sections": {
         "assignment": "Asignado a",
+        "invoiceResponsibility": "Responsable de la factura",
+        "paymentResponsibility": "Responsable del cobro",
         "invoiceDetails": "Datos de la factura",
         "invoiceAmount": "Monto de la factura",
         "paymentDetails": "Detalles del pago",

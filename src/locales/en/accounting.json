@@ -1194,6 +1194,7 @@
       },
       "hints": {
         "paymentLookupUnavailable": "Company-wide payment lookup is awaiting the API update. These results use your existing invoice-view access.",
+        "independentResponsibility": "The payment collector may differ from the person responsible for the merchandise. Changing one does not change the other.",
         "selfResponsibility": "Responsibility defaults to your linked employee. You can select a daily route only when you are its responsible supervisor.",
         "balanceAfterClearance": "New balance is a preview after this payment is applied. Pending payments affect the invoice balance when cleared.",
         "expenseAccount": "The expense category this spending belongs to.",
@@ -1285,6 +1286,8 @@
       },
       "sections": {
         "assignment": "Assigned to",
+        "invoiceResponsibility": "Invoice responsibility",
+        "paymentResponsibility": "Payment responsibility",
         "invoiceDetails": "Invoice details",
         "invoiceAmount": "Invoice amount",
         "paymentDetails": "Payment details",

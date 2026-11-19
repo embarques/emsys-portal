@@ -1,6 +1,5 @@
 "use client";
 
-import { applyRegisteredInvoiceResponsibility } from "@/lib/invoices/responsibility";
 
 import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Pin, Printer, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -11,6 +10,7 @@ import { InvoiceDocumentPicker } from "@/components/invoices/invoice-document-pi
 import { useInvoiceDocumentDraft } from "@/lib/invoices/hooks/use-invoice-document-draft";
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDailyIncomeStep } from "@/components/invoices/invoice-daily-income-step";
+import type { InvoicePaymentDraft } from "@/lib/invoices/invoice-daily-income-context";
 import { InvoiceFormPreviewStep } from "@/components/invoices/invoice-form-preview-step";
 import {
   InvoicePoliciesStep,
@@ -310,7 +310,7 @@ export function InvoiceFormWizard({
     }
     setValues((current) => {
       const next = {
-        ...(context.registration ? applyRegisteredInvoiceResponsibility(current, context.registration) : current),
+        ...current,
         ...(current.autoGenerateNumber && context.registration?.invoice?.number
           ? {
               invoiceNumber: context.registration.invoice.number,
@@ -696,12 +696,13 @@ export function InvoiceFormWizard({
       requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
       defaultToLatestContainer={!isEditing}
       assignedMode={assignedMode}
-      responsibilityLocked={Boolean(dailyIncomeContext.registration)}
     />
   );
 
+  const paymentDraftRef = useMemo<{ session: number; current: InvoicePaymentDraft | null }>(() => ({ session: formSessionKey, current: null }), [formSessionKey]);
   const paymentStepContent = (
     <InvoiceDailyIncomeStep
+      paymentDraftRef={paymentDraftRef}
       values={values}
       onContextChange={handleDailyIncomeContextChange}
       onContinue={handleDailyIncomePaymentContinue}

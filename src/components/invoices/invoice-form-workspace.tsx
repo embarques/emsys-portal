@@ -1,6 +1,5 @@
 "use client";
 import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
-import { applyRegisteredInvoiceResponsibility, registeredInvoicePickupAssignment } from "@/lib/invoices/responsibility";
 import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
 import { isStaleMutation } from "@/lib/api/mutation-version";
 
@@ -310,11 +309,10 @@ export function InvoiceCreateWizard({
   ): Promise<InvoiceFormSubmitResult> {
     try {
       const registration = submitContext?.dailyIncomeRegistration ?? null;
-      const savingValues = registration ? applyRegisteredInvoiceResponsibility(values, registration) : values;
-      const registeredAssignment = registration ? registeredInvoicePickupAssignment(savingValues, registration) : undefined;
+      const savingValues = values;
       const context = isAssignedOnly && assignedContext
-        ? { ...buildAssignedInvoiceWriteContext(assignedContext), pickupAssignment: registeredAssignment ?? await resolveInvoicePickupAssignment(savingValues) }
-        : await buildInvoiceWriteContext(savingValues, registeredAssignment);
+        ? { ...buildAssignedInvoiceWriteContext(assignedContext), pickupAssignment: await resolveInvoicePickupAssignment(savingValues) }
+        : await buildInvoiceWriteContext(savingValues);
       const incomeStatementId = submitContext?.incomeStatementId ?? registration?.incomeStatementId ?? 0;
       const registeredInvoiceTotals =
         registration?.invoice && Number.isFinite(registration.invoice.cost)

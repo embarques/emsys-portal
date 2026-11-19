@@ -60,7 +60,7 @@ import { formatContainerIdLabel, formatContainerLabel } from "@/lib/containers/d
 import { formatInvoiceDate, formatInvoiceMoney } from "@/lib/invoices/display";
 import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
-import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
+import { buildTransactionAssigneeOptions, resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { Branch } from "@/lib/branches/types";
 import {
@@ -269,7 +269,7 @@ export function InvoiceForm({
 }: InvoiceFormProps) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
-  const responsibility = useResponsibilityAccess("INITIAL-PAYMENT");
+  const responsibility = useResponsibilityAccess("INVOICE");
   const responsibilityReadOnly = responsibilityLocked || isEditing && !responsibility.canAssign;
   const canUseManualNumber = hasPermission(PERMISSIONS.invoicesManualNumber.name, PERMISSIONS.invoicesManualNumber.resourceType);
   const googleMapsConfigured = useIsGoogleMapsConfigured();
@@ -1029,6 +1029,11 @@ export function InvoiceForm({
             wizardFieldCol,
             <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
           )}
+      {values.pickupSource === "route" && values.routeId ? (
+        <p className="text-sm text-muted-foreground">
+          {t("invoices.form.fields.supervisor")}: {resolveDailyRouteSupervisor(pickupRoutes.find((route) => route.id === values.routeId))?.name || "—"}
+        </p>
+      ) : null}
   </>;
 
   const detailsFields = (

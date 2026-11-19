@@ -200,7 +200,7 @@
     }
   },
   "form": {
-    "hints": { "selfResponsibility": "La responsabilidad se asigna a tu empleado activo vinculado. El pago inicial usa la misma responsabilidad." },
+    "hints": { "selfResponsibility": "La responsabilidad de la factura se asigna de forma predeterminada a tu empleado activo vinculado. El responsable del cobro se asigna por separado." },
     "design": {
       "backToInvoices": "Volver a facturas",
       "createDescription": "Ingresa los datos del envío, confirma los clientes y la mercancía y revisa el pago y los totales antes de guardar.",
@@ -210,6 +210,7 @@
       "totals": "Totales"
     },
     "fields": {
+      "supervisor": "Supervisor de la factura",
       "date": "Fecha",
       "invoiceNumber": "Número de factura",
       "container": "Contenedor",
