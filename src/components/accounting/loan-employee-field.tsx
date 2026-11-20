@@ -6,6 +6,11 @@ import { useMemo, useState } from "react";
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FieldLabelRow } from "@/components/forms/field-label-row";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
@@ -176,8 +181,8 @@ export function LoanEmployeeField({
       ) : null}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
+          <DialogHeader>
             <DialogTitle>
               {editing ? t("employees.form.editTitle") : t("employees.form.addTitle")}
             </DialogTitle>
@@ -195,7 +200,7 @@ export function LoanEmployeeField({
               onCancel={() => setDialogOpen(false)}
             />
           ) : null}
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </div>
   );

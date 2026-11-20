@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -77,12 +81,12 @@ export function ComplaintInsightsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
+      <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
+        <DialogHeader>
           <DialogTitle>{t("complaints.insights.title")}</DialogTitle>
           <DialogDescription>{t("complaints.insights.description")}</DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="complaint-insights-from">{t("complaints.insights.from")}</Label>
@@ -141,7 +145,7 @@ export function ComplaintInsightsDialog({
             </div>
           )}
         </div>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

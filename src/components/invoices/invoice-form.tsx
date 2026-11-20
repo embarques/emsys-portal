@@ -18,6 +18,10 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 
 import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -1427,8 +1431,8 @@ export function InvoiceForm({
       </form>
 
       <Dialog open={entityDialog === "container"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
+          <DialogHeader>
             <DialogTitle>{t("containers.form.addTitle")}</DialogTitle>
           </DialogHeader>
           <ContainerForm
@@ -1440,12 +1444,12 @@ export function InvoiceForm({
             onSubmit={saveContainer}
             onCancel={() => setEntityDialog(null)}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
+          <DialogHeader>
             <DialogTitle>{t("employees.form.addTitle")}</DialogTitle>
           </DialogHeader>
           <EmployeeForm
@@ -1457,12 +1461,12 @@ export function InvoiceForm({
             onSubmit={saveEmployee}
             onCancel={() => setEntityDialog(null)}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={entityDialog === "route"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl", "z-[70]")}>
+          <DialogHeader>
             <DialogTitle>{t("routes.pickupRoutes.addTabLabel")}</DialogTitle>
           </DialogHeader>
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -1474,7 +1478,7 @@ export function InvoiceForm({
               onCancel={() => setEntityDialog(null)}
             />
           </div>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </>
   );

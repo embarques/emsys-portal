@@ -75,6 +75,23 @@
       }
     }
   },
+  "insights": {
+    "description": "Composición de pendientes y citas nuevas según el periodo seleccionado.",
+    "pending": {
+      "title": "Pendientes por propósito",
+      "description": "Cada propósito como proporción de todas las citas pendientes. Seleccione una porción para ver detalles.",
+      "chartLabel": "Citas pendientes por propósito",
+      "totalLabel": "Pendientes",
+      "allPending": "Todas las pendientes",
+      "ofTotal": "{{percent}}% de pendientes",
+      "sliceLabel": "{{label}}: {{count}} ({{percent}}% de pendientes)",
+      "typeColumn": "Propósito",
+      "countColumn": "Cantidad",
+      "shareColumn": "Proporción de pendientes",
+      "other": "Otras pendientes",
+      "empty": "No hay citas pendientes en este momento."
+    }
+  },
   "status": {
     "completed": "Completado",
     "pending": "Pendiente"

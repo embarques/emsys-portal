@@ -37,6 +37,7 @@ import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
+import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -523,8 +524,8 @@ export function InventoryItemsWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader className="bg-primary px-0 py-0 text-primary-foreground sm:bg-transparent sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
             </DialogTitle>
@@ -538,7 +539,7 @@ export function InventoryItemsWorkspace() {
             onSubmit={saveItem}
             onCancel={() => setFormMode(null)}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <InventoryActiveToggleDialog
@@ -551,8 +552,8 @@ export function InventoryItemsWorkspace() {
       />
 
       <Dialog open={documentDialog === "receipt"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader>
             <DialogTitle>{t("inventory.form.newReceiptTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryReceiptForm
@@ -572,12 +573,12 @@ export function InventoryItemsWorkspace() {
               }
             }}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={documentDialog === "dispatch"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader>
             <DialogTitle>{t("inventory.form.newDispatchTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryDispatchForm
@@ -596,12 +597,12 @@ export function InventoryItemsWorkspace() {
               }
             }}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={documentDialog === "adjustment"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader>
             <DialogTitle>{t("inventory.form.adjustStockTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryAdjustmentForm
@@ -621,7 +622,7 @@ export function InventoryItemsWorkspace() {
               }
             }}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </div>
   );

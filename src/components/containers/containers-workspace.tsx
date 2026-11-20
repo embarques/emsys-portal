@@ -39,6 +39,10 @@ import { useTranslation } from "@/lib/i18n";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { CONTAINER_API_TABLE_FIELDS } from "@/lib/containers/table-fields";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -49,6 +53,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { useUserError } from "@/lib/errors";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
@@ -597,8 +602,8 @@ export function ContainersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
+          <DialogHeader>
             <DialogTitle>
               {formMode === "edit" ? t("containers.form.editTitle") : t("containers.form.addTitle")}
             </DialogTitle>
@@ -623,7 +628,7 @@ export function ContainersWorkspace() {
             }}
             isSubmitting={isSaving}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

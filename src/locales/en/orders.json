@@ -75,6 +75,23 @@
       }
     }
   },
+  "insights": {
+    "description": "Pending mix and new appointments for the selected timeframe.",
+    "pending": {
+      "title": "Pending by purpose",
+      "description": "Each purpose as a share of all pending appointments. Select a slice for details.",
+      "chartLabel": "Pending appointments by purpose",
+      "totalLabel": "Pending",
+      "allPending": "All pending",
+      "ofTotal": "{{percent}}% of pending",
+      "sliceLabel": "{{label}}: {{count}} ({{percent}}% of pending)",
+      "typeColumn": "Purpose",
+      "countColumn": "Count",
+      "shareColumn": "Share of pending",
+      "other": "Other pending",
+      "empty": "There are no pending appointments right now."
+    }
+  },
   "status": {
     "completed": "Completed",
     "pending": "Pending"

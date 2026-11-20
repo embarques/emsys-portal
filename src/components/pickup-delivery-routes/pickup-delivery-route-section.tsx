@@ -7,6 +7,11 @@ import { RouteForm } from "@/components/route-manager/route-form";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import { cn } from "@/lib/utils";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -648,8 +653,8 @@ export function ActiveRouteSection({
       />
 
       <Dialog open={createVehicleDialogOpen} onOpenChange={setCreateVehicleDialogOpen}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
+          <DialogHeader>
             <DialogTitle>{t("routes.createVehicleDialog.title")}</DialogTitle>
             <DialogDescription>
               {t("routes.createVehicleDialog.description")}
@@ -666,12 +671,12 @@ export function ActiveRouteSection({
               onCancel={() => setCreateVehicleDialogOpen(false)}
             />
           ) : null}
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
+          <DialogHeader>
             <DialogTitle>{t("routes.createDialog.title")}</DialogTitle>
             <DialogDescription>
               {t("routes.createDialog.description")}
@@ -688,7 +693,7 @@ export function ActiveRouteSection({
               onCancel={() => setCreateDialogOpen(false)}
             />
           ) : null}
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </>
   );

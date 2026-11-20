@@ -35,6 +35,7 @@ import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
+import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
@@ -458,8 +459,8 @@ export function InventoryDispatchesWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader className="bg-primary px-0 py-0 text-primary-foreground sm:bg-transparent sm:text-foreground">
             <DialogTitle>{formMode === "edit" ? t("inventory.form.editDispatchTitle") : t("inventory.form.newDispatchTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryDispatchForm
@@ -472,7 +473,7 @@ export function InventoryDispatchesWorkspace() {
             onCancel={() => setFormMode(null)}
             onSubmit={saveDispatch}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <InventoryDocumentCommandDialog

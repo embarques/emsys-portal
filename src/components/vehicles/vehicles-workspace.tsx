@@ -25,6 +25,10 @@ import {
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { VEHICLE_API_TABLE_FIELDS } from "@/lib/vehicles/table-fields";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -35,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -557,8 +562,8 @@ export function VehiclesWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-lg")}>
+          <DialogHeader>
             <DialogTitle>
               {formMode === "edit" ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
             </DialogTitle>
@@ -578,7 +583,7 @@ export function VehiclesWorkspace() {
               setFormError(null);
             }}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

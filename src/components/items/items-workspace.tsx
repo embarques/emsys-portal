@@ -31,6 +31,10 @@ import {
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { ITEM_API_TABLE_FIELDS } from "@/lib/items/table-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -45,6 +49,7 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
+import { cn } from "@/lib/utils";
 import { computeItemKpis, formatItemPrice, truncateItemId } from "@/lib/items/display";
 import { useItemFilterFields } from "@/lib/items/hooks/use-item-filter-fields";
 import {
@@ -479,8 +484,8 @@ export function ItemsWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-lg")}>
+          <DialogHeader>
             <DialogTitle>
               {formMode === "edit" ? t("items.form.editTitle") : t("items.form.addTitle")}
             </DialogTitle>
@@ -508,7 +513,7 @@ export function ItemsWorkspace() {
               setFormError(null);
             }}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

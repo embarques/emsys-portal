@@ -30,6 +30,7 @@ import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
+import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -392,8 +393,8 @@ export function InventorySuppliersWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader className="bg-primary px-0 py-0 text-primary-foreground sm:bg-transparent sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
             </DialogTitle>
@@ -406,7 +407,7 @@ export function InventorySuppliersWorkspace() {
             onSubmit={saveSupplier}
             onCancel={() => setFormMode(null)}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <InventoryActiveToggleDialog

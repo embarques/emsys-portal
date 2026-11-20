@@ -5,6 +5,11 @@ import type { UseFormSetValue } from "react-hook-form";
 
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   resolveDailyRouteSupervisor,
@@ -173,8 +178,8 @@ export function useTransactionAssigneeEntityActions({
   const entityDialogs = (
     <>
       <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
+          <DialogHeader>
             <DialogTitle>
               {editingEmployee ? t("employees.form.editTitle") : t("employees.form.addTitle")}
             </DialogTitle>
@@ -194,12 +199,12 @@ export function useTransactionAssigneeEntityActions({
             onSubmit={saveEmployee}
             onCancel={() => setEntityDialog(null)}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={entityDialog === "route"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl", "z-[70]")}>
+          <DialogHeader>
             <DialogTitle>
               {editingRoute
                 ? t("routes.dailyRoutes.editTitle")
@@ -216,7 +221,7 @@ export function useTransactionAssigneeEntityActions({
               onCancel={() => setEntityDialog(null)}
             />
           </div>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </>
   );

@@ -4,12 +4,14 @@ import { useMemo, useState } from "react";
 
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -339,7 +341,7 @@ function ReviewPriceTotals({
         </span>
       </div>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="z-[70] sm:max-w-sm">
+        <CompactActionDialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>{t("invoices.wizard.summary.discount")}</DialogTitle>
             <DialogDescription>
@@ -348,45 +350,47 @@ function ReviewPriceTotals({
               })}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="invoice-preview-discount-amount">
-              {t("invoices.wizard.summary.discountAmount")}
-            </Label>
-            <Input
-              id="invoice-preview-discount-amount"
-              type="number"
-              min={0}
-              max={maximumDiscount}
-              step="0.01"
-              inputMode="decimal"
-              value={discountInput}
-              autoFocus
-              onChange={(event) => {
-                setDiscountInput(event.target.value);
-                setDiscountValidationError(null);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  if (isImeComposing(event)) return;
-                  applyDiscount();
-                }
-              }}
-              placeholder="0.00"
-            />
-            {discountValidationError ? (
-              <p className="text-sm text-destructive">{discountValidationError}</p>
-            ) : null}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="invoice-preview-discount-amount">
+                {t("invoices.wizard.summary.discountAmount")}
+              </Label>
+              <Input
+                id="invoice-preview-discount-amount"
+                type="number"
+                min={0}
+                max={maximumDiscount}
+                step="0.01"
+                inputMode="decimal"
+                value={discountInput}
+                autoFocus
+                onChange={(event) => {
+                  setDiscountInput(event.target.value);
+                  setDiscountValidationError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (isImeComposing(event)) return;
+                    applyDiscount();
+                  }
+                }}
+                placeholder="0.00"
+              />
+              {discountValidationError ? (
+                <p className="text-sm text-destructive">{discountValidationError}</p>
+              ) : null}
+            </div>
           </div>
-          <DialogFooter>
+          <CompactActionDialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
               {t("common.actions.cancel")}
             </Button>
             <Button type="button" onClick={applyDiscount}>
               {t("common.actions.apply")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </CompactActionDialogFooter>
+        </CompactActionDialogContent>
       </Dialog>
     </div>
   );

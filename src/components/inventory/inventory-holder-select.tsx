@@ -5,6 +5,11 @@ import { useMemo, useState } from "react";
 
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { InventoryHolderForm } from "@/components/inventory/inventory-holder-form";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -104,8 +109,8 @@ export function InventoryHolderSelect({
         mobileSheet
       />
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
+          <DialogHeader>
             <DialogTitle>{t("inventory.form.addHolderTitle")}</DialogTitle>
           </DialogHeader>
           {dialogOpen ? (
@@ -117,7 +122,7 @@ export function InventoryHolderSelect({
               onCancel={() => setDialogOpen(false)}
             />
           ) : null}
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </div>
   );

@@ -28,6 +28,10 @@ import {
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { EMPLOYEE_API_TABLE_FIELDS } from "@/lib/employees/table-fields";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -38,6 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -691,8 +696,8 @@ export function EmployeesWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4 max-md:border-primary/70 max-md:bg-primary max-md:py-6">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
+          <DialogHeader>
             <DialogTitle className="max-md:text-3xl max-md:font-bold max-md:text-primary-foreground">
               {formMode === "edit" ? t("employees.form.editTitle") : t("employees.form.addTitle")}
             </DialogTitle>
@@ -714,7 +719,7 @@ export function EmployeesWorkspace() {
               setFormError(null);
             }}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

@@ -14,6 +14,10 @@ import { LoanQuickLoanButtons } from "@/components/accounting/loan-quick-loan-bu
 import { CurrentTransactionSummary } from "@/components/accounting/transaction-review";
 import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { DateInput } from "@/components/ui/date-input";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,13 +65,13 @@ export function RecordLoanPaymentDialog(props: Props) {
   const { t } = useTranslation();
   return (
     <Dialog open={props.open} onOpenChange={(open) => { if (!props.pending) props.onOpenChange(open); }}>
-      <DialogContent className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
+      <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-4xl")}>
         <DialogHeader className="shrink-0 border-b px-5 py-4">
           <DialogTitle>{t("accounting.loans.paymentForm.title")}</DialogTitle>
           <DialogDescription>{t("accounting.loans.paymentForm.description")}</DialogDescription>
         </DialogHeader>
         {props.open ? <RecordLoanPaymentForm {...props} /> : null}
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

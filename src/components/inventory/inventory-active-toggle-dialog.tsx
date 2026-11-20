@@ -2,8 +2,12 @@
 
 import { Archive, ArchiveRestore } from "lucide-react";
 
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
 
 export type InventoryActiveToggleTarget<T> = { records: T[]; isActive: boolean } | null;
@@ -37,12 +41,12 @@ export function InventoryActiveToggleDialog<T>({
 
   return (
     <Dialog open={target !== null} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <CompactActionDialogContent>
         <DialogHeader>
           <DialogTitle>{target ? t(`${copyKey}.${action}Title`) : ""}</DialogTitle>
           <DialogDescription>{target ? description : ""}</DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <CompactActionDialogFooter>
           <Button variant="outline" disabled={isPending} onClick={() => onOpenChange(false)}>
             {t("common.actions.cancel")}
           </Button>
@@ -59,8 +63,8 @@ export function InventoryActiveToggleDialog<T>({
             {target?.isActive ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
             {isPending ? t("common.actions.saving") : t(`inventory.actions.${action}`)}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </CompactActionDialogFooter>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }
