@@ -43,17 +43,22 @@ Unpaid registration sends amount zero without a payment method or destination;
 the API omits the zero receipt line. The discount still reduces receivables.
 
 Use returned `paymentAccount` to label receipts, with ledger-line fallback for
-older responses. For batch eligibility under
-[API #383](https://github.com/embarques/emsys-api/pull/383), use persisted
-`sourceAccount.id`, else `paymentAccount.id`, else zero, alongside the payment
-method. Do not invent source metadata from SALES/AR credits or infer a batch key
-from ledger lines. Legacy edit defaults may still infer their source locally.
-Older rows without money-account metadata therefore stay separate from new rows
-with a known destination; the portal does not migrate accounting records.
+older responses. Batch eligibility requires the same payment method only.
+Persisted money accounts (`sourceAccount.id`, else `paymentAccount.id`) remain
+per-journal metadata for display and settlement; do not invent them from
+SALES/AR credits or ledger lines, and do not reject mixed money accounts in one
+batch. Legacy edit defaults may still infer their source locally. The portal
+does not migrate accounting records.
+[API #383](https://github.com/embarques/emsys-api/pull/383) introduced the
+same-account constraint; that homogeneity rule is intentionally withdrawn.
 
-Local portal regression coverage: `tests/unit/initial-payment-contract.test.mjs`.
-Backend Go tests and authenticated registration/clearance checks still need to
-run in an environment with Go and non-production Firebase/API credentials.
+Local portal regressions cover initial-payment contracts and mixed-account batch
+selection (`tests/unit/initial-payment-contract.test.mjs`,
+`tests/unit/journal-reconciliation.test.mjs`, and
+`tests/browser/journal-mixed-accounts.test.mjs`). The API follow-up was verified
+with Go tests and an isolated MongoDB replica set, including rollback and retry
+behavior. Authenticated end-to-end checks against a deployed non-production API
+still require Firebase/API credentials.
 
 ## Journal lifecycle and migration
 

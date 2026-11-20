@@ -182,20 +182,19 @@ already reconciled, retain the original receipt-confirmation actor/time and
 record clearance actor/time separately. Failed commands leave all dependent
 states consistent and retries do not duplicate effects.
 
-**Batch selection (November 17, 2026):** `POST /journals/reconcile` (and clearance
-batches) accept 1–200 IDs with one payment method **and** one cash/bank money
-account. Resolve money account as `sourceAccount.id` when present, otherwise
-`paymentAccount.id`. Loan issue/increase and loan payment journals store the
-cash/bank side on `sourceAccount` (credit on issue, debit on payment); they may
-share a batch only when those IDs match. Reconciliation supports all eligible
-transaction types; clearance supports only eligible bank-method transactions,
-never cash. Mixed money accounts return 422 with
-`selected journals must have the same cash or bank account`. Loan AR is never
-the batch key. Portal selection mirrors this rule; summary breakdown splits loan
-journals under Other into issued/increased vs payments received. Clearance state
-conflicts and mixed bank payment methods retain their existing 409 response.
-The mixed-account 422 clearance contract requires the API #383 follow-up;
-the original PR head returned a generic 409 for that case.
+**Batch selection (November 20, 2026):** `POST /journals/reconcile` (and clearance
+batches) accept 1–200 IDs with **one payment method**. Mixed cash/bank money
+accounts are allowed; each journal keeps its own persisted money side
+(`sourceAccount.id` when present, otherwise `paymentAccount.id`). Loan
+issue/increase and loan payment journals store the cash/bank side on
+`sourceAccount` (credit on issue, debit on payment) and may share a batch whenever
+the payment method matches. Reconciliation supports all eligible transaction
+types; clearance supports only eligible bank-method transactions, never cash.
+Loan AR is never treated as a batch key. Portal selection mirrors payment-method
+homogeneity only. Summary breakdown still splits loan journals under Other into
+issued/increased vs payments received. Clearance state conflicts and mixed bank
+payment methods retain their existing conflict responses (reconcile mixed-method
+422; clearance mixed-method/ineligible 409).
 
 **Closeout purpose:** the closeout is a daily entry window and operational income/
 expense summary. Closing it prevents new entries into that day; existing records

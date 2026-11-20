@@ -6,7 +6,7 @@ export type JournalBatchSelectionKey = {
   moneyAccountName: string;
 };
 
-export type JournalBatchSelectionBlockReason = "paymentMethod" | "moneyAccount";
+export type JournalBatchSelectionBlockReason = "paymentMethod";
 
 function accountId(account?: AccountingLookup | null): number {
   return account?.id && account.id > 0 ? account.id : 0;
@@ -17,10 +17,11 @@ function accountName(account?: AccountingLookup | null): string {
 }
 
 /**
- * Cash/bank account the batch is confirming — not loan AR / expense categories.
+ * Cash/bank account on the journal — not loan AR / expense categories.
  * Loans store the money side on `sourceAccount` (issue credits it; payment debits it).
- * Match the API: sourceAccount first, then paymentAccount. Ledger lines are
- * display fallbacks, not persisted money-account metadata for batch validation.
+ * Match the API helper: sourceAccount first, then paymentAccount. Ledger lines are
+ * display fallbacks, not batch validation keys. Batches only require the same
+ * payment method; mixed money accounts are allowed.
  */
 export function resolveJournalMoneyAccount(
   row: Pick<DailyIncomeJournal, "transactionType" | "sourceAccount" | "paymentAccount" | "accounts">,
@@ -49,7 +50,6 @@ export function getJournalBatchSelectionBlockReason(
   if (!selected) return null;
   const next = getJournalBatchSelectionKey(row);
   if (selected.paymentMethod !== next.paymentMethod) return "paymentMethod";
-  if (selected.moneyAccountId !== next.moneyAccountId) return "moneyAccount";
   return null;
 }
 

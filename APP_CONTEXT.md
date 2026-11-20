@@ -393,10 +393,10 @@ Pending Reconciliation queue no longer blocks uncleared bank rows.
 Queries, advanced filters and pagination run on the server. Matching and selected
 Income / Expenses / Net totals use `/journals/summary`, preserve currency groups,
 and do not substitute a current-page total for all matching records. Batch
-reconcile/clear selection is limited to one payment method and one cash/bank
-money account (`sourceAccount`, else `paymentAccount`). Loan issues/increases and
-loan payments may share a batch only when that money account matches; loan AR is
-not the batch key. Clearance is limited to eligible bank-method transactions;
+reconcile/clear selection is limited to one payment method. Different cash/bank
+money accounts (`sourceAccount`, else `paymentAccount`) may share a batch,
+including loan issues/increases and loan payments; accounts are not batch keys.
+Clearance is limited to eligible bank-method transactions;
 cash transactions can reconcile but cannot clear. The reconciliation confirm
 summary keeps loans under Other and splits them into Issued / increased vs
 Payments received.

@@ -11,7 +11,7 @@
     "selectedTotalsCount": "{{count}} selected transactions",
     "selectedCount": "Selected:",
     "clearSelected": "Mark cleared",
-    "sameMethod": "Select up to 200 transactions with the same payment method and the same cash/bank account. Loan issues and loan payments may share a batch only when they hit that same account.",
+    "sameMethod": "Select up to 200 transactions with the same payment method. Different cash or bank accounts may be included in the same batch.",
     "empty": "No pending transactions to be cleared across closeouts.",
     "emptyFiltered": "No pending clearance transactions match your search.",
     "blocked": {
@@ -19,10 +19,8 @@
       "notOutstanding": "This transaction isn't pending clearance.",
       "notAuthorized": "The API hasn't authorized clearing this transaction.",
       "paymentMethod": "Only {{method}} transactions can be added to the current selection.",
-      "moneyAccount": "Only transactions for {{account}} can be added to the current selection.",
       "limit": "You can clear up to 200 transactions at a time.",
-      "noMethod": "no payment method",
-      "noMoneyAccount": "no cash/bank account"
+      "noMethod": "no payment method"
     },
     "confirmList": {
       "caption": "Transactions to mark as cleared",
@@ -1971,7 +1969,7 @@
     "selectedTitle": "Selected transactions",
     "clearSelection": "Clear selection",
     "reconcileSelected": "Reconcile selected",
-    "selectionHelp": "Select up to 200 transactions with the same payment method and the same cash/bank account, across pages. Select all adds matching rows on this page. Totals are shown separately for each currency.",
+    "selectionHelp": "Select up to 200 transactions with the same payment method, across pages. Different cash or bank accounts may be included. Select all adds matching rows on this page. Totals are shown separately for each currency.",
     "confirmDescription": "Review the selected transactions and totals. Reconciliation is final and releases the employee’s responsibility. It does not change invoice payments or balances.",
     "confirm": "Reconcile all selected",
     "cancel": "Cancel",
@@ -2004,7 +2002,7 @@
     "totalCount": "Transactions:",
     "clearSelection": "Clear selection",
     "reconcileSelected": "Reconcile selected",
-    "sameMethod": "Select up to 200 transactions with the same payment method and the same cash/bank account. Loan issues and loan payments may share a batch only when they hit that same account.",
+    "sameMethod": "Select up to 200 transactions with the same payment method. Different cash or bank accounts may be included in the same batch.",
     "empty": "No pending transactions to reconcile across closeouts.",
     "emptyFiltered": "No pending reconciliation transactions match your search.",
     "blocked": {
@@ -2012,10 +2010,8 @@
       "notOutstanding": "This transaction isn't pending reconciliation.",
       "notAuthorized": "The API hasn't authorized reconciling this transaction.",
       "paymentMethod": "Only {{method}} transactions can be added to the current selection.",
-      "moneyAccount": "Only transactions for {{account}} can be added to the current selection.",
       "limit": "You can reconcile up to 200 transactions at a time.",
-      "noMethod": "no payment method",
-      "noMoneyAccount": "no cash/bank account"
+      "noMethod": "no payment method"
     },
     "confirmTitle": "Reconcile selected transactions?",
     "confirmDescription": "Confirm that money or supporting documents have been accounted for. This releases the assignee’s responsibility and retains the reconciliation history. Clearance status, invoice balances and closeout amounts stay unchanged.",
