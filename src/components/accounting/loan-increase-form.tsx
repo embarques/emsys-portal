@@ -34,7 +34,7 @@ type Props = {
   assetAccounts: ChartAccount[];
   /** Prefills employee and loan when opened from a selected loan. */
   initialLoan?: Loan | null;
-  /** Principal increase (default) or decrease; shares the same payload shape. */
+  /** Principal increase or non-cash forgiveness using the shared guided form. */
   mode?: "increase" | "decrease";
   pending: boolean;
   onSubmit: (values: LoanIncreaseValues) => Promise<void>;
@@ -85,7 +85,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
   const values = watch();
   const amount = Number(values.amount) || 0;
   const loansQuery = useEmployeeActiveLoans(values.employeeId);
-  const loans = loansQuery.data?.items ?? [];
+  const loans = (loansQuery.data?.items ?? []).filter(loan => mode !== "decrease" || loan.balance > 0);
   const selectedLoan =
     loans.find((loan) => loan.id === values.loanId) ??
     (values.loanId && initialLoan?.id === values.loanId ? initialLoan : undefined);
@@ -125,7 +125,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
     }
   });
 
-  const debitAccount = mode === "decrease" ? values.sourceAccountName : loanAccountName;
+  const debitAccount = mode === "decrease" ? text("lossAccountName") : loanAccountName;
   const creditAccount = mode === "decrease" ? loanAccountName : values.sourceAccountName;
   const balanceAfter = selectedLoan
     ? mode === "decrease"
@@ -233,7 +233,9 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
 
           <FormSection className={stageClass(2)} variant="card" icon={ReceiptText} title={text("sections.amount")}>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+              {mode === "decrease" ? (
+                <div className="space-y-2"><p className="text-sm font-medium">{text("lossAccountLabel")}</p><p className="text-sm">{text("lossAccountName")}</p><p className="text-xs text-muted-foreground">{text("noMoneyMovement")}</p></div>
+              ) : <div className="space-y-2">
                 <FieldLabelRow
                   showClear={Boolean(values.sourceAccountId) && sourceAccountInline}
                   onClear={() => {
@@ -264,12 +266,14 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
                   mobileSheet
                 />
                 {fieldError("sourceAccountId")}
-              </div>
+              </div>}
               <div className="space-y-2">
                 {requiredLabel("loan-increase-amount", text("amount"))}
                 <Input
                   id="loan-increase-amount"
                   type="number"
+                  inputMode="decimal"
+                  aria-describedby={mode === "decrease" ? "loan-decrease-amount-help" : undefined}
                   min="0.01"
                   max={mode === "decrease" && openBalance != null ? openBalance : undefined}
                   step="0.01"
@@ -277,7 +281,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
                   {...register("amount", { setValueAs: (value) => (value === "" ? undefined : Number(value)) })}
                 />
                 {mode === "decrease" && openBalance != null ? (
-                  <p className="text-xs text-muted-foreground">{text("maxDecrease", { amount: formatLoanMoney(openBalance) })}</p>
+                  <p id="loan-decrease-amount-help" className="text-xs text-muted-foreground">{text("maxDecrease", { amount: formatLoanMoney(openBalance) })}</p>
                 ) : null}
                 {fieldError("amount")}
               </div>
@@ -310,7 +314,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
           {guided && flow.step === 3 ? <FormSection variant="card" title={t("accounting.dailyIncome.wizard.quickFlow.review")} action={<Button type="button" variant="ghost" onClick={() => flow.setStep(2)}>{t("common.actions.edit")}</Button>}>
             <dl className="grid gap-4 sm:grid-cols-2">{[
               [text("employee"), values.employeeName], [text("loan"), selectedLoan?.description || t("accounting.loans.fallbackDescription")],
-              [text("sourceAccount"), values.sourceAccountName], [text("amount"), formatLoanMoney(amount)],
+              [mode === "decrease" ? text("lossAccountLabel") : text("sourceAccount"), mode === "decrease" ? text("lossAccountName") : values.sourceAccountName], [text("amount"), formatLoanMoney(amount)],
               [text("date"), values.transactionDate], [text("reference"), values.referenceNumber], [text("notes"), values.description],
             ].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">{value || t("common.empty.dash")}</dd></div>)}</dl>
           </FormSection> : null}
@@ -320,8 +324,8 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
         [text("employee"), values.employeeName || t("common.empty.dash")],
         [text("loan"), selectedLoan ? selectedLoan.description || t("accounting.loans.fallbackDescription") : t("common.empty.dash")],
         ...(selectedLoan ? [[text("balanceAfter"), formatLoanMoney(mode === "decrease" ? Math.max(0, selectedLoan.balance - amount) : selectedLoan.balance + amount)] as [string, string]] : []),
-        [text("journalDebit"), <JournalSummaryLine key="debit" account={mode === "decrease" ? values.sourceAccountName : loanAccountName} amount={amount} />],
-        [text("journalCredit"), <JournalSummaryLine key="credit" account={mode === "decrease" ? loanAccountName : values.sourceAccountName} amount={amount} />],
+        [text("journalDebit"), <JournalSummaryLine key="debit" account={debitAccount} amount={amount} />],
+        [text("journalCredit"), <JournalSummaryLine key="credit" account={creditAccount} amount={amount} />],
         [text("date"), values.transactionDate || t("common.empty.dash")],
         ...(values.referenceNumber?.trim() ? [[text("reference"), values.referenceNumber] as [string, string]] : []),
       ]} />, summaryContainer) : null}

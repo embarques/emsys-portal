@@ -20,6 +20,8 @@ import {
   type LoanCreateValues,
   type LoanEmployeeRef,
   type LoanIncreaseValues,
+  type LoanDecreaseValues,
+  type LoanDecreaseResult,
   type LoanListParams,
   type LoanListResult,
   type LoanPaymentValues,
@@ -127,7 +129,7 @@ function normalizeLoanStatus(value: unknown): LoanStatus {
 
 function normalizeLoanTransactionType(value: unknown): LoanTransactionType {
   const type = stringValue(value).toUpperCase();
-  return type === "PAYMENT" || type === "INCREASE" ? type : "ISSUE";
+  return type === "PAYMENT" || type === "INCREASE" || type === "DECREASE" ? type : "ISSUE";
 }
 
 export function normalizeLoan(value: unknown): Loan | null {
@@ -176,6 +178,7 @@ function normalizeLoanTransaction(value: unknown): LoanTransaction | null {
     type: normalizeLoanTransactionType(raw.type),
     amount: numberValue(raw.amount),
     assetAccount: normalizeAccount(firstDefined(raw.assetAccount, raw.sourceAccount, raw.receivedAccount)),
+    adjustmentAccount: normalizeAccount(raw.adjustmentAccount),
     transactionDate: stringValue(firstDefined(raw.transactionDate, raw.date, raw.createdAt)).slice(0, 10),
     referenceNumber: stringValue(firstDefined(raw.referenceNumber, raw.refNumber)),
     description: stringValue(raw.description),
@@ -344,22 +347,39 @@ export async function increaseLoan(requestId: string, values: LoanIncreaseValues
   return loan;
 }
 
-/** Same payload shape as increase; posts the inverse principal adjustment. */
-export async function decreaseLoan(requestId: string, values: LoanIncreaseValues): Promise<Loan> {
+/** Explicit non-cash command shape, also used for retry identity. */
+export function buildLoanDecreasePayload(values: LoanDecreaseValues) {
+  return {
+    employee: { id: values.employeeId, name: values.employeeName ?? "" },
+    amount: values.amount,
+    transactionDate: values.transactionDate,
+    referenceNumber: values.referenceNumber,
+    description: values.description,
+  };
+}
+
+/** Forgive principal without changing paid amount or moving money. */
+export async function decreaseLoan(requestId: string, values: LoanDecreaseValues): Promise<LoanDecreaseResult> {
   const payload = await apiClient.post<ApiEnvelope>(
     `${API_ENDPOINTS.ACCOUNTING_LOAN}/${encodeURIComponent(values.loanId)}/decreases`,
     {
       requestId,
-      ...buildLoanIncreasePayload(values),
+      ...buildLoanDecreasePayload(values),
     },
   );
-  assertMutation(payload, "Unable to decrease the loan.");
+  assertMutation(payload, translateCurrent("accounting.loans.errors.decreaseUnconfirmed"));
   const data = objectValue(unwrap(payload));
   const loan = normalizeLoan(firstDefined(data.loan, data));
-  if (!loan || loan.id !== values.loanId) {
+  const journal = objectValue(data.journal);
+  const transaction = objectValue(data.transaction);
+  const journalId = stringValue(firstDefined(journal.id, journal._id));
+  const incomeStatementId = numberValue(objectValue(journal.incomeStatement).id);
+  if (!loan || loan.id !== values.loanId || !journalId || incomeStatementId <= 0 ||
+      journal.transactionType !== "LOAN-DECREASE" || transaction.type !== "DECREASE" ||
+      stringValue(transaction.loanId) !== values.loanId || stringValue(transaction.journalEntryId) !== journalId) {
     throw new Error(translateCurrent("accounting.loans.errors.decreaseUnconfirmed"));
   }
-  return loan;
+  return { loan, journalId, incomeStatementId };
 }
 
 export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan | null> {

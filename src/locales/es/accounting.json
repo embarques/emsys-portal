@@ -51,10 +51,6 @@
     "emptyNone": "Aún no hay cuentas.",
     "addAccount": "Nueva cuenta",
     "loading": "Cargando cuentas…",
-    "card": {
-      "title": "Cuentas",
-      "description": "Jerarquía de cuentas, tipo, sucursal y disponibilidad."
-    },
     "columns": {
       "id": "#",
       "type": "Tipo",
@@ -791,7 +787,7 @@
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
-      "useLoanPaymentWorkflow": "Registra los pagos de préstamos desde el flujo de pago de préstamos.",
+      "useLoanPaymentWorkflow": "Use el flujo específico de préstamos para pagos y reducciones de capital.",
       "paymentInvoiceAmbiguous": "Más de una factura tiene este número. Pide a un administrador que resuelva el duplicado antes de registrar el pago.",
       "paymentInvoiceInvalid": "No se pudo verificar la factura. Escribe el número exacto e inténtalo de nuevo.",
       "responsibilityRequired": "Vincula un empleado activo a tu usuario o pide a un operador autorizado que asigne la responsabilidad. El registro no se ha guardado.",
@@ -1043,7 +1039,8 @@
       },
       "loanDecrease": {
         "label": "Registrar disminución de principal del préstamo",
-        "description": "Reducir el principal de un préstamo existente"
+        "description": "Reduzca el capital pendiente como una pérdida sin movimiento de dinero. Los pagos anteriores no cambian.",
+        "shortLabel": "Capital condonado"
       },
       "loanPayment": {
         "label": "Registrar pago de préstamo",
@@ -1424,7 +1421,8 @@
     "transactionTypes": {
       "ISSUE": "Préstamo otorgado",
       "INCREASE": "Monto adicional",
-      "PAYMENT": "Pago"
+      "PAYMENT": "Pago",
+      "DECREASE": "Capital condonado"
     },
     "stats": {
       "outstandingBalance": "Saldo pendiente",
@@ -1474,6 +1472,7 @@
         "loan": "Detalles del préstamo",
         "employee": "Empleado",
         "payments": "Pagos",
+        "reductions": "Reducciones de capital",
         "audit": "Auditoría"
       },
       "reference": "Número de referencia",
@@ -1510,7 +1509,8 @@
       "decreaseAmountPositive": "El monto a disminuir debe ser mayor que cero.",
       "decreaseExceedsBalance": "La disminución no puede superar el saldo abierto del préstamo.",
       "paymentExceedsBalance": "El pago no puede superar el saldo abierto del préstamo.",
-      "loanRequired": "Seleccione un préstamo."
+      "loanRequired": "Seleccione un préstamo.",
+      "decreaseAmountInvalid": "Ingrese un importe positivo de hasta 1,000,000,000,000 con un máximo de dos decimales."
     },
     "journalPreview": {
       "selectAccount": "Seleccionar cuenta"
@@ -1595,6 +1595,10 @@
       "journalCredit": "Crédito · Efectivo o banco de origen",
       "submit": "Agregar al préstamo"
     },
+    "reductions": {
+      "empty": "No hay reducciones de capital registradas.",
+      "noneReceived": "No se recibió dinero"
+    },
     "decreaseForm": {
       "sections": {
         "loan": "Empleado y préstamo",
@@ -1603,7 +1607,7 @@
         "notes": "Referencia y notas",
         "journal": "Resumen del asiento"
       },
-      "loanHint": "Elija el empleado y el préstamo activo. Esto reduce el principal y el monto adeudado, y no puede superar el saldo abierto.",
+      "loanHint": "Condone parte o la totalidad del saldo pendiente. No se recibe dinero y los pagos anteriores no cambian.",
       "employee": "Empleado",
       "selectEmployee": "Seleccionar empleado",
       "searchEmployees": "Buscar empleados",
@@ -1626,10 +1630,13 @@
       "reference": "Número de referencia",
       "optional": "Opcional",
       "notes": "Descripción",
-      "notesPlaceholder": "Motivo de la disminución del principal",
-      "journalDebit": "Débito · Efectivo o banco de destino",
+      "notesPlaceholder": "Motivo de la condonación del capital",
+      "journalDebit": "Débito · Reducciones de capital de préstamos",
       "journalCredit": "Crédito · Cuenta por cobrar del préstamo",
-      "submit": "Disminuir préstamo"
+      "submit": "Condonar capital",
+      "lossAccountLabel": "Cuenta de pérdida",
+      "lossAccountName": "Reducciones de capital de préstamos",
+      "noMoneyMovement": "La reducción se registra como una pérdida. Las cuentas de efectivo y banco no cambian."
     },
     "payments": {
       "title": "Pagos",

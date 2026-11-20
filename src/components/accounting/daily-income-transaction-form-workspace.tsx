@@ -114,7 +114,12 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           return;
         }
 
-        await updateJournal.mutateAsync({ id: editingJournal.id, statement, values, options });
+        await updateJournal.mutateAsync({
+          id: editingJournal.id,
+          statement,
+          values,
+          options: { ...options, expectedVersion: editingJournal.version },
+        });
         notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
         closeFormTabAndReturn(tabId);
         return;

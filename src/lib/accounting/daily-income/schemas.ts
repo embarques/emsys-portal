@@ -87,7 +87,8 @@ export function createDailyIncomeJournalSchema(
         "TRANSFER",
         "LOAN",
         "LOAN-PAYMENT",
-      ]).refine((type) => type !== "LOAN-PAYMENT", { message: "accounting.dailyIncome.errors.useLoanPaymentWorkflow" }),
+        "LOAN-DECREASE",
+      ]).refine((type) => type !== "LOAN-PAYMENT" && type !== "LOAN-DECREASE", { message: "accounting.dailyIncome.errors.useLoanPaymentWorkflow" }),
       amount: z
         .number({ error: messages.amountRequired })
         .nonnegative(messages.amountNonNegative)

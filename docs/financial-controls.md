@@ -112,3 +112,38 @@ still require Firebase/API credentials.
   occupied codes, range exhaustion, concurrent allocation and protected types.
 - Review ambiguous legacy custom-account mappings before migration; verify
   existing Income/Expense IDs and historical postings remain intact.
+
+## Loan principal forgiveness (API #382 review)
+
+Principal reduction means forgiveness/loss, never returned funds. The dedicated
+`POST /loans/{id}/decreases` command requires journal-create permission, a matching
+active actor/loan branch and employee, a current open closeout, and positive
+cent-precision amount no greater than the positive outstanding balance. It debits
+LOAN PRINCIPAL REDUCTIONS and credits the loan receivable. Paid amount and
+cash/bank balances stay unchanged; a zero resulting balance marks the loan PAID.
+
+The API resolves the fixed tenant-local expense account (ID 4000000005); the
+portal offers no funding/destination or payment-method input. Existing tenants
+must run the chart-accounts seed before activation. A missing or altered loss
+account rejects posting. The additive `decreaseRequestId` unique partial index
+must also be installed through the standard tenant index migration.
+
+DECREASE loan history and LOAN-DECREASE journals remain distinct from payments.
+Closeout expenses include the loss; `nonCashExpenses` keeps that loss from
+reducing `totalCash`. No bank clearance item or cash receipt is created.
+Reconciliation uses the existing journal confirmation workflow. Generic journal
+creation/edit/reversal cannot bypass this dedicated loan lifecycle.
+
+Principal, loan transaction, journal and audit commit atomically. Identical retries
+retain their UUID/payload and return the original journal/transaction with the
+current loan, including after payoff or closeout closure. Failed/ambiguous
+acknowledgments retain the retry identity in the mounted portal session; reload
+recovery is not established. Changed payloads require a new command identity.
+
+Local regressions cover cent/balance validation, paid amounts, full forgiveness,
+permission and tenant scope, configuration errors, rollback, concurrency and
+replay. Portal tests cover payload shape, separate history, desktop/mobile input,
+retry identity and focused cache invalidation. Authenticated acceptance against a
+deployed non-production API still requires Firebase/API credentials. No historical
+journals are rewritten; any records previously posted under a cash-return
+interpretation need separate audited review.

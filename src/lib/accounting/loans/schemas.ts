@@ -50,12 +50,15 @@ export function createLoanDecreaseSchema(t: TranslateFn, maxBalance?: number) {
       employeeId: z.number().positive(t("accounting.loans.validation.employeeRequired")),
       employeeName: z.string().optional(),
       loanId: z.string().min(1, t("accounting.loans.validation.loanRequired")),
-      sourceAccountId: z.number().positive(t("accounting.loans.validation.sourceAccountRequired")),
+      // Shared form-shell defaults; forgiveness sends no funding fields.
+      sourceAccountId: z.number(),
       sourceAccountName: z.string().optional(),
       sourceAccountType: z.string().optional(),
       amount: z
         .number({ error: t("accounting.loans.validation.decreaseAmountRequired") })
-        .positive(t("accounting.loans.validation.decreaseAmountPositive")),
+        .positive(t("accounting.loans.validation.decreaseAmountPositive"))
+        .max(1e12, t("accounting.loans.validation.decreaseAmountInvalid"))
+        .refine(value => Math.round(value * 100) > 0 && Math.abs(value * 100 - Math.round(value * 100)) <= 0.000001, t("accounting.loans.validation.decreaseAmountInvalid")),
       transactionDate: z.string().min(1, t("accounting.loans.validation.dateRequired")),
       referenceNumber: z.string().trim().max(40, t("accounting.loans.validation.referenceTooLong")),
       description: z.string().trim().max(500, t("accounting.loans.validation.descriptionTooLong")),

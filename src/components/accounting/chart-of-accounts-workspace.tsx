@@ -26,12 +26,7 @@ import { CHART_ACCOUNT_TABLE_FILTER_FIELDS } from "@/lib/accounting/chart-accoun
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -558,14 +553,6 @@ export function ChartOfAccountsWorkspace() {
 
         <Card className="mt-6 gap-0">
           <CardHeader className="gap-3 border-b py-4 pb-3">
-            <div>
-              <CardTitle>
-                {t("accounting.chartOfAccounts.card.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("accounting.chartOfAccounts.card.description")}
-              </CardDescription>
-            </div>
             <TableDirectoryToolbar isLoading={accountsQuery.isFetching || isSearchPending}
               filtersOpen={filtersOpen}
               onFiltersOpenChange={setFiltersOpen}

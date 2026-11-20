@@ -87,10 +87,11 @@ export function LoanViewSheet({
 
   const dash = t("common.empty.dash");
   const paymentEntries = payments.filter((entry) => entry.type === "PAYMENT");
+  const reductions = payments.filter((entry) => entry.type === "DECREASE");
   const isActive = loan.status === "ACTIVE";
   const footerCanPay = Boolean(onAction) && canPay && isActive;
   const footerCanIncrease = Boolean(onAction) && canIncrease && isActive;
-  const footerCanDecrease = Boolean(onAction) && canDecrease && isActive;
+  const footerCanDecrease = Boolean(onAction) && canDecrease && isActive && loan.balance > 0;
   const footerShowIncreaseTodo = Boolean(onAction) && showIncreaseTodo && isActive;
   const showFooterActions =
     footerCanPay || footerCanIncrease || footerCanDecrease || footerShowIncreaseTodo;
@@ -211,6 +212,23 @@ export function LoanViewSheet({
                 </div>
               ))
             )}
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection icon={ReceiptText} title={t("accounting.loans.view.sections.reductions")}>
+            {paymentsError ? <p role="alert" className="px-4 py-3 text-sm text-destructive">{paymentsError}</p> : paymentsLoading ? <p role="status" className="px-4 py-3 text-sm text-muted-foreground">{t("accounting.loans.payments.loading")}</p> : reductions.length === 0 ? <p className="px-4 py-3 text-sm text-muted-foreground">{t("accounting.loans.reductions.empty")}</p> : reductions.map((entry) => (
+              <div key={entry.id} className="border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
+                <div className="flex items-start justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium">{formatLoanDate(entry.transactionDate) || dash}</p>
+                    <p className="text-muted-foreground">{entry.adjustmentAccount?.displayName ?? entry.adjustmentAccount?.name ?? t("accounting.loans.decreaseForm.lossAccountName")}</p>
+                    <p className="text-xs text-muted-foreground">{t("accounting.loans.reductions.noneReceived")}</p>
+                    {entry.referenceNumber ? <p className="mt-1 text-xs text-muted-foreground">{t("accounting.loans.payments.refLabel")}: {entry.referenceNumber}</p> : null}
+                    {entry.description ? <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">{entry.description}</p> : null}
+                  </div>
+                  <p className="shrink-0 font-semibold">{formatLoanMoney(entry.amount)}</p>
+                </div>
+              </div>
+            ))}
           </RecordViewSheetSection>
 
           <RecordViewSheetSection icon={Info} title={t("accounting.loans.view.sections.audit")}>
