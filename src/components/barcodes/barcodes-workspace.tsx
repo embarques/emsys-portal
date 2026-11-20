@@ -48,10 +48,13 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -885,7 +888,7 @@ export function BarcodesWorkspace() {
       />
 
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent>
+        <CompactActionDialogContent>
           <DialogHeader>
             <DialogTitle>{t("barcodes.bulk.statusTitle")}</DialogTitle>
             <DialogDescription>
@@ -901,21 +904,21 @@ export function BarcodesWorkspace() {
               placeholder={t("barcodes.form.placeholders.status")}
               searchPlaceholder={t("barcodes.form.search.statuses")}
             />
-            {bulkError ? <p className="text-sm text-destructive">{bulkError}</p> : null}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)} disabled={isUpdating}>
-              {t("common.actions.cancel")}
-            </Button>
-            <Button onClick={() => void applyStatusChange()} disabled={isUpdating || !newStatus}>
-              {t("barcodes.bulk.apply")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+          <CompactActionDialogFooter
+            error={bulkError}
+            onCancel={() => setStatusDialogOpen(false)}
+            cancelDisabled={isUpdating}
+            onSubmit={() => void applyStatusChange()}
+            submitLabel={t("barcodes.bulk.apply")}
+            submitDisabled={!newStatus}
+            isSubmitting={isUpdating}
+          />
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={containerDialogOpen} onOpenChange={setContainerDialogOpen}>
-        <DialogContent>
+        <CompactActionDialogContent>
           <DialogHeader>
             <DialogTitle>{t("barcodes.bulk.containerTitle")}</DialogTitle>
             <DialogDescription>
@@ -931,24 +934,17 @@ export function BarcodesWorkspace() {
               placeholder={t("barcodes.form.placeholders.container")}
               searchPlaceholder={t("barcodes.form.search.containers")}
             />
-            {bulkError ? <p className="text-sm text-destructive">{bulkError}</p> : null}
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setContainerDialogOpen(false)}
-              disabled={isUpdating}
-            >
-              {t("common.actions.cancel")}
-            </Button>
-            <Button
-              onClick={() => void applyContainerChange()}
-              disabled={isUpdating || !newContainerId}
-            >
-              {t("barcodes.bulk.apply")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+          <CompactActionDialogFooter
+            error={bulkError}
+            onCancel={() => setContainerDialogOpen(false)}
+            cancelDisabled={isUpdating}
+            onSubmit={() => void applyContainerChange()}
+            submitLabel={t("barcodes.bulk.apply")}
+            submitDisabled={!newContainerId}
+            isSubmitting={isUpdating}
+          />
+        </CompactActionDialogContent>
       </Dialog>
 
       <AssignBarcodeRouteDialog

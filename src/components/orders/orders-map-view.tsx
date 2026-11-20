@@ -23,12 +23,14 @@ import {
   TableSelectionActionDivider,
   TableSelectionActionGroup,
 } from "@/components/app-shell/table-selection-action-group";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -1039,9 +1041,7 @@ export function OrdersMapView({
           setUnassignOpen(nextOpen);
         }}
       >
-        <DialogContent
-          className="z-[70]"
-          onOpenAutoFocus={(event) => event.preventDefault()}
+        <CompactActionDialogContent
           onPointerDownOutside={(event) => {
             if (isUnassigning) event.preventDefault();
           }}
@@ -1063,7 +1063,7 @@ export function OrdersMapView({
                   })}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <CompactActionDialogFooter>
             <Button
               variant="outline"
               onClick={() => setUnassignOpen(false)}
@@ -1078,8 +1078,8 @@ export function OrdersMapView({
               pendingLabel={t("orders.actions.clearingRoute")}
               icon={RouteOff}
             />
-          </DialogFooter>
-        </DialogContent>
+          </CompactActionDialogFooter>
+        </CompactActionDialogContent>
       </Dialog>
     </>
   );

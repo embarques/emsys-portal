@@ -52,7 +52,10 @@ export function DirectoryInsightsToggle({
 type DirectoryInsightsFlipProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  metrics: DirectoryInsightMetric[];
+  /** Default insights face metrics. Ignored when `insights` is provided. */
+  metrics?: DirectoryInsightMetric[];
+  /** Optional custom back face (e.g. appointment pie chart). */
+  insights?: ReactNode;
   children: ReactNode;
   className?: string;
   /** Optional workspace title used in the insights header. */
@@ -142,7 +145,6 @@ function DirectoryInsightsFace({
           <h2 className="truncate text-lg font-semibold tracking-tight">
             {title ? t("shell.directoryInsights.titleNamed", { title }) : t("shell.directoryInsights.title")}
           </h2>
-          <p className="text-sm text-muted-foreground">{t("shell.directoryInsights.description")}</p>
         </div>
         <DirectoryInsightsToggle open onOpenChange={(next) => !next && onBack()} />
       </div>
@@ -245,7 +247,8 @@ function DirectoryInsightsFace({
 export function DirectoryInsightsFlip({
   open,
   onOpenChange,
-  metrics,
+  metrics = [],
+  insights,
   children,
   className,
   title,
@@ -299,11 +302,13 @@ export function DirectoryInsightsFlip({
             !open && "pointer-events-none",
           )}
         >
-          <DirectoryInsightsFace
-            metrics={metrics}
-            title={title}
-            onBack={() => onOpenChange(false)}
-          />
+          {insights ?? (
+            <DirectoryInsightsFace
+              metrics={metrics}
+              title={title}
+              onBack={() => onOpenChange(false)}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -2,8 +2,12 @@
 
 import { Ban, Send } from "lucide-react";
 
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
 
 export type InventoryDocumentCommand = "post" | "cancel";
@@ -30,12 +34,12 @@ export function InventoryDocumentCommandDialog({
   const { t } = useTranslation();
   return (
     <Dialog open={command !== null} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <CompactActionDialogContent>
         <DialogHeader>
           <DialogTitle>{command ? t(`${copyKey}.${command}Title`) : ""}</DialogTitle>
           <DialogDescription>{command ? t(`${copyKey}.${command}Description`, { name: label }) : ""}</DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <CompactActionDialogFooter>
           <Button variant="outline" disabled={isPending} onClick={() => onOpenChange(false)}>
             {t("common.actions.close")}
           </Button>
@@ -55,8 +59,8 @@ export function InventoryDocumentCommandDialog({
               {isPending ? t("common.actions.saving") : t("inventory.actions.cancelDraft")}
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
+        </CompactActionDialogFooter>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

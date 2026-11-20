@@ -20,7 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import {
   dailyRoutesForAssigneeBranch,
@@ -776,8 +781,8 @@ export function RegisterInventoryChangeFields({
       </FormSection>
 
       <Dialog open={entityDialog === "supplier"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader>
             <DialogTitle>
               {editingSupplier ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
             </DialogTitle>
@@ -791,12 +796,12 @@ export function RegisterInventoryChangeFields({
             onCancel={() => setEntityDialog(null)}
           />
           {entityError ? <p className="px-6 pb-4 text-sm text-destructive">{entityError}</p> : null}
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={entityDialog === "item"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
+          <DialogHeader>
             <DialogTitle>
               {editingItem ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
             </DialogTitle>
@@ -810,12 +815,12 @@ export function RegisterInventoryChangeFields({
             onCancel={() => setEntityDialog(null)}
           />
           {entityError ? <p className="px-6 pb-4 text-sm text-destructive">{entityError}</p> : null}
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={entityDialog === "vehicle"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "z-[70] sm:max-w-2xl")}>
+          <DialogHeader>
             <DialogTitle>
               {editingVehicle ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
             </DialogTitle>
@@ -830,12 +835,12 @@ export function RegisterInventoryChangeFields({
             onSubmit={saveVehicle}
             onCancel={() => setEntityDialog(null)}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
+          <DialogHeader>
             <DialogTitle>{t("employees.form.addTitle")}</DialogTitle>
           </DialogHeader>
           <EmployeeForm
@@ -849,12 +854,12 @@ export function RegisterInventoryChangeFields({
             onSubmit={saveEmployee}
             onCancel={() => setEntityDialog(null)}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={entityDialog === "route"} onOpenChange={(open) => !open && setEntityDialog(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
+          <DialogHeader>
             <DialogTitle>
               {editingRoute ? t("routes.dailyRoutes.editTitle") : t("routes.dailyRoutes.addTabLabel")}
             </DialogTitle>
@@ -869,7 +874,7 @@ export function RegisterInventoryChangeFields({
               onCancel={() => setEntityDialog(null)}
             />
           </div>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </div>
   );

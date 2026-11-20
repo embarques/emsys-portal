@@ -1,10 +1,10 @@
 "use client";
 
 import { Info } from "lucide-react";
+import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -59,7 +59,7 @@ export function InvoiceDocumentInfo({
           <Info className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
+      <CompactActionDialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("invoices.documents.info")}</DialogTitle>
           <DialogDescription className="break-words">
@@ -79,7 +79,7 @@ export function InvoiceDocumentInfo({
             </div>
           ))}
         </dl>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

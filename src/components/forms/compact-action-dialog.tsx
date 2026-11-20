@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Loader2 } from "lucide-react";
 
+import { FormDialogChromeProvider } from "@/components/forms/form-dialog-chrome";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogFooter } from "@/components/ui/dialog";
@@ -18,6 +19,10 @@ import { cn } from "@/lib/utils";
 export const compactActionDialogContentClassName =
   "z-[70] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:p-4";
 
+/** Host for forms that previously used p-0 + FormBody — keep height, drop muted shell. */
+export const compactActionDialogFormClassName =
+  "flex max-h-[90vh] flex-col overflow-hidden";
+
 export const compactActionDialogFooterClassName = "max-md:grid max-md:grid-cols-2";
 
 type CompactActionDialogContentProps = React.ComponentProps<typeof DialogContent>;
@@ -25,7 +30,7 @@ type CompactActionDialogContentProps = React.ComponentProps<typeof DialogContent
 export const CompactActionDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogContent>,
   CompactActionDialogContentProps
->(function CompactActionDialogContent({ className, onOpenAutoFocus, ...props }, ref) {
+>(function CompactActionDialogContent({ className, children, onOpenAutoFocus, ...props }, ref) {
   return (
     <DialogContent
       ref={ref}
@@ -36,7 +41,9 @@ export const CompactActionDialogContent = React.forwardRef<
         onOpenAutoFocus?.(event);
       }}
       {...props}
-    />
+    >
+      <FormDialogChromeProvider>{children}</FormDialogChromeProvider>
+    </DialogContent>
   );
 });
 CompactActionDialogContent.displayName = "CompactActionDialogContent";

@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 
 import { ChartAccountForm } from "@/components/accounting/chart-account-form";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -675,8 +679,13 @@ export function ChartOfAccountsWorkspace() {
           }
         }}
       >
-        <DialogContent className="inset-x-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 max-md:[&>button.absolute]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6">
-          <DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-b-0 sm:bg-transparent sm:p-0 sm:text-foreground">
+        <CompactActionDialogContent
+          className={cn(
+            compactActionDialogFormClassName,
+            "inset-x-0 top-0 h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 rounded-none border-0 p-0 max-md:[&>button.absolute]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6",
+          )}
+        >
+          <DialogHeader>
             <div className="flex items-center justify-between gap-4">
               <DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">
                 {editing
@@ -710,7 +719,7 @@ export function ChartOfAccountsWorkspace() {
               onCancel={() => setDialogOpen(false)}
             />
           </div>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog

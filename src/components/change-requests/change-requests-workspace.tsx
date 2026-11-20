@@ -18,7 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export function ChangeRequestsWorkspace() {
   const { companyId, user, email, roleId, permissions } = useAuth();
@@ -178,7 +182,7 @@ function Workspace() {
       <CatalogTablePagination state={list} />
     </Card> : null}
     <Dialog open={Boolean(reviewing)} onOpenChange={open => { if (!open && !review.isPending) setReviewing(null); }}>
-      <DialogContent>
+      <CompactActionDialogContent>
         <DialogHeader><DialogTitle>{text("review")}</DialogTitle><DialogDescription>{text("reviewDescription")}</DialogDescription></DialogHeader>
         <p>{reviewing?.reason}</p>
         <form onSubmit={event => { void reviewForm.handleSubmit(values => reviewRequest(true, values))(event); }} className="space-y-4">
@@ -186,12 +190,12 @@ function Workspace() {
           <textarea id="review-reason" className="min-h-24 w-full rounded-md border bg-background p-3" {...reviewForm.register("reason")} disabled={review.isPending} />
           {reviewForm.formState.errors.reason ? <p role="alert">{text("invalid")}</p> : null}
           {review.isError ? <p role="alert">{normalizeApiError(review.error).message}</p> : null}
-          <DialogFooter>
+          <CompactActionDialogFooter>
             <Button type="button" variant="outline" disabled={review.isPending || !reviewReason.trim()} onClick={() => { void reviewForm.handleSubmit(values => reviewRequest(false, values))(); }}>{text("reject")}</Button>
             <Button type="submit" disabled={review.isPending}>{text("approve")}</Button>
-          </DialogFooter>
+          </CompactActionDialogFooter>
         </form>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   </div>;
 }

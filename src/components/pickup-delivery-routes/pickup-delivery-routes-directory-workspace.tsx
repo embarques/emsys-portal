@@ -17,6 +17,10 @@ import { ACTIVE_ROUTE_API_TABLE_FIELDS } from "@/lib/pickup-delivery-routes/tabl
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -24,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -564,8 +569,8 @@ export function ActiveRoutesDirectoryWorkspace({
           if (!open) setEditingActiveRoute(null);
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
+          <DialogHeader>
             <DialogTitle>
               {editingActiveRoute
                 ? t(`routes.${copyPrefix}.editTitle`)
@@ -586,7 +591,7 @@ export function ActiveRoutesDirectoryWorkspace({
               setEditingActiveRoute(null);
             }}
           />
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog

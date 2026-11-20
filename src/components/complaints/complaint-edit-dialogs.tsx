@@ -7,8 +7,13 @@ import {
   ComplaintRequiredMark,
   ComplaintTargetsSection,
 } from "@/components/complaints/complaint-targets-section";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { FormBody, FormFooter } from "@/components/forms/form-shell";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -23,8 +28,8 @@ export function ComplaintTargetsDialog({ workflow, canPickEmployees }: { workflo
   const { t } = useTranslation();
   return (
     <Dialog open={workflow.dialog === "targets"} onOpenChange={(open) => (open ? undefined : workflow.closeDialog())}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
+      <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
+        <DialogHeader>
           <DialogTitle>{t("complaints.workflow.dialogs.targets.title")}</DialogTitle>
           <DialogDescription>{t("complaints.workflow.dialogs.targets.description")}</DialogDescription>
         </DialogHeader>
@@ -39,7 +44,7 @@ export function ComplaintTargetsDialog({ workflow, canPickEmployees }: { workflo
             onCancel={workflow.closeDialog}
           />
         </form>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }
@@ -56,8 +61,8 @@ export function ComplaintAttachmentDialog({ workflow }: { workflow: Workflow }) 
 
   return (
     <Dialog open={workflow.dialog === "attachment"} onOpenChange={(open) => (open ? undefined : workflow.closeDialog())}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
+      <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-lg")}>
+        <DialogHeader>
           <DialogTitle>{t("complaints.workflow.dialogs.attachment.title")}</DialogTitle>
           <DialogDescription>{t("complaints.workflow.dialogs.attachment.description")}</DialogDescription>
         </DialogHeader>
@@ -135,7 +140,7 @@ export function ComplaintAttachmentDialog({ workflow }: { workflow: Workflow }) 
             onCancel={workflow.closeDialog}
           />
         </form>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

@@ -3,6 +3,7 @@
 import { useId } from "react";
 import { AlertCircle, Info, Loader2 } from "lucide-react";
 
+import { useFormDialogChrome } from "@/components/forms/form-dialog-chrome";
 import { useTranslation } from "@/lib/i18n";
 
 import { Button } from "@/components/ui/button";
@@ -95,13 +96,18 @@ type FormBodyProps = {
 /** Scrollable form body with the shared muted background and padding. */
 export function FormBody({ className, workflow = false, isBusy = false, busyLabel, children }: FormBodyProps) {
   const { t } = useTranslation();
+  const inDialog = useFormDialogChrome();
 
   return (
     <div
       data-form-body
       className={cn(
-        "relative min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain bg-muted/35 px-5 py-4",
-        workflow && "@container space-y-5 p-4 sm:p-6",
+        "relative min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain",
+        inDialog
+          ? "bg-transparent px-0 py-0"
+          : "bg-muted/35 px-5 py-4",
+        workflow && !inDialog && "@container space-y-5 p-4 sm:p-6",
+        workflow && inDialog && "@container space-y-4",
         className,
       )}
     >
@@ -185,6 +191,7 @@ export function FormFooter({
   cancelLabel,
 }: FormFooterProps) {
   const { t } = useTranslation();
+  const inDialog = useFormDialogChrome();
   const resolvedCancelLabel = cancelLabel ?? t("common.actions.cancel");
 
   const notice: FormFooterNotice | null = error
@@ -192,6 +199,31 @@ export function FormFooter({
     : warning
       ? { tone: "warning", message: warning }
       : null;
+
+  const actions = (
+    <>
+      {onCancel ? (
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          {resolvedCancelLabel}
+        </Button>
+      ) : null}
+      <Button type="submit" disabled={isSubmitting || submitDisabled} title={notice?.message}>
+        {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
+        {isSubmitting ? t("common.actions.saving") : submitLabel}
+      </Button>
+    </>
+  );
+
+  if (inDialog) {
+    return (
+      <div className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 bg-background pt-2">
+        {notice ? <FormFooterNoticeMessage tone={notice.tone} message={notice.message} /> : null}
+        <div className="flex flex-col-reverse gap-2 max-md:grid max-md:grid-cols-2 sm:flex-row sm:justify-end">
+          {actions}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card px-5 py-3">
@@ -202,17 +234,7 @@ export function FormFooter({
           <span className="flex-1" aria-hidden />
         )}
 
-        <div className="flex shrink-0 items-center gap-2">
-          {onCancel ? (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-              {resolvedCancelLabel}
-            </Button>
-          ) : null}
-          <Button type="submit" disabled={isSubmitting || submitDisabled} title={notice?.message}>
-            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
-            {isSubmitting ? t("common.actions.saving") : submitLabel}
-          </Button>
-        </div>
+        <div className="flex shrink-0 items-center gap-2">{actions}</div>
       </div>
     </div>
   );

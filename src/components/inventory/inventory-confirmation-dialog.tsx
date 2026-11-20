@@ -5,8 +5,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/lib/i18n";
@@ -39,9 +43,9 @@ type InventoryConfirmationDialogProps = {
 export function InventoryConfirmationDialog(props: InventoryConfirmationDialogProps) {
   return (
     <Dialog open={props.action !== null} onOpenChange={(open) => { if (!open && !props.isPending) props.onOpenChange(false); }}>
-      <DialogContent centerInWorkspace>
+      <CompactActionDialogContent centerInWorkspace>
         {props.action ? <ConfirmationForm key={`${props.action.kind}-${props.action.party}`} {...props} action={props.action} /> : null}
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }
@@ -104,7 +108,7 @@ function ConfirmationForm({
         {textError ? <p role="alert" className="text-xs text-destructive">{t(textError)}</p> : null}
       </div>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-      <DialogFooter>
+      <CompactActionDialogFooter>
         <Button type="button" variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>
           {t("common.actions.close")}
         </Button>
@@ -118,7 +122,7 @@ function ConfirmationForm({
             ? t("inventory.confirmations.saving")
             : t(isReject ? "inventory.confirmations.reject" : "inventory.confirmations.confirm")}
         </Button>
-      </DialogFooter>
+      </CompactActionDialogFooter>
     </form>
   );
 }

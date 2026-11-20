@@ -24,7 +24,11 @@ import { useLoanEntry } from "@/lib/accounting/loans/use-loan-entry";
 import { useInventoryPaymentEntryAccess } from "@/lib/accounting/daily-income/use-inventory-payment-entry";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
 import type { SubmitJournal } from "@/lib/accounting/daily-income/duplicate-payment";
 import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
@@ -531,10 +535,12 @@ export function AddTransactionWizard(props: Props) {
         </div>
       ) : null}
       <Dialog open={Boolean(confirmation.pendingValues)} onOpenChange={(open) => { if (!open) confirmation.respond(false); }}>
-        <DialogContent onOpenAutoFocus={(event) => {
-          event.preventDefault();
-          document.getElementById(`${formId}-duplicate-cancel`)?.focus();
-        }}>
+        <CompactActionDialogContent
+          onOpenAutoFocus={(event) => {
+            document.getElementById(`${formId}-duplicate-cancel`)?.focus();
+            event.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{t("accounting.dailyIncome.duplicatePayment.title")}</DialogTitle>
             <DialogDescription>{t("accounting.dailyIncome.duplicatePayment.description")}</DialogDescription>
@@ -558,15 +564,15 @@ export function AddTransactionWizard(props: Props) {
               </>
             )}
           </dl>
-          <DialogFooter>
+          <CompactActionDialogFooter>
             <Button id={`${formId}-duplicate-cancel`} type="button" variant="outline" onClick={() => confirmation.respond(false)}>
               {t("accounting.dailyIncome.duplicatePayment.review")}
             </Button>
             <Button type="button" onClick={() => confirmation.respond(true)}>
               {t("accounting.dailyIncome.duplicatePayment.confirm")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </CompactActionDialogFooter>
+        </CompactActionDialogContent>
       </Dialog>
     </div>
   );

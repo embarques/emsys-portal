@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Columns3, GripVertical } from "lucide-react";
 
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -53,7 +55,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-md">
+        <CompactActionDialogContent className="max-h-[85vh] overflow-hidden sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("common.table.customizeColumns")}</DialogTitle>
             <DialogDescription>{t("common.table.customizeColumnsDescription")}</DialogDescription>
@@ -138,7 +140,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
             })}
           </div>
 
-          <DialogFooter className="gap-2 sm:justify-between">
+          <CompactActionDialogFooter className="gap-2 sm:justify-between">
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={showAllColumns}>
                 {t("common.table.showAll")}
@@ -150,8 +152,8 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
             <Button type="button" size="sm" onClick={() => setOpen(false)}>
               {t("common.table.done")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </CompactActionDialogFooter>
+        </CompactActionDialogContent>
       </Dialog>
     </>
   );

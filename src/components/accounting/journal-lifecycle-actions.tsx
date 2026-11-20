@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
+import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
@@ -96,7 +98,7 @@ export function JournalLifecycleActions({
           if (!openState && !mutation.isPending) setAction(null);
         }}
       >
-        <DialogContent>
+        <CompactActionDialogContent>
           <DialogHeader>
             <DialogTitle>{text(action ?? "note")}</DialogTitle>
             <DialogDescription>
@@ -141,21 +143,15 @@ export function JournalLifecycleActions({
             {mutation.isError ? (
               <p role="alert">{normalizeApiError(mutation.error).message}</p>
             ) : null}
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={mutation.isPending}
-                onClick={() => setAction(null)}
-              >
-                {t("common.actions.cancel")}
-              </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {text("confirm")}
-              </Button>
-            </DialogFooter>
+            <CompactActionDialogFooter
+              onCancel={() => setAction(null)}
+              cancelDisabled={mutation.isPending}
+              submitLabel={text("confirm")}
+              submitType="submit"
+              isSubmitting={mutation.isPending}
+            />
           </form>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
   );
 

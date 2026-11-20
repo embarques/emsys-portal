@@ -8,9 +8,14 @@ import {
   ComplaintRequiredMark,
   ComplaintTargetsSection,
 } from "@/components/complaints/complaint-targets-section";
+import {
+  CompactActionDialogContent,
+  compactActionDialogFormClassName,
+} from "@/components/forms/compact-action-dialog";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { DateInput } from "@/components/ui/date-input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -183,8 +188,8 @@ export function ComplaintIntakeDialog({
 
   return (
     <Dialog open={state.open} onOpenChange={state.setOpen}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-        <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
+      <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
+        <DialogHeader>
           <DialogTitle>{t("complaints.add")}</DialogTitle>
           <DialogDescription>{t("complaints.form.description")}</DialogDescription>
         </DialogHeader>
@@ -328,7 +333,7 @@ export function ComplaintIntakeDialog({
             onCancel={() => state.setOpen(false)}
           />
         </form>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }
