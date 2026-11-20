@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import {
   isCheckPaymentMethod,
-  requiresBankAccount,
+  requiresBankAccountSelection,
 } from "@/lib/accounting/daily-income/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 import { translate } from "@/lib/i18n/catalog";
@@ -59,7 +59,7 @@ function refineInvoiceDailyIncomeRegistration(
     });
   }
 
-  if (requiresBankAccount(values.paymentMethodName) && !values.paymentAccountId) {
+  if (requiresBankAccountSelection("INITIAL-PAYMENT", values.paymentMethodName) && !values.paymentAccountId) {
     context.addIssue({
       code: "custom",
       path: ["paymentAccountId"],

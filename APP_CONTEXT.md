@@ -517,7 +517,14 @@ This includes:
 
 These accounts provide the structure used to classify and organize financial transactions.
 
-**Cash and bank umbrellas:** `CASH ON HAND` is the default cash account; any ASSET account nested under it (via Parent account, any depth) is a user-defined cash account. A general `BANK` system account is the bank umbrella; user-defined bank accounts sit under it, and sub-banks under another bank. Cash income lands in a chosen cash account (default CASH ON HAND); every other method lands in a bank account (the general bank when none are defined). Cash expenses leave a chosen cash account; other expenses leave a chosen bank account. Cash-account selection, Debit card/Wire and non-cash expenses are behind `NEXT_PUBLIC_PAYMENT_ACCOUNTS_ENABLED` until the remaining acceptance work in `docs/payment-accounts-api-contract.md` is resolved.
+**Cash and bank umbrellas:** `CASH ON HAND` is the default cash account; any ASSET account nested under it (via Parent account, any depth) is a user-defined cash account. A general `BANK` system account is the bank umbrella; user-defined bank accounts sit under it, and sub-banks under another bank. Cash income lands in a chosen cash account (default CASH ON HAND); bank receipts use a bank account (the general bank when none are defined). Cash expenses leave a chosen cash account; other expenses leave a chosen bank account. Cash-account selection, Debit card/Wire and non-cash expenses are behind `NEXT_PUBLIC_PAYMENT_ACCOUNTS_ENABLED` until the remaining acceptance work in `docs/payment-accounts-api-contract.md` is resolved.
+
+**Credit-card processor clearing:** initial/subsequent invoice card payments,
+other-income card receipts, and card refunds use the API's
+`CARD PROCESSOR RECEIVABLE` asset. Receipt forms do not request or send a bank
+account, including stale selections from another method. Cards retain the bank
+clearance workflow: an outstanding invoice card receipt does not reduce its
+invoice balance until cleared. Card-paid expenses still select their bank source.
 
 ### Items
 

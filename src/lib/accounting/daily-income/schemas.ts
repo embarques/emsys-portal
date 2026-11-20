@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   isCheckPaymentMethod,
   requiresBankAccount,
+  requiresBankAccountSelection,
 } from "@/lib/accounting/daily-income/types";
 import { isExpensePaidByMethod, isFixedCashTransactionType } from "@/lib/accounting/daily-income/transaction-workflow";
 import { getBalanceAfterDiscount, getDiscountableBalance, type OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
@@ -251,7 +252,7 @@ export function createDailyIncomeJournalSchema(
       if (
         paymentDetailsRequired &&
         !expensePaidByMethod &&
-        requiresBankAccount(values.paymentMethodName) &&
+        requiresBankAccountSelection(values.transactionType, values.paymentMethodName) &&
         (!values.paymentAccountId || values.paymentAccountType !== "BANK")
       ) {
         context.addIssue({

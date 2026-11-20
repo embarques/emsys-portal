@@ -54,7 +54,7 @@ import {
   type InvoiceAdjustmentKind,
   type OriginalInvoiceAdjustment,
 } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
-import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccountSelection, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type DailyIncomeRefNumberMode, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { isBankTransaction } from "@/lib/accounting/daily-income/auto-clear";
 import { getInvoicePaymentBalancePreview } from "@/lib/accounting/daily-income/invoice-balance-preview";
@@ -412,7 +412,7 @@ export function DailyIncomeTransactionForm({
   const autoClear = watch("autoClear");
   const clearPaymentOnSave = watch("clearPaymentOnSave");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
-  const needsBankAccount = requiresBankAccount(paymentMethodName);
+  const needsBankAccount = requiresBankAccountSelection(type, paymentMethodName);
   const invoiceResults = useMemo<InvoicePaymentChoice[]>(
     () => !debouncedInvoiceQuery ? invoices : !legacyInvoiceSearch
       ? (paymentInvoice.data?.invoice ? [paymentInvoice.data.invoice] : []) : invoiceSearch.data?.items ?? [],
@@ -940,7 +940,7 @@ export function DailyIncomeTransactionForm({
     }
     setValue("paymentMethodId", method?.id, { shouldValidate: true });
     setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true });
-    const nextNeedsBank = requiresBankAccount(method?.name);
+    const nextNeedsBank = requiresBankAccountSelection(type, method?.name);
     if (expensePaidByMethod) {
       if (shouldClearMoneyAccount(nextNeedsBank, sourceAccountType)) applyMoneyAccount(setValue, "sourceAccount", undefined);
     } else if (!nextNeedsBank || paymentAccountType !== "BANK") {

@@ -24,7 +24,7 @@ import {
   EMPTY_DAILY_INCOME_SUMMARY,
   isCashPaymentMethod,
   isCheckPaymentMethod,
-  requiresBankAccount,
+  requiresBankAccountSelection,
   toApiPaymentMethodName,
   type AccountingLookup,
   type DailyIncomeJournal,
@@ -642,7 +642,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   const amount = Number(values.amount) || 0;
   const paymentMethod = resolveJournalPaymentMethod(values);
   const methodName = paymentMethod?.name ?? values.paymentMethodName;
-  const bankAccountRequired = amount > 0 && requiresBankAccount(methodName);
+  const bankAccountRequired = amount > 0 && requiresBankAccountSelection(values.transactionType, methodName);
   // Paid-by-method expenses carry their cash/bank account in sourceAccount.
   const expensePaidByMethod = isExpensePaidByMethod(values.transactionType);
   const bankAccountSelected = bankAccountRequired && !expensePaidByMethod;
