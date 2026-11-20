@@ -187,10 +187,15 @@ batches) accept 1–200 IDs with one payment method **and** one cash/bank money
 account. Resolve money account as `sourceAccount.id` when present, otherwise
 `paymentAccount.id`. Loan issue/increase and loan payment journals store the
 cash/bank side on `sourceAccount` (credit on issue, debit on payment); they may
-share a batch only when those IDs match. Mixed money accounts return 422 with
+share a batch only when those IDs match. Reconciliation supports all eligible
+transaction types; clearance supports only eligible bank-method transactions,
+never cash. Mixed money accounts return 422 with
 `selected journals must have the same cash or bank account`. Loan AR is never
 the batch key. Portal selection mirrors this rule; summary breakdown splits loan
-journals under Other into issued/increased vs payments received.
+journals under Other into issued/increased vs payments received. Clearance state
+conflicts and mixed bank payment methods retain their existing 409 response.
+The mixed-account 422 clearance contract requires the API #383 follow-up;
+the original PR head returned a generic 409 for that case.
 
 **Closeout purpose:** the closeout is a daily entry window and operational income/
 expense summary. Closing it prevents new entries into that day; existing records

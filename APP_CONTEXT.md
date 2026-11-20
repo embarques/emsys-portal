@@ -396,8 +396,10 @@ and do not substitute a current-page total for all matching records. Batch
 reconcile/clear selection is limited to one payment method and one cash/bank
 money account (`sourceAccount`, else `paymentAccount`). Loan issues/increases and
 loan payments may share a batch only when that money account matches; loan AR is
-not the batch key. The reconciliation confirm summary keeps loans under Other and
-splits them into Issued / increased vs Payments received.
+not the batch key. Clearance is limited to eligible bank-method transactions;
+cash transactions can reconcile but cannot clear. The reconciliation confirm
+summary keeps loans under Other and splits them into Issued / increased vs
+Payments received.
 
 **Register inventory change** records company supplies as received or dispatched.
 Received entries select supplier/item/quantity/cost and link an expense journal
