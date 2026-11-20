@@ -33,6 +33,19 @@ pass repeats API totals without generating another public PDF. See
 
 ## Deferred invoice receipts
 
+Credit-card receipts preserve processor clearing. `INITIAL-PAYMENT`, `PAYMENT`,
+`SALES` and `REFUND` omit `paymentAccount` on card writes and consume the API's
+`CARD PROCESSOR RECEIVABLE` metadata on read. The UI and schemas do not require
+a bank selection for these receipts. Stale bank selections are discarded by the
+payload adapter. `requiresBankAccountSelection` controls account selection;
+`requiresBankAccount` retains bank-method settlement classification. This keeps
+card receipts outstanding until clearance and preserves explicit clearance grants
+and user consent. Card-paid expenses continue funding from `sourceAccount` BANK.
+
+Local regressions: `tests/unit/credit-card-processor.test.mjs` and
+`tests/browser/card-processor.test.mjs`. Live processor settlement and real MongoDB
+clearance/replay remain separate acceptance checks.
+
 - Verify method/account corrections adjust only the correct invoice
   receipt effect, with no double application, cross-closeout movement or partial
   write. Cover concurrency, failed settlement and replay across lifecycle states.

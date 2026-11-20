@@ -26,7 +26,7 @@ test("debit card and wire require a bank account", () => {
   }
 });
 
-test("credit card requires a bank account across supported method spellings", () => {
+test("credit cards retain bank settlement classification across supported method spellings", () => {
   for (const name of ["CREDIT-CARD", "credit card", "CREDIT_CARD", "CreditCard"]) {
     assert.equal(requiresBankAccount(name), true);
     assert.equal(isCheckPaymentMethod(name), false);

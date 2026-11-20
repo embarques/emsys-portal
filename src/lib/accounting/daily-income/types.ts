@@ -282,10 +282,17 @@ export function isCheckPaymentMethod(name?: string | null): boolean {
   return normalized === "CHECK" || normalized === "CHEQUE";
 }
 
-/** Every non-cash method moves money through a bank account. */
+/** Non-cash methods use the bank settlement workflow, including processor receipts. */
 export function requiresBankAccount(name?: string | null): boolean {
   const normalizedName = toApiPaymentMethodName(name);
   return ["DEPOSIT", "ZELLE", "CHECK", "CREDIT-CARD", "DEBIT-CARD", "WIRE"].includes(normalizedName);
+}
+
+/** Card receipts post to the processor asset; card expenses still need a funding bank. */
+export function requiresBankAccountSelection(transactionType: JournalTransactionType, name?: string | null): boolean {
+  const processorReceipt = toApiPaymentMethodName(name) === "CREDIT-CARD" &&
+    ["INITIAL-PAYMENT", "PAYMENT", "SALES", "REFUND"].includes(transactionType);
+  return requiresBankAccount(name) && !processorReceipt;
 }
 
 export type DailyIncomeJournalValues = {

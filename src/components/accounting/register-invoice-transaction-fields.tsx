@@ -40,7 +40,7 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccountSelection, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import type { TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import {
@@ -210,7 +210,7 @@ export function RegisterInvoiceTransactionFields({
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isCheck = isCheckPaymentMethod(paymentMethodName);
-  const needsBankAccount = requiresBankAccount(paymentMethodName);
+  const needsBankAccount = requiresBankAccountSelection("INITIAL-PAYMENT", paymentMethodName);
   const paymentAccountId = watch("paymentAccountId");
   const paymentAccountName = watch("paymentAccountName");
   const paymentAccountType = watch("paymentAccountType");
@@ -546,7 +546,7 @@ export function RegisterInvoiceTransactionFields({
     setValue("clearPaymentOnSave", false, { shouldDirty: true });
     setValue("paymentMethodId", method?.id, { shouldValidate: true, shouldDirty: true });
     setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true, shouldDirty: true });
-    if (!requiresBankAccount(method?.name)) {
+    if (!requiresBankAccountSelection("INITIAL-PAYMENT", method?.name)) {
       setValue("paymentAccountId", undefined, { shouldValidate: true });
       setValue("paymentAccountName", undefined, { shouldValidate: true });
       setValue("paymentAccountType", undefined, { shouldValidate: true });

@@ -9,7 +9,7 @@ import { formatAccountingMoney } from "@/lib/accounting/display";
 import { isAutoClearEligible } from "@/lib/accounting/daily-income/auto-clear";
 import { isAutoReconcileEligible } from "@/lib/accounting/daily-income/auto-reconcile";
 import { inventoryHoldersFromValues } from "@/lib/accounting/daily-income/inventory-change";
-import { isCashPaymentMethod, isCheckPaymentMethod, requiresBankAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { isCashPaymentMethod, isCheckPaymentMethod, requiresBankAccountSelection, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { isCashAccountSelectable } from "@/lib/accounting/daily-income/payment-accounts";
 import { getTransactionStepLabelKey, hasPartiesStep, hasPaymentDetailsStep, isExpensePaidByMethod, type TransactionFormStep } from "@/lib/accounting/daily-income/transaction-workflow";
 import { useTranslation } from "@/lib/i18n";
@@ -80,7 +80,7 @@ export function TransactionReview({ values: v, onEdit, compact = false, currency
     ...(paymentDetails ? [{
       step: "payment" as const, rows: [
         ["accounting.dailyIncome.form.fields.paymentMethod", v.paymentMethodName],
-        ["accounting.dailyIncome.form.fields.bankAccount", requiresBankAccount(v.paymentMethodName) ? v.paymentAccountName : undefined],
+        ["accounting.dailyIncome.form.fields.bankAccount", requiresBankAccountSelection(v.transactionType, v.paymentMethodName) ? v.paymentAccountName : undefined],
         ["accounting.dailyIncome.form.fields.cashAccount", isCashAccountSelectable(v.transactionType, isCashPaymentMethod(v.paymentMethodName)) ? v.paymentAccountName : undefined],
         ["accounting.dailyIncome.form.fields.sourceAccount", expensePaidByMethod ? v.sourceAccountName : undefined],
         ["accounting.dailyIncome.form.fields.checkNumber", isCheckPaymentMethod(v.paymentMethodName) ? v.checkNumber : undefined],
