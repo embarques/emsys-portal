@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Truck } from "lucide-react";
+import { Plus, Save, Truck } from "lucide-react";
 
 import { InventoryConfirmationDialog } from "@/components/inventory/inventory-confirmation-dialog";
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
@@ -35,8 +35,8 @@ import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
-import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CompactActionDialogContent, CompactActionDialogHeader } from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
@@ -460,9 +460,10 @@ export function InventoryDispatchesWorkspace() {
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="bg-primary px-0 py-0 text-primary-foreground sm:bg-transparent sm:text-foreground">
-            <DialogTitle>{formMode === "edit" ? t("inventory.form.editDispatchTitle") : t("inventory.form.newDispatchTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Truck}
+            title={formMode === "edit" ? t("inventory.form.editDispatchTitle") : t("inventory.form.newDispatchTitle")}
+          />
           <InventoryDispatchForm
             key={editingDispatch?.id ?? "new"}
             items={items}

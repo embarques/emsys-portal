@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Plus,
+  Save,
   Shield,
   UserX,
   UserCog,
@@ -19,7 +20,6 @@ import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-butto
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -30,6 +30,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { USER_API_TABLE_FIELDS } from "@/lib/users/table-fields";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
@@ -455,14 +456,15 @@ export function UsersWorkspace() {
           title={t("users.title")}
           description={t("users.pages.description")}
           actions={
-            <Button onClick={openAddForm} disabled={isSaving}>
-              <Plus className="h-4 w-4" />
-              {t("users.actions.add")}
-            </Button>
+            <>
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+              <Button onClick={openAddForm} disabled={isSaving}>
+                <Plus className="h-4 w-4" />
+                {t("users.actions.add")}
+              </Button>
+            </>
           }
         />
-
-        <StatCards items={statCards} />
       </div>
 
       <UserMobileList isSearching={isFetching || isSearchPending}
@@ -503,9 +505,6 @@ export function UsersWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -613,11 +612,10 @@ export function UsersWorkspace() {
         }}
       >
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
-          <DialogHeader>
-            <DialogTitle>
-              {formMode === "edit" ? t("users.form.editTitle") : t("users.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("users.form.editTitle") : t("users.form.addTitle")}
+          />
           <UserForm
             key={editingUser?.id ?? "new"}
             initialValues={

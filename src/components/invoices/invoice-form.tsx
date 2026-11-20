@@ -19,14 +19,10 @@ import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-d
 
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { DateInput } from "@/components/ui/date-input";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
@@ -1432,9 +1428,7 @@ export function InvoiceForm({
 
       <Dialog open={entityDialog === "container"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
-          <DialogHeader>
-            <DialogTitle>{t("containers.form.addTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={ContainerIcon} title={t("containers.form.addTitle")} />
           <ContainerForm
             key="new-container"
             initialValues={createEmptyContainerForm()}
@@ -1449,9 +1443,7 @@ export function InvoiceForm({
 
       <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
-          <DialogHeader>
-            <DialogTitle>{t("employees.form.addTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={UserPlus} title={t("employees.form.addTitle")} />
           <EmployeeForm
             key="new-employee"
             initialValues={createEmptyEmployeeForm()}
@@ -1466,9 +1458,7 @@ export function InvoiceForm({
 
       <Dialog open={entityDialog === "route"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl", "z-[70]")}>
-          <DialogHeader>
-            <DialogTitle>{t("routes.pickupRoutes.addTabLabel")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={Route} title={t("routes.pickupRoutes.addTabLabel")} />
           <div className="min-h-0 flex-1 overflow-y-auto">
             <ActiveRouteSection
               key="new-pickup-route"

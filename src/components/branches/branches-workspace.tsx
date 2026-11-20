@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   Building2,
   Plus,
+  Save,
 } from "lucide-react";
 
 import { BranchForm } from "@/components/branches/branch-form";
@@ -15,7 +16,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -25,6 +25,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { BRANCH_API_TABLE_FIELDS } from "@/lib/branches/table-fields";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
@@ -361,24 +362,16 @@ export function BranchesWorkspace() {
         title={t("branches.title")}
         description={t("branches.pages.description")}
         actions={
-          canCreate ? (
-            <Button onClick={openAddForm} disabled={isSaving}>
-              <Plus className="h-4 w-4" />
-              {t("branches.actions.add")}
-            </Button>
-          ) : undefined
+          <>
+            <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            {canCreate ? (
+              <Button onClick={openAddForm} disabled={isSaving}>
+                <Plus className="h-4 w-4" />
+                {t("branches.actions.add")}
+              </Button>
+            ) : null}
+          </>
         }
-      />
-
-      <StatCards
-        items={[
-          {
-            label: t("branches.stats.total.label"),
-            value: stats.isLoading ? "…" : stats.total.toString(),
-            description: t("branches.stats.total.description"),
-            icon: Building2,
-          },
-        ]}
       />
 
       <DirectoryInsightsFlip
@@ -395,9 +388,6 @@ export function BranchesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -546,11 +536,10 @@ export function BranchesWorkspace() {
             "max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] sm:max-w-7xl",
           )}
         >
-          <DialogHeader>
-            <DialogTitle>
-              {formMode === "edit" ? t("branches.form.editTitle") : t("branches.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("branches.form.editTitle") : t("branches.form.addTitle")}
+          />
           <BranchForm
             key={editingBranch?.id ?? "new"}
             initialValues={

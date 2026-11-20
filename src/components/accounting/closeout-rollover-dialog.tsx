@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays } from "lucide-react";
 
 import { DailyIncomeStatementForm } from "./daily-income-statement-form";
 import {
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { useCloseoutCalendar, useCreateIncomeStatement } from "@/lib/accounting/daily-income/hooks";
 import type { DailyIncomeStatement, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -128,16 +130,15 @@ export function CloseoutRolloverDialog({ open, onOpenChange, onReady }: Props) {
   return (
     <Dialog open={showDialog} onOpenChange={onOpenChange}>
       <CompactActionDialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("accounting.dailyIncome.statement.createTitle")}</DialogTitle>
-          <DialogDescription>
-            {t(
-              needsExchangeRate
-                ? "accounting.dailyIncome.statement.rolloverHelp"
-                : "accounting.dailyIncome.statement.rolloverHelpDefault",
-            )}
-          </DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={CalendarDays}
+          title={t("accounting.dailyIncome.statement.createTitle")}
+          description={t(
+            needsExchangeRate
+              ? "accounting.dailyIncome.statement.rolloverHelp"
+              : "accounting.dailyIncome.statement.rolloverHelpDefault",
+          )}
+        />
         {prerequisiteError ? (
           <div className="space-y-4">
             <FormFooterNoticeMessage tone="error" message={prerequisiteError} />

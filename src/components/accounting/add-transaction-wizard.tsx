@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Loader2, Save, X } from "lucide-react";
+import { ArrowRight, Copy, Loader2, Save, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
@@ -25,8 +25,10 @@ import { useInventoryPaymentEntryAccess } from "@/lib/accounting/daily-income/us
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
@@ -541,29 +543,32 @@ export function AddTransactionWizard(props: Props) {
             event.preventDefault();
           }}
         >
-          <DialogHeader>
-            <DialogTitle>{t("accounting.dailyIncome.duplicatePayment.title")}</DialogTitle>
-            <DialogDescription>{t("accounting.dailyIncome.duplicatePayment.description")}</DialogDescription>
-          </DialogHeader>
-          <dl className="grid grid-cols-2 gap-2 text-sm">
-            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.invoice")}</dt>
-            <dd>{confirmation.pendingValues?.invoiceNumber || props.invoices.find((invoice) => invoice.invoiceId === confirmation.pendingValues?.invoiceId)?.invoiceNumber || t("common.empty.dash")}</dd>
-            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.paymentMethod")}</dt>
-            <dd>{confirmation.pendingValues?.paymentMethodName}</dd>
-            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.amount")}</dt>
-            <dd>{confirmation.pendingValues?.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
-            {isCheckPaymentMethod(confirmation.pendingValues?.paymentMethodName) ? (
-              <>
-                <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.checkNumber")}</dt>
-                <dd className="break-all">{confirmation.pendingValues?.checkNumber || t("common.empty.dash")}</dd>
-              </>
-            ) : (
-              <>
-                <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</dt>
-                <dd className="break-all">{confirmation.pendingValues?.externalReferenceNumber || t("common.empty.dash")}</dd>
-              </>
-            )}
-          </dl>
+          <CompactActionDialogHeader
+            icon={Copy}
+            title={t("accounting.dailyIncome.duplicatePayment.title")}
+            description={t("accounting.dailyIncome.duplicatePayment.description")}
+          />
+          <CompactActionDialogBody>
+            <dl className="grid grid-cols-2 gap-2 text-sm">
+              <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.invoice")}</dt>
+              <dd>{confirmation.pendingValues?.invoiceNumber || props.invoices.find((invoice) => invoice.invoiceId === confirmation.pendingValues?.invoiceId)?.invoiceNumber || t("common.empty.dash")}</dd>
+              <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.paymentMethod")}</dt>
+              <dd>{confirmation.pendingValues?.paymentMethodName}</dd>
+              <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.amount")}</dt>
+              <dd>{confirmation.pendingValues?.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
+              {isCheckPaymentMethod(confirmation.pendingValues?.paymentMethodName) ? (
+                <>
+                  <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.checkNumber")}</dt>
+                  <dd className="break-all">{confirmation.pendingValues?.checkNumber || t("common.empty.dash")}</dd>
+                </>
+              ) : (
+                <>
+                  <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</dt>
+                  <dd className="break-all">{confirmation.pendingValues?.externalReferenceNumber || t("common.empty.dash")}</dd>
+                </>
+              )}
+            </dl>
+          </CompactActionDialogBody>
           <CompactActionDialogFooter>
             <Button id={`${formId}-duplicate-cancel`} type="button" variant="outline" onClick={() => confirmation.respond(false)}>
               {t("accounting.dailyIncome.duplicatePayment.review")}

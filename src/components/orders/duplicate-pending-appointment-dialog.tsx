@@ -1,18 +1,16 @@
 "use client";
 
 import { useRef } from "react";
+import { AlertTriangle } from "lucide-react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { formatOrderDateWithWeekday } from "@/lib/orders/display";
 import type { ExistingPendingAppointment } from "@/lib/orders/duplicate-pending-appointment";
 import { useTranslation } from "@/lib/i18n";
@@ -64,13 +62,13 @@ export function DuplicatePendingAppointmentDialog({
           cancelButtonRef.current?.focus();
         }}
       >
-        <DialogHeader>
-          <DialogTitle>{t("orders.duplicatePending.title")}</DialogTitle>
-          <DialogDescription className="text-foreground/80">
-            {t("orders.duplicatePending.description")}
-          </DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={AlertTriangle}
+          title={t("orders.duplicatePending.title")}
+          description={t("orders.duplicatePending.description")}
+        />
 
+        <CompactActionDialogBody>
         {existing.length > 0 ? (
           <div className="overflow-hidden rounded-lg border border-input">
             <ul className="max-h-64 divide-y divide-input/80 overflow-y-auto text-sm">
@@ -97,6 +95,7 @@ export function DuplicatePendingAppointmentDialog({
             {t("orders.duplicatePending.unknownExisting")}
           </p>
         )}
+        </CompactActionDialogBody>
 
         <CompactActionDialogFooter className="sm:grid sm:grid-cols-2">
           <Button

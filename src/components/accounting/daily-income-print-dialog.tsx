@@ -4,17 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Printer } from "lucide-react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { Employee } from "@/lib/employees/types";
@@ -97,11 +94,12 @@ export function DailyIncomePrintDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <CompactActionDialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t("accounting.dailyIncome.print.title")}</DialogTitle>
-          <DialogDescription>{t("accounting.dailyIncome.print.description")}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
+        <CompactActionDialogHeader
+          icon={Printer}
+          title={t("accounting.dailyIncome.print.title")}
+          description={t("accounting.dailyIncome.print.description")}
+        />
+        <CompactActionDialogBody>
           <div className="space-y-2">
             <Label htmlFor="daily-income-print-date">{t("accounting.dailyIncome.print.date")}</Label>
             <DateInput
@@ -124,7 +122,7 @@ export function DailyIncomePrintDialog({
               mobileSheet
             />
           </div>
-        </div>
+        </CompactActionDialogBody>
         <CompactActionDialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
             {t("common.actions.cancel")}

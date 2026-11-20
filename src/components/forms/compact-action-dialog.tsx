@@ -1,25 +1,31 @@
 "use client";
 
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, type LucideIcon } from "lucide-react";
 
 import { FormDialogChromeProvider } from "@/components/forms/form-dialog-chrome";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogFooter } from "@/components/ui/dialog";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
- * Shared chrome for compact action / create dialogs (Assign route style):
- * padded desktop content, mobile bottom sheet, Cancel outline + primary footer.
+ * Shared chrome for compact action / create dialogs:
+ * header (icon + title + description) → body → footer (actions).
  */
 
-/** Desktop pad inherits DialogContent; this adds stacking + mobile bottom sheet. */
+/** Desktop pad is owned by header/body/footer; this adds stacking + mobile bottom sheet. */
 export const compactActionDialogContentClassName =
-  "z-[70] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:p-4";
+  "z-[70] gap-0 overflow-hidden p-0 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl";
 
-/** Host for forms that previously used p-0 + FormBody — keep height, drop muted shell. */
+/** Host for taller form dialogs — keep height, structured sections scroll in the body. */
 export const compactActionDialogFormClassName =
   "flex max-h-[90vh] flex-col overflow-hidden";
 
@@ -42,11 +48,79 @@ export const CompactActionDialogContent = React.forwardRef<
       }}
       {...props}
     >
-      <FormDialogChromeProvider>{children}</FormDialogChromeProvider>
+      <FormDialogChromeProvider>
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      </FormDialogChromeProvider>
     </DialogContent>
   );
 });
 CompactActionDialogContent.displayName = "CompactActionDialogContent";
+
+type CompactActionDialogHeaderProps = {
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  /** Leading Lucide icon in a soft chip (matches record-view sheet headers). */
+  icon?: LucideIcon;
+  className?: string;
+};
+
+/** Dialog header: icon chip + title + optional description, separated from the body. */
+export function CompactActionDialogHeader({
+  title,
+  description,
+  icon: Icon,
+  className,
+}: CompactActionDialogHeaderProps) {
+  return (
+    <div
+      className={cn(
+        "relative shrink-0 border-b border-border bg-gradient-to-br from-muted/70 via-card to-card px-5 py-4 pr-12 max-md:px-4",
+        className,
+      )}
+    >
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/70 via-primary/40 to-transparent"
+        aria-hidden
+      />
+      <DialogHeader className="relative space-y-0 text-left">
+        <div className="flex items-start gap-3">
+          {Icon ? (
+            <div
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-background/90 text-primary shadow-sm"
+              aria-hidden
+            >
+              <Icon className="size-4" />
+            </div>
+          ) : null}
+          <div className="min-w-0 flex-1 space-y-1">
+            <DialogTitle className="text-base font-semibold leading-tight tracking-tight sm:text-lg">
+              {title}
+            </DialogTitle>
+            {description ? (
+              <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </DialogDescription>
+            ) : null}
+          </div>
+        </div>
+      </DialogHeader>
+    </div>
+  );
+}
+
+type CompactActionDialogBodyProps = {
+  children: React.ReactNode;
+  className?: string;
+};
+
+/** Scrollable dialog body between header and footer. */
+export function CompactActionDialogBody({ children, className }: CompactActionDialogBodyProps) {
+  return (
+    <div className={cn("min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 max-md:px-4", className)}>
+      {children}
+    </div>
+  );
+}
 
 type CompactActionDialogFooterProps = {
   className?: string;
@@ -70,7 +144,7 @@ type CompactActionDialogFooterProps = {
 };
 
 /**
- * Footer matching Assign route: optional notice, Cancel outline, primary with icon.
+ * Footer with border separator: optional notice, Cancel outline, primary with icon.
  * Pass `children` to fully customize actions (still gets the mobile two-column grid).
  */
 export function CompactActionDialogFooter({
@@ -97,11 +171,18 @@ export function CompactActionDialogFooter({
       ? ({ tone: "warning" as const, message: warning })
       : null;
 
+  const shellClassName = cn(
+    "sticky bottom-0 z-10 shrink-0 border-t border-border bg-card px-5 py-3 max-md:px-4",
+    className,
+  );
+
   if (children) {
     return (
-      <DialogFooter className={cn(compactActionDialogFooterClassName, className)}>
-        {children}
-      </DialogFooter>
+      <div className={shellClassName}>
+        <DialogFooter className={cn(compactActionDialogFooterClassName, "bg-transparent p-0")}>
+          {children}
+        </DialogFooter>
+      </div>
     );
   }
 
@@ -135,18 +216,16 @@ export function CompactActionDialogFooter({
     </>
   );
 
-  if (notice) {
-    return (
-      <div className={cn("sticky bottom-0 z-10 flex shrink-0 flex-col gap-3", className)}>
-        <FormFooterNoticeMessage tone={notice.tone} message={notice.message} />
-        <DialogFooter className={compactActionDialogFooterClassName}>{actions}</DialogFooter>
-      </div>
-    );
-  }
-
   return (
-    <DialogFooter className={cn(compactActionDialogFooterClassName, className)}>
-      {actions}
-    </DialogFooter>
+    <div className={shellClassName}>
+      {notice ? (
+        <div className="mb-3">
+          <FormFooterNoticeMessage tone={notice.tone} message={notice.message} />
+        </div>
+      ) : null}
+      <DialogFooter className={cn(compactActionDialogFooterClassName, "bg-transparent p-0")}>
+        {actions}
+      </DialogFooter>
+    </div>
   );
 }

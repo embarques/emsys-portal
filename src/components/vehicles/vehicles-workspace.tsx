@@ -5,6 +5,7 @@ import {
   Car,
   Fuel,
   Plus,
+  Save,
 } from "lucide-react";
 
 import { VehicleComplianceBanner, VehicleComplianceDateCell } from "@/components/vehicles/vehicle-compliance";
@@ -17,7 +18,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -27,6 +27,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { VEHICLE_API_TABLE_FIELDS } from "@/lib/vehicles/table-fields";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
@@ -400,14 +401,15 @@ export function VehiclesWorkspace() {
         title={t("vehicles.title")}
         description={t("vehicles.pages.description")}
         actions={
-          <Button onClick={openAddForm}>
-            <Plus className="h-4 w-4" />
-            {t("vehicles.actions.add")}
-          </Button>
+          <>
+            <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            <Button onClick={openAddForm}>
+              <Plus className="h-4 w-4" />
+              {t("vehicles.actions.add")}
+            </Button>
+          </>
         }
       />
-
-      <StatCards items={statCards} />
 
       <VehicleComplianceBanner
         items={compliance.items}
@@ -430,9 +432,6 @@ export function VehiclesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -563,11 +562,10 @@ export function VehiclesWorkspace() {
         }}
       >
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-lg")}>
-          <DialogHeader>
-            <DialogTitle>
-              {formMode === "edit" ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
+          />
           <VehicleForm
             key={editingVehicle?.id ?? "new"}
             initialValues={

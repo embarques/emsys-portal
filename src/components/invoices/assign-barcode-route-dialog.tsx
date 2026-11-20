@@ -5,17 +5,14 @@ import { Loader2, Route as RouteIcon } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -167,12 +164,13 @@ export function AssignBarcodeRouteDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <CompactActionDialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("labels.staging.routeDialog.title")}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={RouteIcon}
+          title={t("labels.staging.routeDialog.title")}
+          description={description}
+        />
 
-        <div className="space-y-4">
+        <CompactActionDialogBody>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="assign-barcode-daily-route">
@@ -233,7 +231,7 @@ export function AssignBarcodeRouteDialog({
             </div>
           ) : null}
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-        </div>
+        </CompactActionDialogBody>
 
         <CompactActionDialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>

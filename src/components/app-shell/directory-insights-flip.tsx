@@ -26,7 +26,7 @@ type DirectoryInsightsToggleProps = {
   className?: string;
 };
 
-/** Toolbar control that flips the directory table to the insights face. */
+/** Header control that flips the directory table to the insights face. */
 export function DirectoryInsightsToggle({
   open,
   onOpenChange,
@@ -37,9 +37,13 @@ export function DirectoryInsightsToggle({
   return (
     <Button
       type="button"
-      variant={open ? "secondary" : "outline"}
-      size="sm"
-      className={cn("gap-1.5", className)}
+      variant={open ? "secondary" : "default"}
+      className={cn(
+        "gap-1.5",
+        !open &&
+          "border-0 bg-gradient-to-r from-teal-600 to-sky-600 text-white shadow-xs hover:from-teal-500 hover:to-sky-500 hover:text-white focus-visible:ring-sky-500/40 dark:from-teal-500 dark:to-sky-500 dark:hover:from-teal-400 dark:hover:to-sky-400",
+        className,
+      )}
       aria-pressed={open}
       onClick={() => onOpenChange(!open)}
     >
@@ -241,8 +245,8 @@ function DirectoryInsightsFace({
 }
 
 /**
- * Flips a directory table card to show the same summary metrics in a richer layout.
- * Keep the KPI cards above the table; this only replaces the table surface.
+ * Flips a directory table card to show summary metrics in a richer layout.
+ * Directory KPI cards above the table are omitted; Insights is the summary entry point.
  */
 export function DirectoryInsightsFlip({
   open,

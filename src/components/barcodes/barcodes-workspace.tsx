@@ -27,7 +27,6 @@ import { TablePaginationControls } from "@/components/app-shell/table-pagination
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -48,8 +47,10 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import {
   Dialog,
@@ -612,10 +613,13 @@ export function BarcodesWorkspace() {
       <PageHeader
         title={t("barcodes.title")}
         description={t("barcodes.pages.description")}
-        actions={<BarcodeStatusesButton />}
+        actions={
+          <>
+            <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            <BarcodeStatusesButton />
+          </>
+        }
       />
-
-      <StatCards items={statCards} />
 
       <DirectoryInsightsFlip
         open={insightsOpen}
@@ -631,9 +635,6 @@ export function BarcodesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -889,13 +890,12 @@ export function BarcodesWorkspace() {
 
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <CompactActionDialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("barcodes.bulk.statusTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("barcodes.bulk.statusDescription", { count: selectedIds.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
+          <CompactActionDialogHeader
+            icon={Tag}
+            title={t("barcodes.bulk.statusTitle")}
+            description={t("barcodes.bulk.statusDescription", { count: selectedIds.length })}
+          />
+          <CompactActionDialogBody className="space-y-2">
             <Label>{t("barcodes.form.fields.status")}</Label>
             <SearchableSelect
               value={newStatus}
@@ -904,7 +904,7 @@ export function BarcodesWorkspace() {
               placeholder={t("barcodes.form.placeholders.status")}
               searchPlaceholder={t("barcodes.form.search.statuses")}
             />
-          </div>
+          </CompactActionDialogBody>
           <CompactActionDialogFooter
             error={bulkError}
             onCancel={() => setStatusDialogOpen(false)}
@@ -919,13 +919,12 @@ export function BarcodesWorkspace() {
 
       <Dialog open={containerDialogOpen} onOpenChange={setContainerDialogOpen}>
         <CompactActionDialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("barcodes.bulk.containerTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("barcodes.bulk.containerDescription", { count: selectedIds.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
+          <CompactActionDialogHeader
+            icon={ContainerIcon}
+            title={t("barcodes.bulk.containerTitle")}
+            description={t("barcodes.bulk.containerDescription", { count: selectedIds.length })}
+          />
+          <CompactActionDialogBody className="space-y-2">
             <Label>{t("barcodes.form.fields.container")}</Label>
             <SearchableSelect
               value={newContainerId}
@@ -934,7 +933,7 @@ export function BarcodesWorkspace() {
               placeholder={t("barcodes.form.placeholders.container")}
               searchPlaceholder={t("barcodes.form.search.containers")}
             />
-          </div>
+          </CompactActionDialogBody>
           <CompactActionDialogFooter
             error={bulkError}
             onCancel={() => setContainerDialogOpen(false)}

@@ -4,16 +4,13 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Columns3, GripVertical } from "lucide-react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
 import { useTranslation } from "@/lib/i18n";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
@@ -56,12 +53,13 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
 
       <Dialog open={open} onOpenChange={setOpen}>
         <CompactActionDialogContent className="max-h-[85vh] overflow-hidden sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("common.table.customizeColumns")}</DialogTitle>
-            <DialogDescription>{t("common.table.customizeColumnsDescription")}</DialogDescription>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={Columns3}
+            title={t("common.table.customizeColumns")}
+            description={t("common.table.customizeColumnsDescription")}
+          />
 
-          <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
+          <CompactActionDialogBody className="max-h-[50vh] space-y-2 pr-1">
             {columns.map((column, index) => {
               const locked = column.hideable === false;
               const columnLabel = formatTableColumnLabel(column.label, t);
@@ -138,7 +136,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                 </div>
               );
             })}
-          </div>
+          </CompactActionDialogBody>
 
           <CompactActionDialogFooter className="gap-2 sm:justify-between">
             <div className="flex flex-wrap gap-2">

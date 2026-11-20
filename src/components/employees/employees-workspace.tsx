@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   Building2,
   Plus,
+  Save,
   Users,
 } from "lucide-react";
 
@@ -19,7 +20,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -30,6 +30,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { EMPLOYEE_API_TABLE_FIELDS } from "@/lib/employees/table-fields";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
@@ -484,6 +485,7 @@ export function EmployeesWorkspace() {
             <div className="flex flex-wrap items-center gap-2">
               <EmployeeTitlesButton />
               <EmployeeDepartmentsButton />
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
               <Button onClick={openAddForm} disabled={isSaving}>
                 <Plus className="h-4 w-4" />
                 {t("employees.actions.add")}
@@ -492,8 +494,6 @@ export function EmployeesWorkspace() {
           }
         />
       </div>
-
-      <StatCards className="hidden md:block" items={statCards} />
 
       <EmployeeMobileList isSearching={isFetching || isSearchPending}
         employees={employees}
@@ -552,9 +552,6 @@ export function EmployeesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -697,11 +694,10 @@ export function EmployeesWorkspace() {
         }}
       >
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
-          <DialogHeader>
-            <DialogTitle className="max-md:text-3xl max-md:font-bold max-md:text-primary-foreground">
-              {formMode === "edit" ? t("employees.form.editTitle") : t("employees.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("employees.form.editTitle") : t("employees.form.addTitle")}
+          />
           <EmployeeForm
             key={editingEmployee?.id ?? "new"}
             initialValues={

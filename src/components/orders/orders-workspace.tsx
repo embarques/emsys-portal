@@ -1343,10 +1343,15 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         description={t(routeMode ? "orders.pages.routeAppointments" : "orders.pages.description")}
         actions={
           <div className="flex items-center gap-2">
-            {!routeMode ? <Button onClick={openAddForm} disabled={isSaving || (routeMode && !routeAccess.canUpdate)}>
-              <Plus className="h-4 w-4" />
-              {t("orders.actions.add")}
-            </Button> : null}
+            {!routeMode ? (
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            ) : null}
+            {!routeMode ? (
+              <Button onClick={openAddForm} disabled={isSaving || (routeMode && !routeAccess.canUpdate)}>
+                <Plus className="h-4 w-4" />
+                {t("orders.actions.add")}
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -1376,11 +1381,6 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              !routeMode ? (
-                <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-              ) : undefined
-            }
             search={
               <TableSearchInput
                 value={filters.query}

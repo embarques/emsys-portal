@@ -464,7 +464,14 @@ export function OrderForm({
           id="date"
           {...wizardInputFieldProps(
             values.date,
-            isEditing ? "pl-9 md:pl-8" : "h-9 w-[12.5rem] pl-9 sm:w-[14rem] md:pl-8",
+            // Fill remaining header width; keep the typed date right-aligned in the control.
+            // WebKit's date value is shrink-to-fit, so it needs w-full for text-align to show.
+            cn(
+              "pl-9 text-right md:pl-8",
+              "[&::-webkit-date-and-time-value]:w-full [&::-webkit-date-and-time-value]:text-right",
+              "[&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:w-full [&::-webkit-datetime-edit]:justify-end",
+              !isEditing && "h-9 w-full min-w-0",
+            ),
           )}
           value={values.date}
           onChange={(event) => updateField("date", event.target.value)}
@@ -482,7 +489,7 @@ export function OrderForm({
           title={`01 · ${t("orders.form.workflow.scheduleStep")}`}
           required
           className="shrink-0 space-y-0 p-3"
-          action={<div className="flex items-center">{dateInput}</div>}
+          action={<div className="flex min-w-0 flex-1 items-center">{dateInput}</div>}
         >
           {null}
         </FormSection>

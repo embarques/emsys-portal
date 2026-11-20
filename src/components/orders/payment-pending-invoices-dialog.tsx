@@ -1,19 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 
 import {
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { formatInvoiceDate, formatInvoiceMoney } from "@/lib/invoices/display";
 import { sumInvoiceBalances } from "@/lib/invoices/sender-pending-invoices";
 import { getInvoiceBalanceAmount, type Invoice } from "@/lib/invoices/types";
@@ -51,14 +47,15 @@ export function PaymentPendingInvoicesDialog({
         data-enter-navigation="ignore"
         onCloseAutoFocus={onCloseAutoFocus}
       >
-        <DialogHeader>
-          <DialogTitle>{t("orders.comments.pendingInvoices.title")}</DialogTitle>
-          <DialogDescription className="text-foreground/80">
-            {senderName
+        <CompactActionDialogHeader
+          icon={FileText}
+          title={t("orders.comments.pendingInvoices.title")}
+          description={
+            senderName
               ? t("orders.comments.pendingInvoices.descriptionWithSender", { name: senderName })
-              : t("orders.comments.pendingInvoices.description")}
-          </DialogDescription>
-        </DialogHeader>
+              : t("orders.comments.pendingInvoices.description")
+          }
+        />
         {open ? (
           <PendingInvoicesSelection
             invoices={invoices}

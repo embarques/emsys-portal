@@ -10,11 +10,12 @@ import {
 } from "@/components/complaints/complaint-targets-section";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { DateInput } from "@/components/ui/date-input";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -189,10 +190,11 @@ export function ComplaintIntakeDialog({
   return (
     <Dialog open={state.open} onOpenChange={state.setOpen}>
       <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
-        <DialogHeader>
-          <DialogTitle>{t("complaints.add")}</DialogTitle>
-          <DialogDescription>{t("complaints.form.description")}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={MessageSquareWarning}
+          title={t("complaints.add")}
+          description={t("complaints.form.description")}
+        />
         <form onSubmit={state.save} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
           <FormBody workflow isBusy={state.busy}>
             <FormSection variant="card" icon={UserRound} title={t("complaints.form.sections.caller")}>

@@ -22,9 +22,10 @@ import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } 
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import {
@@ -782,11 +783,10 @@ export function RegisterInventoryChangeFields({
 
       <Dialog open={entityDialog === "supplier"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader>
-            <DialogTitle>
-              {editingSupplier ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={Building2}
+            title={editingSupplier ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
+          />
           <InventorySupplierForm
             key={editingSupplier?.id ?? "new"}
             initialValues={editingSupplier ? supplierToFormValues(editingSupplier) : createEmptySupplierForm()}
@@ -801,11 +801,10 @@ export function RegisterInventoryChangeFields({
 
       <Dialog open={entityDialog === "item"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader>
-            <DialogTitle>
-              {editingItem ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={PackagePlus}
+            title={editingItem ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
+          />
           <InventoryItemForm
             key={editingItem?.id ?? "new-item"}
             initialValues={editingItem ? inventoryItemToFormValues(editingItem) : createEmptyInventoryForm()}
@@ -820,11 +819,10 @@ export function RegisterInventoryChangeFields({
 
       <Dialog open={entityDialog === "vehicle"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "z-[70] sm:max-w-2xl")}>
-          <DialogHeader>
-            <DialogTitle>
-              {editingVehicle ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={Car}
+            title={editingVehicle ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
+          />
           <VehicleForm
             key={editingVehicle?.id ?? "new-vehicle"}
             initialValues={editingVehicle ? vehicleToFormValues(editingVehicle) : createEmptyVehicleForm()}
@@ -840,9 +838,7 @@ export function RegisterInventoryChangeFields({
 
       <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
-          <DialogHeader>
-            <DialogTitle>{t("employees.form.addTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={UserPlus} title={t("employees.form.addTitle")} />
           <EmployeeForm
             key="new"
             initialValues={createEmptyEmployeeForm()}
@@ -859,11 +855,10 @@ export function RegisterInventoryChangeFields({
 
       <Dialog open={entityDialog === "route"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
-          <DialogHeader>
-            <DialogTitle>
-              {editingRoute ? t("routes.dailyRoutes.editTitle") : t("routes.dailyRoutes.addTabLabel")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={Route}
+            title={editingRoute ? t("routes.dailyRoutes.editTitle") : t("routes.dailyRoutes.addTabLabel")}
+          />
           <div className="min-h-0 flex-1 overflow-y-auto">
             <ActiveRouteSection
               key={editingRoute?.id ?? "new-route"}

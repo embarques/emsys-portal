@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
@@ -45,10 +46,11 @@ export function CreateLoanDialog(props: Props) {
   const { t } = useTranslation();
   return <Dialog open={props.open} onOpenChange={open => { if (!props.pending) props.onOpenChange(open); }}>
     <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-4xl")}>
-      <DialogHeader className="shrink-0 border-b px-5 py-4">
-        <DialogTitle>{t("accounting.loans.createForm.title")}</DialogTitle>
-        <DialogDescription>{t("accounting.loans.createForm.description")}</DialogDescription>
-      </DialogHeader>
+      <CompactActionDialogHeader
+        icon={Banknote}
+        title={t("accounting.loans.createForm.title")}
+        description={t("accounting.loans.createForm.description")}
+      />
       {props.open ? <CreateLoanForm {...props} /> : null}
     </CompactActionDialogContent>
   </Dialog>;

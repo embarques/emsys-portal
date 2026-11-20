@@ -5,9 +5,10 @@ import { Ban, Send } from "lucide-react";
 import {
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
 
 export type InventoryDocumentCommand = "post" | "cancel";
@@ -35,10 +36,11 @@ export function InventoryDocumentCommandDialog({
   return (
     <Dialog open={command !== null} onOpenChange={onOpenChange}>
       <CompactActionDialogContent>
-        <DialogHeader>
-          <DialogTitle>{command ? t(`${copyKey}.${command}Title`) : ""}</DialogTitle>
-          <DialogDescription>{command ? t(`${copyKey}.${command}Description`, { name: label }) : ""}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={command === "post" ? Send : Ban}
+          title={command ? t(`${copyKey}.${command}Title`) : ""}
+          description={command ? t(`${copyKey}.${command}Description`, { name: label }) : ""}
+        />
         <CompactActionDialogFooter>
           <Button variant="outline" disabled={isPending} onClick={() => onOpenChange(false)}>
             {t("common.actions.close")}

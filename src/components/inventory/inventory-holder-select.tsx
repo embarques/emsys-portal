@@ -1,16 +1,17 @@
 "use client";
 
-import { Warehouse } from "lucide-react";
+import { Plus, Warehouse } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { InventoryHolderForm } from "@/components/inventory/inventory-holder-form";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -110,9 +111,7 @@ export function InventoryHolderSelect({
       />
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
-          <DialogHeader>
-            <DialogTitle>{t("inventory.form.addHolderTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={Plus} title={t("inventory.form.addHolderTitle")} />
           {dialogOpen ? (
             <InventoryHolderForm
               allowedTypes={allowedTypes}

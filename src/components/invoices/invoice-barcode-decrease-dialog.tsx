@@ -3,17 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
+import { ScanBarcode } from "lucide-react";
 import type {
   InvoiceBarcodeDecreaseNeed,
   InvoiceBarcodeDeletionSelection,
@@ -81,18 +79,20 @@ export function InvoiceBarcodeDecreaseDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <CompactActionDialogContent className="max-h-[90vh] max-w-lg overflow-hidden sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{t("invoices.barcodeSync.decreaseTitle")}</DialogTitle>
-          <DialogDescription>{t("invoices.barcodeSync.decreaseDescription")}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={ScanBarcode}
+          title={t("invoices.barcodeSync.decreaseTitle")}
+          description={t("invoices.barcodeSync.decreaseDescription")}
+        />
 
+        <CompactActionDialogBody className="max-h-[50vh]">
         {missingObjectIds ? (
           <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             {t("invoices.barcodeSync.missingObjectIds")}
           </p>
         ) : null}
 
-        <div className="max-h-[50vh] space-y-4 overflow-y-auto pr-1">
+        <div className="space-y-4 pr-1">
           {decreases.map((entry) => {
             const selected = selections[entry.lineItemId] ?? [];
             const selectable = entry.barcodes.filter((barcode) => invoiceBarcodeObjectId(barcode));
@@ -148,6 +148,7 @@ export function InvoiceBarcodeDecreaseDialog({
             );
           })}
         </div>
+        </CompactActionDialogBody>
 
         <CompactActionDialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

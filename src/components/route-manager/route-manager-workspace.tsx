@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Route as RouteIcon, Save } from "lucide-react";
 
 import { RouteForm } from "@/components/route-manager/route-form";
 import { RouteViewSheet } from "@/components/route-manager/route-view-sheet";
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import {
@@ -511,18 +512,13 @@ export function RouteManagerWorkspace() {
         }}
       >
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
-          <DialogHeader>
-            <DialogTitle>
-              {formMode === "edit"
-                ? t("routes.form.editTitle")
-                : t("routes.form.addTitle")}
-            </DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? t("routes.form.editDescription")
-                : t("routes.form.addDescription")}
-            </DialogDescription>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : RouteIcon}
+            title={formMode === "edit" ? t("routes.form.editTitle") : t("routes.form.addTitle")}
+            description={
+              formMode === "edit" ? t("routes.form.editDescription") : t("routes.form.addDescription")
+            }
+          />
           <RouteForm
             key={editingAssignment?.id ?? "new"}
             initialValues={

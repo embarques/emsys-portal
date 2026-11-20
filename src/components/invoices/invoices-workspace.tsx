@@ -19,9 +19,7 @@ import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/in
 import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { InvoiceLineItemsCell } from "@/components/invoices/invoice-line-items-cell";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
-import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
-import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -32,7 +30,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { ReservedInvoicesButton } from "@/components/invoices/reserved-invoices-button";
-import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -994,6 +991,11 @@ export function InvoicesWorkspace() {
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <ReservedInvoicesButton />
+              <DirectoryInsightsToggle
+                open={insightsOpen}
+                onOpenChange={setInsightsOpen}
+                className="hidden md:inline-flex"
+              />
               {canCreateInvoices ? (
                 <Button onClick={openAddForm} disabled={isSaving}>
                   <Plus className="h-4 w-4" />
@@ -1175,13 +1177,6 @@ export function InvoicesWorkspace() {
       </section>
 
       <div className="hidden md:block">
-      <StatCardsCarousel mobileLayout="stack">
-        <NewInvoicesStatCard />
-        {stats.map((stat) => (
-          <FlippableStatCard key={stat.label} {...stat} />
-        ))}
-      </StatCardsCarousel>
-
       <DirectoryInsightsFlip
         open={insightsOpen}
         onOpenChange={setInsightsOpen}
@@ -1196,9 +1191,6 @@ export function InvoicesWorkspace() {
             onFiltersOpenChange={setDesktopFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <div className="min-w-0 flex-1 space-y-2">
                 <TableSearchInput

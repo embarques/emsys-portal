@@ -61,7 +61,7 @@ export function FormSection({
     >
       {title || action ? (
         <div className={cn("flex min-h-7 items-center justify-between gap-2", fill && "shrink-0")}>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {Icon ? <Icon className="size-4 shrink-0 text-primary" /> : null}
             {title ? (
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -104,7 +104,7 @@ export function FormBody({ className, workflow = false, isBusy = false, busyLabe
       className={cn(
         "relative min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain",
         inDialog
-          ? "bg-transparent px-0 py-0"
+          ? "bg-transparent px-5 py-4 max-md:px-4"
           : "bg-muted/35 px-5 py-4",
         workflow && !inDialog && "@container space-y-5 p-4 sm:p-6",
         workflow && inDialog && "@container space-y-4",
@@ -216,7 +216,7 @@ export function FormFooter({
 
   if (inDialog) {
     return (
-      <div className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 bg-background pt-2">
+      <div className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-border bg-card px-5 py-3 max-md:px-4">
         {notice ? <FormFooterNoticeMessage tone={notice.tone} message={notice.message} /> : null}
         <div className="flex flex-col-reverse gap-2 max-md:grid max-md:grid-cols-2 sm:flex-row sm:justify-end">
           {actions}

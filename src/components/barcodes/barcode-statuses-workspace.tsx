@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { Plus, Save } from "lucide-react";
+import { Plus, Save, Tag } from "lucide-react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 
@@ -16,12 +18,7 @@ import { TableSelectionToolbar } from "@/components/app-shell/table-selection-to
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBarcodeStatusesWorkspace } from "@/lib/barcodes/hooks/use-barcode-statuses-workspace";
@@ -130,11 +127,13 @@ export function BarcodeStatusesWorkspace() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <CompactActionDialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editing ? t("barcodeStatuses.form.editTitle") : t("barcodeStatuses.form.addTitle")}</DialogTitle>
-            <DialogDescription>{t("barcodeStatuses.form.description")}</DialogDescription>
-          </DialogHeader>
-          <form id="barcode-status-form" onSubmit={save} onKeyDown={handleEnterNavigation} className="space-y-4">
+          <CompactActionDialogHeader
+            icon={Tag}
+            title={editing ? t("barcodeStatuses.form.editTitle") : t("barcodeStatuses.form.addTitle")}
+            description={t("barcodeStatuses.form.description")}
+          />
+          <form id="barcode-status-form" onSubmit={save} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+            <CompactActionDialogBody className="space-y-4">
             <div className="space-y-1">
               <Label htmlFor="barcode-status-name">{t("barcodeStatuses.fields.name")} <span className="text-destructive">*</span></Label>
               <Input
@@ -153,6 +152,7 @@ export function BarcodeStatusesWorkspace() {
               />
             </div>
             {form.formState.errors.name ? <p className="text-sm text-destructive">{t("barcodeStatuses.validation.nameRequired")}</p> : null}
+            </CompactActionDialogBody>
             <CompactActionDialogFooter
               error={error}
               submitLabel={t("common.actions.save")}

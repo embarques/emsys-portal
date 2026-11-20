@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Archive, Boxes, PackageCheck, Plus, SlidersHorizontal, Truck, Warehouse } from "lucide-react";
+import { Archive, Boxes, PackageCheck, Plus, Save, SlidersHorizontal, Truck, Warehouse } from "lucide-react";
 
 import { InventoryActiveToggleDialog, type InventoryActiveToggleTarget } from "@/components/inventory/inventory-active-toggle-dialog";
 import { InventoryAdjustmentForm } from "@/components/inventory/inventory-adjustment-form";
@@ -16,7 +16,6 @@ import { TablePaginationControls } from "@/components/app-shell/table-pagination
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -37,8 +36,8 @@ import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
-import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CompactActionDialogContent, CompactActionDialogHeader } from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
@@ -342,14 +341,16 @@ export function InventoryItemsWorkspace() {
                   {t("inventory.actions.adjustStock")}
                 </Button>
               ) : null}
-              {canCreate ? <Button onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                {t("inventory.actions.addItem")}
-              </Button> : null}
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+              {canCreate ? (
+                <Button onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  {t("inventory.actions.addItem")}
+                </Button>
+              ) : null}
             </div>
           }
         />
-        <StatCards items={stats} />
       </div>
 
       <InventoryItemMobileList isSearching={directoryQuery.isFetching || isSearchPending}
@@ -396,9 +397,6 @@ export function InventoryItemsWorkspace() {
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             filterPanel={
               <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || isSearchPending}
                 presetScope="inventory-items"
@@ -525,11 +523,10 @@ export function InventoryItemsWorkspace() {
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="bg-primary px-0 py-0 text-primary-foreground sm:bg-transparent sm:text-foreground">
-            <DialogTitle>
-              {formMode === "edit" ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
+          />
           <InventoryItemForm
             key={editingItem?.id ?? "new"}
             initialValues={editingItemValues}
@@ -553,9 +550,7 @@ export function InventoryItemsWorkspace() {
 
       <Dialog open={documentDialog === "receipt"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader>
-            <DialogTitle>{t("inventory.form.newReceiptTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={Warehouse} title={t("inventory.form.newReceiptTitle")} />
           <InventoryReceiptForm
             items={items}
             suppliers={suppliers}
@@ -578,9 +573,7 @@ export function InventoryItemsWorkspace() {
 
       <Dialog open={documentDialog === "dispatch"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader>
-            <DialogTitle>{t("inventory.form.newDispatchTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={Truck} title={t("inventory.form.newDispatchTitle")} />
           <InventoryDispatchForm
             items={items}
             holders={holders}
@@ -602,9 +595,7 @@ export function InventoryItemsWorkspace() {
 
       <Dialog open={documentDialog === "adjustment"} onOpenChange={(open) => !open && setDocumentDialog(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader>
-            <DialogTitle>{t("inventory.form.adjustStockTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader icon={SlidersHorizontal} title={t("inventory.form.adjustStockTitle")} />
           <InventoryAdjustmentForm
             items={items}
             holders={holders}

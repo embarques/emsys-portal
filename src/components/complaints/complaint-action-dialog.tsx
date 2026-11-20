@@ -1,13 +1,15 @@
 "use client";
 
-import { Save } from "lucide-react";
+import { MessageSquare, Save } from "lucide-react";
 import type { FieldError as HookFieldError, UseFormRegisterReturn } from "react-hook-form";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import type { useComplaintWorkflow } from "@/lib/complaints/hooks/use-complaint-workflow";
 import { useTranslation } from "@/lib/i18n";
@@ -68,13 +70,13 @@ export function ComplaintActionDialog({ workflow }: { workflow: ReturnType<typeo
   return (
     <Dialog open={kind !== null} onOpenChange={(open) => (open ? undefined : workflow.closeDialog())}>
       <CompactActionDialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{kind ? t(`complaints.workflow.dialogs.${kind}.title`) : null}</DialogTitle>
-          <DialogDescription>
-            {kind ? t(`complaints.workflow.dialogs.${kind}.description`) : null}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <CompactActionDialogHeader
+          icon={MessageSquare}
+          title={kind ? t(`complaints.workflow.dialogs.${kind}.title`) : null}
+          description={kind ? t(`complaints.workflow.dialogs.${kind}.description`) : null}
+        />
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <CompactActionDialogBody className="space-y-4">
           {kind === "resolve" ? (
             <>
               <TextareaField
@@ -118,6 +120,7 @@ export function ComplaintActionDialog({ workflow }: { workflow: ReturnType<typeo
               autoFocus
             />
           ) : null}
+          </CompactActionDialogBody>
           <CompactActionDialogFooter
             error={workflow.dialogError}
             isSubmitting={workflow.busy}

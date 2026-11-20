@@ -16,9 +16,10 @@ import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { DateInput } from "@/components/ui/date-input";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
@@ -66,10 +67,11 @@ export function RecordLoanPaymentDialog(props: Props) {
   return (
     <Dialog open={props.open} onOpenChange={(open) => { if (!props.pending) props.onOpenChange(open); }}>
       <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-4xl")}>
-        <DialogHeader className="shrink-0 border-b px-5 py-4">
-          <DialogTitle>{t("accounting.loans.paymentForm.title")}</DialogTitle>
-          <DialogDescription>{t("accounting.loans.paymentForm.description")}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={Banknote}
+          title={t("accounting.loans.paymentForm.title")}
+          description={t("accounting.loans.paymentForm.description")}
+        />
         {props.open ? <RecordLoanPaymentForm {...props} /> : null}
       </CompactActionDialogContent>
     </Dialog>

@@ -1,15 +1,13 @@
 "use client";
 
 import { Info } from "lucide-react";
-import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  CompactActionDialogBody,
+  CompactActionDialogContent,
+  CompactActionDialogHeader,
+} from "@/components/forms/compact-action-dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   documentActorName,
@@ -59,26 +57,27 @@ export function InvoiceDocumentInfo({
           <Info className="size-4" />
         </Button>
       </DialogTrigger>
-      <CompactActionDialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t("invoices.documents.info")}</DialogTitle>
-          <DialogDescription className="break-words">
-            {document.name}
-          </DialogDescription>
-        </DialogHeader>
-        <dl className="divide-y">
-          {fields.map(([label, value]) => (
-            <div
-              key={label}
-              className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3 py-3 text-sm"
-            >
-              <dt className="text-muted-foreground">
-                {t(`invoices.documents.${label}`)}
-              </dt>
-              <dd className="min-w-0 break-words font-medium">{value}</dd>
-            </div>
-          ))}
-        </dl>
+      <CompactActionDialogContent className="max-h-[85dvh] overflow-hidden sm:max-w-md">
+        <CompactActionDialogHeader
+          icon={Info}
+          title={t("invoices.documents.info")}
+          description={document.name}
+        />
+        <CompactActionDialogBody>
+          <dl className="divide-y">
+            {fields.map(([label, value]) => (
+              <div
+                key={label}
+                className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3 py-3 text-sm"
+              >
+                <dt className="text-muted-foreground">
+                  {t(`invoices.documents.${label}`)}
+                </dt>
+                <dd className="min-w-0 break-words font-medium">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </CompactActionDialogBody>
       </CompactActionDialogContent>
     </Dialog>
   );

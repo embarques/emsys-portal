@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   DollarSign,
   Plus,
+  Save,
   Tag,
 } from "lucide-react";
 
@@ -15,7 +16,6 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -33,6 +33,7 @@ import { ITEM_API_TABLE_FIELDS } from "@/lib/items/table-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
@@ -318,14 +319,15 @@ export function ItemsWorkspace() {
         title={t("items.title")}
         description={t("items.pages.description")}
         actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("items.actions.add")}
-          </Button>
+          <>
+            <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("items.actions.add")}
+            </Button>
+          </>
         }
       />
-
-      <StatCards items={stat} />
 
       <DirectoryInsightsFlip
         open={insightsOpen}
@@ -341,9 +343,6 @@ export function ItemsWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={advancedFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -485,16 +484,15 @@ export function ItemsWorkspace() {
         }}
       >
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-lg")}>
-          <DialogHeader>
-            <DialogTitle>
-              {formMode === "edit" ? t("items.form.editTitle") : t("items.form.addTitle")}
-            </DialogTitle>
-            <DialogDescription>
-              {formMode === "edit" && editingItem
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("items.form.editTitle") : t("items.form.addTitle")}
+            description={
+              formMode === "edit" && editingItem
                 ? editingItem.description || truncateItemId(editingItem.itemId)
-                : t("items.form.addDescription")}
-            </DialogDescription>
-          </DialogHeader>
+                : t("items.form.addDescription")
+            }
+          />
           <ItemForm
             key={editingItem?.itemId ?? "new"}
             initialValues={

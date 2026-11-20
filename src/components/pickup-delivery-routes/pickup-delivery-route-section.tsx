@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Car, Route as RouteIcon } from "lucide-react";
 
 import { ActiveRouteForm } from "@/components/pickup-delivery-routes/pickup-delivery-route-form";
 import { RouteForm } from "@/components/route-manager/route-form";
@@ -8,15 +9,13 @@ import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   useDailyRoutePicker,
@@ -654,12 +653,11 @@ export function ActiveRouteSection({
 
       <Dialog open={createVehicleDialogOpen} onOpenChange={setCreateVehicleDialogOpen}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
-          <DialogHeader>
-            <DialogTitle>{t("routes.createVehicleDialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("routes.createVehicleDialog.description")}
-            </DialogDescription>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={Car}
+            title={t("routes.createVehicleDialog.title")}
+            description={t("routes.createVehicleDialog.description")}
+          />
           {createVehicleDialogOpen ? (
             <VehicleForm
               key="create-vehicle-from-active"
@@ -676,12 +674,11 @@ export function ActiveRouteSection({
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
-          <DialogHeader>
-            <DialogTitle>{t("routes.createDialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("routes.createDialog.description")}
-            </DialogDescription>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={RouteIcon}
+            title={t("routes.createDialog.title")}
+            description={t("routes.createDialog.description")}
+          />
           {createDialogOpen ? (
             <RouteForm
               key="create-route-from-active"

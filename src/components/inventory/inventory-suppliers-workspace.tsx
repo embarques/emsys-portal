@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Archive, Building2, Plus } from "lucide-react";
+import { Archive, Building2, Plus, Save } from "lucide-react";
 
 import { InventoryActiveToggleDialog, type InventoryActiveToggleTarget } from "@/components/inventory/inventory-active-toggle-dialog";
 import { InventoryActiveBadge } from "@/components/inventory/inventory-status-badge";
@@ -30,8 +30,8 @@ import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
-import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CompactActionDialogContent, CompactActionDialogHeader } from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
@@ -394,11 +394,10 @@ export function InventorySuppliersWorkspace() {
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="bg-primary px-0 py-0 text-primary-foreground sm:bg-transparent sm:text-foreground">
-            <DialogTitle>
-              {formMode === "edit" ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
+          />
           <InventorySupplierForm
             key={editingSupplier?.id ?? "new"}
             initialValues={editingSupplierValues}

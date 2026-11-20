@@ -18,13 +18,10 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
-import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
 } from "@/components/app-shell/directory-insights-flip";
-import { NewCustomersStatCard } from "@/components/customers/new-customers-stat-card";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { CUSTOMER_API_TABLE_FIELDS } from "@/lib/customers/table-fields";
@@ -508,28 +505,18 @@ export function CustomersWorkspace() {
           title={t("customers.title")}
           description={t("customers.pages.description")}
           actions={
-            canCreateCustomers ? (
-              <Button onClick={openAddForm} disabled={isSaving}>
-                <Plus className="h-4 w-4" />
-                {t("customers.actions.add")}
-              </Button>
-            ) : null
+            <>
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+              {canCreateCustomers ? (
+                <Button onClick={openAddForm} disabled={isSaving}>
+                  <Plus className="h-4 w-4" />
+                  {t("customers.actions.add")}
+                </Button>
+              ) : null}
+            </>
           }
         />
       </div>
-
-      <StatCardsCarousel className="hidden md:block">
-        <NewCustomersStatCard />
-        {statCards.map((stat) => (
-          <FlippableStatCard
-            key={stat.label}
-            label={stat.label}
-            value={stats.isLoading ? "…" : stat.value.toLocaleString()}
-            description={stat.description}
-            icon={stat.icon}
-          />
-        ))}
-      </StatCardsCarousel>
 
       <CustomerMobileList isSearching={isFetching || isSearchPending}
         customers={customers}
@@ -590,9 +577,6 @@ export function CustomersWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}

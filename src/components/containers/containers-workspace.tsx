@@ -1,12 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Container, Plus } from "lucide-react";
+import { Container, Plus, Save } from "lucide-react";
 
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
-import { AverageContainerValueStatCard } from "@/components/containers/average-container-value-stat-card";
-import { DepartedContainersStatCard } from "@/components/containers/departed-containers-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -14,8 +12,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
-import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -41,6 +37,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { CONTAINER_API_TABLE_FIELDS } from "@/lib/containers/table-fields";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
@@ -419,23 +416,15 @@ export function ContainersWorkspace() {
         title={t("containers.title")}
         description={t("containers.pages.description")}
         actions={
-          <Button onClick={openAddForm}>
-            <Plus className="h-4 w-4" />
-            {t("containers.actions.add")}
-          </Button>
+          <>
+            <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            <Button onClick={openAddForm}>
+              <Plus className="h-4 w-4" />
+              {t("containers.actions.add")}
+            </Button>
+          </>
         }
       />
-
-      <StatCardsCarousel>
-        <FlippableStatCard
-          label={t("containers.stats.total.label")}
-          value={stats.isLoading ? "…" : stats.total.toLocaleString()}
-          description={t("containers.stats.total.description")}
-          icon={Container}
-        />
-        <DepartedContainersStatCard />
-        <AverageContainerValueStatCard />
-      </StatCardsCarousel>
 
       <DirectoryInsightsFlip
         open={insightsOpen}
@@ -451,9 +440,6 @@ export function ContainersWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -603,11 +589,10 @@ export function ContainersWorkspace() {
         }}
       >
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
-          <DialogHeader>
-            <DialogTitle>
-              {formMode === "edit" ? t("containers.form.editTitle") : t("containers.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : Plus}
+            title={formMode === "edit" ? t("containers.form.editTitle") : t("containers.form.addTitle")}
+          />
           <ContainerForm
             key={editingContainer?.id ?? "new"}
             initialValues={

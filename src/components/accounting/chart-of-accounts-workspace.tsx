@@ -4,6 +4,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { useMemo, useState } from "react";
 import {
+  BookMarked,
   Edit,
   Loader2,
   Plus,
@@ -14,6 +15,7 @@ import {
 import { ChartAccountForm } from "@/components/accounting/chart-account-form";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -680,45 +682,36 @@ export function ChartOfAccountsWorkspace() {
         }}
       >
         <CompactActionDialogContent
-          className={cn(
-            compactActionDialogFormClassName,
-            "inset-x-0 top-0 h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 rounded-none border-0 p-0 max-md:[&>button.absolute]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6",
-          )}
+          className={cn(compactActionDialogFormClassName, "sm:max-w-xl")}
         >
-          <DialogHeader>
-            <div className="flex items-center justify-between gap-4">
-              <DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">
-                {editing
-                  ? t("accounting.chartOfAccounts.form.editTitle")
-                  : t("accounting.chartOfAccounts.form.createTitle")}
-              </DialogTitle>
-              <button type="button" className="font-semibold text-primary-foreground sm:hidden" onClick={() => setDialogOpen(false)}>
-                {t("common.actions.cancel")}
-              </button>
-            </div>
-            <DialogDescription className="text-primary-foreground/85 sm:text-muted-foreground">
-              {editing
+          <CompactActionDialogHeader
+            icon={editing ? BookMarked : Plus}
+            title={
+              editing
+                ? t("accounting.chartOfAccounts.form.editTitle")
+                : t("accounting.chartOfAccounts.form.createTitle")
+            }
+            description={
+              editing
                 ? t("accounting.chartOfAccounts.form.editDescription")
-                : t("accounting.chartOfAccounts.form.createDescription")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="min-h-0 w-full max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:p-0">
-            <ChartAccountForm
-              key={editing?.id ?? "new"}
-              initialValues={editing ? accountValues(editing) : EMPTY_ACCOUNT}
-              branches={branchesQuery.data?.items ?? []}
-              accounts={(accountOptionsQuery.data?.items ?? []).filter(
-                (account) => account.id !== editing?.id,
-              )}
-              isEditing={Boolean(editing)}
-              isSubmitting={
-                createMutation.isPending || updateMutation.isPending
-              }
-              error={formError}
-              onSubmit={save}
-              onCancel={() => setDialogOpen(false)}
-            />
-          </div>
+                : t("accounting.chartOfAccounts.form.createDescription")
+            }
+          />
+          <ChartAccountForm
+            key={editing?.id ?? "new"}
+            initialValues={editing ? accountValues(editing) : EMPTY_ACCOUNT}
+            branches={branchesQuery.data?.items ?? []}
+            accounts={(accountOptionsQuery.data?.items ?? []).filter(
+              (account) => account.id !== editing?.id,
+            )}
+            isEditing={Boolean(editing)}
+            isSubmitting={
+              createMutation.isPending || updateMutation.isPending
+            }
+            error={formError}
+            onSubmit={save}
+            onCancel={() => setDialogOpen(false)}
+          />
         </CompactActionDialogContent>
       </Dialog>
 

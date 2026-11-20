@@ -1,9 +1,13 @@
 "use client";
 
 import { InvoiceCreateWizard } from "@/components/invoices/invoice-form-workspace";
+import { Users } from "lucide-react";
+
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { Button } from "@/components/ui/button";
@@ -38,13 +42,13 @@ export function AppointmentInvoiceDialogs({ state }: AppointmentInvoiceDialogsPr
         }}
       >
         <CompactActionDialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("orders.dialogs.chooseInvoiceReceiverTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("orders.dialogs.chooseInvoiceReceiverDescription", { count: receivers.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <ul className="max-h-[60vh] space-y-2 overflow-y-auto">
+          <CompactActionDialogHeader
+            icon={Users}
+            title={t("orders.dialogs.chooseInvoiceReceiverTitle")}
+            description={t("orders.dialogs.chooseInvoiceReceiverDescription", { count: receivers.length })}
+          />
+          <CompactActionDialogBody className="max-h-[60vh] space-y-2">
+          <ul className="space-y-2">
             {receivers.map((receiver) => (
               <li key={receiver.id}>
                 <button
@@ -57,6 +61,7 @@ export function AppointmentInvoiceDialogs({ state }: AppointmentInvoiceDialogsPr
               </li>
             ))}
           </ul>
+          </CompactActionDialogBody>
           <CompactActionDialogFooter>
             <Button variant="outline" onClick={state.cancelReceiverChoice}>
               {t("common.actions.cancel")}

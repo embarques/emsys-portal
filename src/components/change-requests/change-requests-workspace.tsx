@@ -19,10 +19,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { FilePenLine } from "lucide-react";
 
 export function ChangeRequestsWorkspace() {
   const { companyId, user, email, roleId, permissions } = useAuth();
@@ -183,13 +186,24 @@ function Workspace() {
     </Card> : null}
     <Dialog open={Boolean(reviewing)} onOpenChange={open => { if (!open && !review.isPending) setReviewing(null); }}>
       <CompactActionDialogContent>
-        <DialogHeader><DialogTitle>{text("review")}</DialogTitle><DialogDescription>{text("reviewDescription")}</DialogDescription></DialogHeader>
-        <p>{reviewing?.reason}</p>
-        <form onSubmit={event => { void reviewForm.handleSubmit(values => reviewRequest(true, values))(event); }} className="space-y-4">
-          <Label htmlFor="review-reason">{text("reviewReason")}</Label>
-          <textarea id="review-reason" className="min-h-24 w-full rounded-md border bg-background p-3" {...reviewForm.register("reason")} disabled={review.isPending} />
-          {reviewForm.formState.errors.reason ? <p role="alert">{text("invalid")}</p> : null}
-          {review.isError ? <p role="alert">{normalizeApiError(review.error).message}</p> : null}
+        <CompactActionDialogHeader
+          icon={FilePenLine}
+          title={text("review")}
+          description={text("reviewDescription")}
+        />
+        <form
+          onSubmit={event => { void reviewForm.handleSubmit(values => reviewRequest(true, values))(event); }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <CompactActionDialogBody>
+            {reviewing?.reason ? <p>{reviewing.reason}</p> : null}
+            <div className="space-y-2">
+              <Label htmlFor="review-reason">{text("reviewReason")}</Label>
+              <textarea id="review-reason" className="min-h-24 w-full rounded-md border bg-background p-3" {...reviewForm.register("reason")} disabled={review.isPending} />
+              {reviewForm.formState.errors.reason ? <p role="alert">{text("invalid")}</p> : null}
+              {review.isError ? <p role="alert">{normalizeApiError(review.error).message}</p> : null}
+            </div>
+          </CompactActionDialogBody>
           <CompactActionDialogFooter>
             <Button type="button" variant="outline" disabled={review.isPending || !reviewReason.trim()} onClick={() => { void reviewForm.handleSubmit(values => reviewRequest(false, values))(); }}>{text("reject")}</Button>
             <Button type="submit" disabled={review.isPending}>{text("approve")}</Button>

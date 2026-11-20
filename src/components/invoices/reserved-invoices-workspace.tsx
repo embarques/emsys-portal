@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { Controller } from "react-hook-form";
-import { ChevronLeft, ChevronRight, FileText, Plus, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Plus, RefreshCw, UserRound } from "lucide-react";
 
 import { DataTable } from "@/components/app-shell/data-table";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { InfoHint } from "@/components/app-shell/info-hint";
@@ -26,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -153,16 +155,19 @@ function ReservedInvoicePoolPanel() {
 
       <Dialog open={generateOpen} onOpenChange={open => { if (!busy) setGenerateOpen(open); }}>
         <CompactActionDialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{text("generate")}</DialogTitle>
-            <DialogDescription>{text("generatePrompt")}</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={model.form.handleSubmit(values => model.act("generate", { ...values, userId: 0 }, () => setGenerateOpen(false)))} className="space-y-4">
+          <CompactActionDialogHeader
+            icon={Plus}
+            title={text("generate")}
+            description={text("generatePrompt")}
+          />
+          <form onSubmit={model.form.handleSubmit(values => model.act("generate", { ...values, userId: 0 }, () => setGenerateOpen(false)))} className="flex min-h-0 flex-1 flex-col">
+            <CompactActionDialogBody className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="pool-count">{text("count")}</Label>
               <Input id="pool-count" type="number" min={1} max={100} autoFocus disabled={busy || model.pending} aria-invalid={Boolean(model.form.formState.errors.count)} aria-describedby={model.form.formState.errors.count ? "pool-count-error" : undefined} {...model.form.register("count", { valueAsNumber: true })} />
               {model.form.formState.errors.count && <p id="pool-count-error" role="alert" className="text-sm text-destructive">{text("invalidCount")}</p>}
             </div>
+            </CompactActionDialogBody>
             <CompactActionDialogFooter
               error={model.mutation.isError ? normalizeApiError(model.mutation.error).message : null}
               submitLabel={text("generate")}
@@ -178,11 +183,13 @@ function ReservedInvoicePoolPanel() {
 
       <Dialog open={assignOpen} onOpenChange={open => { if (!busy) setAssignOpen(open); }}>
         <CompactActionDialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{text("assignTitle")}</DialogTitle>
-            <DialogDescription>{t("invoices.pool.assignPrompt", { count: model.selected.length })}</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={event => { event.preventDefault(); if (userId > 0) model.act("assign", undefined, () => setAssignOpen(false)); }} className="space-y-4">
+          <CompactActionDialogHeader
+            icon={UserRound}
+            title={text("assignTitle")}
+            description={t("invoices.pool.assignPrompt", { count: model.selected.length })}
+          />
+          <form onSubmit={event => { event.preventDefault(); if (userId > 0) model.act("assign", undefined, () => setAssignOpen(false)); }} className="flex min-h-0 flex-1 flex-col">
+            <CompactActionDialogBody className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="pool-user">{text("user")}</Label>
               <Controller name="userId" control={model.form.control} render={({ field }) =>
@@ -194,6 +201,7 @@ function ReservedInvoicePoolPanel() {
               {!model.canViewUsers && <p role="alert" className="text-sm text-destructive">{text("usersDenied")}</p>}
               {model.users.isError && <p role="alert" className="text-sm text-destructive">{normalizeApiError(model.users.error).message}</p>}
             </div>
+            </CompactActionDialogBody>
             <CompactActionDialogFooter
               error={model.mutation.isError ? normalizeApiError(model.mutation.error).message : null}
               submitLabel={text("assignSubmit")}

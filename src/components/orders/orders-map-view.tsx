@@ -26,6 +26,7 @@ import {
 import {
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -1049,10 +1050,11 @@ export function OrdersMapView({
             if (isUnassigning) event.preventDefault();
           }}
         >
-          <DialogHeader>
-            <DialogTitle>{t("orders.dialogs.clearRouteTitle")}</DialogTitle>
-            <DialogDescription>
-              {selectedAssignedStops.length === 1
+          <CompactActionDialogHeader
+            icon={RouteOff}
+            title={t("orders.dialogs.clearRouteTitle")}
+            description={
+              selectedAssignedStops.length === 1
                 ? t("orders.dialogs.clearRouteDescription", {
                     count: selectedAssignedStops.length,
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
@@ -1060,9 +1062,9 @@ export function OrdersMapView({
                 : t("orders.dialogs.clearRouteDescription_plural", {
                     count: selectedAssignedStops.length,
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
-                  })}
-            </DialogDescription>
-          </DialogHeader>
+                  })
+            }
+          />
           <CompactActionDialogFooter>
             <Button
               variant="outline"

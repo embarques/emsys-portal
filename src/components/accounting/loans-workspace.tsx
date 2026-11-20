@@ -23,7 +23,6 @@ import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -414,14 +413,15 @@ export function LoansWorkspace() {
           title={t("accounting.loans.page.title")}
           description={t("accounting.loans.page.description")}
           actions={
-            <Button disabled={!loanEntry.openCreate} onClick={openNewLoan}>
-              <Plus className="h-4 w-4" />
-              {t("accounting.loans.actions.newLoan")}
-            </Button>
+            <>
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+              <Button disabled={!loanEntry.openCreate} onClick={openNewLoan}>
+                <Plus className="h-4 w-4" />
+                {t("accounting.loans.actions.newLoan")}
+              </Button>
+            </>
           }
         />
-
-        <StatCards items={stats} />
 
         <DirectoryInsightsFlip
           open={insightsOpen}
@@ -437,9 +437,6 @@ export function LoansWorkspace() {
               onFiltersOpenChange={setFiltersOpen}
               activeFilterCount={activeFilterCount}
               columnLayout={columnVisibility}
-              actions={
-                <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-              }
               search={
                 <TableSearchInput
                   value={filters.query}

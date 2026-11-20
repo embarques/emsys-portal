@@ -5,16 +5,14 @@ import { useMemo, useState } from "react";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { BadgePercent } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isImeComposing } from "@/hooks/use-form-enter-navigation";
@@ -342,15 +340,14 @@ function ReviewPriceTotals({
       </div>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <CompactActionDialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t("invoices.wizard.summary.discount")}</DialogTitle>
-            <DialogDescription>
-              {t("invoices.wizard.summary.discountDialogDescription", {
-                max: formatInvoiceMoney(maximumDiscount),
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
+          <CompactActionDialogHeader
+            icon={BadgePercent}
+            title={t("invoices.wizard.summary.discount")}
+            description={t("invoices.wizard.summary.discountDialogDescription", {
+              max: formatInvoiceMoney(maximumDiscount),
+            })}
+          />
+          <CompactActionDialogBody>
             <div className="space-y-2">
               <Label htmlFor="invoice-preview-discount-amount">
                 {t("invoices.wizard.summary.discountAmount")}
@@ -381,7 +378,7 @@ function ReviewPriceTotals({
                 <p className="text-sm text-destructive">{discountValidationError}</p>
               ) : null}
             </div>
-          </div>
+          </CompactActionDialogBody>
           <CompactActionDialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
               {t("common.actions.cancel")}

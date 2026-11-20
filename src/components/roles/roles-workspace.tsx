@@ -17,7 +17,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
@@ -449,14 +448,15 @@ export function RolesWorkspace() {
           title={t("roles.title")}
           description={t("roles.pages.description")}
           actions={
-            <Button onClick={openAddForm} disabled={addDisabled}>
-              <Plus className="h-4 w-4" />
-              {t("roles.actions.add")}
-            </Button>
+            <>
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+              <Button onClick={openAddForm} disabled={addDisabled}>
+                <Plus className="h-4 w-4" />
+                {t("roles.actions.add")}
+              </Button>
+            </>
           }
         />
-
-        <StatCards items={statCards} />
       </div>
 
       <RoleMobileList isSearching={rolesQuery.isFetching || isSearchPending}
@@ -500,9 +500,6 @@ export function RolesWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-            actions={
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            }
             search={
               <TableSearchInput
                 value={filters.query}

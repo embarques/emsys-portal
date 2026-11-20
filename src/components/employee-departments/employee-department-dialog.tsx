@@ -1,12 +1,14 @@
 "use client";
 
-import { Save } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SwitchField } from "@/components/ui/switch-field";
 import { Label } from "@/components/ui/label";
@@ -20,13 +22,13 @@ export function EmployeeDepartmentDialog({ state }: { state: ReturnType<typeof u
   return (
     <Dialog open={state.open} onOpenChange={state.setOpen}>
       <CompactActionDialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {t(state.editing ? "employeeDepartments.edit" : "employeeDepartments.add")}
-          </DialogTitle>
-          <DialogDescription>{t("employeeDepartments.description")}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={state.save} onKeyDown={handleEnterNavigation} className="space-y-4">
+        <CompactActionDialogHeader
+          icon={state.editing ? Save : Plus}
+          title={t(state.editing ? "employeeDepartments.edit" : "employeeDepartments.add")}
+          description={t("employeeDepartments.description")}
+        />
+        <form onSubmit={state.save} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+          <CompactActionDialogBody>
           <div className="space-y-1">
             <Label htmlFor="department-name">
               {t("employeeDepartments.name")} <span className="text-destructive">*</span>
@@ -56,6 +58,7 @@ export function EmployeeDepartmentDialog({ state }: { state: ReturnType<typeof u
               state.form.setValue("active", checked, { shouldDirty: true, shouldValidate: true })
             }
           />
+          </CompactActionDialogBody>
           <CompactActionDialogFooter
             error={state.error}
             isSubmitting={state.busy}

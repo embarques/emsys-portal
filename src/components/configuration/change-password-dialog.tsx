@@ -8,16 +8,13 @@ import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { changeCurrentUserPassword } from "@/lib/auth/firebase/firebase-password";
@@ -74,17 +71,14 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <CompactActionDialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <KeyRound className="size-5" />
-            {t("settings.password.title")}
-          </DialogTitle>
-          <DialogDescription>
-            {t("settings.password.description")}
-          </DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={KeyRound}
+          title={t("settings.password.title")}
+          description={t("settings.password.description")}
+        />
 
-        <form onSubmit={handleSubmit(submit)} className="space-y-4">
+        <form onSubmit={handleSubmit(submit)} className="flex min-h-0 flex-1 flex-col">
+          <CompactActionDialogBody>
           <PasswordField
             id="new-password"
             label={t("settings.password.fields.new")}
@@ -102,6 +96,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
               {errors.root.message}
             </p>
           ) : null}
+          </CompactActionDialogBody>
           <CompactActionDialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               <KeyRound className="h-4 w-4" />

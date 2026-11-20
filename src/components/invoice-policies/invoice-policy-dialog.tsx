@@ -1,17 +1,14 @@
 "use client";
 
-import { Save } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SwitchField } from "@/components/ui/switch-field";
@@ -34,13 +31,13 @@ export function InvoicePolicyDialog({
   return (
     <Dialog open={state.open} onOpenChange={state.setOpen}>
       <CompactActionDialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {t(state.editing ? "invoicePolicies.edit" : "invoicePolicies.add")}
-          </DialogTitle>
-          <DialogDescription>{t("invoicePolicies.description")}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={state.save} onKeyDown={handleEnterNavigation} className="space-y-4">
+        <CompactActionDialogHeader
+          icon={state.editing ? Save : Plus}
+          title={t(state.editing ? "invoicePolicies.edit" : "invoicePolicies.add")}
+          description={t("invoicePolicies.description")}
+        />
+        <form onSubmit={state.save} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+          <CompactActionDialogBody className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="invoice-policy-title">
               {t("invoicePolicies.fields.title")} <span className="text-destructive">*</span>
@@ -98,6 +95,7 @@ export function InvoicePolicyDialog({
             disabled={state.busy}
             onCheckedChange={(checked) => state.form.setValue("active", checked, { shouldDirty: true })}
           />
+          </CompactActionDialogBody>
 
           <CompactActionDialogFooter
             error={state.error}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FilePenLine } from "lucide-react";
+import { FilePenLine, NotebookPen } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
@@ -10,15 +10,12 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -99,19 +96,19 @@ export function JournalLifecycleActions({
         }}
       >
         <CompactActionDialogContent>
-          <DialogHeader>
-            <DialogTitle>{text(action ?? "note")}</DialogTitle>
-            <DialogDescription>
-              {text(action === "note" ? "noteDescription" : "warning")}
-            </DialogDescription>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={NotebookPen}
+            title={text(action ?? "note")}
+            description={text(action === "note" ? "noteDescription" : "warning")}
+          />
           <form
             onSubmit={submit}
-            className="space-y-4"
+            className="flex min-h-0 flex-1 flex-col"
             onChange={() => {
               if (!mutation.isPending) setRequestId(createRandomId());
             }}
           >
+            <CompactActionDialogBody className="space-y-4">
             {action === "note" ? (
               <>
                 <Label htmlFor="journal-note">{text("description")}</Label>
@@ -143,6 +140,7 @@ export function JournalLifecycleActions({
             {mutation.isError ? (
               <p role="alert">{normalizeApiError(mutation.error).message}</p>
             ) : null}
+            </CompactActionDialogBody>
             <CompactActionDialogFooter
               onCancel={() => setAction(null)}
               cancelDisabled={mutation.isPending}

@@ -7,10 +7,12 @@ import { EmployeeForm } from "@/components/employees/employee-form";
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { Route, UserPlus } from "lucide-react";
 import {
   resolveDailyRouteSupervisor,
 } from "@/lib/accounting/daily-income/assignee";
@@ -179,11 +181,10 @@ export function useTransactionAssigneeEntityActions({
     <>
       <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
-          <DialogHeader>
-            <DialogTitle>
-              {editingEmployee ? t("employees.form.editTitle") : t("employees.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={UserPlus}
+            title={editingEmployee ? t("employees.form.editTitle") : t("employees.form.addTitle")}
+          />
           <EmployeeForm
             key={editingEmployee ? String(editingEmployee.id) : "new-employee"}
             initialValues={
@@ -204,13 +205,14 @@ export function useTransactionAssigneeEntityActions({
 
       <Dialog open={entityDialog === "route"} onOpenChange={(open) => !open && setEntityDialog(null)}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl", "z-[70]")}>
-          <DialogHeader>
-            <DialogTitle>
-              {editingRoute
+          <CompactActionDialogHeader
+            icon={Route}
+            title={
+              editingRoute
                 ? t("routes.dailyRoutes.editTitle")
-                : t("routes.dailyRoutes.addTabLabel")}
-            </DialogTitle>
-          </DialogHeader>
+                : t("routes.dailyRoutes.addTabLabel")
+            }
+          />
           <div className="min-h-0 flex-1 overflow-y-auto">
             <ActiveRouteSection
               key={editingRoute?.id ?? "new-route"}

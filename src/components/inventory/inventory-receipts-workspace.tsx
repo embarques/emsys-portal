@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PackageCheck, Plus } from "lucide-react";
+import { PackageCheck, Plus, Save } from "lucide-react";
 
 import { InventoryDocumentCommandDialog, type InventoryDocumentCommand } from "@/components/inventory/inventory-document-command-dialog";
 import { InventoryDocumentMobileList } from "@/components/inventory/inventory-document-mobile-list";
@@ -35,8 +35,8 @@ import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
-import { CompactActionDialogContent } from "@/components/forms/compact-action-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CompactActionDialogContent, CompactActionDialogHeader } from "@/components/forms/compact-action-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -452,9 +452,10 @@ export function InventoryReceiptsWorkspace() {
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <CompactActionDialogContent className={INVENTORY_FORM_DIALOG_CLASS_NAME}>
-          <DialogHeader className="bg-primary px-0 py-0 text-primary-foreground sm:bg-transparent sm:text-foreground">
-            <DialogTitle>{formMode === "edit" ? t("inventory.form.editReceiptTitle") : t("inventory.form.newReceiptTitle")}</DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={formMode === "edit" ? Save : PackageCheck}
+            title={formMode === "edit" ? t("inventory.form.editReceiptTitle") : t("inventory.form.newReceiptTitle")}
+          />
           <InventoryReceiptForm
             key={editingReceipt?.id ?? "new"}
             items={items}

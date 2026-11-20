@@ -8,10 +8,11 @@ import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FieldLabelRow } from "@/components/forms/field-label-row";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -182,11 +183,10 @@ export function LoanEmployeeField({
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl", "z-[70]")}>
-          <DialogHeader>
-            <DialogTitle>
-              {editing ? t("employees.form.editTitle") : t("employees.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={UserPlus}
+            title={editing ? t("employees.form.editTitle") : t("employees.form.addTitle")}
+          />
           {dialogOpen ? (
             <EmployeeForm
               key={editing ? String(editing.id) : "new-loan-employee"}

@@ -5,17 +5,14 @@ import { Route as RouteIcon } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -206,12 +203,13 @@ export function AssignAppointmentRouteDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <CompactActionDialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("orders.dialogs.assignRouteTitle")}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={RouteIcon}
+          title={t("orders.dialogs.assignRouteTitle")}
+          description={description}
+        />
 
-        <div className="space-y-4">
+        <CompactActionDialogBody>
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="assign-daily-route">{t("orders.dialogs.dailyRoute")}</Label>
@@ -251,7 +249,7 @@ export function AssignAppointmentRouteDialog({
           ) : null}
           {scopeError ? <p className="text-sm text-destructive">{scopeError}</p> : null}
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-        </div>
+        </CompactActionDialogBody>
 
         <CompactActionDialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>

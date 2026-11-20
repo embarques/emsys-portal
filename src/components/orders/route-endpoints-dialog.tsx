@@ -7,11 +7,13 @@ import { Route as RouteIcon } from "lucide-react";
 
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { useGoogleMapsApiKey } from "@/lib/company/hooks/use-current-company";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -44,13 +46,21 @@ export function RouteEndpointsDialog({ defaultValues, branchHasLocation, onClose
         onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }}
         onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}
       >
-        <DialogHeader>
-          <DialogTitle>{t("orders.optimize.endpoints.title")}</DialogTitle>
-          <DialogDescription>
-            {t(branchHasLocation ? "orders.optimize.endpoints.branchDefaultDescription" : "orders.optimize.endpoints.description")}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={form.handleSubmit((values) => onSubmit(toRouteEndpointLocations(values)))} className="space-y-4" noValidate>
+        <CompactActionDialogHeader
+          icon={RouteIcon}
+          title={t("orders.optimize.endpoints.title")}
+          description={t(
+            branchHasLocation
+              ? "orders.optimize.endpoints.branchDefaultDescription"
+              : "orders.optimize.endpoints.description",
+          )}
+        />
+        <form
+          onSubmit={form.handleSubmit((values) => onSubmit(toRouteEndpointLocations(values)))}
+          className="flex min-h-0 flex-1 flex-col"
+          noValidate
+        >
+          <CompactActionDialogBody>
           {(["start", "end"] as const).map((endpoint) => (
             <fieldset key={endpoint} disabled={busy} className="space-y-2">
               <legend className="text-sm font-medium">{t(`orders.optimize.endpoints.${endpoint}`)}</legend>
@@ -86,6 +96,7 @@ export function RouteEndpointsDialog({ defaultValues, branchHasLocation, onClose
             </fieldset>
           ))}
           {!googleMapsApiKey ? <p role="alert" className="text-sm text-destructive">{t("orders.map.errors.missingApiKey")}</p> : null}
+          </CompactActionDialogBody>
           <CompactActionDialogFooter>
             <Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common.actions.cancel")}</Button>
             <Button type="submit" disabled={busy || !googleMapsApiKey}>

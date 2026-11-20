@@ -1,18 +1,15 @@
 "use client";
 
-import { Save } from "lucide-react";
+import { Route as RouteIcon, Save } from "lucide-react";
 
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { PredefinedRouteCitiesEditor } from "@/components/predefined-routes/predefined-route-cities-editor";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -33,11 +30,13 @@ export function PredefinedRouteDialog({
   return (
     <Dialog open={state.open} onOpenChange={state.setOpen}>
       <CompactActionDialogContent centerInWorkspace className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{t(state.editing ? "predefinedRoutes.edit" : "predefinedRoutes.add")}</DialogTitle>
-          <DialogDescription>{t("predefinedRoutes.description")}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={state.save} onKeyDown={handleEnterNavigation} className="space-y-4">
+        <CompactActionDialogHeader
+          icon={state.editing ? Save : RouteIcon}
+          title={t(state.editing ? "predefinedRoutes.edit" : "predefinedRoutes.add")}
+          description={t("predefinedRoutes.description")}
+        />
+        <form onSubmit={state.save} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+          <CompactActionDialogBody className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="predefined-route-name">
               {t("predefinedRoutes.fields.name")} <span className="text-destructive">*</span>
@@ -82,6 +81,7 @@ export function PredefinedRouteDialog({
               </p>
             ) : null}
           </div>
+          </CompactActionDialogBody>
 
           <CompactActionDialogFooter
             error={state.error}

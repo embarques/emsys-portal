@@ -5,12 +5,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { ClipboardCheck, XCircle } from "lucide-react";
+
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/lib/i18n";
@@ -83,15 +87,17 @@ function ConfirmationForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4" aria-busy={busy}>
-      <DialogHeader>
-        <DialogTitle>
-          {isReject
+    <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col" aria-busy={busy}>
+      <CompactActionDialogHeader
+        icon={isReject ? XCircle : ClipboardCheck}
+        title={
+          isReject
             ? t("inventory.confirmations.rejectTitle", { subject: t(`inventory.confirmations.subjects.${subject}`) })
-            : t("inventory.confirmations.confirmTitle", { party })}
-        </DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
+            : t("inventory.confirmations.confirmTitle", { party })
+        }
+        description={description}
+      />
+      <CompactActionDialogBody className="space-y-4">
       {note ? <p className="text-sm text-muted-foreground">{note}</p> : null}
       <div className="space-y-2">
         <Label htmlFor="inventory-confirmation-text">
@@ -108,6 +114,7 @@ function ConfirmationForm({
         {textError ? <p role="alert" className="text-xs text-destructive">{t(textError)}</p> : null}
       </div>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+      </CompactActionDialogBody>
       <CompactActionDialogFooter>
         <Button type="button" variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>
           {t("common.actions.close")}

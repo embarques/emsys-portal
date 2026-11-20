@@ -7,17 +7,14 @@ import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
 import { RouteCrewsButton } from "@/components/route-manager/route-crews-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
+  CompactActionDialogBody,
   CompactActionDialogContent,
   CompactActionDialogFooter,
+  CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -369,16 +366,17 @@ export function AssignRouteCrewDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <CompactActionDialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {isDelivery
+        <CompactActionDialogHeader
+          icon={RouteIcon}
+          title={
+            isDelivery
               ? t("labels.staging.routeDialog.title")
-              : t("orders.dialogs.assignRouteTitle")}
-          </DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+              : t("orders.dialogs.assignRouteTitle")
+          }
+          description={description}
+        />
 
-        <div className="space-y-4">
+        <CompactActionDialogBody>
           <div className="space-y-1">
             <Label htmlFor="assign-route-date">{t("orders.dialogs.assignmentDate")}</Label>
             <DateInput
@@ -462,7 +460,7 @@ export function AssignRouteCrewDialog({
           </div>
 
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-        </div>
+        </CompactActionDialogBody>
 
         <CompactActionDialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>

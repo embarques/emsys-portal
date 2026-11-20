@@ -9,10 +9,13 @@ import {
 } from "@/components/complaints/complaint-targets-section";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import { FormBody, FormFooter } from "@/components/forms/form-shell";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Crosshair, Paperclip } from "lucide-react";
+
+import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,10 +32,11 @@ export function ComplaintTargetsDialog({ workflow, canPickEmployees }: { workflo
   return (
     <Dialog open={workflow.dialog === "targets"} onOpenChange={(open) => (open ? undefined : workflow.closeDialog())}>
       <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-2xl")}>
-        <DialogHeader>
-          <DialogTitle>{t("complaints.workflow.dialogs.targets.title")}</DialogTitle>
-          <DialogDescription>{t("complaints.workflow.dialogs.targets.description")}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={Crosshair}
+          title={t("complaints.workflow.dialogs.targets.title")}
+          description={t("complaints.workflow.dialogs.targets.description")}
+        />
         <form onSubmit={workflow.submitTargets} className="flex min-h-0 flex-1 flex-col">
           <FormBody isBusy={workflow.busy}>
             <ComplaintTargetsSection form={workflow.targetsForm} busy={workflow.busy} canPickEmployees={canPickEmployees} />
@@ -62,10 +66,11 @@ export function ComplaintAttachmentDialog({ workflow }: { workflow: Workflow }) 
   return (
     <Dialog open={workflow.dialog === "attachment"} onOpenChange={(open) => (open ? undefined : workflow.closeDialog())}>
       <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-lg")}>
-        <DialogHeader>
-          <DialogTitle>{t("complaints.workflow.dialogs.attachment.title")}</DialogTitle>
-          <DialogDescription>{t("complaints.workflow.dialogs.attachment.description")}</DialogDescription>
-        </DialogHeader>
+        <CompactActionDialogHeader
+          icon={Paperclip}
+          title={t("complaints.workflow.dialogs.attachment.title")}
+          description={t("complaints.workflow.dialogs.attachment.description")}
+        />
         <form onSubmit={workflow.submitAttachment} className="flex min-h-0 flex-1 flex-col">
           <FormBody isBusy={workflow.busy}>
             <div className="space-y-1">

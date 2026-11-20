@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { CalendarRange, Plus } from "lucide-react";
+import { CalendarRange, Plus, Route } from "lucide-react";
 
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { ActiveRouteViewSheet } from "@/components/pickup-delivery-routes/pickup-delivery-route-view-sheet";
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   CompactActionDialogContent,
+  CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
 import {
@@ -570,14 +571,11 @@ export function ActiveRoutesDirectoryWorkspace({
         }}
       >
         <CompactActionDialogContent className={cn(compactActionDialogFormClassName, "sm:max-w-3xl")}>
-          <DialogHeader>
-            <DialogTitle>
-              {editingActiveRoute
-                ? t(`routes.${copyPrefix}.editTitle`)
-                : t(`routes.${copyPrefix}.title`)}
-            </DialogTitle>
-            <DialogDescription>{t(`routes.${copyPrefix}.description`)}</DialogDescription>
-          </DialogHeader>
+          <CompactActionDialogHeader
+            icon={Route}
+            title={editingActiveRoute ? t(`routes.${copyPrefix}.editTitle`) : t(`routes.${copyPrefix}.title`)}
+            description={t(`routes.${copyPrefix}.description`)}
+          />
           <ActiveRouteSection
             key={editingActiveRoute?.id ?? `new-${variant.id}`}
             initialRecord={editingActiveRoute}
