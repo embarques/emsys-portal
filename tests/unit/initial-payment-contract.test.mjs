@@ -41,8 +41,9 @@ test("discounted registration sends one INITIAL-PAYMENT with receipt and discoun
   const { getJournalBatchSelectionKey, getJournalBatchSelectionBlockReason } = load("src/lib/accounting/daily-income/journal-batch-selection.ts");
   const key = getJournalBatchSelectionKey(journal);
   assert.equal(key.moneyAccountId, 1);
-  assert.equal(getJournalBatchSelectionBlockReason(key, { ...journal, paymentAccount: { ...cash, id: 8 } }), "moneyAccount");
+  assert.equal(getJournalBatchSelectionBlockReason(key, { ...journal, paymentAccount: { ...cash, id: 8 } }), null, "mixed money accounts stay selectable");
   assert.equal(getJournalBatchSelectionBlockReason(key, { ...journal, paymentAccount: cash, accounts: [] }), null);
+  assert.equal(getJournalBatchSelectionBlockReason(key, { ...journal, paymentMethod: { id: 4, name: "ZELLE" }, paymentAccount: cash }), "paymentMethod");
 
   const { summarizeJournalBreakdown, summarizeJournalTotals } = load("src/lib/accounting/daily-income/journal-classification.ts");
   assert.deepEqual(summarizeJournalTotals([journal]), [{ currency: "USD", income: 80, expenses: 0, net: 80, count: 1 }]);

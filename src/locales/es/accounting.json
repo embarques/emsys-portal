@@ -11,7 +11,7 @@
     "selectedTotalsCount": "{{count}} transacciones seleccionadas",
     "selectedCount": "Seleccionadas:",
     "clearSelected": "Marcar como liquidado",
-    "sameMethod": "Seleccione hasta 200 transacciones con el mismo método de pago y la misma cuenta de efectivo/banco. Los préstamos otorgados y los pagos pueden compartir un lote solo si afectan esa misma cuenta.",
+    "sameMethod": "Seleccione hasta 200 transacciones con el mismo método de pago. Puede incluir distintas cuentas de efectivo o banco en el mismo lote.",
     "empty": "No hay transacciones pendientes de liquidar en los cierres.",
     "emptyFiltered": "Ninguna transacción pendiente de liquidación coincide con su búsqueda.",
     "blocked": {
@@ -19,10 +19,8 @@
       "notOutstanding": "Esta transacción no está pendiente de liquidación.",
       "notAuthorized": "La API no ha autorizado la liquidación de esta transacción.",
       "paymentMethod": "Solo se pueden agregar transacciones de {{method}} a la selección actual.",
-      "moneyAccount": "Solo se pueden agregar transacciones de {{account}} a la selección actual.",
       "limit": "Puede liquidar hasta 200 transacciones a la vez.",
-      "noMethod": "sin método de pago",
-      "noMoneyAccount": "sin cuenta de efectivo/banco"
+      "noMethod": "sin método de pago"
     },
     "confirmList": {
       "caption": "Transacciones por marcar como liquidadas",
@@ -1971,7 +1969,7 @@
     "selectedTitle": "Transacciones seleccionadas",
     "clearSelection": "Limpiar selección",
     "reconcileSelected": "Conciliar seleccionadas",
-    "selectionHelp": "Seleccione hasta 200 transacciones con el mismo método de pago y la misma cuenta de efectivo/banco, entre páginas. Seleccionar todo agrega las filas compatibles de esta página. Los totales se muestran por moneda.",
+    "selectionHelp": "Seleccione hasta 200 transacciones con el mismo método de pago, entre páginas. Puede incluir distintas cuentas de efectivo o banco. Seleccionar todo agrega las filas compatibles de esta página. Los totales se muestran por moneda.",
     "confirmDescription": "Revise las transacciones seleccionadas y los totales. La conciliación es definitiva y libera la responsabilidad del empleado. No cambia los pagos ni los saldos de las facturas.",
     "confirm": "Conciliar todas las seleccionadas",
     "cancel": "Cancelar",
@@ -2004,7 +2002,7 @@
     "totalCount": "Transacciones:",
     "clearSelection": "Quitar selección",
     "reconcileSelected": "Conciliar selección",
-    "sameMethod": "Seleccione hasta 200 transacciones con el mismo método de pago y la misma cuenta de efectivo/banco. Los préstamos otorgados y los pagos pueden compartir un lote solo si afectan esa misma cuenta.",
+    "sameMethod": "Seleccione hasta 200 transacciones con el mismo método de pago. Puede incluir distintas cuentas de efectivo o banco en el mismo lote.",
     "empty": "No hay transacciones pendientes de conciliar en los cierres.",
     "emptyFiltered": "Ninguna transacción pendiente de conciliación coincide con su búsqueda.",
     "blocked": {
@@ -2012,10 +2010,8 @@
       "notOutstanding": "Esta transacción no está pendiente de conciliación.",
       "notAuthorized": "La API no ha autorizado la conciliación de esta transacción.",
       "paymentMethod": "Solo se pueden agregar transacciones de {{method}} a la selección actual.",
-      "moneyAccount": "Solo se pueden agregar transacciones de {{account}} a la selección actual.",
       "limit": "Puede conciliar hasta 200 transacciones a la vez.",
-      "noMethod": "sin método de pago",
-      "noMoneyAccount": "sin cuenta de efectivo/banco"
+      "noMethod": "sin método de pago"
     },
     "confirmTitle": "¿Conciliar las transacciones seleccionadas?",
     "confirmDescription": "Confirme que se ha verificado el dinero o la documentación. Libera la responsabilidad del encargado y conserva el historial de conciliación. No cambia la liquidación, los saldos de facturas ni los importes del cierre.",

@@ -251,7 +251,7 @@ test("bank income and expenses clear instead of auto-reconciling on creation", a
  }
 });
 
-test("batch selection locks payment method and cash/bank money account together", () => {
+test("batch selection locks payment method only; mixed money accounts stay allowed", () => {
  const {
   getJournalBatchSelectionKey,
   getJournalBatchSelectionBlockReason,
@@ -296,7 +296,9 @@ test("batch selection locks payment method and cash/bank money account together"
 
  const key = getJournalBatchSelectionKey(cashLoanIssue);
  assert.equal(getJournalBatchSelectionBlockReason(key, cashLoanPayment), null);
- assert.equal(getJournalBatchSelectionBlockReason(key, bankLoanPayment), "moneyAccount");
+ assert.equal(getJournalBatchSelectionBlockReason(key, bankLoanPayment), null);
+ assert.equal(getJournalBatchSelectionBlockReason(key, {...cashLoanPayment, sourceAccount:undefined}), null);
+ assert.equal(getJournalBatchSelectionBlockReason(getJournalBatchSelectionKey({...cashLoanIssue, sourceAccount:undefined}), cashLoanPayment), null);
  assert.equal(getJournalBatchSelectionBlockReason(key, zelleReceipt), "paymentMethod");
 });
 

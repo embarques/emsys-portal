@@ -60,7 +60,7 @@ type JournalTransactionsTableProps = {
   onPrintReceipt?: (row: DailyIncomeJournal) => void;
 };
 
-type SelectionBlockReason = JournalQueueBlockReason | "paymentMethod" | "moneyAccount" | "limit";
+type SelectionBlockReason = JournalQueueBlockReason | "paymentMethod" | "limit";
 
 export function JournalTransactionsTable(props: JournalTransactionsTableProps) {
   const {companyId,user,email,roleId} = useAuth();
@@ -149,7 +149,6 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
     const scope = clearance ? "journalClearance" : "journalReconciliation";
     const label = t(`accounting.${scope}.blocked.${reason}`, {
       method: batchKey?.paymentMethod || t(`accounting.${scope}.blocked.noMethod`),
-      account: batchKey?.moneyAccountName || t(`accounting.${scope}.blocked.noMoneyAccount`),
     });
     return <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" className="size-7 text-muted-foreground" aria-label={label}><Info className="size-4" aria-hidden="true"/></Button></TooltipTrigger><TooltipContent className="max-w-xs">{label}</TooltipContent></Tooltip>;
   }
