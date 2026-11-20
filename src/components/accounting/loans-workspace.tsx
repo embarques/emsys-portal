@@ -24,6 +24,10 @@ import { TableSelectionToolbar } from "@/components/app-shell/table-selection-to
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import type { LoanRecordAction } from "@/components/accounting/loan-record-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -160,6 +164,7 @@ export function LoansWorkspace() {
   const { notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<LoanFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [viewLoan, setViewLoan] = useState<Loan | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -258,6 +263,8 @@ export function LoansWorkspace() {
       icon: FileText,
     },
   ];
+
+  const insightMetrics = stats;
 
   const tableColumns: DataTableColumn<Loan>[] = useMemo(
     () => [
@@ -416,15 +423,23 @@ export function LoansWorkspace() {
 
         <StatCards items={stats} />
 
-        <Card className="mt-6 gap-0">
+        <DirectoryInsightsFlip
+          open={insightsOpen}
+          onOpenChange={setInsightsOpen}
+          metrics={insightMetrics}
+          title={t("accounting.loans.page.title")}
+          className="mt-6"
+        >
+        <Card className="gap-0">
           <CardHeader className="gap-3 border-b py-4 pb-3">
             <TableDirectoryToolbar
-              isLoading={loansQuery.isFetching || filters.query.trim() !== debouncedQuery.trim()}
               filtersOpen={filtersOpen}
               onFiltersOpenChange={setFiltersOpen}
               activeFilterCount={activeFilterCount}
               columnLayout={columnVisibility}
-
+              actions={
+                <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+              }
               search={
                 <TableSearchInput
                   value={filters.query}
@@ -558,6 +573,7 @@ export function LoansWorkspace() {
             </div>
           </div>
         </Card>
+        </DirectoryInsightsFlip>
       </div>
 
       <div className="space-y-5 md:hidden">

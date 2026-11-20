@@ -18,6 +18,10 @@ import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-butto
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { VEHICLE_API_TABLE_FIELDS } from "@/lib/vehicles/table-fields";
@@ -95,6 +99,7 @@ export function VehiclesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<VehicleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -162,6 +167,8 @@ export function VehiclesWorkspace() {
       icon: Fuel,
     },
   ];
+
+  const insightMetrics = statCards;
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -404,14 +411,23 @@ export function VehiclesWorkspace() {
         className="mt-6"
       />
 
-      <Card className="mt-6 gap-0">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("vehicles.title")}
+        className="mt-6"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -517,6 +533,7 @@ export function VehiclesWorkspace() {
           />
         </div>
       </Card>
+      </DirectoryInsightsFlip>
 
       <VehicleViewSheet
         vehicle={viewVehicle}

@@ -16,6 +16,10 @@ import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-butto
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { BRANCH_API_TABLE_FIELDS } from "@/lib/branches/table-fields";
@@ -93,6 +97,7 @@ export function BranchesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<BranchFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -336,6 +341,15 @@ export function BranchesWorkspace() {
     t,
   );
 
+  const insightMetrics = [
+    {
+      label: t("branches.stats.total.label"),
+      value: stats.isLoading ? "…" : stats.total.toString(),
+      description: t("branches.stats.total.description"),
+      icon: Building2,
+    },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -362,14 +376,23 @@ export function BranchesWorkspace() {
         ]}
       />
 
-      <Card className="mt-6 gap-0">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("branches.title")}
+        className="mt-6"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -486,6 +509,7 @@ export function BranchesWorkspace() {
           />
         </div>
       </Card>
+      </DirectoryInsightsFlip>
 
       <BranchViewSheet
         branch={viewBranch}

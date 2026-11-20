@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { Tag, Plus } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 
-import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 
 import { CatalogBulkDeleteDialog } from "@/components/app-shell/catalog-bulk-delete-dialog";
@@ -15,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -25,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { useBarcodeStatusesWorkspace } from "@/lib/barcodes/hooks/use-barcode-statuses-workspace";
 import { fetchBarcodeStatusesPage } from "@/lib/barcodes/api/barcode-statuses-api";
 import { BARCODE_STATUS_TABLE_FILTER_FIELDS } from "@/lib/barcodes/barcode-status-filter-fields";
-import type { BarcodeStatusOption } from "@/lib/labels/types";
+import { isProtectedBarcodeStatusId, type BarcodeStatusOption } from "@/lib/labels/types";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogBulkDelete } from "@/lib/table/hooks/use-catalog-bulk-delete";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
@@ -33,6 +35,8 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { CatalogDataTable, CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
 
 const statusRowId = (status: BarcodeStatusOption) => String(status.id);
+const isProtectedBarcodeStatus = (status: BarcodeStatusOption) =>
+  isProtectedBarcodeStatusId(status.id);
 
 export function BarcodeStatusesWorkspace() {
   const handleEnterNavigation = useFormEnterNavigation();
@@ -91,9 +95,17 @@ export function BarcodeStatusesWorkspace() {
           pageRowIds={table.selection.pageRowIds}
           totalCount={table.total}
           onSelectedIdsChange={table.selection.setSelectedIds}
-          deleteDisabled={isDeleting || bulkDelete.isPending}
-          onEdit={() => { if (selectedRows[0]) openEdit(selectedRows[0]); }}
-          onDelete={() => bulkDelete.request(selectedRows)}
+          deleteDisabled={
+            isDeleting ||
+            bulkDelete.isPending ||
+            selectedRows.every(isProtectedBarcodeStatus)
+          }
+          onEdit={() => {
+            if (selectedRows[0]) openEdit(selectedRows[0]);
+          }}
+          onDelete={() =>
+            bulkDelete.request(selectedRows.filter((row) => !isProtectedBarcodeStatus(row)))
+          }
         />
         <CatalogDataTable
           state={table}
@@ -107,8 +119,8 @@ export function BarcodeStatusesWorkspace() {
             <DirectoryTableRowActions
               row={status}
               onEdit={openEdit}
-              onDelete={(row) => void remove(row)}
-              deleteDisabled={isDeleting}
+              onDelete={isProtectedBarcodeStatus(status) ? undefined : (row) => void remove(row)}
+              deleteDisabled={isDeleting || isProtectedBarcodeStatus(status)}
             />
           )}
         />
@@ -117,14 +129,12 @@ export function BarcodeStatusesWorkspace() {
       <CatalogBulkDeleteDialog state={bulkDelete} entity={t("barcodeStatuses.entity")} entities={t("barcodeStatuses.entities")} getName={(status) => status.name} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
+        <CompactActionDialogContent className="sm:max-w-lg">
+          <DialogHeader>
             <DialogTitle>{editing ? t("barcodeStatuses.form.editTitle") : t("barcodeStatuses.form.addTitle")}</DialogTitle>
             <DialogDescription>{t("barcodeStatuses.form.description")}</DialogDescription>
           </DialogHeader>
-          <form id="barcode-status-form" onSubmit={save} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-            <FormBody workflow isBusy={isSaving}>
-              <FormSection variant="card" icon={Tag} title={t("barcodeStatuses.form.details")}>
+          <form id="barcode-status-form" onSubmit={save} onKeyDown={handleEnterNavigation} className="space-y-4">
             <div className="space-y-1">
               <Label htmlFor="barcode-status-name">{t("barcodeStatuses.fields.name")} <span className="text-destructive">*</span></Label>
               <Input
@@ -143,11 +153,16 @@ export function BarcodeStatusesWorkspace() {
               />
             </div>
             {form.formState.errors.name ? <p className="text-sm text-destructive">{t("barcodeStatuses.validation.nameRequired")}</p> : null}
-              </FormSection>
-            </FormBody>
-            <FormFooter error={error} submitLabel={t("common.actions.save")} isSubmitting={isSaving} onCancel={() => setDialogOpen(false)} />
+            <CompactActionDialogFooter
+              error={error}
+              submitLabel={t("common.actions.save")}
+              submitType="submit"
+              submitIcon={<Save className="h-4 w-4" />}
+              isSubmitting={isSaving}
+              onCancel={() => setDialogOpen(false)}
+            />
           </form>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
     </div>
   );

@@ -71,32 +71,33 @@
   "unknownContainer": "Contenedor desconocido",
   "updater": {
     "options": {
-      "title": "Opciones de actualización",
-      "description": "Seleccione uno o más campos para aplicar en cada escaneo de código de barras.",
-      "changeStatus": "Cambiar estado",
-      "newStatus": "Nuevo estado",
-      "changeContainer": "Cambiar contenedor",
-      "newContainer": "Nuevo contenedor",
-      "changeRoute": "Cambiar ruta",
-      "newRoute": "Nueva ruta",
-      "barcodeLabel": "Código de barras (presione Enter)",
-      "barcodePlaceholder": "Escanee o escriba el código de barras...",
-      "barcodeHint": "El campo se borra automáticamente después de cada actualización para escanear la siguiente etiqueta.",
-      "bulkLabel": "Múltiples códigos de barras (separados por coma o nueva línea)",
-      "bulkPlaceholder": "LBL-..., LBL-...",
+      "title": "Actualizar códigos de barras",
+      "instruction": "Seleccione uno o más campos para aplicar en cada escaneo de código de barras.",
+      "newStatus": "Estado",
+      "newContainer": "Contenedor",
+      "newRoute": "Ruta de entrega",
+      "statusPlaceholder": "Seleccione un estado para actualizar…",
+      "containerPlaceholder": "Seleccione un contenedor para actualizar…",
+      "routePlaceholder": "Seleccione una ruta de entrega para actualizar…",
+      "barcodeLabel": "Código de barras",
+      "barcodePlaceholder": "Escanee o pegue códigos de barras…",
+      "barcodeHint": "Presione Enter para aplicar. Para varias etiquetas, sepárelas con comas. El campo se borra después de cada actualización para escanear la siguiente.",
       "apply": "Aplicar",
-      "applyAll": "Aplicar todos los códigos",
       "applying": "Aplicando…"
     },
     "search": {
       "statuses": "Buscar estados…",
       "containers": "Buscar contenedores…",
-      "routes": "Buscar rutas…"
+      "routes": "Buscar rutas de entrega…"
     },
     "results": {
-      "title": "Cambios de códigos de barras",
+      "title": "Resultados de cambio de códigos",
       "description": "Los mensajes verdes tuvieron éxito; los rojos fallaron. Solo se completan los campos modificados por fila.",
-      "empty": "Escanee un código de barras para ver los resultados aquí."
+      "empty": "Escanee un código de barras para ver los resultados aquí.",
+      "disabledHint": "Aplique una actualización de código de barras para abrir los resultados."
+    },
+    "panels": {
+      "ariaLabel": "Paneles del escáner de códigos de barras"
     },
     "columns": {
       "barcode": "Código de barras",
@@ -114,10 +115,10 @@
     },
     "errors": {
       "barcodeRequired": "El código de barras es obligatorio.",
-      "selectAtLeastOne": "Seleccione al menos un campo para actualizar (estado, contenedor o ruta).",
+      "selectAtLeastOne": "Seleccione al menos un campo para actualizar (estado, contenedor o ruta de entrega).",
       "selectNewStatus": "Seleccione un nuevo estado.",
       "selectNewContainer": "Seleccione un nuevo contenedor.",
-      "selectNewRoute": "Seleccione una nueva ruta.",
+      "selectNewRoute": "Seleccione una nueva ruta de entrega.",
       "notFound": "No se encontró código de barras para \"{{barcode}}\".",
       "noChanges": "Ya está actualizado: los valores seleccionados coinciden con la etiqueta actual."
     },

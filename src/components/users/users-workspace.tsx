@@ -20,6 +20,10 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
@@ -100,6 +104,7 @@ export function UsersWorkspace() {
   const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -283,6 +288,8 @@ export function UsersWorkspace() {
       icon: Shield,
     },
   ];
+
+  const insightMetrics = statCards;
 
   const dash = t("common.empty.dash");
 
@@ -477,14 +484,23 @@ export function UsersWorkspace() {
         onAddUser={openAddForm}
       />
 
-      <Card className="mt-6 hidden gap-0 md:flex">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("users.title")}
+        className="mt-6 hidden md:block"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -567,6 +583,7 @@ export function UsersWorkspace() {
           />
         </div>
       </Card>
+      </DirectoryInsightsFlip>
 
       <UserViewSheet
         user={viewUser}

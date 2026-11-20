@@ -7,12 +7,14 @@ import { useMemo } from "react";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -71,18 +73,18 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl gap-6 p-6 sm:p-8">
+      <CompactActionDialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-2xl">
-            <KeyRound className="size-6" />
+          <DialogTitle className="flex items-center gap-3">
+            <KeyRound className="size-5" />
             {t("settings.password.title")}
           </DialogTitle>
-          <DialogDescription className="text-base">
+          <DialogDescription>
             {t("settings.password.description")}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(submit)} className="space-y-5">
+        <form onSubmit={handleSubmit(submit)} className="space-y-4">
           <PasswordField
             id="new-password"
             label={t("settings.password.fields.new")}
@@ -100,13 +102,14 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
               {errors.root.message}
             </p>
           ) : null}
-          <DialogFooter>
+          <CompactActionDialogFooter>
             <Button type="submit" disabled={isSubmitting}>
+              <KeyRound className="h-4 w-4" />
               {isSubmitting ? t("settings.password.actions.changing") : t("settings.password.actions.submit")}
             </Button>
-          </DialogFooter>
+          </CompactActionDialogFooter>
         </form>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

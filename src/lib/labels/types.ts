@@ -175,6 +175,16 @@ export const FALLBACK_BARCODE_STATUS_OPTIONS: BarcodeStatusOption[] = [
   { id: 8, name: "SUBASTADO" },
 ];
 
+/**
+ * Core delivery-workflow status ids the API refuses to delete
+ * (`DEV-RD` / returned, `CONDUCE`, `ENTREGADO`).
+ */
+export const PROTECTED_BARCODE_STATUS_IDS = new Set([5, 6, 7]);
+
+export function isProtectedBarcodeStatusId(id: number): boolean {
+  return PROTECTED_BARCODE_STATUS_IDS.has(id);
+}
+
 /** Resolve a write payload status ref from stored ids/names on a label snapshot. */
 export function resolveBarcodeStatusRef(
   statusId: number | undefined,

@@ -3,9 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DailyIncomeStatementForm } from "./daily-income-statement-form";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useCloseoutCalendar, useCreateIncomeStatement } from "@/lib/accounting/daily-income/hooks";
 import type { DailyIncomeStatement, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -123,7 +127,7 @@ export function CloseoutRolloverDialog({ open, onOpenChange, onReady }: Props) {
 
   return (
     <Dialog open={showDialog} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <CompactActionDialogContent>
         <DialogHeader>
           <DialogTitle>{t("accounting.dailyIncome.statement.createTitle")}</DialogTitle>
           <DialogDescription>
@@ -137,11 +141,11 @@ export function CloseoutRolloverDialog({ open, onOpenChange, onReady }: Props) {
         {prerequisiteError ? (
           <div className="space-y-4">
             <FormFooterNoticeMessage tone="error" message={prerequisiteError} />
-            <div className="flex justify-end">
+            <CompactActionDialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 {t("common.actions.cancel")}
               </Button>
-            </div>
+            </CompactActionDialogFooter>
           </div>
         ) : loadingPrerequisites || !prerequisitesReady ? (
           <p role="status">{t("common.loading")}</p>
@@ -159,7 +163,7 @@ export function CloseoutRolloverDialog({ open, onOpenChange, onReady }: Props) {
         ) : (
           <div className="space-y-4">
             {error ? <FormFooterNoticeMessage tone="error" message={error} /> : null}
-            <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-2 border-t bg-background py-4 sm:flex sm:justify-end">
+            <CompactActionDialogFooter>
               <Button type="button" variant="outline" className="min-w-0" onClick={() => onOpenChange(false)} disabled={create.isPending}>
                 {t("common.actions.cancel")}
               </Button>
@@ -176,10 +180,10 @@ export function CloseoutRolloverDialog({ open, onOpenChange, onReady }: Props) {
                   {create.isPending ? t("common.actions.saving") : t("accounting.dailyIncome.statement.save")}
                 </Button>
               ) : null}
-            </div>
+            </CompactActionDialogFooter>
           </div>
         )}
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

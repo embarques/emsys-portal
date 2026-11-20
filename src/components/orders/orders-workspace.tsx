@@ -52,6 +52,10 @@ import {
 import { PageHeader } from "@/components/app-shell/page-header";
 import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
 import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { NewAppointmentsStatCard } from "@/components/orders/new-appointments-stat-card";
 
 import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
@@ -112,6 +116,7 @@ import {
   useClearOrdersRouteAssignments,
   useCreateOrder,
   useDeleteOrders,
+  useNewOrderStats,
   useOrderStats,
   useOrders,
   useRetryOrderLegacySync,
@@ -129,6 +134,7 @@ import {
   type OrderFormValues,
   areOrderFormValuesEquivalent,
 } from "@/lib/orders/types";
+import { DEFAULT_NEW_ORDER_STAT_PERIOD } from "@/lib/orders/new-order-stats";
 import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
 import { buildPickupRouteFilterRows } from "@/lib/orders/pickup-route-filter";
 import { PREDEFINED_ROUTE_FILTER_FIELD } from "@/lib/orders/predefined-route-filter";
@@ -362,6 +368,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const { loading: authLoading, companyId, hasPermission } = useAuth();
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
@@ -403,6 +410,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   });
 
   const stats = useOrderStats({ enabled: !routeMode });
+  const newOrderStats = useNewOrderStats(DEFAULT_NEW_ORDER_STAT_PERIOD);
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
@@ -922,6 +930,35 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     },
   ];
 
+  const insightMetrics = useMemo(() => {
+    if (routeMode) return [];
+    return [
+      {
+        label: t("orders.stats.new.label"),
+        value: newOrderStats.isLoading
+          ? "…"
+          : newOrderStats.isError
+            ? "—"
+            : newOrderStats.total.toLocaleString(),
+        description: t(`orders.stats.new.periods.${DEFAULT_NEW_ORDER_STAT_PERIOD}`),
+        icon: Plus,
+      },
+      ...statCards.map((stat) => ({
+        label: stat.label,
+        value: stats.isLoading ? "…" : stat.value,
+        icon: stat.icon,
+      })),
+    ];
+  }, [
+    newOrderStats.isError,
+    newOrderStats.isLoading,
+    newOrderStats.total,
+    routeMode,
+    statCards,
+    stats.isLoading,
+    t,
+  ]);
+
   const tableColumns: DataTableColumn<Order>[] = useMemo(
     () => [
     {
@@ -1389,14 +1426,25 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             />
           ))}
         </StatCardsCarousel> : null}
-        <Card className="mt-6 gap-0">
+        <DirectoryInsightsFlip
+          open={insightsOpen}
+          onOpenChange={setInsightsOpen}
+          metrics={insightMetrics}
+          title={t("orders.title")}
+          className="mt-6"
+        >
+        <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              !routeMode ? (
+                <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+              ) : undefined
+            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -1548,6 +1596,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         </div>
         ) : null}
         </Card>
+        </DirectoryInsightsFlip>
       </div>
 
       <OrderViewSheet

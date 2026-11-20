@@ -565,32 +565,54 @@ export function OrderCommentsEditor({
               </div>
         ) : null}
           {requiresItem && current.itemType && current.itemType !== "other" ? (
-            <div className="min-w-0 space-y-1.5">
-              <label htmlFor={`quick-comment-quantity-${currentIndex}`} className="text-sm font-medium">{t("orders.comments.columns.quantity")}</label>
-              <Input {...wizardInputFieldProps(current.quantity)} id={`quick-comment-quantity-${currentIndex}`} type="number" min="1" value={current.quantity}
-                onFocus={highlightQuantityField}
-                onChange={(event) => updateComment(currentIndex, { quantity: event.target.value })}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    if (isImeComposing(event)) return;
-                    if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
-                  }
-                }} />
+            <div className="flex min-w-0 items-end gap-2">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <label htmlFor={`quick-comment-quantity-${currentIndex}`} className="text-sm font-medium">{t("orders.comments.columns.quantity")}</label>
+                <Input {...wizardInputFieldProps(current.quantity)} id={`quick-comment-quantity-${currentIndex}`} type="number" min="1" value={current.quantity}
+                  onFocus={highlightQuantityField}
+                  onChange={(event) => updateComment(currentIndex, { quantity: event.target.value })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (isImeComposing(event)) return;
+                      if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
+                    }
+                  }} />
+              </div>
+              <Button
+                type="button"
+                className="h-9 shrink-0"
+                disabled={!isOrderCommentComplete(current)}
+                onClick={() => finishAndAddAnother(currentIndex)}
+              >
+                <Plus className="size-4" />
+                {t("orders.comments.savePurpose")}
+              </Button>
             </div>
           ) : current.purpose && (!requiresItem || current.itemType === "other") ? (
-            <div className="min-w-0 space-y-1.5">
-              <label htmlFor={`quick-comment-note-${currentIndex}`} className="text-sm font-medium">{t("orders.comments.columns.comment")}</label>
-              <Input {...wizardInputFieldProps(current[noteField])} id={`quick-comment-note-${currentIndex}`} value={current[noteField]}
-                placeholder={t(noteField === "customItem" ? "orders.comments.placeholders.customItem" : "orders.comments.placeholders.note")}
-                onChange={(event) => updateComment(currentIndex, { [noteField]: event.target.value })}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    if (isImeComposing(event)) return;
-                    if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
-                  }
-                }} />
+            <div className="flex min-w-0 items-end gap-2">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <label htmlFor={`quick-comment-note-${currentIndex}`} className="text-sm font-medium">{t("orders.comments.columns.comment")}</label>
+                <Input {...wizardInputFieldProps(current[noteField])} id={`quick-comment-note-${currentIndex}`} value={current[noteField]}
+                  placeholder={t(noteField === "customItem" ? "orders.comments.placeholders.customItem" : "orders.comments.placeholders.note")}
+                  onChange={(event) => updateComment(currentIndex, { [noteField]: event.target.value })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (isImeComposing(event)) return;
+                      if (isOrderCommentComplete(current)) finishAndAddAnother(currentIndex);
+                    }
+                  }} />
+              </div>
+              <Button
+                type="button"
+                className="h-9 shrink-0"
+                disabled={!isOrderCommentComplete(current)}
+                onClick={() => finishAndAddAnother(currentIndex)}
+              >
+                <Plus className="size-4" />
+                {t("orders.comments.savePurpose")}
+              </Button>
             </div>
           ) : null}
       </div>

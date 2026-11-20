@@ -17,6 +17,10 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
@@ -116,6 +120,7 @@ export function InventoryItemsWorkspace() {
 
   const [filterRows, setFilterRows] = useState<TableFilterRowState[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const filterFields = useLocalizedFilterFields(
     INVENTORY_ITEM_TABLE_FILTER_FIELDS,
     "inventory.filters.items.fields",
@@ -247,6 +252,8 @@ export function InventoryItemsWorkspace() {
     },
   ];
 
+  const insightMetrics = stats;
+
   const tableColumns: DataTableColumn<InventoryItem>[] = [
     { id: "item", label: t("inventory.columns.item"), sortField: "name", cellClassName: "font-medium", renderCell: (item) => item.name },
     { id: "sku", label: t("inventory.columns.sku"), renderCell: (item) => item.sku || dash },
@@ -375,12 +382,22 @@ export function InventoryItemsWorkspace() {
 
       {listErrorMessage ? <p className="mt-4 text-sm text-destructive md:hidden">{listErrorMessage}</p> : null}
 
-      <Card className="mt-6 hidden gap-0 md:flex">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("inventory.submenus.items")}
+        className="mt-6 hidden md:block"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             filterPanel={
               <TableAdvancedFilterPanel isLoading={directoryQuery.isFetching || isSearchPending}
                 presetScope="inventory-items"
@@ -494,6 +511,7 @@ export function InventoryItemsWorkspace() {
           </div>
         ) : null}
       </Card>
+      </DirectoryInsightsFlip>
 
       <InventoryViewSheet
         item={viewItem}

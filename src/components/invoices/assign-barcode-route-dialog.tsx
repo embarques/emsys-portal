@@ -4,13 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Route as RouteIcon } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -164,10 +166,7 @@ export function AssignBarcodeRouteDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="z-[70] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:p-4"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
+      <CompactActionDialogContent>
         <DialogHeader>
           <DialogTitle>{t("labels.staging.routeDialog.title")}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -236,7 +235,7 @@ export function AssignBarcodeRouteDialog({
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </div>
 
-        <DialogFooter className="max-md:grid max-md:grid-cols-2">
+        <CompactActionDialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>
             {t("common.actions.cancel")}
           </Button>
@@ -244,8 +243,8 @@ export function AssignBarcodeRouteDialog({
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <RouteIcon className="h-4 w-4" />}
             {t(isSaving ? "labels.staging.routeDialog.assigning" : "labels.staging.routeDialog.assign")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </CompactActionDialogFooter>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

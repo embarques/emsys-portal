@@ -262,7 +262,7 @@ export function InventorySuppliersWorkspace() {
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={directoryQuery.isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
