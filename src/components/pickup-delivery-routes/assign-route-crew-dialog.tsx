@@ -6,13 +6,15 @@ import { Route as RouteIcon } from "lucide-react";
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
 import { RouteCrewsButton } from "@/components/route-manager/route-crews-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -366,10 +368,7 @@ export function AssignRouteCrewDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="z-[70] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:p-4"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
+      <CompactActionDialogContent>
         <DialogHeader>
           <DialogTitle>
             {isDelivery
@@ -465,7 +464,7 @@ export function AssignRouteCrewDialog({
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </div>
 
-        <DialogFooter className="max-md:grid max-md:grid-cols-2">
+        <CompactActionDialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>
             {t("common.actions.cancel")}
           </Button>
@@ -475,8 +474,8 @@ export function AssignRouteCrewDialog({
               ? t("labels.staging.routeDialog.assign")
               : t("orders.actions.assignRoute")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </CompactActionDialogFooter>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

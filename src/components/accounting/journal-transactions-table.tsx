@@ -217,7 +217,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       <CardTitle>{isQueue ? text("title") : t("accounting.dailyIncome.transactions.title")}</CardTitle>
       {headerActions}
     </div>
-    <TableDirectoryToolbar isLoading={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} columnLayout={layout}
+    <TableDirectoryToolbar columnLayout={layout}
       filtersOpen={filtersOpen} onFiltersOpenChange={setFiltersOpen}
       activeFilterCount={activeFilterCount}
       filterPanel={<TableAdvancedFilterPanel isLoading={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} presetScope={clearance ? "pending-clearance" : pending ? "pending-journals" : "daily-income-journals"} open={filtersOpen} rows={filterRows} fields={fields} resultSummary={listSummary} onRowsChange={resetFilters} onClearAll={() => resetFilters([])}/>}

@@ -6,8 +6,6 @@ import { useMemo, useState } from "react";
 import {
   FilePenLine,
   Info,
-  MapPin,
-  Phone as PhoneIcon,
   Printer,
   Receipt,
   Send,
@@ -111,46 +109,38 @@ function PartySection({
   if (!name && !documentId && !email && phones.length === 0 && !address) return null;
 
   return (
-    <>
-      <RecordViewSheetSection title={title} icon={icon}>
-        <RecordViewSheetDetailRow
-          label={t("invoices.view.fields.name")}
-          value={name || dash}
-        />
-        <RecordViewSheetDetailRow
-          label={t("invoices.view.fields.documentId")}
-          value={documentId || dash}
-        />
-        <RecordViewSheetDetailRow
-          label={t("invoices.view.fields.email")}
-          value={email || dash}
-        />
-      </RecordViewSheetSection>
-
-      <RecordViewSheetSection title={t("invoices.view.fields.phones")} icon={PhoneIcon}>
-        {phones.length === 0 ? (
-          <RecordViewSheetDetailRow label={t("invoices.view.fields.phones")} value={dash} />
-        ) : (
-          phones.map((phone, index) => (
-            <PhoneActionRow
-              key={`${title}-phone-${index}`}
-              label={phone.label?.trim() || t("phones.types.other")}
-              number={phone.number}
-              displayNumber={phone.displayNumber}
-              isPrimary={Boolean(phone.isPrimary)}
-            />
-          ))
-        )}
-      </RecordViewSheetSection>
-
-      <RecordViewSheetSection title={t("invoices.view.fields.address")} icon={MapPin}>
-        {address ? (
-          <AddressActionRow label="" address={address} isPrimary={address.isPrimary} />
-        ) : (
-          <RecordViewSheetDetailRow label={t("invoices.view.fields.address")} value={dash} />
-        )}
-      </RecordViewSheetSection>
-    </>
+    <RecordViewSheetSection title={title} icon={icon}>
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.name")}
+        value={name || dash}
+      />
+      {address ? (
+        <AddressActionRow label={t("invoices.view.fields.address")} address={address} />
+      ) : (
+        <RecordViewSheetDetailRow label={t("invoices.view.fields.address")} value={dash} />
+      )}
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.documentId")}
+        value={documentId || dash}
+      />
+      <RecordViewSheetDetailRow
+        label={t("invoices.view.fields.email")}
+        value={email || dash}
+      />
+      {phones.length === 0 ? (
+        <RecordViewSheetDetailRow label={t("invoices.view.fields.phones")} value={dash} />
+      ) : (
+        phones.map((phone, index) => (
+          <PhoneActionRow
+            key={`${title}-phone-${index}`}
+            label={phone.label?.trim() || t("phones.types.other")}
+            number={phone.number}
+            displayNumber={phone.displayNumber}
+            isPrimary={Boolean(phone.isPrimary)}
+          />
+        ))
+      )}
+    </RecordViewSheetSection>
   );
 }
 

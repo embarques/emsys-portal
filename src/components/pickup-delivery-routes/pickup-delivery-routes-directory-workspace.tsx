@@ -398,7 +398,7 @@ export function ActiveRoutesDirectoryWorkspace({
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={activeRoutesQuery.isFetching || activeRouteFilters.query.trim() !== debouncedActiveRouteQuery.trim()}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={advancedFilterCount}

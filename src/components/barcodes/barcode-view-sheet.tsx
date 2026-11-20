@@ -50,7 +50,6 @@ type BarcodeViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   actionsDisabled?: boolean;
   canDeliver?: boolean;
-  canPrintInvoice?: boolean;
   canPrint?: boolean;
   canOpenInvoice?: boolean;
   canChangeStatus?: boolean;
@@ -59,7 +58,6 @@ type BarcodeViewSheetProps = {
   canEdit?: boolean;
   canDelete?: boolean;
   deliverDisabled?: boolean;
-  printInvoiceDisabled?: boolean;
   printDisabled?: boolean;
   isPrinting?: boolean;
   openInvoiceDisabled?: boolean;
@@ -69,7 +67,6 @@ type BarcodeViewSheetProps = {
   editDisabled?: boolean;
   deleteDisabled?: boolean;
   onDeliver?: (barcode: Barcode) => void;
-  onPrintInvoice?: (barcode: Barcode) => void;
   onPrint?: (barcode: Barcode) => void;
   onOpenInvoice?: (barcode: Barcode) => void;
   onChangeStatus?: (barcode: Barcode) => void;
@@ -85,7 +82,6 @@ export function BarcodeViewSheet({
   onOpenChange,
   actionsDisabled = false,
   canDeliver = false,
-  canPrintInvoice = false,
   canPrint = false,
   canOpenInvoice = false,
   canChangeStatus = false,
@@ -94,7 +90,6 @@ export function BarcodeViewSheet({
   canEdit = false,
   canDelete = false,
   deliverDisabled = false,
-  printInvoiceDisabled = false,
   printDisabled = false,
   isPrinting = false,
   openInvoiceDisabled = false,
@@ -104,7 +99,6 @@ export function BarcodeViewSheet({
   editDisabled = false,
   deleteDisabled = false,
   onDeliver,
-  onPrintInvoice,
   onPrint,
   onOpenInvoice,
   onChangeStatus,
@@ -126,7 +120,6 @@ export function BarcodeViewSheet({
   const showChangeStatus = Boolean(canChangeStatus && onChangeStatus);
   const showTransferContainer = Boolean(canTransferContainer && onTransferContainer);
   const showAssignRoute = Boolean(canAssignRoute && onAssignRoute);
-  const showPrintInvoice = Boolean(canPrintInvoice && onPrintInvoice);
   const showPrint = Boolean(canPrint && onPrint);
   const showSecondaryActionsMenu =
     showDeliver ||
@@ -136,8 +129,7 @@ export function BarcodeViewSheet({
     showAssignRoute ||
     allowRequestChange;
   const showRecordActions = (canEdit && onEdit) || (canDelete && onDelete);
-  const showFooter =
-    showPrintInvoice || showPrint || showSecondaryActionsMenu || showRecordActions;
+  const showFooter = showPrint || showSecondaryActionsMenu || showRecordActions;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -146,13 +138,6 @@ export function BarcodeViewSheet({
           icon={ScanBarcode}
           eyebrow={t("barcodes.entity")}
           title={barcode.number}
-          meta={
-            statusName ? (
-              <Badge variant="outline" className={getBarcodeStatusBadgeClass(statusName)}>
-                {formatBarcodeStatus(barcode.status, t)}
-              </Badge>
-            ) : null
-          }
         />
 
         <RecordViewSheetBody>
@@ -162,16 +147,30 @@ export function BarcodeViewSheet({
               value={formatBarcodeId(barcode.id)}
             />
             <RecordViewSheetDetailRow
+              label={t("barcodes.columns.status")}
+              value={
+                statusName ? (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "whitespace-nowrap rounded-full px-2.5 py-1",
+                      getBarcodeStatusBadgeClass(statusName),
+                    )}
+                  >
+                    {formatBarcodeStatus(barcode.status, t)}
+                  </Badge>
+                ) : (
+                  dash
+                )
+              }
+            />
+            <RecordViewSheetDetailRow
               label={t("barcodes.columns.invoice")}
               value={barcode.invoiceNumber?.trim() || dash}
             />
             <RecordViewSheetDetailRow
               label={t("barcodes.columns.description")}
               value={barcode.description?.trim() || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("barcodes.columns.status")}
-              value={formatBarcodeStatus(barcode.status, t)}
             />
             <RecordViewSheetDetailRow
               label={t("barcodes.columns.container")}
@@ -294,19 +293,6 @@ export function BarcodeViewSheet({
                     </DropdownMenuItem>
                   ) : null}
                 </TableSelectionActionsMenu>
-                {showPrintInvoice ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={actionsDisabled || printInvoiceDisabled}
-                    onClick={() => onPrintInvoice?.(barcode)}
-                  >
-                    <Printer className="size-4" />
-                    {t("invoices.printSignatures.action")}
-                  </Button>
-                ) : null}
                 {showPrint ? (
                   <Button
                     type="button"

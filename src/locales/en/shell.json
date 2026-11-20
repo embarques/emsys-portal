@@ -162,6 +162,16 @@
     "detailsTitle": "{{label}} details",
     "backToSummary": "Back to {{label}} summary"
   },
+  "directoryInsights": {
+    "show": "Insights",
+    "back": "Back to table",
+    "eyebrow": "Insights",
+    "title": "Directory insights",
+    "titleNamed": "{{title}} insights",
+    "description": "The same summary metrics, laid out for a quick visual read.",
+    "empty": "No summary metrics are available yet.",
+    "relativeShare": "{{label}} relative scale {{percent}}%"
+  },
   "accessDenied": {
     "title": "Access denied",
     "description": "You do not have permission to view this page."

@@ -8,9 +8,9 @@
  */
 
 export const tableSelectionActionStyles = {
-  /** Overflow "Actions" menu trigger. */
+  /** Overflow "Actions" menu trigger — violet so it doesn’t read like Print (sky). */
   actions:
-    "border-primary/35 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary",
+    "border-violet-500/45 bg-violet-500/10 text-violet-700 hover:bg-violet-500/15 hover:text-violet-700 dark:text-violet-300 dark:hover:text-violet-300",
   /** Read-only / open detail / view route / open invoice. */
   view: "border-teal-500/30 bg-teal-500/5 text-teal-700 hover:bg-teal-500/10 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-300",
   /** Open edit form. */
@@ -61,7 +61,7 @@ export const tableSelectionActionStyles = {
 
 /** Text-only tints for dropdown / menu items that mirror the outline button colors. */
 export const tableSelectionActionMenuStyles = {
-  actions: "text-primary focus:text-primary",
+  actions: "text-violet-700 focus:text-violet-700 dark:text-violet-300 dark:focus:text-violet-300",
   view: "text-teal-700 focus:text-teal-700 dark:text-teal-300 dark:focus:text-teal-300",
   edit: "text-blue-700 focus:text-blue-700 dark:text-blue-300 dark:focus:text-blue-300",
   request: "text-violet-700 focus:text-violet-700 dark:text-violet-300 dark:focus:text-violet-300",

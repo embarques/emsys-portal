@@ -140,18 +140,55 @@ test("appointment steps validate sender, then receivers, then date and purpose",
   assert.equal(getAppointmentStepError({ ...values, date: "" }, 3, false), "orders.form.validation.pickupDateRequired");
 });
 
-test("skipping receivers permits saving without them and leaves original selections intact", () => {
+test("empty or incomplete receiver templates are ignored so save can continue", () => {
   const { values, types } = fixture();
-  const { getAppointmentStepError, canSelectAppointmentStep } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");
+  const {
+    getAppointmentStepError,
+    canSelectAppointmentStep,
+    getCompleteAppointmentReceivers,
+  } = loadFeature("src/lib/orders/utils/appointment-form-steps.ts");
   const comments = [{ ...types.createEmptyOrderComment(), purpose: "PAYMENT" }];
-  const draft = { ...values, receivers: [{ key: "empty", customer: null, addressIndex: 0 }], comments };
+  const incompleteAddress = {
+    key: "partial",
+    customer: values.receivers[0].customer,
+    addressIndex: -1,
+  };
+  const draft = {
+    ...values,
+    receivers: [
+      { key: "empty", customer: null, addressIndex: 0 },
+      incompleteAddress,
+      values.receivers[0],
+    ],
+    comments,
+  };
   assert.equal(getAppointmentStepError(draft, 1, false), null);
-  assert.equal(getAppointmentStepError(draft, 2, false), "orders.form.validation.receiverRequired");
-  assert.equal(canSelectAppointmentStep(draft, 3, false), false);
-  assert.equal(canSelectAppointmentStep({ ...draft, receivers: [] }, 3, false), true);
+  assert.equal(getAppointmentStepError(draft, 2, false), null);
+  assert.equal(canSelectAppointmentStep(draft, 3, false), true);
+  assert.deepEqual(
+    getCompleteAppointmentReceivers(draft.receivers).map((row) => row.customer.id),
+    ["receiver-a"],
+  );
   assert.equal(getAppointmentStepError({ ...draft, receivers: [] }, 3, false), null);
-  assert.equal(draft.receivers.length, 1);
+  assert.equal(draft.receivers.length, 3);
   assert.equal(canSelectAppointmentStep({ ...draft, sender: null, receivers: [] }, 3, false), false);
+});
+
+test("selecting a receiver keeps one trailing empty template ready", () => {
+  const { values } = fixture();
+  const { withTrailingEmptyAppointmentReceiver } = loadFeature(
+    "src/lib/orders/utils/appointment-form-steps.ts",
+  );
+  let keys = 0;
+  const nextKey = () => `auto-${++keys}`;
+  const filled = withTrailingEmptyAppointmentReceiver(values.receivers, nextKey);
+  assert.equal(filled.length, 3);
+  assert.equal(filled[2].customer, null);
+  assert.equal(filled[2].key, "auto-1");
+  assert.equal(withTrailingEmptyAppointmentReceiver(filled, nextKey), filled);
+  assert.deepEqual(withTrailingEmptyAppointmentReceiver([], nextKey), [
+    { key: "auto-2", customer: null, addressIndex: 0 },
+  ]);
 });
 
 test("wizard preserves duplicate receiver and comment item validation", () => {
@@ -186,6 +223,6 @@ test("appointment navigation checks preceding steps without requiring a date or 
   assert.equal(canSelectAppointmentStep(values, 2, true), false);
   const incompleteReceiver = { ...values, receivers: [{ key: "empty", customer: null, addressIndex: 0 }] };
   assert.equal(canSelectAppointmentStep(incompleteReceiver, 2, false), true);
-  assert.equal(canSelectAppointmentStep(incompleteReceiver, 3, false), false);
+  assert.equal(canSelectAppointmentStep(incompleteReceiver, 3, false), true);
   assert.equal(canSelectAppointmentStep(values, 4, false), false);
 });

@@ -28,7 +28,6 @@ export function CatalogTableToolbar<T>({ state, presetScope, searchPlaceholder, 
 
   return (
     <TableDirectoryToolbar
-      isLoading={state.isSearching}
       filtersOpen={state.open}
       onFiltersOpenChange={state.setOpen}
       activeFilterCount={state.activeFilterCount}

@@ -152,20 +152,22 @@ test("take/pickup items ask only for quantity and Enter saves; the Other item as
   } finally { await page.close(); }
 });
 
-test("empty receivers show only the add action and an empty draft row blocks save until removed", async () => {
+test("empty receiver templates can be added and are ignored on save", async () => {
   const page = await fixture(1280, "appointment", { emptyReceivers: "true" });
   try {
-    assert.equal(await page.locator('[id^="receiver-"]').count(), 0);
-    assert.equal(await page.getByRole("button", { name: "Add receiver", exact: true }).count(), 1);
     await page.getByRole("button", { name: "Payment", exact: true }).click();
-    await page.getByRole("button", { name: "Add receiver", exact: true }).last().click();
-    assert.equal(await page.locator('[id^="receiver-"]').count() > 0, true);
+    await page.getByRole("switch", { name: /Skip receiver selection/i }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    assert.equal(await page.locator('[id^="receiver-"]').count(), 1);
+    await page.getByText("Receiver 1", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Add receiver", exact: true }).click();
+    assert.equal(await page.locator('[id^="receiver-"]').count(), 2);
+    await page.getByText("Receiver 2", { exact: true }).waitFor();
     const save = page.locator("[data-wizard-primary]");
-    assert.equal(await save.isDisabled(), true);
-    await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Remove receiver 1", exact: true }).click();
-    assert.equal(await page.locator('[id^="receiver-"]').count(), 0);
     assert.equal(await save.isDisabled(), false);
+    await page.getByRole("button", { name: "Save appointment", exact: true }).click();
+    const saved = JSON.parse(await page.locator("#appointment-saved").textContent());
+    assert.deepEqual(saved.receivers, []);
   } finally { await page.close(); }
 });
 

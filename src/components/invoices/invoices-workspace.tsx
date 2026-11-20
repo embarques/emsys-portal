@@ -22,6 +22,10 @@ import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
 import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -85,7 +89,9 @@ import {
   useInvoiceJournals,
   useInvoiceStats,
   useInvoices,
+  useNewInvoiceStats,
 } from "@/lib/invoices/hooks/use-invoices";
+import { DEFAULT_NEW_INVOICE_STAT_PERIOD } from "@/lib/invoices/new-invoice-stats";
 import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { useInvoiceFilterFields } from "@/lib/invoices/hooks/use-invoice-filter-fields";
@@ -394,6 +400,7 @@ export function InvoicesWorkspace() {
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
@@ -463,6 +470,7 @@ export function InvoicesWorkspace() {
 
   const { data, isLoading, isError, error, isFetching, refetch } = useInvoices(listParams);
   const invoiceStats = useInvoiceStats();
+  const newInvoiceStats = useNewInvoiceStats(DEFAULT_NEW_INVOICE_STAT_PERIOD);
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
     limit: 100,
@@ -706,6 +714,21 @@ export function InvoicesWorkspace() {
         },
       ],
     },
+  ];
+
+  const insightMetrics = [
+    {
+      label: t("invoices.stats.new.label"),
+      value: newInvoiceStats.isLoading ? "…" : newInvoiceStats.total.toLocaleString(),
+      description: t("invoices.stats.new.periods.30d"),
+      icon: FileText,
+    },
+    ...stats.map(({ label, value, description, icon }) => ({
+      label,
+      value,
+      description,
+      icon,
+    })),
   ];
 
   const tableColumns: DataTableColumn<Invoice>[] = useMemo(
@@ -1159,14 +1182,23 @@ export function InvoicesWorkspace() {
         ))}
       </StatCardsCarousel>
 
-      <Card className="mt-6 gap-0">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("invoices.title")}
+        className="mt-6"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={desktopFiltersOpen}
             onFiltersOpenChange={setDesktopFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             search={
               <div className="min-w-0 flex-1 space-y-2">
                 <TableSearchInput
@@ -1298,6 +1330,7 @@ export function InvoicesWorkspace() {
           </div>
         ) : null}
       </Card>
+      </DirectoryInsightsFlip>
       </div>
 
       {printInvoiceIds.length > 0 && <InvoicePrintSignaturesDialog invoiceIds={printInvoiceIds} onClose={() => setPrintInvoiceIds([])} />}

@@ -71,32 +71,33 @@
   "unknownContainer": "Unknown container",
   "updater": {
     "options": {
-      "title": "Update options",
-      "description": "Select one or more fields to apply on each barcode scan.",
-      "changeStatus": "Change status",
-      "newStatus": "New status",
-      "changeContainer": "Change container",
-      "newContainer": "New container",
-      "changeRoute": "Change route",
-      "newRoute": "New route",
-      "barcodeLabel": "Barcode (press Enter)",
-      "barcodePlaceholder": "Scan or type barcode...",
-      "barcodeHint": "Field clears automatically after each update so you can scan the next label.",
-      "bulkLabel": "Multiple barcodes (comma or newline separated)",
-      "bulkPlaceholder": "LBL-..., LBL-...",
+      "title": "Update barcodes",
+      "instruction": "Select one or more fields to apply on each barcode scan.",
+      "newStatus": "Status",
+      "newContainer": "Container",
+      "newRoute": "Delivery route",
+      "statusPlaceholder": "Select a status to update…",
+      "containerPlaceholder": "Select a container to update…",
+      "routePlaceholder": "Select a delivery route to update…",
+      "barcodeLabel": "Barcode",
+      "barcodePlaceholder": "Scan or paste barcodes…",
+      "barcodeHint": "Press Enter to apply. For several labels, separate them with commas. The field clears after each update so you can scan the next one.",
       "apply": "Apply",
-      "applyAll": "Apply all barcodes",
       "applying": "Applying…"
     },
     "search": {
       "statuses": "Search statuses…",
       "containers": "Search containers…",
-      "routes": "Search routes…"
+      "routes": "Search delivery routes…"
     },
     "results": {
-      "title": "Barcode Changes",
+      "title": "Barcode change results",
       "description": "Green messages succeeded; red messages failed. Only changed fields are filled per row.",
-      "empty": "Scan a barcode to see results here."
+      "empty": "Scan a barcode to see results here.",
+      "disabledHint": "Apply a barcode update to open results."
+    },
+    "panels": {
+      "ariaLabel": "Barcode scanner panels"
     },
     "columns": {
       "barcode": "Barcode",
@@ -114,10 +115,10 @@
     },
     "errors": {
       "barcodeRequired": "Barcode is required.",
-      "selectAtLeastOne": "Select at least one field to update (status, container, or route).",
+      "selectAtLeastOne": "Select at least one field to update (status, container, or delivery route).",
       "selectNewStatus": "Select a new status.",
       "selectNewContainer": "Select a new container.",
-      "selectNewRoute": "Select a new route.",
+      "selectNewRoute": "Select a new delivery route.",
       "notFound": "No barcode found for \"{{barcode}}\".",
       "noChanges": "Already up to date — selected values match the current label."
     },

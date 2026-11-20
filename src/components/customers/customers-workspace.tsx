@@ -20,6 +20,10 @@ import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-butto
 import { PageHeader } from "@/components/app-shell/page-header";
 import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
 import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { NewCustomersStatCard } from "@/components/customers/new-customers-stat-card";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
@@ -56,7 +60,15 @@ import {
   formatCustomerAuditActor,
   getClientTypeBadgeClass,
 } from "@/lib/customers/display";
-import { useCustomerStats, useCustomers, useDeleteCustomers } from "@/lib/customers/hooks/use-customers";
+import {
+  useCustomerStats,
+  useCustomers,
+  useDeleteCustomers,
+  useNewCustomerStats,
+} from "@/lib/customers/hooks/use-customers";
+import {
+  DEFAULT_NEW_CUSTOMER_STAT_PERIOD,
+} from "@/lib/customers/new-customer-stats";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -112,6 +124,7 @@ export function CustomersWorkspace() {
   );
   const [filters, setFilters] = useState<CustomerFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -151,6 +164,7 @@ export function CustomersWorkspace() {
     enabled: filtersOpen,
   });
   const stats = useCustomerStats();
+  const newCustomerStats = useNewCustomerStats(DEFAULT_NEW_CUSTOMER_STAT_PERIOD);
   const deleteCustomersMutation = useDeleteCustomers();
 
   const customers = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
@@ -273,6 +287,24 @@ export function CustomersWorkspace() {
       icon: UserCheck,
     },
   ];
+
+  const insightMetrics = useMemo(
+    () => [
+      {
+        label: t("customers.stats.new.label"),
+        value: newCustomerStats.isLoading ? "…" : newCustomerStats.total.toLocaleString(),
+        description: t(`customers.stats.new.periods.${DEFAULT_NEW_CUSTOMER_STAT_PERIOD}`),
+        icon: Users,
+      },
+      ...statCards.map((stat) => ({
+        label: stat.label,
+        value: stats.isLoading ? "…" : stat.value.toLocaleString(),
+        description: stat.description,
+        icon: stat.icon,
+      })),
+    ],
+    [newCustomerStats.isLoading, newCustomerStats.total, statCards, stats.isLoading, t],
+  );
 
   const branchFilterOptions = useMemo(() => {
     return (branchesData?.items ?? []).map((branch) => ({
@@ -544,14 +576,23 @@ export function CustomersWorkspace() {
         onDeleteSelected={() => openDeleteTarget({ mode: "bulk", ids: [...selectedIds] })}
       />
 
-      <Card className="mt-6 hidden gap-0 md:flex">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("customers.title")}
+        className="mt-6 hidden md:block"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -677,6 +718,7 @@ export function CustomersWorkspace() {
         </div>
         ) : null}
       </Card>
+      </DirectoryInsightsFlip>
 
       <CustomerViewSheet
         customer={viewCustomer}

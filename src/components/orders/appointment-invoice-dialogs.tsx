@@ -1,13 +1,16 @@
 "use client";
 
 import { InvoiceCreateWizard } from "@/components/invoices/invoice-form-workspace";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -34,7 +37,7 @@ export function AppointmentInvoiceDialogs({ state }: AppointmentInvoiceDialogsPr
           if (!open) state.cancelReceiverChoice();
         }}
       >
-        <DialogContent className="z-[60]">
+        <CompactActionDialogContent>
           <DialogHeader>
             <DialogTitle>{t("orders.dialogs.chooseInvoiceReceiverTitle")}</DialogTitle>
             <DialogDescription>
@@ -54,12 +57,12 @@ export function AppointmentInvoiceDialogs({ state }: AppointmentInvoiceDialogsPr
               </li>
             ))}
           </ul>
-          <DialogFooter>
+          <CompactActionDialogFooter>
             <Button variant="outline" onClick={state.cancelReceiverChoice}>
               {t("common.actions.cancel")}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </CompactActionDialogFooter>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog

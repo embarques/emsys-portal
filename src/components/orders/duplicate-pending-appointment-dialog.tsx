@@ -2,12 +2,14 @@
 
 import { useRef } from "react";
 
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -57,52 +59,60 @@ export function DuplicatePendingAppointmentDialog({
         if (!nextOpen) onCancel();
       }}
     >
-      <DialogContent
-        onOpenAutoFocus={(event) => {
-          event.preventDefault();
+      <CompactActionDialogContent
+        onOpenAutoFocus={() => {
           cancelButtonRef.current?.focus();
         }}
       >
         <DialogHeader>
           <DialogTitle>{t("orders.duplicatePending.title")}</DialogTitle>
-          <DialogDescription>{t("orders.duplicatePending.description")}</DialogDescription>
+          <DialogDescription className="text-foreground/80">
+            {t("orders.duplicatePending.description")}
+          </DialogDescription>
         </DialogHeader>
 
         {existing.length > 0 ? (
-          <ul className="max-h-64 space-y-3 overflow-y-auto text-sm">
-            {existing.map((appointment) => (
-              <li
-                key={appointment.id}
-                className="rounded-md border border-border bg-muted/30 px-3 py-2"
-              >
-                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-                  <dt className="text-muted-foreground">{t("orders.duplicatePending.fields.id")}</dt>
-                  <dd>{appointment.id}</dd>
-                  <dt className="text-muted-foreground">{t("orders.duplicatePending.fields.date")}</dt>
-                  <dd>
-                    {appointment.date
-                      ? formatOrderDateWithWeekday(appointment.date, locale)
-                      : t("common.empty.dash")}
-                  </dd>
-                  <dt className="text-muted-foreground">{t("orders.duplicatePending.fields.purpose")}</dt>
-                  <dd>{formatPurposeLabel(appointment.purpose, t)}</dd>
-                </dl>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-hidden rounded-lg border border-input">
+            <ul className="max-h-64 divide-y divide-input/80 overflow-y-auto text-sm">
+              {existing.map((appointment) => (
+                <li key={appointment.id} className="bg-muted/50 px-3 py-2.5">
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                    <dt className="text-foreground/70">{t("orders.duplicatePending.fields.id")}</dt>
+                    <dd className="font-medium text-foreground">{appointment.id}</dd>
+                    <dt className="text-foreground/70">{t("orders.duplicatePending.fields.date")}</dt>
+                    <dd className="text-foreground">
+                      {appointment.date
+                        ? formatOrderDateWithWeekday(appointment.date, locale)
+                        : t("common.empty.dash")}
+                    </dd>
+                    <dt className="text-foreground/70">{t("orders.duplicatePending.fields.purpose")}</dt>
+                    <dd className="text-foreground">{formatPurposeLabel(appointment.purpose, t)}</dd>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
-          <p className="text-sm text-muted-foreground">{t("orders.duplicatePending.unknownExisting")}</p>
+          <p className="rounded-lg border border-dashed border-input px-3 py-4 text-sm text-foreground/75">
+            {t("orders.duplicatePending.unknownExisting")}
+          </p>
         )}
 
-        <DialogFooter>
-          <Button ref={cancelButtonRef} type="button" variant="outline" onClick={onCancel}>
+        <CompactActionDialogFooter className="sm:grid sm:grid-cols-2">
+          <Button
+            ref={cancelButtonRef}
+            type="button"
+            variant="outline"
+            className="w-full border-input"
+            onClick={onCancel}
+          >
             {t("orders.duplicatePending.cancel")}
           </Button>
-          <Button type="button" onClick={onConfirm}>
+          <Button type="button" className="w-full" onClick={onConfirm}>
             {t("orders.duplicatePending.confirm")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </CompactActionDialogFooter>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

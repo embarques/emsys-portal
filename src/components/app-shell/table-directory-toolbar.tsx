@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Filter, Loader2 } from "lucide-react";
+import { ChevronDown, Filter } from "lucide-react";
 
 import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { FilterPresetMenu } from "@/components/app-shell/filter-preset-menu";
@@ -191,8 +191,6 @@ function TableFilterDropdown({ open, onOpenChange, activeCount = 0, children }: 
 
 type TableDirectoryToolbarProps = {
   search: ReactNode;
-  /** Waiting for debounce or fetching fresh results, including cached-data refetches. */
-  isLoading?: boolean;
   filtersOpen?: boolean;
   onFiltersOpenChange?: (open: boolean) => void;
   activeFilterCount?: number;
@@ -205,7 +203,6 @@ type TableDirectoryToolbarProps = {
 
 export function TableDirectoryToolbar({
   search,
-  isLoading = false,
   filtersOpen = false,
   onFiltersOpenChange,
   activeFilterCount = 0,
@@ -214,7 +211,6 @@ export function TableDirectoryToolbar({
   columnLayout,
   actions,
 }: TableDirectoryToolbarProps) {
-  const { t } = useTranslation();
   const showFilter = showFilterToggle && onFiltersOpenChange;
   const showRightCluster = Boolean(columnLayout || actions);
 
@@ -230,12 +226,6 @@ export function TableDirectoryToolbar({
           >
             {filterPanel}
           </TableFilterDropdown>
-        ) : null}
-        {isLoading ? (
-          <span role="progressbar" aria-label={t("common.ui.searching")} className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
-            <span className="hidden sm:inline">{t("common.ui.searching")}</span>
-          </span>
         ) : null}
       </div>
 

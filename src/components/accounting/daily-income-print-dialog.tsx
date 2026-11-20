@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Printer } from "lucide-react";
 
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -94,12 +96,12 @@ export function DailyIncomePrintDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <CompactActionDialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("accounting.dailyIncome.print.title")}</DialogTitle>
           <DialogDescription>{t("accounting.dailyIncome.print.description")}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-2">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="daily-income-print-date">{t("accounting.dailyIncome.print.date")}</Label>
             <DateInput
@@ -123,7 +125,7 @@ export function DailyIncomePrintDialog({
             />
           </div>
         </div>
-        <DialogFooter>
+        <CompactActionDialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
             {t("common.actions.cancel")}
           </Button>
@@ -131,8 +133,8 @@ export function DailyIncomePrintDialog({
             <Printer className="h-4 w-4" />
             {t("accounting.dailyIncome.print.confirm")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </CompactActionDialogFooter>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -78,7 +80,7 @@ export function InvoiceBarcodeDecreaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-hidden sm:max-w-xl">
+      <CompactActionDialogContent className="max-h-[90vh] max-w-lg overflow-hidden sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t("invoices.barcodeSync.decreaseTitle")}</DialogTitle>
           <DialogDescription>{t("invoices.barcodeSync.decreaseDescription")}</DialogDescription>
@@ -147,15 +149,15 @@ export function InvoiceBarcodeDecreaseDialog({
           })}
         </div>
 
-        <DialogFooter>
+        <CompactActionDialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.actions.cancel")}
           </Button>
           <Button type="button" disabled={!canConfirm} onClick={() => onConfirm(selections)}>
             {t("invoices.barcodeSync.confirmDelete")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </CompactActionDialogFooter>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

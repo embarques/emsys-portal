@@ -19,7 +19,6 @@ import {
 import { BarcodeViewSheet } from "@/components/barcodes/barcode-view-sheet";
 import { BarcodeStatusesButton } from "@/components/barcodes/barcode-statuses-button";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
-import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { useDeliveryAccess } from "@/lib/deliveries/hooks/use-deliver-invoice";
 import { canStartBarcodeDelivery } from "@/lib/deliveries/utils/can-start-barcode-delivery";
 import { InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
@@ -29,6 +28,10 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
@@ -153,13 +156,12 @@ export function BarcodesWorkspace() {
   const deliveryAccess = useDeliveryAccess();
   const deliveryScope = `${deliveryAccess.companyId}:${deliveryAccess.actorId}:${deliveryAccess.viewScope}`;
   const [deliveryTarget, setDeliveryTarget] = useState<{ scope: string; barcode: Barcode } | null>(null);
-  const [invoicePrintTarget, setInvoicePrintTarget] = useState<{ scope: string; ids: string[] } | null>(null);
   const deliverBarcode = deliveryTarget?.scope === deliveryScope ? deliveryTarget.barcode : null;
-  const printInvoiceIds = invoicePrintTarget?.scope === deliveryScope ? invoicePrintTarget.ids : [];
 
   const initialFilters = useInitialBarcodeFilters();
   const [filters, setFilters] = useState<BarcodeFilterState>(initialFilters);
   const [filtersOpen, setFiltersOpen] = useState(initialFilters.rows.length > 0);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -471,6 +473,8 @@ export function BarcodesWorkspace() {
     },
   ];
 
+  const insightMetrics = statCards;
+
   const tableColumns: DataTableColumn<Barcode>[] = [
     {
       id: "id",
@@ -610,14 +614,23 @@ export function BarcodesWorkspace() {
 
       <StatCards items={statCards} />
 
-      <Card className="mt-6 gap-0">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("barcodes.title")}
+        className="mt-6"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -676,19 +689,6 @@ export function BarcodesWorkspace() {
           deleteDisabled={!selectedInvoiceTarget || isUpdating}
           actions={
             <>
-              {deliveryAccess.canPrint ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                  disabled={!selectedBarcodes.length || selectedBarcodes.length !== selectedIds.length || selectedBarcodes.some((barcode) => !barcode.invoiceId) || isUpdating || isFetching}
-                  onClick={() => setInvoicePrintTarget({ scope: deliveryScope, ids: [...new Set(selectedBarcodes.flatMap((barcode) => barcode.invoiceId ? [barcode.invoiceId] : []))] })}
-                >
-                  <Printer className="size-4" />
-                  {t("invoices.printSignatures.action")}
-                </Button>
-              ) : null}
               <Button
                 type="button"
                 size="sm"
@@ -836,6 +836,7 @@ export function BarcodesWorkspace() {
           </div>
         ) : null}
       </Card>
+      </DirectoryInsightsFlip>
 
       <BarcodeViewSheet
         barcode={viewBarcode}
@@ -845,7 +846,6 @@ export function BarcodesWorkspace() {
         }}
         actionsDisabled={isUpdating || isFetching}
         canDeliver={deliveryAccess.canDeliver}
-        canPrintInvoice={deliveryAccess.canPrint}
         canPrint={canPrint}
         canOpenInvoice={canUpdateInvoices}
         canChangeStatus
@@ -854,7 +854,6 @@ export function BarcodesWorkspace() {
         canEdit={canUpdateInvoices}
         canDelete={canUpdateInvoices}
         deliverDisabled={!viewBarcode || !canStartBarcodeDelivery(viewBarcode)}
-        printInvoiceDisabled={!viewBarcode?.invoiceId}
         printDisabled={!viewBarcode || !canPrint}
         isPrinting={isPrinting}
         openInvoiceDisabled={!viewBarcode || !getInvoiceTargetForBarcode(viewBarcode)}
@@ -869,10 +868,6 @@ export function BarcodesWorkspace() {
           if (canStartBarcodeDelivery(barcode)) {
             setDeliveryTarget({ scope: deliveryScope, barcode });
           }
-        }}
-        onPrintInvoice={(barcode) => {
-          if (!barcode.invoiceId) return;
-          setInvoicePrintTarget({ scope: deliveryScope, ids: [barcode.invoiceId] });
         }}
         onPrint={(barcode) => {
           void printBarcodes([barcode]);
@@ -1008,13 +1003,6 @@ export function BarcodesWorkspace() {
           </div>
         </DialogContent>
       </Dialog>
-      {printInvoiceIds.length > 0 && deliveryAccess.canPrint ? (
-        <InvoicePrintSignaturesDialog
-          key={`${deliveryAccess.companyId}:${deliveryAccess.actorId}:${printInvoiceIds.join(",")}`}
-          invoiceIds={printInvoiceIds}
-          onClose={() => setInvoicePrintTarget(null)}
-        />
-      ) : null}
       {deliverBarcode && deliveryAccess.canDeliver ? (
         <DeliverDialog
           key={`${deliveryAccess.companyId}:${deliveryAccess.actorId}:${deliverBarcode.invoiceId}:${deliverBarcode.delivery?.id}`}

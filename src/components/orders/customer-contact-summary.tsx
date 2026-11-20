@@ -1,7 +1,9 @@
 "use client";
 
-import { MapPin, Phone, Star } from "lucide-react";
+import { IdCard, Mail, MapPin, NotebookPen, Phone, Star } from "lucide-react";
 
+import { AddressActionRow } from "@/components/addresses/address-action-row";
+import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { formatCoreAddressLines } from "@/lib/customers/display";
 import {
@@ -12,6 +14,7 @@ import {
 import { getOrderPartyAddressAtIndex } from "@/lib/orders/types";
 import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 const optionalMissingClassName =
   "rounded-md bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-200";
@@ -23,6 +26,9 @@ type CustomerContactSummaryProps = {
   /** When set, empty phone/address show as yellow optional-missing warnings. */
   missingPhoneLabel?: string;
   missingAddressLabel?: string;
+  /** Emphasize phones and selected address with action rows for appointment forms. */
+  detailed?: boolean;
+  className?: string;
 };
 
 export function CustomerContactSummary({
@@ -30,6 +36,8 @@ export function CustomerContactSummary({
   addressIndex,
   missingPhoneLabel,
   missingAddressLabel,
+  detailed = false,
+  className,
 }: CustomerContactSummaryProps) {
   const { t } = useTranslation();
   const address =
@@ -45,20 +53,123 @@ export function CustomerContactSummary({
     }))
     .filter(({ display }) => display.length > 0);
 
-  const addressLine = formatCoreAddressLines(address).join(", ");
-  const hasAddress = coreAddressHasContent(address) && Boolean(addressLine);
+  const addressLines = formatCoreAddressLines(address);
+  const addressLine = addressLines.join(", ");
+  const hasAddress = coreAddressHasContent(address) && addressLines.length > 0;
+  const email = customer.email.trim();
+  const idNumber = customer.IDNumber.trim();
+  const notes = customer.notes.trim();
   const warnMissing = Boolean(missingPhoneLabel || missingAddressLabel);
   const showMissingPhone = phoneEntries.length === 0 && warnMissing && Boolean(missingPhoneLabel);
   const showMissingAddress = !hasAddress && warnMissing && Boolean(missingAddressLabel);
+
+  if (detailed) {
+    return (
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-xl border border-primary/15 bg-card p-3 shadow-sm",
+          className,
+        )}
+      >
+        <div className="min-w-0 shrink-0 space-y-1">
+          <p className="truncate text-base font-semibold text-foreground">{customer.name}</p>
+          {idNumber || email ? (
+            <div className="space-y-0.5 text-sm text-foreground/80">
+              {idNumber ? (
+                <p className="flex min-w-0 items-center gap-1.5 break-words">
+                  <IdCard className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span>
+                    <span className="font-medium text-foreground">{t("orders.view.idNumber")}: </span>
+                    {idNumber}
+                  </span>
+                </p>
+              ) : null}
+              {email ? (
+                <p className="flex min-w-0 items-center gap-1.5 break-words">
+                  <Mail className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span>{email}</span>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+            {t("orders.view.address")}
+          </p>
+          {hasAddress ? (
+            <div className="overflow-hidden rounded-lg border border-border bg-background">
+              <AddressActionRow
+                label={address.label ?? ""}
+                address={address}
+                isPrimary={address.isPrimary || addressIndex == null || addressIndex === 0}
+              />
+            </div>
+          ) : showMissingAddress ? (
+            <p className={cn("text-sm", optionalMissingClassName)}>{missingAddressLabel}</p>
+          ) : (
+            <p className="text-sm text-foreground/70">{t("common.empty.dash")}</p>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+            {t("orders.view.phones")}
+          </p>
+          {phoneEntries.length > 0 ? (
+            <div className="divide-y overflow-hidden rounded-lg border border-border bg-background">
+              {phoneEntries.map(({ phone }, index) => (
+                <PhoneActionRow
+                  key={`${phone.number}-${index}`}
+                  label={t(`phones.types.${phone.type}`)}
+                  number={phone.number}
+                  displayNumber={phone.displayNumber}
+                  isPrimary={phone.isPrimary}
+                />
+              ))}
+            </div>
+          ) : showMissingPhone ? (
+            <p className={cn("text-sm", optionalMissingClassName)}>{missingPhoneLabel}</p>
+          ) : (
+            <p className="text-sm text-foreground/70">{t("common.empty.dash")}</p>
+          )}
+        </div>
+
+        {notes ? (
+          <div className="min-w-0 space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+              {t("customers.form.fields.notes")}
+            </p>
+            <p className="flex items-start gap-1.5 text-sm text-foreground">
+              <NotebookPen className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="min-w-0 whitespace-pre-wrap break-words">{notes}</span>
+            </p>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   const hasDetails =
     phoneEntries.length > 0 || hasAddress || showMissingPhone || showMissingAddress;
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-card p-3 shadow-sm">
+    <div className={cn("rounded-xl border border-primary/15 bg-card p-3 shadow-sm", className)}>
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-foreground">{customer.name}</p>
         {hasDetails ? (
-          <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">
+          <div className="mt-1.5 space-y-1.5 text-xs text-muted-foreground">
+            {hasAddress || showMissingAddress ? (
+              <p className="flex items-start gap-1.5">
+                <MapPin className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+                {hasAddress ? (
+                  <span className="min-w-0 break-words">{addressLine}</span>
+                ) : (
+                  <span className={optionalMissingClassName}>{missingAddressLabel}</span>
+                )}
+              </p>
+            ) : null}
             {phoneEntries.length > 0 || showMissingPhone ? (
               <p className="flex items-start gap-1.5">
                 <Phone className="mt-px size-3.5 shrink-0" aria-hidden="true" />
@@ -79,16 +190,6 @@ export function CustomerContactSummary({
                   </span>
                 ) : (
                   <span className={optionalMissingClassName}>{missingPhoneLabel}</span>
-                )}
-              </p>
-            ) : null}
-            {hasAddress || showMissingAddress ? (
-              <p className="flex items-start gap-1.5">
-                <MapPin className="mt-px size-3.5 shrink-0" aria-hidden="true" />
-                {hasAddress ? (
-                  <span className="min-w-0 break-words">{addressLine}</span>
-                ) : (
-                  <span className={optionalMissingClassName}>{missingAddressLabel}</span>
                 )}
               </p>
             ) : null}

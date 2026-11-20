@@ -5,7 +5,10 @@ import { Controller } from "react-hook-form";
 import { ChevronLeft, ChevronRight, FileText, Plus, RefreshCw } from "lucide-react";
 
 import { DataTable } from "@/components/app-shell/data-table";
-import { FormBody, FormFooter } from "@/components/forms/form-shell";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { InfoHint } from "@/components/app-shell/info-hint";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -23,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -149,59 +152,58 @@ function ReservedInvoicePoolPanel() {
       )}
 
       <Dialog open={generateOpen} onOpenChange={open => { if (!busy) setGenerateOpen(open); }}>
-        <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
+        <CompactActionDialogContent className="sm:max-w-md">
+          <DialogHeader>
             <DialogTitle>{text("generate")}</DialogTitle>
             <DialogDescription>{text("generatePrompt")}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={model.form.handleSubmit(values => model.act("generate", { ...values, userId: 0 }, () => setGenerateOpen(false)))} className="flex min-h-0 flex-1 flex-col">
-            <FormBody isBusy={busy}>
-              <div className="space-y-2">
-                <Label htmlFor="pool-count">{text("count")}</Label>
-                <Input id="pool-count" type="number" min={1} max={100} autoFocus disabled={busy || model.pending} aria-invalid={Boolean(model.form.formState.errors.count)} aria-describedby={model.form.formState.errors.count ? "pool-count-error" : undefined} {...model.form.register("count", { valueAsNumber: true })} />
-                {model.form.formState.errors.count && <p id="pool-count-error" role="alert" className="text-sm text-destructive">{text("invalidCount")}</p>}
-              </div>
-            </FormBody>
-            <FormFooter
+          <form onSubmit={model.form.handleSubmit(values => model.act("generate", { ...values, userId: 0 }, () => setGenerateOpen(false)))} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="pool-count">{text("count")}</Label>
+              <Input id="pool-count" type="number" min={1} max={100} autoFocus disabled={busy || model.pending} aria-invalid={Boolean(model.form.formState.errors.count)} aria-describedby={model.form.formState.errors.count ? "pool-count-error" : undefined} {...model.form.register("count", { valueAsNumber: true })} />
+              {model.form.formState.errors.count && <p id="pool-count-error" role="alert" className="text-sm text-destructive">{text("invalidCount")}</p>}
+            </div>
+            <CompactActionDialogFooter
               error={model.mutation.isError ? normalizeApiError(model.mutation.error).message : null}
               submitLabel={text("generate")}
+              submitType="submit"
+              submitIcon={<Plus className="h-4 w-4" />}
               isSubmitting={busy}
               submitDisabled={!model.canGenerate || model.pending}
               onCancel={() => setGenerateOpen(false)}
             />
           </form>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Dialog open={assignOpen} onOpenChange={open => { if (!busy) setAssignOpen(open); }}>
-        <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
+        <CompactActionDialogContent className="sm:max-w-md">
+          <DialogHeader>
             <DialogTitle>{text("assignTitle")}</DialogTitle>
             <DialogDescription>{t("invoices.pool.assignPrompt", { count: model.selected.length })}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={event => { event.preventDefault(); if (userId > 0) model.act("assign", undefined, () => setAssignOpen(false)); }} className="flex min-h-0 flex-1 flex-col">
-            <FormBody isBusy={busy}>
-              <div className="space-y-2">
-                <Label htmlFor="pool-user">{text("user")}</Label>
-                <Controller name="userId" control={model.form.control} render={({ field }) =>
-                  <SearchableSelect id="pool-user" className="w-full" value={field.value > 0 ? String(field.value) : ""} onValueChange={value => field.onChange(Number(value))}
-                    disabled={busy || model.pending || !model.canViewUsers} manualFiltering onSearchChange={model.setUserSearch} loading={model.users.isFetching}
-                    options={(model.users.data?.items ?? []).map(user => ({ value: String(user.id), label: user.name || user.email }))}
-                    placeholder={text("user")} searchPlaceholder={text("searchUser")} emptyMessage={text("noUsers")} />
-                } />
-                {!model.canViewUsers && <p role="alert" className="text-sm text-destructive">{text("usersDenied")}</p>}
-                {model.users.isError && <p role="alert" className="text-sm text-destructive">{normalizeApiError(model.users.error).message}</p>}
-              </div>
-            </FormBody>
-            <FormFooter
+          <form onSubmit={event => { event.preventDefault(); if (userId > 0) model.act("assign", undefined, () => setAssignOpen(false)); }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="pool-user">{text("user")}</Label>
+              <Controller name="userId" control={model.form.control} render={({ field }) =>
+                <SearchableSelect id="pool-user" className="w-full" value={field.value > 0 ? String(field.value) : ""} onValueChange={value => field.onChange(Number(value))}
+                  disabled={busy || model.pending || !model.canViewUsers} manualFiltering onSearchChange={model.setUserSearch} loading={model.users.isFetching}
+                  options={(model.users.data?.items ?? []).map(user => ({ value: String(user.id), label: user.name || user.email }))}
+                  placeholder={text("user")} searchPlaceholder={text("searchUser")} emptyMessage={text("noUsers")} />
+              } />
+              {!model.canViewUsers && <p role="alert" className="text-sm text-destructive">{text("usersDenied")}</p>}
+              {model.users.isError && <p role="alert" className="text-sm text-destructive">{normalizeApiError(model.users.error).message}</p>}
+            </div>
+            <CompactActionDialogFooter
               error={model.mutation.isError ? normalizeApiError(model.mutation.error).message : null}
               submitLabel={text("assignSubmit")}
+              submitType="submit"
               isSubmitting={busy}
               submitDisabled={userId === 0 || !model.canAssign || !model.canAssignSelection || model.selectionLocked}
               onCancel={() => setAssignOpen(false)}
             />
           </form>
-        </DialogContent>
+        </CompactActionDialogContent>
       </Dialog>
 
       <Card className="gap-0">
@@ -220,7 +222,7 @@ function ReservedInvoicePoolPanel() {
               )))}
             </select>
           </label>
-          <TableDirectoryToolbar isLoading={model.query.isFetching || model.searchPending}
+          <TableDirectoryToolbar
             search={<TableSearchInput value={model.numberSearch} onChange={model.setNumberSearch} maxLength={100} placeholder={text("search")} disabled={busy || model.pending} />}
             columnLayout={columnLayout}
             filtersOpen={filtersOpen}

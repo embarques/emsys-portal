@@ -162,6 +162,16 @@
     "detailsTitle": "Detalles de {{label}}",
     "backToSummary": "Volver al resumen de {{label}}"
   },
+  "directoryInsights": {
+    "show": "Información",
+    "back": "Volver a la tabla",
+    "eyebrow": "Información",
+    "title": "Información del directorio",
+    "titleNamed": "Información de {{title}}",
+    "description": "Los mismos indicadores del resumen, presentados de forma visual.",
+    "empty": "Aún no hay indicadores de resumen disponibles.",
+    "relativeShare": "Escala relativa de {{label}}: {{percent}}%"
+  },
   "accessDenied": {
     "title": "Acceso denegado",
     "description": "No tiene permiso para ver esta página."

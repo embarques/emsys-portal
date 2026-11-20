@@ -16,6 +16,10 @@ import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
 import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
+import {
+  DirectoryInsightsFlip,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -53,12 +57,20 @@ import {
   formatOptionalContainerCost,
 } from "@/lib/containers/display";
 import {
+  useAverageContainerValueStats,
   useContainerStats,
   useContainers,
   useCreateContainer,
   useDeleteContainers,
+  useDepartedContainerStats,
   useUpdateContainer,
 } from "@/lib/containers/hooks/use-containers";
+import {
+  DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD,
+  DEPARTED_CONTAINER_STAT_PERIOD_DAYS,
+} from "@/lib/containers/departed-container-stats";
+import { formatDepartedAnnualPace } from "@/lib/containers/display";
+import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   DEFAULT_CONTAINER_LIST_PARAMS,
   buildContainerListParams,
@@ -83,12 +95,13 @@ const defaultFilters: ContainerFilterState = {
 };
 
 export function ContainersWorkspace() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { toErrorMessage } = useUserError();
   const containerFilterFields = useContainerFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<ContainerFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -114,6 +127,8 @@ export function ContainersWorkspace() {
 
   const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
   const stats = useContainerStats();
+  const departedStats = useDepartedContainerStats(DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD);
+  const averageValueStats = useAverageContainerValueStats(DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD);
   const createContainerMutation = useCreateContainer();
   const updateContainerMutation = useUpdateContainer();
   const deleteContainersMutation = useDeleteContainers();
@@ -351,6 +366,48 @@ export function ContainersWorkspace() {
     t,
   );
 
+  const insightMetrics = useMemo(() => {
+    const annualPace = formatDepartedAnnualPace(
+      departedStats.total,
+      DEPARTED_CONTAINER_STAT_PERIOD_DAYS[DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD],
+    );
+
+    return [
+      {
+        label: t("containers.stats.total.label"),
+        value: stats.isLoading ? "…" : stats.total.toLocaleString(),
+        description: t("containers.stats.total.description"),
+        icon: Container,
+      },
+      {
+        label: t("containers.stats.departed.label"),
+        value: departedStats.isLoading ? "…" : departedStats.total.toLocaleString(locale),
+        description: departedStats.isLoading
+          ? undefined
+          : t("containers.stats.departed.annualPace", { pace: annualPace }),
+        icon: Container,
+      },
+      {
+        label: t("containers.stats.averageValue.label"),
+        value: averageValueStats.isLoading ? "…" : formatInvoiceMoney(averageValueStats.average),
+        description: averageValueStats.isLoading
+          ? undefined
+          : t("containers.stats.averageValue.description", { count: averageValueStats.containerCount }),
+        icon: Container,
+      },
+    ];
+  }, [
+    averageValueStats.average,
+    averageValueStats.containerCount,
+    averageValueStats.isLoading,
+    departedStats.isLoading,
+    departedStats.total,
+    locale,
+    stats.isLoading,
+    stats.total,
+    t,
+  ]);
+
   return (
     <div>
       <PageHeader
@@ -375,14 +432,23 @@ export function ContainersWorkspace() {
         <AverageContainerValueStatCard />
       </StatCardsCarousel>
 
-      <Card className="mt-6 gap-0">
+      <DirectoryInsightsFlip
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        metrics={insightMetrics}
+        title={t("containers.title")}
+        className="mt-6"
+      >
+      <Card className="gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
+          <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
-
+            actions={
+              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+            }
             search={
               <TableSearchInput
                 value={filters.query}
@@ -507,6 +573,7 @@ export function ContainersWorkspace() {
         </div>
         ) : null}
       </Card>
+      </DirectoryInsightsFlip>
 
       <ContainerViewSheet
         container={viewContainer}

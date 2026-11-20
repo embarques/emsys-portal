@@ -3,30 +3,84 @@ import {
   isOrderCommentComplete,
   isOrderPartyAddressChosen,
   type OrderFormValues,
+  type OrderReceiverFormValue,
 } from "@/lib/orders/types";
 
-/** Validate all steps up to the current step, including the complete form at save. */
-export function getAppointmentStepError(values: OrderFormValues, step: number, unverifiedSender: boolean) {
+function getSenderStepError(values: OrderFormValues, unverifiedSender: boolean) {
   if (!values.sender) return "orders.form.validation.senderRequired";
   if (!isOrderPartyAddressChosen(values.sender, values.senderAddressIndex)) {
     return "orders.form.validation.senderAddressRequired";
   }
   if (unverifiedSender) return "orders.form.validation.unverifiedSenderAddress";
-  if (step === 1) return null;
-  if (values.receivers.some((row) => !row.customer)) return "orders.form.validation.receiverRequired";
-  if (new Set(values.receivers.map((row) => row.customer?.id)).size !== values.receivers.length) {
+  return null;
+}
+
+/** A receiver row is ready to save when it has a customer and a chosen address. */
+export function isCompleteAppointmentReceiver(row: OrderReceiverFormValue): boolean {
+  return Boolean(row.customer && isOrderPartyAddressChosen(row.customer, row.addressIndex));
+}
+
+/** Drop empty/incomplete receiver templates so they never block save or reach the API. */
+export function getCompleteAppointmentReceivers(
+  receivers: OrderFormValues["receivers"],
+): OrderFormValues["receivers"] {
+  return receivers.filter(isCompleteAppointmentReceiver);
+}
+
+/** True when at least one draft row still needs a customer. */
+export function hasEmptyAppointmentReceiverTemplate(
+  receivers: OrderFormValues["receivers"],
+): boolean {
+  return receivers.some((row) => !row.customer);
+}
+
+/** Keep one blank receiver slot ready after each selection (Receiver 2, 3, …). */
+export function withTrailingEmptyAppointmentReceiver(
+  receivers: OrderFormValues["receivers"],
+  createKey: () => string = () => crypto.randomUUID(),
+): OrderFormValues["receivers"] {
+  if (hasEmptyAppointmentReceiverTemplate(receivers)) return receivers;
+  return [...receivers, { key: createKey(), customer: null, addressIndex: 0 }];
+}
+
+function getReceiversStepError(values: OrderFormValues) {
+  const complete = getCompleteAppointmentReceivers(values.receivers);
+  if (new Set(complete.map((row) => row.customer?.id)).size !== complete.length) {
     return "orders.form.validation.duplicateReceiver";
   }
-  if (values.receivers.some((row) => row.customer && !isOrderPartyAddressChosen(row.customer, row.addressIndex))) {
-    return "orders.form.validation.receiverAddressRequired";
-  }
-  if (step === 2) return null;
+  return null;
+}
+
+function getScheduleAndCommentsError(values: OrderFormValues) {
   if (!values.date.trim() || Number.isNaN(new Date(values.date).getTime())) {
     return "orders.form.validation.pickupDateRequired";
   }
   if (!values.comments.some(isOrderCommentComplete)) return "orders.form.validation.commentRequired";
   if (hasDuplicateOrderCommentItems(values.comments)) return "orders.form.validation.duplicateCommentItem";
   return null;
+}
+
+/** Sender + date + comments — used before continuing to receivers or saving with receivers skipped. */
+export function getAppointmentDetailsError(values: OrderFormValues, unverifiedSender: boolean) {
+  return getSenderStepError(values, unverifiedSender) ?? getScheduleAndCommentsError(values);
+}
+
+/** Receiver rows only — empty/incomplete templates are ignored; duplicates among complete rows are not. */
+export function getAppointmentReceiversError(values: OrderFormValues) {
+  return getReceiversStepError(values);
+}
+
+/** Validate all steps up to the current step, including the complete form at save. */
+export function getAppointmentStepError(values: OrderFormValues, step: number, unverifiedSender: boolean) {
+  const senderError = getSenderStepError(values, unverifiedSender);
+  if (senderError) return senderError;
+  if (step === 1) return null;
+
+  const receiversError = getReceiversStepError(values);
+  if (receiversError) return receiversError;
+  if (step === 2) return null;
+
+  return getScheduleAndCommentsError(values);
 }
 
 /** Customers already chosen on other receiver rows, so a row's picker cannot select them again. */

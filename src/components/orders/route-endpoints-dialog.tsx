@@ -3,10 +3,16 @@
 import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
+import { Route as RouteIcon } from "lucide-react";
+
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
+import {
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+} from "@/components/forms/compact-action-dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useGoogleMapsApiKey } from "@/lib/company/hooks/use-current-company";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
 import {
   routeEndpointsSchema,
@@ -34,7 +40,10 @@ export function RouteEndpointsDialog({ defaultValues, branchHasLocation, onClose
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
-      <DialogContent onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
+      <CompactActionDialogContent
+        onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }}
+        onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}
+      >
         <DialogHeader>
           <DialogTitle>{t("orders.optimize.endpoints.title")}</DialogTitle>
           <DialogDescription>
@@ -77,12 +86,15 @@ export function RouteEndpointsDialog({ defaultValues, branchHasLocation, onClose
             </fieldset>
           ))}
           {!googleMapsApiKey ? <p role="alert" className="text-sm text-destructive">{t("orders.map.errors.missingApiKey")}</p> : null}
-          <DialogFooter>
+          <CompactActionDialogFooter>
             <Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common.actions.cancel")}</Button>
-            <Button type="submit" disabled={busy || !googleMapsApiKey}>{t(busy ? "orders.actions.optimizingRoute" : "orders.actions.optimizeRoute")}</Button>
-          </DialogFooter>
+            <Button type="submit" disabled={busy || !googleMapsApiKey}>
+              <RouteIcon className="h-4 w-4" />
+              {t(busy ? "orders.actions.optimizingRoute" : "orders.actions.optimizeRoute")}
+            </Button>
+          </CompactActionDialogFooter>
         </form>
-      </DialogContent>
+      </CompactActionDialogContent>
     </Dialog>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 
 import {
@@ -10,9 +11,6 @@ import {
   FilePenLine,
   Info,
   Map as MapIcon,
-  MapPin,
-  MessageSquare,
-  Phone as PhoneIcon,
   Printer,
   Receipt,
   Route as RouteIcon,
@@ -40,6 +38,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
@@ -60,6 +59,9 @@ import {
   tableSelectionActionStyles,
 } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
+
+type ViewPartyTab = "sender" | "receivers";
+type ViewSheetTab = "overview" | "history";
 
 type OrderViewSheetProps = {
   order: Order | null;
@@ -83,15 +85,18 @@ type OrderViewSheetProps = {
   /** Hide route actions in route-appointments mode. */
   canManageRoutes?: boolean;
   actionsDisabled?: boolean;
+  initialTab?: ViewSheetTab;
 };
 
-function PartyViewSections({
+function PartyViewSection({
   customer,
   partyLabel,
+  nameLabel,
   addressIndex,
 }: {
   customer: Customer;
   partyLabel: string;
+  nameLabel: string;
   addressIndex?: number;
 }) {
   const { t } = useTranslation();
@@ -103,56 +108,38 @@ function PartyViewSections({
   const dash = t("common.empty.dash");
 
   return (
-    <>
-      <RecordViewSheetSection title={partyLabel} icon={UserRound}>
-        <RecordViewSheetDetailRow
-          label={t("orders.view.name")}
-          value={customer.name.trim() || dash}
-        />
-        <RecordViewSheetDetailRow
-          label={t("orders.view.idNumber")}
-          value={customer.IDNumber || dash}
-        />
-        <RecordViewSheetDetailRow
-          label={t("orders.view.email")}
-          value={customer.email || dash}
-        />
-      </RecordViewSheetSection>
-
-      <RecordViewSheetSection
-        title={t("orders.view.senderPhones", { party: partyLabel })}
-        icon={PhoneIcon}
-      >
-        {phones.length === 0 ? (
-          <RecordViewSheetDetailRow label={t("orders.view.phones")} value={dash} />
-        ) : (
-          phones.map((phone, index) => (
-            <PhoneActionRow
-              key={`${partyLabel}-phone-${index}`}
-              label={t(`phones.types.${phone.type}`)}
-              number={phone.number}
-              displayNumber={phone.displayNumber}
-              isPrimary={phone.isPrimary}
-            />
-          ))
-        )}
-      </RecordViewSheetSection>
-
-      <RecordViewSheetSection
-        title={t("orders.view.senderAddress", { party: partyLabel })}
-        icon={MapPin}
-      >
-        {coreAddressHasContent(address) ? (
-          <AddressActionRow
-            label=""
-            address={address}
-            isPrimary={address.isPrimary || addressIndex == null || addressIndex === 0}
+    <RecordViewSheetSection title={partyLabel} icon={UserRound}>
+      <RecordViewSheetDetailRow
+        label={nameLabel}
+        value={customer.name.trim() || dash}
+      />
+      {coreAddressHasContent(address) ? (
+        <AddressActionRow label={t("orders.view.address")} address={address} />
+      ) : (
+        <RecordViewSheetDetailRow label={t("orders.view.address")} value={dash} />
+      )}
+      <RecordViewSheetDetailRow
+        label={t("orders.view.idNumber")}
+        value={customer.IDNumber || dash}
+      />
+      <RecordViewSheetDetailRow
+        label={t("orders.view.email")}
+        value={customer.email || dash}
+      />
+      {phones.length === 0 ? (
+        <RecordViewSheetDetailRow label={t("orders.view.phones")} value={dash} />
+      ) : (
+        phones.map((phone, index) => (
+          <PhoneActionRow
+            key={`${partyLabel}-phone-${index}`}
+            label={t(`phones.types.${phone.type}`)}
+            number={phone.number}
+            displayNumber={phone.displayNumber}
+            isPrimary={phone.isPrimary}
           />
-        ) : (
-          <RecordViewSheetDetailRow label={t("orders.view.address")} value={dash} />
-        )}
-      </RecordViewSheetSection>
-    </>
+        ))
+      )}
+    </RecordViewSheetSection>
   );
 }
 
@@ -176,14 +163,24 @@ export function OrderViewSheet({
   canEdit,
   loadRouteDetails = true,
   actionsDisabled = false,
+  initialTab = "overview",
 }: OrderViewSheetProps) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: loadRouteDetails && Boolean(order) });
+  const [partyTab, setPartyTab] = useState<ViewPartyTab>("sender");
+  const [activeTab, setActiveTab] = useState<ViewSheetTab>(initialTab);
+
+  useEffect(() => {
+    setPartyTab("sender");
+    setActiveTab(initialTab);
+  }, [order?.id, initialTab]);
 
   if (!order) return null;
 
   const receivers = getOrderReceivers(order);
+  const hasReceivers = receivers.length > 0;
+  const showingReceivers = hasReceivers && partyTab === "receivers";
   const allowEdit = canEdit ?? hasPermission("canUpdatePickup", "pickup");
   const allowDelete = Boolean(onDelete) && hasPermission("canDeletePickup", "pickup");
   const allowCompletion = canManageCompletion ?? allowEdit;
@@ -207,44 +204,91 @@ export function OrderViewSheet({
   const showFooter = Boolean(
     showSecondaryActionsMenu || onPrint || allowEdit || allowDelete,
   );
+  const viewTabs: ViewSheetTab[] = ["overview", "history"];
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
-      <RecordViewSheetContent>
+      <RecordViewSheetContent
+        className={activeTab === "history" ? "sm:max-w-6xl" : undefined}
+      >
         <RecordViewSheetHeader
           icon={CalendarDays}
           eyebrow={t("orders.entity")}
           title={order.sender.name.trim() || t("orders.history.defaultSenderName")}
-          meta={
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                <CalendarDays className="size-3.5 shrink-0 opacity-70" aria-hidden />
-                {formatOrderDateWithWeekday(order.date, locale)}
-              </span>
-              <Badge
-                variant="outline"
-                className={
-                  order.completed
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                    : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                }
-              >
-                {getOrderCompletedLabel(order.completed, t)}
-              </Badge>
-            </div>
-          }
         />
 
-        <RecordViewSheetBody>
-          <PartyViewSections
-            customer={order.sender}
-            partyLabel={t("orders.columns.sender")}
-          />
+        <div
+          role="tablist"
+          aria-label={t("orders.view.tabs")}
+          className="flex gap-6 border-b px-6"
+        >
+          {viewTabs.map((tab) => (
+            <button
+              key={tab}
+              id={`order-tab-${tab}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              tabIndex={activeTab === tab ? 0 : -1}
+              onKeyDown={(event) => {
+                let next: ViewSheetTab | undefined;
+                if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                  next = tab === "overview" ? "history" : "overview";
+                }
+                if (event.key === "Home") next = "overview";
+                if (event.key === "End") next = "history";
+                if (next) {
+                  event.preventDefault();
+                  setActiveTab(next);
+                  document.getElementById(`order-tab-${next}`)?.focus();
+                }
+              }}
+              aria-controls={`order-panel-${tab}`}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "border-b-2 px-1 py-3 text-sm font-medium",
+                activeTab === tab
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground",
+              )}
+            >
+              {t(
+                tab === "overview"
+                  ? "orders.view.overview"
+                  : "orders.history.sectionTitle",
+              )}
+            </button>
+          ))}
+        </div>
 
-          <RecordViewSheetSection title={t("orders.columns.purpose")} icon={MessageSquare}>
+        {activeTab === "history" ? (
+          <RecordViewSheetBody
+            role="tabpanel"
+            id="order-panel-history"
+            aria-labelledby="order-tab-history"
+            className="flex flex-col overflow-hidden bg-card p-0"
+          >
+            <SenderOrderHistorySection
+              key={order.id}
+              sender={order.sender}
+              currentOrderId={String(order.id)}
+              variant="embedded"
+            />
+          </RecordViewSheetBody>
+        ) : (
+        <RecordViewSheetBody
+          role="tabpanel"
+          id="order-panel-overview"
+          aria-labelledby="order-tab-overview"
+        >
+          <RecordViewSheetSection title={t("orders.view.general")} icon={CalendarDays}>
+            <RecordViewSheetDetailRow
+              label={t("orders.columns.date")}
+              value={formatOrderDateWithWeekday(order.date, locale)}
+            />
             <div className="border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
               <p className="text-xs font-medium leading-snug text-muted-foreground">
-                {t("orders.columns.comments")}
+                {t("orders.columns.purpose")}
               </p>
               <p className="text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
                 {order.comments.length > 0
@@ -252,11 +296,45 @@ export function OrderViewSheet({
                   : t("common.empty.dash")}
               </p>
             </div>
+            <RecordViewSheetDetailRow
+              label={t("orders.tableColumns.completed")}
+              value={
+                <Badge
+                  variant="outline"
+                  className={
+                    order.completed
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                      : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                  }
+                >
+                  {getOrderCompletedLabel(order.completed, t)}
+                </Badge>
+              }
+            />
           </RecordViewSheetSection>
 
-          {receivers.length > 0 ? (
+          {hasReceivers ? (
+            <SegmentedControl
+              id="view-party-tab"
+              aria-label={t("orders.form.workflow.partyTabGroup")}
+              value={partyTab}
+              onValueChange={setPartyTab}
+              className="w-full"
+              options={[
+                { value: "sender", label: t("orders.form.workflow.partyTabSender") },
+                {
+                  value: "receivers",
+                  label: t("orders.form.workflow.partyTabReceiversCount", {
+                    count: receivers.length,
+                  }),
+                },
+              ]}
+            />
+          ) : null}
+
+          {showingReceivers ? (
             receivers.map((receiver, index) => (
-              <PartyViewSections
+              <PartyViewSection
                 key={`${receiver.id}-${index}`}
                 customer={receiver}
                 partyLabel={
@@ -264,20 +342,17 @@ export function OrderViewSheet({
                     ? `${t("orders.columns.receiver")} ${index + 1}`
                     : t("orders.columns.receiver")
                 }
+                nameLabel={t("orders.view.receiverName")}
                 addressIndex={0}
               />
             ))
           ) : (
-            <RecordViewSheetSection title={t("orders.columns.receiver")} icon={UserRound} padding="relaxed">
-              <p className="text-sm text-muted-foreground">{t("orders.empty.noReceiver")}</p>
-            </RecordViewSheetSection>
+            <PartyViewSection
+              customer={order.sender}
+              partyLabel={t("orders.columns.sender")}
+              nameLabel={t("orders.view.senderName")}
+            />
           )}
-
-          <SenderOrderHistorySection
-            sender={order.sender}
-            currentOrderId={String(order.id)}
-            variant="view"
-          />
 
           <RecordViewSheetSection title={t("orders.view.system")} icon={Info}>
             <RecordViewSheetDetailRow
@@ -309,6 +384,7 @@ export function OrderViewSheet({
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
+        )}
 
         {showFooter ? (
           <RecordViewSheetActions
