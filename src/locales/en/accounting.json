@@ -51,10 +51,6 @@
     "emptyNone": "No accounts yet.",
     "addAccount": "New account",
     "loading": "Loading accounts…",
-    "card": {
-      "title": "Accounts",
-      "description": "Account hierarchy, type, branch, and availability."
-    },
     "columns": {
       "id": "#",
       "type": "Type",
@@ -791,7 +787,7 @@
       "reportReady": "Daily income report ready."
     },
     "errors": {
-      "useLoanPaymentWorkflow": "Record loan payments through the loan payment workflow.",
+      "useLoanPaymentWorkflow": "Use the dedicated loan workflow for loan payments and principal reductions.",
       "paymentInvoiceAmbiguous": "More than one invoice has this number. Ask an administrator to resolve the duplicate before recording payment.",
       "paymentInvoiceInvalid": "The invoice reference could not be verified. Enter the exact invoice number and retry.",
       "responsibilityRequired": "Link an active employee to your user, or ask an authorized operator to select responsibility. Your entry has not been saved.",
@@ -1043,7 +1039,8 @@
       },
       "loanDecrease": {
         "label": "Register loan principal decrease",
-        "description": "Reduce principal on an existing loan"
+        "description": "Reduce outstanding principal as a non-cash loss. Prior payments stay unchanged.",
+        "shortLabel": "Principal forgiven"
       },
       "loanPayment": {
         "label": "Register loan payment",
@@ -1424,7 +1421,8 @@
     "transactionTypes": {
       "ISSUE": "Loan issued",
       "INCREASE": "Additional amount",
-      "PAYMENT": "Payment"
+      "PAYMENT": "Payment",
+      "DECREASE": "Principal forgiven"
     },
     "stats": {
       "outstandingBalance": "Outstanding balance",
@@ -1474,6 +1472,7 @@
         "loan": "Loan details",
         "employee": "Employee",
         "payments": "Payments",
+        "reductions": "Principal reductions",
         "audit": "Audit"
       },
       "reference": "Reference number",
@@ -1510,7 +1509,8 @@
       "decreaseAmountPositive": "Decrease amount must be greater than zero.",
       "decreaseExceedsBalance": "Decrease cannot exceed the open loan balance.",
       "paymentExceedsBalance": "Payment cannot exceed the open loan balance.",
-      "loanRequired": "Select a loan."
+      "loanRequired": "Select a loan.",
+      "decreaseAmountInvalid": "Enter a positive amount up to 1,000,000,000,000 with at most two decimal places."
     },
     "journalPreview": {
       "selectAccount": "Select account"
@@ -1595,6 +1595,10 @@
       "journalCredit": "Credit · Source cash or bank",
       "submit": "Add to loan"
     },
+    "reductions": {
+      "empty": "No principal reductions recorded.",
+      "noneReceived": "No money received"
+    },
     "decreaseForm": {
       "sections": {
         "loan": "Employee and loan",
@@ -1603,7 +1607,7 @@
         "notes": "Reference and notes",
         "journal": "Journal entry summary"
       },
-      "loanHint": "Choose the employee and the active loan. This lowers principal and the amount owed, and cannot exceed the open balance.",
+      "loanHint": "Forgive part or all of the outstanding loan. No money is received; prior payments stay unchanged.",
       "employee": "Employee",
       "selectEmployee": "Select employee",
       "searchEmployees": "Search employees",
@@ -1626,10 +1630,13 @@
       "reference": "Reference number",
       "optional": "Optional",
       "notes": "Description",
-      "notesPlaceholder": "Reason for the principal decrease",
-      "journalDebit": "Debit · Destination cash or bank",
+      "notesPlaceholder": "Reason for forgiving the principal",
+      "journalDebit": "Debit · Loan principal reductions",
       "journalCredit": "Credit · Loan receivable",
-      "submit": "Decrease loan"
+      "submit": "Forgive principal",
+      "lossAccountLabel": "Loss account",
+      "lossAccountName": "Loan principal reductions",
+      "noMoneyMovement": "The reduction is recorded as a loss. Cash and bank accounts stay unchanged."
     },
     "payments": {
       "title": "Payments",

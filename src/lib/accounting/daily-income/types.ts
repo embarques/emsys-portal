@@ -80,7 +80,8 @@ export type JournalTransactionType =
   | "INVENTORY"
   | "TRANSFER"
   | "LOAN"
-  | "LOAN-PAYMENT";
+  | "LOAN-PAYMENT"
+  | "LOAN-DECREASE";
 
 /** `creator` = digitizing user (API resolves their linked employee when employee/route are omitted). */
 export type DailyIncomeAssigneeSource = "creator" | "employee" | "route";

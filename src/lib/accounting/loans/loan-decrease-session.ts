@@ -1,17 +1,17 @@
-import { buildLoanIncreasePayload, decreaseLoan } from "./api";
-import type { Loan, LoanIncreaseValues } from "./types";
+import { buildLoanDecreasePayload, decreaseLoan } from "./api";
+import type { LoanDecreaseResult, LoanDecreaseValues } from "./types";
 import { createRandomId } from "@/lib/utils/id";
 
 /** One mounted entry session; uncertain commands retain their UUID and input snapshot. */
 export function createLoanDecreaseSession(send = decreaseLoan, newRequestId = createRandomId) {
   const attempts = new Map<string, {
     requestId: string;
-    values: LoanIncreaseValues;
-    pending?: Promise<Loan>;
+    values: LoanDecreaseValues;
+    pending?: Promise<LoanDecreaseResult>;
   }>();
 
-  return async (scope: string, values: LoanIncreaseValues): Promise<Loan> => {
-    const key = JSON.stringify([scope, values.loanId, buildLoanIncreasePayload(values)]);
+  return async (scope: string, values: LoanDecreaseValues): Promise<LoanDecreaseResult> => {
+    const key = JSON.stringify([scope, values.loanId, buildLoanDecreasePayload(values)]);
     let attempt = attempts.get(key);
     if (attempt?.pending) return attempt.pending;
     if (!attempt) {

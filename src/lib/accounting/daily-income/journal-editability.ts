@@ -12,6 +12,7 @@ const NON_EDITABLE_TYPES = new Set<string>([
   "INVENTORY",
   "LOAN",
   "LOAN-PAYMENT",
+  "LOAN-DECREASE",
   "VOID",
   "REVERSAL",
 ]);

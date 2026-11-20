@@ -19,7 +19,7 @@ import { CHECK_TABLE_FILTER_FIELDS } from "@/lib/accounting/checks/filter-fields
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { formatAccountingMoney } from "@/lib/accounting/display";
@@ -232,10 +232,6 @@ export function ChecksWorkspace() {
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <div>
-            <CardTitle>{t("accounting.checks.title")}</CardTitle>
-            <CardDescription>{t("accounting.checks.description")}</CardDescription>
-          </div>
           <TableDirectoryToolbar isLoading={isFetching || isSearchPending}
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}

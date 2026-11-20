@@ -349,7 +349,7 @@ export function LoansWorkspace() {
       return;
     }
     if (action === "decrease") {
-      if (!loanEntry.openDecrease) return;
+      if (!loanEntry.openDecrease || loan.status !== "ACTIVE" || loan.balance <= 0) return;
       setPaymentInitialLoan(null);
       setPrincipalInitialLoan(loan);
       setWorkflowKind("decrease");

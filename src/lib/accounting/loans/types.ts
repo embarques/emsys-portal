@@ -5,7 +5,7 @@ import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type LoanStatus = "ACTIVE" | "PAID" | "VOID";
 
-export type LoanTransactionType = "ISSUE" | "INCREASE" | "PAYMENT";
+export type LoanTransactionType = "ISSUE" | "INCREASE" | "DECREASE" | "PAYMENT";
 
 export type LoanAccountRef = AccountingLookup & {
   type?: string;
@@ -49,6 +49,7 @@ export type LoanTransaction = {
   type: LoanTransactionType;
   amount: number;
   assetAccount?: LoanAccountRef;
+  adjustmentAccount?: LoanAccountRef;
   transactionDate: string;
   referenceNumber: string;
   description: string;
@@ -108,10 +109,7 @@ export type LoanPaymentValues = {
 };
 
 /**
- * Shared payload for principal adjustments.
- * Increase: raises principal and amount owed (debit loan AR, credit source).
- * Decrease: lowers principal and amount owed, never above the open balance
- * (debit source, credit loan AR).
+ * Increase raises principal and amount owed (debit loan AR, credit source).
  */
 export type LoanIncreaseValues = {
   employeeId: number;
@@ -125,6 +123,13 @@ export type LoanIncreaseValues = {
   referenceNumber: string;
   description: string;
 };
+
+/** Forgiveness receives no money; the API owns the fixed loss account. */
+export type LoanDecreaseValues = Pick<LoanIncreaseValues,
+  "employeeId" | "employeeName" | "loanId" | "amount" | "transactionDate" | "referenceNumber" | "description"
+>;
+
+export type LoanDecreaseResult = { loan: Loan; journalId: string; incomeStatementId: number };
 
 export const DEFAULT_LOAN_LIST_PARAMS = {
   page: 1,
