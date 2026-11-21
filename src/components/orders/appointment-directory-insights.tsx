@@ -2,16 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { DirectoryInsightsToggle } from "@/components/app-shell/directory-insights-flip";
-import { PeriodChangeDescription } from "@/components/app-shell/period-change-description";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import { useNewOrderStats } from "@/lib/orders/hooks/use-orders";
 import {
-  DEFAULT_NEW_ORDER_STAT_PERIOD,
-  NEW_ORDER_STAT_PERIODS,
-  isNewOrderStatPeriod,
-  type NewOrderStatPeriod,
-} from "@/lib/orders/new-order-stats";
+  DirectoryInsightsShell,
+  DirectoryInsightsToggle,
+} from "@/components/app-shell/directory-insights-flip";
+import { NewAppointmentsStatCard } from "@/components/orders/new-appointments-stat-card";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +27,9 @@ type AppointmentDirectoryInsightsProps = {
   pendingEstimates: number;
   pendingPayments: number;
   isLoading?: boolean;
-  onBack: () => void;
+  /** When set, shows the directory flip back-to-table control. */
+  onBack?: () => void;
+  className?: string;
 };
 
 const SLICE_STYLE: Record<
@@ -272,56 +269,6 @@ function PendingAppointmentsPie({
   );
 }
 
-function NewAppointmentsInsightCard() {
-  const { t } = useTranslation();
-  const [period, setPeriod] = useState<NewOrderStatPeriod>(DEFAULT_NEW_ORDER_STAT_PERIOD);
-  const stats = useNewOrderStats(period);
-
-  const periodOptions = NEW_ORDER_STAT_PERIODS.map((value) => ({
-    value,
-    label: t(`orders.stats.new.periods.${value}`),
-  }));
-  const periodLabel = t(`orders.stats.new.periods.${period}`);
-
-  return (
-    <div className="rounded-2xl border bg-gradient-to-br from-teal-500/15 via-teal-500/5 to-transparent p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{t("orders.stats.new.label")}</p>
-          <p className="text-4xl font-bold tracking-tight tabular-nums">
-            {stats.isLoading ? "…" : stats.isError ? "—" : stats.total.toLocaleString()}
-          </p>
-        </div>
-        <SearchableSelect
-          aria-label={t("orders.stats.new.periodLabel")}
-          className="h-8 min-h-8 w-auto border bg-background py-0 pl-2 pr-7 text-xs"
-          contentClassName="min-w-[7rem]"
-          fitToOptions
-          options={periodOptions}
-          searchable={false}
-          value={period}
-          onValueChange={(value) => {
-            if (isNewOrderStatPeriod(value)) setPeriod(value);
-          }}
-        />
-      </div>
-      <div className="mt-3 text-sm">
-        {stats.isLoading ? (
-          <span className="text-muted-foreground">…</span>
-        ) : stats.isError ? (
-          <span className="text-destructive">{t("orders.stats.new.error")}</span>
-        ) : (
-          <PeriodChangeDescription
-            current={stats.total}
-            previous={stats.previousTotal}
-            periodLabel={periodLabel}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
 /** Insights face for Appointments: pending-purpose pie + period-scoped new appointments. */
 export function AppointmentDirectoryInsights({
   pendingTotal,
@@ -331,6 +278,7 @@ export function AppointmentDirectoryInsights({
   pendingPayments,
   isLoading = false,
   onBack,
+  className,
 }: AppointmentDirectoryInsightsProps) {
   const { t } = useTranslation();
   const [selectedKey, setSelectedKey] = useState<PendingSliceKey | null>(null);
@@ -389,22 +337,18 @@ export function AppointmentDirectoryInsights({
   }
 
   return (
-    <div className="flex h-full min-h-[22rem] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
-      <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
-        <div className="min-w-0 space-y-1">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            {t("shell.directoryInsights.eyebrow")}
-          </p>
-          <h2 className="truncate text-lg font-semibold tracking-tight">
-            {t("shell.directoryInsights.titleNamed", { title: t("orders.title") })}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t("orders.insights.description")}</p>
-        </div>
-        <DirectoryInsightsToggle open onOpenChange={(next) => !next && onBack()} />
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-5">
-        <NewAppointmentsInsightCard />
+    <DirectoryInsightsShell
+      title={t("orders.title")}
+      description={t("orders.insights.description")}
+      className={className}
+      headerAction={
+        onBack ? (
+          <DirectoryInsightsToggle open onOpenChange={(next) => !next && onBack()} />
+        ) : undefined
+      }
+    >
+      <div className="space-y-5">
+        <NewAppointmentsStatCard />
 
         <section className="rounded-2xl border p-5">
           <div className="mb-4 space-y-1">
@@ -435,6 +379,6 @@ export function AppointmentDirectoryInsights({
           )}
         </section>
       </div>
-    </div>
+    </DirectoryInsightsShell>
   );
 }

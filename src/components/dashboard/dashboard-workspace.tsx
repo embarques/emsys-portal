@@ -68,7 +68,6 @@ export function DashboardWorkspace() {
 
       <div className="space-y-10">
         <section className="space-y-4">
-          <h3 className="text-lg font-semibold">{t("dashboard.appointments.title")}</h3>
           <DashboardAppointmentsStats />
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardChartCard
@@ -110,7 +109,6 @@ export function DashboardWorkspace() {
         </section>
 
         <section className="space-y-4">
-          <h3 className="text-lg font-semibold">{t("dashboard.invoices.title")}</h3>
           <DashboardInvoicesStats />
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardChartCard
@@ -159,7 +157,6 @@ export function DashboardWorkspace() {
         </section>
 
         <section className="space-y-4">
-          <h3 className="text-lg font-semibold">{t("dashboard.clients.title")}</h3>
           <DashboardCustomersStats />
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardChartCard

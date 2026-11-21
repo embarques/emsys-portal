@@ -632,7 +632,7 @@
       "next": "Siguiente",
       "confirm": "¿Cerrar el cierre #{{id}} del {{date}}? Las transacciones quedarán bloqueadas hasta que se vuelva a abrir."
     },
-    "title": "Transacciones de hoy",
+    "title": "Transacciones diarias",
     "description": "Consulte los cuadres diarios y sus transacciones por ubicación. Agregue una transacción para iniciar el cuadre de hoy cuando sea necesario.",
     "noun": "transacciones",
     "transactionNoun": "transacción",
@@ -709,7 +709,7 @@
       "noPayment": "Sin pago"
     },
     "transactions": {
-      "title": "Transacciones de hoy",
+      "title": "Transacciones diarias",
       "searchPlaceholder": "Buscar transacciones…",
       "empty": "Ninguna transacción coincide con este cierre.",
       "loadingTitle": "Cargando transacciones",

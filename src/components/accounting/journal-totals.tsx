@@ -15,6 +15,15 @@ import type { JournalCurrencySummary } from "@/lib/accounting/daily-income/recon
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { formatAuditDate } from "@/lib/audit/display";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+  compactTableShellClassName,
+} from "@/components/ui/compact-table";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -48,42 +57,47 @@ function BreakdownTransactionTable({
   if (entries.length === 0) return null;
 
   return (
-    <div className="mt-1.5 overflow-x-auto rounded-md border">
-      <table className="w-full min-w-[44rem] text-xs">
-        <caption className="sr-only">{t("accounting.journalReconciliation.confirmList.caption")}</caption>
-        <thead className="bg-muted/60 text-left text-muted-foreground">
-          <tr>
-            {headers.map((label, index) => (
-              <th
-                key={label}
-                scope="col"
-                className={`whitespace-nowrap px-2 py-1.5 font-medium${index === headers.length - 1 ? " text-right" : ""}`}
-              >
-                {label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => (
-            <tr key={entry.id} className="border-t">
-              <td className="whitespace-nowrap px-2 py-1.5">
-                {entry.date ? formatAuditDate(entry.date) : dash}
-              </td>
-              <td className="whitespace-nowrap px-2 py-1.5">
-                {entry.invoiceOrExternalRef || entry.label || dash}
-              </td>
-              <td className="whitespace-nowrap px-2 py-1.5">{entry.paymentMethod || dash}</td>
-              <td className="whitespace-nowrap px-2 py-1.5">{entry.createdBy || dash}</td>
-              <td className="whitespace-nowrap px-2 py-1.5">{entry.employee || dash}</td>
-              <td className="px-2 py-1.5">{entry.account || dash}</td>
-              <td className={`whitespace-nowrap px-2 py-1.5 text-right ${amountClass}`}>
-                {format(entry.amount)}
-              </td>
+    <div className={cn("mt-1.5", compactTableShellClassName)}>
+      <CompactTableScroll aria-label={t("accounting.journalReconciliation.confirmList.caption")}>
+        <table className={compactTableClassName}>
+          <caption className="sr-only">{t("accounting.journalReconciliation.confirmList.caption")}</caption>
+          <thead>
+            <tr className={compactTableHeadRowClassName}>
+              {headers.map((label, index) => (
+                <th
+                  key={label}
+                  scope="col"
+                  className={cn(
+                    compactTableHeadClassName,
+                    index === headers.length - 1 && "text-right",
+                  )}
+                >
+                  {label}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr key={entry.id} className={compactTableRowClassName}>
+                <td className={compactTableCellClassName}>
+                  {entry.date ? formatAuditDate(entry.date) : dash}
+                </td>
+                <td className={compactTableCellClassName}>
+                  {entry.invoiceOrExternalRef || entry.label || dash}
+                </td>
+                <td className={compactTableCellClassName}>{entry.paymentMethod || dash}</td>
+                <td className={compactTableCellClassName}>{entry.createdBy || dash}</td>
+                <td className={compactTableCellClassName}>{entry.employee || dash}</td>
+                <td className={compactTableCellClassName}>{entry.account || dash}</td>
+                <td className={cn(compactTableCellClassName, "text-right", amountClass)}>
+                  {format(entry.amount)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CompactTableScroll>
     </div>
   );
 }
@@ -428,40 +442,49 @@ export function ClearanceConfirmList({
     t("accounting.dailyIncome.columns.payment"),
   ];
   return (
-    <div className="max-h-64 overflow-auto rounded-md border">
-      <table className="w-full text-xs">
-        <caption className="sr-only">{t("accounting.journalClearance.confirmList.caption")}</caption>
-        <thead className="sticky top-0 bg-muted text-left text-muted-foreground">
-          <tr>
-            {headers.map((label, index) => (
-              <th
-                key={label}
-                scope="col"
-                className={`whitespace-nowrap px-2 py-1.5 font-medium${index === headers.length - 1 ? " text-right" : ""}`}
-              >
-                {label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id} className="border-t">
-              <td className="whitespace-nowrap px-2 py-1.5">{row.date ? formatAuditDate(row.date) : dash}</td>
-              <td className="whitespace-nowrap px-2 py-1.5">{row.invoice?.number || dash}</td>
-              <td className="whitespace-nowrap px-2 py-1.5">{row.refNumber || dash}</td>
-              <td className="whitespace-nowrap px-2 py-1.5">
-                {row.checkNumber || row.externalReferenceNumber || dash}
-              </td>
-              <td className="whitespace-nowrap px-2 py-1.5">{row.paymentMethod?.name || dash}</td>
-              <td className="px-2 py-1.5">{resolveJournalRowAccount(row, chartAccountsById)?.name || dash}</td>
-              <td className="whitespace-nowrap px-2 py-1.5 text-right font-medium tabular-nums">
-                {formatDailyIncomeMoney(row.amount, row.currency || "USD")}
-              </td>
+    <div className={cn(compactTableShellClassName, "max-h-64")}>
+      <CompactTableScroll aria-label={t("accounting.journalClearance.confirmList.caption")}>
+        <table className={compactTableClassName}>
+          <caption className="sr-only">{t("accounting.journalClearance.confirmList.caption")}</caption>
+          <thead>
+            <tr className={compactTableHeadRowClassName}>
+              {headers.map((label, index) => (
+                <th
+                  key={label}
+                  scope="col"
+                  className={cn(
+                    compactTableHeadClassName,
+                    index === headers.length - 1 && "text-right",
+                  )}
+                >
+                  {label}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className={compactTableRowClassName}>
+                <td className={compactTableCellClassName}>
+                  {row.date ? formatAuditDate(row.date) : dash}
+                </td>
+                <td className={compactTableCellClassName}>{row.invoice?.number || dash}</td>
+                <td className={compactTableCellClassName}>{row.refNumber || dash}</td>
+                <td className={compactTableCellClassName}>
+                  {row.checkNumber || row.externalReferenceNumber || dash}
+                </td>
+                <td className={compactTableCellClassName}>{row.paymentMethod?.name || dash}</td>
+                <td className={compactTableCellClassName}>
+                  {resolveJournalRowAccount(row, chartAccountsById)?.name || dash}
+                </td>
+                <td className={cn(compactTableCellClassName, "text-right font-medium tabular-nums")}>
+                  {formatDailyIncomeMoney(row.amount, row.currency || "USD")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CompactTableScroll>
     </div>
   );
 }

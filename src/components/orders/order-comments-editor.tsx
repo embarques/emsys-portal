@@ -527,13 +527,16 @@ export function OrderCommentsEditor({
                   : t("orders.form.design.editPurpose", { index: currentIndex + 1 })}
               </h3>
               {!isCurrentDraft ? (
-                <div className="flex items-center gap-1">
-                  <Button type="button" variant="outline" size="sm" onClick={addComment}>
-                    <Plus className="size-4" />{t("orders.form.design.addAnotherPurpose")}
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => removeComment(currentIndex)}
-                    aria-label={t("orders.comments.removeAria", { index: currentIndex + 1 })}><Trash2 className="size-4" /></Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={() => removeComment(currentIndex)}
+                  aria-label={t("orders.comments.removeAria", { index: currentIndex + 1 })}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               ) : null}
             </div>
             <div role="group" aria-label={t("orders.comments.columns.purpose")} className="grid grid-cols-3 gap-2 @md:grid-cols-5">

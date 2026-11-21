@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { PeriodChangeDescription } from "@/components/app-shell/period-change-description";
-import { PeriodStatCard } from "@/components/app-shell/period-stat-card";
+import { PeriodInsightCard } from "@/components/app-shell/period-insight-card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useNewInvoiceStats } from "@/lib/invoices/hooks/use-invoices";
 import {
@@ -27,10 +27,10 @@ export function NewInvoicesStatCard() {
   const periodLabel = t(`invoices.stats.new.periods.${period}`);
 
   return (
-    <PeriodStatCard
+    <PeriodInsightCard
       description={
         stats.isLoading ? (
-          "…"
+          <span className="text-muted-foreground">…</span>
         ) : (
           <PeriodChangeDescription
             current={stats.total}
@@ -43,7 +43,7 @@ export function NewInvoicesStatCard() {
       periodControl={
         <SearchableSelect
           aria-label={t("invoices.stats.new.periodLabel")}
-          className="h-8 min-h-8 w-auto border py-0 pl-2 pr-7 text-xs max-md:min-h-8 max-md:rounded-md max-md:text-xs"
+          className="h-8 min-h-8 w-auto border bg-background py-0 pl-2 pr-7 text-xs"
           contentClassName="min-w-[7rem]"
           fitToOptions
           options={periodOptions}

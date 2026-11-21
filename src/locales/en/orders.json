@@ -166,7 +166,6 @@
     "design": {
       "addPurpose": "Add a purpose",
       "editPurpose": "Edit purpose {{index}}",
-      "addAnotherPurpose": "Add another",
       "addedPurposes": "Added purposes ({{count}})",
       "noPurposes": "No purposes added yet.",
       "editPurposeAria": "Edit purpose {{index}}: {{purpose}}"

@@ -387,7 +387,7 @@ export function ActiveRoutesDirectoryWorkspace({
   );
 
   return (
-    <div className="flex min-h-[calc(100vh-11rem)] flex-col">
+    <div>
       <PageHeader
         title={t(`routes.${copyPrefix}.title`)}
         description={t(`routes.pages.${copyPrefix}`)}

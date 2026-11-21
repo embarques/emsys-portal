@@ -9,6 +9,16 @@ import { inventoryPaymentSteps, ReconcileDispatchDialog } from "@/components/acc
 import { FormBody } from "@/components/forms/form-shell";
 import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { Button } from "@/components/ui/button";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+  compactTableShellClassName,
+} from "@/components/ui/compact-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
@@ -23,6 +33,7 @@ import { isInventoryHolderType, INVENTORY_CUSTODIAN_HOLDER_TYPES } from "@/lib/i
 import { PENDING_DISPATCHES_PAGE_SIZE } from "@/lib/inventory/pending-dispatches/api";
 import { usePendingDispatches } from "@/lib/inventory/pending-dispatches/hooks";
 import type { PendingDispatchFilters, PendingInventoryDispatch } from "@/lib/inventory/pending-dispatches/types";
+import { cn } from "@/lib/utils";
 
 const initialFilters: PendingDispatchFilters = { holder: "", from: "", through: "", age: "" };
 const ALL_VALUE = "all";
@@ -49,6 +60,7 @@ export function PendingInventoryDispatchesPanel({ presentation = "page", onBusyC
   const query = usePendingDispatches(activeFilters, page);
   const holdersQuery = useInventoryHolders();
   const text = (key: string, values?: Record<string, string | number>) => t(`accounting.pendingInventory.${key}`, values);
+  const empty = t("common.empty.dash");
   const holderOptions = useMemo(() => [
     { value: ALL_VALUE, label: t("accounting.pendingInventory.allHolders") },
     ...(holdersQuery.data ?? [])
@@ -90,21 +102,59 @@ export function PendingInventoryDispatchesPanel({ presentation = "page", onBusyC
     </div>
     {query.isError ? <p role="alert" className="text-destructive">{normalizeApiError(query.error).message}</p> : null}
     {query.isPending ? <DirectoryTableLoader icon={PackageCheck} title={text("loading")} description={text("loadingDescription")} columns={COLUMNS.slice(0, -1).map((key) => text(`columns.${key}`))} /> : !query.isError ? <>
-      <div className="overflow-x-auto rounded-xl border" aria-busy={query.isFetching}><table className="w-full text-left text-sm"><thead><tr>{COLUMNS.map((key) => <th scope="col" className="p-3" key={key}>{text(`columns.${key}`)}</th>)}</tr></thead><tbody>
-        {query.data?.items.map((row) => <tr key={row.id} className="border-t">
-          <td className="p-3">{row.dispatchedAt ? new Date(row.dispatchedAt).toLocaleDateString() : "—"}</td>
-          <td className="p-3"><span className="block">{row.holder.displayName}</span>{isInventoryHolderType(row.holder.type) ? <span className="text-xs text-muted-foreground">{getHolderTypeLabel(row.holder.type, t)}</span> : null}</td>
-          <td className="p-3">{row.assigneeEmployee?.name || "—"}</td>
-          <td className="p-3">{row.dailyRoute?.name || "—"}</td>
-          <td className="max-w-64 p-3">{itemsSummary(row) || "—"}</td>
-          <td className="p-3">{row.dispatchedQuantity}</td>
-          <td className="p-3">{row.awaitingConfirmationQuantity}</td>
-          <td className="p-3 font-medium">{row.outstandingQuantity}</td>
-          <td className="p-3">{row.ageDays}</td>
-          <td className="p-3"><Button variant="outline" onClick={() => setSelection({ companyId, row })}>{text(canReconcile ? "reconcile" : "view")}</Button></td>
-        </tr>)}
-        {!query.isFetching && !query.data?.items.length ? <tr><td colSpan={COLUMNS.length} className="p-6 text-center text-muted-foreground">{text("empty")}</td></tr> : null}
-      </tbody></table></div>
+      <div className={compactTableShellClassName} aria-busy={query.isFetching}>
+        <CompactTableScroll aria-label={text("title")}>
+          <table className={compactTableClassName}>
+            <thead>
+              <tr className={compactTableHeadRowClassName}>
+                {COLUMNS.map((key) => (
+                  <th scope="col" className={compactTableHeadClassName} key={key}>
+                    {text(`columns.${key}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {query.data?.items.map((row) => (
+                <tr key={row.id} className={compactTableRowClassName}>
+                  <td className={compactTableCellClassName}>
+                    {row.dispatchedAt ? new Date(row.dispatchedAt).toLocaleDateString() : empty}
+                  </td>
+                  <td className={compactTableCellWrapClassName}>
+                    <span className="block">{row.holder.displayName}</span>
+                    {isInventoryHolderType(row.holder.type) ? (
+                      <span className="text-xs text-muted-foreground">
+                        {getHolderTypeLabel(row.holder.type, t)}
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className={compactTableCellClassName}>{row.assigneeEmployee?.name || empty}</td>
+                  <td className={compactTableCellClassName}>{row.dailyRoute?.name || empty}</td>
+                  <td className={cn(compactTableCellWrapClassName, "max-w-64")}>
+                    {itemsSummary(row) || empty}
+                  </td>
+                  <td className={compactTableCellClassName}>{row.dispatchedQuantity}</td>
+                  <td className={compactTableCellClassName}>{row.awaitingConfirmationQuantity}</td>
+                  <td className={cn(compactTableCellClassName, "font-medium")}>{row.outstandingQuantity}</td>
+                  <td className={compactTableCellClassName}>{row.ageDays}</td>
+                  <td className={compactTableCellClassName}>
+                    <Button variant="outline" onClick={() => setSelection({ companyId, row })}>
+                      {text(canReconcile ? "reconcile" : "view")}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {!query.isFetching && !query.data?.items.length ? (
+                <tr>
+                  <td colSpan={COLUMNS.length} className="px-2 py-12 text-center text-muted-foreground">
+                    {text("empty")}
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </CompactTableScroll>
+      </div>
       {query.isFetching ? <p role="status" className="text-sm text-muted-foreground">{text("loading")}</p> : null}
       <div className="flex items-center justify-end gap-3"><Button variant="outline" disabled={page <= 1 || query.isFetching} onClick={() => setPage((value) => value - 1)}>{text("previous")}</Button><span>{page}</span><Button variant="outline" disabled={page * PENDING_DISPATCHES_PAGE_SIZE >= (query.data?.total ?? 0) || query.isFetching} onClick={() => setPage((value) => value + 1)}>{text("next")}</Button></div>
     </> : null}

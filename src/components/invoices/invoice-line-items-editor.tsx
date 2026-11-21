@@ -22,6 +22,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+  compactTableShellClassName,
+} from "@/components/ui/compact-table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -516,26 +526,28 @@ function WizardLineItemsTable({
   onRemove,
   onMove,
 }: WizardLineItemsTableProps) {
+  const { t } = useTranslation();
+  const empty = t("common.empty.dash");
   const visibleItems = items.filter((item) => item.id !== editingId);
 
   return (
-    <div className="hidden overflow-hidden rounded-xl border md:block">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2.5 font-medium">{descriptionColumn}</th>
-              <th className="w-20 px-3 py-2.5 font-medium">{quantityColumn}</th>
-              <th className="w-20 px-3 py-2.5 font-medium">{labelsColumn}</th>
-              <th className="w-28 px-3 py-2.5 font-medium">{unitPriceColumn}</th>
-              <th className="w-28 px-3 py-2.5 font-medium">{totalColumn}</th>
-              <th className="w-36 px-3 py-2.5 font-medium">{actionsColumn}</th>
+    <div className={cn("hidden md:block", compactTableShellClassName)}>
+      <CompactTableScroll aria-label={descriptionColumn}>
+        <table className={compactTableClassName}>
+          <thead>
+            <tr className={compactTableHeadRowClassName}>
+              <th className={compactTableHeadClassName}>{descriptionColumn}</th>
+              <th className={cn(compactTableHeadClassName, "w-20")}>{quantityColumn}</th>
+              <th className={cn(compactTableHeadClassName, "w-20")}>{labelsColumn}</th>
+              <th className={cn(compactTableHeadClassName, "w-28")}>{unitPriceColumn}</th>
+              <th className={cn(compactTableHeadClassName, "w-28")}>{totalColumn}</th>
+              <th className={cn(compactTableHeadClassName, "w-36")}>{actionsColumn}</th>
             </tr>
           </thead>
           <tbody>
             {visibleItems.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={6} className="px-2 py-12 text-center text-muted-foreground">
                   {emptyMessage}
                 </td>
               </tr>
@@ -543,19 +555,26 @@ function WizardLineItemsTable({
               visibleItems.map((item, index) => (
                 <tr
                   key={item.id}
-                  className="cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/40"
+                  className={cn(
+                    compactTableRowClassName,
+                    "cursor-pointer transition-colors hover:bg-muted/40",
+                  )}
                   onClick={editOnRowClick(() => onEdit(item.id))}
                 >
-                  <td className="px-3 py-2.5 font-medium">{item.itemName.trim() || "—"}</td>
-                  <td className="px-3 py-2.5 tabular-nums">{item.quantity}</td>
-                  <td className="px-3 py-2.5 tabular-nums">{resolveLineLabelCount(item)}</td>
-                  <td className="px-3 py-2.5 tabular-nums">
-                    {item.unitPrice.trim() ? formatInvoiceMoney(Number(item.unitPrice)) : "—"}
+                  <td className={cn(compactTableCellWrapClassName, "font-medium")}>
+                    {item.itemName.trim() || empty}
                   </td>
-                  <td className="px-3 py-2.5 tabular-nums">
+                  <td className={cn(compactTableCellClassName, "tabular-nums")}>{item.quantity}</td>
+                  <td className={cn(compactTableCellClassName, "tabular-nums")}>
+                    {resolveLineLabelCount(item)}
+                  </td>
+                  <td className={cn(compactTableCellClassName, "tabular-nums")}>
+                    {item.unitPrice.trim() ? formatInvoiceMoney(Number(item.unitPrice)) : empty}
+                  </td>
+                  <td className={cn(compactTableCellClassName, "tabular-nums")}>
                     {formatInvoiceMoney(resolveLineTotal(item))}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className={compactTableCellClassName}>
                     <div className="flex items-center gap-1">
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -629,7 +648,7 @@ function WizardLineItemsTable({
             )}
           </tbody>
         </table>
-      </div>
+      </CompactTableScroll>
     </div>
   );
 }

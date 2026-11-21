@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+  compactTableShellClassName,
+} from "@/components/ui/compact-table";
 import { useTranslation } from "@/lib/i18n";
 import type { LabelUpdateResult } from "@/lib/labels/types";
 import { cn } from "@/lib/utils";
@@ -83,7 +93,8 @@ export function LabelChangeOutputTable({
     <div
       data-testid="label-change-output"
       className={cn(
-        "flex max-h-[min(20rem,45%)] min-h-[8rem] shrink-0 flex-col overflow-hidden rounded-xl border",
+        "max-h-[min(20rem,45%)] min-h-[8rem] shrink-0",
+        compactTableShellClassName,
         className,
       )}
     >
@@ -94,61 +105,64 @@ export function LabelChangeOutputTable({
       {rows.length === 0 ? (
         <p className="px-3 py-4 text-sm text-muted-foreground">{emptyMessage}</p>
       ) : (
-        <div className="min-h-0 flex-1 overflow-auto">
-          <table className="w-full min-w-[1100px] text-left text-sm">
-            <thead className="sticky top-0 z-10 bg-muted/50 text-xs text-muted-foreground">
-              <tr className="border-b">
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.barcode")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.invoice")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.container")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.prevStatus")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.newStatus")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.prevContainer")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.newContainer")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.prevRoute")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.newRoute")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.updatedAt")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.updatedBy")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.message")}</th>
+        <CompactTableScroll
+          aria-label={t("labels.staging.output.title")}
+          className="min-h-0 flex-1"
+        >
+          <table className={compactTableClassName}>
+            <thead>
+              <tr className={compactTableHeadRowClassName}>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.barcode")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.invoice")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.container")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.prevStatus")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.newStatus")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.prevContainer")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.newContainer")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.prevRoute")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.newRoute")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.updatedAt")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.updatedBy")}</th>
+                <th className={compactTableHeadClassName}>{t("labels.staging.output.columns.message")}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-0">
-                  <td className="px-3 py-2 font-mono text-xs">{row.barcode}</td>
-                  <td className="px-3 py-2">
+                <tr key={row.id} className={compactTableRowClassName}>
+                  <td className={cn(compactTableCellClassName, "font-mono")}>{row.barcode}</td>
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.invoiceNumber} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.container} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.previousStatus} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.newStatus} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.previousContainer} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.newContainer} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.previousRoute} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.newRoute} />
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     {formatOccurredAt(row.occurredAt, locale)}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     <OutputValue value={row.createdBy} />
                   </td>
                   <td
                     className={cn(
-                      "px-3 py-2",
+                      compactTableCellWrapClassName,
                       row.success
                         ? "text-emerald-600 dark:text-emerald-400"
                         : "text-destructive",
@@ -160,7 +174,7 @@ export function LabelChangeOutputTable({
               ))}
             </tbody>
           </table>
-        </div>
+        </CompactTableScroll>
       )}
     </div>
   );

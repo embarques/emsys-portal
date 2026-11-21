@@ -356,9 +356,9 @@ It includes:
 
 The goal is to maintain a centralized financial history of the company's operations.
 
-### Today's Transactions (Daily Income)
+### Daily Transactions (Daily Income)
 
-Today's Transactions (`/accounting/daily-income`) records and browses a closeout's
+Daily Transactions (`/accounting/daily-income`) records and browses a closeout's
 invoice registrations/initial payments, existing-invoice payments, adjustments,
 income, expenses, inventory changes and account transfers. Loan creation and
 loan payments use their dedicated feature APIs. Historical closeouts remain
@@ -705,7 +705,7 @@ The API only exposes generate endpoints (`POST /reports/{type}`) plus a public d
 
 Insights provides analytics and business intelligence that can help management improve operations and make better decisions. The Dashboard already surfaces these KPIs, so Analytics is not listed in the sidebar (the `/analytics` route may still exist for deep links).
 
-Dashboard KPI cards and all-time weekday/month charts use `dashboard:view`:
+Dashboard KPI insight panels and all-time weekday/month charts use `dashboard:view`:
 
 - `GET /v1/insights/kpis?period=7d|30d|3m|6m|1y` — rolling current + previous windows in one aggregation per KPI (`newAppointments`, `newInvoices`, `newCustomers`, `departedContainers`, `averageValuePerContainer`)
 - Containers **Average value per container** uses the dedicated `GET /v1/containers/stats/average-value` endpoint instead of the insights field

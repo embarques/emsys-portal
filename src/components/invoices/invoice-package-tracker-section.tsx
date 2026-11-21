@@ -4,6 +4,15 @@ import { useMemo } from "react";
 import { Package } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+} from "@/components/ui/compact-table";
 import { formatLabelTimestamp } from "@/lib/labels/display";
 import { buildInvoicePackageTrackerEntries } from "@/lib/invoices/package-tracker";
 import type { Invoice } from "@/lib/invoices/types";
@@ -32,17 +41,17 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
       {sortedTimeline.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.packageTracker.empty")}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <CompactTableScroll aria-label={t("invoices.view.packageTracker.title", { count: timeline.length })}>
+          <table className={compactTableClassName}>
             <thead>
-              <tr className="border-b bg-muted/40 text-muted-foreground">
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+              <tr className={compactTableHeadRowClassName}>
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.packageTracker.fields.dateTime")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.packageTracker.fields.createdBy")}
                 </th>
-                <th className="px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.packageTracker.fields.description")}
                 </th>
               </tr>
@@ -51,14 +60,14 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
               {sortedTimeline.map((entry) => {
                 const dateTime = formatLabelTimestamp(entry.timestamp);
                 return (
-                  <tr key={entry.id} className="border-b last:border-b-0 even:bg-muted/25">
-                    <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                  <tr key={entry.id} className={compactTableRowClassName}>
+                    <td className={compactTableCellClassName}>
                       {isFilled(dateTime) ? dateTime : empty}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                    <td className={compactTableCellClassName}>
                       {isFilled(entry.performedBy) ? entry.performedBy : empty}
                     </td>
-                    <td className="min-w-[10rem] px-3 py-2 leading-snug text-foreground [overflow-wrap:anywhere]">
+                    <td className={compactTableCellWrapClassName}>
                       {isFilled(entry.description) ? entry.description : empty}
                     </td>
                   </tr>
@@ -66,7 +75,7 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
               })}
             </tbody>
           </table>
-        </div>
+        </CompactTableScroll>
       )}
     </RecordViewSheetSection>
   );

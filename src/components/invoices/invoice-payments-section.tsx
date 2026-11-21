@@ -10,6 +10,16 @@ import { normalizeApiError } from "@/lib/api/axios";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+} from "@/components/ui/compact-table";
+import { cn } from "@/lib/utils";
+import {
   formatInvoiceCommentDateTime,
   formatInvoiceMoney,
 } from "@/lib/invoices/display";
@@ -68,25 +78,27 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
       title={t("invoices.view.payments.title", { count: sortedPayments.length })}
       icon={Wallet}
     >
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+      <CompactTableScroll aria-label={t("invoices.view.payments.title", { count: sortedPayments.length })}>
+        <table className={compactTableClassName}>
           <thead>
-            <tr className="border-b bg-muted/40 text-muted-foreground">
-              <th className="w-8 px-1 py-2"><span className="sr-only">{t("accounting.dailyIncome.actions.printReceipt")}</span></th>
-              <th className="px-3 py-2 font-medium">
+            <tr className={compactTableHeadRowClassName}>
+              <th className={cn(compactTableHeadClassName, "w-8 px-1")}>
+                <span className="sr-only">{t("accounting.dailyIncome.actions.printReceipt")}</span>
+              </th>
+              <th className={compactTableHeadClassName}>
                 {t("invoices.view.payments.fields.description")}
               </th>
-              <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+              <th className={cn(compactTableHeadClassName, "text-right")}>
                 {t("invoices.view.payments.fields.amount")}
               </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
+              <th className={compactTableHeadClassName}>
                 {t("invoices.view.payments.fields.method")}
               </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
+              <th className={compactTableHeadClassName}>
                 {t("invoices.view.payments.fields.date")}
               </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">{referenceLabel}</th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
+              <th className={compactTableHeadClassName}>{referenceLabel}</th>
+              <th className={compactTableHeadClassName}>
                 {t("invoices.view.payments.fields.createdBy")}
               </th>
             </tr>
@@ -101,8 +113,8 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
               const reference = payment.referenceNumber?.trim() ?? "";
               const createdBy = payment.createdBy?.trim() ?? "";
               return (
-                <tr key={payment.id} className="border-b last:border-b-0 even:bg-muted/25">
-                  <td className="px-1 py-1">
+                <tr key={payment.id} className={compactTableRowClassName}>
+                  <td className={cn(compactTableCellClassName, "w-8 px-1")}>
                     <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
                       aria-label={t("accounting.dailyIncome.actions.printReceipt")}
                       title={t("accounting.dailyIncome.actions.printReceipt")}
@@ -113,22 +125,22 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
                         : <Printer className="h-3.5 w-3.5" />}
                     </Button>
                   </td>
-                  <td className="min-w-[8rem] px-3 py-2 leading-snug text-foreground [overflow-wrap:anywhere]">
+                  <td className={cn(compactTableCellWrapClassName, "min-w-[8rem]")}>
                     {isFilled(description) ? description : empty}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-foreground">
+                  <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
                     {Number.isFinite(payment.amount) ? formatInvoiceMoney(payment.amount) : empty}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                  <td className={compactTableCellClassName}>
                     {isFilled(method) ? method : empty}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                  <td className={compactTableCellClassName}>
                     {isFilled(date) ? date : empty}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono text-foreground">
+                  <td className={cn(compactTableCellClassName, "font-mono")}>
                     {isFilled(reference) ? reference : empty}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                  <td className={compactTableCellClassName}>
                     {isFilled(createdBy) ? createdBy : empty}
                   </td>
                 </tr>
@@ -136,7 +148,7 @@ export function InvoicePaymentsSection({ invoice }: InvoicePaymentsSectionProps)
             })}
           </tbody>
         </table>
-      </div>
+      </CompactTableScroll>
     </RecordViewSheetSection>
   );
 }
