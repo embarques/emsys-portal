@@ -5,6 +5,16 @@ import { ScanBarcode } from "lucide-react";
 
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+} from "@/components/ui/compact-table";
+import { cn } from "@/lib/utils";
 import { getBarcodeStatusBadgeClass } from "@/lib/barcodes/display";
 import { resolveInvoiceBarcodeStatusRows } from "@/lib/invoices/barcode-status";
 import type { Invoice } from "@/lib/invoices/types";
@@ -32,40 +42,40 @@ export function InvoiceBarcodeStatusSection({ invoice }: InvoiceBarcodeStatusSec
       {rows.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.barcodeStatus.empty")}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <CompactTableScroll aria-label={t("invoices.view.barcodeStatus.title", { count: rows.length })}>
+          <table className={compactTableClassName}>
             <thead>
-              <tr className="border-b bg-muted/40 text-muted-foreground">
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+              <tr className={compactTableHeadRowClassName}>
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.barcodeStatus.fields.barcode")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.barcodeStatus.fields.status")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.barcodeStatus.fields.container")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                <th className={cn(compactTableHeadClassName, "text-right")}>
                   {t("invoices.view.barcodeStatus.fields.quantity")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                <th className={cn(compactTableHeadClassName, "text-right")}>
                   {t("invoices.view.barcodeStatus.fields.labels")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.barcodeStatus.fields.deliveryRoute")}
                 </th>
-                <th className="px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.barcodeStatus.fields.description")}
                 </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.id} className="border-b last:border-b-0 even:bg-muted/25">
-                  <td className="whitespace-nowrap px-3 py-2 font-mono font-medium text-foreground">
+                <tr key={row.id} className={compactTableRowClassName}>
+                  <td className={cn(compactTableCellClassName, "font-mono font-medium")}>
                     {row.barcode}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2">
+                  <td className={compactTableCellClassName}>
                     {isFilled(row.status) ? (
                       <TableTagText className={getBarcodeStatusBadgeClass(row.status)}>
                         {row.status}
@@ -74,26 +84,26 @@ export function InvoiceBarcodeStatusSection({ invoice }: InvoiceBarcodeStatusSec
                       <span className="text-muted-foreground">{empty}</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                  <td className={compactTableCellClassName}>
                     {isFilled(row.container) ? row.container : empty}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-foreground">
+                  <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
                     {row.quantity}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-foreground">
+                  <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
                     {row.labels}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                  <td className={compactTableCellClassName}>
                     {isFilled(row.deliveryRoute) ? row.deliveryRoute : empty}
                   </td>
-                  <td className="min-w-[8rem] px-3 py-2 leading-snug text-foreground [overflow-wrap:anywhere]">
+                  <td className={cn(compactTableCellWrapClassName, "min-w-[8rem]")}>
                     {isFilled(row.description) ? row.description : empty}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </CompactTableScroll>
       )}
     </RecordViewSheetSection>
   );

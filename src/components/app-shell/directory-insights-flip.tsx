@@ -125,6 +125,160 @@ function RelativeShareBar({
   );
 }
 
+type DirectoryInsightsShellProps = {
+  title?: string;
+  description?: ReactNode;
+  headerAction?: ReactNode;
+  children: ReactNode;
+  className?: string;
+};
+
+/** Shared insights panel chrome (eyebrow, title, optional header action). */
+export function DirectoryInsightsShell({
+  title,
+  description,
+  headerAction,
+  children,
+  className,
+}: DirectoryInsightsShellProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      className={cn(
+        "flex h-full min-h-[22rem] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm",
+        className,
+      )}
+    >
+      <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
+        <div className="min-w-0 space-y-1">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            {t("shell.directoryInsights.eyebrow")}
+          </p>
+          <h2 className="truncate text-lg font-semibold tracking-tight">
+            {title
+              ? t("shell.directoryInsights.titleNamed", { title })
+              : t("shell.directoryInsights.title")}
+          </h2>
+          {description ? (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        {headerAction}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto p-5">{children}</div>
+    </div>
+  );
+}
+
+type DirectoryInsightsMetricsGridProps = {
+  metrics: DirectoryInsightMetric[];
+  className?: string;
+};
+
+/** Spotlight + supporting metric tiles with relative share bars. */
+export function DirectoryInsightsMetricsGrid({
+  metrics,
+  className,
+}: DirectoryInsightsMetricsGridProps) {
+  const { t } = useTranslation();
+  const [spotlight, ...rest] = metrics;
+  const magnitudes = metrics.map((metric) => parseMetricMagnitude(metric.value));
+  const maxMagnitude = Math.max(0, ...magnitudes.filter((value): value is number => value != null));
+
+  if (metrics.length === 0) {
+    return (
+      <p className={cn("py-12 text-center text-sm text-muted-foreground", className)}>
+        {t("shell.directoryInsights.empty")}
+      </p>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "grid gap-4",
+        rest.length > 0 && "lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]",
+        className,
+      )}
+    >
+      {spotlight ? (
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6",
+            ACCENT_CLASSES[0],
+          )}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-current/10 blur-2xl motion-reduce:hidden"
+          />
+          <div className="relative space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              {spotlight.icon ? <spotlight.icon className="h-4 w-4" /> : null}
+              <span>{spotlight.label}</span>
+            </div>
+            <p className="text-4xl font-bold tracking-tight text-foreground tabular-nums sm:text-5xl">
+              {spotlight.value}
+            </p>
+            {spotlight.description ? (
+              <p className="max-w-sm text-sm text-muted-foreground">{spotlight.description}</p>
+            ) : null}
+            {metrics.length > 1 ? (
+              <RelativeShareBar
+                label={spotlight.label}
+                value={spotlight.value}
+                maxMagnitude={maxMagnitude}
+                barClassName={BAR_CLASSES[0]}
+                className="h-2.5 max-w-xs"
+              />
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {rest.length > 0 ? (
+        <div className="space-y-3">
+          {rest.map((metric, index) => {
+            const accentIndex = (index + 1) % ACCENT_CLASSES.length;
+
+            return (
+              <div
+                key={`${metric.label}-${index}`}
+                className={cn(
+                  "rounded-2xl border bg-gradient-to-r p-4",
+                  ACCENT_CLASSES[accentIndex],
+                )}
+              >
+                <div className="min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    {metric.icon ? <metric.icon className="h-3.5 w-3.5" /> : null}
+                    <span className="truncate">{metric.label}</span>
+                  </div>
+                  <p className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+                    {metric.value}
+                  </p>
+                  {metric.description ? (
+                    <p className="text-xs text-muted-foreground">{metric.description}</p>
+                  ) : null}
+                </div>
+                <RelativeShareBar
+                  label={metric.label}
+                  value={metric.value}
+                  maxMagnitude={maxMagnitude}
+                  barClassName={BAR_CLASSES[accentIndex]}
+                  className="mt-3 h-2"
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DirectoryInsightsFace({
   metrics,
   title,
@@ -134,113 +288,15 @@ function DirectoryInsightsFace({
   title?: string;
   onBack: () => void;
 }) {
-  const { t } = useTranslation();
-  const [spotlight, ...rest] = metrics;
-  const magnitudes = metrics.map((metric) => parseMetricMagnitude(metric.value));
-  const maxMagnitude = Math.max(0, ...magnitudes.filter((value): value is number => value != null));
-
   return (
-    <div className="flex h-full min-h-[22rem] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
-      <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
-        <div className="min-w-0 space-y-1">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            {t("shell.directoryInsights.eyebrow")}
-          </p>
-          <h2 className="truncate text-lg font-semibold tracking-tight">
-            {title ? t("shell.directoryInsights.titleNamed", { title }) : t("shell.directoryInsights.title")}
-          </h2>
-        </div>
+    <DirectoryInsightsShell
+      title={title}
+      headerAction={
         <DirectoryInsightsToggle open onOpenChange={(next) => !next && onBack()} />
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-auto p-5">
-        {metrics.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted-foreground">
-            {t("shell.directoryInsights.empty")}
-          </p>
-        ) : (
-          <div
-            className={cn(
-              "grid gap-4",
-              rest.length > 0 && "lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]",
-            )}
-          >
-            {spotlight ? (
-              <div
-                className={cn(
-                  "relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6",
-                  ACCENT_CLASSES[0],
-                )}
-              >
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-current/10 blur-2xl motion-reduce:hidden"
-                />
-                <div className="relative space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    {spotlight.icon ? <spotlight.icon className="h-4 w-4" /> : null}
-                    <span>{spotlight.label}</span>
-                  </div>
-                  <p className="text-4xl font-bold tracking-tight text-foreground tabular-nums sm:text-5xl">
-                    {spotlight.value}
-                  </p>
-                  {spotlight.description ? (
-                    <p className="max-w-sm text-sm text-muted-foreground">{spotlight.description}</p>
-                  ) : null}
-                  {metrics.length > 1 ? (
-                    <RelativeShareBar
-                      label={spotlight.label}
-                      value={spotlight.value}
-                      maxMagnitude={maxMagnitude}
-                      barClassName={BAR_CLASSES[0]}
-                      className="h-2.5 max-w-xs"
-                    />
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-
-            {rest.length > 0 ? (
-              <div className="space-y-3">
-                {rest.map((metric, index) => {
-                  const accentIndex = (index + 1) % ACCENT_CLASSES.length;
-
-                  return (
-                    <div
-                      key={`${metric.label}-${index}`}
-                      className={cn(
-                        "rounded-2xl border bg-gradient-to-r p-4",
-                        ACCENT_CLASSES[accentIndex],
-                      )}
-                    >
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          {metric.icon ? <metric.icon className="h-3.5 w-3.5" /> : null}
-                          <span className="truncate">{metric.label}</span>
-                        </div>
-                        <p className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-                          {metric.value}
-                        </p>
-                        {metric.description ? (
-                          <p className="text-xs text-muted-foreground">{metric.description}</p>
-                        ) : null}
-                      </div>
-                      <RelativeShareBar
-                        label={metric.label}
-                        value={metric.value}
-                        maxMagnitude={maxMagnitude}
-                        barClassName={BAR_CLASSES[accentIndex]}
-                        className="mt-3 h-2"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-        )}
-      </div>
-    </div>
+      }
+    >
+      <DirectoryInsightsMetricsGrid metrics={metrics} />
+    </DirectoryInsightsShell>
   );
 }
 

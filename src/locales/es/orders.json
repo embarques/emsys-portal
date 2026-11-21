@@ -166,7 +166,6 @@
     "design": {
       "addPurpose": "Agregar un propósito",
       "editPurpose": "Editar propósito {{index}}",
-      "addAnotherPurpose": "Agregar otro",
       "addedPurposes": "Propósitos agregados ({{count}})",
       "noPurposes": "Aún no hay propósitos agregados.",
       "editPurposeAria": "Editar propósito {{index}}: {{purpose}}"

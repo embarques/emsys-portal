@@ -15,6 +15,16 @@ import {
   getReceiverSummary,
 } from "@/lib/orders/display";
 import type { Customer } from "@/lib/customers/types";
+import {
+  CompactTableScroll,
+  compactTableCaptionClassName,
+  compactTableCellClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+  compactTableShellClassName,
+} from "@/components/ui/compact-table";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
@@ -23,6 +33,16 @@ type SenderOrderHistorySectionProps = {
   currentOrderId?: string;
   variant?: "form" | "view" | "embedded";
 };
+
+function CompactCell({
+  value,
+  className,
+}: {
+  value: string;
+  className?: string;
+}) {
+  return <td className={cn(compactTableCellClassName, className)}>{value}</td>;
+}
 
 export function SenderOrderHistorySection({
   sender,
@@ -59,14 +79,9 @@ export function SenderOrderHistorySection({
   const sectionId = "sender-appointment-history";
   const isView = variant === "view";
   const isEmbedded = variant === "embedded";
+  const isCompact = isView || isEmbedded;
 
   const showTable = Boolean(senderId) && !isLoading && !errorMessage && history.length > 0;
-  const headerClassName = cn(
-    "px-3 py-2 font-medium",
-    (isView || isEmbedded) && "whitespace-nowrap",
-  );
-  const cellClassName = "px-3 py-2 text-xs text-foreground";
-
   const statusMessage = !senderId ? (
     <p className="text-sm text-muted-foreground">{t("orders.history.pendingSavedSender")}</p>
   ) : isLoading ? (
@@ -81,19 +96,9 @@ export function SenderOrderHistorySection({
   ) : null;
 
   const table = showTable ? (
-    <table
-      className={cn(
-        "w-full border-separate border-spacing-0 text-left",
-        isView || isEmbedded ? "text-xs" : "min-w-[760px] text-sm",
-      )}
-    >
+    <table className={cn(compactTableClassName, !isCompact && "text-sm")}>
       <thead>
-        <tr
-          className={cn(
-            "border-b text-muted-foreground",
-            isView || isEmbedded ? "bg-muted/40" : "bg-muted/50 text-xs",
-          )}
-        >
+        <tr className={compactTableHeadRowClassName}>
           {(
             [
               "orders.columns.date",
@@ -105,13 +110,7 @@ export function SenderOrderHistorySection({
               "orders.columns.createdBy",
             ] as const
           ).map((key) => (
-            <th
-              key={key}
-              className={cn(
-                headerClassName,
-                isEmbedded && "sticky top-0 z-[1] border-b border-border bg-muted",
-              )}
-            >
+            <th key={key} className={compactTableHeadClassName}>
               {t(key)}
             </th>
           ))}
@@ -120,40 +119,43 @@ export function SenderOrderHistorySection({
       <tbody>
         {history.map((order) => {
           const isCurrent = String(order.id) === currentOrderId;
+          const senderAddress = getCustomerAddressLine(order.sender);
+          const comments =
+            order.comments.length > 0 ? formatOrderCommentsSummary(order) : dash;
+          const receiver = getReceiverSummary(order);
+          const receiverAddress = getReceiverAddressLine(order);
+          const createdAt = formatAuditDateTime(order.createdAt);
+          const createdBy = formatUserSummary(order.createdBy);
+
           return (
             <tr
               key={order.id}
               className={cn(
-                "border-b last:border-b-0",
-                isView || isEmbedded
-                  ? "even:bg-muted/25"
-                  : isCurrent
-                    ? "bg-primary/5"
-                    : "bg-background",
+                isCompact
+                  ? compactTableRowClassName
+                  : cn(
+                      compactTableRowClassName,
+                      isCurrent ? "bg-primary/5" : "bg-background",
+                    ),
               )}
             >
-              <td className={cn(cellClassName, "whitespace-nowrap")}>
+              <td className={compactTableCellClassName}>
                 {formatOrderDate(order.date)}
                 {isCurrent ? (
-                  <span className="ml-2 text-[10px] text-primary">
+                  <span className="ml-1.5 text-[10px] text-primary">
                     {t("orders.history.current")}
                   </span>
                 ) : null}
               </td>
-              <td className={cn(cellClassName, "min-w-[10rem] leading-snug [overflow-wrap:anywhere]")}>
-                {getCustomerAddressLine(order.sender)}
-              </td>
-              <td className={cn(cellClassName, "min-w-[8rem] leading-snug [overflow-wrap:anywhere]")}>
-                {order.comments.length > 0 ? formatOrderCommentsSummary(order) : dash}
-              </td>
-              <td className={cn(cellClassName, "whitespace-nowrap")}>{getReceiverSummary(order)}</td>
-              <td className={cn(cellClassName, "min-w-[10rem] leading-snug [overflow-wrap:anywhere]")}>
-                {getReceiverAddressLine(order)}
-              </td>
-              <td className={cn(cellClassName, "whitespace-nowrap", !isView && !isEmbedded && "text-muted-foreground")}>
-                {formatAuditDateTime(order.createdAt)}
-              </td>
-              <td className={cn(cellClassName, "whitespace-nowrap")}>{formatUserSummary(order.createdBy)}</td>
+              <CompactCell value={senderAddress} />
+              <CompactCell value={comments} />
+              <CompactCell value={receiver} />
+              <CompactCell value={receiverAddress} />
+              <CompactCell
+                value={createdAt}
+                className={cn(!isCompact && "text-muted-foreground")}
+              />
+              <CompactCell value={createdBy} />
             </tr>
           );
         })}
@@ -164,33 +166,30 @@ export function SenderOrderHistorySection({
   const content = statusMessage ? (
     <div className={cn(isEmbedded ? "p-4" : undefined)}>{statusMessage}</div>
   ) : (
-    <div
+    <CompactTableScroll
+      aria-label={sectionTitle}
       className={cn(
-        "overflow-x-auto",
         !isView && !isEmbedded && "rounded-lg border",
         isEmbedded && "h-full min-h-0",
       )}
     >
       {table}
-    </div>
+    </CompactTableScroll>
   );
 
   if (isEmbedded) {
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-card">
-        <div
-          id={`${sectionId}-panel`}
-          role="region"
-          aria-labelledby={sectionId}
-          tabIndex={0}
-          className="min-h-0 flex-1 overflow-auto"
-        >
-          {content}
+      <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", compactTableShellClassName)}>
+        <div id={`${sectionId}-panel`} className="min-h-0 flex-1 min-w-0">
+          <CompactTableScroll aria-labelledby={sectionId} className="h-full min-h-0">
+          {statusMessage ? (
+            <div className="p-4">{statusMessage}</div>
+          ) : (
+            table
+          )}
+          </CompactTableScroll>
         </div>
-        <p
-          id={sectionId}
-          className="shrink-0 border-t border-border bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground"
-        >
+        <p id={sectionId} className={compactTableCaptionClassName}>
           {sectionTitle}
         </p>
       </div>
@@ -200,7 +199,7 @@ export function SenderOrderHistorySection({
   return (
     <section
       className={cn(
-        isView && "overflow-hidden rounded-lg border border-border bg-card shadow-sm",
+        isView && cn(compactTableShellClassName, "shadow-sm"),
         !isView && "space-y-2.5",
       )}
     >

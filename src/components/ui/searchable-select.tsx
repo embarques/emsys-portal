@@ -78,6 +78,11 @@ export type SearchableSelectProps = {
   contentClassName?: string;
   /** When false, the closed trigger grows to show the full selected label instead of truncating. */
   truncateSelection?: boolean;
+  /**
+   * When true, selected and option labels wrap to multiple lines instead of
+   * truncating or forcing a single horizontal line.
+   */
+  wrapLabels?: boolean;
   /** Size the trigger to the longest option label so every choice fits without truncating. */
   fitToOptions?: boolean;
   align?: "start" | "center" | "end";
@@ -372,6 +377,7 @@ function SearchableSelectDropdown({
   className,
   contentClassName,
   truncateSelection = true,
+  wrapLabels = false,
   fitToOptions = false,
   align = "start",
   autoFocus = false,
@@ -638,11 +644,18 @@ function SearchableSelectDropdown({
 
   const ChevronIcon = open ? ChevronUp : ChevronDown;
 
-  const selectionClassName = truncateSelection
-    ? "min-w-0 flex-1 truncate text-left"
-    : "whitespace-nowrap text-left";
+  const wrapTextClassName =
+    "min-w-0 flex-1 whitespace-normal break-words text-left [overflow-wrap:anywhere]";
+  const selectionClassName = wrapLabels
+    ? wrapTextClassName
+    : truncateSelection
+      ? "min-w-0 flex-1 truncate text-left"
+      : "whitespace-nowrap text-left";
   const showSelectionLabel =
-    !truncateSelection && !open && hasSelection && !query;
+    (wrapLabels || !truncateSelection) && !open && hasSelection && !query;
+  const showWrappedPlaceholder =
+    wrapLabels && !open && !hasSelection && !query;
+  const wrapTriggerClassName = wrapLabels ? "h-auto items-start py-2.5" : undefined;
   const canClearSelection = hasSelection && value !== "";
 
   function clearSelection() {
@@ -672,15 +685,33 @@ function SearchableSelectDropdown({
           onSelect={() => handleSelect(option.value)}
           className={cn(
             listItemClassName,
-            detailLines.length > 0 && "items-start",
+            (wrapLabels || detailLines.length > 0) && "items-start",
             isMobileSheet &&
               "min-h-14 rounded-none border-b border-border/60 px-4 py-4 text-base last:border-b-0 data-[selected=true]:bg-primary/5",
           )}
         >
           <span className="flex min-w-0 flex-col">
-            <span className={fitToOptions ? "whitespace-nowrap" : "truncate"}>{option.label}</span>
+            <span
+              className={
+                wrapLabels
+                  ? "whitespace-normal break-words [overflow-wrap:anywhere]"
+                  : fitToOptions
+                    ? "whitespace-nowrap"
+                    : "truncate"
+              }
+            >
+              {option.label}
+            </span>
             {detailLines.map((line, lineIndex) => (
-              <span key={lineIndex} className="truncate text-xs text-muted-foreground">
+              <span
+                key={lineIndex}
+                className={cn(
+                  "text-xs text-muted-foreground",
+                  wrapLabels
+                    ? "whitespace-normal break-words [overflow-wrap:anywhere]"
+                    : "truncate",
+                )}
+              >
                 {line}
               </span>
             ))}
@@ -719,6 +750,7 @@ function SearchableSelectDropdown({
             onClick={() => handleOpenChange(true)}
             className={cn(
               triggerClassName,
+              wrapTriggerClassName,
               "disabled:cursor-not-allowed disabled:opacity-50",
               className,
               "pr-9 pl-3",
@@ -808,6 +840,7 @@ function SearchableSelectDropdown({
               onKeyDown={handleComboboxKeyDown}
               className={cn(
                 triggerClassName,
+                wrapTriggerClassName,
                 "disabled:cursor-not-allowed disabled:opacity-50",
                 className,
                 "pr-9 pl-3",
@@ -893,14 +926,23 @@ function SearchableSelectDropdown({
               }}
               className={cn(
                 triggerClassName,
+                wrapTriggerClassName,
                 disabled && "cursor-not-allowed opacity-50",
                 className,
                 canClearSelection ? "pr-16 pl-3" : "pr-9 pl-3",
               )}
             >
               {showSelectionLabel ? (
-                <span aria-hidden className="whitespace-nowrap text-left">
+                <span
+                  aria-hidden
+                  className={wrapLabels ? wrapTextClassName : "whitespace-nowrap text-left"}
+                >
                   {selectedOption?.label}
+                </span>
+              ) : null}
+              {showWrappedPlaceholder ? (
+                <span aria-hidden className={cn(wrapTextClassName, "text-muted-foreground")}>
+                  {placeholder}
                 </span>
               ) : null}
               <CommandPrimitive.Input
@@ -923,16 +965,18 @@ function SearchableSelectDropdown({
                 placeholder={
                   open
                     ? searchPlaceholder
-                    : hasSelection
+                    : hasSelection || showWrappedPlaceholder
                       ? undefined
                       : placeholder
                 }
                 readOnly={!open && hasSelection}
                 className={cn(
-                  showSelectionLabel && "sr-only",
-                  truncateSelection
-                    ? "min-w-0 flex-1 truncate bg-transparent text-left outline-none disabled:cursor-not-allowed"
-                    : "whitespace-nowrap bg-transparent text-left outline-none disabled:cursor-not-allowed",
+                  (showSelectionLabel || showWrappedPlaceholder) && "sr-only",
+                  wrapLabels
+                    ? "min-w-0 flex-1 bg-transparent text-left outline-none disabled:cursor-not-allowed"
+                    : truncateSelection
+                      ? "min-w-0 flex-1 truncate bg-transparent text-left outline-none disabled:cursor-not-allowed"
+                      : "whitespace-nowrap bg-transparent text-left outline-none disabled:cursor-not-allowed",
                   "placeholder:text-muted-foreground",
                   !hasSelection && !open && "text-muted-foreground",
                 )}

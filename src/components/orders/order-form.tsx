@@ -462,16 +462,17 @@ export function OrderForm({
         </Label>
         <DateInput
           id="date"
+          fitContent={!isEditing}
           {...wizardInputFieldProps(
             values.date,
-            // Fill remaining header width; keep the typed date right-aligned in the control.
-            // WebKit's date value is shrink-to-fit, so it needs w-full for text-align to show.
-            cn(
-              "pl-9 text-right md:pl-8",
-              "[&::-webkit-date-and-time-value]:w-full [&::-webkit-date-and-time-value]:text-right",
-              "[&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:w-full [&::-webkit-datetime-edit]:justify-end",
-              !isEditing && "h-9 w-full min-w-0",
-            ),
+            isEditing
+              ? cn(
+                  "pl-9 text-right md:pl-8",
+                  // Edit: fill the field; WebKit's date value needs w-full for text-align.
+                  "[&::-webkit-date-and-time-value]:w-full [&::-webkit-date-and-time-value]:text-right",
+                  "[&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:w-full [&::-webkit-datetime-edit]:justify-end",
+                )
+              : "h-9",
           )}
           value={values.date}
           onChange={(event) => updateField("date", event.target.value)}
@@ -489,7 +490,7 @@ export function OrderForm({
           title={`01 · ${t("orders.form.workflow.scheduleStep")}`}
           required
           className="shrink-0 space-y-0 p-3"
-          action={<div className="flex min-w-0 flex-1 items-center">{dateInput}</div>}
+          action={<div className="flex shrink-0 items-center justify-end">{dateInput}</div>}
         >
           {null}
         </FormSection>
@@ -579,68 +580,69 @@ export function OrderForm({
   }
 
   function renderSenderBody(fill: boolean) {
+    if (showHistory && values.sender) {
+      return (
+        <SenderOrderHistorySection
+          sender={values.sender}
+          currentOrderId={values.id > 0 ? String(values.id) : undefined}
+          variant="embedded"
+        />
+      );
+    }
+
     return (
-      <>
-        {showHistory && values.sender ? (
-          <SenderOrderHistorySection
-            sender={values.sender}
-            currentOrderId={values.id > 0 ? String(values.id) : undefined}
-            variant="embedded"
-          />
-        ) : null}
-        <div className={cn(showHistory ? "hidden" : undefined, fill && "flex min-h-0 flex-1 flex-col")}>
-          <div
-            className={cn(
-              "min-w-0 space-y-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-4",
-              fill && "flex min-h-0 flex-1 flex-col",
-            )}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="senderId">
-                {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
-              </Label>
-              <PartyFieldActions
-                hasSelection={Boolean(values.sender)}
-                onAdd={() => openAddCustomer("sender")}
-                onEdit={() => openEditCustomer("sender")}
-              />
-            </div>
-            <CustomerPartySelect
-              id="senderId"
-              triggerClassName={wizardSelectClassNameFor(values.senderId)}
-              partyType="sender"
-              value={values.senderId}
-              selectedCustomer={values.sender}
-              onValueChange={updateSender}
-              onClear={clearSender}
-              onAddAddress={(customer) => void openAddAddress("sender", customer)}
-              placeholder={t("orders.form.placeholders.selectSender")}
-              required
-              showAddressLabels={false}
+      <div className={cn(fill && "flex min-h-0 flex-1 flex-col")}>
+        <div
+          className={cn(
+            "min-w-0 space-y-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-4",
+            fill && "flex min-h-0 flex-1 flex-col",
+          )}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="senderId" className="font-semibold">
+              {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
+            </Label>
+            <PartyFieldActions
+              hasSelection={Boolean(values.sender)}
+              onAdd={() => openAddCustomer("sender")}
+              onEdit={() => openEditCustomer("sender")}
             />
-            {values.sender && isOrderPartyAddressChosen(values.sender, values.senderAddressIndex) ? (
-              <>
-                <CustomerContactSummary
-                  customer={values.sender}
-                  addressIndex={values.senderAddressIndex}
-                  detailed={fill}
-                  missingPhoneLabel={t("orders.form.workflow.senderMissingPhone")}
-                  missingAddressLabel={t("orders.form.workflow.senderMissingAddress")}
-                />
-                <UnverifiedAddressNotice
-                  customer={values.sender}
-                  addressIndex={values.senderAddressIndex}
-                  onUpdateAddress={() => openEditCustomer("sender", values.senderAddressIndex)}
-                />
-              </>
-            ) : fill ? (
-              <p className="rounded-lg border border-dashed border-input px-3 py-4 text-sm text-foreground/75">
-                {t("orders.form.workflow.senderEmptyHint")}
-              </p>
-            ) : null}
           </div>
+          <CustomerPartySelect
+            id="senderId"
+            triggerClassName={wizardSelectClassNameFor(values.senderId)}
+            partyType="sender"
+            value={values.senderId}
+            selectedCustomer={values.sender}
+            onValueChange={updateSender}
+            onClear={clearSender}
+            onAddAddress={(customer) => void openAddAddress("sender", customer)}
+            placeholder={t("orders.form.placeholders.selectSender")}
+            required
+            showAddressLabels={false}
+          />
+          {values.sender && isOrderPartyAddressChosen(values.sender, values.senderAddressIndex) ? (
+            <>
+              <CustomerContactSummary
+                customer={values.sender}
+                addressIndex={values.senderAddressIndex}
+                detailed={fill}
+                missingPhoneLabel={t("orders.form.workflow.senderMissingPhone")}
+                missingAddressLabel={t("orders.form.workflow.senderMissingAddress")}
+              />
+              <UnverifiedAddressNotice
+                customer={values.sender}
+                addressIndex={values.senderAddressIndex}
+                onUpdateAddress={() => openEditCustomer("sender", values.senderAddressIndex)}
+              />
+            </>
+          ) : fill ? (
+            <p className="rounded-lg border border-dashed border-input px-3 py-4 text-sm text-foreground/75">
+              {t("orders.form.workflow.senderEmptyHint")}
+            </p>
+          ) : null}
         </div>
-      </>
+      </div>
     );
   }
 

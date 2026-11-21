@@ -22,6 +22,7 @@
   },
   "clients": {
     "title": "Clientes",
+    "insightsDescription": "Clientes nuevos del período seleccionado, más totales del directorio.",
     "weekday": {
       "title": "Por día de creación",
       "description": "Clientes nuevos creados cada día de la semana, en todos los registros."
@@ -33,6 +34,7 @@
   },
   "invoices": {
     "title": "Facturas",
+    "insightsDescription": "Facturas nuevas del período seleccionado, más saldo pendiente.",
     "weekday": {
       "title": "Por día de creación",
       "description": "Facturas nuevas creadas cada día de la semana, en todos los registros."

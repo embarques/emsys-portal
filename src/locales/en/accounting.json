@@ -632,7 +632,7 @@
       "next": "Next",
       "confirm": "Close closeout #{{id}} for {{date}}? Transactions will be locked until this closeout is reopened."
     },
-    "title": "Today's Transactions",
+    "title": "Daily Transactions",
     "description": "Review daily closeouts and their transactions by location. Add a transaction to start today’s closeout when needed.",
     "noun": "transactions",
     "transactionNoun": "transaction",
@@ -709,7 +709,7 @@
       "noPayment": "No payment"
     },
     "transactions": {
-      "title": "Today's Transactions",
+      "title": "Daily Transactions",
       "searchPlaceholder": "Search transactions…",
       "empty": "No transactions match this closeout.",
       "loadingTitle": "Loading transactions",

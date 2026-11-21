@@ -5,6 +5,15 @@ import { MessageSquare, MessageSquarePlus } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { Button } from "@/components/ui/button";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+} from "@/components/ui/compact-table";
 import { Label } from "@/components/ui/label";
 import { formatInvoiceCommentDateTime } from "@/lib/invoices/display";
 import type { InvoiceComment } from "@/lib/invoices/types";
@@ -49,17 +58,17 @@ export function InvoiceCommentsSection({ comments, onAddComment }: InvoiceCommen
       {sortedComments.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.view.comments.empty")}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <CompactTableScroll aria-label={t("invoices.view.comments.title", { count: comments.length })}>
+          <table className={compactTableClassName}>
             <thead>
-              <tr className="border-b bg-muted/40 text-muted-foreground">
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+              <tr className={compactTableHeadRowClassName}>
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.comments.fields.date")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.comments.fields.createdBy")}
                 </th>
-                <th className="px-3 py-2 font-medium">
+                <th className={compactTableHeadClassName}>
                   {t("invoices.view.comments.fields.description")}
                 </th>
               </tr>
@@ -70,14 +79,14 @@ export function InvoiceCommentsSection({ comments, onAddComment }: InvoiceCommen
                 const createdBy = comment.createdBy?.trim() ?? "";
                 const description = comment.description?.trim() ?? "";
                 return (
-                  <tr key={comment.id} className="border-b last:border-b-0 even:bg-muted/25">
-                    <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                  <tr key={comment.id} className={compactTableRowClassName}>
+                    <td className={compactTableCellClassName}>
                       {isFilled(date) ? date : empty}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                    <td className={compactTableCellClassName}>
                       {isFilled(createdBy) ? createdBy : empty}
                     </td>
-                    <td className="min-w-[10rem] whitespace-pre-wrap px-3 py-2 leading-snug text-foreground [overflow-wrap:anywhere]">
+                    <td className={cn(compactTableCellWrapClassName, "whitespace-pre-wrap")}>
                       {isFilled(description) ? description : empty}
                     </td>
                   </tr>
@@ -85,7 +94,7 @@ export function InvoiceCommentsSection({ comments, onAddComment }: InvoiceCommen
               })}
             </tbody>
           </table>
-        </div>
+        </CompactTableScroll>
       )}
       <div className="border-t bg-muted/20 px-3 py-3">
         <Label

@@ -1,0 +1,59 @@
+---
+description: Directory tables size to content width/height; no viewport min-height stretch
+globs: src/components/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Directory Table Sizing
+
+Directory/list table cards grow with their rows. Do **not** stretch them to the
+viewport for visual consistency when content is short.
+
+## Width
+
+- The table `Card` fills the **main content column** (sidebar + page padding
+  already frame the layout).
+- Do not target `100vw` / full browser width.
+
+## Height
+
+- Height is **content-first**: grow with rows; allow normal page scroll when the
+  table is taller than the viewport.
+- Empty and in-table loading states use the shared `DataTable` block
+  (`px-6 py-12`). Standalone loaders/empty messages inside a table card should
+  match (`px-6 py-12`).
+- Do **not** set `min-h-[100vh]`, `min-h-screen`, or magic offsets like
+  `min-h-[calc(100vh-…)]` on directory wrappers or table cards just to make
+  sparse pages look “full.”
+
+```tsx
+// ✅ GOOD — content-sized shell (same as customers / vehicles / items)
+<div>
+  <PageHeader … />
+  <Card className="mt-6 gap-0">…</Card>
+</div>
+```
+
+```tsx
+// ❌ BAD — fake viewport height when few rows
+<div className="flex min-h-[calc(100vh-11rem)] flex-col">
+  <Card className="mt-6 gap-0">…</Card>
+</div>
+```
+
+## Exceptions (do not use these as excuses for directory stretch)
+
+- **Dashboard shell** may keep a page-level `min-h` so the main region fills
+  under the header — that is not a table rule.
+- **Maps / form tab shells / full-screen dialogs** may use definite viewport
+  height when the UI needs an internal scroll region.
+- **Fill remaining height + internal body scroll** (sticky toolbar, scrollable
+  rows, pinned pagination) is allowed only when explicitly building that shell
+  with a definite remaining space — not via a hardcoded viewport `min-h` on a
+  short content card.
+
+## Checklist
+
+- [ ] No directory/table card or workspace wrapper uses viewport `min-h` for look
+- [ ] Table card still uses `mt-6 gap-0` (see `table-header-divider-spacing`)
+- [ ] Empty/loading inside the card uses `py-12` (or `DataTable` empty slot)

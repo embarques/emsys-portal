@@ -3,6 +3,16 @@
 import { FileAudio, FileText, FileVideo, ImageIcon, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+  compactTableShellClassName,
+} from "@/components/ui/compact-table";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -43,6 +53,7 @@ export function InvoiceDocumentList({
   onAction,
 }: Props) {
   const { t } = useTranslation();
+  const empty = t("common.empty.dash");
   function icon(document: InvoiceDocument) {
     if (document.mimeType.startsWith("image/")) {
       return <ImageIcon className="size-6 shrink-0 text-blue-500" />;
@@ -148,67 +159,65 @@ export function InvoiceDocumentList({
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto rounded-lg border sm:block">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-muted/40 text-muted-foreground">
-            <tr>
-              {["name", "uploadedBy", "uploaded", "size", "actions"].map(
-                (column) => (
-                  <th
-                    key={column}
-                    scope="col"
-                    className="whitespace-nowrap px-3 py-3 font-medium"
-                  >
-                    {t(`invoices.documents.${column}`)}
-                  </th>
-                ),
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((document) => (
-              <tr
-                key={document.id}
-                className={cn(
-                  "border-t",
-                  selectedId === document.id && "bg-primary/5",
+      <div className={cn("hidden sm:block", compactTableShellClassName)}>
+        <CompactTableScroll aria-label={t("invoices.documents.title")}>
+          <table className={compactTableClassName}>
+            <thead>
+              <tr className={compactTableHeadRowClassName}>
+                {["name", "uploadedBy", "uploaded", "size", "actions"].map(
+                  (column) => (
+                    <th key={column} scope="col" className={compactTableHeadClassName}>
+                      {t(`invoices.documents.${column}`)}
+                    </th>
+                  ),
                 )}
-              >
-                <td className="px-3 py-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 text-left hover:underline disabled:opacity-50"
-                    disabled={document.deleting}
-                    onClick={() => onSelect(document.id)}
-                  >
-                    {icon(document)}
-                    <span className="max-w-56 break-words">
-                      {document.name}
-                      {document.deleting
-                        ? ` (${t("invoices.documents.deleting")})`
-                        : ""}
-                    </span>
-                  </button>
-                </td>
-                <td className="px-3 py-3">
-                  {documentActorName(document.createdBy)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-3">
-                  {formatAuditDateTime(document.createdAt || "") || "—"}
-                </td>
-                <td className="whitespace-nowrap px-3 py-3">
-                  {formatDocumentSize(document.size)}
-                </td>
-                <td className="px-2">
-                  <div className="flex items-center">
-                    <InvoiceDocumentInfo document={document} />
-                    {actions(document)}
-                  </div>
-                </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((document) => (
+                <tr
+                  key={document.id}
+                  className={cn(
+                    compactTableRowClassName,
+                    selectedId === document.id && "bg-primary/5",
+                  )}
+                >
+                  <td className={compactTableCellWrapClassName}>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 text-left hover:underline disabled:opacity-50"
+                      disabled={document.deleting}
+                      onClick={() => onSelect(document.id)}
+                    >
+                      {icon(document)}
+                      <span className="max-w-56 break-words">
+                        {document.name}
+                        {document.deleting
+                          ? ` (${t("invoices.documents.deleting")})`
+                          : ""}
+                      </span>
+                    </button>
+                  </td>
+                  <td className={compactTableCellClassName}>
+                    {documentActorName(document.createdBy)}
+                  </td>
+                  <td className={compactTableCellClassName}>
+                    {formatAuditDateTime(document.createdAt || "") || empty}
+                  </td>
+                  <td className={compactTableCellClassName}>
+                    {formatDocumentSize(document.size)}
+                  </td>
+                  <td className={cn(compactTableCellClassName, "px-2")}>
+                    <div className="flex items-center">
+                      <InvoiceDocumentInfo document={document} />
+                      {actions(document)}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CompactTableScroll>
       </div>
     </>
   ) : (

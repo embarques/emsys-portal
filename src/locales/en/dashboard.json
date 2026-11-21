@@ -22,6 +22,7 @@
   },
   "clients": {
     "title": "Clients",
+    "insightsDescription": "New clients for the selected timeframe, plus directory totals.",
     "weekday": {
       "title": "By weekday created",
       "description": "New clients created on each weekday, across all records."
@@ -33,6 +34,7 @@
   },
   "invoices": {
     "title": "Invoices",
+    "insightsDescription": "New invoices for the selected timeframe, plus outstanding balance.",
     "weekday": {
       "title": "By weekday created",
       "description": "New invoices created on each weekday, across all records."

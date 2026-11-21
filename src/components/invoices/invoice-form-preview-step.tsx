@@ -11,6 +11,16 @@ import {
   CompactActionDialogHeader,
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+  compactTableShellClassName,
+} from "@/components/ui/compact-table";
 import { Dialog } from "@/components/ui/dialog";
 import { BadgePercent } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -33,6 +43,7 @@ import {
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
 import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -579,74 +590,74 @@ function InvoiceWizardCheckoutReview({
               })}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full min-w-[36rem] text-sm">
-                <colgroup>
-                  <col className="w-auto" />
-                  <col className="w-[4.5rem]" />
-                  <col className="w-[5.5rem]" />
-                  <col className="w-[7.5rem]" />
-                  <col className="w-[7.5rem]" />
-                </colgroup>
-                <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-medium">
-                      {t("invoices.wizard.review.table.item")}
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium">
-                      {t("invoices.wizard.review.table.qty")}
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium">
-                      {t("invoices.wizard.review.table.labels")}
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium">
-                      {t("invoices.wizard.review.table.unitPrice")}
-                    </th>
-                    <th className="px-4 py-3 text-right font-medium">
-                      {t("invoices.wizard.review.table.subtotal")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineItemRows.map((item) => {
-                    const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                    const label =
-                      item.itemName.trim() ||
-                      catalogItem?.description ||
-                      t("invoices.wizard.summary.lineItem");
-                    const labelCount = resolveLineLabelCount(item);
-                    const unitPrice = Number(item.unitPrice) || 0;
-                    const lineTotal = resolveLineTotal(item);
-                    return (
-                      <tr key={item.id} className="border-b last:border-b-0">
-                        <td className="px-4 py-4 align-middle">
-                          <p className="whitespace-normal break-words font-medium leading-snug text-foreground">
+            <div className={compactTableShellClassName}>
+              <CompactTableScroll aria-label={t("invoices.wizard.review.lineItems")}>
+                <table className={compactTableClassName}>
+                  <colgroup>
+                    <col className="w-auto" />
+                    <col className="w-[4.5rem]" />
+                    <col className="w-[5.5rem]" />
+                    <col className="w-[7.5rem]" />
+                    <col className="w-[7.5rem]" />
+                  </colgroup>
+                  <thead>
+                    <tr className={compactTableHeadRowClassName}>
+                      <th className={compactTableHeadClassName}>
+                        {t("invoices.wizard.review.table.item")}
+                      </th>
+                      <th className={cn(compactTableHeadClassName, "text-right")}>
+                        {t("invoices.wizard.review.table.qty")}
+                      </th>
+                      <th className={cn(compactTableHeadClassName, "text-right")}>
+                        {t("invoices.wizard.review.table.labels")}
+                      </th>
+                      <th className={cn(compactTableHeadClassName, "text-right")}>
+                        {t("invoices.wizard.review.table.unitPrice")}
+                      </th>
+                      <th className={cn(compactTableHeadClassName, "text-right")}>
+                        {t("invoices.wizard.review.table.subtotal")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineItemRows.map((item) => {
+                      const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                      const label =
+                        item.itemName.trim() ||
+                        catalogItem?.description ||
+                        t("invoices.wizard.summary.lineItem");
+                      const labelCount = resolveLineLabelCount(item);
+                      const unitPrice = Number(item.unitPrice) || 0;
+                      const lineTotal = resolveLineTotal(item);
+                      return (
+                        <tr key={item.id} className={compactTableRowClassName}>
+                          <td className={cn(compactTableCellWrapClassName, "font-medium")}>
                             {label}
-                          </p>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
-                          {item.quantity || t("common.empty.dash")}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-muted-foreground">
-                          {labelCount > 0 ? (
-                            <span className="tabular-nums">{labelCount}</span>
-                          ) : (
-                            <InvoiceWizardReviewOptionalMissing>
-                              {t("invoices.wizard.review.noLabels")}
-                            </InvoiceWizardReviewOptionalMissing>
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
-                          <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} />
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 align-middle text-right font-medium tabular-nums">
-                          <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className={cn(compactTableCellClassName, "text-right tabular-nums text-muted-foreground")}>
+                            {item.quantity || t("common.empty.dash")}
+                          </td>
+                          <td className={cn(compactTableCellClassName, "text-right text-muted-foreground")}>
+                            {labelCount > 0 ? (
+                              <span className="tabular-nums">{labelCount}</span>
+                            ) : (
+                              <InvoiceWizardReviewOptionalMissing>
+                                {t("invoices.wizard.review.noLabels")}
+                              </InvoiceWizardReviewOptionalMissing>
+                            )}
+                          </td>
+                          <td className={cn(compactTableCellClassName, "text-right tabular-nums text-muted-foreground")}>
+                            <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} />
+                          </td>
+                          <td className={cn(compactTableCellClassName, "text-right font-medium tabular-nums")}>
+                            <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </CompactTableScroll>
             </div>
           )}
           <ReviewPriceTotals
@@ -822,34 +833,48 @@ export function InvoiceFormPreviewStep({
         {lineItemRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 font-medium">{t("invoices.wizard.review.table.item")}</th>
-                  <th className="px-3 py-2 font-medium">{t("invoices.wizard.review.table.qty")}</th>
-                  <th className="px-3 py-2 font-medium">{t("invoices.form.preview.price")}</th>
-                  <th className="px-3 py-2 font-medium">{t("invoices.form.totals.total")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lineItemRows.map((item) => {
-                  const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                  const label =
-                    item.itemName.trim() ||
-                    catalogItem?.description ||
-                    t("invoices.wizard.summary.lineItem");
-                  return (
-                    <tr key={item.id} className="border-b last:border-b-0">
-                      <td className="px-3 py-2">{label}</td>
-                      <td className="px-3 py-2">{item.quantity || t("common.empty.dash")}</td>
-                      <td className="px-3 py-2">{formatInvoiceMoney(Number(item.unitPrice) || 0)}</td>
-                      <td className="px-3 py-2 font-medium">{formatInvoiceMoney(resolveLineTotal(item))}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className={compactTableShellClassName}>
+            <CompactTableScroll aria-label={t("invoices.form.sections.description")}>
+              <table className={compactTableClassName}>
+                <thead>
+                  <tr className={compactTableHeadRowClassName}>
+                    <th className={compactTableHeadClassName}>{t("invoices.wizard.review.table.item")}</th>
+                    <th className={cn(compactTableHeadClassName, "text-right")}>
+                      {t("invoices.wizard.review.table.qty")}
+                    </th>
+                    <th className={cn(compactTableHeadClassName, "text-right")}>
+                      {t("invoices.form.preview.price")}
+                    </th>
+                    <th className={cn(compactTableHeadClassName, "text-right")}>
+                      {t("invoices.form.totals.total")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItemRows.map((item) => {
+                    const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                    const label =
+                      item.itemName.trim() ||
+                      catalogItem?.description ||
+                      t("invoices.wizard.summary.lineItem");
+                    return (
+                      <tr key={item.id} className={compactTableRowClassName}>
+                        <td className={compactTableCellWrapClassName}>{label}</td>
+                        <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
+                          {item.quantity || t("common.empty.dash")}
+                        </td>
+                        <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
+                          {formatInvoiceMoney(Number(item.unitPrice) || 0)}
+                        </td>
+                        <td className={cn(compactTableCellClassName, "text-right font-medium tabular-nums")}>
+                          {formatInvoiceMoney(resolveLineTotal(item))}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </CompactTableScroll>
           </div>
         )}
       </FormSection>

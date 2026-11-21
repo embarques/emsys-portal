@@ -8,6 +8,15 @@ import { BarcodeStatusesButton } from "@/components/barcodes/barcode-statuses-bu
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
+import {
+  CompactTableScroll,
+  compactTableCaptionClassName,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+} from "@/components/ui/compact-table";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,9 +47,27 @@ import { cn } from "@/lib/utils";
 const UPDATER_TAB_ACCENT = WORKSPACE_TAB_SECTION_COLORS.barcodes;
 
 function ResultCell({ value }: { value?: string | number }) {
-  if (value === undefined || value === "") return <span className="text-muted-foreground">—</span>;
+  const { t } = useTranslation();
+  if (value === undefined || value === "") {
+    return <span className="text-muted-foreground">{t("common.empty.dash")}</span>;
+  }
   return <span>{value}</span>;
 }
+
+const RESULTS_COLUMNS = [
+  "barcode",
+  "invoice",
+  "container",
+  "prevStatus",
+  "newStatus",
+  "prevContainer",
+  "newContainer",
+  "prevRoute",
+  "newRoute",
+  "updatedAt",
+  "updatedBy",
+  "message",
+] as const;
 
 type UpdaterPanel = "update" | "statuses";
 
@@ -287,7 +314,12 @@ export function LabelUpdaterWorkspace() {
         actions={<BarcodeStatusesButton />}
       />
 
-      <div className="mt-6 flex flex-col">
+      <div
+        className={cn(
+          "mt-6 flex flex-col",
+          showStatusesPanel && "min-h-[min(70vh,42rem)]",
+        )}
+      >
         {/* Outer -mb-px overlaps the card; overflow stays on the inner row so it does not clip the seam. */}
         <div className="relative z-10 -mb-px">
           <div
@@ -372,7 +404,12 @@ export function LabelUpdaterWorkspace() {
           </div>
         </div>
 
-        <Card className="relative z-0 gap-0 overflow-hidden rounded-t-none py-0 shadow-sm">
+        <Card
+          className={cn(
+            "relative z-0 gap-0 overflow-hidden rounded-t-none py-0 shadow-sm",
+            showStatusesPanel && "min-h-0 flex-1 rounded-b-lg",
+          )}
+        >
         {showUpdatePanel ? (
           <div
             role="tabpanel"
@@ -385,97 +422,102 @@ export function LabelUpdaterWorkspace() {
               </p>
 
               <div className="flex w-full flex-col gap-4">
-                <FormSection
-                  variant="card"
-                  className="w-full"
-                  icon={Tag}
-                  title={t("labels.updater.options.newStatus")}
-                  action={(
-                    <FieldEntityActions
-                      onAdd={openNewStatus}
-                      onEdit={canEditSelectedStatus ? openEditStatus : undefined}
-                      hasSelection={Boolean(selectedStatus)}
-                      addIcon={Tag}
+                <div className="grid w-full items-start gap-4 sm:grid-cols-3">
+                  <FormSection
+                    variant="card"
+                    className="min-w-0"
+                    icon={Tag}
+                    title={t("labels.updater.options.newStatus")}
+                    action={(
+                      <FieldEntityActions
+                        onAdd={openNewStatus}
+                        onEdit={canEditSelectedStatus ? openEditStatus : undefined}
+                        hasSelection={Boolean(selectedStatus)}
+                        addIcon={Tag}
+                      />
+                    )}
+                  >
+                    <SearchableSelect
+                      id="newStatus"
+                      value={newStatusId}
+                      onValueChange={setNewStatusId}
+                      wrapLabels
+                      placeholder={t("labels.updater.options.statusPlaceholder")}
+                      searchPlaceholder={t("labels.updater.search.statuses")}
+                      aria-label={t("labels.updater.options.newStatus")}
+                      options={[
+                        { value: "", label: t("labels.updater.options.statusPlaceholder") },
+                        ...barcodeStatusOptions.map((option) => ({
+                          value: String(option.id),
+                          label: option.label,
+                          keywords: [option.name],
+                        })),
+                      ]}
                     />
-                  )}
-                >
-                  <SearchableSelect
-                    id="newStatus"
-                    value={newStatusId}
-                    onValueChange={setNewStatusId}
-                    placeholder={t("labels.updater.options.statusPlaceholder")}
-                    searchPlaceholder={t("labels.updater.search.statuses")}
-                    aria-label={t("labels.updater.options.newStatus")}
-                    options={[
-                      { value: "", label: t("labels.updater.options.statusPlaceholder") },
-                      ...barcodeStatusOptions.map((option) => ({
-                        value: String(option.id),
-                        label: option.label,
-                        keywords: [option.name],
-                      })),
-                    ]}
-                  />
-                </FormSection>
+                  </FormSection>
 
-                <FormSection
-                  variant="card"
-                  className="w-full"
-                  icon={ContainerIcon}
-                  title={t("labels.updater.options.newContainer")}
-                  action={(
-                    <FieldEntityActions
-                      onAdd={openNewContainer}
-                      onEdit={selectedContainer ? openEditContainer : undefined}
-                      hasSelection={Boolean(selectedContainer)}
-                      addIcon={ContainerIcon}
+                  <FormSection
+                    variant="card"
+                    className="min-w-0"
+                    icon={ContainerIcon}
+                    title={t("labels.updater.options.newContainer")}
+                    action={(
+                      <FieldEntityActions
+                        onAdd={openNewContainer}
+                        onEdit={selectedContainer ? openEditContainer : undefined}
+                        hasSelection={Boolean(selectedContainer)}
+                        addIcon={ContainerIcon}
+                      />
+                    )}
+                  >
+                    <SearchableSelect
+                      id="newContainer"
+                      value={newContainerId}
+                      onValueChange={setNewContainerId}
+                      wrapLabels
+                      placeholder={t("labels.updater.options.containerPlaceholder")}
+                      searchPlaceholder={t("labels.updater.search.containers")}
+                      aria-label={t("labels.updater.options.newContainer")}
+                      options={[
+                        { value: "", label: t("labels.updater.options.containerPlaceholder") },
+                        ...containers.map((container) => ({
+                          value: String(container.id),
+                          label: formatContainerLabel(container),
+                          keywords: [container.name, container.containerNumber, container.booking],
+                        })),
+                      ]}
                     />
-                  )}
-                >
-                  <SearchableSelect
-                    id="newContainer"
-                    value={newContainerId}
-                    onValueChange={setNewContainerId}
-                    placeholder={t("labels.updater.options.containerPlaceholder")}
-                    searchPlaceholder={t("labels.updater.search.containers")}
-                    aria-label={t("labels.updater.options.newContainer")}
-                    options={[
-                      { value: "", label: t("labels.updater.options.containerPlaceholder") },
-                      ...containers.map((container) => ({
-                        value: String(container.id),
-                        label: formatContainerLabel(container),
-                        keywords: [container.name, container.containerNumber, container.booking],
-                      })),
-                    ]}
-                  />
-                </FormSection>
+                  </FormSection>
 
-                <FormSection
-                  variant="card"
-                  className="w-full"
-                  icon={RouteIcon}
-                  title={t("labels.updater.options.newRoute")}
-                  action={(
-                    <FieldEntityActions
-                      onAdd={openNewRoute}
-                      onEdit={selectedRoute ? openEditRoute : undefined}
-                      hasSelection={Boolean(selectedRoute)}
-                      addIcon={RouteIcon}
+                  <FormSection
+                    variant="card"
+                    className="min-w-0"
+                    icon={RouteIcon}
+                    title={t("labels.updater.options.newRoute")}
+                    action={(
+                      <FieldEntityActions
+                        onAdd={openNewRoute}
+                        onEdit={selectedRoute ? openEditRoute : undefined}
+                        hasSelection={Boolean(selectedRoute)}
+                        addIcon={RouteIcon}
+                      />
+                    )}
+                  >
+                    <SearchableSelect
+                      id="newRoute"
+                      value={newRouteRecordId}
+                      onValueChange={setNewRouteRecordId}
+                      wrapLabels
+                      placeholder={t("labels.updater.options.routePlaceholder")}
+                      searchPlaceholder={t("labels.updater.search.routes")}
+                      aria-label={t("labels.updater.options.newRoute")}
+                      options={[
+                        { value: "", label: t("labels.updater.options.routePlaceholder") },
+                        ...routeOptions,
+                      ]}
                     />
-                  )}
-                >
-                  <SearchableSelect
-                    id="newRoute"
-                    value={newRouteRecordId}
-                    onValueChange={setNewRouteRecordId}
-                    placeholder={t("labels.updater.options.routePlaceholder")}
-                    searchPlaceholder={t("labels.updater.search.routes")}
-                    aria-label={t("labels.updater.options.newRoute")}
-                    options={[
-                      { value: "", label: t("labels.updater.options.routePlaceholder") },
-                      ...routeOptions,
-                    ]}
-                  />
-                </FormSection>
+                  </FormSection>
+                </div>
 
                 <FormSection
                   variant="card"
@@ -545,31 +587,26 @@ export function LabelUpdaterWorkspace() {
             role="tabpanel"
             id="label-updater-panel-statuses"
             aria-labelledby="label-updater-tab-statuses"
+            className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="space-y-4 px-6 py-6 pb-8">
-              <p className="text-sm text-muted-foreground">
-                {t("labels.updater.results.description")}
+            {results.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted-foreground">
+                {t("labels.updater.results.empty")}
               </p>
-
-              {results.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("labels.updater.results.empty")}</p>
-              ) : (
-                <div className="overflow-x-auto rounded-xl border">
-                  <table className="w-full min-w-[1100px] text-left text-sm">
+            ) : (
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                <CompactTableScroll
+                  aria-labelledby="label-updater-results-caption"
+                  className="min-h-0 flex-1"
+                >
+                  <table className={compactTableClassName}>
                     <thead>
-                      <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.barcode")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.invoice")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.container")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.prevStatus")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.newStatus")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.prevContainer")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.newContainer")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.prevRoute")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.newRoute")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.updatedAt")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.updatedBy")}</th>
-                        <th className="px-3 py-2 font-medium">{t("labels.updater.columns.message")}</th>
+                      <tr className={compactTableHeadRowClassName}>
+                        {RESULTS_COLUMNS.map((key) => (
+                          <th key={key} className={compactTableHeadClassName}>
+                            {t(`labels.updater.columns.${key}`)}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
@@ -577,49 +614,61 @@ export function LabelUpdaterWorkspace() {
                         <tr
                           key={result.id}
                           className={cn(
-                            "border-b last:border-0",
+                            "border-b last:border-b-0",
                             result.success ? "bg-emerald-500/10" : "bg-destructive/10",
                           )}
                         >
-                          <td className="px-3 py-2 font-mono text-xs">{result.barcode}</td>
-                          <td className="px-3 py-2">
+                          <td className={cn(compactTableCellClassName, "font-mono font-medium")}>
+                            {result.barcode}
+                          </td>
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.invoiceNumber} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.container} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.previousStatus} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.newStatus} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.previousContainer} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.newContainer} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.previousRoute} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.newRoute} />
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.dateTime} />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className={compactTableCellClassName}>
                             <ResultCell value={result.createdBy} />
                           </td>
-                          <td className="px-3 py-2">{result.message}</td>
+                          <td
+                            className={cn(
+                              compactTableCellWrapClassName,
+                              "min-w-[16rem] max-w-[28rem]",
+                            )}
+                          >
+                            {result.message}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                </div>
-              )}
-            </div>
+                </CompactTableScroll>
+                <p id="label-updater-results-caption" className={compactTableCaptionClassName}>
+                  {t("labels.updater.results.description")}
+                </p>
+              </div>
+            )}
           </div>
         ) : null}
         </Card>

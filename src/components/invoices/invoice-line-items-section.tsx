@@ -3,9 +3,19 @@
 import { ClipboardList } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
+import {
+  CompactTableScroll,
+  compactTableCellClassName,
+  compactTableCellWrapClassName,
+  compactTableClassName,
+  compactTableHeadClassName,
+  compactTableHeadRowClassName,
+  compactTableRowClassName,
+} from "@/components/ui/compact-table";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import type { InvoiceLineItem } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 function isFilled(value: string | undefined): boolean {
   const trimmed = value?.trim() ?? "";
@@ -24,23 +34,23 @@ export function InvoiceLineItemsSection({ lineItems }: { lineItems: readonly Inv
       {lineItems.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <CompactTableScroll aria-label={t("invoices.wizard.review.lineItems")}>
+          <table className={compactTableClassName}>
             <thead>
-              <tr className="border-b bg-muted/40 text-muted-foreground">
-                <th className="px-3 py-2 font-medium">
+              <tr className={compactTableHeadRowClassName}>
+                <th className={compactTableHeadClassName}>
                   {t("invoices.form.lineItems.columns.description")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                <th className={cn(compactTableHeadClassName, "text-right")}>
                   {t("invoices.form.lineItems.columns.quantity")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                <th className={cn(compactTableHeadClassName, "text-right")}>
                   {t("invoices.form.lineItems.columns.labels")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                <th className={cn(compactTableHeadClassName, "text-right")}>
                   {t("invoices.form.lineItems.columns.unitPrice")}
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                <th className={cn(compactTableHeadClassName, "text-right")}>
                   {t("invoices.form.lineItems.columns.total")}
                 </th>
               </tr>
@@ -54,20 +64,20 @@ export function InvoiceLineItemsSection({ lineItems }: { lineItems: readonly Inv
                     : "";
 
                 return (
-                  <tr key={item.id} className="border-b last:border-b-0 even:bg-muted/25">
-                    <td className="min-w-[8rem] px-3 py-2 font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
+                  <tr key={item.id} className={compactTableRowClassName}>
+                    <td className={cn(compactTableCellWrapClassName, "font-medium")}>
                       {description || empty}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-foreground">
+                    <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
                       {item.quantity}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-foreground">
+                    <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
                       {item.labelCount}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-foreground">
+                    <td className={cn(compactTableCellClassName, "text-right tabular-nums")}>
                       {formatInvoiceMoney(item.unitPrice)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right font-medium tabular-nums text-foreground">
+                    <td className={cn(compactTableCellClassName, "text-right font-medium tabular-nums")}>
                       {formatInvoiceMoney(item.lineTotal)}
                     </td>
                   </tr>
@@ -75,7 +85,7 @@ export function InvoiceLineItemsSection({ lineItems }: { lineItems: readonly Inv
               })}
             </tbody>
           </table>
-        </div>
+        </CompactTableScroll>
       )}
     </RecordViewSheetSection>
   );
