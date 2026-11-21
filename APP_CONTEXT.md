@@ -438,6 +438,23 @@ Protected corrections use an audited void/reversal/correction or approved change
 request, with dedicated invoice, inventory and loan lifecycles preserved. Pending
 work is in `docs/financial-controls.md` and `docs/payment-accounts-api-contract.md`.
 
+**Portal Edit / Delete lifecycle:** Edit updates an eligible outstanding journal
+in the current open closeout; otherwise an explicit API `allowedActions.correct`
+grant opens an audited correction confirmation with a required reason. The API
+reverses and replaces the entry atomically in today's open closeout. Delete is
+an audited cancellation: prefer an explicitly allowed void; otherwise use an
+explicitly allowed reversal. No journal is hard-deleted. Confirmations explain
+the affected closeout and that no bank refund is initiated. Reconciliation and
+clearance evidence remains in history. Both original and offset leave pending
+clearance (`NOT_REQUIRED`). Only the active offset requires reconciliation
+(`OUTSTANDING`); the original retains a prior `RECONCILED` state or becomes
+`NOT_REQUIRED`. A replacement follows normal reconciliation and bank clearance,
+without inheriting approval or auto-clear consent. Historical or
+verified entries require the protected API correction grants, not merely a date
+check or a severe alert. Approval requests remain separate; authorized
+self-approval is unchanged. Dedicated invoice registration, inventory and loan
+workflows remain authoritative.
+
 ### Checks
 
 Checks manages invoice payments made by check.

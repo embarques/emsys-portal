@@ -1,4 +1,4 @@
-type TestWindow = Window & {partialAcknowledgement?:boolean;journalCalls: Array<{url:string;body:Record<string,unknown>}>;failApproval?:boolean;approved?:string[];pendingClearance?:boolean;cleared?:string[];failClearance?:boolean};
+type TestWindow = Window & {offsetQueue?:boolean;partialAcknowledgement?:boolean;journalCalls: Array<{url:string;body:Record<string,unknown>}>;failApproval?:boolean;approved?:string[];pendingClearance?:boolean;cleared?:string[];failClearance?:boolean};
 const state = () => window as unknown as TestWindow;
 const rows = [
  {id:"650000000000000000000001",refNumber:"TXN-A1",transactionType:"PAYMENT",transactionAmount:25,currency:"USD",paymentMethod:{name:"CASH"},paymentAccount:{id:101,name:"Cash drawer A",type:"ASSET"},reconciliationStatus:"OUTSTANDING",date:"2026-11-04",createdAt:"2026-11-04T17:26:16Z",invoice:{id:"invoice-1",number:"INV-26-001475",cost:100,discount:20,balance:55}},
@@ -17,7 +17,8 @@ export const apiClient = {get: async () => ({data: []}), post: async (url: strin
  const current=state();
  current.journalCalls ??= [];
  current.journalCalls.push({url,body});
- const sourceRows = current.pendingClearance ? clearanceRows : rows;
+ const offsetRows=[{...rows[0],id:"650000000000000000000004",refNumber:"OFFSET-1",transactionType:"REVERSAL",transactionAmount:-25,reversalOf:rows[0].id,transactionStatus:"ACTIVE",reconciliationStatus:"OUTSTANDING",clearanceStatus:"NOT_REQUIRED",allowedActions:{clear:false}}];
+ const sourceRows = current.offsetQueue ? (current.pendingClearance ? [] : offsetRows) : current.pendingClearance ? clearanceRows : rows;
  if(url.endsWith("/clear")) {
   if(current.failClearance) {current.failClearance=false;throw new Error("temporary clearance failure");}
   current.cleared=body.ids as string[];
@@ -40,6 +41,10 @@ export const apiClient = {get: async () => ({data: []}), post: async (url: strin
   const income=included.filter(row=>row.transactionType==="PAYMENT").reduce((sum,row)=>sum+row.transactionAmount,0);
   const expenses=included.filter(row=>row.transactionType==="EXPENSE").reduce((sum,row)=>sum+row.transactionAmount,0);
   return {data:[{currency:"USD",income,expenses,net:income-expenses,count:included.length}]};
+ }
+ if(current.offsetQueue) {
+  const included=sourceRows.filter(row=>!current.approved?.includes(row.id));
+  return {data:included,total:included.length};
  }
  const page=(body.pagination as {page:number})?.page ?? 1;
  return {data: (page===1 ? sourceRows.slice(0,2) : sourceRows.slice(2)).filter(row=>!current.approved?.includes(row.id)&&!current.cleared?.includes(row.id)),total:current.approved || current.cleared ? 1 : 51};

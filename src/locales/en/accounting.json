@@ -1988,6 +1988,7 @@
     "empty": "No outstanding transactions match your filters."
   },
   "journalReconciliation": {
+    "reversal": "Reversal",
     "title": "Pending Reconciliation",
     "description": "Transactions awaiting verification across all closeouts.",
     "createdAt": "Created at",
@@ -2225,6 +2226,14 @@
     "noteDescription": "Only the description changes. Financial amounts and verification history remain unchanged.",
     "reason": "Reason",
     "description": "Description",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "voidDescription": "Delete this transaction by voiding it in the same open closeout. The original remains in history; its offset requires reconciliation. Neither entry requires bank clearance. This does not issue a refund.",
+    "reverseDescription": "Delete this transaction by recording an audited reversal in today's open closeout. The original keeps its closeout and verification evidence; its offset requires reconciliation. Neither entry requires bank clearance. This does not issue a refund.",
+    "correctDescription": "Saving this edit reverses the original and creates a replacement together in today's open closeout. The original keeps its history. The offset requires reconciliation, without bank clearance. The replacement follows normal reconciliation and bank clearance. This does not issue a refund. Enter a reason to confirm.",
+    "reasonRequired": "Enter a reason.",
+    "reasonTooLong": "Use no more than 1,000 characters.",
+    "unconfirmed": "The correction could not be confirmed. Retry with the same values to check its result.",
+    "descriptionTooLong": "Use no more than 2,000 characters.",
+    "cancellationUnconfirmed": "The cancellation could not be confirmed. Retry with the same reason to check its result."
   }
 }

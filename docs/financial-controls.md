@@ -60,6 +60,61 @@ with Go tests and an isolated MongoDB replica set, including rollback and retry
 behavior. Authenticated end-to-end checks against a deployed non-production API
 still require Firebase/API credentials.
 
+## Portal lifecycle alignment — API PR #381
+
+The portal presents Edit and Delete while retaining distinct backend commands:
+
+- Edit uses PUT only for an explicitly editable outstanding journal in the
+  current open closeout. Verified or historical entries require the API's
+  `correct` grant, a reason, and confirmation before one atomic `/correct`
+  command reverses the original and posts its replacement in today's period.
+- Delete prefers a permitted `/void`, otherwise a permitted `/reverse`; both
+  retain the original and an audited offset. Confirmation explains the period
+  and that the command does not initiate a refund. No journal DELETE is sent.
+- Original and offset leave Pending Clearance (`NOT_REQUIRED`). Only the new
+  active offset requires reconciliation (`OUTSTANDING`). Preserve any existing
+  reconciliation state, actors and timestamps on the original; otherwise its
+  reconciliation becomes `NOT_REQUIRED`. Replacements start their normal
+  reconciliation/clearance lifecycle; correction never silently approves them.
+- Reconciliation confirms custody; it is not correction authorization. Existing
+  change requests and authorized self-approval remain separate. This change adds
+  no second-person approval policy or alert-delivery service.
+- Identical uncertain corrections retain UUID, reason, version and replacement
+  payload within the mounted editor. Failed confirmation retains the draft;
+  cancellation returns to the editor without posting. Reload recovery is not
+  established. Backend grants, versions, atomicity and domain restrictions remain
+  authoritative.
+
+Queue lists, summaries and badges share mandatory server filters: outstanding
+queue status and transaction status excluding VOIDED/REVERSED. Clearance also
+excludes transaction type REVERSAL; reconciliation includes active offsets. No whole-directory download or detail-per-row lookup is
+introduced. Legacy records identified only by reversal/void metadata still
+require [API #381](https://github.com/embarques/emsys-api/pull/381)'s explicit
+`financial-controls` repair; unsupported metadata filters are not sent by the
+portal. The repair must preserve ledger lines, invoice balances and prior audit
+actors/timestamps, and safely support reruns. It restores previously excluded
+offsets to outstanding reconciliation unless they already have verification
+evidence. Already reconciled offsets stay reconciled on reruns. Historical bank receipts without
+application evidence stop the seed for review. No production migration,
+deployment, seeding or permission refresh is performed by the portal change.
+
+Local acceptance includes command routing, protected/dedicated lifecycle gates,
+retry identity, missing acknowledgments, replacement approval flags, server queue
+scope and desktop/mobile confirmations. Authenticated acceptance against a
+non-production deployed API remains a rollout check; local replica-set tests
+cover offset reconciliation, clearance rejection, rollback and migration reruns.
+
+Validation for the confirmed offset-only policy on November 21, 2026: 42
+focused unit/permission checks and three Chromium desktop/mobile fixtures pass,
+as do TypeScript, the production build and focused lint. API formatting, vet,
+build, full tests, regenerated Swagger/Scalar contract checks and race-enabled
+isolated lifecycle/migration tests pass. The database fixture records one
+aggregation for each clearing-directory history/pending query and one for the
+offset reconciliation page. Cancelled receipts remain in history but not pending
+counts. Migration reruns after an offset is reconciled preserve that approval.
+These are fixture query-count controls, not production latency measurements or a
+claimed speed improvement. No production data or deployment was changed.
+
 ## Journal lifecycle and migration
 
 - Verify payment-method/account corrections and remaining lifecycle concurrency.

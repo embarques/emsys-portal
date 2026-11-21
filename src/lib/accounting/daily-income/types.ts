@@ -121,7 +121,7 @@ export type DailyIncomeJournal = ApiTableRecord & {
   loan?: { id?: number | string; name?: string } | null;
   /** Provenance used by API dedicated-lifecycle checks (e.g. inventory_receipt). */
   sourceSystem?: string;
-  /** NOT_REQUIRED applies to voided/reversed entries. */
+  /** Cancelled originals are NOT_REQUIRED unless already reconciled; offsets require reconciliation. */
   reconciliationStatus?: "NOT_REQUIRED" | "OUTSTANDING" | "RECONCILED";
   /** Independent settlement status; NOT_REQUIRED applies to non-clearable transactions. */
   clearanceStatus?: "NOT_REQUIRED" | "OUTSTANDING" | "CLEARED";

@@ -32,11 +32,12 @@ import {
   useCurrentIncomeStatement,
   useIncomeStatementSummaryTotals,
   useCloseoutCalendar,
-  useUpdateDailyIncomeJournal,
 
 } from "@/lib/accounting/daily-income/hooks";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
-import { journalEditBlockReason } from "@/lib/accounting/daily-income/journal-editability";
+import { JournalCorrectionDialog } from "./journal-correction-dialog";
+import { useJournalEdit } from "@/lib/accounting/daily-income/use-journal-edit";
+import { journalEditOperation } from "@/lib/accounting/daily-income/journal-editability";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
@@ -328,14 +329,14 @@ export function DailyIncomeWorkspace() {
   );
 
   const createJournal = useCreateDailyIncomeJournal();
-  const updateJournal = useUpdateDailyIncomeJournal();
+  const editWorkflow = useJournalEdit();
   const generateIncomeReportMutation = useGenerateIncomeReport();
   const generateReceiptMutation = useGenerateReport();
   const startTransaction = useStartTransaction(selectedBranch, openAddTransactionForm);
   const displayCurrency = statement?.currency || "USD";
   const canUpdateJournals = hasPermission(PERMISSIONS.journalsUpdate.name, PERMISSIONS.journalsUpdate.resourceType);
   const canEditJournal = (journal: DailyIncomeJournal) =>
-    canUpdateJournals && journalEditBlockReason(journal, transactionStatement) === null;
+    journalEditOperation(journal, transactionStatement) === "correct" || (canUpdateJournals && journalEditOperation(journal, transactionStatement) === "edit");
 
   const stats = useMemo((): StatCardItem[] => {
     const summary = summaryTotalsQuery.data;
@@ -377,11 +378,12 @@ export function DailyIncomeWorkspace() {
       return Promise.resolve();
     }
     return (editingJournal
-      ? updateJournal.mutateAsync({ id: editingJournal.id, statement: saveStatement, values, options:{...options,expectedVersion:journalForForm?.version} })
+      ? editWorkflow.save({ journal: journalForForm ?? editingJournal, statement: saveStatement, values, options, canUpdate: canUpdateJournals })
       : createJournal.mutateAsync({ statement: saveStatement, values, options })
     )
       .then(async (journal) => {
         if (editingJournal) {
+          if (!journal) return;
           feedback.notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
           setTransactionDialog(false);
           setEditingJournal(null);
@@ -748,7 +750,8 @@ export function DailyIncomeWorkspace() {
       isPending={generateIncomeReportMutation.isPending}
       onConfirm={handlePrintReport}
     />
-    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} paymentClearanceStatus={journalForForm?.clearanceStatus} employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} lookupLoading={lookupLoading} lookupError={lookupError} onRetryLookups={retryLookups} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={(editingJournal ? statement : transactionStatement)?.date ?? date} statementBranchId={(editingJournal ? statement : transactionStatement)?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} lookupLoading={lookupLoading} lookupError={lookupError} onRetryLookups={retryLookups} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
+    <JournalCorrectionDialog workflow={editWorkflow} />
+    <Dialog open={transactionDialog} onOpenChange={(open) => { if (editWorkflow.isPending) return; setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} paymentClearanceStatus={journalForForm?.clearanceStatus} employees={employees} dailyRoutes={dailyRoutes} statementDate={transactionStatement?.date ?? date} statementBranchId={transactionStatement?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} lookupLoading={lookupLoading} lookupError={lookupError} onRetryLookups={retryLookups} isSubmitting={createJournal.isPending || editWorkflow.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={transactionStatement?.date ?? date} statementBranchId={transactionStatement?.branch?.id ?? selectedBranch?.id} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} lookupLoading={lookupLoading} lookupError={lookupError} onRetryLookups={retryLookups} isSubmitting={createJournal.isPending || editWorkflow.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
     <DailyIncomeTransactionViewSheet
       journal={viewJournal}
       currency={displayCurrency}

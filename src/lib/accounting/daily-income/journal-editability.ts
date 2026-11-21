@@ -51,3 +51,24 @@ export function journalEditBlockReason(
 export function isGenericEditableTransactionType(type: JournalTransactionType | string): boolean {
   return !NON_EDITABLE_TYPES.has(type);
 }
+
+/** Shared guard for generic audited corrections and cancellations. */
+function canUseGenericJournalLifecycle(journal: DailyIncomeJournal): boolean {
+  return Boolean(journal.version && journal.version >= 1 && !journal.pendingChange &&
+    journal.transactionStatus !== "VOIDED" && journal.transactionStatus !== "REVERSED" &&
+    !journal.voidedAt && !journal.reversedAt && !journal.reversalOf &&
+    !NON_EDITABLE_TYPES.has(journal.transactionType) && !journal.loan &&
+    journal.sourceSystem !== "legacy-api" && !isInventoryBackedSource(journal.sourceSystem));
+}
+
+/** Choose a write path only from server grants; dates never confer authority. */
+export function journalEditOperation(journal: DailyIncomeJournal, currentCloseout: DailyIncomeStatement | null | undefined): "edit" | "correct" | null {
+  if (journalEditBlockReason(journal, currentCloseout) === null) return "edit";
+  return canUseGenericJournalLifecycle(journal) && journal.allowedActions?.correct === true ? "correct" : null;
+}
+
+export function journalDeleteOperation(journal: DailyIncomeJournal): "void" | "reverse" | null {
+  if (!canUseGenericJournalLifecycle(journal)) return null;
+  if (journal.allowedActions?.void === true) return "void";
+  return journal.allowedActions?.reverse === true ? "reverse" : null;
+}
