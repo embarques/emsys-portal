@@ -75,13 +75,14 @@ test("an untouched initial collector follows merchandise changes until explicitl
       await page.waitForFunction(() => document.getElementById("collector").textContent === "88");
       await page.getByText("Change invoice party", { exact: true }).click();
       await page.waitForFunction(() => document.getElementById("collector").textContent === "77");
+      await page.getByLabel("Amount").fill("10");
       await page.getByText("Refresh", { exact: true }).click();
       await page.getByText("Post", { exact: true }).click();
       await page.waitForFunction(() => document.getElementById("posted").textContent.length > 0);
       const values = JSON.parse(await page.locator("#posted").textContent());
       assert.equal(values.employeeId, 77);
       assert.equal(values.invoiceResponsibility.employee.id, 77);
-      assert.equal(values.amount, 0);
+      assert.equal(values.amount, 10);
     } finally { await page.close(); }
   }
 });

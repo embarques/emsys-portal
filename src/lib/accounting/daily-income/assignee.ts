@@ -102,7 +102,6 @@ export function dailyRouteSupervisors(
  */
 export function resolveDailyRouteSupervisor(
   route: Pick<ActiveRoute, "employees"> | null | undefined,
-  _currentSupervisorId?: number,
 ): DailyRouteSupervisorRef | null {
   const supervisors = dailyRouteSupervisors(route);
   return supervisors.length === 1 ? supervisors[0] : null;

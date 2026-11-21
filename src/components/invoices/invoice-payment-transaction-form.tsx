@@ -257,7 +257,7 @@ export function InvoicePaymentTransactionForm({
     const supervisor = !assignee.routeId
       ? null
       : route
-        ? resolveDailyRouteSupervisor(route, chosenSupervisorId)
+        ? resolveDailyRouteSupervisor(route)
         : chosenSupervisorId
           ? { id: chosenSupervisorId, name: getValues("supervisorName") ?? "" }
           : null;
@@ -435,29 +435,29 @@ export function InvoicePaymentTransactionForm({
     >
       {skipPayment ? null : (
         <>
-        <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.form.hints.independentResponsibility")}</p>
-        <RegisterInvoiceTransactionFields
-          grouped
-          employees={employeesQuery.data?.items ?? []}
-          dailyRoutes={dailyRoutes}
-          statementBranchId={statement.branch?.id}
-          accounts={accounts}
-          bankAccounts={bankAccounts}
-          paymentMethods={paymentMethods}
-          errors={errors}
-          register={register}
-          setValue={(name, value, options) => {
-            if (["assigneeSource", "employeeId", "routeId"].includes(name) && options?.shouldValidate) paymentAssigneeEdited.current = true;
-            setValue(name, value, options);
-          }}
-          watch={watch}
-          showEmployee
-          allowDailyRoute
-          showInvoiceNumber={false}
-          showParties={false}
-          invoiceCostReadOnly
-          paymentSectionFirst
-        />
+          <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.form.hints.initialCollectorDefaults")}</p>
+          <RegisterInvoiceTransactionFields
+            grouped
+            employees={employeesQuery.data?.items ?? []}
+            dailyRoutes={dailyRoutes}
+            statementBranchId={statement.branch?.id}
+            accounts={accounts}
+            bankAccounts={bankAccounts}
+            paymentMethods={paymentMethods}
+            errors={errors}
+            register={register}
+            setValue={(name, value, options) => {
+              if (["assigneeSource", "employeeId", "routeId"].includes(name) && options?.shouldValidate) paymentAssigneeEdited.current = true;
+              setValue(name, value, options);
+            }}
+            watch={watch}
+            showEmployee
+            allowDailyRoute
+            showInvoiceNumber={false}
+            showParties={false}
+            invoiceCostReadOnly
+            paymentSectionFirst
+          />
         </>
       )}
 

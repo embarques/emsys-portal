@@ -8,7 +8,6 @@ import { ClearSelectionButton } from "@/components/forms/clear-selection-button"
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
-import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
@@ -178,7 +177,7 @@ export function TransactionAssigneeSelect({
   const routeOptions = useMemo(() => {
     const selected = routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined;
     const list =
-      canAssignResponsibility && selected && !branchScopedRoutes.some((item) => item.id === selected.id)
+      canAssignResponsibility && selected && canSelectResponsibleRoute(selected, true) && !branchScopedRoutes.some((item) => item.id === selected.id)
         ? [selected, ...branchScopedRoutes]
         : branchScopedRoutes;
     return withPinnedSelectOption(
@@ -187,7 +186,7 @@ export function TransactionAssigneeSelect({
         label: option.label,
         keywords: (option as { keywords?: string[] }).keywords,
       })),
-      canAssignResponsibility ? routeId : undefined,
+      canAssignResponsibility && (!selected || canSelectResponsibleRoute(selected, true)) ? routeId : undefined,
       routeName,
     );
   }, [branchScopedRoutes, dailyRoutes, routeId, routeName, t, canAssignResponsibility]);
@@ -195,7 +194,7 @@ export function TransactionAssigneeSelect({
   // Fill the supervisor for prefilled routes; never replace one that was already recorded.
   useEffect(() => {
     if (source !== "route" || !selectedRoute || supervisorId) return;
-    const supervisor = resolveDailyRouteSupervisor(selectedRoute, canAssignResponsibility ? undefined : ownEmployeeId);
+    const supervisor = resolveDailyRouteSupervisor(selectedRoute);
     if (supervisor) setSupervisor(setValue, supervisor);
   }, [selectedRoute, setValue, source, supervisorId, canAssignResponsibility, ownEmployeeId]);
 
@@ -289,7 +288,7 @@ export function TransactionAssigneeSelect({
     setValue("routeName", route?.name.trim() || employeeNames || next);
     setValue("routeCrewId", undefined, { shouldValidate: true });
     setValue("routeCrewName", "");
-    const supervisor = resolveDailyRouteSupervisor(route, canAssignResponsibility ? undefined : ownEmployeeId);
+    const supervisor = resolveDailyRouteSupervisor(route);
     setSupervisor(setValue, supervisor);
     clearEmployee(setValue);
     // Stay on Assignment when the stale-date warning is shown so the user can read it.
