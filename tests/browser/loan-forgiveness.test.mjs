@@ -47,7 +47,7 @@ test("principal forgiveness preserves money balances, validation and retry ident
    assert.equal(await amount.getAttribute("max"),"80");
    await amount.fill("81");await amount.press("Tab");
    await page.locator("form").evaluate(form=>form.requestSubmit());
-   await page.getByRole("alert").filter({hasText:"open balance"}).waitFor();
+   await page.getByRole("alert").filter({hasText:"Decrease cannot exceed the open loan balance."}).waitFor();
    assert.equal(await page.evaluate(()=>window.forgivenessCalls.filter(c=>c.url.endsWith("/decreases")).length),0);
    await amount.fill("10");await page.locator("#loan-increase-description").fill("Approved forgiveness");
    await page.getByRole("button",{name:"Forgive principal",exact:true}).click();
