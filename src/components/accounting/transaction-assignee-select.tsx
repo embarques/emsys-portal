@@ -6,14 +6,12 @@ import { Route, UserCheck, UserPlus, UserRound } from "lucide-react";
 import { canSelectResponsibleRoute } from "@/lib/accounting/daily-income/responsibility";
 import { ClearSelectionButton } from "@/components/forms/clear-selection-button";
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
-import { FieldLabelRow } from "@/components/forms/field-label-row";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, SearchableSelect } from "@/components/ui/searchable-select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
-  buildDailyRouteSupervisorOptions,
   buildTransactionAssigneeOptions,
   dailyRoutesForAssigneeBranch,
   employeesForAssigneeBranch,
@@ -194,28 +192,6 @@ export function TransactionAssigneeSelect({
     );
   }, [branchScopedRoutes, dailyRoutes, routeId, routeName, t, canAssignResponsibility]);
 
-  // A route missing from the loaded list still needs an accountable supervisor.
-  const supervisorOptions = useMemo(
-    () =>
-      withPinnedSelectOption(
-        selectedRoute ? buildDailyRouteSupervisorOptions(selectedRoute) : buildTransactionAssigneeOptions(branchScopedEmployees),
-        supervisorId,
-        supervisorName,
-      ),
-    [branchScopedEmployees, selectedRoute, supervisorId, supervisorName],
-  );
-  const supervisorPlaceholder = t(
-    routeId
-      ? "accounting.dailyIncome.form.placeholders.selectSupervisor"
-      : "accounting.dailyIncome.form.placeholders.selectRouteFirst",
-  );
-  const supervisorInline = getInlineSelectOptions({
-    inlineOptionsLimit,
-    options: supervisorOptions,
-    value: supervisorId ? String(supervisorId) : "",
-    placeholder: supervisorPlaceholder,
-  }) !== null;
-
   // Fill the supervisor for prefilled routes; never replace one that was already recorded.
   useEffect(() => {
     if (source !== "route" || !selectedRoute || supervisorId) return;
@@ -320,18 +296,6 @@ export function TransactionAssigneeSelect({
     if (supervisor && !isStaleRouteDate(route)) onAssigneeComplete?.();
   }
 
-  function handleSupervisorChange(next: string) {
-    const id = Number(next);
-    if (!next || !Number.isInteger(id) || id <= 0) {
-      setSupervisor(setValue, null);
-      return;
-    }
-    const option = supervisorOptions.find((item) => item.value === next);
-    setSupervisor(setValue, { id, name: option?.label ?? "" });
-    const assignedRoute = routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined;
-    if (routeId && !isStaleRouteDate(assignedRoute)) onAssigneeComplete?.();
-  }
-
   const allowedSources = sourceOptions.filter((option) => canAssignResponsibility || option.value === "creator" || option.value === "route" && branchScopedRoutes.length > 0);
   const sourceControl = !allowDailyRoute ? null : guided ? (
     <ChoiceTiles<DailyIncomeAssigneeSource>
@@ -432,32 +396,12 @@ export function TransactionAssigneeSelect({
 
       {showRoutePicker ? (
         <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:col-span-2">
-          <FieldLabelRow
-            showClear={Boolean(supervisorInline && supervisorId)}
-            clearDisabled={!routeId}
-            onClear={() => {
-              handleSupervisorChange("");
-              window.requestAnimationFrame(() => document.getElementById(`${id}-supervisor`)?.focus());
-            }}
-          >
-            <Label htmlFor={`${id}-supervisor`} className="font-semibold text-foreground">
-              {t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
-            </Label>
-          </FieldLabelRow>
-          <SearchableSelect
-            inlineOptionsLimit={inlineOptionsLimit}
-            stretchInlineOptions
-            clearable={false}
-            id={`${id}-supervisor`}
-            value={supervisorId ? String(supervisorId) : ""}
-            onValueChange={handleSupervisorChange}
-            placeholder={supervisorPlaceholder}
-            searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSupervisors")}
-            emptyMessage={t("accounting.dailyIncome.form.placeholders.noRouteSupervisors")}
-            disabled={!routeId || !canAssignResponsibility}
-            mobileSheet
-            options={supervisorOptions}
-          />
+          <p id={`${id}-supervisor-label`} className="font-semibold text-foreground">
+            {t("accounting.dailyIncome.form.fields.responsibleSupervisor")}
+          </p>
+          <output aria-labelledby={`${id}-supervisor-label`}>
+            {supervisorName || (supervisorId ? String(supervisorId) : t("accounting.dailyIncome.form.placeholders.selectRouteFirst"))}
+          </output>
           {supervisorError ? <p className="text-sm text-destructive">{supervisorError}</p> : null}
           <p className="border-t border-border pt-3 text-xs text-muted-foreground">
             {t("accounting.dailyIncome.form.hints.routeSupervisorAccountability")}

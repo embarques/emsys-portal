@@ -43,7 +43,7 @@ const route = (employees) => ({
   employees,
 });
 
-test("a route's only supervisor is responsible; several supervisors need an explicit choice", () => {
+test("a route's only supervisor is responsible; ambiguous routes cannot choose a supervisor", () => {
   const { resolveDailyRouteSupervisor } = loadFeature("src/lib/accounting/daily-income/assignee.ts");
   const single = route([
     { id: 1, name: "Ana", role: "driver", roles: ["driver", "supervisor"] },
@@ -57,9 +57,29 @@ test("a route's only supervisor is responsible; several supervisors need an expl
     { id: 4, name: "Dee", role: "driver" },
   ]);
   assert.equal(resolveDailyRouteSupervisor(shared), null);
-  assert.deepEqual(resolveDailyRouteSupervisor(shared, 3), { id: 3, name: "Cy" });
+  assert.equal(resolveDailyRouteSupervisor(shared, 3), null);
   // A helper is never accepted as the responsible supervisor.
   assert.equal(resolveDailyRouteSupervisor(shared, 4), null);
+});
+
+test("daily-route writes reject ambiguous lead roles before issuing a request", async () => {
+  const { createEmptyActiveRouteForm, assertActiveRouteFormValues } = loadFeature("src/lib/pickup-delivery-routes/types.ts");
+  const valid = {
+    ...createEmptyActiveRouteForm("pickup"), date: "2026-11-21", branch: { id: 1, code: "NY" },
+    employees: [{ id: 1, name: "Ana", role: "driver", roles: ["driver", "supervisor"] }],
+  };
+  assert.doesNotThrow(() => assertActiveRouteFormValues(valid));
+  let requests = 0;
+  const api = loadFeature("src/lib/pickup-delivery-routes/api/pickup-delivery-routes-api.ts", {
+    post: async () => { requests += 1; }, put: async () => { requests += 1; },
+  });
+  for (const role of ["supervisor", "driver"]) {
+    const ambiguous = { ...valid, employees: [...valid.employees, { id: 2, name: "Ben", role }] };
+    assert.throws(() => assertActiveRouteFormValues(ambiguous));
+    await assert.rejects(() => api.createActiveRoute(ambiguous));
+    await assert.rejects(() => api.updateActiveRoute(ROUTE_ID, ambiguous));
+  }
+  assert.equal(requests, 0);
 });
 
 test("route payments keep the route attribution and let the API set the snapshotted supervisor", async () => {
@@ -77,13 +97,14 @@ test("route payments keep the route attribution and let the API set the snapshot
   assert.equal(sent.employee, null);
 });
 
-test("later surcharge posts keep the transaction assignee and do not send the invoice route", async () => {
+for (const transactionType of ["PAYMENT", "SURCHARGE", "DISCOUNT"]) {
+test(`${transactionType}: later posts keep their selected employee without an invoice route`, async () => {
   let sent;
   const api = loadFeature("src/lib/accounting/daily-income/api.ts", {
     post: async (_url, body) => { sent = body; return { success: true, data: { id: "journal-surcharge" } }; },
   });
   await api.createDailyIncomeJournal(statement, {
-    transactionType: "SURCHARGE",
+    transactionType,
     amount: 25,
     invoiceId: "inv-1",
     assigneeSource: "employee",
@@ -96,7 +117,49 @@ test("later surcharge posts keep the transaction assignee and do not send the in
   assert.deepEqual(sent.employee, { id: 99, name: "ALEX" });
   assert.equal(sent.vehicleRoute, null);
   assert.equal(sent.route, null);
+  assert.equal(sent.employeeGroup, null);
+  assert.equal(sent.invoiceId, "inv-1");
+  assert.equal(sent.invoice, undefined);
 });
+
+test(`${transactionType}: self defaults are resolved by the API without a route`, async () => {
+  let sent;
+  const api = loadFeature("src/lib/accounting/daily-income/api.ts", {
+    post: async (_url, body) => { sent = body; return { data: { id: "journal-self" } }; },
+  });
+  await api.createDailyIncomeJournal(statement, {
+    transactionType, amount: 10, invoiceId: "inv-1", assigneeSource: "creator",
+    paymentMethodName: "CASH", refNumber: "", description: "",
+  });
+  assert.equal(sent.employee, null);
+  assert.equal(sent.vehicleRoute, null);
+  assert.equal(sent.route, null);
+  assert.equal(sent.employeeGroup, null);
+  assert.equal(sent.invoiceId, "inv-1");
+});
+
+test(`${transactionType}: invoice receive history never becomes the journal's edit assignment`, async () => {
+  const api = loadFeature("src/lib/accounting/daily-income/api.ts");
+  const { journalToFormValues } = loadFeature("src/lib/accounting/daily-income/journal-form.ts");
+  const journal = api.normalizeJournal({
+    id: "journal-independent", transactionType, transactionAmount: 10,
+    employee: { id: 99, name: "Collector" },
+    invoice: {
+      id: "inv-1", number: "00042", cost: 100, payment: 10, balance: 90,
+      dailyRoute: { id: ROUTE_ID, name: "Original receive route", supervisor: { id: 7, name: "Original supervisor" } },
+      dailyRouteId: ROUTE_ID,
+    },
+  });
+  assert.equal(journal.invoice.dailyRoute.id, ROUTE_ID, "receive history remains available");
+  assert.equal(journal.route, undefined);
+  assert.equal(journal.dailyRoute, undefined);
+  const values = journalToFormValues(journal);
+  assert.equal(values.assigneeSource, "employee");
+  assert.equal(values.employeeId, 99);
+  assert.equal(values.routeId, undefined);
+  assert.equal(values.supervisorId, undefined);
+});
+}
 
 test("inventory dispatch sends joint holders and route attribution, never a journal employee", async () => {
   let sent;

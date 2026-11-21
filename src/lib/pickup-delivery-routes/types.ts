@@ -196,10 +196,10 @@ export function getActiveRouteEmployeesByRole(
   return record.employees.filter((employee) => employeeHasRole(employee, role));
 }
 
-/** A daily route needs a driver and a supervisor; one employee may hold both. */
+/** Each lead role has exactly one holder; one employee may hold both. */
 export function hasDailyRouteLeadRoles(employees: RouteEmployeeRef[]): boolean {
   return (["driver", "supervisor"] as const).every((role) =>
-    employees.some((employee) => employeeHasRole(employee, role)),
+    employees.filter((employee) => employeeHasRole(employee, role)).length === 1,
   );
 }
 

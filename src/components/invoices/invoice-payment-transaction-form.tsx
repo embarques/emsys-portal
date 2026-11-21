@@ -434,6 +434,8 @@ export function InvoicePaymentTransactionForm({
       }}
     >
       {skipPayment ? null : (
+        <>
+        <p className="text-sm text-muted-foreground">{t("accounting.dailyIncome.form.hints.independentResponsibility")}</p>
         <RegisterInvoiceTransactionFields
           grouped
           employees={employeesQuery.data?.items ?? []}
@@ -456,6 +458,7 @@ export function InvoicePaymentTransactionForm({
           invoiceCostReadOnly
           paymentSectionFirst
         />
+        </>
       )}
 
       {createJournal.isPending ? (

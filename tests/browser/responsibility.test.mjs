@@ -52,6 +52,21 @@ test("exact assignment capability permits employee selection",async()=>{
   assert.equal(JSON.parse(await page.locator("#values").textContent()).employeeId,99);
  }finally{await page.close();}
 });
+
+test("route assignment displays its single supervisor and excludes ambiguous crews on desktop and mobile", async () => {
+ for (const width of [1200, 390]) {
+  const page = await fixture("assign", width);
+  try {
+   await page.getByRole("radio", { name: /route/i }).click();
+   await page.getByRole("combobox").first().click();
+   assert.equal(await page.getByRole("option", { name: /Ambiguous route/ }).count(), 0);
+   await page.getByRole("option", { name: /Other route/ }).click();
+   assert.equal(JSON.parse(await page.locator("#values").textContent()).supervisorId, 99);
+   assert.equal(await page.getByRole("status", { name: "Responsible supervisor" }).textContent(), "Supervisor 99");
+   assert.equal(await page.getByRole("combobox").count(), 1, "only the route is selectable");
+  } finally { await page.close(); }
+ }
+});
 test("read-only attribution preserves the saved person and offers no reassignment controls",async()=>{
  const page=await fixture("readonly");try {
   assert.equal(await page.getByText("Saved responsible person").isVisible(),true);

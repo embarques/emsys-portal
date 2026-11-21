@@ -97,18 +97,14 @@ export function dailyRouteSupervisors(
 }
 
 /**
- * Keep the chosen supervisor while it is still on the route; otherwise use the
- * route's only supervisor. Routes with several supervisors need an explicit choice.
+ * A daily route has one supervisor. Ambiguous legacy crews must be corrected
+ * before use; a previous selection cannot make an ambiguous route valid.
  */
 export function resolveDailyRouteSupervisor(
   route: Pick<ActiveRoute, "employees"> | null | undefined,
-  currentSupervisorId?: number,
+  _currentSupervisorId?: number,
 ): DailyRouteSupervisorRef | null {
   const supervisors = dailyRouteSupervisors(route);
-  const current = currentSupervisorId
-    ? supervisors.find((supervisor) => supervisor.id === currentSupervisorId)
-    : undefined;
-  if (current) return current;
   return supervisors.length === 1 ? supervisors[0] : null;
 }
 

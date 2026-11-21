@@ -98,3 +98,65 @@ never trigger that fallback. Full database/authenticated acceptance runs after
 the API merge/deployment; a Portal dev push does not establish those results.
 
 Users who already have company-wide invoice-view access retain ordinary number/name/phone search. The narrow exact-number endpoint supplements payment access for scoped/no-invoice-view operators.
+
+## API PR #377 review (2026-11-21)
+
+[API PR #377](https://github.com/embarques/emsys-api/pull/377) separates
+SURCHARGE/DISCOUNT assignment from invoice receive history, but explicitly tests
+that PAYMENT still inherits the invoice route. The confirmed product behavior is
+that **all three later transactions are independent**. That PAYMENT test conflicts
+with the required behavior and must not be restored during conflict resolution.
+
+The broader fix, [commit 3658380](https://github.com/embarques/emsys-api/commit/36583802e9e4355a22b5b6588f66b2a3563fdd96),
+is already in API `dev` (verified against GitHub during this review). PR #377's
+original implementation is therefore superseded for route inheritance. This does
+not establish that the fix has been deployed or that production data is migrated.
+
+### Expected lifecycle
+
+| Stage | Expected behavior |
+| --- | --- |
+| Choose an existing invoice | Select its reference and current totals; retain the journal's own assignment. Do not copy invoice `dailyRoute`, `receivedBy`, or merchandise responsibility. |
+| Choose an employee | Send that employee with route aliases cleared. Assigning another party requires the specific payment-responsibility grant, separately from journal-create access. |
+| Use creator default | Send no fabricated employee or route; the API resolves the authenticated creator's active employee link. Missing or ambiguous linkage is an error. |
+| Choose a route | Send the journal's route, independently of the invoice route. The API currently captures the route snapshot's supervisor. See the multiple-supervisor gap below. |
+| Post PAYMENT | Cash applies to invoice payment/balance immediately. Bank receipts defer that application until clearance. Internal reconciliation alone does not settle the bank receipt. |
+| Post DISCOUNT | Increase invoice discount and reduce receivable/balance; do not treat it as collected cash. Reject an adjustment that would make the balance negative. |
+| Post SURCHARGE | Increase invoice cost, surcharge and receivable/balance; do not treat it as collected cash. |
+| Closeout/retry | The server chooses the current authorized closeout. A failed or uncertain request must retain its draft and duplicate-submission protection. |
+| Read/edit/reconcile later | Use the journal's recorded employee and route snapshot. Invoice receive history and subsequent crew changes must not silently transfer accountability. Edits/corrections remain subject to server permissions, versions and allowed actions. |
+
+### Alignment and unresolved decisions
+
+- The portal's journal payload and read/edit adapters already keep later PAYMENT,
+  SURCHARGE and DISCOUNT assignments separate from nested invoice history.
+  Regression coverage in `tests/unit/daily-route-accountability.test.mjs` now
+  checks explicit employee, creator default, and invoice-route read/edit isolation
+  for all three types.
+- **Multiple route supervisors:** the portal offers an explicit supervisor choice,
+  but `journalPayload` omits that selection on route transactions. The current API
+  resolver uses the stored route supervisor (or first supervisor in the crew),
+  and rejects a conflicting employee. Selecting a second supervisor in the UI
+  therefore does not establish that supervisor's accountability. Decide whether
+  to support a validated explicit supervisor in the API contract, use only the
+  snapshot supervisor in the UI, or enforce one supervisor per route. Do not add
+  an undocumented field or send a conflicting employee as a workaround.
+- **Initial collection:** the API supports separate merchandise responsibility
+  and initial collector fields; the portal's creation workflow currently describes
+  a shared choice. Whether to expose separate choices is a distinct product
+  decision from later-payment independence.
+
+### Validation limits
+
+Portal unit tests exercise the actual adapters with the central HTTP boundary
+replaced. They do not establish backend transaction atomicity, tenant enforcement,
+permission seeding, deployed behavior, or authenticated browser acceptance.
+Focused API Go tests could not run in this review environment because `go` was
+not available on PATH. No live API mutations were performed.
+
+The six focused portal test files for accountability, responsibility grants,
+supervisor terminology, invoice balances, creation retries and reconciliation
+passed. The additional `journal-edit-submission.test.mjs` file could not exercise
+its three cases: its existing test loader cannot resolve the workspace's relative
+`./journal-correction-dialog` import. Direct-edit submission behavior therefore
+remains unverified by that fixture in this review.

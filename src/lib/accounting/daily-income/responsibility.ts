@@ -21,7 +21,7 @@ export function needsCompanyPaymentLookup(type: string, discovery: boolean, perm
 
 export function canSelectResponsibleRoute(route: ActiveRoute, canAssign: boolean, ownEmployeeId?: number): boolean {
   const supervisors = dailyRouteSupervisors(route);
-  return canAssign || Boolean(ownEmployeeId && supervisors.length === 1 && supervisors[0].id === ownEmployeeId);
+  return supervisors.length === 1 && (canAssign || Boolean(ownEmployeeId && supervisors[0].id === ownEmployeeId));
 }
 
 /** Self attribution stays omitted on the wire; the API resolves the active link. */

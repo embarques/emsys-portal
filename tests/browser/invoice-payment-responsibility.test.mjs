@@ -67,3 +67,21 @@ test("without payment assignment authority, the initial collector defaults to li
     assert.equal(values.employeeId, undefined); assert.equal(values.invoiceResponsibility.employee.id, 88);
   } finally { await page.close(); }
 });
+
+test("an untouched initial collector follows merchandise changes until explicitly overridden", async () => {
+  for (const width of [1200, 390]) {
+    const page = await fixture(width);
+    try {
+      await page.waitForFunction(() => document.getElementById("collector").textContent === "88");
+      await page.getByText("Change invoice party", { exact: true }).click();
+      await page.waitForFunction(() => document.getElementById("collector").textContent === "77");
+      await page.getByText("Refresh", { exact: true }).click();
+      await page.getByText("Post", { exact: true }).click();
+      await page.waitForFunction(() => document.getElementById("posted").textContent.length > 0);
+      const values = JSON.parse(await page.locator("#posted").textContent());
+      assert.equal(values.employeeId, 77);
+      assert.equal(values.invoiceResponsibility.employee.id, 77);
+      assert.equal(values.amount, 0);
+    } finally { await page.close(); }
+  }
+});

@@ -6,11 +6,14 @@ import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/typ
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import type { Employee } from "@/lib/employees/types";
 
-const routes = [5, 99].map((id) => ({
+const routes = [...[5, 99].map((id) => ({
   id: String(id), name: id === 5 ? "My route" : "Other route", date: new Date().toISOString().slice(0, 10),
   active: true, routeType: "pickup", branch: { id: 1, code: "NY" },
   employees: [{ id, name: `Supervisor ${id}`, role: "supervisor" }],
-})) as ActiveRoute[];
+})), { id: "ambiguous", name: "Ambiguous route", date: new Date().toISOString().slice(0, 10),
+  active: true, routeType: "pickup", branch: { id: 1, code: "NY" },
+  employees: [{ id: 5, name: "Supervisor 5", role: "supervisor" }, { id: 99, name: "Supervisor 99", role: "supervisor" }],
+}] as ActiveRoute[];
 
 function Fixture() {
   const [values, setValues] = useState<Record<string, string | number | undefined>>({ assigneeSource: "creator" });
@@ -26,7 +29,7 @@ function Fixture() {
     dailyRoutes={routes} statementBranchId={1}
     assigneeSource={values.assigneeSource as "creator" | "route" | "employee"}
     routeId={values.routeId as string | undefined} routeName={values.routeName as string | undefined}
-    employeeId={values.employeeId as number | undefined} supervisorId={values.supervisorId as number | undefined}
+    employeeId={values.employeeId as number | undefined} supervisorId={values.supervisorId as number | undefined} supervisorName={values.supervisorName as string | undefined}
     setValue={(name, value) => setValues((current) => ({ ...current, [name]: value }))}
   /></section><output id="values">{JSON.stringify(split ? { invoice, payment: values } : values)}</output></main>;
 }

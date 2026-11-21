@@ -69,6 +69,8 @@ test("membership does not permit assigning another supervisor", () => {
  assert.equal(policy.canSelectResponsibleRoute(route(5),false,undefined),false);
  assert.equal(policy.canSelectResponsibleRoute(route(5),true,9),true);
  assert.equal(policy.canSelectResponsibleRoute({...route(5), employees:[{id:5,role:"supervisor"},{id:9,role:"supervisor"}]},false,5),false);
+ assert.equal(policy.canSelectResponsibleRoute({...route(5), employees:[{id:5,role:"supervisor"},{id:9,role:"supervisor"}]},true,5),false);
+ assert.equal(policy.canSelectResponsibleRoute({...route(5), employees:[]},true,5),false);
 });
 
 test("self attribution removes stale employee, route and supervisor before posting", async () => {
