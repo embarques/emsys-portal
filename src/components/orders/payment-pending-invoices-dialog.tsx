@@ -131,7 +131,7 @@ function PendingInvoicesSelection({
     );
   } else {
     body = (
-      <div className="overflow-hidden rounded-lg border border-input">
+      <div className="overflow-hidden border border-input">
         <div className="flex items-center gap-3 border-b border-input bg-muted/60 px-3 py-2 text-xs font-semibold text-foreground/75">
           <label className="flex min-w-0 cursor-pointer items-center gap-3">
             <input
@@ -187,30 +187,49 @@ function PendingInvoicesSelection({
     );
   }
 
+  const selectedTotal = formatInvoiceMoney(sumInvoiceBalances(selected));
+
   return (
     <>
       {body}
-      <CompactActionDialogFooter className="items-center sm:justify-between">
-        <p className="text-sm text-foreground/75">
-          {selected.length > 0
-            ? t("orders.comments.pendingInvoices.selectedSummary", {
-                count: selected.length,
-                total: formatInvoiceMoney(sumInvoiceBalances(selected)),
-              })
-            : null}
-        </p>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row max-md:contents">
-          <Button type="button" variant="outline" className="border-input" onClick={onCancel}>
-            {t("common.actions.cancel")}
-          </Button>
-          <Button
-            type="button"
-            disabled={selected.length === 0}
-            className="bg-[color-mix(in_oklab,var(--primary),black_18%)] text-primary-foreground hover:bg-[color-mix(in_oklab,var(--primary),black_26%)] disabled:bg-muted disabled:text-foreground/55 disabled:opacity-100"
-            onClick={() => onSave(selected)}
-          >
-            {t("orders.comments.pendingInvoices.addToComment")}
-          </Button>
+      <CompactActionDialogFooter>
+        <div className="col-span-2 flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 sm:flex-1" aria-live="polite">
+            {selected.length > 0 ? (
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <span className="text-sm text-muted-foreground">
+                  {t("orders.comments.pendingInvoices.selectedCount", {
+                    count: selected.length,
+                  })}
+                </span>
+                <span className="inline-flex items-baseline gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("orders.comments.pendingInvoices.selectedTotal")}
+                  </span>
+                  <span className="text-base font-semibold tabular-nums tracking-tight text-foreground">
+                    {selectedTotal}
+                  </span>
+                </span>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("orders.comments.pendingInvoices.noneSelected")}
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-row">
+            <Button type="button" variant="outline" className="border-input" onClick={onCancel}>
+              {t("common.actions.cancel")}
+            </Button>
+            <Button
+              type="button"
+              disabled={selected.length === 0}
+              className="bg-[color-mix(in_oklab,var(--primary),black_18%)] text-primary-foreground hover:bg-[color-mix(in_oklab,var(--primary),black_26%)] disabled:bg-muted disabled:text-foreground/55 disabled:opacity-100"
+              onClick={() => onSave(selected)}
+            >
+              {t("orders.comments.pendingInvoices.addToComment")}
+            </Button>
+          </div>
         </div>
       </CompactActionDialogFooter>
     </>

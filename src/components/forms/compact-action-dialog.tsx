@@ -78,10 +78,6 @@ export function CompactActionDialogHeader({
         className,
       )}
     >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/70 via-primary/40 to-transparent"
-        aria-hidden
-      />
       <DialogHeader className="relative space-y-0 text-left">
         <div className="flex items-start gap-3">
           {Icon ? (
