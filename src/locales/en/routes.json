@@ -10,7 +10,7 @@
     "updateFailed": "Unable to update route.",
     "deleteFailed": "Unable to delete route.",
     "saveFailed": "Unable to save route.",
-    "driverSupervisorRequired": "A driver and a supervisor are required.",
+    "driverSupervisorRequired": "Exactly one driver and one supervisor are required. The same employee may hold both roles.",
     "dateRequired": "Date is required.",
     "containerRequired": "A container is required for delivery routes.",
     "pickupNoContainer": "Pickup routes cannot include a container.",

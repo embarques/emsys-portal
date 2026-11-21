@@ -10,7 +10,7 @@
     "updateFailed": "No se pudo actualizar la ruta.",
     "deleteFailed": "No se pudo eliminar la ruta.",
     "saveFailed": "No se pudo guardar la ruta.",
-    "driverSupervisorRequired": "Se requieren un chofer y un supervisor.",
+    "driverSupervisorRequired": "Se requiere exactamente un chofer y un supervisor. El mismo empleado puede cumplir ambos roles.",
     "dateRequired": "La fecha es obligatoria.",
     "containerRequired": "Las rutas de entrega requieren un contenedor.",
     "pickupNoContainer": "Las rutas de recogida no pueden incluir un contenedor.",

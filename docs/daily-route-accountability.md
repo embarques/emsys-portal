@@ -19,7 +19,10 @@
 2. **Later PAYMENT / SURCHARGE / DISCOUNT**: each journal chooses its own assignee.
    Do **not** inherit `invoice.dailyRoute` for reconciliation ownership.
 3. When a journal itself selects a daily route, that route’s **supervisor** is
-   accountable for **that journal only**. A different employee must not be sent
+   accountable for **that journal only**. Each daily route has exactly one
+   supervisor; the financial form displays that person without a separate choice.
+   Ambiguous legacy crews must be corrected before new assignment.
+   A different employee must not be sent
    with a conflicting route id (`INVALID_DAILY_ROUTE`).
 
 ## API contract notes
@@ -71,10 +74,14 @@ See [inventory gaps](inventory-workflow.md) and
 
 ## Responsibility grants and creation workflow (2026-11-18)
 
-Invoice responsibility and INITIAL-PAYMENT use the same creation-time party.
+Invoice merchandise responsibility and the INITIAL-PAYMENT collector are separate.
+The collector defaults to the merchandise party when payment assignment is
+authorized, and stays independently editable. An explicit collector choice survives
+navigation, merchandise changes and lookup refreshes; without an override, the
+default follows the merchandise selection before posting.
 `canAssignInvoiceResponsibility` on `invoice_responsibility` permits another
 employee/route selection; `canAssignPaymentResponsibility` on
-`payment_responsibility` controls later PAYMENT/DISCOUNT/SURCHARGE (and API REFUND).
+`payment_responsibility` controls INITIAL-PAYMENT and later PAYMENT/DISCOUNT/SURCHARGE (and API REFUND).
 Route management and employee CRUD are not substitutes. Administrators receive
 both through the API seed; existing tenants require additive seeding and session
 permission refresh. These changes depend on API PR #388.
@@ -83,9 +90,10 @@ Without the relevant grant, the Portal offers the creator-linked employee defaul
 and routes only when an exact active link establishes that the user is supervisor.
 It never identifies self by name/email or by scanning a directory page. The API
 resolves the default; missing/ambiguous links reject creation. The invoice wizard
-uses one responsibility choice across desktop/mobile, then applies the committed
-journal party to completion and locks responsibility after registration. Later
-payments never copy responsibility from the invoice.
+uses independent merchandise and collector choices across desktop/mobile.
+Completion keeps the registered merchandise party independently of the collector
+and locks merchandise responsibility after registration. Later payments never
+copy responsibility from the invoice.
 
 Operators with scoped invoice access use `GET /journals/payment-invoice/lookup?number=<exact-number>` from API
 PR #388. This exact, case-sensitive company lookup returns only id/number/current
@@ -119,32 +127,30 @@ not establish that the fix has been deployed or that production data is migrated
 | Choose an existing invoice | Select its reference and current totals; retain the journal's own assignment. Do not copy invoice `dailyRoute`, `receivedBy`, or merchandise responsibility. |
 | Choose an employee | Send that employee with route aliases cleared. Assigning another party requires the specific payment-responsibility grant, separately from journal-create access. |
 | Use creator default | Send no fabricated employee or route; the API resolves the authenticated creator's active employee link. Missing or ambiguous linkage is an error. |
-| Choose a route | Send the journal's route, independently of the invoice route. The API currently captures the route snapshot's supervisor. See the multiple-supervisor gap below. |
+| Choose a route | Send the journal's route, independently of the invoice route. The API captures that route's single supervisor. Ambiguous legacy crews need correction before new assignment. |
 | Post PAYMENT | Cash applies to invoice payment/balance immediately. Bank receipts defer that application until clearance. Internal reconciliation alone does not settle the bank receipt. |
 | Post DISCOUNT | Increase invoice discount and reduce receivable/balance; do not treat it as collected cash. Reject an adjustment that would make the balance negative. |
 | Post SURCHARGE | Increase invoice cost, surcharge and receivable/balance; do not treat it as collected cash. |
 | Closeout/retry | The server chooses the current authorized closeout. A failed or uncertain request must retain its draft and duplicate-submission protection. |
 | Read/edit/reconcile later | Use the journal's recorded employee and route snapshot. Invoice receive history and subsequent crew changes must not silently transfer accountability. Edits/corrections remain subject to server permissions, versions and allowed actions. |
 
-### Alignment and unresolved decisions
+### Confirmed alignment (2026-11-21)
 
 - The portal's journal payload and read/edit adapters already keep later PAYMENT,
   SURCHARGE and DISCOUNT assignments separate from nested invoice history.
   Regression coverage in `tests/unit/daily-route-accountability.test.mjs` now
   checks explicit employee, creator default, and invoice-route read/edit isolation
   for all three types.
-- **Multiple route supervisors:** the portal offers an explicit supervisor choice,
-  but `journalPayload` omits that selection on route transactions. The current API
-  resolver uses the stored route supervisor (or first supervisor in the crew),
-  and rejects a conflicting employee. Selecting a second supervisor in the UI
-  therefore does not establish that supervisor's accountability. Decide whether
-  to support a validated explicit supervisor in the API contract, use only the
-  snapshot supervisor in the UI, or enforce one supervisor per route. Do not add
-  an undocumented field or send a conflicting employee as a workaround.
-- **Initial collection:** the API supports separate merchandise responsibility
-  and initial collector fields; the portal's creation workflow currently describes
-  a shared choice. Whether to expose separate choices is a distinct product
-  decision from later-payment independence.
+- **One supervisor per daily route:** confirmed by the user. Route forms reject
+  ambiguous lead roles before POST/PUT; financial assignment excludes ambiguous
+  crews and displays the route's sole supervisor. The API vehicle-route service
+  already validates exactly one supervisor and driver. Historical journal
+  snapshots remain unchanged. Legacy data normalization and deployed enforcement
+  remain backend acceptance items.
+- **Independent initial collection:** confirmed by the user. Preserve the existing
+  separate selectors and defaulting policy described above. Browser regressions
+  cover defaulting, explicit override, navigation/refresh retention and the
+  restricted-user self default on desktop and mobile.
 
 ### Validation limits
 
@@ -154,9 +160,13 @@ permission seeding, deployed behavior, or authenticated browser acceptance.
 Focused API Go tests could not run in this review environment because `go` was
 not available on PATH. No live API mutations were performed.
 
-The six focused portal test files for accountability, responsibility grants,
-supervisor terminology, invoice balances, creation retries and reconciliation
-passed. The additional `journal-edit-submission.test.mjs` file could not exercise
+After the confirmed decisions, 112 focused unit tests and eight isolated browser
+tests passed, including desktop/mobile assignment controls and initial collector
+defaulting and override retention. TypeScript, lint and the production build passed
+(existing repository warnings remain). These changes add no API calls or dependencies; route validation
+tests assert zero requests for invalid lead-role assignments.
+
+The additional `journal-edit-submission.test.mjs` file could not exercise
 its three cases: its existing test loader cannot resolve the workspace's relative
 `./journal-correction-dialog` import. Direct-edit submission behavior therefore
 remains unverified by that fixture in this review.

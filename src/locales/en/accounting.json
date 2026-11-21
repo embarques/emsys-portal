@@ -1190,6 +1190,7 @@
       "hints": {
         "paymentLookupUnavailable": "Company-wide payment lookup is awaiting the API update. These results use your existing invoice-view access.",
         "independentResponsibility": "The payment collector may differ from the person responsible for the merchandise. Changing one does not change the other.",
+        "initialCollectorDefaults": "With payment assignment permission, the collector defaults to the merchandise party and can be changed separately. Otherwise, the payment is assigned to your linked employee.",
         "selfResponsibility": "Responsibility defaults to your linked employee. You can select a daily route only when you are its responsible supervisor.",
         "balanceAfterClearance": "New balance is a preview after this payment is applied. Pending payments affect the invoice balance when cleared.",
         "expenseAccount": "The expense category this spending belongs to.",
