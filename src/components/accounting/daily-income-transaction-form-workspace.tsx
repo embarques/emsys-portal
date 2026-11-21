@@ -19,10 +19,11 @@ import {
   useDailyIncomeJournal,
   useIncomeStatementById,
   useCurrentIncomeStatement,
-  useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
-import { journalEditBlockReason } from "@/lib/accounting/daily-income/journal-editability";
+import { JournalCorrectionDialog } from "./journal-correction-dialog";
+import { useJournalEdit } from "@/lib/accounting/daily-income/use-journal-edit";
+import { journalEditOperation, journalEditBlockReason } from "@/lib/accounting/daily-income/journal-editability";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
@@ -85,7 +86,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const retryLookups = () => { for (const query of failedLookups) void query.refetch(); };
 
   const createJournal = useCreateDailyIncomeJournal(transactionSessionId);
-  const updateJournal = useUpdateDailyIncomeJournal();
+  const editWorkflow = useJournalEdit();
 
   const statement = currentStatementQuery.data ?? null;
   const editingJournal = journalQuery.data ?? null;
@@ -94,7 +95,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
     [editingJournal, isEditing],
   );
   const typeLabel = initialValues ? transactionTypeLabel(initialValues.transactionType, t) : null;
-  const isSubmitting = createJournal.isPending || updateJournal.isPending;
+  const isSubmitting = createJournal.isPending || editWorkflow.isPending;
 
   useEffect(() => {
     if (isEditing && typeLabel) {
@@ -114,12 +115,8 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           return;
         }
 
-        await updateJournal.mutateAsync({
-          id: editingJournal.id,
-          statement,
-          values,
-          options: { ...options, expectedVersion: editingJournal.version },
-        });
+        const saved = await editWorkflow.save({ journal: editingJournal, statement, values, options, canUpdate: canUpdateJournals });
+        if (!saved) return;
         notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
         closeFormTabAndReturn(tabId);
         return;
@@ -200,8 +197,10 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
     );
   }
 
-  const editBlock = isEditing && editingJournal
-    ? canUpdateJournals ? journalEditBlockReason(editingJournal, statement) : "permission"
+  const editOperation = editingJournal ? journalEditOperation(editingJournal, statement) : null;
+  const canEdit = editOperation === "correct" || (editOperation === "edit" && canUpdateJournals);
+  const editBlock = isEditing && editingJournal && !canEdit
+    ? journalEditBlockReason(editingJournal, statement) ?? "permission"
     : null;
   if (editBlock) {
     return (
@@ -242,6 +241,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           open
           mode="edit"
           initialValues={initialValues}
+          paymentClearanceStatus={editingJournal?.clearanceStatus}
           employees={employees}
           dailyRoutes={dailyRoutes}
           statementDate={statement.date}
@@ -285,5 +285,5 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       )}
     </FormTabShell>
   );
-  return <>{isEditing ? wizard : <SessionTransactionsLayout summaryRef={setSummaryContainer} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
+  return <><JournalCorrectionDialog workflow={editWorkflow} />{isEditing ? wizard : <SessionTransactionsLayout summaryRef={setSummaryContainer} entries={sessionTransactions} currency={statement.currency}>{wizard}</SessionTransactionsLayout>}</>;
 }

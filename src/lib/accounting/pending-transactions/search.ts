@@ -1,4 +1,5 @@
 import { buildAdvancedSearchBody, buildResourceSearchFilterGroups, coerceTypedFilterNode, type ApiSearchFilterNode } from "@/lib/api/search-query";
+import { OUTSTANDING_RECONCILIATION_FILTERS } from "../daily-income/journal-search";
 import { DAILY_INCOME_TABLE_FILTER_FIELDS } from "../daily-income/filter-fields";
 import { parseTableFilterRange } from "@/lib/table/filter-range";
 import type { TableFilterRowState, TableFilterFieldDefinition } from "@/lib/table/filter-types";
@@ -27,7 +28,7 @@ export function pendingTransactionSearch(query: string, rows: TableFilterRowStat
     filterRows: rows,
     tableFilterFields: PENDING_TRANSACTION_FILTER_FIELDS,
     expandNode: expandRanges,
-    chipFilters: [{ field: "reconciliationStatus", operator: "eq", value: "OUTSTANDING" }],
+    chipFilters: OUTSTANDING_RECONCILIATION_FILTERS,
   });
   const body = buildAdvancedSearchBody({ page, limit: 40, sort: "date:desc", filterGroups: groups });
   return { ...body, filters: body.filters.flatMap(node => { const typed = coerceTypedFilterNode(node, { numericFields }); return typed ? [typed] : []; }) };

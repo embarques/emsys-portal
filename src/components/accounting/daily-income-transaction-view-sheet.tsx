@@ -109,10 +109,7 @@ export function DailyIncomeTransactionViewSheet({
     Boolean(onPrintReceipt) && canPrintPaymentReceipt(resolved);
   const printReceiptDisabled = !/^[a-f0-9]{24}$/i.test(resolved.id);
   const actions = resolved.allowedActions;
-  const isRouteOperator =
-    hasPermission("canOperateDailyRoute", "daily_route_work") &&
-    !hasPermission("canManageDailyRouteRecords", "daily_route_work");
-  const showLifecycle = Boolean(actions && resolved.version && !isRouteOperator);
+  const showLifecycle = Boolean(actions && resolved.version);
   const canRequest = hasPermission("canCreateChangeRequest", "change_request");
   const showLifecycleMenu = showLifecycle || canRequest;
   const showFooter = canEdit || showPrintReceipt || showLifecycleMenu;
@@ -251,6 +248,7 @@ export function DailyIncomeTransactionViewSheet({
                   <JournalLifecycleActions
                     key={`${resolved.id}:${resolved.version}`}
                     journal={resolved}
+                    hasEditAction={canEdit}
                     variant="menu"
                   />
                 </TableSelectionActionsMenu>

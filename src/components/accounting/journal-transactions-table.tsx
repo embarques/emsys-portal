@@ -261,6 +261,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
               <JournalLifecycleActions
                 key={`selection-lifecycle:${ids[0]}:${selected[ids[0]]?.version ?? 0}`}
                 journal={selected[ids[0]]}
+                hasEditAction={Boolean(onEdit && canEditRow?.(selected[ids[0]]))}
                 variant="menu"
                 onCompleted={() => setSelected({})}
               />

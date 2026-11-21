@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { FilePenLine, NotebookPen } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { journalLifecycleSchema } from "@/lib/accounting/daily-income/schemas/journal-correction.schema";
 import { useForm } from "react-hook-form";
 
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
@@ -24,6 +27,8 @@ import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 import { tableSelectionActionMenuStyles, tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
+import { journalDeleteOperation } from "@/lib/accounting/daily-income/journal-editability";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useJournalLifecycle } from "@/lib/accounting/daily-income/lifecycle-hooks";
 
 type Action = "reverse" | "void" | "note";
@@ -34,29 +39,38 @@ type JournalLifecycleActionsProps = {
   variant?: "sheet" | "toolbar" | "menu";
   /** Called after a successful void / reverse / note (e.g. clear table selection). */
   onCompleted?: () => void;
+  hasEditAction?: boolean;
 };
 
 export function JournalLifecycleActions({
   journal,
   variant = "sheet",
   onCompleted,
+  hasEditAction = false,
 }: JournalLifecycleActionsProps) {
   const { t } = useTranslation();
+  const { notifySuccess } = useFeedback();
   const { hasPermission } = useAuth();
+  const { openFormTab } = useWorkspaceTabs();
   const text = (key: string) => t(`accounting.journalLifecycle.${key}`);
   const [action, setAction] = useState<Action | null>(null);
   const [requestId, setRequestId] = useState(createRandomId);
   const mutation = useJournalLifecycle();
   const form = useForm<{ reason: string; description: string }>({
+    resolver: zodResolver(journalLifecycleSchema(action === "note")),
     defaultValues: { reason: "", description: journal.description },
   });
+  const reasonId = useId();
+  const submitting = useRef(false);
+  const deleteOperation = journalDeleteOperation(journal);
   const actions = journal.allowedActions;
-  const isRouteOperator =
-    hasPermission("canOperateDailyRoute", "daily_route_work") &&
-    !hasPermission("canManageDailyRouteRecords", "daily_route_work");
-  const showLifecycle = Boolean(actions && journal.version && !isRouteOperator);
+  const showLifecycle = Boolean(actions && journal.version);
   const canRequest = hasPermission("canCreateChangeRequest", "change_request");
   if (!showLifecycle && !canRequest) return null;
+
+  function edit() {
+    openFormTab({ feature: "daily-income-transactions", baseHref: "/accounting/daily-income", mode: "edit", entityId: journal.id, label: t("common.actions.edit") });
+  }
 
   const size = variant === "toolbar" ? "sm" : "default";
   const buttonClass = variant === "toolbar" ? "whitespace-nowrap" : undefined;
@@ -68,8 +82,14 @@ export function JournalLifecycleActions({
     mutation.reset();
   }
 
-  const submit = form.handleSubmit((values) => {
-    if (!action || !journal.version) return;
+  const submit = (event: React.FormEvent<HTMLFormElement>) => form.handleSubmit((values) => {
+    if (!action || !journal.version || submitting.current) return;
+    if (action === "note" && values.description === journal.description) {
+      notifySuccess(t("common.form.noChanges"));
+      setAction(null);
+      return;
+    }
+    submitting.current = true;
     mutation.mutate(
       {
         id: journal.id,
@@ -80,13 +100,14 @@ export function JournalLifecycleActions({
         ...values,
       },
       {
+        onSettled: () => { submitting.current = false; },
         onSuccess: () => {
           setAction(null);
           onCompleted?.();
         },
       },
     );
-  });
+  })(event);
 
   const dialog = (
     <Dialog
@@ -98,11 +119,12 @@ export function JournalLifecycleActions({
         <CompactActionDialogContent>
           <CompactActionDialogHeader
             icon={NotebookPen}
-            title={text(action ?? "note")}
-            description={text(action === "note" ? "noteDescription" : "warning")}
+            title={action === "note" || !action ? text("note") : t("common.actions.delete")}
+            description={text(action === "note" ? "noteDescription" : action === "void" ? "voidDescription" : "reverseDescription")}
           />
           <form
             onSubmit={submit}
+            noValidate
             className="flex min-h-0 flex-1 flex-col"
             onChange={() => {
               if (!mutation.isPending) setRequestId(createRandomId());
@@ -111,11 +133,13 @@ export function JournalLifecycleActions({
             <CompactActionDialogBody className="space-y-4">
             {action === "note" ? (
               <>
-                <Label htmlFor="journal-note">{text("description")}</Label>
+                <Label htmlFor={reasonId}>{text("description")}</Label>
                 <textarea
-                  id="journal-note"
+                  id={reasonId}
                   className="min-h-24 w-full rounded-md border bg-background p-3"
-                  {...form.register("description", { maxLength: 2000 })}
+                  {...form.register("description")}
+                  aria-invalid={Boolean(form.formState.errors.description)}
+                  aria-describedby={form.formState.errors.description ? `${reasonId}-error` : undefined}
                   disabled={mutation.isPending}
                 />
                 {journal.restrictionReason ? (
@@ -124,19 +148,21 @@ export function JournalLifecycleActions({
               </>
             ) : (
               <>
-                <Label htmlFor="journal-reversal-reason">{text("reason")}</Label>
+                <Label htmlFor={reasonId}>{text("reason")}</Label>
                 <textarea
-                  id="journal-reversal-reason"
+                  id={reasonId}
                   className="min-h-24 w-full rounded-md border bg-background p-3"
-                  {...form.register("reason", {
-                    required: true,
-                    validate: (value) => Boolean(value.trim()),
-                    maxLength: 1000,
-                  })}
+                  {...form.register("reason")}
+                  required
+                  aria-invalid={Boolean(form.formState.errors.reason)}
+                  aria-describedby={form.formState.errors.reason ? `${reasonId}-error` : undefined}
                   disabled={mutation.isPending}
                 />
               </>
             )}
+            {form.formState.errors[action === "note" ? "description" : "reason"] ? (
+              <p id={`${reasonId}-error`} role="alert">{t(form.formState.errors[action === "note" ? "description" : "reason"]!.message!)}</p>
+            ) : null}
             {mutation.isError ? (
               <p role="alert">{normalizeApiError(mutation.error).message}</p>
             ) : null}
@@ -164,27 +190,14 @@ export function JournalLifecycleActions({
             </Link>
           </DropdownMenuItem>
         ) : null}
-        {showLifecycle && actions?.void ? (
-          <DropdownMenuItem onSelect={() => open("void")} className={tableSelectionActionMenuStyles.delete}>
-            {text("void")}
+        {showLifecycle && deleteOperation ? (
+          <DropdownMenuItem onSelect={() => open(deleteOperation)} className={tableSelectionActionMenuStyles.delete}>
+            {t("common.actions.delete")}
           </DropdownMenuItem>
         ) : null}
-        {showLifecycle && actions?.reverse ? (
-          <DropdownMenuItem onSelect={() => open("reverse")} className={tableSelectionActionMenuStyles.caution}>
-            {text("reverse")}
-          </DropdownMenuItem>
-        ) : null}
-        {showLifecycle && actions?.correct && canRequest ? (
-          <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
-            <Link
-              href={`/change-requests?${new URLSearchParams({
-                resourceType: "journal",
-                resourceId: journal.id,
-                action: "UPDATE",
-              })}`}
-            >
-              {text("correct")}
-            </Link>
+        {showLifecycle && actions?.correct && !hasEditAction ? (
+          <DropdownMenuItem onSelect={edit} className={tableSelectionActionMenuStyles.request}>
+            {t("common.actions.edit")}
           </DropdownMenuItem>
         ) : null}
         {showLifecycle && actions?.note ? (
@@ -207,45 +220,14 @@ export function JournalLifecycleActions({
           className={buttonClass}
         />
       ) : null}
-      {showLifecycle && actions?.void ? (
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          className={cn(buttonClass, tableSelectionActionStyles.delete)}
-          onClick={() => open("void")}
-        >
-          {text("void")}
+      {showLifecycle && deleteOperation ? (
+        <Button type="button" variant="outline" size={size} className={cn(buttonClass, tableSelectionActionStyles.delete)} onClick={() => open(deleteOperation)}>
+          {t("common.actions.delete")}
         </Button>
       ) : null}
-      {showLifecycle && actions?.reverse ? (
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          className={cn(buttonClass, tableSelectionActionStyles.caution)}
-          onClick={() => open("reverse")}
-        >
-          {text("reverse")}
-        </Button>
-      ) : null}
-      {showLifecycle && actions?.correct && canRequest ? (
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          className={cn(buttonClass, tableSelectionActionStyles.request)}
-          asChild
-        >
-          <Link
-            href={`/change-requests?${new URLSearchParams({
-              resourceType: "journal",
-              resourceId: journal.id,
-              action: "UPDATE",
-            })}`}
-          >
-            {text("correct")}
-          </Link>
+      {showLifecycle && actions?.correct && !hasEditAction ? (
+        <Button type="button" variant="outline" size={size} className={buttonClass} onClick={edit}>
+          {t("common.actions.edit")}
         </Button>
       ) : null}
       {showLifecycle && actions?.note ? (

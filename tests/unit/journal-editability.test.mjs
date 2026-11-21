@@ -60,3 +60,27 @@ test("missing eligibility or version fails closed", () => {
   assert.equal(journalEditBlockReason(journal({ allowedActions: undefined }), current), "restricted");
   assert.equal(journalEditBlockReason(journal({ version: undefined }), current), "restricted");
 });
+
+
+const { journalEditOperation, journalDeleteOperation } = loadedModule.exports;
+test("simple Edit selects direct update before verification and atomic correction afterward", () => {
+ assert.equal(journalEditOperation(journal(),current),"edit");
+ for(const extra of [{reconciliationStatus:"RECONCILED"},{clearanceStatus:"CLEARED"},{incomeStatementId:1}]) {
+  assert.equal(journalEditOperation(journal({...extra,allowedActions:{correct:true,edit:false}}),current),"correct");
+  assert.equal(journalEditOperation(journal({...extra,allowedActions:{correct:false,edit:false}}),current),null);
+ }
+});
+
+test("Delete prefers an allowed void, otherwise an allowed reversal", () => {
+ assert.equal(journalDeleteOperation(journal({allowedActions:{void:true,reverse:true}})),"void");
+ assert.equal(journalDeleteOperation(journal({allowedActions:{reverse:true}})),"reverse");
+ assert.equal(journalDeleteOperation(journal()),null);
+});
+
+test("generic Edit/Delete never bypass dedicated lifecycles or inactive records", () => {
+ for(const extra of [{transactionType:"INITIAL-PAYMENT"},{transactionType:"INVENTORY"},{transactionType:"LOAN-PAYMENT"},{transactionType:"LOAN-DECREASE"},{sourceSystem:"legacy-api"},{reversalOf:"offset"},{transactionStatus:"VOIDED"},{pendingChange:true},{version:undefined}]) {
+  const row=journal({...extra,allowedActions:{edit:false,correct:true,void:true,reverse:true}});
+  assert.equal(journalEditOperation(row,current),null,JSON.stringify(extra));
+  assert.equal(journalDeleteOperation(row),null,JSON.stringify(extra));
+ }
+});

@@ -401,6 +401,10 @@ export function summarizeJournalBreakdown(
     row.count += 1;
 
     if (!journalContributesAmounts(item)) {
+      // Offsets need internal review but are not new income or expenses.
+      if (item.reversalOf && !item.reversedAt && !item.voidedAt && item.transactionStatus !== "VOIDED" && item.transactionStatus !== "REVERSED") {
+        addAlongPath(row.other, [{ id: "type:reversal", label: t("accounting.journalReconciliation.reversal") }], item.amount, buildJournalBreakdownEntry(item, item.amount, chartById));
+      }
       byCurrency.set(currency, row);
       continue;
     }

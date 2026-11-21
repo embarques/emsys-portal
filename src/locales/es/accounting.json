@@ -1988,6 +1988,7 @@
     "empty": "No hay transacciones pendientes que coincidan con los filtros."
   },
   "journalReconciliation": {
+    "reversal": "Reversión",
     "title": "Conciliación pendiente",
     "description": "Transacciones pendientes de verificación en todos los cierres.",
     "createdAt": "Creado el",
@@ -2225,6 +2226,14 @@
     "noteDescription": "Solo cambia la descripción. Los montos y el historial de verificación se conservan.",
     "reason": "Motivo",
     "description": "Descripción",
-    "confirm": "Confirmar"
+    "confirm": "Confirmar",
+    "voidDescription": "Eliminar esta transacción la anula en el mismo cuadre abierto. El original se conserva en el historial; su asiento de compensación requiere conciliación. Ninguno requiere liquidación bancaria. Esto no emite un reembolso.",
+    "reverseDescription": "Eliminar esta transacción registra una reversión auditada en el cuadre abierto de hoy. El original conserva su cuadre y evidencia de verificación; su asiento de compensación requiere conciliación. Ninguno requiere liquidación bancaria. Esto no emite un reembolso.",
+    "correctDescription": "Guardar esta edición revierte el original y crea un reemplazo en una sola operación en el cuadre abierto de hoy. El original conserva su historial. El asiento de compensación requiere conciliación, sin liquidación bancaria. El reemplazo sigue su conciliación y liquidación bancaria habituales. Esto no emite un reembolso. Ingrese un motivo para confirmar.",
+    "reasonRequired": "Ingrese un motivo.",
+    "reasonTooLong": "Use un máximo de 1,000 caracteres.",
+    "unconfirmed": "No se pudo confirmar la corrección. Reintente con los mismos valores para consultar el resultado.",
+    "descriptionTooLong": "Use un máximo de 2,000 caracteres.",
+    "cancellationUnconfirmed": "No se pudo confirmar la cancelación. Reintente con el mismo motivo para consultar el resultado."
   }
 }

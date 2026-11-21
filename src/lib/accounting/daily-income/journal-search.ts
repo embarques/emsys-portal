@@ -9,18 +9,20 @@ import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 import type { JournalQueue } from "./journal-queue";
 import type { DailyIncomeJournalListParams } from "./types";
 
-/**
- * Pending Clearance only lists clearable activity. Voided/reversed journals can
- * still carry a stale OUTSTANDING clearanceStatus from the API, so exclude them
- * from the queue and badge count. They belong in reconciliation when outstanding.
+/** Mandatory server scope shared by queue lists, summaries and badges.
+ * Legacy metadata-only rows still require the API's explicit repair migration.
  */
+const ACTIVE_QUEUE_FILTERS: ApiSearchFilter[] = [
+  { field: "transactionStatus", operator: "notIn", value: ["VOIDED", "REVERSED"] },
+  { field: "transactionType", operator: "neq", value: "REVERSAL" },
+];
 export const OUTSTANDING_CLEARANCE_FILTERS: ApiSearchFilter[] = [
   { field: "clearanceStatus", operator: "eq", value: "OUTSTANDING" },
-  { field: "transactionStatus", operator: "notIn", value: ["VOIDED", "REVERSED"] },
+  ...ACTIVE_QUEUE_FILTERS,
 ];
-
 export const OUTSTANDING_RECONCILIATION_FILTERS: ApiSearchFilter[] = [
   { field: "reconciliationStatus", operator: "eq", value: "OUTSTANDING" },
+  { field: "transactionStatus", operator: "notIn", value: ["VOIDED", "REVERSED"] },
 ];
 
 export function outstandingJournalQueueFilters(queue: JournalQueue): ApiSearchFilter[] {

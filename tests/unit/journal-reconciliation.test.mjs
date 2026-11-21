@@ -34,7 +34,7 @@ test("pending search is server paginated, all dates, with immutable Outstanding 
  const body=buildJournalSearchBody({incomeStatementId:0,pending:true,page:3,limit:50});
  assert.equal(body.operator,"and");
  assert.deepEqual(body.pagination,{page:3,limit:50,offset:100});
- assert.deepEqual(leaves(body.filters),[{field:"reconciliationStatus",operator:"eq",value:"OUTSTANDING"}]);
+ assert.deepEqual(leaves(body.filters),[{field:"reconciliationStatus",operator:"eq",value:"OUTSTANDING"},{field:"transactionStatus",operator:"notIn",value:["VOIDED","REVERSED"]}]);
 });
 
 test("clearance scope is independent of reconciliation and cannot be bypassed with user OR filters", () => {
@@ -98,7 +98,7 @@ test("clearance fields and explicit false action grants survive journal normaliz
  assert.equal(row.clearedBy.name,"Admin");
 });
 
-test("voided entries keep NOT_REQUIRED for both clearance and reconciliation", async () => {
+test("unverified voided originals keep NOT_REQUIRED for both clearance and reconciliation", async () => {
  const api=loader({post:async()=>({total:1,data:[{id:"id",transactionType:"PAYMENT",transactionAmount:80,transactionStatus:"VOIDED",clearanceStatus:"NOT_REQUIRED",reconciliationStatus:"NOT_REQUIRED"}]})})("src/lib/accounting/daily-income/api.ts");
  const {items:[row]}=await api.fetchDailyIncomeJournals({incomeStatementId:1,page:1,limit:50});
  assert.equal(row.clearanceStatus,"NOT_REQUIRED");
@@ -115,6 +115,7 @@ test("clearance command and badge use their own endpoint and filter with a stabl
  assert.deepEqual(calls[2][1].filters,[
   {field:"clearanceStatus",operator:"eq",value:"OUTSTANDING"},
   {field:"transactionStatus",operator:"notIn",value:["VOIDED","REVERSED"]},
+  {field:"transactionType",operator:"neq",value:"REVERSAL"},
  ]);
  assert.equal(calls[2][1].pagination.limit,1);
 });
@@ -154,7 +155,7 @@ test("summary, selection and reconciliation use canonical journal endpoints", as
  assert.equal(await api.fetchOutstandingJournalCount(),7);
  assert.deepEqual(calls.slice(0,3),[["/journals/summary",{ids:["one","two"]}],["/journals/reconcile",command],["/journals/reconcile",command]]);
  assert.equal(calls[3][1].pagination.limit,1);
- assert.deepEqual(calls[3][1].filters,[{field:"reconciliationStatus",operator:"eq",value:"OUTSTANDING"}]);
+ assert.deepEqual(calls[3][1].filters,[{field:"reconciliationStatus",operator:"eq",value:"OUTSTANDING"},{field:"transactionStatus",operator:"notIn",value:["VOIDED","REVERSED"]}]);
 });
 test("auto approval uses only the explicit journal permission for every transaction",()=>{
  const {getAutoClearPermission,isAutoClearEligible}=loader()("src/lib/accounting/daily-income/auto-clear.ts");
@@ -346,4 +347,99 @@ test("reconciliation breakdown splits loan issues and loan payments under other"
    ["loan:payment", 40, "Cash drawer A"],
   ],
  );
+});
+
+
+test("both queues and badges exclude inactive journals without filtering a downloaded page", async () => {
+ const {buildJournalSearchBody,outstandingJournalQueueFilters}=loader()("src/lib/accounting/daily-income/journal-search.ts");
+ for(const queue of ["reconciliation","clearance"]) {
+  const body=buildJournalSearchBody({pending:queue==="reconciliation",pendingClearance:queue==="clearance",page:1,limit:40});
+  assert.deepEqual(leaves(body.filters),outstandingJournalQueueFilters(queue));
+  assert.equal(leaves(body.filters).some(f=>f.field==="transactionType"&&f.value==="REVERSAL"&&f.operator==="neq"),queue==="clearance");
+ }
+});
+
+test("correction posts one atomic replacement and preserves identity after an uncertain failure", async () => {
+ const calls=[];
+ const api=loader({post:async(url,body)=>{
+  calls.push({url,body});
+  if(calls.length===1) throw new Error("connection lost after commit");
+  return {success:true,data:{replacement:{id:"replacement",transactionType:"SALES",transactionAmount:105}}};
+ }})("src/lib/accounting/daily-income/journal-correction-api.ts");
+ const correct=api.createJournalCorrector();
+ const input={journal:{id:"original",version:7},statement:{id:9,date:"2026-11-21",currency:"USD",rate:1},values:{transactionType:"SALES",amount:105,description:"Correct amount",paymentMethodName:"CASH",accountId:400,accountName:"Other income",autoClear:true,autoReconcile:true,clearPaymentOnSave:true}};
+ await assert.rejects(correct(input,"Receipt amount"),/connection lost/);
+ const result=await correct(input,"Receipt amount");
+ assert.equal(result.id,"replacement");
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].url,"/journals/original/correct");
+ assert.deepEqual(calls[0],calls[1]);
+ assert.equal(calls[0].body.expectedVersion,7);
+ assert.equal(calls[0].body.reason,"Receipt amount");
+ assert.ok(calls[0].body.requestId);
+ assert.equal(calls[0].body.replacement.autoClear,undefined);
+ assert.equal(calls[0].body.replacement.autoReconcile,undefined);
+ assert.equal(calls[0].body.replacement.clearPaymentOnSave,undefined);
+});
+
+test("correction rejects missing acknowledgments instead of reporting a saved transaction", async () => {
+ const {createJournalCorrector}=loader({post:async()=>({success:true,data:{}})})("src/lib/accounting/daily-income/journal-correction-api.ts");
+ await assert.rejects(createJournalCorrector()({journal:{id:"j1",version:1},statement:{id:9,currency:"USD",rate:1},values:{transactionType:"SALES",amount:10,paymentMethodName:"CASH"}},"Fix amount"));
+});
+
+test("lifecycle writes refresh queues, badges, closeouts and the linked invoice without refreshing catalogs", async () => {
+ const {invalidateJournalLifecycle}=loader()("src/lib/accounting/daily-income/journal-lifecycle-cache.ts");
+ const keys=[
+  ["accounting","journals",{},"company-a"],
+  ["accounting","journal-summary","company-a"],
+  ["accounting","outstanding-journal-count","company-a","clearance"],
+  ["accounting","pending-journals","company-a"],
+  ["accounting","journal","j1"],
+  ["accounting","income-statement-summary-total",9],
+  ["accounting","checks-outstanding"],
+  ["accounting","accounts",{}],
+  ["accounting","payment-methods"],
+  ["accounting","pending-journals","company-b"],
+  ["customers","list"],
+ ];
+ const refreshed=[];
+ const requests=[];
+ await invalidateJournalLifecycle({invalidateQueries:async input=>{
+  requests.push(input);
+  if(input.predicate) refreshed.push(...keys.filter(queryKey=>input.predicate({queryKey})));
+ }},"company-a",{id:"j1",invoiceId:"invoice-1"});
+ for(const key of keys.slice(0,7)) assert.ok(refreshed.includes(key),JSON.stringify(key));
+ for(const key of keys.slice(7)) assert.ok(!refreshed.includes(key),JSON.stringify(key));
+ assert.ok(requests.some(input=>JSON.stringify(input.queryKey)==='["invoices","detail","invoice-1"]'));
+});
+
+test("cancellation never hard-deletes and missing acknowledgment remains unconfirmed", async () => {
+ const calls=[];
+ const {applyJournalLifecycle}=loader({post:async(url,body)=>{calls.push({url,body});return {success:true,data:{id:"offset"}};}})("src/lib/accounting/daily-income/lifecycle-api.ts");
+ for(const action of ["void","reverse"]) {
+  await applyJournalLifecycle({id:"j1",action,requestId:"same-uuid",reason:"Duplicate",expectedVersion:2});
+  assert.equal(calls.at(-1).url,`/journals/j1/${action}`);
+  assert.equal(calls.at(-1).body.expectedVersion,2);
+ }
+ const missing=loader({post:async()=>({success:true})})("src/lib/accounting/daily-income/lifecycle-api.ts");
+ await assert.rejects(missing.applyJournalLifecycle({id:"j1",action:"reverse",requestId:"same-uuid",reason:"Duplicate",expectedVersion:2}),/The cancellation could not be confirmed/);
+});
+
+
+test("active offsets stay actionable for reconciliation but never bank clearance", () => {
+ const load=loader();
+ const {getJournalQueueBlockReason}=load("src/lib/accounting/daily-income/journal-queue.ts");
+ const {normalizeJournal}=load("src/lib/accounting/daily-income/api.ts");
+ const offset=normalizeJournal({id:"offset",transactionType:"REVERSAL",reversalOf:"original",transactionStatus:"ACTIVE",transactionAmount:-80,reconciliationStatus:"OUTSTANDING",clearanceStatus:"NOT_REQUIRED",paymentMethod:{name:"CHECK"},allowedActions:{clear:false},currency:"USD"});
+ assert.equal(getJournalQueueBlockReason(offset,"reconciliation"),null);
+ assert.equal(getJournalQueueBlockReason(offset,"clearance"),"inactive");
+ assert.equal(getJournalQueueBlockReason({...offset,reconciliationStatus:"RECONCILED"},"reconciliation"),"notOutstanding");
+ assert.equal(getJournalQueueBlockReason({...offset,transactionStatus:"REVERSED"},"reconciliation"),"inactive");
+ const {summarizeJournalTotals,summarizeJournalBreakdown}=load("src/lib/accounting/daily-income/journal-classification.ts");
+ assert.deepEqual(summarizeJournalTotals([offset]),[{currency:"USD",income:0,expenses:0,net:0,count:1}]);
+ const breakdown=summarizeJournalBreakdown([offset],key=>key)[0];
+ assert.equal(breakdown.other.children[0].entries.length,1);
+ assert.equal(breakdown.other.amount,-80);
+ assert.equal(breakdown.income.amount,0);
+ assert.equal(breakdown.expenses.amount,0);
 });
