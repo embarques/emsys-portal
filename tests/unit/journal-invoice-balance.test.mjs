@@ -53,7 +53,7 @@ for (const [name, fields, expected] of [
 for (const transactionType of ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE", "EXPENSE", "SALES", "TRANSFER", "LOAN", "INVENTORY"]) {
  test(`${transactionType} permits the server to assign the creator's linked employee`, () => {
   const { dailyIncomeJournalSchema } = loadFeature("src/lib/accounting/daily-income/schemas.ts", {});
-  const values = { transactionType, refNumber: "", description: "", amount: 10, invoiceId: "invoice-1", invoiceNumber: "123", invoiceCost: 100, invoiceBalance: 100, accountId: 1, sourceAccountId: 2, paymentMethodId: 1, paymentMethodName: "CASH", inventoryDirection: "dispatched", inventoryItemId: "box", inventoryQuantity: 1, inventoryTotal: 10, inventoryHolderEmployees: [{ id: 4, name: "Holder" }] };
+  const values = { transactionType, refNumber: "", description: "", amount: 10, invoiceId: "invoice-1", invoiceNumber: "123", invoiceCost: 100, invoiceBalance: 100, accountId: 1, sourceAccountId: 31, paymentMethodId: 1, paymentMethodName: "CASH", inventoryDirection: "dispatched", inventoryItemId: "box", inventoryQuantity: 1, inventoryTotal: 10, inventoryHolderEmployees: [{ id: 4, name: "Holder" }] };
   assert.equal(dailyIncomeJournalSchema.safeParse(values).success, true);
   const invalid = dailyIncomeJournalSchema.safeParse({ ...values, amount: -1 });
   assert.equal(invalid.success, false, "amount validation must remain enforced");
@@ -83,13 +83,13 @@ for (const transactionType of ["DISCOUNT", "SURCHARGE"]) {
 test("expense always posts Cash with a system-generated reference and keeps its source account", async () => {
  let sent;
  const api = loadFeature("src/lib/accounting/daily-income/api.ts", {post: async (_url, body) => { sent = body; return {success: true, data: {id:"journal-1"}}; }});
- await api.createDailyIncomeJournal({id: 1, date: "2026-10-29", status: "OPEN", branch: {id:2}, currency:"USD", rate:1}, {transactionType:"EXPENSE", amount:40, accountId:7, accountName:"Fuel", accountType:"EXPENSE", sourceAccountId:4, sourceAccountName:"Bank", sourceAccountType:"BANK", paymentMethodId:3, paymentMethodName:"ZELLE", paymentAccountId:4, paymentAccountType:"BANK", checkNumber:"0012", externalReferenceNumber:"ZL-1", refNumberMode:"system", refNumber:"", description:"Fuel"});
+ await api.createDailyIncomeJournal({id: 1, date: "2026-10-29", status: "OPEN", branch: {id:2}, currency:"USD", rate:1}, {transactionType:"EXPENSE", amount:40, accountId:7, accountName:"Fuel", accountType:"EXPENSE", sourceAccountId:31, sourceAccountName:"Cash drawer", sourceAccountType:"ASSET", paymentMethodId:3, paymentMethodName:"ZELLE", paymentAccountId:4, paymentAccountType:"BANK", checkNumber:"0012", externalReferenceNumber:"ZL-1", refNumberMode:"system", refNumber:"", description:"Fuel"});
  assert.deepEqual(sent.paymentMethod, {name:"CASH"});
  assert.equal("refNumber" in sent, false);
  assert.equal(sent.paymentAccount, undefined);
  assert.equal(sent.external_reference_number, undefined);
  assert.equal(sent.paymentReference, undefined);
- assert.deepEqual(sent.sourceAccount, {id:4, name:"Bank", type:"BANK"});
+ assert.deepEqual(sent.sourceAccount, {id:31, name:"Cash drawer", type:"ASSET"});
  assert.deepEqual(sent.account, {id:7, name:"Fuel", type:"EXPENSE"});
 });
 

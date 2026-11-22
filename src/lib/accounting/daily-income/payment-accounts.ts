@@ -8,6 +8,10 @@ type AccountNode = Pick<ChartAccount, "id" | "name" | "displayName" | "type" | "
 const DEFAULT_CASH_ACCOUNT_NAME = "CASH ON HAND";
 /** Legacy duplicate cash posting account from chart repair; same role as CASH ON HAND. */
 const LEGACY_CASH_ACCOUNT_ALIAS = "CASH ACCOUNT";
+const CASH_ON_HAND_ID = 1;
+const LEGACY_CASH_ACCOUNT_ID = 9;
+// emsys-api/internal/chart_account/model.go: receipt clearing is not cash funding.
+const RECEIVABLE_SYSTEM_ACCOUNT_IDS = new Set([2, 5, 4_000_000_001, 4_000_000_002]);
 const DEFAULT_BANK_ACCOUNT_NAME = "BANK";
 const MAX_ACCOUNT_DEPTH = 10;
 
@@ -32,7 +36,13 @@ function systemName(account: AccountNode): string {
 
 /** True for the legacy "Cash Account" child that duplicates CASH ON HAND. */
 export function isLegacyCashAccountAlias(account: AccountNode): boolean {
-  return systemName(account) === LEGACY_CASH_ACCOUNT_ALIAS;
+  return account.id === LEGACY_CASH_ACCOUNT_ID && account.type === "ASSET" &&
+    account.parentAccount?.id === CASH_ON_HAND_ID && systemName(account) === LEGACY_CASH_ACCOUNT_ALIAS;
+}
+
+/** Reject known invalid cash sources locally; persisted scope/eligibility stays API-owned. */
+export function isInvalidCashExpenseSource(id: number, type: string | undefined): boolean {
+  return id <= 0 || RECEIVABLE_SYSTEM_ACCOUNT_IDS.has(id) || (type != null && type !== "ASSET");
 }
 
 /** The system CASH ON HAND account every company has; the cash umbrella. */
@@ -61,7 +71,7 @@ export function listCashAccounts<T extends AccountNode>(accounts: readonly T[]):
   if (!root) return [];
   const byId = new Map(accounts.map((account) => [account.id, account]));
   return accounts.filter((account) => {
-    if (account.type !== "ASSET") return false;
+    if (account.type !== "ASSET" || RECEIVABLE_SYSTEM_ACCOUNT_IDS.has(account.id)) return false;
     if (account.id !== root.id && !isDescendantOf(account, root.id, byId)) return false;
     // Hide the legacy Cash Account duplicate when Cash on Hand is available.
     if (account.id !== root.id && isLegacyCashAccountAlias(account)) return false;

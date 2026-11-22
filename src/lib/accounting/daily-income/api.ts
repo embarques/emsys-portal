@@ -11,7 +11,8 @@ import { isAutoReconcileEligible } from "./auto-reconcile";
 import { inventoryHoldersFromValues } from "./inventory-change";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { isExpensePaidByMethod, isFixedCashTransactionType } from "./transaction-workflow";
-import { isCashAccountSelectable, isPaymentAccountsEnabled } from "./payment-accounts";
+import { isCashAccountSelectable, isInvalidCashExpenseSource, isPaymentAccountsEnabled } from "./payment-accounts";
+import { translateCurrent } from "@/lib/i18n/translate-current";
 import { pickJournalPrimaryAccountLine } from "./journal-account";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -642,6 +643,10 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   const amount = Number(values.amount) || 0;
   const paymentMethod = resolveJournalPaymentMethod(values);
   const methodName = paymentMethod?.name ?? values.paymentMethodName;
+  if (values.transactionType === "EXPENSE" && isCashPaymentMethod(methodName) &&
+    values.sourceAccountId != null && isInvalidCashExpenseSource(values.sourceAccountId, values.sourceAccountType)) {
+    throw new Error(translateCurrent("accounting.dailyIncome.errors.cashExpenseSourceInvalid"));
+  }
   const bankAccountRequired = amount > 0 && requiresBankAccountSelection(values.transactionType, methodName);
   // Paid-by-method expenses carry their cash/bank account in sourceAccount.
   const expensePaidByMethod = isExpensePaidByMethod(values.transactionType);

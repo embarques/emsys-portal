@@ -38,22 +38,22 @@ test("loan funding options are cash and bank only; receivable stays on the loan 
     "src/lib/accounting/loans/loan-accounts.ts",
   );
   const cash = { id: 1, name: "CASH ON HAND", displayName: "Cash on hand", type: "ASSET", systemAccount: true };
-  const drawer = { id: 2, name: "DRAWER A", displayName: "Drawer A", type: "ASSET", parentAccount: { id: 1 } };
-  const ar = { id: 3, name: "ACCOUNTS RECEIVABLE", displayName: "Accounts receivable", type: "ASSET", systemAccount: true };
-  const loan = { id: 4, name: "EMPLOYEE LOANS", displayName: "Employee loans", type: "LOAN" };
-  const bank = { id: 5, name: "CHASE", displayName: "Chase", type: "BANK" };
-  const generalBank = { id: 6, name: "BANK", displayName: "Bank", type: "BANK", systemAccount: true };
+  const drawer = { id: 31, name: "DRAWER A", displayName: "Drawer A", type: "ASSET", parentAccount: { id: 1 } };
+  const ar = { id: 2, name: "ACCOUNTS RECEIVABLE", displayName: "Accounts receivable", type: "ASSET", systemAccount: true };
+  const loan = { id: 33, name: "EMPLOYEE LOANS", displayName: "Employee loans", type: "LOAN" };
+  const bank = { id: 41, name: "CHASE", displayName: "Chase", type: "BANK" };
+  const generalBank = { id: 10, name: "BANK", displayName: "Bank", type: "BANK", systemAccount: true };
   const accounts = [cash, drawer, ar, loan, bank, generalBank];
 
   assert.equal(isLoanReceivableLikeAccount(ar), true);
   assert.equal(isLoanReceivableLikeAccount(loan), true);
   assert.deepEqual(
     listLoanReceivableAccounts(accounts).map((account) => account.id),
-    [4],
+    [33],
   );
   assert.deepEqual(
     listLoanFundingAccounts(accounts).map((account) => account.id).sort((a, b) => a - b),
-    [1, 2, 5],
+    [1, 31, 41],
   );
   assert.ok(!listLoanFundingAccounts(accounts).some((account) => account.id === ar.id));
 });

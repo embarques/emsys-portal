@@ -787,6 +787,7 @@
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
+      "cashExpenseSourceInvalid": "Seleccione Efectivo en caja o una cuenta de efectivo válida. Las cuentas por cobrar y de compensación no pueden financiar gastos en efectivo.",
       "useLoanPaymentWorkflow": "Use el flujo específico de préstamos para pagos y reducciones de capital.",
       "paymentInvoiceAmbiguous": "Más de una factura tiene este número. Pide a un administrador que resuelva el duplicado antes de registrar el pago.",
       "paymentInvoiceInvalid": "No se pudo verificar la factura. Escribe el número exacto e inténtalo de nuevo.",
