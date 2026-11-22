@@ -17,6 +17,29 @@ pass repeats API totals without generating another public PDF. See
 
 ## Cash and bank account acceptance
 
+### PR #375 portal alignment
+
+Expense categories (`account`) remain separate from funding (`sourceAccount`).
+Cash pickers exclude the API's reserved receivable/clearing IDs even if chart
+data incorrectly parents them under CASH ON HAND: Accounts Receivable (2), Loan
+Receivable (5), Card Processor Receivable (4000000001), Checks to Deposit
+(4000000002). Cash expense schema and payload validation reject these sources;
+the API remains authoritative for persisted account eligibility and scope.
+
+Only the known legacy Cash Account asset (ID 9, directly under CASH ON HAND ID 1,
+with the legacy name) is hidden as a duplicate. Unrelated accounts sharing its
+name retain their identity. Existing journal snapshots and saved account labels
+are preserved; no historical migration or read-time relabeling is introduced.
+Payment-account feature enablement remains a separate rollout decision.
+
+Backend follow-up for [emsys-api PR #375](https://github.com/embarques/emsys-api/pull/375):
+its reviewed resolver canonicalizes by name alone after funding validation,
+including BANK and loan/transfer resolution. Restrict conversion to the known
+legacy cash asset beneath CASH ON HAND before rollout. Cover unrelated BANK/
+custom ASSET names, wrong ancestry, historical snapshot preservation, and
+create/sync/permitted edit behavior in backend tests. Portal filtering does not
+enforce this server invariant.
+
 - Verify cash child creation/allocation against the current template contract.
   Creating an ASSET child under root 1 without a code returned "funding account
   code must be four digits within its account range" in this run. No guessed

@@ -6,6 +6,7 @@ import {
   requiresBankAccountSelection,
 } from "@/lib/accounting/daily-income/types";
 import { isExpensePaidByMethod, isFixedCashTransactionType } from "@/lib/accounting/daily-income/transaction-workflow";
+import { isInvalidCashExpenseSource } from "./payment-accounts";
 import { getBalanceAfterDiscount, getDiscountableBalance, type OriginalInvoiceAdjustment } from "@/lib/accounting/daily-income/invoice-adjustment-presets";
 import { getInvoicePaymentBalancePreview } from "@/lib/accounting/daily-income/invoice-balance-preview";
 
@@ -358,6 +359,11 @@ export function createDailyIncomeJournalSchema(
       }
 
       const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
+      if (values.transactionType === "EXPENSE" &&
+        (isFixedCashTransactionType(values.transactionType) || !requiresBankAccount(values.paymentMethodName)) &&
+        values.sourceAccountId != null && isInvalidCashExpenseSource(values.sourceAccountId, values.sourceAccountType)) {
+        context.addIssue({ code: "custom", path: ["sourceAccountId"], message: "accounting.dailyIncome.errors.cashExpenseSourceInvalid" });
+      }
       if (sourceAccountRelated && !values.sourceAccountId) {
         context.addIssue({
           code: "custom",

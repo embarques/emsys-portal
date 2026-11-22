@@ -787,6 +787,7 @@
       "reportReady": "Daily income report ready."
     },
     "errors": {
+      "cashExpenseSourceInvalid": "Choose Cash on Hand or an eligible cash account. Receivable and clearing accounts cannot fund cash expenses.",
       "useLoanPaymentWorkflow": "Use the dedicated loan workflow for loan payments and principal reductions.",
       "paymentInvoiceAmbiguous": "More than one invoice has this number. Ask an administrator to resolve the duplicate before recording payment.",
       "paymentInvoiceInvalid": "The invoice reference could not be verified. Enter the exact invoice number and retry.",
