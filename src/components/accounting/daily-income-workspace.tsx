@@ -357,10 +357,21 @@ export function DailyIncomeWorkspace() {
       })),
     })));
 
-    return ensureDepositStatAndOrder(nextStats, {
+    const ordered = ensureDepositStatAndOrder(nextStats, {
       label: t("accounting.dailyIncome.summary.totalDeposited"),
       zeroValue: formatAmount(0),
     });
+    if (summary.bankSettlement) {
+      for (const [key, cents] of [
+        ["bankPending", summary.bankSettlement.pendingCents],
+        ["bankCleared", summary.bankSettlement.clearedCents],
+      ] as const) {
+        ordered.push({ label: t(`accounting.dailyIncome.summary.${key}`),
+          value: summaryTotalsQuery.isFetching && !summaryTotalsQuery.isLoading ? "…" : formatAmount(cents / 100),
+          description: t("accounting.dailyIncome.summary.bankSettlementHint"), icon });
+      }
+    }
+    return ordered;
   }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading, t]);
 
 

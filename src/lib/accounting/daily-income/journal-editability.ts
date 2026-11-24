@@ -41,8 +41,9 @@ export function journalEditBlockReason(
   if (journal.clearanceStatus === "CLEARED") return "cleared";
   if (journal.reconciliationStatus === "RECONCILED") return "reconciled";
   if (journal.reconciliationStatus === "NOT_REQUIRED") return "reversed";
+  if (journal.reconciliationStatus !== "OUTSTANDING") return "restricted";
   if (journal.pendingChange === true) return "restricted";
-  if (journal.allowedActions?.edit !== true || !journal.version || journal.version < 1) return "restricted";
+  if (journal.allowedActions?.edit !== true || !journal.version || !Number.isSafeInteger(journal.version) || journal.version < 1) return "restricted";
   if (journal.reversedAt || journal.reversalOf || journal.voidedAt) return "reversed";
   return null;
 }
@@ -54,7 +55,8 @@ export function isGenericEditableTransactionType(type: JournalTransactionType | 
 
 /** Shared guard for generic audited corrections and cancellations. */
 function canUseGenericJournalLifecycle(journal: DailyIncomeJournal): boolean {
-  return Boolean(journal.version && journal.version >= 1 && !journal.pendingChange &&
+  return Boolean(journal.version && Number.isSafeInteger(journal.version) && journal.version >= 1 && !journal.pendingChange &&
+    (journal.reconciliationStatus === "OUTSTANDING" || journal.reconciliationStatus === "RECONCILED") &&
     journal.transactionStatus !== "VOIDED" && journal.transactionStatus !== "REVERSED" &&
     !journal.voidedAt && !journal.reversedAt && !journal.reversalOf &&
     !NON_EDITABLE_TYPES.has(journal.transactionType) && !journal.loan &&

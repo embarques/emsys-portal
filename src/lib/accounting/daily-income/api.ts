@@ -441,10 +441,15 @@ export async function fetchIncomeStatementSummaryTotals(
   const totals = (Array.isArray(raw.totals) ? raw.totals : unwrapArray(payload))
     .map(normalizeSummaryTotal)
     .filter((item): item is IncomeStatementSummaryTotal => item != null);
+  const bank = raw.bankSettlement == null ? undefined : objectValue(raw.bankSettlement);
+  if (bank && (!Number.isSafeInteger(bank.pendingCents) || !Number.isSafeInteger(bank.clearedCents))) {
+    throw new Error(translateCurrent("accounting.dailyIncome.summary.invalidBankTotals"));
+  }
   return {
     currency: stringValue(raw.currency) || "USD",
     rate: numberValue(raw.rate, 1),
     totals,
+    bankSettlement: bank ? { pendingCents: Number(bank.pendingCents), clearedCents: Number(bank.clearedCents) } : undefined,
   };
 }
 
@@ -815,7 +820,11 @@ export async function updateDailyIncomeJournal(id: string, statement: DailyIncom
     { id, expectedVersion: options?.expectedVersion, ...journalPayload(statement, values, options) },
   );
   assertMutation(payload, "Unable to update transaction.");
-  return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
+  const journal = normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
+  if (!journal?.id || journal.id !== id) {
+    throw new Error(translateCurrent("accounting.dailyIncome.errors.updateUnconfirmed"));
+  }
+  return journal;
 }
 
 export {

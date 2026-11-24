@@ -25,6 +25,78 @@ earlier reconciliation actor/time when subsequently clearing. An uncleared bank
 receipt may be internally reconciled; earlier API/portal rejection controls reflect
 a superseded rule and must be updated under V02.
 
+Lifecycle review: bank methods are check, Zelle, deposit, credit card, debit card
+and wire. Recording their receipt creates a journal to track pending settlement;
+it does not apply the payment to the invoice. Cash requires no bank clearance.
+
+| Action on a bank invoice receipt | Reconciliation | Clearance | Invoice payment |
+| --- | --- | --- | --- |
+| Record | Outstanding | Outstanding | Not applied |
+| Reconcile | Reconciled | Outstanding | Not applied |
+| Clear, with or without earlier reconciliation | Reconciled | Cleared | Applied once |
+| Void or reverse | Preserve prior verification evidence | Not required | Undo only an applied receipt |
+
+The active offset from a void/reversal requires its own reconciliation and never
+bank clearance. A correction posts an offset plus a replacement atomically; a
+bank replacement follows the receipt lifecycle above. Retries retain their command
+identity, and later verification/clearance does not reopen the original closeout.
+
+The closeout summary now adds live `bankSettlement.pendingCents` and
+`bankSettlement.clearedCents` alongside the existing registered totals. These are
+income receipts only, in minor units of the response currency using the closeout
+rate. Cash, expenses, loans, transfers and inactive originals/offsets are excluded.
+The portal labels the two totals in English and Spanish on desktop and mobile;
+older APIs that omit the object do not display invented zero balances. Closed
+closeouts keep their saved totals while the live settlement breakdown advances.
+This adds no portal request and one tenant-local API aggregation. Install the
+additive `idx_journals_legacy_income_statement_lookup` index through the normal
+API tenant index migration so both supported reference formats remain indexed.
+This does not reclassify ledger lines or introduce a bank clearing account.
+
+Local review on November 24, 2026: 55 focused portal unit tests and two lifecycle/
+batch browser regressions pass. TypeScript and the production build pass. The API
+passes vet, build, the full Go suite, Swagger/Scalar contract checks, and isolated
+lifecycle/migration/bank-total fixtures with the race detector. An overlay that
+removes the bank eligibility guard reproduces the cash, missing-method, discount
+and surcharge action failures. The live bank-total query used one aggregation and
+IXSCAN with no COLLSCAN, about 2 ms with 2,012 fixture rows; this adds one summary
+aggregation and no portal requests, not a production throughput claim.
+
+The full portal unit suite remains at 714 passing and seven pre-existing failures:
+`daily-income-filters`, Add transaction permission gating, four delivery display
+cases, and daily-route crew validation. Authenticated acceptance against a deployed
+non-production API still needs configured Firebase credentials. Retained-data
+migration, permission refresh and deployment remain separate rollout steps.
+
+Confirmed policy: recording alone does not finalize a journal. Active, unverified
+journals may receive controlled financial edits in the server-selected current
+open closeout while reconciliation is OUTSTANDING and clearance is not CLEARED.
+Require the explicit update grant, API eligibility, expected-version checks,
+before/after audit and atomic financial updates. Pending changes and dedicated
+lifecycle restrictions still apply; identity and closeout membership stay intact.
+Reconciled, cleared and historical journals require permitted audited reversal/
+adjustment or atomic reversal-and-replacement corrections, with the required
+grants and reason. Administrators follow the same lifecycle gates. Separately
+authorized nonfinancial notes remain audited. The API's `AGENTS.md` and
+`CURSOR_RULES.md` now state this policy; this clarification changes no runtime
+behavior.
+
+Portal policy follow-up: the shared desktop/mobile guard now requires explicit
+OUTSTANDING reconciliation for direct edits and a positive, safe integer version
+for generic edits/corrections/cancellations. Generic correction/cancellation also rejects missing or
+ineligible reconciliation metadata. The update adapter requires acknowledgment
+of the same journal ID; missing or mismatched acknowledgments preserve the draft
+and show a localized error. English/Spanish blocked-edit messages direct verified
+entries to correction/reversal, never void. No additional requests were added.
+The expanded 1280/390 browser fixture verifies direct edits versus independent
+reconciled/cleared/historical correction paths, required reason, cancellation,
+retry identity and zero writes for incomplete state, pending changes, invalid
+versions and denied update/correction permissions. All 57 focused unit tests and
+both browser regressions pass. The full portal suite is 716 passing with the same
+seven pre-existing failures listed above. A detached checkout of the current
+`dev` baseline reproduced all seven failures (707 passing, 11 failing overall);
+this change repairs four baseline failures and introduces no new failing cases.
+
 Closeouts limit new transaction entry to a day and provide operational summaries.
 Existing transactions can reconcile/clear after that day closes without moving
 periods or reopening it. Registered amounts stay with the original day; status

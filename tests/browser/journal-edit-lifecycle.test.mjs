@@ -66,6 +66,28 @@ test("Edit/Delete lifecycle confirmations preserve drafts, reasons and retry ide
     await page.getByRole("button",{name:"Edit outstanding",exact:true}).click();
     await page.getByRole("status").filter({hasText:"saved:original"}).waitFor();
     assert.equal((await page.evaluate(()=>window.editCalls)).at(-1).method,"PUT");
+    // Lifecycle state overrides even overly permissive/stale action flags.
+    // Desktop and mobile use the same hook and confirmation workflow.
+    for (const scenario of ["reconciled","cleared","historical"]) {
+      const before=await page.evaluate(()=>window.editCalls.length);
+      await page.getByRole("button",{name:`Edit ${scenario}`,exact:true}).click();
+      await page.getByRole("dialog").waitFor();
+      assert.equal(await page.evaluate(()=>window.editCalls.length),before);
+      await page.getByRole("textbox",{name:"accounting.journalLifecycle.reason",exact:true}).fill(`Correct ${scenario} amount`);
+      await page.getByRole("button",{name:"accounting.journalLifecycle.confirm",exact:true}).click();
+      await page.getByRole("dialog").waitFor({state:"hidden"});
+      const last=(await page.evaluate(()=>window.editCalls)).at(-1);
+      assert.equal(last.method,"POST");
+      assert.equal(last.url,"/journals/original/correct");
+      assert.equal(last.body.expectedVersion,7);
+    }
+    for (const scenario of ["incomplete","pending change","invalid version","without permission","without correction grant"]) {
+      const before=await page.evaluate(()=>window.editCalls.length);
+      await page.getByRole("button",{name:`Edit ${scenario}`,exact:true}).click();
+      await page.getByRole("status").filter({hasText:"blocked"}).waitFor();
+      assert.equal(await page.evaluate(()=>window.editCalls.length),before,scenario);
+      assert.equal(await page.getByRole("dialog").count(),0,scenario);
+    }
     const deletes=page.getByRole("button",{name:"common.actions.delete",exact:true});
     assert.equal(await deletes.count(),2,"one Delete per record, without separate Void/Reverse controls");
     for (const [index,operation] of ["reverse","void"].entries()) {

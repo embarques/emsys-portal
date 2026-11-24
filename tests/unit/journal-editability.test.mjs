@@ -23,7 +23,7 @@ test("outstanding journals in the current open closeout are editable", () => {
   for (const transactionType of ["PAYMENT", "EXPENSE", "SALES", "DISCOUNT", "SURCHARGE", "TRANSFER"]) {
     assert.equal(journalEditBlockReason(journal({ transactionType }), current), null, transactionType);
   }
-  assert.equal(journalEditBlockReason(journal({ reconciliationStatus: undefined }), current), null);
+  assert.equal(journalEditBlockReason(journal({ reconciliationStatus: undefined }), current), "restricted");
 });
 
 test("journals outside the current open closeout are blocked", () => {
@@ -59,6 +59,9 @@ test("cleared transactions and explicit backend edit restrictions block direct e
 test("missing eligibility or version fails closed", () => {
   assert.equal(journalEditBlockReason(journal({ allowedActions: undefined }), current), "restricted");
   assert.equal(journalEditBlockReason(journal({ version: undefined }), current), "restricted");
+  for (const version of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.equal(journalEditBlockReason(journal({ version }), current), "restricted");
+  }
 });
 
 
@@ -78,7 +81,7 @@ test("Delete prefers an allowed void, otherwise an allowed reversal", () => {
 });
 
 test("generic Edit/Delete never bypass dedicated lifecycles or inactive records", () => {
- for(const extra of [{transactionType:"INITIAL-PAYMENT"},{transactionType:"INVENTORY"},{transactionType:"LOAN-PAYMENT"},{transactionType:"LOAN-DECREASE"},{sourceSystem:"legacy-api"},{reversalOf:"offset"},{transactionStatus:"VOIDED"},{pendingChange:true},{version:undefined}]) {
+ for(const extra of [{transactionType:"INITIAL-PAYMENT"},{transactionType:"INVENTORY"},{transactionType:"LOAN-PAYMENT"},{transactionType:"LOAN-DECREASE"},{sourceSystem:"legacy-api"},{reversalOf:"offset"},{transactionStatus:"VOIDED"},{pendingChange:true},{version:undefined},{version:1.5},{version:Infinity},{reconciliationStatus:undefined},{reconciliationStatus:"NOT_REQUIRED"}]) {
   const row=journal({...extra,allowedActions:{edit:false,correct:true,void:true,reverse:true}});
   assert.equal(journalEditOperation(row,current),null,JSON.stringify(extra));
   assert.equal(journalDeleteOperation(row),null,JSON.stringify(extra));

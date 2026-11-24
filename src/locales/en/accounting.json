@@ -678,6 +678,10 @@
       "closeoutNumber": "Closeout #{{id}}"
     },
     "summary": {
+      "bankPending": "Bank receipts pending clearance",
+      "bankCleared": "Cleared bank receipts",
+      "bankSettlementHint": "Current settlement of receipts recorded in this closeout; separate from registered totals.",
+      "invalidBankTotals": "Bank settlement totals could not be verified. Please refresh.",
       "loadingTotals": "Loading summary totals…",
       "currencyRate": "{{code}} · rate {{rate}}",
       "totalDeposited": "Total Deposited"
@@ -787,6 +791,7 @@
       "reportReady": "Daily income report ready."
     },
     "errors": {
+      "updateUnconfirmed": "The update could not be confirmed. Refresh this transaction before retrying.",
       "cashExpenseSourceInvalid": "Choose Cash on Hand or an eligible cash account. Receivable and clearing accounts cannot fund cash expenses.",
       "useLoanPaymentWorkflow": "Use the dedicated loan workflow for loan payments and principal reductions.",
       "paymentInvoiceAmbiguous": "More than one invoice has this number. Ask an administrator to resolve the duplicate before recording payment.",
@@ -799,10 +804,10 @@
     },
     "editBlocked": {
       "permission": "You do not have permission to edit transactions.",
-      "closeout": "Only transactions in the current open closeout can be edited.",
+      "closeout": "Direct edits require today's open closeout. Historical transactions require an authorized correction or reversal.",
       "type": "This transaction type cannot be edited here. Invoice registrations, inventory changes and loans are managed from their own workflows.",
-      "reconciled": "Reconciled transactions cannot be edited. Use void, reverse, or correct after reconciliation.",
-      "cleared": "Cleared transactions cannot be edited. Use void, reverse, or correct after clearance.",
+      "reconciled": "Reconciled transactions require an authorized correction or reversal to change financial details.",
+      "cleared": "Cleared transactions require an authorized correction or reversal to change financial details.",
       "restricted": "The API has restricted editing for this transaction.",
       "reversed": "Reversed or voided transactions cannot be edited."
     },

@@ -8,26 +8,29 @@ import ts from "typescript";
 import { createPortalLoader } from "../../scripts/lib/portal-modules.mjs";
 
 const require = createRequire(import.meta.url);
+// Match the CommonJS context consumed by the transpiled feature hook.
+const { QueryClient, QueryClientProvider } = require("@tanstack/react-query");
 const filename = "src/components/accounting/daily-income-transaction-form-workspace.tsx";
 const source = ts.transpileModule(readFileSync(filename, "utf8"), {
   fileName: filename,
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 
-function fixture({ updateError } = {}) {
+function fixture({ updateError, updateResponse, journalOverrides = {}, canUpdate = true } = {}) {
   const calls = [], closed = [], notices = [];
   const journal = {
     id: "journal-1", incomeStatementId: 42, version: 7,
     transactionType: "EXPENSE", transactionAmount: 25, description: "Original",
     reconciliationStatus: "OUTSTANDING", clearanceStatus: "NOT_REQUIRED",
     allowedActions: { edit: true },
+    ...journalOverrides,
   };
   const statement = { id: 42, status: "OPEN", currency: "USD", rate: 1, branch: { id: 2 } };
   const query = data => ({ data, isLoading: false, isError: false });
   const loadFeature = createPortalLoader({ apiClient: { put: async (url, body) => {
     calls.push({ url, body });
     if (updateError) throw updateError;
-    return { success: true, data: journal };
+    return updateResponse ?? { success: true, data: journal };
   } } });
   const form = loadFeature("src/lib/accounting/daily-income/journal-form.ts");
   const api = loadFeature("src/lib/accounting/daily-income/api.ts");
@@ -44,6 +47,7 @@ function fixture({ updateError } = {}) {
     useUpdateDailyIncomeJournal: () => ({ isPending: false, mutateAsync: ({ id, statement, values, options }) => api.updateDailyIncomeJournal(id, statement, values, options) }),
   };
   const mocks = {
+    "./journal-correction-dialog": { JournalCorrectionDialog: () => null },
     "@/components/accounting/session-transactions-panel": { SessionTransactionsLayout: container },
     "@/components/accounting/add-transaction-wizard": { AddTransactionWizard: props => { wizard = props; return null; } },
     "@/components/forms/form-tab-shell": { FormTabShell: container },
@@ -51,21 +55,33 @@ function fixture({ updateError } = {}) {
     "@/components/ui/button": { Button: container },
     "@/lib/accounting/daily-income/hooks": hooks,
     "@/lib/accounting/daily-income/journal-form": form,
-    "@/lib/auth/hooks/use-auth": { useAuth: () => ({ hasPermission: () => true }) },
+    "@/lib/auth/hooks/use-auth": { useAuth: () => ({ hasPermission: () => canUpdate }) },
     "@/lib/employees/hooks/use-employees": { useEmployees: () => query({ items: [] }) },
     "@/lib/invoices/hooks/use-invoices": { useInvoices: () => query({ items: [] }) },
     "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes": { useDailyRoutePicker: () => query({ items: [] }) },
     "@/lib/layout/hooks/use-workspace-tabs": { useWorkspaceTabs: () => ({ closeFormTabAndReturn: id => closed.push(id) }), useUpdateWorkspaceTabLabel: () => () => {} },
     "@/lib/i18n": { useTranslation: () => ({ t: key => key }) },
   };
+  const editHook = { exports: {} };
+  const editHookSource = ts.transpileModule(readFileSync("src/lib/accounting/daily-income/use-journal-edit.ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  }).outputText;
+  new Function("require", "module", "exports", editHookSource)(name => {
+    if (name === "./hooks") return hooks;
+    if (name in mocks) return mocks[name];
+    if (name.startsWith("./")) return loadFeature(`src/lib/accounting/daily-income/${name.slice(2)}.ts`);
+    if (name.startsWith("@/")) return loadFeature(`src/${name.slice(2)}.ts`);
+    return require(name);
+  }, editHook, editHook.exports);
+  mocks["@/lib/accounting/daily-income/use-journal-edit"] = editHook.exports;
   const loaded = { exports: {} };
   new Function("require", "module", "exports", source)(name => {
     if (name in mocks) return mocks[name];
     if (name.startsWith("@/")) return loadFeature(`src/${name.slice(2)}.ts`);
     return require(name);
   }, loaded, loaded.exports);
-  renderToStaticMarkup(React.createElement(loaded.exports.DailyIncomeTransactionFormWorkspace, { tabId: "edit-tab", mode: "edit", entityId: journal.id }));
-  assert.ok(wizard, "eligible journal renders the existing editor");
+  renderToStaticMarkup(React.createElement(QueryClientProvider, { client: new QueryClient() },
+    React.createElement(loaded.exports.DailyIncomeTransactionFormWorkspace, { tabId: "edit-tab", mode: "edit", entityId: journal.id })));
   return { wizard, values: form.journalToFormValues(journal), calls, closed, notices };
 }
 
@@ -95,4 +111,23 @@ test("a stale-version rejection preserves the editor and does not report a succe
   assert.equal(calls[0].body.expectedVersion, 7);
   assert.deepEqual(closed, []);
   assert.deepEqual(notices, []);
+});
+
+test("unconfirmed or mismatched update acknowledgments keep the editor open", async () => {
+  for (const updateResponse of [{ success: true }, { success: true, data: { id: "different-journal" } }]) {
+    const { wizard, values, closed, notices } = fixture({ updateResponse });
+    assert.ok(wizard);
+    await assert.rejects(wizard.onSubmit({ ...values, description: "Corrected" }), /update could not be confirmed/);
+    assert.deepEqual(closed, []);
+    assert.deepEqual(notices, []);
+  }
+});
+
+test("desktop editor denies incomplete lifecycle state and missing update permission", () => {
+  for (const options of [{ canUpdate: false }, { journalOverrides: { reconciliationStatus: undefined } },
+    { journalOverrides: { pendingChange: true } }, { journalOverrides: { version: 1.5 } }]) {
+    const { wizard, calls } = fixture(options);
+    assert.equal(wizard, undefined);
+    assert.deepEqual(calls, []);
+  }
 });
