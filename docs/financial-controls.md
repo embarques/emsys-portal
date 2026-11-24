@@ -65,8 +65,8 @@ aggregation and no portal requests, not a production throughput claim.
 The full portal unit suite remains at 714 passing and seven pre-existing failures:
 `daily-income-filters`, Add transaction permission gating, four delivery display
 cases, and daily-route crew validation. Authenticated acceptance against a deployed
-non-production API still needs configured Firebase credentials. No retained-data
-migration, permission refresh, deployment, commit or push was performed.
+non-production API still needs configured Firebase credentials. Retained-data
+migration, permission refresh and deployment remain separate rollout steps.
 
 Confirmed policy: recording alone does not finalize a journal. Active, unverified
 journals may receive controlled financial edits in the server-selected current
@@ -93,7 +93,9 @@ reconciled/cleared/historical correction paths, required reason, cancellation,
 retry identity and zero writes for incomplete state, pending changes, invalid
 versions and denied update/correction permissions. All 57 focused unit tests and
 both browser regressions pass. The full portal suite is 716 passing with the same
-seven pre-existing failures listed above.
+seven pre-existing failures listed above. A detached checkout of the current
+`dev` baseline reproduced all seven failures (707 passing, 11 failing overall);
+this change repairs four baseline failures and introduces no new failing cases.
 
 Closeouts limit new transaction entry to a day and provide operational summaries.
 Existing transactions can reconcile/clear after that day closes without moving
