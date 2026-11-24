@@ -38,7 +38,10 @@ test("pending search always ANDs outstanding status outside user OR filters", ()
   const body = pendingTransactionSearch("Ana", [row("employee.name", "contains", "Ana"), row("invoice.number", "eq", "123", "or")], 2);
   assert.equal(body.operator, "and");
   assert.deepEqual(body.pagination, { page: 2, limit: 40, offset: 40 });
-  assert.deepEqual(leaves(body.filters.at(-1)), [{ field: "reconciliationStatus", operator: "eq", value: "OUTSTANDING" }]);
+  assert.deepEqual(leaves(body.filters.at(-1)), [
+    { field: "reconciliationStatus", operator: "eq", value: "OUTSTANDING" },
+    { field: "transactionStatus", operator: "notIn", value: ["VOIDED", "REVERSED"] },
+  ]);
   assert.equal(body.filters[0].operator, "or");
   assert.equal(body.filters[1].operator, "or");
   assert.equal(leaves(body).filter(node => node.field === "incomeStatement.id").length, 0);

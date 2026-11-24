@@ -755,7 +755,11 @@ later reconciliation and settlement do not reopen them. A closeout is a daily
 entry window and operational summary, not a finalized accounting-period lock.
 Registered amounts remain attributed to the entry day; status-based reconciled/
 cleared breakdowns can update as existing transactions progress, with explicit
-labels and audit history. Clearance must not count the receipt as new income again.
+labels and audit history. Clearance must not count the receipt as new income again. The closeout summary
+separately shows bank income receipts pending clearance and cleared bank receipts,
+using live settlement status for that closeout even after closure. Its registered
+entry-day totals remain unchanged. Cash, bank expenses, loans, transfers and
+reversal offsets do not contribute to those two receipt totals.
 
 Missing-period recovery follows `CLOSEOUT_REQUIRED`. Pending transaction inputs
 must survive setup failure/cancellation and must not be reposted if already
@@ -809,6 +813,15 @@ reversals. Daily-route operators request protected changes through
 `/change-requests`; authorized reviewers may approve their own requests. Explicit
 closeout opening remains in place, and neither later verification nor settlement
 reopens a historical period.
+
+The shared desktop/mobile journal editor uses direct PUT only for an explicitly
+eligible, outstanding, uncleared entry in the server-selected current open
+closeout, with update permission and a valid expected version. Reconciled, cleared
+or historical entries use an authorized, reason-confirmed atomic correction.
+Missing reconciliation/version metadata and pending changes block generic
+edits/cancellations; dedicated invoice, inventory and loan workflows stay separate.
+An unconfirmed update keeps the draft open. Nonfinancial notes have their own
+audited permission. Administrator roles do not bypass lifecycle eligibility.
 
 ### Protected daily-route records
 

@@ -68,6 +68,7 @@ export type IncomeStatementSummaryTotals = {
   currency: string;
   rate: number;
   totals: IncomeStatementSummaryTotal[];
+  bankSettlement?: { pendingCents: number; clearedCents: number };
 };
 
 export type JournalTransactionType =

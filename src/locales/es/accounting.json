@@ -678,6 +678,10 @@
       "closeoutNumber": "Cierre #{{id}}"
     },
     "summary": {
+      "bankPending": "Cobros bancarios pendientes de compensación",
+      "bankCleared": "Cobros bancarios compensados",
+      "bankSettlementHint": "Estado actual de los cobros registrados en este cierre; separado de los totales registrados.",
+      "invalidBankTotals": "No se pudieron verificar los totales de compensación bancaria. Actualiza la página.",
       "loadingTotals": "Cargando totales del resumen…",
       "currencyRate": "{{code}} · tasa {{rate}}",
       "totalDeposited": "Total Depositado"
@@ -787,6 +791,7 @@
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
+      "updateUnconfirmed": "No se pudo confirmar la actualización. Actualiza esta transacción antes de volver a intentarlo.",
       "cashExpenseSourceInvalid": "Seleccione Efectivo en caja o una cuenta de efectivo válida. Las cuentas por cobrar y de compensación no pueden financiar gastos en efectivo.",
       "useLoanPaymentWorkflow": "Use el flujo específico de préstamos para pagos y reducciones de capital.",
       "paymentInvoiceAmbiguous": "Más de una factura tiene este número. Pide a un administrador que resuelva el duplicado antes de registrar el pago.",
@@ -799,10 +804,10 @@
     },
     "editBlocked": {
       "permission": "No tiene permiso para editar transacciones.",
-      "closeout": "Solo se pueden editar las transacciones del cierre abierto actual.",
+      "closeout": "La edición directa requiere el cierre abierto de hoy. Las transacciones históricas requieren una corrección o reversión autorizada.",
       "type": "Este tipo de transacción no se puede editar aquí. Los registros de facturas, cambios de inventario y préstamos se gestionan desde sus propios flujos.",
-      "reconciled": "Las transacciones conciliadas no se pueden editar. Use anulación, reversión o corrección después de la conciliación.",
-      "cleared": "Las transacciones liquidadas no se pueden editar. Use anulación, reversión o corrección después de la liquidación.",
+      "reconciled": "Las transacciones conciliadas requieren una corrección o reversión autorizada para cambiar sus datos financieros.",
+      "cleared": "Las transacciones liquidadas requieren una corrección o reversión autorizada para cambiar sus datos financieros.",
       "restricted": "La API ha restringido la edición de esta transacción.",
       "reversed": "Las transacciones revertidas o anuladas no se pueden editar."
     },
