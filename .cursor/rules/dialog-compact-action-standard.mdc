@@ -1,0 +1,84 @@
+---
+description: All portal dialogs must use CompactActionDialog chrome
+globs: src/components/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Compact Action Dialog Standard
+
+All portal **dialogs** (create, edit, assign, confirm, print options, etc.)
+must use the shared template in
+`src/components/forms/compact-action-dialog.tsx`.
+
+Do **not** build custom `DialogContent` / `DialogHeader` / `DialogFooter`
+chrome. New dialogs and any dialog you touch must migrate to this template.
+
+## Required structure
+
+```tsx
+import {
+  CompactActionDialogBody,
+  CompactActionDialogContent,
+  CompactActionDialogFooter,
+  CompactActionDialogHeader,
+  compactActionDialogFormClassName, // taller form dialogs only
+} from "@/components/forms/compact-action-dialog";
+import { Dialog } from "@/components/ui/dialog";
+
+<Dialog open={open} onOpenChange={onOpenChange}>
+  <CompactActionDialogContent className="sm:max-w-lg">
+    <CompactActionDialogHeader
+      icon={SomeLucideIcon}
+      title={t("…")}
+      description={t("…")}
+    />
+    <CompactActionDialogBody>{/* fields / copy */}</CompactActionDialogBody>
+    <CompactActionDialogFooter
+      onCancel={() => onOpenChange(false)}
+      submitLabel={t("common.actions.save")}
+      submitType="submit" // or onSubmit + type button
+      isSubmitting={busy}
+      error={error}
+    />
+  </CompactActionDialogContent>
+</Dialog>
+```
+
+Reference implementations: `assign-appointment-route-dialog.tsx`,
+`employee-title-dialog.tsx`.
+
+## Rules
+
+1. **Always** wrap body chrome with `CompactActionDialogContent` (not raw
+   `DialogContent`). It owns mobile bottom-sheet layout, `gap-0` / `p-0`, and
+   `FormDialogChromeProvider`.
+2. **Header** → `CompactActionDialogHeader` with a Lucide `icon` when the
+   action has a clear metaphor (Route, Plus, Save, Printer, …).
+3. **Body** → `CompactActionDialogBody` for scrollable content between header
+   and footer. Do not put primary actions in the body.
+4. **Footer** → `CompactActionDialogFooter`. Prefer built-in Cancel / primary
+   props; pass `children` only for custom action sets. Use `error` / `warning`
+   for footer notices.
+5. **Taller forms** → add `compactActionDialogFormClassName` on
+   `CompactActionDialogContent` (or the inner `form`) so sections scroll in the
+   body while header/footer stay pinned.
+6. **Copy** → localize every user-visible string (`en` + `es`). Prefer
+   `common.actions.*` for Cancel / Save / shared labels.
+7. **When editing a legacy dialog** that still uses raw `DialogContent`,
+   migrate it to this template in the same change — do not extend the old
+   chrome.
+
+## Not this rule (keep existing patterns)
+
+- **Sheets / record view** — `Sheet` / `RecordViewSheet`, not dialogs
+- **Non-modal surfaces** — popovers, dropdowns, command palettes
+- **`ui/dialog.tsx` primitives** — still used underneath; feature code imports
+  `Dialog` + CompactAction* helpers, not bespoke content chrome
+
+## Checklist
+
+- [ ] Uses `CompactActionDialogContent` / `Header` / `Body` / `Footer`
+- [ ] No custom padded `DialogContent` header/footer layout
+- [ ] Icon + localized title/description on the header
+- [ ] Actions live in `CompactActionDialogFooter`
+- [ ] Touched legacy dialogs migrated, not copied

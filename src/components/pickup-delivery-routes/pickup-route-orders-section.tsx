@@ -260,8 +260,8 @@ export function PickupRouteOrdersSection({
                           <TableTagText
                             className={
                               order.completed
-                                ? "text-emerald-700 dark:text-emerald-300"
-                                : "text-amber-700 dark:text-amber-300"
+                                ? "border-transparent bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                                : "border-transparent bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
                             }
                           >
                             {getOrderCompletedLabel(order.completed, t)}

@@ -3,7 +3,10 @@
 import { Banknote, CheckCircle2, Info } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -13,7 +16,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { ClearablePaymentMethodConfig } from "@/lib/accounting/clearable-payments/configs";
@@ -124,14 +127,14 @@ export function ClearablePaymentViewSheet({
           <RecordViewSheetActions
             leading={
               <TableSelectionActionsMenu>
-                <DropdownMenuItem
+                <TableSelectionActionItem
                   disabled={isMarkingCleared}
                   onSelect={() => onMarkCleared(payment)}
                   className={tableSelectionActionMenuStyles.complete}
                 >
                   <CheckCircle2 className="size-4" />
                   {t(`${i18n}.actions.markCleared`)}
-                </DropdownMenuItem>
+                </TableSelectionActionItem>
               </TableSelectionActionsMenu>
             }
           />

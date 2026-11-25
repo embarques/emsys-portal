@@ -29,8 +29,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
-import { CUSTOMER_TYPE_SENDER, isCustomerSenderType } from "@/lib/customers/customer-type";
+import {
+  CUSTOMER_TYPE_RECEIVER,
+  CUSTOMER_TYPE_SENDER,
+  isCustomerSenderType,
+} from "@/lib/customers/customer-type";
 import { useTranslation } from "@/lib/i18n";
 import {
   findDominicanCity,
@@ -38,7 +43,6 @@ import {
   type DominicanCity,
 } from "@/lib/customers/dominican-cities";
 import {
-  CUSTOMER_TYPE_OPTIONS,
   applyCustomerTypeBranch,
   applyPlaceToCoreAddress,
   clearCoreAddressVerification,
@@ -869,6 +873,15 @@ export function CustomerForm({
   }
 
   const selectedType = normalizeCustomerType(values.customerType);
+  const selectedTypeKey =
+    selectedType === CUSTOMER_TYPE_RECEIVER ? "receiver" : "sender";
+
+  useEffect(() => {
+    if (isEditing || lockCustomerType) return;
+    document.getElementById(`customerType-${selectedTypeKey}`)?.focus();
+    // Autofocus the default type button once when opening add customer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="flex min-h-0 flex-1 flex-col">
@@ -877,25 +890,26 @@ export function CustomerForm({
           <FormSection variant="card" icon={User} title={`01 · ${t("customers.form.sections.general")}`}>
             <div className="grid gap-2.5">
               <div className="space-y-1">
-                <Label htmlFor="customerType">
+                <Label id="customerType-label">
                   {t("customers.form.fields.customerType")} <span className="text-destructive">*</span>
                 </Label>
-                <SearchableSelect
-                  id="customerType"
-                  value={String(selectedType)}
-                  onValueChange={(next) => handleCustomerTypeChange(Number(next))}
-                  options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
-                    value: String(option.value),
-                    label:
-                      option.value === CUSTOMER_TYPE_SENDER
-                        ? t("customers.types.sender")
-                        : t("customers.types.receiver"),
-                  }))}
-                  disabled={lockCustomerType}
-                  autoFocus={!isEditing && !lockCustomerType}
-                  required
-                  mobileSheet
-                />
+                <div data-enter-navigation="field">
+                  <SegmentedControl<"sender" | "receiver">
+                    id="customerType"
+                    aria-labelledby="customerType-label"
+                    value={selectedTypeKey}
+                    disabled={lockCustomerType}
+                    onValueChange={(next) =>
+                      handleCustomerTypeChange(
+                        next === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+                      )
+                    }
+                    options={[
+                      { value: "sender", label: t("customers.types.sender") },
+                      { value: "receiver", label: t("customers.types.receiver") },
+                    ]}
+                  />
+                </div>
                 {!lockCustomerType && showAddresses ? (
                   <p className="text-xs text-muted-foreground">{t("customers.form.workflow.typeChangeHint")}</p>
                 ) : null}

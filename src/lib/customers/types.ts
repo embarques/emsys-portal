@@ -621,6 +621,22 @@ export function getPortalBranchForCustomerType(customerType: number | null | und
   return isCustomerReceiverType(customerType) ? "dr" : "usa";
 }
 
+/** USA/NY → sender; DR/RD/DO → receiver. Unknown codes fall back to sender. */
+export function resolvePortalBranchFromCode(code: string | null | undefined): CustomerPortalBranch {
+  const normalized = String(code ?? "").trim().toUpperCase();
+  if (normalized && BRANCH_CODE_TO_PORTAL[normalized]) {
+    return BRANCH_CODE_TO_PORTAL[normalized];
+  }
+  return "usa";
+}
+
+/** Default customer type for a branch code: USA → sender, DR → receiver. */
+export function getDefaultCustomerTypeForBranchCode(code: string | null | undefined): number {
+  return resolvePortalBranchFromCode(code) === "dr"
+    ? CUSTOMER_TYPE_RECEIVER
+    : CUSTOMER_TYPE_SENDER;
+}
+
 export function getDefaultCountryForPortalBranch(portal: CustomerPortalBranch): string {
   return portal === "dr" ? "DO" : "US";
 }
@@ -637,15 +653,22 @@ export function applyCustomerTypeBranch(values: CustomerFormValues): CustomerFor
   };
 }
 
-export function createEmptyCustomerForm(): CustomerFormValues {
-  const branch = createCustomerBranchFromPortal("usa");
-  const address = createEmptyCustomerCoreAddress("US", true);
+export function createEmptyCustomerForm(
+  customerType: number = CUSTOMER_TYPE_SENDER,
+): CustomerFormValues {
+  const normalizedType = normalizeCustomerType(customerType);
+  const portal = getPortalBranchForCustomerType(normalizedType);
+  const branch = createCustomerBranchFromPortal(portal);
+  const address = createEmptyCustomerCoreAddress(
+    getDefaultCountryForPortalBranch(portal),
+    true,
+  );
 
   return {
     id: "",
     oldID: null,
     name: "",
-    customerType: CUSTOMER_TYPE_SENDER,
+    customerType: normalizedType,
     phones: createDefaultRecordPhones(),
     email: "",
     active: true,

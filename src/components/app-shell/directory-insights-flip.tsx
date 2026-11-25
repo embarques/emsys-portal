@@ -60,6 +60,11 @@ type DirectoryInsightsFlipProps = {
   metrics?: DirectoryInsightMetric[];
   /** Optional custom back face (e.g. appointment pie chart). */
   insights?: ReactNode;
+  /**
+   * Extra content below the default metrics grid (e.g. histogram charts).
+   * Ignored when `insights` is provided.
+   */
+  insightsExtra?: ReactNode;
   children: ReactNode;
   className?: string;
   /** Optional workspace title used in the insights header. */
@@ -282,10 +287,12 @@ export function DirectoryInsightsMetricsGrid({
 function DirectoryInsightsFace({
   metrics,
   title,
+  extra,
   onBack,
 }: {
   metrics: DirectoryInsightMetric[];
   title?: string;
+  extra?: ReactNode;
   onBack: () => void;
 }) {
   return (
@@ -295,7 +302,10 @@ function DirectoryInsightsFace({
         <DirectoryInsightsToggle open onOpenChange={(next) => !next && onBack()} />
       }
     >
-      <DirectoryInsightsMetricsGrid metrics={metrics} />
+      <div className="space-y-5">
+        <DirectoryInsightsMetricsGrid metrics={metrics} />
+        {extra}
+      </div>
     </DirectoryInsightsShell>
   );
 }
@@ -309,6 +319,7 @@ export function DirectoryInsightsFlip({
   onOpenChange,
   metrics = [],
   insights,
+  insightsExtra,
   children,
   className,
   title,
@@ -366,6 +377,7 @@ export function DirectoryInsightsFlip({
             <DirectoryInsightsFace
               metrics={metrics}
               title={title}
+              extra={insightsExtra}
               onBack={() => onOpenChange(false)}
             />
           )}

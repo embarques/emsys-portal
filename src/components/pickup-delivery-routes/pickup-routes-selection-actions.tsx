@@ -5,7 +5,10 @@ import { Eye, Loader2, Map, Printer, RouteOff } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { normalizeApiError } from "@/lib/api/axios";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
@@ -212,7 +215,7 @@ export function PickupRoutesSelectionActions({
           : t("routes.pickupRoutes.actions.print")}
       </Button>
       <TableSelectionActionsMenu disabled={isBusy}>
-        <DropdownMenuItem
+        <TableSelectionActionItem
           onSelect={() => void mapSelectedPickupRoute()}
           disabled={actionsDisabled || !singleSelectedRouteId || isBusy}
           className={tableSelectionActionMenuStyles.map}
@@ -225,19 +228,19 @@ export function PickupRoutesSelectionActions({
           {isOpeningMap
             ? t("routes.pickupRoutes.actions.loadingMap")
             : t("routes.pickupRoutes.actions.mapRoute")}
-        </DropdownMenuItem>
+        </TableSelectionActionItem>
         {singleSelectedRouteId || actionsDisabled ? (
-          <DropdownMenuItem
+          <TableSelectionActionItem
             onSelect={viewSelectedPickupRoute}
             disabled={actionsDisabled || isPrinting || isClearing}
             className={tableSelectionActionMenuStyles.view}
           >
             <Eye className="size-4" />
             {t("routes.pickupRoutes.actions.viewRoute")}
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
         {singleSelectedRouteId || actionsDisabled ? (
-          <DropdownMenuItem
+          <TableSelectionActionItem
             onSelect={() => setClearRouteOpen(true)}
             disabled={actionsDisabled || isPrinting || isClearing}
             className={tableSelectionActionMenuStyles.caution}
@@ -246,7 +249,7 @@ export function PickupRoutesSelectionActions({
             {isClearing
               ? t("routes.pickupRoutes.actions.clearing")
               : t("routes.pickupRoutes.actions.clearRoute")}
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
       </TableSelectionActionsMenu>
 

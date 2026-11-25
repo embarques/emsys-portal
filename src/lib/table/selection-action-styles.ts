@@ -81,3 +81,21 @@ export const tableSelectionActionMenuStyles = {
   complete: "text-emerald-700 focus:text-emerald-700 dark:text-emerald-300 dark:focus:text-emerald-300",
   caution: "text-amber-700 focus:text-amber-700 dark:text-amber-300 dark:focus:text-amber-300",
 } as const;
+
+/**
+ * Map a menu-item tint class (from `tableSelectionActionMenuStyles`) back to the
+ * matching outline button tint for single-action flattening.
+ */
+export function outlineStyleFromMenuActionClass(className?: string): string | undefined {
+  if (!className) return undefined;
+  const keys = Object.keys(tableSelectionActionMenuStyles) as Array<
+    keyof typeof tableSelectionActionMenuStyles
+  >;
+  for (const key of keys) {
+    const menuClass = tableSelectionActionMenuStyles[key];
+    if (className === menuClass || className.includes(menuClass)) {
+      return tableSelectionActionStyles[key];
+    }
+  }
+  return undefined;
+}

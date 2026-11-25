@@ -61,17 +61,6 @@ export function usePredefinedRouteWorkspace(onCreated?: (route: PredefinedRoute)
     }
   });
 
-  async function remove(item: PredefinedRoute) {
-    if (busy) return;
-    if (!window.confirm(t("predefinedRoutes.confirmDelete", { name: item.name }))) return;
-    try {
-      await mutations.remove.mutateAsync(item.id);
-      feedback.notifyDeleted(t("predefinedRoutes.entity"), 1);
-    } catch (cause) {
-      feedback.notifyError(normalizeApiError(cause).message);
-    }
-  }
-
   return {
     form,
     open,
@@ -80,7 +69,6 @@ export function usePredefinedRouteWorkspace(onCreated?: (route: PredefinedRoute)
     busy,
     edit,
     save,
-    remove,
     deleteRecord: (item: PredefinedRoute) => mutations.remove.mutateAsync(item.id),
     setOpen: (value: boolean) => {
       if (!busy) setOpen(value);

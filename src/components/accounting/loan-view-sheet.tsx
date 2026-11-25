@@ -6,7 +6,10 @@ import {
   LoanRecordActions,
   type LoanRecordAction,
 } from "@/components/accounting/loan-record-actions";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -16,7 +19,8 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -125,9 +129,9 @@ export function LoanViewSheet({
             <RecordViewSheetDetailRow
               label={t("accounting.loans.details.balance")}
               value={
-                <span className={getLoanBalanceMoneyClass(loan.balance)}>
+                <TableTagText className={getLoanBalanceMoneyClass(loan.balance)}>
                   {formatLoanMoney(loan.balance)}
-                </span>
+                </TableTagText>
               }
             />
             <RecordViewSheetDetailRow
@@ -255,7 +259,7 @@ export function LoanViewSheet({
               <>
                 <TableSelectionActionsMenu hidden={!showSecondaryActionsMenu}>
                   {onExportExcel ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={isPrinting}
                       onSelect={() => onExportExcel(loan)}
                       className={tableSelectionActionMenuStyles.export}
@@ -264,7 +268,7 @@ export function LoanViewSheet({
                       {isPrinting
                         ? t("accounting.loans.payments.excelPreparing")
                         : t("accounting.loans.payments.excel")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showFooterActions ? (
                     <LoanRecordActions

@@ -1,5 +1,6 @@
 "use client";
 
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
 import { useDeliveryRouteRate } from "@/lib/deliveries/hooks/use-delivery-route-rate";
 import { toDopAmount, type AssignedDeliveryBarcode } from "@/lib/deliveries/types";
@@ -10,8 +11,10 @@ import { cn } from "@/lib/utils";
 export function DeliveryBalanceAmount({ balance, rate, className }: { balance: number; rate?: number; className?: string }) {
   const dop = toDopAmount(balance, rate);
   return (
-    <span className={cn("inline-flex flex-col", className)}>
-      <span className={getInvoiceBalanceMoneyClass(balance)}>{formatInvoiceMoney(balance)}</span>
+    <span className={cn("inline-flex flex-col items-start gap-0.5", className)}>
+      <TableTagText className={getInvoiceBalanceMoneyClass(balance)}>
+        {formatInvoiceMoney(balance)}
+      </TableTagText>
       {dop != null ? <span className="text-xs tabular-nums text-muted-foreground">{formatDailyIncomeMoney(dop, "DOP")}</span> : null}
     </span>
   );

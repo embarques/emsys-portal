@@ -15,7 +15,10 @@ export function InventoryDocumentStatusBadge({
 }) {
   const { t } = useTranslation();
   return (
-    <Badge variant="outline" className={cn(DOCUMENT_STATUS_BADGE_CLASSES[status], className)}>
+    <Badge
+      variant="outline"
+      className={cn("rounded-full px-2.5 py-1", DOCUMENT_STATUS_BADGE_CLASSES[status], className)}
+    >
       {getDocumentStatusLabel(status, t)}
     </Badge>
   );
@@ -26,11 +29,12 @@ export function InventoryActiveBadge({ isActive }: { isActive: boolean }) {
   return (
     <Badge
       variant="outline"
-      className={
+      className={cn(
+        "rounded-full px-2.5 py-1",
         isActive
           ? DOCUMENT_STATUS_BADGE_CLASSES.POSTED
-          : DOCUMENT_STATUS_BADGE_CLASSES.CANCELLED
-      }
+          : DOCUMENT_STATUS_BADGE_CLASSES.CANCELLED,
+      )}
     >
       {t(isActive ? "inventory.activeStatuses.active" : "inventory.activeStatuses.inactive")}
     </Badge>

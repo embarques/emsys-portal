@@ -75,8 +75,10 @@ type DataTableProps<T> = {
    */
   minWidth?: number;
   /**
-   * Row/header spacing. `compact` tightens padding, keeps `text-sm`, auto-fits
-   * columns to single-line content, and only wraps a column after the user shrinks it.
+   * Row/header spacing. Portal directories default to `compact` (Appointments
+   * standard): tighter padding, `text-sm`, auto-fit to single-line content, and
+   * wrap only after the user shrinks a column. Pass `default` only for rare
+   * non-directory tables that need looser spacing.
    */
   density?: DataTableDensity;
   selectable?: boolean;
@@ -89,6 +91,8 @@ type DataTableProps<T> = {
   onToggleSelectAll?: (checked: boolean) => void;
   onToggleSelect?: (id: string, checked: boolean) => void;
   rowLabel?: (row: T) => string;
+  /** Optional extra classes for a data row (e.g. warning / status tint). */
+  getRowClassName?: (row: T) => string | undefined;
   onRowClick?: (row: T) => void;
   onRowDoubleClick?: (row: T) => void;
   /** Highlights the row whose key matches (e.g. when a view sheet is open). */
@@ -118,7 +122,7 @@ function DataTableContent<T>({
   columnLayout,
   emptyState,
   minWidth = 960,
-  density = "default",
+  density = "compact",
   selectable = false,
   isRowSelectable,
   selectedIds = [],
@@ -129,6 +133,7 @@ function DataTableContent<T>({
   onToggleSelectAll,
   onToggleSelect,
   rowLabel,
+  getRowClassName,
   onRowClick,
   onRowDoubleClick,
   activeRowId,
@@ -662,7 +667,8 @@ function DataTableContent<T>({
                     (onRowClick || onRowDoubleClick) && "cursor-pointer",
                     "border-b transition-colors last:border-0 hover:bg-muted/25",
                     isCompact && "even:bg-muted/25 last:border-b-0",
-                    (selected || active) && "bg-primary/[0.06]"
+                    (selected || active) && "bg-primary/[0.06]",
+                    getRowClassName?.(row),
                   )}
                   onMouseDown={handleRowMouseDown}
                   onClick={(event) => handleRowClick(event, row)}

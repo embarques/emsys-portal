@@ -601,8 +601,6 @@
       "clearanceCleared": "Cleared"
     },
     "lineItems": {
-      "title": "Line items",
-      "invoice": "Invoice {{number}}",
       "view": "View line items",
       "viewForInvoice": "View line items for invoice {{number}}",
       "loading": "Loading line items…",

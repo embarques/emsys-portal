@@ -144,11 +144,12 @@ export function getInvoicePaidMoneyClass(amount: number): string {
   return "font-medium tabular-nums text-emerald-700 dark:text-emerald-300";
 }
 
+/** Pill colors for invoice balance: paid off = emerald; owed = rose. */
 export function getInvoiceBalanceMoneyClass(amount: number): string {
   if (amount <= 0) {
-    return "font-medium tabular-nums text-emerald-700 dark:text-emerald-300";
+    return "border-transparent bg-emerald-500/15 font-medium tabular-nums text-emerald-700 dark:text-emerald-300";
   }
-  return "font-medium tabular-nums text-rose-700 dark:text-rose-300";
+  return "border-transparent bg-rose-500/15 font-medium tabular-nums text-rose-700 dark:text-rose-300";
 }
 
 export type InvoicePaidStatusView = "closed" | "open";

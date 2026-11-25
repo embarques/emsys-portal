@@ -27,6 +27,7 @@ import { TableSelectionToolbar } from "@/components/app-shell/table-selection-to
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterPanel } from "@/components/app-shell/table-advanced-filter-panel";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { getChartAccountTypeBadgeClass } from "@/lib/accounting/chart-accounts/display";
 import { CHART_ACCOUNT_API_TABLE_FIELDS } from "@/lib/accounting/chart-accounts/table-fields";
 import { CHART_ACCOUNT_TABLE_FILTER_FIELDS } from "@/lib/accounting/chart-accounts/filter-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
@@ -114,22 +115,6 @@ function accountValues(account: ChartAccount): ChartAccountValues {
   };
 }
 
-function chartAccountTypeBadgeClassName(type: ChartAccountType) {
-  switch (type) {
-    case "ASSET":
-      return "border-transparent bg-blue-100 text-blue-700";
-    case "EXPENSE":
-      return "border-transparent bg-rose-100 text-rose-700";
-    case "REVENUE":
-      return "border-transparent bg-emerald-100 text-emerald-700";
-    case "BANK":
-      return "border-transparent bg-cyan-100 text-cyan-700";
-    case "LOAN":
-      return "border-transparent bg-amber-100 text-amber-700";
-    default:
-      return "border-transparent bg-muted text-muted-foreground";
-  }
-}
 
 function MobileChartAccountRow({
   account,
@@ -170,7 +155,7 @@ function MobileChartAccountRow({
           <Badge
             className={cn(
               "rounded-full px-3 py-1 text-xs font-semibold",
-              chartAccountTypeBadgeClassName(account.type),
+              getChartAccountTypeBadgeClass(account.type),
             )}
           >
             {t(`accounting.chartOfAccounts.types.${account.type}`)}
@@ -328,7 +313,7 @@ export function ChartOfAccountsWorkspace() {
         label: t("accounting.chartOfAccounts.columns.type"),
         truncateCell: false,
         renderCell: (account) => (
-          <TableTagText>
+          <TableTagText className={getChartAccountTypeBadgeClass(account.type)}>
             {t(`accounting.chartOfAccounts.types.${account.type}`)}
           </TableTagText>
         ),

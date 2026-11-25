@@ -496,7 +496,7 @@ export function ActiveRoutesDirectoryWorkspace({
         />
 
         {activeRoutesQuery.isError ? (
-          <div className="px-6 py-8 text-sm text-destructive">
+          <div className="border-b px-6 py-3 text-sm text-destructive">
             {toErrorMessage(activeRoutesQuery.error)}
           </div>
         ) : (

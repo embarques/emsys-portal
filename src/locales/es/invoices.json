@@ -601,8 +601,6 @@
       "clearanceCleared": "Compensado"
     },
     "lineItems": {
-      "title": "Artículos de la factura",
-      "invoice": "Factura {{number}}",
       "view": "Ver artículos",
       "viewForInvoice": "Ver artículos de la factura {{number}}",
       "loading": "Cargando artículos…",

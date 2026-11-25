@@ -198,11 +198,11 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
         {!detailQuery.isFetching && total > 1 ? (
           <button
             type="button"
-            aria-label={t("customers.addresses.viewMoreAria")}
+            aria-label={t("customers.addresses.viewMoreAria", { count: total - 1 })}
             className="mt-0.5 text-left text-xs font-medium text-primary hover:underline"
             onClick={openSheet}
           >
-            {t("customers.addresses.viewMore")}
+            {t("customers.addresses.viewMore", { count: total - 1 })}
           </button>
         ) : null}
       </div>

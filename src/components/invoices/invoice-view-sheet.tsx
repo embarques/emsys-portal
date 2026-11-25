@@ -15,8 +15,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
+
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 
@@ -528,21 +531,21 @@ export function InvoiceViewSheet({
                   : t("invoices.wizard.actions.printInvoice")}
               </Button>
               <TableSelectionActionsMenu>
-                <DropdownMenuItem
+                <TableSelectionActionItem
                   disabled={manageItemsDisabled}
                   onSelect={() => onManageItems(invoice)}
                   className={tableSelectionActionMenuStyles.documents}
                 >
                   <Tags className="size-4" />
                   {t("invoices.staging.tableAction")}
-                </DropdownMenuItem>
+                </TableSelectionActionItem>
                 {allowRequestChange ? (
-                  <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+                  <TableSelectionActionItem asChild className={tableSelectionActionMenuStyles.request}>
                     <Link href={changeRequestHref("invoice", invoice.invoiceId)}>
                       <FilePenLine className="size-4" />
                       {t("accounting.journalLifecycle.request")}
                     </Link>
-                  </DropdownMenuItem>
+                  </TableSelectionActionItem>
                 ) : null}
               </TableSelectionActionsMenu>
             </>

@@ -39,6 +39,11 @@
       "merchandise": "Merchandise",
       "receiver": "Receiver",
       "sender": "Sender"
+    },
+    "fields": {
+      "name": "Name",
+      "address": "Address",
+      "phones": "Phones"
     }
   },
   "filters": {

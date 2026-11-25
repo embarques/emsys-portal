@@ -39,6 +39,11 @@
       "merchandise": "Mercancía",
       "receiver": "Destinatario",
       "sender": "Remitente"
+    },
+    "fields": {
+      "name": "Nombre",
+      "address": "Dirección",
+      "phones": "Teléfonos"
     }
   },
   "filters": {

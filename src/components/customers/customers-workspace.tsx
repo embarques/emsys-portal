@@ -22,6 +22,7 @@ import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
 } from "@/components/app-shell/directory-insights-flip";
+import { ClientHistogramCharts } from "@/components/dashboard/dashboard-histogram-charts";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { CUSTOMER_API_TABLE_FIELDS } from "@/lib/customers/table-fields";
@@ -348,15 +349,10 @@ export function CustomersWorkspace() {
           <Badge
             variant="outline"
             className={cn(
-              "gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1",
+              "whitespace-nowrap rounded-full px-2.5 py-1",
               getClientTypeBadgeClass(clientType),
             )}
           >
-            {clientType === "receiver" ? (
-              <UserCheck className="size-3.5 shrink-0" aria-hidden="true" />
-            ) : (
-              <Send className="size-3.5 shrink-0" aria-hidden="true" />
-            )}
             {typeLabel}
           </Badge>
         );
@@ -567,6 +563,7 @@ export function CustomersWorkspace() {
         open={insightsOpen}
         onOpenChange={setInsightsOpen}
         metrics={insightMetrics}
+        insightsExtra={<ClientHistogramCharts />}
         title={t("customers.title")}
         className="mt-6 hidden md:block"
       >

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Controller } from "react-hook-form";
 import { ChevronLeft, ChevronRight, FileText, Plus, RefreshCw, UserRound } from "lucide-react";
+import type { SortDirection } from "@/lib/api/list-query";
 
 import { DataTable } from "@/components/app-shell/data-table";
 import {
@@ -20,12 +21,15 @@ import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advance
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { INVOICE_POOL_FILTER_FIELDS } from "@/lib/invoices/invoice-pool-filters";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
@@ -82,18 +86,21 @@ function ReservedInvoicePoolPanel() {
       id: "number",
       label: text("number"),
       hideable: false,
+      sortField: "number",
       cellClassName: "font-mono font-medium",
       renderCell: (item) => item.number,
     },
     {
       id: "reservedAt",
       label: text("reservedAt"),
+      sortField: "reservedAt",
       cellClassName: "text-muted-foreground",
       renderCell: (item) => item.reservedAt ? formatAuditDateTime(item.reservedAt) : "—",
     },
     {
       id: "user",
       label: text("user"),
+      sortField: "allocation.userId",
       renderCell: (item) => item.allocation.userId
         ? (model.users.data?.items.find(user => user.id === item.allocation.userId)?.name ?? item.allocation.userId)
         : <span className="text-muted-foreground">{text("unassigned")}</span>,
@@ -101,6 +108,7 @@ function ReservedInvoicePoolPanel() {
     {
       id: "status",
       label: text("status"),
+      sortField: "claimed",
       renderCell: (item) => (
         <div className="flex items-center gap-1">
           <Badge variant={item.claimed ? "secondary" : "outline"} className={item.claimed ? undefined : item.allocation.userId ? "border-primary/20 bg-primary/10 text-primary" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"}>
@@ -112,6 +120,10 @@ function ReservedInvoicePoolPanel() {
     },
   ];
   const columnLayout = useColumnVisibility("reserved-invoices", columns);
+
+  function handleSortChange(field: string, direction: SortDirection) {
+    model.setSort(`${field}:${direction}`);
+  }
 
   if (!model.ready) return <p role="status">{text("loading")}</p>;
   if (!model.canView) return <p role="alert">{text("denied")}</p>;
@@ -143,8 +155,8 @@ function ReservedInvoicePoolPanel() {
       )}
 
       {showStatus && (
-        <Card className="mb-6">
-          <CardContent className="space-y-3">
+        <Card className="mb-6 gap-0">
+          <CardContent className="space-y-3 pt-6">
             {model.justGenerated && !model.pending && <InvoiceWizardNotice tone="warning" message={text("generationNotice")} className="rounded-md border px-3 sm:px-3" />}
             {model.mutation.isError && !dialogOpen && <p role="alert" className="text-sm text-destructive">{normalizeApiError(model.mutation.error).message}</p>}
             {model.pending && !busy && <div className="flex flex-wrap items-center gap-3" role="status"><p className="text-sm">{text("pending")}</p><Button onClick={model.retry}>{text("retry")}</Button></div>}
@@ -214,22 +226,8 @@ function ReservedInvoicePoolPanel() {
         </CompactActionDialogContent>
       </Dialog>
 
-      <Card className="gap-0">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
-          <label className="flex items-center gap-2 text-sm">
-            {text("sort")}
-            <select className="h-9 rounded-md border bg-background px-2" value={model.sort}
-              disabled={busy || model.pending} onChange={event => model.setSort(event.target.value)}>
-              {[
-                ["id", "id"], ["number", "number"], ["reservedAt", "reservedAt"],
-                ["createdAt", "createdAt"], ["allocation.userId", "user"], ["claimed", "status"],
-              ].flatMap(([field, label]) => ["asc", "desc"].map(direction => (
-                <option key={`${field}:${direction}`} value={`${field}:${direction}`}>
-                  {text(label)} · {text(direction)}
-                </option>
-              )))}
-            </select>
-          </label>
           <TableDirectoryToolbar
             search={<TableSearchInput value={model.numberSearch} onChange={model.setNumberSearch} maxLength={100} placeholder={text("search")} disabled={busy || model.pending} />}
             columnLayout={columnLayout}
@@ -261,25 +259,29 @@ function ReservedInvoicePoolPanel() {
         {model.selected.length > 0 && <fieldset disabled={model.selectionLocked}>
           <TableSelectionToolbar selectedIds={model.selected.map(item => item.id)} pageRowIds={model.selectable.map(item => item.id)} totalCount={model.query.data?.remaining} onSelectedIdsChange={model.setSelectedIds} hideStandardActions actions={
             <TableSelectionActionsMenu disabled={model.selectionLocked}>
-              <DropdownMenuItem
+              <TableSelectionActionItem
                 disabled={model.selectionLocked || !model.canAssign || !model.canAssignSelection}
                 onSelect={openAssign}
                 className={tableSelectionActionMenuStyles.assign}
               >
                 {text("assign")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
+              </TableSelectionActionItem>
+              <TableSelectionActionItem
                 disabled={model.selectionLocked || !model.canAssign || !model.canReturnSelection}
                 onSelect={() => model.act("return")}
                 className={tableSelectionActionMenuStyles.caution}
               >
                 {text("return")}
-              </DropdownMenuItem>
+              </TableSelectionActionItem>
             </TableSelectionActionsMenu>
           } />
         </fieldset>}
 
-        {model.query.isError ? <p role="alert" className="px-6 py-8 text-sm text-destructive">{normalizeApiError(model.query.error).message}</p> : loading ? (
+        {model.query.isError ? (
+          <p role="alert" className="border-b px-6 py-3 text-sm text-destructive">
+            {normalizeApiError(model.query.error).message}
+          </p>
+        ) : loading ? (
           <DirectoryTableLoader icon={FileText} title={text("loading")} description={text("description")} columns={columns.map(column => column.label)} />
         ) : (
           <fieldset className="min-w-0" disabled={model.selectionLocked}>
@@ -291,7 +293,8 @@ function ReservedInvoicePoolPanel() {
               columnLayout={columnLayout}
               minWidth={560}
               isPageDataPending={model.query.isFetching || model.searchPending}
-              sortUnavailable
+              sort={model.sort}
+              onSortChange={handleSortChange}
               selectable
               isRowSelectable={item => !model.selectionLocked && !item.claimed}
               selectedIds={model.selected.map(item => item.id)}
@@ -301,12 +304,12 @@ function ReservedInvoicePoolPanel() {
               selectAllIndeterminate={model.selected.length > 0 && model.selected.length < model.selectable.length}
               onToggleSelectAll={checked => model.setSelectedIds(checked ? model.selectable.map(item => item.id) : [])}
               onToggleSelect={id => { const item = model.selectable.find(item => item.id === id); if (item) model.toggle(item); }}
-              emptyState={<p className="text-muted-foreground">{text("empty")}</p>}
+              emptyState={<p className="text-sm text-muted-foreground">{text("empty")}</p>}
             />
           </fieldset>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t px-6 py-4">
+        <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground" aria-live="polite">{remaining}</p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={!model.hasPrevious || model.query.isFetching || model.searchPending || busy} onClick={model.previous}><ChevronLeft className="size-4" />{text("previous")}</Button>
