@@ -52,6 +52,7 @@ import {
   mapPaidRegionToPaymentLocation,
   mapPaymentLocationToPaidRegion,
   normalizeApiInvoiceMoney,
+  normalizeApiInvoicePaymentSummary,
   resolveLineLabelCount,
   resolveLineTotal,
   type Invoice,
@@ -209,6 +210,7 @@ type ApiInvoice = {
   payment?: number;
   balance?: number;
   discount?: number;
+  paymentSummary?: unknown;
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
   employee?: ApiInvoiceUser;
@@ -660,6 +662,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     paidRegion: paidRegion || undefined,
     paidStatus: String(item.paidStatus ?? "").trim() || undefined,
     cost: cost || undefined,
+    paymentSummary: normalizeApiInvoicePaymentSummary(item.paymentSummary),
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
     pickupSource: receivedBy.pickupSource,

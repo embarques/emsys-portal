@@ -9,6 +9,8 @@ import { getBranchLabel } from "@/lib/vehicles/display";
 
 import type {
   Invoice,
+  InvoiceClearanceStatus,
+  InvoiceCustomerPaymentStatus,
   InvoiceLineItem,
   InvoicePaymentLocation,
   InvoicePaymentMethod,
@@ -170,6 +172,42 @@ export function getInvoicePaidStatusBadgeClass(status: InvoicePaidStatusView): s
   return status === "closed"
     ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
     : "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
+}
+
+const INVOICE_CUSTOMER_PAYMENT_LABEL_KEYS: Record<InvoiceCustomerPaymentStatus, string> = {
+  UNPAID: "invoices.view.payment.clientUnpaid",
+  PARTIALLY_PAID: "invoices.view.payment.clientPartiallyPaid",
+  PAID: "invoices.view.payment.clientPaid",
+  VOID: "invoices.view.payment.clientVoid",
+};
+
+const INVOICE_CLEARANCE_LABEL_KEYS: Record<InvoiceClearanceStatus, string> = {
+  NOT_REQUIRED: "invoices.view.payment.clearanceNotRequired",
+  OUTSTANDING: "invoices.view.payment.clearanceOutstanding",
+  PARTIALLY_CLEARED: "invoices.view.payment.clearancePartial",
+  CLEARED: "invoices.view.payment.clearanceCleared",
+};
+
+export function getInvoiceCustomerPaymentLabel(status: InvoiceCustomerPaymentStatus, t: TranslateFn): string {
+  return t(INVOICE_CUSTOMER_PAYMENT_LABEL_KEYS[status]);
+}
+
+export function getInvoiceClearanceLabel(status: InvoiceClearanceStatus, t: TranslateFn): string {
+  return t(INVOICE_CLEARANCE_LABEL_KEYS[status]);
+}
+
+export function getInvoiceCustomerPaymentBadgeClass(status: InvoiceCustomerPaymentStatus): string {
+  if (status === "PAID") return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+  if (status === "VOID") return "border-transparent bg-muted text-muted-foreground";
+  if (status === "PARTIALLY_PAID") return "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
+  return "border-transparent bg-rose-500/15 text-rose-700 dark:text-rose-300";
+}
+
+/** Clearance is an internal settlement state, so it never reads as money owed. */
+export function getInvoiceClearanceBadgeClass(status: InvoiceClearanceStatus): string {
+  if (status === "CLEARED") return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+  if (status === "NOT_REQUIRED") return "border-transparent bg-muted text-muted-foreground";
+  return "border-transparent bg-sky-500/15 text-sky-700 dark:text-sky-300";
 }
 
 export function truncateInvoiceId(invoiceId: string): string {

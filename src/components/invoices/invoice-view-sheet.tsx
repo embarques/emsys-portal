@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useMemo, useState } from "react";
 import {
+  Clock3,
   FilePenLine,
   Info,
   Printer,
@@ -49,7 +50,10 @@ import {
   formatInvoiceMoney,
   formatInvoicePickupAssignmentLabel,
   getContainerLabelForInvoice,
-  getInvoiceBalance,
+  getInvoiceClearanceBadgeClass,
+  getInvoiceClearanceLabel,
+  getInvoiceCustomerPaymentBadgeClass,
+  getInvoiceCustomerPaymentLabel,
   getInvoicePaidStatusLabel,
   getInvoicePartyCoreAddress,
   getInvoiceSubtotal,
@@ -59,7 +63,9 @@ import {
 } from "@/lib/invoices/display";
 import {
   isInvoiceEmployeePickupSource,
+  resolveInvoicePaymentSummary,
   type Invoice,
+  type InvoicePaymentSummary,
 } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -192,6 +198,50 @@ function InvoiceTotalCell({
   );
 }
 
+/**
+ * Receipts awaiting clearance are money the client already handed over, so the
+ * outstanding balance above excludes them. This breaks that amount out so
+ * accounting keeps the receivable balance in view, and only renders when the
+ * invoice actually holds an unsettled receipt.
+ */
+function InvoiceClearanceBreakdown({
+  summary,
+  t,
+}: {
+  summary: InvoicePaymentSummary;
+  t: (key: string) => string;
+}) {
+  if (summary.pendingClearance <= 0) return null;
+
+  return (
+    <div className="mt-2.5 rounded-lg border border-sky-500/40 bg-sky-500/5 px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        <Clock3 className="size-3.5 shrink-0 text-sky-700 dark:text-sky-300" />
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+          {t("invoices.view.payment.clearanceBreakdown")}
+        </p>
+      </div>
+      <dl className="mt-2 space-y-1">
+        {[
+          { label: t("invoices.view.payment.pendingClearance"), value: summary.pendingClearance },
+          { label: t("invoices.view.payment.currentBalance"), value: summary.receivableBalance },
+          { label: t("invoices.view.payment.balanceAfterClearance"), value: summary.outstandingBalance },
+        ].map((row) => (
+          <div key={row.label} className="flex items-baseline justify-between gap-3">
+            <dt className="text-xs text-muted-foreground">{row.label}</dt>
+            <dd className="text-sm font-semibold tabular-nums text-foreground">
+              {formatInvoiceMoney(row.value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {t("invoices.view.payment.pendingClearanceHint")}
+      </p>
+    </div>
+  );
+}
+
 function getPickupAssignmentFieldLabel(
   invoice: Invoice,
   t: (key: string) => string,
@@ -243,11 +293,14 @@ export function InvoiceViewSheet({
   const totals = useMemo(() => {
     if (!invoice) return null;
     const subtotal = getInvoiceSubtotal(invoice);
-    const balance = getInvoiceBalance(invoice);
-    return { subtotal, balance };
+    return { subtotal };
   }, [invoice]);
+  const payment = useMemo(
+    () => (invoice ? resolveInvoicePaymentSummary(invoice) : null),
+    [invoice],
+  );
 
-  if (!invoice || !totals) return null;
+  if (!invoice || !totals || !payment) return null;
 
   const paidStatus = resolveInvoicePaidStatus(invoice);
   const empty = t("common.empty.dash");
@@ -337,16 +390,17 @@ export function InvoiceViewSheet({
                 value={formatInvoiceDeduction(invoice.discount)}
               />
               <InvoiceTotalCell
-                label={t("invoices.columns.amountPaid")}
-                value={formatInvoiceDeduction(invoice.amountPaid)}
-                tone={invoice.amountPaid > 0 ? "positive" : "default"}
+                label={t("invoices.view.payment.totalPaid")}
+                value={formatInvoiceDeduction(payment.totalPaid)}
+                tone={payment.totalPaid > 0 ? "positive" : "default"}
               />
               <InvoiceTotalCell
-                label={t("invoices.columns.balance")}
-                value={formatInvoiceMoney(totals.balance)}
+                label={t("invoices.view.payment.outstandingBalance")}
+                value={formatInvoiceMoney(payment.outstandingBalance)}
                 tone="balance"
               />
             </div>
+            <InvoiceClearanceBreakdown summary={payment} t={t} />
             <RecordViewSheetSection
               title={t("invoices.form.sections.invoiceDetails")}
               icon={Receipt}
@@ -374,6 +428,30 @@ export function InvoiceViewSheet({
                   </Badge>
                 }
               />
+              <RecordViewSheetDetailRow
+                label={t("invoices.view.fields.clientPaymentStatus")}
+                value={
+                  <Badge
+                    variant="outline"
+                    className={getInvoiceCustomerPaymentBadgeClass(payment.customerStatus)}
+                  >
+                    {getInvoiceCustomerPaymentLabel(payment.customerStatus, t)}
+                  </Badge>
+                }
+              />
+              {payment.clearanceStatus === "NOT_REQUIRED" ? null : (
+                <RecordViewSheetDetailRow
+                  label={t("invoices.view.fields.clearanceStatus")}
+                  value={
+                    <Badge
+                      variant="outline"
+                      className={getInvoiceClearanceBadgeClass(payment.clearanceStatus)}
+                    >
+                      {getInvoiceClearanceLabel(payment.clearanceStatus, t)}
+                    </Badge>
+                  }
+                />
+              )}
               <RecordViewSheetDetailRow
                 label={t("invoices.view.fields.paymentLocation")}
                 value={getPaymentLocationLabel(invoice.paymentLocation)}

@@ -569,8 +569,27 @@
       "scanned": "Scanned",
       "paymentLocation": "Payment Location",
       "paymentStatus": "Payment Status",
+      "clientPaymentStatus": "Client Payment",
+      "clearanceStatus": "Payment Clearance",
       "name": "Name",
       "email": "Email"
+    },
+    "payment": {
+      "totalPaid": "Total Paid",
+      "outstandingBalance": "Outstanding Balance",
+      "clearanceBreakdown": "Clearance breakdown",
+      "pendingClearance": "Pending clearance",
+      "currentBalance": "Balance before clearance",
+      "balanceAfterClearance": "Balance once it clears",
+      "pendingClearanceHint": "This payment was already received from the client, so it is not owed. The balance drops to the amount shown once the payment clears.",
+      "clientUnpaid": "Unpaid",
+      "clientPartiallyPaid": "Partially paid",
+      "clientPaid": "Paid",
+      "clientVoid": "Void",
+      "clearanceNotRequired": "No payments",
+      "clearanceOutstanding": "Pending clearance",
+      "clearancePartial": "Partially cleared",
+      "clearanceCleared": "Cleared"
     },
     "lineItems": {
       "title": "Line items",

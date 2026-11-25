@@ -569,8 +569,27 @@
       "scanned": "Escaneado",
       "paymentLocation": "Lugar de pago",
       "paymentStatus": "Estado de pago",
+      "clientPaymentStatus": "Pago del cliente",
+      "clearanceStatus": "Compensación del pago",
       "name": "Nombre",
       "email": "Correo"
+    },
+    "payment": {
+      "totalPaid": "Total pagado",
+      "outstandingBalance": "Saldo pendiente",
+      "clearanceBreakdown": "Desglose de compensación",
+      "pendingClearance": "Pendiente de compensar",
+      "currentBalance": "Saldo antes de compensar",
+      "balanceAfterClearance": "Saldo al compensarse",
+      "pendingClearanceHint": "Este pago ya se recibió del cliente, por eso no se adeuda. El saldo baja al monto indicado cuando el pago se compense.",
+      "clientUnpaid": "Sin pagar",
+      "clientPartiallyPaid": "Pago parcial",
+      "clientPaid": "Pagado",
+      "clientVoid": "Anulada",
+      "clearanceNotRequired": "Sin pagos",
+      "clearanceOutstanding": "Pendiente de compensar",
+      "clearancePartial": "Compensación parcial",
+      "clearanceCleared": "Compensado"
     },
     "lineItems": {
       "title": "Artículos de la factura",
