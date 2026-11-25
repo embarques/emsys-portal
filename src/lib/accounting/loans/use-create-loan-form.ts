@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { createLoanFormSchema } from "./schemas";
 import type { LoanCreateValues } from "./types";
@@ -37,7 +37,7 @@ export function useCreateLoanForm(onSubmit: (values: LoanCreateValues) => Promis
       submitting.current = true;
       form.clearErrors("root.server");
       try { await onSubmit(values); }
-      catch (error) { form.setError("root.server", { message: normalizeApiError(error).message }); }
+      catch (error) { form.setError("root.server", { message: formatFormMutationError(error, t) }); }
       finally { submitting.current = false; }
     })();
   }

@@ -46,7 +46,7 @@ import {
   getHolderNameById,
   summarizeDocumentLines,
 } from "@/lib/inventory/display";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCancelDispatch,
@@ -195,7 +195,7 @@ export function InventoryDispatchesWorkspace() {
       setFormMode(null);
       setEditingDispatch(null);
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -213,7 +213,7 @@ export function InventoryDispatchesWorkspace() {
       setCommandTarget(null);
       setViewDispatch(null);
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -231,7 +231,7 @@ export function InventoryDispatchesWorkspace() {
       setConfirmationTarget(null);
       setViewDispatch(null);
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 

@@ -52,6 +52,7 @@ import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accou
 import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
 import { canOpenEmployeesDirectory } from "@/components/accounting/open-employees-recovery-action";
 import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
@@ -417,8 +418,11 @@ export function DailyIncomeWorkspace() {
       .catch((error) => {
         if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
         setFormError(
-          normalizeDailyIncomeJournalError(error, {
-            canManageEmployees: canOpenEmployeesDirectory(hasPermission),
+          formatFormMutationError(error, t, {
+            formatConflict: (err) =>
+              normalizeDailyIncomeJournalError(err, {
+                canManageEmployees: canOpenEmployeesDirectory(hasPermission),
+              }),
           }),
         );
         return Promise.reject(error);

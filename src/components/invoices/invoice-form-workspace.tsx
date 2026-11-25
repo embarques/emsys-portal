@@ -5,8 +5,8 @@ import {
   OpenEmployeesRecoveryAction,
 } from "@/components/accounting/open-employees-recovery-action";
 import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
-import { isStaleMutation } from "@/lib/api/mutation-version";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { formatFormMutationError } from "@/lib/errors";
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -354,7 +354,10 @@ export function InvoiceCreateWizard({
       };
     } catch (error) {
       return {
-        error: normalizeDailyIncomeJournalError(error, { canManageEmployees }),
+        error: formatFormMutationError(error, t, {
+          formatConflict: (mutationError) =>
+            normalizeDailyIncomeJournalError(mutationError, { canManageEmployees }),
+        }),
       };
     }
   }
@@ -545,9 +548,10 @@ export function InvoiceEditWizard({
       };
     } catch (error) {
       return {
-        error: isStaleMutation(error)
-          ? t("common.form.staleUpdate")
-          : normalizeDailyIncomeJournalError(error, { canManageEmployees }),
+        error: formatFormMutationError(error, t, {
+          formatConflict: (mutationError) =>
+            normalizeDailyIncomeJournalError(mutationError, { canManageEmployees }),
+        }),
       };
     } finally {
       setIsSyncingBarcodes(false);
@@ -587,9 +591,10 @@ export function InvoiceEditWizard({
       return await saveInvoiceWithBarcodeSync(submitted, plan, {});
     } catch (error) {
       return {
-        error: isStaleMutation(error)
-          ? t("common.form.staleUpdate")
-          : normalizeDailyIncomeJournalError(error, { canManageEmployees }),
+        error: formatFormMutationError(error, t, {
+          formatConflict: (mutationError) =>
+            normalizeDailyIncomeJournalError(mutationError, { canManageEmployees }),
+        }),
       };
     }
   }

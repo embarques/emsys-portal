@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 export function canOpenEmployeesDirectory(
   hasPermission: (name: string, resourceType: string) => boolean,
 ): boolean {
-  return hasPermission(PERMISSIONS.employeesView.name, PERMISSIONS.employeesView.resourceType);
+  return hasPermission(PERMISSIONS.employeesView.name, PERMISSIONS.employeesView.resourceType) &&
+    hasPermission(PERMISSIONS.usersView.name, PERMISSIONS.usersView.resourceType) &&
+    hasPermission(PERMISSIONS.employeeUserLink.name, PERMISSIONS.employeeUserLink.resourceType);
 }
 
 function openEmployeesDirectory() {

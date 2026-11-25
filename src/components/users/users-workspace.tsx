@@ -1,5 +1,6 @@
 "use client";
 
+import { EmployeeUserLink } from "@/components/employees/employee-user-link";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -64,6 +65,7 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
+import { formatFormMutationError } from "@/lib/errors";
 import type { DataTableColumn } from "@/lib/table/types";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
@@ -239,7 +241,7 @@ export function UsersWorkspace() {
         } catch (apiError) {
           throw new Error(
             t("users.errors.firebasePartialCreate", {
-              message: normalizeApiError(apiError).message,
+              message: formatFormMutationError(apiError, t),
             }),
           );
         }
@@ -249,7 +251,7 @@ export function UsersWorkspace() {
       setEditingUser(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -269,7 +271,7 @@ export function UsersWorkspace() {
         targets.length === 1 ? targets[0].name : String(targets.length),
       );
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
       setDeactivateTarget(null);
     }
   }
@@ -449,6 +451,8 @@ export function UsersWorkspace() {
     </TableFilterPanel>
   );
 
+  const linkTarget = selectedIds.length === 1 ? pageUsers.find(row => String(row.id) === selectedIds[0]) : undefined;
+
   return (
     <div className="max-w-full overflow-x-hidden">
       <div className="hidden md:block">
@@ -524,6 +528,7 @@ export function UsersWorkspace() {
         ) : null}
 
         <TableSelectionToolbar
+          actions={linkTarget && <EmployeeUserLink key={linkTarget.id} side="user" id={linkTarget.id} name={linkTarget.name} />}
           selectedIds={selectedIds}
           pageRowIds={pageUsers.map((user) => String(user.id))}
           totalCount={totalUsers}

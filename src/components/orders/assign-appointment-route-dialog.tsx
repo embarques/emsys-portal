@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatOrderRouteName } from "@/lib/orders/display";
@@ -171,7 +171,7 @@ export function AssignAppointmentRouteDialog({
       );
       onOpenChange(false);
     } catch (error) {
-      const message = normalizeApiError(error).message;
+      const message = formatFormMutationError(error, t);
       setFormError(message);
       notifyError(message);
     }

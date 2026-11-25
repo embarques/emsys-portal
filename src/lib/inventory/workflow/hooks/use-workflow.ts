@@ -2,6 +2,7 @@
 import { useCallback, useRef } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth/hooks/use-auth';
+import { formatFormMutationError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n';
 import { useAppSelector } from '@/lib/store/hooks';
 import { useWorkspaceQuery } from '@/lib/query/use-workspace-query';
@@ -17,12 +18,13 @@ export function useWorkflowScope() {
   return useAppSelector(state => state.auth.companyId);
 }
 
-/** Translates `inventory.*` error keys raised by the workflow layer; API messages pass through. */
+/** Translates `inventory.*` keys; otherwise uses shared form mutation error formatting (incl. 412). */
 export function useWorkflowErrorMessage() {
   const { t } = useTranslation();
   return useCallback((error: unknown) => {
     const message = workflowError(error);
-    return message.startsWith('inventory.') ? t(message) : message;
+    if (message.startsWith('inventory.')) return t(message);
+    return formatFormMutationError(error, t);
   }, [t]);
 }
 

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
 import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
 import { canOpenEmployeesDirectory } from "@/components/accounting/open-employees-recovery-action";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import {
   useAccountingPaymentMethods,
   useSessionDailyIncomeTransactions,
@@ -44,6 +44,7 @@ export function DailyIncomeTransactionFormWorkspace(props: WorkspaceFormHostProp
 
 function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const transactionSessionId = useId();
   const [summaryContainer, setSummaryContainer] = useState<HTMLDivElement | null>(null);
@@ -83,7 +84,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
   const entryLookups = [employeesQuery, dailyRoutesQuery, invoicesQuery, accountsQuery, bankAccountsQuery, paymentMethodsQuery];
   const lookupLoading = entryLookups.some((query) => query.isLoading);
   const failedLookups = entryLookups.filter((query) => query.isError);
-  const lookupError = failedLookups.length ? normalizeApiError(failedLookups[0].error).message : null;
+  const lookupError = failedLookups.length ? toErrorMessage(failedLookups[0].error) : null;
   const retryLookups = () => { for (const query of failedLookups) void query.refetch(); };
 
   const createJournal = useCreateDailyIncomeJournal(transactionSessionId);
@@ -135,8 +136,11 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
     } catch (error) {
       if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
       setFormError(
-        normalizeDailyIncomeJournalError(error, {
-          canManageEmployees: canOpenEmployeesDirectory(hasPermission),
+        formatFormMutationError(error, t, {
+          formatConflict: (mutationError) =>
+            normalizeDailyIncomeJournalError(mutationError, {
+              canManageEmployees: canOpenEmployeesDirectory(hasPermission),
+            }),
         }),
       );
       return Promise.reject(error);
@@ -156,7 +160,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
 
   if (isEditing && (journalQuery.isError || !editingJournal)) {
     const message = journalQuery.isError
-      ? normalizeApiError(journalQuery.error).message
+      ? toErrorMessage(journalQuery.error)
       : t("accounting.dailyIncome.errors.transactionNotFound");
     return (
       <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
@@ -184,7 +188,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
 
   if (!statement) {
     const message = statementQuery.isError || currentStatementQuery.isError
-      ? normalizeApiError(statementQuery.error ?? currentStatementQuery.error).message
+      ? toErrorMessage(statementQuery.error ?? currentStatementQuery.error)
       : t("accounting.dailyIncome.errors.closeoutNotFound");
     return (
       <FormTabShell title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}>

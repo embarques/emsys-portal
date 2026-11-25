@@ -89,6 +89,7 @@ import {
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
+import { formatFormMutationError } from "@/lib/errors";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
@@ -640,7 +641,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       if (mutationError instanceof DuplicatePendingAppointmentCancelledError) {
         return { error: null, cancelled: true };
       }
-      const message = normalizeApiError(mutationError).message;
+      const message = formatFormMutationError(mutationError, t);
       notifyError(message);
       return { error: message };
     }

@@ -7,7 +7,7 @@ import { ItemForm } from "@/components/items/item-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { useCreateItem, useItem, useUpdateItem } from "@/lib/items/hooks/use-items";
 import {
@@ -70,7 +70,7 @@ export function ItemFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
       notifyAdded(t("items.entity"), next.description || truncateItemId(next.itemId));
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 

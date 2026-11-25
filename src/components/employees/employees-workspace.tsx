@@ -1,5 +1,6 @@
 "use client";
 
+import { EmployeeUserLink } from "@/components/employees/employee-user-link";
 import { useMemo, useState } from "react";
 import {
   Building2,
@@ -51,6 +52,7 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useTranslation } from "@/lib/i18n";
+import { formatFormMutationError } from "@/lib/errors";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
@@ -234,7 +236,7 @@ export function EmployeesWorkspace() {
       setEditingEmployee(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -264,7 +266,7 @@ export function EmployeesWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
       setDeleteTarget(null);
     }
   }
@@ -475,6 +477,8 @@ export function EmployeesWorkspace() {
     t,
   );
 
+  const linkTarget = selectedIds.length === 1 ? employees.find(row => String(row.id) === selectedIds[0]) : undefined;
+
   return (
     <div>
       <div className="hidden md:block">
@@ -605,6 +609,7 @@ export function EmployeesWorkspace() {
         ) : null}
 
         <TableSelectionToolbar
+          actions={linkTarget && <EmployeeUserLink key={linkTarget.id} side="employee" id={linkTarget.id} name={linkTarget.name} linkedUser={linkTarget.user?.name} />}
           selectedIds={selectedIds}
           pageRowIds={employees.map((employee) => String(employee.id))}
           totalCount={totalEmployees}

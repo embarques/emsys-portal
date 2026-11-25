@@ -17,7 +17,7 @@ import {
   resolveDailyRouteSupervisor,
 } from "@/lib/accounting/daily-income/assignee";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import {
   useCreateEmployee,
   useEnsureEmployeeDetail,
@@ -167,7 +167,7 @@ export function useTransactionAssigneeEntityActions({
       setEntityDialog(null);
       setEditingEmployee(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 

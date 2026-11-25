@@ -7,7 +7,7 @@ import { ContainerForm } from "@/components/containers/container-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import {
   useContainer,
   useContainerPicker,
@@ -86,7 +86,7 @@ export function ContainerFormWorkspace({ tabId, mode, entityId, closeOnSave }: W
       }
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 

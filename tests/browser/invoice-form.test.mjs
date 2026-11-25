@@ -29,6 +29,7 @@ before(async () => {
       "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes$": hooks,
       "@/lib/inventory/hooks/use-inventory$": path.resolve("tests/browser/fixtures/inventory-hooks.ts"),
       "@/lib/auth/hooks/use-auth$": path.resolve("tests/browser/fixtures/documents-auth.ts"),
+      "@/lib/users/hooks/use-users$": path.resolve("tests/browser/fixtures/closeout-hooks.ts"),
       "@/lib/i18n$": path.resolve("tests/browser/fixtures/i18n.ts"),
       "@/lib/branches/hooks/use-branches$": hooks,
       "@/components/app-shell/feedback-provider$": path.resolve("tests/browser/fixtures/feedback.tsx"),
@@ -122,23 +123,21 @@ test("the receiver picker offers pickup receivers, a search of all receivers and
 
 const focusedId = (page, id) => page.waitForFunction((id) => document.activeElement?.id === id, id);
 
-test("appointment route, warehouse and office employee advance to the invoice number mode on Enter", async () => {
-  for (const [sourceIndex, assignment] of [[0, "routeId"], [1, "pickupEmployeeId"], [2, "pickupEmployeeId"]]) {
+test("appointment route and supervisor employee advance to Next on Enter", async () => {
+  for (const [source, assignment] of [["route", "routeId"], ["supervisor", "pickupEmployeeId"]]) {
     const page = await fixture();
     try {
-      await page.locator("#pickupSource").focus();
-      await page.keyboard.press("ArrowDown");
-      await page.getByRole("option").nth(sourceIndex).click();
+      await page.locator(`#pickupSource-${source}`).click();
       await focusedId(page, assignment);
 
       await page.keyboard.press("ArrowDown");
       await page.keyboard.press("Enter");
-      await focusedId(page, "invoiceNumber-mode-system");
+      await focusedId(page, "wizard-next");
 
       await page.locator(`#${assignment}`).focus();
       await page.keyboard.press("Escape");
       await page.keyboard.press("Enter");
-      await focusedId(page, "invoiceNumber-mode-system");
+      await focusedId(page, "wizard-next");
     } finally { await page.close(); }
   }
 });
@@ -146,56 +145,49 @@ test("appointment route, warehouse and office employee advance to the invoice nu
 test("without manual number permission the locked invoice number mode still receives focus", async () => {
   const page = await fixture({ manualNumber: false });
   try {
-    await page.locator("#pickupSource").focus();
-    await page.keyboard.press("ArrowDown");
-    await page.getByRole("option").nth(0).click();
-    await focusedId(page, "routeId");
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-    await focusedId(page, "invoiceNumber-mode-system");
     assert.equal(await page.locator("#invoiceNumber-mode-system").isDisabled(), false);
     assert.equal(await page.locator("#invoiceNumber-mode-custom").isDisabled(), true);
-
-    await page.keyboard.press("ArrowRight");
     assert.equal(await page.locator("#invoiceNumber-mode-system").getAttribute("aria-checked"), "true");
     assert.equal(await page.locator("#invoiceNumber").count(), 0);
 
-    await page.keyboard.press("Enter");
-    await focusedId(page, "wizard-next");
+    await page.locator("#invoiceNumber-mode-system").focus();
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await page.locator("#invoiceNumber-mode-system").getAttribute("aria-checked"), "true");
+    assert.equal(await page.locator("#invoiceNumber").count(), 0);
   } finally { await page.close(); }
 });
 
 test("choosing Enter your own invoice number shows the number input below the segments", async () => {
   const page = await fixture();
   try {
-    assert.equal(await page.locator("#invoiceNumber-mode-system").getAttribute("aria-checked"), "true");
-    assert.equal(await page.locator("#invoiceNumber").count(), 0);
-
-    await page.locator("#invoiceNumber-mode-custom").click();
-    await focusedId(page, "invoiceNumber");
+    // Manual numbering is the default when the user has permission.
     assert.equal(await page.locator("#invoiceNumber-mode-custom").getAttribute("aria-checked"), "true");
+    assert.equal(await page.locator("#invoiceNumber").count(), 1);
     const segments = await page.locator("#invoiceNumber-mode").boundingBox();
     const input = await page.locator("#invoiceNumber").boundingBox();
     assert.ok(input.y >= segments.y + segments.height, "input sits below the segments");
 
     await page.locator("#invoiceNumber-mode-system").click();
     await page.locator("#invoiceNumber").waitFor({ state: "detached" });
+    assert.equal(await page.locator("#invoiceNumber-mode-system").getAttribute("aria-checked"), "true");
+
+    await page.locator("#invoiceNumber-mode-custom").click();
+    await focusedId(page, "invoiceNumber");
   } finally { await page.close(); }
 });
 
 test("appointment routes open newest route date first even when an older route was created later", async () => {
   const page = await fixture();
   try {
-    await page.locator("#pickupSource").focus();
-    await page.keyboard.press("Enter");
+    await page.locator("#pickupSource-route").click();
     await focusedId(page, "routeId");
-    await page.getByRole("option").first().waitFor();
-    const labels = await page.getByRole("option").allTextContents();
+    await page.getByRole("option", { name: /North route/ }).waitFor();
+    const labels = (await page.getByRole("option").allTextContents()).filter((label) => /route/i.test(label));
     assert.match(labels[0], /North route/);
     assert.match(labels[1], /South route/);
 
-    await page.keyboard.press("Enter");
-    await focusedId(page, "invoiceNumber-mode-system");
+    await page.getByRole("option", { name: /North route/ }).click();
+    await focusedId(page, "wizard-next");
     assert.match(await page.locator("#routeId").inputValue(), /North route/);
   } finally { await page.close(); }
 });
@@ -263,16 +255,14 @@ test("clicking an added line item opens it for editing in a highlighted panel", 
   } finally { await page.close(); }
 });
 
-test("typing an employee name and pressing Enter selects it and focuses the invoice number mode", async () => {
+test("typing an employee name and pressing Enter selects it and focuses Next", async () => {
   const page = await fixture();
   try {
-    await page.locator("#pickupSource").focus();
-    await page.keyboard.press("ArrowDown");
-    await page.getByRole("option").nth(1).click();
+    await page.locator("#pickupSource-supervisor").click();
     await focusedId(page, "pickupEmployeeId");
     await page.keyboard.type("Ana");
     await page.keyboard.press("Enter");
-    await focusedId(page, "invoiceNumber-mode-system");
+    await focusedId(page, "wizard-next");
     assert.equal(await page.locator("#pickupEmployeeId").inputValue(), "Ana Warehouse");
   } finally { await page.close(); }
 });

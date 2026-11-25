@@ -39,7 +39,7 @@ import {
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useUserError } from "@/lib/errors/use-user-error";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatBranchCodeOnly, getBranchCodeBadgeClass } from "@/lib/branches/display";
 import { useDirectoryBranchFilter } from "@/lib/branches/hooks/use-directory-branch-filter";
@@ -230,7 +230,7 @@ export function RouteManagerWorkspace() {
       setEditingAssignment(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -260,7 +260,7 @@ export function RouteManagerWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
       setDeleteTarget(null);
     }
   }

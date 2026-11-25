@@ -140,7 +140,7 @@ sorting semantics and live deployment must still be verified.
   Preserve internal `refNumber` as a distinct field.
 - **User Activity entity reference:** source uses `documentId`; do not assume the legacy
   portal `id` alias means the activity primary key or is valid on this operation.
-- **Reserved invoices:** current POST allow-list does not establish GET cursor-sort
+- **Assign invoices:** current POST allow-list does not establish GET cursor-sort
   binding. Keep reserved date/null/device-claim semantics and test both envelopes.
 - **Status options:** the main `name` match is an options-picker/local catalog concept;
   do not invent POST search or server sorting for `/barcodes/status-options`.

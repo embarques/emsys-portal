@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
   PERMISSIONS: "/permissions",
   EMPLOYEE_TITLES: "/employee-titles",
   EMPLOYEE_DEPARTMENTS: "/employee-departments",
+  EMPLOYEE_USER_LINK: (employeeId: number) => `/employees/${employeeId}/user-link`,
   EMPLOYEES: "/employees",
   CUSTOMERS: "/customers",
   CUSTOMERS_AUTOCOMPLETE: "/customers/autocomplete",

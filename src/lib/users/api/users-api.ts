@@ -216,8 +216,9 @@ export function normalizeApiUser(raw: unknown): User | null {
   return normalizeUser(raw);
 }
 
-export async function fetchUsers(params: UserListParams = {}): Promise<PaginatedResult<User>> {
+export async function fetchUsers(params: UserListParams = {}, signal?: AbortSignal): Promise<PaginatedResult<User>> {
   return fetchPaginatedResourceList({
+    signal,
     endpoint: API_ENDPOINTS.USERS,
     page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,

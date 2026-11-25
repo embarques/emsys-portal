@@ -1,5 +1,6 @@
 "use client";
 
+import { EmployeeUserLink } from "@/components/employees/employee-user-link";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import type { Employee } from "@/lib/employees/types";
 
@@ -26,6 +27,7 @@ export function EmployeeMobileSelectionToolbar({
 }: EmployeeMobileSelectionToolbarProps) {
   return (
     <TableSelectionToolbar
+      actions={singleSelectedEmployee && <EmployeeUserLink key={singleSelectedEmployee.id} side="employee" id={singleSelectedEmployee.id} name={singleSelectedEmployee.name} linkedUser={singleSelectedEmployee.user?.name} />}
       selectedIds={selectedIds}
       pageRowIds={pageRowIds}
       totalCount={totalCount}

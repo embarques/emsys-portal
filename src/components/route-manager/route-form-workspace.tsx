@@ -7,7 +7,7 @@ import { RouteForm } from "@/components/route-manager/route-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { useUserError } from "@/lib/errors/use-user-error";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateRoute,
@@ -74,7 +74,7 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
       notifyAdded(t("routes.form.entityLabel"), formatRouteName(next));
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 

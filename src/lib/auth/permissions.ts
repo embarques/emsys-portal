@@ -132,6 +132,7 @@ export const PERMISSIONS = {
    * until then gate with user view (same as Security).
    */
   userActivitiesView: { name: "canViewUserActivity", resourceType: "user_activity" },
+  employeeUserLink: { name: "canLinkEmployeeUser", resourceType: "employee_user_link" },
   employeesView: { name: "canViewEmployee", resourceType: "employee" },
   accountSettingsView: { name: "canViewSettings", resourceType: "settings" },
   employeeTitlesView: { name: "canViewEmployeeTitle", resourceType: "employee_title" },

@@ -48,7 +48,7 @@ import {
   type BranchRef,
 } from "@/lib/branches/user-branch";
 import { useTranslation } from "@/lib/i18n";
-import { useUserError } from "@/lib/errors/use-user-error";
+import { formatFormMutationError } from "@/lib/errors";
 import {
   formatPreviousDailyRouteLabel,
 } from "@/lib/pickup-delivery-routes/display";
@@ -94,7 +94,6 @@ export function ActiveRouteSection({
   onCancel,
 }: ActiveRouteSectionProps) {
   const { t } = useTranslation();
-  const { toErrorMessage } = useUserError();
   const copyPrefix = variant?.copyPrefix ?? "dailyRoutes";
   const { displayName } = useAuth();
   const { notifySuccess } = useFeedback();
@@ -472,7 +471,7 @@ export function ActiveRouteSection({
       notifySuccess(t(`routes.${copyPrefix}.form.saved`));
       onSaved?.(saved);
     } catch (error) {
-      setFormError(toErrorMessage(error));
+      setFormError(formatFormMutationError(error, t));
     }
   }
 
@@ -512,7 +511,7 @@ export function ActiveRouteSection({
       setCreateDialogOpen(false);
       notifySuccess(t("routes.activeRoute.routeCreated"));
     } catch (error) {
-      setCreateFormError(toErrorMessage(error));
+      setCreateFormError(formatFormMutationError(error, t));
     }
   }
 
@@ -531,7 +530,7 @@ export function ActiveRouteSection({
       setCreateVehicleDialogOpen(false);
       notifySuccess(t("routes.activeRoute.vehicleCreated"));
     } catch (error) {
-      setCreateVehicleFormError(toErrorMessage(error));
+      setCreateVehicleFormError(formatFormMutationError(error, t));
     }
   }
 

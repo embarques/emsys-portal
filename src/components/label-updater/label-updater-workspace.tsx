@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError } from "@/lib/errors";
 import { useApplyBarcodeScan, useApplyBarcodeScanBulk } from "@/lib/labels/hooks/use-label-updater";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
 import { isProtectedBarcodeStatusId, type LabelUpdateResult } from "@/lib/labels/types";
@@ -80,7 +80,6 @@ function parseBarcodeEntries(raw: string): string[] {
 
 export function LabelUpdaterWorkspace() {
   const { t } = useTranslation();
-  const { toErrorMessage } = useUserError();
   const { openTab, openFormTab } = useWorkspaceTabs();
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const { data: containersData } = useContainerPicker();
@@ -290,7 +289,7 @@ export function LabelUpdaterWorkspace() {
       setBarcodeInput("");
       revealStatusesPanelOnApplyResult(nextResults);
     } catch (error) {
-      setFormError(toErrorMessage(error));
+      setFormError(formatFormMutationError(error, t));
       focusBarcodeField();
     } finally {
       submissionInFlight.current = false;

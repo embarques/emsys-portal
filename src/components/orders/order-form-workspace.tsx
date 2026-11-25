@@ -8,7 +8,7 @@ import { DuplicatePendingAppointmentDialog } from "@/components/orders/duplicate
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { DuplicatePendingAppointmentCancelledError } from "@/lib/orders/duplicate-pending-appointment";
 import { useCreateOrder, useOrder, useUpdateOrder } from "@/lib/orders/hooks/use-orders";
 import { useDuplicatePendingAppointmentConfirmation } from "@/lib/orders/hooks/use-duplicate-pending-appointment-confirmation";
@@ -30,6 +30,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 
 export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -89,7 +90,7 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
       if (mutationError instanceof DuplicatePendingAppointmentCancelledError) {
         return { error: null, cancelled: true };
       }
-      const message = normalizeApiError(mutationError).message;
+      const message = formatFormMutationError(mutationError, t);
       setFormError(message);
       return { error: message };
     }
@@ -108,7 +109,7 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
-      ? normalizeApiError(detailQuery.error).message
+      ? toErrorMessage(detailQuery.error)
       : t("orders.form.notFound");
     return (
       <FormTabShell title={t("orders.form.editTitle")}>

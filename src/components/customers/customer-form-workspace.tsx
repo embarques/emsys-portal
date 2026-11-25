@@ -1,6 +1,5 @@
 "use client";
 import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
-import { isStaleMutation } from "@/lib/api/mutation-version";
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -9,8 +8,11 @@ import { CustomerForm } from "@/components/customers/customer-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
-import { useUserError } from "@/lib/errors";
+import {
+  formatCustomerMutationError,
+  isDuplicateCustomerError,
+} from "@/lib/customers/customer-create-error";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateCustomer,
@@ -93,14 +95,15 @@ export function CustomerFormWorkspace({
       }
       closeFormTabAndReturn(tabId);
     } catch (mutationError) {
-      if (isStaleMutation(mutationError)) {
-        setFormError(t("common.form.staleUpdate"));
-        return;
-      }
       const { status, category } = formatError(mutationError);
       setFormError(
-        formatCustomerMutationError(mutationError, t, {
-          mode: isEditing ? "edit" : "create",
+        formatFormMutationError(mutationError, t, {
+          formatConflict: (error) =>
+            isDuplicateCustomerError(error)
+              ? formatCustomerMutationError(error, t, {
+                  mode: isEditing ? "edit" : "create",
+                })
+              : null,
           hint:
             status === 403 || category === "forbidden"
               ? t("common.errors.permissionHint")

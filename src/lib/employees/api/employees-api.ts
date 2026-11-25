@@ -155,7 +155,7 @@ type ApiEmployeeWritePayload = {
   loanBalanceUpdated?: string;
   totalLoanGiven?: number;
   totalPaymentReceived?: number;
-  user?: { id: number; name?: string };
+  user?: { id: number; name?: string } | null;
   id?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -320,6 +320,8 @@ function buildEmployeeWritePayload(
 
   if (values.user?.id) {
     payload.user = { id: values.user.id, name: values.user.name };
+  } else if (options.id && values.clearUserLink) {
+    payload.user = null;
   }
 
   if (options.id != null) {
@@ -399,8 +401,10 @@ async function resolveCreatedEmployee(
 
 export async function fetchEmployees(
   params: EmployeeListParams = {},
+  signal?: AbortSignal,
 ): Promise<PaginatedResult<Employee>> {
   return fetchPaginatedResourceList({
+    signal,
     endpoint: API_ENDPOINTS.EMPLOYEES,
     page: params.page ?? DEFAULT_EMPLOYEE_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_EMPLOYEE_LIST_PARAMS.limit,
@@ -496,4 +500,12 @@ export async function deleteEmployee(employeeId: string): Promise<void> {
 export async function deleteEmployees(employeeIds: string[]): Promise<BulkSettledResult<string>> {
   const uniqueIds = [...new Set(employeeIds.map((id) => id.trim()).filter(Boolean))];
   return runSettledIdsWithConcurrency(uniqueIds, deleteEmployee);
+}
+
+
+export async function linkEmployeeUser(employeeId: number, userId: number) {
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    API_ENDPOINTS.EMPLOYEE_USER_LINK(employeeId), { userId },
+  );
+  assertMutationSuccess(response, translateCurrent("employees.link.failed"));
 }

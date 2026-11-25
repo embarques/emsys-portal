@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { PermissionGuard } from "@/lib/auth/guards/permission-guard";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { EmployeeDepartmentDialog } from "@/components/employee-departments/employee-department-dialog";
 import { EmployeeTitleDialog } from "@/components/employee-titles/employee-title-dialog";
@@ -67,7 +68,9 @@ export function EmployeeForm({
   const { t } = useTranslation();
   const googleMapsConfigured = useIsGoogleMapsConfigured();
   const { notifyAdded } = useFeedback();
-  const usersQuery = useUsers({ page: 1, limit: 200, sort: "name:asc", active: true });
+  const { hasPermission } = useAuth();
+  const canLink = hasPermission(PERMISSIONS.employeeUserLink.name, PERMISSIONS.employeeUserLink.resourceType) && hasPermission(PERMISSIONS.usersView.name, PERMISSIONS.usersView.resourceType);
+  const usersQuery = useUsers({ page: 1, limit: 200, sort: "name:asc", active: true }, { enabled: canLink });
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const branchesQuery = useAllBranchOptions();
@@ -248,7 +251,8 @@ export function EmployeeForm({
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <form onSubmit={handleSubmit(data => onSubmit(canLink && initialValues?.user && !data.user
+        ? { ...data, clearUserLink: true } : data))} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
         <FormBody workflow isBusy={isSubmitting}>
         <div className="grid items-start gap-5 @4xl:grid-cols-2">
             {departmentsQuery.isError || titlesQuery.isError || branchesQuery.isError ? (
@@ -406,12 +410,15 @@ export function EmployeeForm({
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="userId">{t("employees.form.fields.user")}</Label>
-                    <FieldEntityActions
+                    {canLink && hasPermission("canCreateUser", "user") && <FieldEntityActions
                       hasSelection={Boolean(values.user)}
                       onAdd={openCreateUser}
-                      onEdit={openEditUser}
+                      onEdit={hasPermission("canUpdateUser", "user") ? openEditUser : undefined}
                       disabled={usersQuery.isLoading}
-                    />
+                    />}
+                    {canLink && values.user && !hasPermission("canCreateUser", "user") && hasPermission("canUpdateUser", "user") && (
+                      <Button type="button" variant="ghost" size="sm" onClick={openEditUser}>{t("common.actions.edit")}</Button>
+                    )}
                   </div>
                   <div className="min-w-0 w-full">
                     <SearchableSelect
@@ -421,10 +428,11 @@ export function EmployeeForm({
                       placeholder={t("employees.form.fields.noUser")}
                       searchPlaceholder={t("employees.form.placeholders.userSearch")}
                       options={userOptions}
-                      disabled={usersQuery.isLoading}
+                      disabled={!canLink || usersQuery.isLoading}
                       className="w-full"
                       mobileSheet
                     />
+                    {!canLink && <p className="text-xs text-muted-foreground">{t("employees.link.ask")}</p>}
                   </div>
                 </div>
               </div>

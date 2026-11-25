@@ -683,12 +683,12 @@ function InvoiceWizardCheckoutReview({
           onEdit={onEditPayment}
           variant={isPhoneWizard ? "phonePanel" : "default"}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 text-sm">
             <div
               className={
                 paymentIsMissingOptional
-                  ? "rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2"
-                  : undefined
+                  ? "w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2"
+                  : "w-full"
               }
             >
               {paymentSummary?.registration ? (
@@ -797,8 +797,8 @@ export function InvoiceFormPreviewStep({
 
       <FormSection icon={Receipt} title={t("invoices.form.sections.invoiceDetails")}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <PreviewField label={t("invoices.form.fields.date")} value={values.date} />
           <PreviewField label={t("invoices.form.fields.invoiceNumber")} value={values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber} />
+          <PreviewField label={t("invoices.form.fields.date")} value={values.date} />
           <PreviewField label={pickupFieldLabel} value={pickupLabel} />
           <PreviewField label={t("invoices.form.fields.container")} value={containerLabel} />
           <PreviewField label={t("invoices.form.fields.paymentLocation")} value={getPaymentLocationLabel(values.paymentLocation)} />

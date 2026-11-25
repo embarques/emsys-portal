@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { useAssignBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
 import type { AssignBarcodeToRouteTarget, RouteAssignmentProgress } from "@/lib/labels/api/barcodes-api";
@@ -145,7 +145,7 @@ export function AssignBarcodeRouteDialog({
       onResult?.({ success: true, routeName: assignedRouteName, message });
       onOpenChange(false);
     } catch (error) {
-      const message = normalizeApiError(error).message;
+      const message = formatFormMutationError(error, t);
       setFormError(message);
       notifyError(message);
       onResult?.({

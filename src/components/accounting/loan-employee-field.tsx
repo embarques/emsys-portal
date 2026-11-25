@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { getInlineSelectOptions, QUICK_SELECT_OPTIONS_LIMIT, SearchableSelect } from "@/components/ui/searchable-select";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import {
   useCreateEmployee,
   useEnsureEmployeeDetail,
@@ -123,7 +123,7 @@ export function LoanEmployeeField({
       setDialogOpen(false);
       setEditing(null);
     } catch (saveError) {
-      setEntityError(normalizeApiError(saveError).message);
+      setEntityError(formatFormMutationError(saveError, t));
     }
   }
 

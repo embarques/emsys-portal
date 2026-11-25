@@ -7,7 +7,7 @@ import { EmployeeForm } from "@/components/employees/employee-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateEmployee,
@@ -29,6 +29,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 
 export function EmployeeFormWorkspace({ tabId, mode, entityId, closeOnSave }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -79,7 +80,7 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId, closeOnSave }: Wo
       }
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -96,7 +97,7 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId, closeOnSave }: Wo
 
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
-      ? normalizeApiError(detailQuery.error).message
+      ? toErrorMessage(detailQuery.error)
       : t("employees.form.notFound");
     return (
       <FormTabShell title={t("employees.form.editTitle")}>

@@ -17,7 +17,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { findBranchByCodeOrId, resolveUserBranchRef, type BranchRef } from "@/lib/branches/user-branch";
 import { formatContainerLabel, formatContainerRouteNumber } from "@/lib/containers/display";
@@ -348,7 +348,7 @@ export function AssignRouteCrewDialog({
 
       onOpenChange(false);
     } catch (error) {
-      const message = normalizeApiError(error).message;
+      const message = formatFormMutationError(error, t);
       setFormError(message);
       notifyError(message);
     }

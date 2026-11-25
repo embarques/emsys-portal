@@ -68,7 +68,7 @@ async function generateNumbers(page) {
 
 test("reserved page presents available, assigned and downloaded numbers",async()=>{
  const page=await fixture();try{
-  await page.getByRole("heading",{name:"Reserved invoices"}).waitFor();
+  await page.getByRole("heading",{name:"Assign invoices"}).waitFor();
   await page.getByText("INV-102",{exact:true}).waitFor();
   assert.equal(await page.getByRole("checkbox",{name:"Select INV-102",exact:true}).isDisabled(),true);
   await page.screenshot({path:"/tmp/emsys-invoice-pool-portal.png",fullPage:true});
@@ -115,7 +115,7 @@ test("only unused unclaimed assignments can be returned",async()=>{
 test("user selection is separate from generation and does not require an employee", async () => {
  const page = await fixture();
  try {
-  await page.getByRole("heading", {name:"Reserved invoices"}).waitFor();
+  await page.getByRole("heading", {name:"Assign invoices"}).waitFor();
   await page.getByRole("checkbox", {name:"Select INV-100",exact:true}).check();
   await page.getByRole("button", {name:"Assign selected",exact:true}).click();
   const dialog = page.getByRole("dialog");
@@ -134,8 +134,8 @@ test("user selection is separate from generation and does not require an employe
  } finally { await page.close(); }
 });
 
-test("Reserved navigation labels resolve in both supported languages", async () => {
- for (const [locale,label] of [["en","Reserved invoices"],["es","Facturas reservadas"]]) {
+test("Assign invoices navigation labels resolve in both supported languages", async () => {
+ for (const [locale,label] of [["en","Assign invoices"],["es","Asignar facturas"]]) {
   const catalog = JSON.parse(await readFile(`src/locales/${locale}/navigation.json`,"utf8"));
   assert.equal(catalog.items.reservedInvoices,label);
  }
@@ -169,7 +169,7 @@ test("reserved numbers filter as typed and clear stale selection",async()=>{
  assert.equal(await page.getByRole("toolbar").count(),0);
  assert.equal(await page.getByRole("checkbox",{name:"Select INV-101",exact:true}).isChecked(),false);
  await page.getByLabel("Search reserved numbers",{exact:true}).fill("missing");
- await page.getByText("No reserved invoices in this pool.",{exact:true}).waitFor();
+ await page.getByText("No invoices to assign in this pool.",{exact:true}).waitFor();
  assert.equal(await page.getByRole("checkbox",{name:"Select all selectable numbers on this page",exact:true}).isDisabled(),true);
  await page.getByLabel("Search reserved numbers",{exact:true}).fill("");
  await page.getByText("INV-100",{exact:true}).waitFor();
@@ -230,7 +230,7 @@ test("advanced column filters preserve AND/OR logic and clear stale selections",
   assert.equal(await page.getByRole("toolbar").count(), 0);
   await page.getByRole("button", {name:"New filter",exact:true}).click();
   await chooseFilter(page, 2, "Status", "Equals", "Downloaded to mobile");
-  await page.getByText("No reserved invoices in this pool.", {exact:true}).waitFor();
+  await page.getByText("No invoices to assign in this pool.", {exact:true}).waitFor();
   await page.getByLabel("Filter join 2", {exact:true}).click();
   await page.getByRole("option", {name:"OR",exact:true}).click();
   await page.getByText("INV-100", {exact:true}).waitFor();
@@ -261,7 +261,7 @@ test("advanced user values search remotely and share the initial user lookup", a
   const filter = page.getByLabel("Filter value 1", {exact:true});
   await filter.click(); await filter.fill("Grace");
   await page.getByRole("option", {name:"Grace User",exact:true}).click();
-  await page.getByText("No reserved invoices in this pool.", {exact:true}).waitFor();
+  await page.getByText("No invoices to assign in this pool.", {exact:true}).waitFor();
   await page.waitForTimeout(350);
   assert.equal(await filter.inputValue(), "Grace User");
   assert.equal(await page.evaluate(() => window.poolUserQueries.filter(query => query === "Grace").length), 1);

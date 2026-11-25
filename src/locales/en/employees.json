@@ -1,4 +1,16 @@
 {
+  "link": {
+    "userAction": "Link user",
+    "employeeAction": "Link employee",
+    "ask": "Ask someone with permission to link this employee and user.",
+    "user": "User",
+    "employee": "Employee",
+    "success": "Employee and user linked.",
+    "failed": "Unable to link employee and user.",
+    "search": "Search by name",
+    "linked": "This employee is linked to {name}.",
+    "conflict": "This employee or user already has a different link."
+  },
   "errors": {
     "nameRequired": "Employee name is required.",
     "departmentRequired": "Department is required.",

@@ -22,7 +22,7 @@ import { formatLoanDate, formatLoanMoney } from "@/lib/accounting/loans/display"
 import { createLoanDecreaseSchema, createLoanIncreaseSchema } from "@/lib/accounting/loans/schemas";
 import type { Loan, LoanIncreaseValues } from "@/lib/accounting/loans/types";
 import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { useLoanEntrySteps } from "@/lib/accounting/loans/use-loan-entry-steps";
 import { LoanEntryStepFooter, LoanEntryStepHeading, LoanEntryStepNavigation } from "@/components/accounting/loan-entry-step-navigation";
@@ -119,7 +119,7 @@ export function LoanIncreaseForm({ employees, assetAccounts, initialLoan = null,
     try {
       await onSubmit(submitted);
     } catch (error) {
-      form.setError("root.server", { message: normalizeApiError(error).message });
+      form.setError("root.server", { message: formatFormMutationError(error, t) });
     } finally {
       submitting.current = false;
     }

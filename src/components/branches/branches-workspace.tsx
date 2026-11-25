@@ -47,6 +47,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { useBranchFilterFields } from "@/lib/branches/hooks/use-branch-filter-fields";
 import { useTranslation } from "@/lib/i18n";
+import { formatFormMutationError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
@@ -220,7 +221,7 @@ export function BranchesWorkspace() {
       setEditingBranch(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -252,7 +253,7 @@ export function BranchesWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
       setDeleteTarget(null);
     }
   }

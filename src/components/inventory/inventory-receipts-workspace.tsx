@@ -47,7 +47,7 @@ import {
   getSupplierNameById,
   summarizeDocumentLines,
 } from "@/lib/inventory/display";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCancelReceipt,
@@ -197,7 +197,7 @@ export function InventoryReceiptsWorkspace() {
       setFormMode(null);
       setEditingReceipt(null);
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -215,7 +215,7 @@ export function InventoryReceiptsWorkspace() {
       setCommandTarget(null);
       setViewReceipt(null);
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -233,7 +233,7 @@ export function InventoryReceiptsWorkspace() {
       setConfirmationTarget(null);
       setViewReceipt(null);
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 

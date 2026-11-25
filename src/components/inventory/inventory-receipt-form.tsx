@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateInventoryItem,
@@ -138,7 +138,7 @@ export function InventoryReceiptForm({
       });
       setEntityDialog(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 
@@ -153,7 +153,7 @@ export function InventoryReceiptForm({
       setEntityDialog(null);
       setEditingSupplier(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 

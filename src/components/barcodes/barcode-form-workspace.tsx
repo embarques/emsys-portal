@@ -7,7 +7,7 @@ import { BarcodeForm } from "@/components/barcodes/barcode-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import {
   useBarcode,
   useCreateBarcode,
@@ -72,7 +72,7 @@ export function BarcodeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
       notifyAdded(t("barcodes.entity"), next.number);
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 

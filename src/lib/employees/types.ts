@@ -52,6 +52,7 @@ export type Employee = ApiTableRecord & {
 };
 
 export type EmployeeFormValues = {
+  clearUserLink?: boolean;
   id: number;
   name: string;
   title: string;

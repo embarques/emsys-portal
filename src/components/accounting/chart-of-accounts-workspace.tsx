@@ -60,6 +60,7 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
+import { formatFormMutationError } from "@/lib/errors";
 import {
   buildTableSelectionResetKey,
   useTableSelectionReset,
@@ -416,7 +417,7 @@ export function ChartOfAccountsWorkspace() {
             : t("accounting.chartOfAccounts.toasts.created"),
         );
       })
-      .catch((error) => setFormError(normalizeApiError(error).message));
+      .catch((error) => setFormError(formatFormMutationError(error, t)));
   }
 
   function openCreateDialog() {
