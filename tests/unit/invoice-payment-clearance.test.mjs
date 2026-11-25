@@ -32,7 +32,6 @@ const CHECK_PENDING = {
     invoiceTotal: 1000,
     discount: 0,
     totalPaid: 550,
-    clearedAmount: 300,
     pendingClearance: 250,
     outstandingBalance: 450,
     receivableBalance: 700,
@@ -47,10 +46,10 @@ test("the API payment summary is what the view reports, not a recomputed balance
   const summary = types.resolveInvoicePaymentSummary(invoice);
 
   assert.equal(summary.totalPaid, 550);
-  assert.equal(summary.clearedAmount, 300);
   assert.equal(summary.pendingClearance, 250);
-  assert.equal(summary.outstandingBalance, 450);
+  // The balance before clearance is 700; once the pending 250 clears it is 450.
   assert.equal(summary.receivableBalance, 700);
+  assert.equal(summary.outstandingBalance, 450);
   assert.equal(summary.customerStatus, "PARTIALLY_PAID");
   assert.equal(summary.clearanceStatus, "PARTIALLY_CLEARED");
   // The accounting balance still drives the existing balance column.
@@ -99,7 +98,6 @@ test("an API without the summary reports no pending clearance instead of guessin
   const summary = types.resolveInvoicePaymentSummary(invoice);
   assert.equal(summary.pendingClearance, 0);
   assert.equal(summary.totalPaid, 200);
-  assert.equal(summary.clearedAmount, 200);
   assert.equal(summary.outstandingBalance, 300, "falls back to the stored balance");
   assert.equal(summary.receivableBalance, 300);
   assert.equal(summary.customerStatus, "PARTIALLY_PAID");
@@ -115,7 +113,7 @@ test("incomplete or unknown summary payloads are rejected rather than partially 
     null,
     {},
     { ...complete, pendingClearance: undefined },
-    { ...complete, clearedAmount: null },
+    { ...complete, receivableBalance: null },
     { ...complete, totalPaid: "not-a-number" },
     { ...complete, outstandingBalance: Number.NaN },
     { ...complete, customerStatus: "SETTLED" },
@@ -152,9 +150,9 @@ test("every payment clearance string is translated in English and Spanish", asyn
     "view.payment.totalPaid",
     "view.payment.outstandingBalance",
     "view.payment.clearanceBreakdown",
-    "view.payment.clearedAmount",
     "view.payment.pendingClearance",
-    "view.payment.receivableBalance",
+    "view.payment.currentBalance",
+    "view.payment.balanceAfterClearance",
     "view.payment.pendingClearanceHint",
   ]);
   for (const status of ["UNPAID", "PARTIALLY_PAID", "PAID", "VOID"]) {

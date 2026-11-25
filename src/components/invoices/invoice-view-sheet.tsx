@@ -223,9 +223,9 @@ function InvoiceClearanceBreakdown({
       </div>
       <dl className="mt-2 space-y-1">
         {[
-          { label: t("invoices.view.payment.clearedAmount"), value: summary.clearedAmount },
           { label: t("invoices.view.payment.pendingClearance"), value: summary.pendingClearance },
-          { label: t("invoices.view.payment.receivableBalance"), value: summary.receivableBalance },
+          { label: t("invoices.view.payment.currentBalance"), value: summary.receivableBalance },
+          { label: t("invoices.view.payment.balanceAfterClearance"), value: summary.outstandingBalance },
         ].map((row) => (
           <div key={row.label} className="flex items-baseline justify-between gap-3">
             <dt className="text-xs text-muted-foreground">{row.label}</dt>

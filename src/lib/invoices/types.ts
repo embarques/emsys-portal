@@ -443,15 +443,14 @@ export type InvoiceClearanceStatus = "NOT_REQUIRED" | "OUTSTANDING" | "PARTIALLY
 
 /**
  * Read-only `paymentSummary` from the API. Bank receipts reach `amountPaid`
- * only once their settlement clears, so `outstandingBalance` (what the client
- * owes) and `balance` (the accounting receivable) differ while clearance is
- * pending.
+ * only once their settlement clears, so `receivableBalance` (the balance
+ * before clearance) and `outstandingBalance` (the balance once the pending
+ * receipts clear) differ while clearance is pending.
  */
 export type InvoicePaymentSummary = {
   invoiceTotal: number;
   discount: number;
   totalPaid: number;
-  clearedAmount: number;
   pendingClearance: number;
   outstandingBalance: number;
   receivableBalance: number;
@@ -467,7 +466,7 @@ export function normalizeApiInvoicePaymentSummary(input: unknown): InvoicePaymen
   if (!input || typeof input !== "object") return undefined;
   const raw = input as Record<string, unknown>;
 
-  const amounts = ["invoiceTotal", "discount", "totalPaid", "clearedAmount", "pendingClearance", "outstandingBalance", "receivableBalance"] as const;
+  const amounts = ["invoiceTotal", "discount", "totalPaid", "pendingClearance", "outstandingBalance", "receivableBalance"] as const;
   const values = {} as Record<(typeof amounts)[number], number>;
   for (const key of amounts) {
     const amount = readApiMoney(raw[key]);
@@ -509,7 +508,6 @@ export function resolveInvoicePaymentSummary(
     invoiceTotal,
     discount,
     totalPaid: cleared,
-    clearedAmount: cleared,
     pendingClearance: 0,
     outstandingBalance: balance,
     receivableBalance: balance,
