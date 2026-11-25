@@ -177,7 +177,14 @@ const DialogDescription = React.forwardRef<
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("sticky bottom-0 z-10 flex shrink-0 flex-col-reverse gap-2 bg-background py-2 sm:flex-row sm:justify-end", className)} {...props} />
+  <div
+    className={cn(
+      // flex-wrap + min-w-0 keep long action labels from clipping sibling buttons.
+      "sticky bottom-0 z-10 flex shrink-0 flex-col-reverse gap-2 bg-background py-2 sm:flex-row sm:flex-wrap sm:justify-end [&>*]:min-w-0",
+      className,
+    )}
+    {...props}
+  />
 );
 
 export {

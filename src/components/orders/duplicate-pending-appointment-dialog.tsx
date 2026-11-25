@@ -78,7 +78,7 @@ export function DuplicatePendingAppointmentDialog({
         )}
         </CompactActionDialogBody>
 
-        <CompactActionDialogFooter className="sm:grid sm:grid-cols-2">
+        <CompactActionDialogFooter>
           <Button
             ref={cancelButtonRef}
             type="button"

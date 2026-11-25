@@ -126,10 +126,11 @@ sorting semantics and live deployment must still be verified.
 - **Inventory receipt/dispatch notes:** source now includes `notes`; current portal
   search constants still say it is unsupported and search status instead. Validate
   deployment before updating these stale comments or switching the search bar.
-- **Inventory postedAt:** this is useful as an explicit date filter/sort but is absent
-  from the receipt/dispatch allow-lists. Keep it blocked until server support exists.
-- **Vehicle due dates and branch labelPrefix:** explicit filters remain desired B09
-  capabilities; they are not added to main search or treated as enabled.
+- **Inventory postedAt:** API dev supports this explicit filter and sort for receipts and
+  dispatches. Enable the controls after authenticated deployment acceptance.
+- **Vehicle due dates and branch labelPrefix:** API dev supports these as advanced filters.
+  Portal enablement awaits deployed verification, as do the numeric container
+  sequence filters.
 - **Route Deliveries name:** currently projects merchandise description into `name`.
   Keep this endpoint-specific field separate from barcode catalog `description`.
 - **Supplier names:** use existing `companyName`, not an invented `name` alias.

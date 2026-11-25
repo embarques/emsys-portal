@@ -93,7 +93,7 @@ Our workers digitize the information from our physical invoices into the system 
 
 An invoice represents the merchandise collected as part of a client's shipment.
 
-**Received by** (`receivedBy`) is who took in the merchandise in **NY** (pickup / receive). It replaces legacy `employee` (`core.User`). The value is either a **non-DR (NY) daily route** or a **single employee from a non-DR branch**, set when creating or editing the invoice. The invoice table shows Received by, not a separate Route field. **Received via** (route / warehouse / office) is portal-only so the form can pick which of those to save; do not persist it.
+**Received by** (`receivedBy`) is who took in the merchandise in **NY** (pickup / receive). It replaces legacy `employee` (`core.User`). The value is either a **non-DR (NY) daily route** or a **single employee from a non-DR branch**, set when creating or editing the invoice. The invoice table shows Received by, not a separate Route field. **Received via** (Me / Supervisor / Daily route) is portal-only so the form can pick which of those to save as `receivedBy`; do not persist the via discriminator. The digitizer is always `createdBy` (the user creating the invoice). Without `canAssignInvoiceResponsibility`, the form defaults to Me (own supervised daily routes may still be selectable when policy allows).
 
 Do not confuse these three route concepts:
 

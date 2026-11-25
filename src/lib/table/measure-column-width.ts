@@ -1,14 +1,12 @@
 import { MIN_COLUMN_WIDTH } from "@/lib/table/column-preferences";
 
-/** Auto-fit may exceed manual resize max so long values (addresses, notes) can fully display. */
-export const AUTO_FIT_MAX_COLUMN_WIDTH = 1200;
-
+/** Auto-fit has no upper bound so long values (addresses, notes, routes) can fully display. */
 export function clampAutoFitColumnWidth(width: number): number {
   if (!Number.isFinite(width)) {
     return MIN_COLUMN_WIDTH;
   }
 
-  return Math.min(AUTO_FIT_MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, Math.round(width)));
+  return Math.max(MIN_COLUMN_WIDTH, Math.round(width));
 }
 
 function getHorizontalPadding(element: HTMLElement): number {
@@ -91,29 +89,38 @@ function isPlaceholderCellText(text: string): boolean {
 }
 
 function measureBodyCell(cell: HTMLTableCellElement): number {
+  const padding = getHorizontalPadding(cell);
+  const fullText = cell.textContent ?? "";
+  // Always floor on the full cell text so ellipsis/truncate chrome cannot
+  // under-measure long address, route, or purpose values.
+  const textFloor = isPlaceholderCellText(fullText)
+    ? 36
+    : measureTextWidth(fullText, cell);
+
   const content =
     cell.querySelector(":scope > .truncate") ??
     cell.querySelector(":scope > div") ??
+    cell.querySelector(":scope > span") ??
     cell;
 
   if (!(content instanceof HTMLElement)) {
-    const text = cell.textContent ?? "";
-    if (isPlaceholderCellText(text)) {
-      return clampAutoFitColumnWidth(getHorizontalPadding(cell) + 36);
-    }
-    return getHorizontalPadding(cell) + measureTextWidth(text, cell);
+    return clampAutoFitColumnWidth(padding + textFloor);
   }
 
   if (hasComplexCellContent(content)) {
-    return measureComplexContent(cell, content);
+    return clampAutoFitColumnWidth(
+      Math.max(padding + textFloor, measureComplexContent(cell, content)),
+    );
   }
 
-  const text = content.textContent ?? "";
-  if (isPlaceholderCellText(text)) {
-    return clampAutoFitColumnWidth(getHorizontalPadding(cell) + 36);
+  const contentText = content.textContent ?? "";
+  if (isPlaceholderCellText(contentText) && isPlaceholderCellText(fullText)) {
+    return clampAutoFitColumnWidth(padding + 36);
   }
 
-  return getHorizontalPadding(cell) + measureTextWidth(text, content);
+  return clampAutoFitColumnWidth(
+    padding + Math.max(textFloor, measureTextWidth(contentText, content)),
+  );
 }
 
 /** Reserve room for the sort chevron (size-3.5) and its gap so the full header label always fits. */

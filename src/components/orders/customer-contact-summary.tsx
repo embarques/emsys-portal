@@ -1,6 +1,7 @@
 "use client";
 
-import { IdCard, Mail, MapPin, NotebookPen, Phone } from "lucide-react";
+import type { ReactNode } from "react";
+import { IdCard, Mail, MapPin, NotebookPen, Phone, type LucideIcon } from "lucide-react";
 
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { formatCoreAddressLines } from "@/lib/customers/display";
@@ -38,6 +39,33 @@ type CustomerContactSummaryProps = {
   className?: string;
 };
 
+type DetailTileProps = {
+  icon: LucideIcon;
+  iconClassName: string;
+  label: string;
+  children: ReactNode;
+  className?: string;
+};
+
+function DetailTile({ icon: Icon, iconClassName, label, children, className }: DetailTileProps) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-0 min-w-0 flex-1 flex-col gap-2 rounded-md border border-border/60 bg-muted/35 p-3",
+        className,
+      )}
+    >
+      <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <Icon className={cn("size-3.5 shrink-0", iconClassName)} aria-hidden="true" />
+        <span>{label}</span>
+      </div>
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain text-sm leading-relaxed text-foreground">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function CustomerContactSummary({
   customer,
   addressIndex,
@@ -71,84 +99,84 @@ export function CustomerContactSummary({
   const showMissingAddress = !hasAddress && warnMissing && Boolean(missingAddressLabel);
 
   if (detailed) {
+    const addressBody = hasAddress ? (
+      <div className="space-y-0.5">
+        {addressLines.map((line) => (
+          <p key={line} className="break-words">
+            {line}
+          </p>
+        ))}
+      </div>
+    ) : showMissingAddress ? (
+      <p className={cn("text-sm", optionalMissingClassName)}>{missingAddressLabel}</p>
+    ) : (
+      <p className="text-sm text-foreground/70">{t("common.empty.dash")}</p>
+    );
+
+    const phoneBody =
+      phoneEntries.length > 0 ? (
+        <span className="flex min-w-0 flex-wrap content-start gap-x-2 gap-y-1">
+          {phoneEntries.map(({ phone, display }, index) => (
+            <span
+              key={`${phone.number}-${index}`}
+              className="inline-flex max-w-full items-baseline gap-2"
+            >
+              {index > 0 ? (
+                <span className="text-muted-foreground" aria-hidden="true">
+                  ·
+                </span>
+              ) : null}
+              {/* Keep each number intact; wrap onto the next line as a whole unit. */}
+              <span className="max-w-full whitespace-nowrap font-medium">{display}</span>
+            </span>
+          ))}
+        </span>
+      ) : showMissingPhone ? (
+        <p className={cn("text-sm", optionalMissingClassName)}>{missingPhoneLabel}</p>
+      ) : (
+        <p className="text-sm text-foreground/70">{t("common.empty.dash")}</p>
+      );
+
     return (
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto rounded-lg border border-primary/15 bg-card p-2.5 shadow-sm",
+          // Scroll the whole panel when stacked tiles exceed the available height.
+          "min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-lg border border-primary/15 bg-card p-3 shadow-sm",
           className,
         )}
       >
-        {idNumber || email ? (
-          <div className="min-w-0 shrink-0 space-y-0.5 text-xs text-foreground/80">
-            {idNumber ? (
-              <p className="flex min-w-0 items-center gap-1.5 break-words">
-                <IdCard className={cn("size-3 shrink-0", iconClass.id)} aria-hidden="true" />
-                <span>
-                  <span className="font-medium text-foreground">{t("orders.view.idNumber")}: </span>
-                  {idNumber}
-                </span>
-              </p>
-            ) : null}
-            {email ? (
-              <p className="flex min-w-0 items-center gap-1.5 break-words">
-                <Mail className={cn("size-3 shrink-0", iconClass.mail)} aria-hidden="true" />
-                <span className="truncate">{email}</span>
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+        {/* min-h-full: fill leftover height when few fields; grow past parent → parent scrolls. */}
+        <div className="flex min-h-full flex-col gap-3">
+          <DetailTile icon={MapPin} iconClassName={iconClass.address} label={t("orders.view.address")}>
+            {addressBody}
+          </DetailTile>
 
-        {hasAddress ? (
-          <div className="flex min-w-0 items-start gap-1.5 text-xs leading-snug text-foreground">
-            <MapPin className={cn("mt-0.5 size-3.5 shrink-0", iconClass.address)} aria-hidden="true" />
-            <div className="min-w-0">
-              {addressLines.map((line) => (
-                <p key={line} className="break-words">
-                  {line}
-                </p>
-              ))}
-            </div>
-          </div>
-        ) : showMissingAddress ? (
-          <p className={cn("text-xs", optionalMissingClassName)}>{missingAddressLabel}</p>
-        ) : (
-          <p className="text-xs text-foreground/70">{t("common.empty.dash")}</p>
-        )}
+          <DetailTile icon={Phone} iconClassName={iconClass.phone} label={t("orders.view.phones")}>
+            {phoneBody}
+          </DetailTile>
 
-        {phoneEntries.length > 0 ? (
-          <p className="flex min-w-0 items-start gap-1.5 text-xs leading-snug">
-            <Phone className={cn("mt-0.5 size-3.5 shrink-0", iconClass.phone)} aria-hidden="true" />
-            <span className="flex min-w-0 flex-1 flex-wrap content-start gap-x-2 gap-y-0.5">
-              {phoneEntries.map(({ phone, display }, index) => (
-                <span
-                  key={`${phone.number}-${index}`}
-                  className="inline-flex max-w-full items-baseline gap-2"
-                >
-                  {index > 0 ? (
-                    <span className="text-muted-foreground" aria-hidden="true">
-                      ·
-                    </span>
-                  ) : null}
-                  {/* Keep each number intact; wrap onto the next line as a whole unit. */}
-                  <span className="max-w-full whitespace-nowrap font-medium text-foreground">
-                    {display}
-                  </span>
-                </span>
-              ))}
-            </span>
-          </p>
-        ) : showMissingPhone ? (
-          <p className={cn("text-xs", optionalMissingClassName)}>{missingPhoneLabel}</p>
-        ) : (
-          <p className="text-xs text-foreground/70">{t("common.empty.dash")}</p>
-        )}
+          {idNumber ? (
+            <DetailTile icon={IdCard} iconClassName={iconClass.id} label={t("orders.view.idNumber")}>
+              <p className="break-words font-medium">{idNumber}</p>
+            </DetailTile>
+          ) : null}
 
-        {notes ? (
-          <p className="flex min-w-0 items-start gap-1.5 text-xs leading-snug text-foreground">
-            <NotebookPen className={cn("mt-0.5 size-3 shrink-0", iconClass.notes)} aria-hidden="true" />
-            <span className="min-w-0 whitespace-pre-wrap break-words">{notes}</span>
-          </p>
-        ) : null}
+          {email ? (
+            <DetailTile icon={Mail} iconClassName={iconClass.mail} label={t("orders.view.email")}>
+              <p className="break-words">{email}</p>
+            </DetailTile>
+          ) : null}
+
+          {notes ? (
+            <DetailTile
+              icon={NotebookPen}
+              iconClassName={iconClass.notes}
+              label={t("customers.form.fields.notes")}
+            >
+              <p className="whitespace-pre-wrap break-words">{notes}</p>
+            </DetailTile>
+          ) : null}
+        </div>
       </div>
     );
   }

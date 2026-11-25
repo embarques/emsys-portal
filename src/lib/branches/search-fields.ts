@@ -1,7 +1,7 @@
 /**
  * POST /branches/search — main search identifies branches by name or code.
- * Contact/address/type criteria stay in advanced filters. Missing backend
- * capabilities such as settings.labelPrefix remain blocked separately.
+ * Contact/address/type criteria stay in advanced filters. The label-prefix
+ * advanced filter awaits deployment verification.
  */
 export const BRANCH_BAR_OR_SEARCH_FIELDS = [
   "name",

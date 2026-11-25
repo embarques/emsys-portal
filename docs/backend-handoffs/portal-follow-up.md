@@ -233,7 +233,9 @@ verify permission/catalog/context changes against real responses.
 
 **Remaining query rollout.** Branches, Vehicles, Containers and Supply items main
 search alignment is local. The broader selected per-surface contract still needs
-operator/sort/deployment acceptance; nine chosen backend capabilities remain rejected.
+authenticated deployment acceptance. API dev implements the nine selected
+capabilities. On November 24, the public Swagger and Scalar snapshots still
+differed from the locally verified API contract.
 Passing ordinary branch/container/vehicle reads are not pending defects.
 
 ### Expected result
@@ -262,7 +264,7 @@ or historical data migration.
 
 #### Both — API and database together
 
-**Portal actions:** retain disabled controls for all nine unsupported additions.
+**Portal actions:** keep all nine additions disabled until deployed acceptance passes.
 After deployment, align each selected surface and verify main/advanced composition,
 operators, sort ties, pages, permissions and company/branch transitions. Use canonical
 supplier companyName and ID-based supplier/holder filters. Receipt/dispatch notes is

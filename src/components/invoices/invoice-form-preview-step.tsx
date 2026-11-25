@@ -36,7 +36,8 @@ import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceDate, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import {
   computeInvoiceBalance,
-  INVOICE_PICKUP_SOURCES,
+  INVOICE_RECEIVED_VIA_CHOICES,
+  invoicePickupSourceToReceivedVia,
   isInvoiceEmployeePickupSource,
   resolveLineLabelCount,
   resolveLineTotal,
@@ -128,13 +129,15 @@ function usePreviewLabels(values: InvoiceFormValues) {
   ]);
 
   const pickupAssignmentFieldLabel = useMemo(() => {
-    if (values.pickupSource === "warehouse") return t("invoices.form.fields.warehouseEmployee");
-    if (values.pickupSource === "office") return t("invoices.form.fields.officeEmployee");
+    if (isInvoiceEmployeePickupSource(values.pickupSource)) {
+      return t("invoices.form.fields.supervisorEmployee");
+    }
     return t("invoices.form.fields.pickupRoute");
   }, [t, values.pickupSource]);
 
   const pickupSourceLabel = useMemo(() => {
-    const option = INVOICE_PICKUP_SOURCES.find((entry) => entry.value === values.pickupSource);
+    const choice = invoicePickupSourceToReceivedVia(values.pickupSource);
+    const option = INVOICE_RECEIVED_VIA_CHOICES.find((entry) => entry.value === choice);
     return option ? t(option.labelKey) : t("invoices.form.fields.pickupSource");
   }, [t, values.pickupSource]);
 

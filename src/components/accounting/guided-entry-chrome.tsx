@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { ArrowLeft, ArrowRight, Loader2, Save } from "lucide-react";
 
+import { useResponsibilityRequiredRecoveryAction } from "@/components/accounting/open-employees-recovery-action";
 import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
@@ -81,9 +82,14 @@ export function GuidedEntryFooter({ busy, onPrevious, onCancel, submitLabel, fin
   appearance?: "default" | "phone";
 }) {
   const { t } = useTranslation();
+  const responsibilityAction = useResponsibilityRequiredRecoveryAction(error);
   return (
     <div className={cn("shrink-0 space-y-3 border-t border-border bg-card px-5 py-3", appearance === "phone" && "pb-[calc(env(safe-area-inset-bottom)+1rem)]")}>
-      {error ? <FormFooterNoticeMessage tone="error" message={error} /> : warning ? <FormFooterNoticeMessage tone="warning" message={warning} /> : null}
+      {error ? (
+        <FormFooterNoticeMessage tone="error" message={error} action={responsibilityAction} />
+      ) : warning ? (
+        <FormFooterNoticeMessage tone="warning" message={warning} />
+      ) : null}
       <div className="flex flex-wrap items-center justify-end gap-2">
         {onPrevious ? (
           <Button type="button" variant="outline" className="mr-auto" disabled={busy} onClick={onPrevious}>

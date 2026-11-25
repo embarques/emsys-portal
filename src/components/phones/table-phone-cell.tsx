@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 import { useTranslation } from "@/lib/i18n";
 import { getRecordPhoneDisplayNumber } from "@/lib/phones/phones";
 import { cn } from "@/lib/utils";
@@ -24,36 +23,57 @@ export function TablePhoneCell({ phones, className, callable = false, onShowAll 
 
   if (entries.length === 0) return <span>{t("common.empty.dash")}</span>;
 
+  const moreCount = entries.length - 1;
+  const showInlineExpanded = expanded && !onShowAll;
+  const visible = showInlineExpanded ? entries : entries.slice(0, 1);
+
+  function handleShowMore(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    if (onShowAll) {
+      onShowAll();
+      return;
+    }
+    setExpanded((value) => !value);
+  }
+
   return (
-    <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME, className)}>
-      <div className={cn("flex w-full flex-col gap-0.5", ADDRESS_TEXT_WRAP_CLASSNAME)}>
-        {(expanded ? entries : entries.slice(0, 2)).map(({ phone, display }, index) => {
+    <div className={cn("min-w-0", className)}>
+      <div
+        className={cn(
+          "flex min-w-0",
+          showInlineExpanded ? "flex-col items-start gap-0.5" : "items-center gap-1.5",
+        )}
+      >
+        {visible.map(({ phone, display }, index) => {
           const dial = (phone.number || display).replace(/[^\d+]/g, "");
           return (
-            <span key={`${phone.number}-${index}`} className="leading-snug">
+            <span key={`${phone.number}-${index}`} className="min-w-0 truncate leading-snug">
               {callable && dial ? (
-                <a href={`tel:${dial}`} className="whitespace-nowrap tabular-nums hover:underline" onClick={(event) => event.stopPropagation()}>{display}</a>
-              ) : <span className="whitespace-nowrap tabular-nums">{display}</span>}
+                <a
+                  href={`tel:${dial}`}
+                  className="whitespace-nowrap tabular-nums hover:underline"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {display}
+                </a>
+              ) : (
+                <span className="whitespace-nowrap tabular-nums">{display}</span>
+              )}
             </span>
           );
         })}
+        {moreCount > 0 && !showInlineExpanded ? (
+          <button
+            type="button"
+            data-stop-row-click
+            aria-label={t("phones.moreCountAria", { count: moreCount })}
+            className="shrink-0 whitespace-nowrap font-medium text-primary hover:underline"
+            onClick={handleShowMore}
+          >
+            {t("phones.moreCount", { count: moreCount })}
+          </button>
+        ) : null}
       </div>
-      {entries.length >= 3 ? (
-        <button
-          type="button"
-          data-stop-row-click
-          aria-expanded={onShowAll ? undefined : expanded}
-          aria-label={t("phones.viewMoreAria")}
-          className="mt-0.5 text-left text-xs font-medium text-primary hover:underline"
-          onClick={(event) => {
-            event.stopPropagation();
-            if (onShowAll) onShowAll();
-            else setExpanded((value) => !value);
-          }}
-        >
-          {t("phones.viewMore")}
-        </button>
-      ) : null}
     </div>
   );
 }

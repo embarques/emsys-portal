@@ -1,7 +1,12 @@
 "use client";
 import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
+import {
+  canOpenEmployeesDirectory,
+  OpenEmployeesRecoveryAction,
+} from "@/components/accounting/open-employees-recovery-action";
 import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
 import { isStaleMutation } from "@/lib/api/mutation-version";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -253,6 +258,8 @@ export function InvoiceCreateWizard({
   appointmentPrefill,
 }: InvoiceCreateWizardProps) {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
+  const canManageEmployees = canOpenEmployeesDirectory(hasPermission);
   const submitLabel = submitLabelProp ?? t("invoices.form.actions.saveInvoice");
   const { notifyAdded } = useFeedback();
   const createMutation = useCreateInvoice();
@@ -346,25 +353,37 @@ export function InvoiceCreateWizard({
         savedInvoiceId: created.invoiceId,
       };
     } catch (error) {
-      return { error: normalizeDailyIncomeJournalError(error) };
+      return {
+        error: normalizeDailyIncomeJournalError(error, { canManageEmployees }),
+      };
     }
   }
 
+  const assignedContextError =
+    isAssignedOnly && assignedContextQuery.isError
+      ? assignedContextQuery.error instanceof AssignedInvoiceContextError
+        ? assignedContextQuery.error.code === "employeeNotLinked" && canManageEmployees
+          ? t("invoices.assigned.errors.employeeNotLinkedOpenEmployees")
+          : t(`invoices.assigned.errors.${assignedContextQuery.error.code}`)
+        : normalizeDailyIncomeJournalError(assignedContextQuery.error, { canManageEmployees })
+      : null;
   const blockedMessage =
     appointmentId && appointmentQuery.isError
       ? t("invoices.workspace.appointmentLoadError")
       : createAccess.ready && isAssignedOnly && !appointmentId
         ? t("invoices.assigned.errors.appointmentRequired")
-        : isAssignedOnly && assignedContextQuery.isError
-          ? assignedContextQuery.error instanceof AssignedInvoiceContextError
-            ? t(`invoices.assigned.errors.${assignedContextQuery.error.code}`)
-            : normalizeDailyIncomeJournalError(assignedContextQuery.error)
-          : null;
+        : assignedContextError;
+  const showOpenEmployeesRecovery =
+    isAssignedOnly &&
+    assignedContextQuery.error instanceof AssignedInvoiceContextError &&
+    assignedContextQuery.error.code === "employeeNotLinked" &&
+    canManageEmployees;
 
   if (blockedMessage) {
     return (
       <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="max-w-md text-sm text-destructive">{blockedMessage}</p>
+        {showOpenEmployeesRecovery ? <OpenEmployeesRecoveryAction /> : null}
         <Button variant="outline" onClick={onCancel}>
           {t("invoices.form.design.backToInvoices")}
         </Button>
@@ -443,6 +462,8 @@ export function InvoiceEditWizard({
   inDialog = false,
 }: InvoiceEditWizardProps) {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
+  const canManageEmployees = canOpenEmployeesDirectory(hasPermission);
   const submitLabel = submitLabelProp ?? t("common.actions.saveChanges");
   const { notifyUpdated, notifySuccess, notifyError } = useFeedback();
   const { printInvoice, isPrinting } = usePrintInvoices();
@@ -523,7 +544,11 @@ export function InvoiceEditWizard({
         savedInvoiceId: updated.invoiceId,
       };
     } catch (error) {
-      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeDailyIncomeJournalError(error) };
+      return {
+        error: isStaleMutation(error)
+          ? t("common.form.staleUpdate")
+          : normalizeDailyIncomeJournalError(error, { canManageEmployees }),
+      };
     } finally {
       setIsSyncingBarcodes(false);
       setPendingValues(null);
@@ -561,7 +586,11 @@ export function InvoiceEditWizard({
 
       return await saveInvoiceWithBarcodeSync(submitted, plan, {});
     } catch (error) {
-      return { error: isStaleMutation(error) ? t("common.form.staleUpdate") : normalizeDailyIncomeJournalError(error) };
+      return {
+        error: isStaleMutation(error)
+          ? t("common.form.staleUpdate")
+          : normalizeDailyIncomeJournalError(error, { canManageEmployees }),
+      };
     }
   }
 

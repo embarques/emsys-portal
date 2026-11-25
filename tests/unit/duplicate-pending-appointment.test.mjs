@@ -58,6 +58,12 @@ test("detects duplicate pending appointment by data.code", () => {
     ),
     true,
   );
+  assert.equal(
+    isDuplicatePendingAppointmentWarning(
+      conflictError({ code: "DUPLICATE_PENDING_APPOINTMENT" }),
+    ),
+    true,
+  );
   assert.equal(isDuplicatePendingAppointmentWarning(conflictError({ message: "Other conflict" })), false);
 });
 

@@ -22,6 +22,7 @@ import {
 import dynamic from "next/dynamic";
 import { useLoanEntry } from "@/lib/accounting/loans/use-loan-entry";
 import { useInventoryPaymentEntryAccess } from "@/lib/accounting/daily-income/use-inventory-payment-entry";
+import { useResponsibilityRequiredRecoveryAction } from "@/components/accounting/open-employees-recovery-action";
 import { FormFooterNoticeMessage } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -158,6 +159,7 @@ export function AddTransactionWizard(props: Props) {
   const [skipAutofocusAfterSave, setSkipAutofocusAfterSave] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const footerError = stepError || props.error;
+  const responsibilityAction = useResponsibilityRequiredRecoveryAction(footerError);
   const steps = getTransactionFormSteps(selectedType, liveAmount);
   const stepIndex = steps.indexOf(activeStep);
   // Choosing the type is step 1 of the add workflow; the form's own steps follow it.
@@ -522,7 +524,9 @@ export function AddTransactionWizard(props: Props) {
       </div>
       {(showTypePicker ? Boolean(footerError) : !specialType) ? (
         <div className={cn("shrink-0 space-y-3 border-t border-border bg-card px-5 py-3", isPhone && "pb-[calc(env(safe-area-inset-bottom)+1rem)]")}>
-          {footerError ? <FormFooterNoticeMessage tone="error" message={footerError} /> : null}
+          {footerError ? (
+            <FormFooterNoticeMessage tone="error" message={footerError} action={responsibilityAction} />
+          ) : null}
           {!showTypePicker ? <div className="flex flex-wrap items-center justify-end gap-2">
             <Button type="button" variant="ghost" onClick={props.onCancel} disabled={isSubmitting}>
               {t("common.actions.cancel")}

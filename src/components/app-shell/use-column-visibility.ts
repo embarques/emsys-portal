@@ -28,6 +28,8 @@ export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
   const [preferences, setPreferences] = useState<TableColumnPreferences>(() =>
     loadTableColumnPreferences(storageKey, columns)
   );
+  /** Bumped by reset so DataTable re-runs content auto-fit (defaultWidth alone is not enough). */
+  const [autoFitEpoch, setAutoFitEpoch] = useState(0);
 
   const orderedColumns = useMemo(
     () => sortColumnsByOrder(columns, preferences.order),
@@ -144,6 +146,8 @@ export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
       order: buildDefaultOrder(columns),
       widths: buildDefaultWidths(columns),
     });
+    // Ask the table to measure content widths after defaults are restored.
+    setAutoFitEpoch((current) => current + 1);
   }, [columns, hideableColumns, persist]);
 
   return {
@@ -158,6 +162,7 @@ export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
     moveColumn,
     showAllColumns,
     resetColumns,
+    autoFitEpoch,
     hideableColumns,
     visibility: preferences.visibility,
     order: preferences.order,

@@ -34,6 +34,10 @@ import {
   type DailyIncomeStatement,
 } from "@/lib/accounting/daily-income/types";
 import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
+import {
+  canOpenEmployeesDirectory,
+  useResponsibilityRequiredRecoveryAction,
+} from "@/components/accounting/open-employees-recovery-action";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import { resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
 import { buildInvoiceDailyIncomeAssigneeDefaults } from "@/lib/invoices/schemas/invoice-daily-income.schema";
@@ -111,6 +115,7 @@ export function InvoicePaymentTransactionForm({
   const { notifySuccess, notifyError } = useFeedback();
   const navigateOnEnter = useFormEnterNavigation({ advanceTextareas: true });
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const responsibilityAction = useResponsibilityRequiredRecoveryAction(submitError);
   const responsibility = useResponsibilityAccess("INITIAL-PAYMENT");
   const { hasPermission } = useAuth();
   const employeesQuery = useEmployees({ page: 1, limit: 200, active: true, sort: "name:asc" }, {
@@ -385,7 +390,9 @@ export function InvoicePaymentTransactionForm({
       );
       await onRegistered(journal);
     } catch (error) {
-      const message = normalizeDailyIncomeJournalError(error);
+      const message = normalizeDailyIncomeJournalError(error, {
+        canManageEmployees: canOpenEmployeesDirectory(hasPermission),
+      });
       setSubmitError(message);
       notifyError(message);
     }
@@ -467,7 +474,7 @@ export function InvoicePaymentTransactionForm({
           {t("invoices.wizard.dailyIncome.dialog.registering")}
         </p>
       ) : submitError && !skipPayment ? (
-        <FormFooterNoticeMessage tone="error" message={submitError} />
+        <FormFooterNoticeMessage tone="error" message={submitError} action={responsibilityAction} />
       ) : null}
     </form>
   );

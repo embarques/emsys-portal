@@ -52,7 +52,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <CompactActionDialogContent className="max-h-[85vh] overflow-hidden sm:max-w-md">
+        <CompactActionDialogContent className="max-h-[85vh] overflow-hidden sm:max-w-lg">
           <CompactActionDialogHeader
             icon={Columns3}
             title={t("common.table.customizeColumns")}
@@ -138,8 +138,10 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
             })}
           </CompactActionDialogBody>
 
-          <CompactActionDialogFooter className="gap-2 sm:justify-between">
-            <div className="flex flex-wrap gap-2">
+          <CompactActionDialogFooter
+            actionsClassName="flex w-full flex-row flex-nowrap items-center justify-between gap-2 sm:flex-row sm:flex-nowrap sm:justify-between"
+          >
+            <div className="flex shrink-0 flex-nowrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={showAllColumns}>
                 {t("common.table.showAll")}
               </Button>
@@ -147,7 +149,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                 {t("common.table.resetToDefault")}
               </Button>
             </div>
-            <Button type="button" size="sm" onClick={() => setOpen(false)}>
+            <Button type="button" size="sm" className="shrink-0" onClick={() => setOpen(false)}>
               {t("common.table.done")}
             </Button>
           </CompactActionDialogFooter>

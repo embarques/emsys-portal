@@ -61,6 +61,8 @@ function measureSelectColumnWidth(table: HTMLTableElement): number {
   return maxWidth;
 }
 
+type DataTableDensity = "default" | "compact";
+
 type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
   rows: T[];
@@ -72,6 +74,11 @@ type DataTableProps<T> = {
    * when the viewport width is not yet known.
    */
   minWidth?: number;
+  /**
+   * Row/header spacing. `compact` tightens padding, keeps `text-sm`, auto-fits
+   * columns to single-line content, and only wraps a column after the user shrinks it.
+   */
+  density?: DataTableDensity;
   selectable?: boolean;
   isRowSelectable?: (row: T) => boolean;
   selectedIds?: string[];
@@ -111,6 +118,7 @@ function DataTableContent<T>({
   columnLayout,
   emptyState,
   minWidth = 960,
+  density = "default",
   selectable = false,
   isRowSelectable,
   selectedIds = [],
@@ -133,8 +141,16 @@ function DataTableContent<T>({
   sortUnavailable = false,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
-  const { isVisible, getColumnWidth, setColumnWidth, fitColumnWidth, fitColumnWidths, reorderColumns } =
-    columnLayout;
+  const isCompact = density === "compact";
+  const {
+    isVisible,
+    getColumnWidth,
+    setColumnWidth,
+    fitColumnWidth,
+    fitColumnWidths,
+    reorderColumns,
+    autoFitEpoch = 0,
+  } = columnLayout;
 
   const activeSort = useMemo(() => getPrimarySortSpec(sort), [sort]);
 
@@ -153,6 +169,13 @@ function DataTableContent<T>({
   const [draggingHeaderId, setDraggingHeaderId] = useState<string | null>(null);
   const [dragOverHeaderId, setDragOverHeaderId] = useState<string | null>(null);
   const [resizingColumnId, setResizingColumnId] = useState<string | null>(null);
+  /**
+   * Compact density: columns stay single-line until the user shrinks them.
+   * Shrinking opts that column into wrapping for the rest of the session.
+   */
+  const [userWrappedColumnIds, setUserWrappedColumnIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const pendingRowClickRef = useRef<number | null>(null);
   const rowPointerRef = useRef<RowPointerState | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -160,7 +183,26 @@ function DataTableContent<T>({
   const [measuredSelectColumnWidth, setMeasuredSelectColumnWidth] = useState<number | null>(null);
   const lastAutoFitSignatureRef = useRef<string | null>(null);
   const autoFitPassRef = useRef(0);
+  const lastAutoFitEpochRef = useRef(autoFitEpoch);
   const autoFitContextRef = useRef({ pageKey: -1, visibleColumnKey: "" });
+
+  function clearUserWrappedColumn(columnId: string) {
+    setUserWrappedColumnIds((current) => {
+      if (!current.has(columnId)) return current;
+      const next = new Set(current);
+      next.delete(columnId);
+      return next;
+    });
+  }
+
+  function markUserWrappedColumn(columnId: string) {
+    setUserWrappedColumnIds((current) => {
+      if (current.has(columnId)) return current;
+      const next = new Set(current);
+      next.add(columnId);
+      return next;
+    });
+  }
 
   const delaySingleClick = Boolean(onRowClick && onRowDoubleClick);
 
@@ -210,6 +252,7 @@ function DataTableContent<T>({
     if (column?.autoFitColumn === false) return;
     if (!tableRef.current) return;
     const width = measureTableColumnContentWidth(tableRef.current, columnIndex);
+    clearUserWrappedColumn(columnId);
     fitColumnWidth(columnId, width);
   }
 
@@ -243,32 +286,53 @@ function DataTableContent<T>({
       autoFitPassRef.current = 0;
     }
 
-    const signature = `${pageKey}\0${visibleColumnKey}`;
+    if (lastAutoFitEpochRef.current !== autoFitEpoch) {
+      lastAutoFitEpochRef.current = autoFitEpoch;
+      lastAutoFitSignatureRef.current = null;
+      autoFitPassRef.current = 0;
+      // Reset-to-default should return to single-line content fit.
+      setUserWrappedColumnIds(new Set());
+    }
+
+    const signature = `${pageKey}\0${visibleColumnKey}\0${autoFitEpoch}`;
 
     if (lastAutoFitSignatureRef.current === signature) return;
-    if (autoFitPassRef.current >= 2) return;
 
     let cancelled = false;
-    let frame = 0;
-    let innerFrame = 0;
+    const frames: number[] = [];
 
-    frame = requestAnimationFrame(() => {
-      innerFrame = requestAnimationFrame(() => {
-        if (cancelled) return;
-        autoFitAllVisibleColumns();
+    // Two passes: measure → apply widths → measure again after layout commits.
+    const runPass = () => {
+      if (cancelled || autoFitPassRef.current >= 2) {
         lastAutoFitSignatureRef.current = signature;
-        autoFitPassRef.current += 1;
-      });
-    });
+        return;
+      }
+      autoFitAllVisibleColumns();
+      autoFitPassRef.current += 1;
+      if (autoFitPassRef.current >= 2) {
+        lastAutoFitSignatureRef.current = signature;
+        return;
+      }
+      frames.push(
+        requestAnimationFrame(() => {
+          frames.push(requestAnimationFrame(runPass));
+        }),
+      );
+    };
+
+    frames.push(
+      requestAnimationFrame(() => {
+        frames.push(requestAnimationFrame(runPass));
+      }),
+    );
 
     return () => {
       cancelled = true;
-      cancelAnimationFrame(frame);
-      cancelAnimationFrame(innerFrame);
+      frames.forEach((frame) => cancelAnimationFrame(frame));
     };
     // Refit only when table inputs change; the per-render helper would retrigger every pass.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey]);
+  }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey, autoFitEpoch]);
 
   useLayoutEffect(() => {
     const table = tableRef.current;
@@ -326,10 +390,12 @@ function DataTableContent<T>({
 
   function startColumnResize(columnId: string, startX: number) {
     const startWidth = getColumnWidth(columnId);
+    let latestWidth = startWidth;
     setResizingColumnId(columnId);
 
     function handleMouseMove(event: MouseEvent) {
-      setColumnWidth(columnId, startWidth + event.clientX - startX);
+      latestWidth = startWidth + event.clientX - startX;
+      setColumnWidth(columnId, latestWidth);
     }
 
     function handleMouseUp() {
@@ -338,6 +404,10 @@ function DataTableContent<T>({
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
       setResizingColumnId(null);
+      // Compact: shrinking a column opts it into multiline wrapping.
+      if (isCompact && latestWidth < startWidth) {
+        markUserWrappedColumn(columnId);
+      }
     }
 
     document.body.style.cursor = "col-resize";
@@ -389,11 +459,17 @@ function DataTableContent<T>({
     return stretchedColumnWidths[columnId] ?? getColumnWidth(columnId);
   }
 
+  const selectCellPaddingClassName = isCompact ? "py-1 pl-3 pr-1" : "py-3 pl-4 pr-1";
+  const leadingColumnPaddingClassName = isCompact ? "pl-3" : "pl-4";
+  const headerCellPaddingClassName = isCompact ? "px-2 py-1.5" : "px-2 py-3";
+  const bodyCellPaddingClassName = isCompact ? "px-2 py-1" : "px-2 py-3";
+
   return (
     <ScrollableTable minWidth={tableWidth}>
       <table
         ref={tableRef}
         aria-busy={isPageDataPending}
+        data-density={density}
         className="w-full table-fixed text-sm"
         style={{ width: tableWidth, minWidth: tableWidth }}
       >
@@ -404,11 +480,22 @@ function DataTableContent<T>({
           ))}
         </colgroup>
         <thead>
-          <tr className="border-b bg-muted/30 text-left">
+          <tr
+            className={cn(
+              "border-b text-left",
+              // Keep default text color so native checkboxes are not tinted by
+              // `text-muted-foreground` (WebKit uses currentColor for the control).
+              isCompact ? "bg-muted" : "bg-muted/30",
+            )}
+          >
             {selectable ? (
               <th
                 style={selectColumnStyle}
-                className="overflow-hidden py-3 pl-4 pr-1 align-middle"
+                className={cn(
+                  "overflow-hidden align-middle",
+                  selectCellPaddingClassName,
+                  isCompact && "border-b border-border bg-muted",
+                )}
                 aria-label={hasSelectCellActions ? t("tableFields.table.selectAndActions") : undefined}
               >
                 <input
@@ -435,6 +522,7 @@ function DataTableContent<T>({
                 <th
                   key={column.id}
                   draggable
+                  scope="col"
                   aria-sort={
                     canSort
                       ? isActiveSort
@@ -446,9 +534,11 @@ function DataTableContent<T>({
                   }
                   style={{ width }}
                   className={cn(
-                    "group relative cursor-grab select-none px-2 py-3 text-left active:cursor-grabbing",
+                    "group relative cursor-grab select-none text-left active:cursor-grabbing",
+                    headerCellPaddingClassName,
+                    isCompact && "border-b border-border bg-muted font-medium",
                     column.headerClassName,
-                    isLeadingColumn && "pl-4",
+                    isLeadingColumn && leadingColumnPaddingClassName,
                     draggingHeaderId === column.id && "cursor-grabbing opacity-60",
                     dragOverHeaderId === column.id && draggingHeaderId !== column.id && "bg-primary/10",
                     resizingColumnId === column.id && "bg-primary/5"
@@ -493,25 +583,36 @@ function DataTableContent<T>({
                           event.stopPropagation();
                           handleSort(sortField!);
                         }}
-                        className="group/sort flex min-w-0 items-center gap-0.5 text-left"
+                        className="group/sort flex min-h-6 min-w-0 items-center gap-0.5 text-left"
                         title={headerLabel}
                       >
-                        <span className="min-w-0 truncate text-xs font-semibold leading-tight tracking-wide text-foreground/70 transition-colors">
+                        <span
+                          className={cn(
+                            "min-w-0 truncate text-xs font-semibold leading-tight tracking-wide transition-colors",
+                            isCompact ? "text-muted-foreground" : "text-foreground/70",
+                          )}
+                        >
                           {headerLabel}
                         </span>
                         {isActiveSort ? (
                           activeSort?.direction === "desc" ? (
-                            <ChevronDown className="size-3.5 shrink-0 text-foreground/80" />
+                            <ChevronDown className="size-3.5 shrink-0 text-foreground/80" aria-hidden />
                           ) : (
-                            <ChevronUp className="size-3.5 shrink-0 text-foreground/80" />
+                            <ChevronUp className="size-3.5 shrink-0 text-foreground/80" aria-hidden />
                           )
                         ) : (
-                          <ChevronsUpDown className="size-3.5 shrink-0 text-foreground/30 opacity-0 transition-opacity group-hover:opacity-100 group-hover/sort:opacity-100" />
+                          <ChevronsUpDown
+                            className="size-3.5 shrink-0 text-foreground/30 opacity-0 transition-opacity group-hover:opacity-100 group-hover/sort:opacity-100"
+                            aria-hidden
+                          />
                         )}
                       </button>
                     ) : (
                       <span
-                        className="min-w-0 truncate text-left text-xs font-semibold leading-tight tracking-wide text-foreground/70"
+                        className={cn(
+                          "min-w-0 truncate text-left text-xs font-semibold leading-tight tracking-wide",
+                          isCompact ? "text-muted-foreground" : "text-foreground/70",
+                        )}
                         title={headerLabel}
                       >
                         {headerLabel}
@@ -560,6 +661,7 @@ function DataTableContent<T>({
                   className={cn(
                     (onRowClick || onRowDoubleClick) && "cursor-pointer",
                     "border-b transition-colors last:border-0 hover:bg-muted/25",
+                    isCompact && "even:bg-muted/25 last:border-b-0",
                     (selected || active) && "bg-primary/[0.06]"
                   )}
                   onMouseDown={handleRowMouseDown}
@@ -569,7 +671,7 @@ function DataTableContent<T>({
                   {selectable ? (
                     <td
                       style={selectColumnStyle}
-                      className="overflow-hidden py-3 pl-4 pr-1 align-middle"
+                      className={cn("overflow-hidden align-middle", selectCellPaddingClassName)}
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="inline-flex items-center gap-1 whitespace-nowrap">
@@ -595,29 +697,53 @@ function DataTableContent<T>({
 
                     const shouldTruncate = column.truncateCell === true;
                     const isLeadingColumn = !selectable && columnIndex === 0;
+                    const allowWrap =
+                      !shouldTruncate &&
+                      (!isCompact || userWrappedColumnIds.has(column.id));
+                    const keepSingleLine = isCompact && !shouldTruncate && !allowWrap;
 
                     return (
                     <td
                       key={column.id}
+                      data-wrap={allowWrap ? "true" : keepSingleLine ? "false" : undefined}
                       style={{ width: getDisplayColumnWidth(column.id) }}
                       className={cn(
-                        "px-2 py-3 align-top",
+                        bodyCellPaddingClassName,
+                        isCompact ? "align-middle" : "align-top",
                         UNIFORM_PILL_CELL_CLASSNAME,
-                        shouldTruncate ? "overflow-hidden" : "whitespace-normal break-words",
+                        shouldTruncate || keepSingleLine
+                          ? "overflow-hidden"
+                          : "whitespace-normal break-words",
                         column.cellClassName,
-                        isLeadingColumn && "pl-4",
+                        // Apply after cellClassName so compact single-line wins over wrap utilities.
+                        keepSingleLine &&
+                          "overflow-hidden whitespace-nowrap [&_:where(p,div,span)]:whitespace-nowrap",
+                        allowWrap &&
+                          isCompact &&
+                          "overflow-visible whitespace-normal break-words [&_:where(p,div,span)]:whitespace-normal",
+                        isLeadingColumn && leadingColumnPaddingClassName,
                       )}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
-                      title={!copyText && shouldTruncate && cellText ? cellText : undefined}
+                      title={
+                        !copyText && (shouldTruncate || keepSingleLine) && cellText
+                          ? cellText
+                          : undefined
+                      }
                     >
                       {copyText ? (
                         <TableCopyableCell
                           value={copyText}
-                          truncate={shouldTruncate}
+                          // Compact single-line must clip inside the column (never paint into neighbors).
+                          truncate={shouldTruncate || keepSingleLine}
                         >
-                          {!shouldTruncate ? cellContent : undefined}
+                          {
+                            // Keep custom cell chrome (e.g. muted address2) even when single-line.
+                            typeof cellContent === "string" || typeof cellContent === "number"
+                              ? undefined
+                              : cellContent
+                          }
                         </TableCopyableCell>
-                      ) : shouldTruncate ? (
+                      ) : shouldTruncate || keepSingleLine ? (
                         <div className="truncate">{cellContent}</div>
                       ) : (
                         <div className="min-w-0 max-w-full break-words [overflow-wrap:break-word]">

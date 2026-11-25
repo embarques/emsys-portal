@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
 import type { InvoicePaymentDraft } from "@/lib/invoices/invoice-daily-income-context";
+import { WizardField } from "@/components/invoices/invoice-wizard-field";
+import { wizardSelectFieldProps } from "@/components/invoices/invoice-wizard-styles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +31,11 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { type InvoiceDailyIncomeContext } from "@/lib/invoices/invoice-daily-income-context";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
-import { type InvoiceFormValues } from "@/lib/invoices/types";
+import {
+  mapPaymentLocationToPaidRegion,
+  type InvoiceFormValues,
+  type InvoicePaymentLocation,
+} from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { useOpenInvoiceCloseout } from "@/lib/invoices/hooks/use-open-invoice-closeout";
@@ -38,6 +44,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   paymentDraftRef: MutableRefObject<InvoicePaymentDraft | null>;
   values: InvoiceFormValues;
+  onPaymentLocationChange: (paymentLocation: InvoicePaymentLocation) => void;
   onContextChange: (context: InvoiceDailyIncomeContext) => void;
   /** Payment posted or skipped ($0): continue to the next wizard step with this context. */
   onContinue?: (context: InvoiceDailyIncomeContext) => void;
@@ -197,6 +204,7 @@ function CloseoutCurrencyForm({
 export function InvoiceDailyIncomeStep({
   paymentDraftRef,
   values,
+  onPaymentLocationChange,
   onContextChange,
   onContinue,
   paymentSubmitRef,
@@ -210,7 +218,7 @@ export function InvoiceDailyIncomeStep({
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
   const closeoutCalendar = useCloseoutCalendar(branchId);
- const currentDate = closeoutCalendar.data?.today ?? "";
+  const currentDate = closeoutCalendar.data?.today ?? "";
   const registrationQuery = useDailyIncomeInvoiceRegistration(values.invoiceNumber);
   const registration = registrationQuery.data ?? localRegistration;
   const statementQuery = useCurrentIncomeStatement(branchId);
@@ -218,8 +226,46 @@ export function InvoiceDailyIncomeStep({
   const openCloseout = useOpenInvoiceCloseout(branchId, setLocalStatement);
   const statusError = openCloseout.error;
   const branchesQuery = useBranchPicker(200);
-  const currentBranch = branchesQuery.data?.items.find((branch) => branch.id === branchId);
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
+  const currentBranch = branches.find((branch) => branch.id === branchId);
   const needsCurrency = currentBranch?.code.trim().toUpperCase() === "RD";
+  const paymentLocationOptions = useMemo(
+    () =>
+      branches
+        .filter((branch) => branch.code.trim())
+        .map((branch) => ({
+          value: branch.code.trim().toUpperCase(),
+          label: branch.code.trim().toUpperCase(),
+        })),
+    [branches],
+  );
+
+  const paymentLocationField = (
+    <div
+      className={
+        isMobileLayout ? undefined : "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"
+      }
+    >
+      <WizardField
+        label={t("invoices.form.fields.paymentLocation")}
+        htmlFor="paymentLocation"
+        required
+        className={isMobileLayout ? undefined : "max-w-md"}
+      >
+        <SearchableSelect
+          id="paymentLocation"
+          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
+          onValueChange={(next) => onPaymentLocationChange(next as InvoicePaymentLocation)}
+          placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
+          searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
+          {...wizardSelectFieldProps(values.paymentLocation)}
+          required
+          loading={branchesQuery.isLoading}
+          options={paymentLocationOptions}
+        />
+      </WizardField>
+    </div>
+  );
 
   useEffect(() => {
     setLocalRegistration((current) => current?.invoice?.number === values.invoiceNumber ? current : null);
@@ -341,7 +387,8 @@ export function InvoiceDailyIncomeStep({
 
   if (isLoading) {
     return (
-      <div className="space-y-5">
+      <div className={cn("space-y-5", !isMobileLayout && "p-4 sm:p-6")}>
+        {paymentLocationField}
         <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {t("invoices.wizard.dailyIncome.checking")}
@@ -354,6 +401,7 @@ export function InvoiceDailyIncomeStep({
     if (queryError) {
       return (
         <div className="space-y-5">
+          {paymentLocationField}
           <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
@@ -374,6 +422,7 @@ export function InvoiceDailyIncomeStep({
     if (registration) {
       return (
         <div className="space-y-5">
+          {paymentLocationField}
           <div className="rounded-xl border bg-card p-4">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
@@ -406,6 +455,7 @@ export function InvoiceDailyIncomeStep({
     if (!statementOpen) {
       return (
         <div className="space-y-5">
+          {paymentLocationField}
           <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
             <div className="space-y-2">
               <p className="font-semibold text-amber-950 dark:text-amber-100">
@@ -441,6 +491,7 @@ export function InvoiceDailyIncomeStep({
 
     return (
       <div className="space-y-5">
+        {paymentLocationField}
         {paymentForm}
       </div>
     );
@@ -448,6 +499,7 @@ export function InvoiceDailyIncomeStep({
 
   return (
     <div className="space-y-5 p-4 sm:p-6">
+      {paymentLocationField}
       {queryError ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
           <div className="flex items-start gap-3">

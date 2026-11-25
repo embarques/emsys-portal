@@ -198,6 +198,7 @@
     "errors": {
       "appointmentRequired": "Las facturas solo se pueden crear desde una cita.",
       "employeeNotLinked": "Su usuario no está vinculado a un empleado. Pida a un administrador que vincule su registro de empleado antes de crear facturas.",
+      "employeeNotLinkedOpenEmployees": "Su usuario no está vinculado a un empleado. Abra Empleados para vincular su registro de empleado antes de crear facturas.",
       "noAssignment": "No está en la ruta de recogida de hoy y no es empleado de oficina ni de almacén. Pida a un administrador que lo asigne antes de crear facturas.",
       "noContainer": "Todavía no hay un contenedor disponible. Pida a un administrador que cree uno antes de crear facturas."
     }
@@ -225,14 +226,16 @@
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
       "pickupReceiver": "Destinatario de esta recogida",
-      "pickupSource": "Recibido en",
-      "pickupSourceCreator": "Yo (empleado vinculado)",
-      "pickupSourceRoute": "Ruta",
+      "pickupSource": "Recibido vía",
+      "pickupSourceCreator": "Yo",
+      "pickupSourceSupervisor": "Supervisor",
+      "pickupSourceRoute": "Ruta diaria",
       "pickupSourceWarehouse": "Almacén",
       "pickupSourceOffice": "Oficina",
-      "pickupRoute": "Ruta de citas",
+      "pickupRoute": "Ruta diaria",
       "warehouseEmployee": "Empleado de almacén",
-      "officeEmployee": "Empleado de oficina"
+      "officeEmployee": "Empleado de oficina",
+      "supervisorEmployee": "Supervisor"
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
@@ -247,13 +250,14 @@
       "selectPickupReceiver": "Elige para quién es esta factura",
       "searchPickupReceivers": "Buscar destinatarios de la recogida…",
       "pickupReceiverSuggestions": "Destinatarios de esta recogida",
-      "selectPickupRoute": "Seleccionar ruta de citas",
-      "noPickupRoute": "Sin ruta de citas",
-      "searchPickupRoutes": "Buscar rutas de citas…",
+      "selectPickupRoute": "Seleccionar ruta diaria",
+      "noPickupRoute": "Sin ruta diaria",
+      "searchPickupRoutes": "Buscar rutas diarias…",
       "selectPaymentLocation": "Seleccionar sucursal",
       "searchPaymentLocations": "Buscar sucursales…",
       "selectWarehouseEmployee": "Seleccionar empleado de almacén",
       "selectOfficeEmployee": "Seleccionar empleado de oficina",
+      "selectSupervisor": "Seleccionar supervisor",
       "searchEmployees": "Buscar empleados…"
     },
     "partyActions": {
@@ -367,9 +371,10 @@
       "invoiceNumberRequired": "El número de factura es obligatorio.",
       "containerRequired": "El contenedor es obligatorio.",
       "paymentLocationRequired": "Selecciona dónde se pagará esta factura.",
-      "pickupRouteRequired": "La ruta de citas es obligatoria.",
+      "pickupRouteRequired": "La ruta diaria es obligatoria.",
       "warehouseEmployeeRequired": "El empleado de almacén es obligatorio.",
       "officeEmployeeRequired": "El empleado de oficina es obligatorio.",
+      "supervisorEmployeeRequired": "El supervisor es obligatorio.",
       "senderRequired": "El remitente es obligatorio.",
       "unverifiedSenderAddress": "La dirección del remitente no está verificada. Puedes continuar y guardar la factura; recomendamos actualizar la dirección con una sugerencia de Google.",
       "lineItemRequired": "Agregue al menos un artículo.",

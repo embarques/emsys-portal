@@ -42,8 +42,8 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
             "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden",
             fitContent
               ? cn(
-                  // Native date inputs ignore field-sizing; size to icon gutter + date glyphs.
-                  "max-w-full !w-[calc(2rem+9.5ch)] !min-w-0 !pl-8 !pr-1.5",
+                  // Native date inputs ignore field-sizing; size to icon gutter + MM/DD/YYYY (+ WebKit field slack) + end pad.
+                  "max-w-full !w-[calc(2rem+11.5ch)] !min-w-0 !pl-8 !pr-2.5",
                   "[&::-webkit-datetime-edit]:m-0 [&::-webkit-datetime-edit]:w-auto [&::-webkit-datetime-edit]:max-w-full [&::-webkit-datetime-edit]:p-0",
                   "[&::-webkit-datetime-edit-fields-wrapper]:p-0",
                   "[&::-webkit-datetime-edit-text]:px-0",
@@ -59,12 +59,12 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
           style={
             fitContent
               ? {
-                  width: "calc(2rem + 9.5ch)",
+                  width: "calc(2rem + 11.5ch)",
                   minWidth: 0,
                   maxWidth: "100%",
                   minInlineSize: 0,
                   maxInlineSize: "100%",
-                  inlineSize: "calc(2rem + 9.5ch)",
+                  inlineSize: "calc(2rem + 11.5ch)",
                   ...style,
                 }
               : {

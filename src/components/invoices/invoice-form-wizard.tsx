@@ -38,6 +38,11 @@ import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { getNavigableFormFields } from "@/hooks/use-form-enter-navigation";
 import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
+import {
+  canOpenEmployeesDirectory,
+  OpenEmployeesRecoveryAction,
+} from "@/components/accounting/open-employees-recovery-action";
+import { isResponsibilityRequiredErrorMessage } from "@/lib/accounting/daily-income/journal-api-error";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useActiveInvoicePolicies } from "@/lib/invoice-policies/hooks/use-invoice-policies";
@@ -173,11 +178,11 @@ export function InvoiceFormWizard({
   const [step, setStep] = useState<InvoiceWizardStep>(() =>
     resolveInitialWizardStep(initialWizardStep, layout.previewStep),
   );
-  const [values, setValues] = useState<InvoiceFormValues>(
-    initialValues && (!requireDailyIncomeRegistration || canUseManualNumber)
-      ? initialValues
-      : { ...(initialValues ?? createEmptyInvoiceForm()), autoGenerateNumber: true },
-  );
+  const [values, setValues] = useState<InvoiceFormValues>(() => {
+    const base = initialValues ?? createEmptyInvoiceForm();
+    // Manual entry is the default; only force system numbering without permission.
+    return canUseManualNumber ? base : { ...base, autoGenerateNumber: true };
+  });
   const documentDraft = useInvoiceDocumentDraft();
   const [pendingUploadFiles, setPendingUploadFiles] = useState<File[] | null>(null);
   const savingRef = useRef(false);
@@ -246,8 +251,11 @@ export function InvoiceFormWizard({
     [t],
   );
   const findStep3Issue = useCallback(
-    (formValues: InvoiceFormValues) => findInvoiceWizardStep3Issue(formValues, t),
-    [t],
+    (formValues: InvoiceFormValues) =>
+      findInvoiceWizardStep3Issue(formValues, t, {
+        requirePaymentLocation: paymentStepId == null,
+      }),
+    [paymentStepId, t],
   );
 
   useEffect(() => {
@@ -292,7 +300,7 @@ export function InvoiceFormWizard({
     setValues((current) => {
       const merged = {
         ...next,
-        ...(!canUseManualNumber && requireDailyIncomeRegistration ? { autoGenerateNumber: true } : {}),
+        ...(!canUseManualNumber ? { autoGenerateNumber: true } : {}),
         discount: current.discount,
         amountPaid: current.amountPaid,
       };
@@ -370,6 +378,7 @@ export function InvoiceFormWizard({
                 t,
                 "continue",
                 paymentStepId,
+                currentValues,
               )
             : null;
   }
@@ -385,6 +394,14 @@ export function InvoiceFormWizard({
     const submitPayment = paymentStepId != null && step === paymentStepId ? paymentSubmitRef.current : null;
     if (!submitPayment) {
       advanceStep(dailyIncomeContext);
+      return;
+    }
+    if (paymentStepId != null && !valuesRef.current.paymentLocation) {
+      revealIssue({
+        step: paymentStepId,
+        fieldId: INVOICE_WIZARD_FIELDS.paymentLocation,
+        message: t("invoices.wizard.validation.paymentLocationRequired"),
+      });
       return;
     }
     if (paymentSubmitting) return;
@@ -617,6 +634,10 @@ export function InvoiceFormWizard({
     isMissingOpenIncomeStatementError(bannerError) &&
     Boolean(invoiceDate) &&
     invoiceBranchId > 0;
+  const showOpenEmployeesAction =
+    Boolean(bannerError) &&
+    isResponsibilityRequiredErrorMessage(bannerError) &&
+    canOpenEmployeesDirectory(hasPermission);
 
   function openDailyIncomeForInvoiceDate() {
     if (!invoiceDate || invoiceBranchId <= 0) return;
@@ -647,6 +668,8 @@ export function InvoiceFormWizard({
         {t("invoices.wizard.dailyIncome.openForInvoiceDateHint")}
       </p>
     </div>
+  ) : showOpenEmployeesAction ? (
+    <OpenEmployeesRecoveryAction />
   ) : undefined;
   const currentStepWarning =
     step < previewStep
@@ -696,7 +719,21 @@ export function InvoiceFormWizard({
       requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
       defaultToLatestContainer={!isEditing}
       assignedMode={assignedMode}
+      showPaymentLocation={!requireDailyIncomeRegistration}
     />
+  );
+
+  const handlePaymentLocationChange = useCallback(
+    (paymentLocation: InvoiceFormValues["paymentLocation"]) => {
+      setValues((current) => {
+        const next = { ...current, paymentLocation };
+        valuesRef.current = next;
+        return next;
+      });
+      setStepError(null);
+      setSubmitError(null);
+    },
+    [],
   );
 
   const paymentDraftRef = useMemo<{ session: number; current: InvoicePaymentDraft | null }>(() => ({ session: formSessionKey, current: null }), [formSessionKey]);
@@ -704,6 +741,7 @@ export function InvoiceFormWizard({
     <InvoiceDailyIncomeStep
       paymentDraftRef={paymentDraftRef}
       values={values}
+      onPaymentLocationChange={handlePaymentLocationChange}
       onContextChange={handleDailyIncomeContextChange}
       onContinue={handleDailyIncomePaymentContinue}
       paymentSubmitRef={paymentSubmitRef}

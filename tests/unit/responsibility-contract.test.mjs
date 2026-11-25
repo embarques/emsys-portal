@@ -152,7 +152,12 @@ for (const language of ["en","es"]) test(`${language}: responsibility guidance a
  assert.ok(messages.dailyIncome.form.hints.selfResponsibility);
  assert.ok(messages.dailyIncome.form.hints.paymentLookupUnavailable);
  assert.ok(messages.dailyIncome.errors.responsibilityRequired);
+ assert.ok(messages.dailyIncome.errors.responsibilityRequiredOpenEmployees);
+ assert.ok(messages.dailyIncome.errors.responsibilityRequiredContactAdmin);
+ assert.ok(messages.dailyIncome.errors.openEmployees);
+ assert.ok(messages.dailyIncome.errors.openEmployeesHint);
  const invoices=JSON.parse(fs.readFileSync(path.join(root,`src/locales/${language}/invoices.json`),"utf8"));
+ assert.ok(invoices.assigned.errors.employeeNotLinkedOpenEmployees);
  assert.ok(invoices.form.fields.pickupSourceCreator);
  assert.ok(invoices.form.hints.selfResponsibility);
 });
@@ -161,8 +166,14 @@ for (const language of ["en","es"]) test(`${language}: responsibility guidance a
 for (const code of ["INITIAL_PAYMENT_ASSIGNEE_REQUIRED", "TRANSACTION_EMPLOYEE_REQUIRED", "INVOICE_EMPLOYEE_LINK_REQUIRED"]) test(`${code}: structured API error becomes recovery guidance`, () => {
  const mapper=loadFeature("src/lib/accounting/daily-income/journal-api-error.ts");
  const error={isAxiosError:true,response:{status:422,data:{message:code,error:"Raw backend detail",data:{code}}}};
- const message=mapper.normalizeDailyIncomeJournalError(error);
- assert.match(message,/active employee/i);assert.doesNotMatch(message,/Raw backend detail|REQUIRED/);
+ const admin=mapper.normalizeDailyIncomeJournalError(error);
+ assert.match(admin,/active employee/i);assert.match(admin,/administrator/i);assert.doesNotMatch(admin,/Raw backend detail|REQUIRED/);
+ const portal=mapper.normalizeDailyIncomeJournalError(error,{canManageEmployees:true});
+ assert.match(portal,/Open Employees/i);assert.doesNotMatch(portal,/administrator/i);
+ assert.equal(mapper.presentDailyIncomeJournalError(error,{canManageEmployees:true}).recovery,"employees");
+ assert.equal(mapper.presentDailyIncomeJournalError(error).recovery,null);
+ assert.equal(mapper.isResponsibilityRequiredErrorMessage(portal),true);
+ assert.equal(mapper.isResponsibilityRequiredErrorMessage(admin),true);
 });
 
 test("generic journal form continues rejecting the separate loan payment workflow",()=>{
