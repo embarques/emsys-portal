@@ -11,7 +11,7 @@ import {
 } from "@/components/forms/compact-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { formatOrderDateWithWeekday } from "@/lib/orders/display";
+import { formatOrderDateWithWeekday, formatOrderPurposeLabel } from "@/lib/orders/display";
 import type { ExistingPendingAppointment } from "@/lib/orders/duplicate-pending-appointment";
 import { useTranslation } from "@/lib/i18n";
 
@@ -21,25 +21,6 @@ type DuplicatePendingAppointmentDialogProps = {
   onConfirm: () => void;
   onCancel: () => void;
 };
-
-function formatPurposeLabel(
-  purpose: string,
-  t: (key: string) => string,
-): string {
-  const trimmed = purpose.trim();
-  if (!trimmed) return t("common.empty.dash");
-
-  const tokens = trimmed.split(/[\s,|/]+/).map((token) => token.trim()).filter(Boolean);
-  if (tokens.length === 0) return t("common.empty.dash");
-
-  return tokens
-    .map((token) => {
-      const key = `orders.comments.purposes.${token.toUpperCase()}`;
-      const localized = t(key);
-      return localized === key ? token : localized;
-    })
-    .join(" · ");
-}
 
 export function DuplicatePendingAppointmentDialog({
   open,
@@ -84,7 +65,7 @@ export function DuplicatePendingAppointmentDialog({
                         : t("common.empty.dash")}
                     </dd>
                     <dt className="text-foreground/70">{t("orders.duplicatePending.fields.purpose")}</dt>
-                    <dd className="text-foreground">{formatPurposeLabel(appointment.purpose, t)}</dd>
+                    <dd className="text-foreground">{formatOrderPurposeLabel(appointment.purpose, t)}</dd>
                   </dl>
                 </li>
               ))}

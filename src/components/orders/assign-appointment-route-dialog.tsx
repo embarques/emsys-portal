@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Route as RouteIcon } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -77,6 +77,8 @@ export function AssignAppointmentRouteDialog({
   const { openFormTab } = useWorkspaceTabs();
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  /** Ignore the first outside pointer after open (DropdownMenu select race). */
+  const ignoreOutsideCloseRef = useRef(false);
 
   const incompleteAppointments = useMemo(
     () => appointments.filter((appointment) => appointment.id > 0 && !appointment.completed),
@@ -135,7 +137,15 @@ export function AssignAppointmentRouteDialog({
     if (!open) {
       setRouteId("");
       setFormError(null);
+      ignoreOutsideCloseRef.current = false;
+      return;
     }
+
+    ignoreOutsideCloseRef.current = true;
+    const timer = window.setTimeout(() => {
+      ignoreOutsideCloseRef.current = false;
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [open]);
 
   const isSaving = assignPickupsMutation.isPending;
@@ -202,7 +212,14 @@ export function AssignAppointmentRouteDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <CompactActionDialogContent>
+      <CompactActionDialogContent
+        onPointerDownOutside={(event) => {
+          if (ignoreOutsideCloseRef.current) event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          if (ignoreOutsideCloseRef.current) event.preventDefault();
+        }}
+      >
         <CompactActionDialogHeader
           icon={RouteIcon}
           title={t("orders.dialogs.assignRouteTitle")}

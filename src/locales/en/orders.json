@@ -369,6 +369,7 @@
     "markIncompleteTitle": "Mark incomplete?",
     "markIncompleteDescription": "Mark {{count}} selected appointment as incomplete?",
     "markIncompleteDescription_plural": "Mark {{count}} selected appointments as incomplete?",
+    "completionSummaryLabel": "Appointments to update",
     "dailyRoute": "Daily route",
     "createDailyRoute": "Create new daily route",
     "selectRoute": "Select a daily route",

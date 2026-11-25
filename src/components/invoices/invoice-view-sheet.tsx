@@ -44,6 +44,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { RecordViewSheetTabs } from "@/components/app-shell/record-view-sheet-tabs";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatOrderDateWithWeekday } from "@/lib/orders/display";
 import {
@@ -309,7 +310,9 @@ export function InvoiceViewSheet({
 }: InvoiceViewSheetProps) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const [activeTab, setActiveTab] = useState<"overview" | "documents">(
+    initialTab ?? "overview",
+  );
   const allowRequestChange = hasPermission("canCreateChangeRequest", "change_request");
   const totals = useMemo(() => {
     if (!invoice) return null;
@@ -342,46 +345,16 @@ export function InvoiceViewSheet({
           title={invoice.invoiceNumber.trim() || empty}
         />
 
-        <div
-          role="tablist"
+        <RecordViewSheetTabs
+          idPrefix="invoice"
           aria-label={t("invoices.documents.title")}
-          className="flex gap-6 border-b px-6"
-        >
-          {["overview", "documents"].map((tab) => (
-            <button
-              key={tab}
-              id={`invoice-tab-${tab}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab}
-              tabIndex={activeTab === tab ? 0 : -1}
-              onKeyDown={(event) => {
-                let next: string | undefined;
-                if (event.key === "ArrowLeft" || event.key === "ArrowRight")
-                  next = tab === "overview" ? "documents" : "overview";
-                if (event.key === "Home") next = "overview";
-                if (event.key === "End") next = "documents";
-                if (next) {
-                  event.preventDefault();
-                  setActiveTab(next);
-                  document.getElementById(`invoice-tab-${next}`)?.focus();
-                }
-              }}
-              aria-controls={`invoice-panel-${tab}`}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "border-b-2 px-1 py-3 text-sm font-medium",
-                activeTab === tab
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground",
-              )}
-            >
-              {t(
-                `invoices.documents.${tab === "overview" ? "overview" : "title"}`,
-              )}
-            </button>
-          ))}
-        </div>
+          value={activeTab}
+          onValueChange={setActiveTab}
+          tabs={[
+            { id: "overview" as const, label: t("invoices.documents.overview") },
+            { id: "documents" as const, label: t("invoices.documents.title") },
+          ]}
+        />
         {activeTab === "documents" ? (
           <RecordViewSheetBody>
             <div

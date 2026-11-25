@@ -97,6 +97,8 @@ import {
   formatOrderDate,
   formatOrderCalendarDate,
   formatOrderId,
+  formatOrderPurposeLabel,
+  formatOrderSenderStreetLine,
   getOrderFeedbackName,
   formatOrderRouteName,
   formatUserSummary,
@@ -748,7 +750,13 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     const targets = orders ?? selectedOrders;
     if (targets.length === 0) return;
     setBulkActionOrders(orders ?? null);
-    setAssignRouteOpen(true);
+    // Close the view sheet first — nested Sheet + Dialog both use dismiss layers,
+    // and opening Assign route from the sheet Actions menu otherwise flashes closed.
+    setViewOrder(null);
+    // Defer past the DropdownMenu pointer-up / focus-restore so that event does not
+    // light-dismiss the dialog the same tick it mounts (CompactActionDialog also
+    // skips open autofocus, which makes the race easier to hit).
+    window.setTimeout(() => setAssignRouteOpen(true), 0);
   }
 
   function openMapView(orders?: Order[]) {
@@ -1659,6 +1667,32 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                   )}
             </DialogDescription>
           </DialogHeader>
+          {actionOrders.length > 0 ? (
+            <ul
+              role="list"
+              className="max-h-56 divide-y divide-border overflow-y-auto overscroll-contain rounded-lg border border-border text-sm"
+              aria-label={t("orders.dialogs.completionSummaryLabel")}
+            >
+              {actionOrders.map((order) => {
+                const dash = t("common.empty.dash");
+                const senderName = order.sender.name.trim() || dash;
+                const streetLine = formatOrderSenderStreetLine(order, dash);
+                const purpose = formatOrderPurposeLabel(order.purpose, t);
+                return (
+                  <li key={getOrderRecordId(order)} className="bg-muted/40 px-3 py-2.5">
+                    <p className="truncate font-medium text-foreground">{senderName}</p>
+                    <p className="mt-0.5 truncate text-muted-foreground">
+                      <span className="sr-only">{t("orders.tableColumns.senderAddress")}: </span>
+                      {streetLine}
+                      <span aria-hidden="true"> · </span>
+                      <span className="sr-only">{t("orders.columns.purpose")}: </span>
+                      {purpose}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
           <DialogFooter>
             <Button
               variant="outline"

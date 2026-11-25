@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { Boxes, PackageCheck, Tag, Truck, Warehouse } from "lucide-react";
 
-import { TableDirectoryTabs } from "@/components/app-shell/table-directory-tabs";
 import {
   RecordViewSheet,
   RecordViewSheetBody,
@@ -12,6 +11,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { RecordViewSheetTabs } from "@/components/app-shell/record-view-sheet-tabs";
 import { InventoryRecordActions } from "@/components/inventory/inventory-record-actions";
 import { InventoryActiveBadge, InventoryDocumentStatusBadge } from "@/components/inventory/inventory-status-badge";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -109,90 +109,114 @@ export function InventoryViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.columns.userModified")} value={item.updatedBy || dash} />
           </RecordViewSheetSection>
 
-          <div className="border-b">
-            <TableDirectoryTabs tabs={tabs} value={activeTab} onValueChange={setActiveTab} aria-label={t("inventory.view.stockByHolder")} />
+          <div className="-mx-5">
+            <RecordViewSheetTabs
+              idPrefix="inventory-item"
+              aria-label={t("inventory.view.tabs")}
+              value={activeTab}
+              onValueChange={setActiveTab}
+              tabs={tabs}
+            />
           </div>
 
           {activeTab === "stock" ? (
-            <RecordViewSheetSection title={t("inventory.view.stockByHolder")} icon={Warehouse} padding="relaxed">
-              {itemBalances.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("inventory.empty.stockByHolder")}</p>
-              ) : (
-                <div className="space-y-3">
-                  {itemBalances.map((balance) => {
-                    const holder = snapshot.holders.find((entry) => entry.id === balance.holderId);
-                    return (
-                      <div key={balance.id} className="rounded-md border border-border px-3 py-2 text-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium">{getHolderNameById(balance.holderId, snapshot.holders)}</span>
-                          <span className="tabular-nums">{balance.quantityOnHand}</span>
+            <div
+              role="tabpanel"
+              id="inventory-item-panel-stock"
+              aria-labelledby="inventory-item-tab-stock"
+            >
+              <RecordViewSheetSection title={t("inventory.view.stockByHolder")} icon={Warehouse} padding="relaxed">
+                {itemBalances.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("inventory.empty.stockByHolder")}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {itemBalances.map((balance) => {
+                      const holder = snapshot.holders.find((entry) => entry.id === balance.holderId);
+                      return (
+                        <div key={balance.id} className="rounded-md border border-border px-3 py-2 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium">{getHolderNameById(balance.holderId, snapshot.holders)}</span>
+                            <span className="tabular-nums">{balance.quantityOnHand}</span>
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {[holder ? getHolderTypeLabel(holder.type, t) : "", getStockConditionLabel(balance.condition, t)]
+                              .filter(Boolean)
+                              .join(" · ")}
+                            {balance.quantityReserved > 0
+                              ? ` · ${t("inventory.columns.reserved")}: ${balance.quantityReserved}`
+                              : ""}
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {[holder ? getHolderTypeLabel(holder.type, t) : "", getStockConditionLabel(balance.condition, t)]
-                            .filter(Boolean)
-                            .join(" · ")}
-                          {balance.quantityReserved > 0
-                            ? ` · ${t("inventory.columns.reserved")}: ${balance.quantityReserved}`
-                            : ""}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </RecordViewSheetSection>
+                      );
+                    })}
+                  </div>
+                )}
+              </RecordViewSheetSection>
+            </div>
           ) : null}
 
           {activeTab === "receipts" ? (
-            <RecordViewSheetSection title={t("inventory.view.receipts")} icon={PackageCheck} padding="relaxed">
-              {itemReceipts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("inventory.empty.receipts")}</p>
-              ) : (
-                <div className="space-y-3">
-                  {itemReceipts.map((receipt) => {
-                    const line = receipt.lines.find((entry) => entry.itemId === item.id);
-                    return (
-                      <div key={receipt.id} className="rounded-md border border-border px-3 py-2 text-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium">{getSupplierNameById(receipt.supplierId, snapshot.suppliers)}</span>
-                          <InventoryDocumentStatusBadge status={receipt.status} />
+            <div
+              role="tabpanel"
+              id="inventory-item-panel-receipts"
+              aria-labelledby="inventory-item-tab-receipts"
+            >
+              <RecordViewSheetSection title={t("inventory.view.receipts")} icon={PackageCheck} padding="relaxed">
+                {itemReceipts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("inventory.empty.receipts")}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {itemReceipts.map((receipt) => {
+                      const line = receipt.lines.find((entry) => entry.itemId === item.id);
+                      return (
+                        <div key={receipt.id} className="rounded-md border border-border px-3 py-2 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium">{getSupplierNameById(receipt.supplierId, snapshot.suppliers)}</span>
+                            <InventoryDocumentStatusBadge status={receipt.status} />
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {formatInventoryDateTime(receipt.receivedAt)} · {line?.quantity ?? 0} ·{" "}
+                            {formatInventoryMinor(line?.unitCostMinor)}
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {formatInventoryDateTime(receipt.receivedAt)} · {line?.quantity ?? 0} ·{" "}
-                          {formatInventoryMinor(line?.unitCostMinor)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </RecordViewSheetSection>
+                      );
+                    })}
+                  </div>
+                )}
+              </RecordViewSheetSection>
+            </div>
           ) : null}
 
           {activeTab === "dispatches" ? (
-            <RecordViewSheetSection title={t("inventory.view.dispatches")} icon={Truck} padding="relaxed">
-              {itemDispatches.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("inventory.empty.dispatches")}</p>
-              ) : (
-                <div className="space-y-3">
-                  {itemDispatches.map((dispatch) => {
-                    const line = dispatch.lines.find((entry) => entry.itemId === item.id);
-                    return (
-                      <div key={dispatch.id} className="rounded-md border border-border px-3 py-2 text-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium">{getHolderNameById(dispatch.toHolderId, snapshot.holders)}</span>
-                          <InventoryDocumentStatusBadge status={dispatch.status} />
+            <div
+              role="tabpanel"
+              id="inventory-item-panel-dispatches"
+              aria-labelledby="inventory-item-tab-dispatches"
+            >
+              <RecordViewSheetSection title={t("inventory.view.dispatches")} icon={Truck} padding="relaxed">
+                {itemDispatches.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("inventory.empty.dispatches")}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {itemDispatches.map((dispatch) => {
+                      const line = dispatch.lines.find((entry) => entry.itemId === item.id);
+                      return (
+                        <div key={dispatch.id} className="rounded-md border border-border px-3 py-2 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium">{getHolderNameById(dispatch.toHolderId, snapshot.holders)}</span>
+                            <InventoryDocumentStatusBadge status={dispatch.status} />
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {formatInventoryDateTime(dispatch.dispatchedAt)} · {line?.quantity ?? 0} ·{" "}
+                            {getHolderNameById(dispatch.fromHolderId, snapshot.holders)}
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {formatInventoryDateTime(dispatch.dispatchedAt)} · {line?.quantity ?? 0} ·{" "}
-                          {getHolderNameById(dispatch.fromHolderId, snapshot.holders)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </RecordViewSheetSection>
+                      );
+                    })}
+                  </div>
+                )}
+              </RecordViewSheetSection>
+            </div>
           ) : null}
         </RecordViewSheetBody>
 

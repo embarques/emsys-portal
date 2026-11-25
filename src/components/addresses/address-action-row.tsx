@@ -18,7 +18,7 @@ import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils
 type AddressActionRowProps = {
   label: string;
   address: CustomerCoreAddress;
-  /** When true, show a star to the left of the label (and "Primary" when `label` is empty). */
+  /** When true, show a star to the left of the address value (and "Primary" when `label` is empty). */
   isPrimary?: boolean;
   className?: string;
   labelAction?: ReactNode;
@@ -67,28 +67,35 @@ export function AddressActionRow({
         className,
       )}
     >
-      {displayLabel || labelAction || isPrimary ? (
+      {displayLabel || labelAction ? (
         <div className="flex items-center gap-1">
-          {displayLabel || isPrimary ? (
-            <p className="flex items-center gap-1 text-xs font-medium leading-snug text-muted-foreground">
-              {isPrimary ? (
-                <Star
-                  className="size-3.5 shrink-0 fill-current text-amber-500"
-                  aria-label={t("customers.addresses.labels.primary")}
-                />
-              ) : null}
-              {displayLabel ? <span>{displayLabel}</span> : null}
+          {displayLabel ? (
+            <p className="min-w-0 text-xs font-medium leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+              {displayLabel}
             </p>
           ) : null}
           {labelAction}
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
-        <div className={cn("min-w-0 flex-1 text-sm font-medium leading-snug text-foreground", ADDRESS_TEXT_WRAP_CLASSNAME)}>
-          {lines.map((line, index) => (
-            <p key={index}>{line}</p>
-          ))}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-1.5">
+          {isPrimary ? (
+            <Star
+              className="mt-0.5 size-3.5 shrink-0 fill-current text-amber-500"
+              aria-label={t("customers.addresses.labels.primary")}
+            />
+          ) : null}
+          <div
+            className={cn(
+              "min-w-0 flex-1 text-sm font-medium leading-snug text-foreground",
+              ADDRESS_TEXT_WRAP_CLASSNAME,
+            )}
+          >
+            {lines.map((line, index) => (
+              <p key={index}>{line}</p>
+            ))}
+          </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-0.5">

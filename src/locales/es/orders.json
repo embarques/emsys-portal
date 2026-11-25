@@ -369,6 +369,7 @@
     "markIncompleteTitle": "¿Marcar como incompleta?",
     "markIncompleteDescription": "¿Marcar {{count}} cita seleccionada como incompleta?",
     "markIncompleteDescription_plural": "¿Marcar {{count}} citas seleccionadas como incompletas?",
+    "completionSummaryLabel": "Citas a actualizar",
     "dailyRoute": "Ruta diaria",
     "createDailyRoute": "Crear nueva ruta diaria",
     "selectRoute": "Seleccionar una ruta diaria",
