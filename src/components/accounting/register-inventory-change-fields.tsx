@@ -45,7 +45,7 @@ import type {
   InventoryChangeDirection,
   InventoryHolderEmployeeRef,
 } from "@/lib/accounting/daily-income/types";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useCreateEmployee } from "@/lib/employees/hooks/use-employees";
 import { createEmptyEmployeeForm, type EmployeeFormValues } from "@/lib/employees/types";
@@ -407,7 +407,7 @@ export function RegisterInventoryChangeFields({
       setEntityDialog(null);
       setEditingSupplier(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 
@@ -421,7 +421,7 @@ export function RegisterInventoryChangeFields({
       ]);
       setEntityDialog(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 
@@ -436,7 +436,7 @@ export function RegisterInventoryChangeFields({
       setEntityDialog(null);
       setEditingItem(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 
@@ -453,7 +453,7 @@ export function RegisterInventoryChangeFields({
       setEntityDialog(null);
       setEditingVehicle(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 

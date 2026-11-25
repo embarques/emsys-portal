@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { normalizeApiError } from "@/lib/api/axios";
+import { classifyApiError } from "@/lib/api/api-error";
+import { formatUserErrorMessage } from "@/lib/errors";
 import { useComplaintMutations } from "@/lib/complaints/hooks/use-complaints";
 import {
   complaintAttachmentFormSchema,
@@ -67,10 +68,10 @@ export function useComplaintWorkflow(complaint: Complaint | null) {
     mutations.attachment.isPending;
 
   function errorMessage(cause: unknown) {
-    const error = normalizeApiError(cause);
-    if (error.status === 412) return t("complaints.errors.versionConflict");
-    if (error.status === 409) return t("complaints.errors.closedConflict");
-    return error.message;
+    const { status } = classifyApiError(cause);
+    if (status === 412 || status === 428) return t("complaints.errors.versionConflict");
+    if (status === 409) return t("complaints.errors.closedConflict");
+    return formatUserErrorMessage(cause, t);
   }
 
   /** Runs one versioned command; errors go to the open dialog, otherwise to a toast. */

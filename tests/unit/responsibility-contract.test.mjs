@@ -167,7 +167,7 @@ for (const code of ["INITIAL_PAYMENT_ASSIGNEE_REQUIRED", "TRANSACTION_EMPLOYEE_R
  const mapper=loadFeature("src/lib/accounting/daily-income/journal-api-error.ts");
  const error={isAxiosError:true,response:{status:422,data:{message:code,error:"Raw backend detail",data:{code}}}};
  const admin=mapper.normalizeDailyIncomeJournalError(error);
- assert.match(admin,/active employee/i);assert.match(admin,/administrator/i);assert.doesNotMatch(admin,/Raw backend detail|REQUIRED/);
+ assert.match(admin,/active employee/i);assert.match(admin,/employee-link permission/i);assert.doesNotMatch(admin,/Raw backend detail|REQUIRED/);
  const portal=mapper.normalizeDailyIncomeJournalError(error,{canManageEmployees:true});
  assert.match(portal,/Open Employees/i);assert.doesNotMatch(portal,/administrator/i);
  assert.equal(mapper.presentDailyIncomeJournalError(error,{canManageEmployees:true}).recovery,"employees");

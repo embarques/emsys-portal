@@ -51,7 +51,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatContainerDate,
@@ -227,7 +227,7 @@ export function ContainersWorkspace() {
       setEditingContainer(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -259,7 +259,7 @@ export function ContainersWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
       setDeleteTarget(null);
     }
   }

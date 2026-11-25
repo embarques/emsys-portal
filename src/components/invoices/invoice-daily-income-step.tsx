@@ -250,7 +250,6 @@ export function InvoiceDailyIncomeStep({
         label={t("invoices.form.fields.paymentLocation")}
         htmlFor="paymentLocation"
         required
-        className={isMobileLayout ? undefined : "max-w-md"}
       >
         <SearchableSelect
           id="paymentLocation"

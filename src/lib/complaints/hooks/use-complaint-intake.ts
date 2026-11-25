@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { normalizeApiError } from "@/lib/api/axios";
+import { applyApiFieldErrors, formatFormMutationError } from "@/lib/errors";
 import { useComplaintMutations } from "@/lib/complaints/hooks/use-complaints";
 import { complaintIntakeFormSchema } from "@/lib/complaints/schemas/complaint.schema";
 import {
@@ -68,7 +68,8 @@ export function useComplaintIntake(
       setOpen(false);
       options.onCreated?.(created);
     } catch (cause) {
-      setError(normalizeApiError(cause).message);
+      if (applyApiFieldErrors(form, cause)) return;
+      setError(formatFormMutationError(cause, t));
     } finally {
       submitting.current = false;
     }

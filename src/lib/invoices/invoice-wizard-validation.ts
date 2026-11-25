@@ -42,6 +42,14 @@ export function findInvoiceWizardStep1Issue(
   values: InvoiceFormValues,
   t: Translate,
 ): InvoiceWizardIssue | null {
+  // Match step-1 visual order: number → date → container → received via.
+  if (!values.autoGenerateNumber && !values.invoiceNumber.trim()) {
+    return {
+      step: 1,
+      fieldId: INVOICE_WIZARD_FIELDS.invoiceNumber,
+      message: t("invoices.wizard.validation.invoiceNumberRequired"),
+    };
+  }
   if (!values.date.trim()) {
     return { step: 1, fieldId: INVOICE_WIZARD_FIELDS.date, message: t("invoices.wizard.validation.dateRequired") };
   }
@@ -65,13 +73,6 @@ export function findInvoiceWizardStep1Issue(
       step: 1,
       fieldId: INVOICE_WIZARD_FIELDS.pickupEmployeeId,
       message: t("invoices.wizard.validation.supervisorEmployeeRequired"),
-    };
-  }
-  if (!values.autoGenerateNumber && !values.invoiceNumber.trim()) {
-    return {
-      step: 1,
-      fieldId: INVOICE_WIZARD_FIELDS.invoiceNumber,
-      message: t("invoices.wizard.validation.invoiceNumberRequired"),
     };
   }
   return null;

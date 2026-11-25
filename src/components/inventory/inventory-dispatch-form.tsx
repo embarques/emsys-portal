@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useTranslation } from "@/lib/i18n";
 import { useCreateInventoryItem, useHolderStock } from "@/lib/inventory/hooks/use-inventory";
@@ -121,7 +121,7 @@ export function InventoryDispatchForm({
       });
       setItemDialogOpen(false);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 

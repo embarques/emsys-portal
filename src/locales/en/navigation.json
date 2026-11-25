@@ -7,7 +7,7 @@
   "submenus": {
     "pickups": "Pickups",
     "orders": "Appointments",
-    "reservedInvoices": "Reserved",
+    "reservedInvoices": "Assign",
     "invoices": "Invoices",
     "routes": "Routes",
     "routeManager": "Routes",
@@ -68,7 +68,7 @@
     "pendingInventoryTransactions": "Pending Transactions",
     "pendingFinancialActivity": "Pending Reconciliation",
     "pendingClearance": "Pending Clearance",
-    "reservedInvoices": "Reserved invoices",
+    "reservedInvoices": "Assign invoices",
     "changeRequests": "Change requests"
   },
   "badges": {

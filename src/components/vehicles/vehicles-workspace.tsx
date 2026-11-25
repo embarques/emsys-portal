@@ -48,6 +48,7 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useTranslation } from "@/lib/i18n";
+import { formatFormMutationError } from "@/lib/errors";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
@@ -244,7 +245,7 @@ export function VehiclesWorkspace() {
       setEditingVehicle(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -272,7 +273,7 @@ export function VehiclesWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
       setDeleteTarget(null);
     }
   }

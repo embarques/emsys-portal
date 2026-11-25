@@ -30,6 +30,7 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useTranslation } from "@/lib/i18n";
+import { formatFormMutationError } from "@/lib/errors";
 import { useRoleFilterFields } from "@/lib/roles/hooks/use-role-filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
@@ -271,7 +272,7 @@ export function RolesWorkspace() {
       setFormError(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -301,7 +302,7 @@ export function RolesWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
       setDeleteTarget(null);
     }
   }

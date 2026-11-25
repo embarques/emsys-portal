@@ -47,7 +47,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatAuditDateTime } from "@/lib/audit/display";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { cn } from "@/lib/utils";
@@ -186,7 +186,7 @@ export function ItemsWorkspace() {
       setEditingItem(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -213,7 +213,7 @@ export function ItemsWorkspace() {
         },
       });
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setFormError(formatFormMutationError(mutationError, t));
       setDeleteTarget(null);
     }
   }

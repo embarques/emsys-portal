@@ -138,6 +138,7 @@ export function UserMobileList({
       </div>
 
       <UserMobileSelectionToolbar
+        singleSelectedUser={selectedIds.length === 1 ? selectedUsers[0] : undefined}
         selectedIds={selectedIds}
         pageRowIds={users.map((user) => String(user.id))}
         canEdit={selectedIds.length === 1}

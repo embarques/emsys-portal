@@ -10,8 +10,8 @@ const employees = [
 ];
 
 const routes = [
-  { id: "route-1", name: "North route", date: "2026-10-21", createdAt: "2026-10-19T09:00:00Z", route: { id: "r1", routeId: "R1", name: "North route" }, employees: [], branch: { code: "NY" } },
-  { id: "route-2", name: "South route", date: "2026-10-20", createdAt: "2026-10-20T15:30:00Z", route: { id: "r2", routeId: "R2", name: "South route" }, employees: [], branch: { code: "NY" } },
+  { id: "route-1", name: "North route", date: "2026-10-21", createdAt: "2026-10-19T09:00:00Z", route: { id: "r1", routeId: "R1", name: "North route" }, employees: [{ id: 1, name: "Ana Warehouse", role: "supervisor" }], branch: { code: "NY" } },
+  { id: "route-2", name: "South route", date: "2026-10-20", createdAt: "2026-10-20T15:30:00Z", route: { id: "r2", routeId: "R2", name: "South route" }, employees: [{ id: 2, name: "Luis Office", role: "supervisor" }], branch: { code: "NY" } },
 ];
 
 const branches = { items: [{ id: 1, code: "NY", name: "New York", type: "office", active: true }] };

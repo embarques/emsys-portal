@@ -116,6 +116,13 @@ eligible without reassignment authority only when self is its responsible
 supervisor; membership alone is insufficient. The API rejects missing or
 ambiguous employee links.
 
+The Employees and Users directories can link a single selected record using
+`canLinkEmployeeUser` (resource `employee_user_link`, action `update`).
+The API stores the relationship on the employee. The link action preserves an
+existing different link. Employee forms require the same grant to set or clear
+the link. An explicitly assigned responsible employee can work without a portal
+user account.
+
 The initial-payment selector defaults to the invoice party when payment assignment
 is authorized. It stays editable and retains an explicit collector choice through
 wizard navigation and directory refreshes. Changing the payment party never
@@ -139,7 +146,7 @@ Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is t
 
 ### Reserved invoice numbers
 
-Invoices → Reserved manages backend-generated numbers for offline mobile creation.
+Invoices → Assign invoices manages backend-generated numbers for offline mobile creation.
 Unused numbers may be in the company pool, assigned to a user, or claimed
 by a mobile installation. Downloaded numbers must be returned from that device
 before reassignment. They are excluded from customer invoice lists and financial

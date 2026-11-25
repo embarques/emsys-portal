@@ -7,8 +7,8 @@ import { UserForm } from "@/components/users/user-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
 import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { useCreateUser, useUpdateUser, useUser } from "@/lib/users/hooks/use-users";
 import {
@@ -23,6 +23,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 
 export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -68,12 +69,12 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
       } catch (apiError) {
         throw new Error(
           t("users.errors.firebasePartialCreate", {
-            message: normalizeApiError(apiError).message,
+            message: formatFormMutationError(apiError, t),
           }),
         );
       }
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -90,7 +91,7 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
-      ? normalizeApiError(detailQuery.error).message
+      ? toErrorMessage(detailQuery.error)
       : t("users.form.notFound");
     return (
       <FormTabShell title={t("users.form.editTitle")}>

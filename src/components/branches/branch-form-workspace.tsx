@@ -7,7 +7,7 @@ import { BranchForm } from "@/components/branches/branch-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { useBranch, useCreateBranch, useUpdateBranch } from "@/lib/branches/hooks/use-branches";
 import {
@@ -24,6 +24,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 
 export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -67,7 +68,7 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
       notifyAdded(t("branches.entity"), next.name);
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -84,7 +85,7 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
 
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
-      ? normalizeApiError(detailQuery.error).message
+      ? toErrorMessage(detailQuery.error)
       : t("branches.form.notFound");
     return (
       <FormTabShell title={t("branches.form.editTitle")}>

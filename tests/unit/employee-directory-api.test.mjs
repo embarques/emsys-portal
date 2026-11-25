@@ -227,3 +227,16 @@ test("employee title options preserve the selected legacy or inactive value", ()
   assert.deepEqual(getEmployeeTitleOptions(items, "Legacy title").at(-1), { value: "Legacy title", label: "Legacy title" });
   assert.equal(getEmployeeTitleOptions(items, "Driver").length, 1);
 });
+
+test("linking from either directory writes only the two identifiers and surfaces conflicts", async () => {
+  const requests = [];
+  const api = loadFeature("src/lib/employees/api/employees-api.ts", {
+    put: async (url, body) => {
+      requests.push({ url, body });
+      return requests.length === 1 ? { success: true } : { success: false, message: "Link conflict" };
+    },
+  });
+  await api.linkEmployeeUser(17, 42);
+  assert.deepEqual(requests[0], { url: "/employees/17/user-link", body: { userId: 42 } });
+  await assert.rejects(api.linkEmployeeUser(18, 42), /Link conflict/);
+});

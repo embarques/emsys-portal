@@ -50,7 +50,7 @@ import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-compa
 import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatFormMutationError } from "@/lib/errors";
 import { useContainerPicker, useCreateContainer } from "@/lib/containers/hooks/use-containers";
 import {
   createEmptyContainerForm,
@@ -605,7 +605,7 @@ export function InvoiceForm({
       updateField("containerId", String(saved.id));
       setEntityDialog(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 
@@ -616,7 +616,7 @@ export function InvoiceForm({
       applyCreatedEmployee(saved);
       setEntityDialog(null);
     } catch (error) {
-      setEntityError(normalizeApiError(error).message);
+      setEntityError(formatFormMutationError(error, t));
     }
   }
 
@@ -1025,6 +1025,7 @@ export function InvoiceForm({
 
   const detailsFields = (
     <div className="grid min-w-0 grid-cols-1 gap-4">
+      {invoiceNumberField}
       {renderField(
         t("invoices.form.fields.date"),
         "date",
@@ -1061,7 +1062,6 @@ export function InvoiceForm({
         <FieldEntityActions onAdd={openAddContainer} addIcon={ContainerIcon} />,
       )}
       {responsibilityFields}
-      {invoiceNumberField}
     </div>
   );
 
@@ -1086,7 +1086,6 @@ export function InvoiceForm({
             label: branch.code.trim().toUpperCase(),
           }))}
         />,
-        isPhoneWizard ? undefined : "max-w-md",
       )
     : null;
 
@@ -1098,6 +1097,11 @@ export function InvoiceForm({
     <div className="min-w-0 space-y-3">
       <p className="text-sm text-muted-foreground">{t("invoices.assigned.detailsHint")}</p>
       <div className="grid min-w-0 grid-cols-1 gap-3">
+        <ReadOnlyField label={t("invoices.form.fields.invoiceNumber")}>
+          {values.autoGenerateNumber
+            ? t("invoices.form.autoNumber.assignedOnSave")
+            : values.invoiceNumber.trim() || dash}
+        </ReadOnlyField>
         <ReadOnlyField label={t("invoices.form.fields.date")}>
           {values.date ? formatInvoiceDate(values.date) : dash}
         </ReadOnlyField>
@@ -1109,11 +1113,6 @@ export function InvoiceForm({
               : dash}
         </ReadOnlyField>
         {responsibilityFields}
-        <ReadOnlyField label={t("invoices.form.fields.invoiceNumber")}>
-          {values.autoGenerateNumber
-            ? t("invoices.form.autoNumber.assignedOnSave")
-            : values.invoiceNumber.trim() || dash}
-        </ReadOnlyField>
       </div>
     </div>
   );

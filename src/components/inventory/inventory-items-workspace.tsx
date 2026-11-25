@@ -38,7 +38,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { CompactActionDialogContent, CompactActionDialogHeader } from "@/components/forms/compact-action-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -197,7 +197,7 @@ export function InventoryItemsWorkspace() {
       setEditingItem(null);
       setPage(1);
     } catch (saveError) {
-      notifyError(toErrorMessage(saveError));
+      notifyError(formatFormMutationError(saveError, t));
     }
   }
 
@@ -221,7 +221,7 @@ export function InventoryItemsWorkspace() {
         },
       });
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 
@@ -564,7 +564,7 @@ export function InventoryItemsWorkspace() {
                 notifyAdded(t("inventory.references.receipt"), t("inventory.documentStatuses.DRAFT"));
                 setDocumentDialog(null);
               } catch (saveError) {
-                notifyError(toErrorMessage(saveError));
+                notifyError(formatFormMutationError(saveError, t));
               }
             }}
           />
@@ -586,7 +586,7 @@ export function InventoryItemsWorkspace() {
                 notifyAdded(t("inventory.references.dispatch"), t("inventory.documentStatuses.DRAFT"));
                 setDocumentDialog(null);
               } catch (saveError) {
-                notifyError(toErrorMessage(saveError));
+                notifyError(formatFormMutationError(saveError, t));
               }
             }}
           />
@@ -609,7 +609,7 @@ export function InventoryItemsWorkspace() {
                 notifyAdded(t("inventory.references.adjustment"), item?.name ?? "");
                 setDocumentDialog(null);
               } catch (saveError) {
-                notifyError(toErrorMessage(saveError));
+                notifyError(formatFormMutationError(saveError, t));
               }
             }}
           />

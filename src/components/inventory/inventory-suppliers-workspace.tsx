@@ -32,7 +32,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { INVENTORY_FORM_DIALOG_CLASS_NAME } from "@/components/inventory/inventory-form-layout";
 import { CompactActionDialogContent, CompactActionDialogHeader } from "@/components/forms/compact-action-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useUserError } from "@/lib/errors";
+import { formatFormMutationError, useUserError } from "@/lib/errors";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -191,7 +191,7 @@ export function InventorySuppliersWorkspace() {
       setFormMode(null);
       setEditingSupplier(null);
     } catch (saveError) {
-      notifyError(toErrorMessage(saveError));
+      notifyError(formatFormMutationError(saveError, t));
     }
   }
 
@@ -218,7 +218,7 @@ export function InventorySuppliersWorkspace() {
         },
       });
     } catch (mutationError) {
-      notifyError(toErrorMessage(mutationError));
+      notifyError(formatFormMutationError(mutationError, t));
     }
   }
 

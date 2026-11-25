@@ -2,10 +2,12 @@
 
 import { UserX } from "lucide-react";
 
+import { EmployeeUserLink } from "@/components/employees/employee-user-link";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useTranslation } from "@/lib/i18n";
 
 type UserMobileSelectionToolbarProps = {
+  singleSelectedUser?: {id: number; name: string};
   selectedIds: string[];
   pageRowIds: string[];
   totalCount?: number;
@@ -17,6 +19,7 @@ type UserMobileSelectionToolbarProps = {
 };
 
 export function UserMobileSelectionToolbar({
+  singleSelectedUser,
   selectedIds,
   pageRowIds,
   totalCount,
@@ -29,6 +32,7 @@ export function UserMobileSelectionToolbar({
   const { t } = useTranslation();
   return (
     <TableSelectionToolbar
+      actions={singleSelectedUser && <EmployeeUserLink key={singleSelectedUser.id} side="user" id={singleSelectedUser.id} name={singleSelectedUser.name} />}
       selectedIds={selectedIds}
       pageRowIds={pageRowIds}
       totalCount={totalCount}

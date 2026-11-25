@@ -19,6 +19,7 @@ import {
 } from "@/lib/invoices/hooks/use-invoice-documents";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { formatFormMutationError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { getContainerLabelForInvoice } from "@/lib/invoices/display";
 import type { Invoice } from "@/lib/invoices/types";
@@ -375,8 +376,8 @@ export function InvoiceDocumentsSection({
                 await remove.mutateAsync(action.document);
               }
               setAction(null);
-            } catch {
-              setError(t("invoices.documents.changeError"));
+            } catch (mutationError) {
+              setError(formatFormMutationError(mutationError, t));
             }
           }}
         />

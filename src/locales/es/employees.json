@@ -1,4 +1,16 @@
 {
+  "link": {
+    "userAction": "Vincular usuario",
+    "employeeAction": "Vincular empleado",
+    "ask": "Pide a alguien con permiso que vincule al empleado con el usuario.",
+    "user": "Usuario",
+    "employee": "Empleado",
+    "success": "Empleado y usuario vinculados.",
+    "failed": "No se pudo vincular al empleado con el usuario.",
+    "search": "Buscar por nombre",
+    "linked": "Este empleado está vinculado a {name}.",
+    "conflict": "Este empleado o usuario ya tiene otro vínculo."
+  },
   "errors": {
     "nameRequired": "El nombre del empleado es obligatorio.",
     "departmentRequired": "El departamento es obligatorio.",

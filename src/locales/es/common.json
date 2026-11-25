@@ -52,7 +52,8 @@
       "new": "Nuevo",
       "edit": "Editar"
     },
-    "staleUpdate": "Otra persona cambió este registro. Tu información sigue en el formulario. Revisa el registro actual antes de volver a abrir el editor; guardar de nuevo no sobrescribirá sus cambios."
+    "staleUpdate": "Otra persona cambió este registro. Tu información sigue en el formulario. Revisa el registro actual antes de volver a abrir el editor; guardar de nuevo no sobrescribirá sus cambios.",
+    "conflict": "Este registro entra en conflicto con uno existente. Cambia los campos únicos e inténtalo de nuevo."
   },
   "address": {
     "useManual": "Ingresar dirección manualmente",
