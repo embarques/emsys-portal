@@ -29,7 +29,12 @@ export const compactActionDialogContentClassName =
 export const compactActionDialogFormClassName =
   "flex max-h-[90vh] flex-col overflow-hidden";
 
-export const compactActionDialogFooterClassName = "max-md:grid max-md:grid-cols-2";
+/**
+ * Keep both actions visible with long labels: equal columns, allow wrap/shrink
+ * (buttons default to whitespace-nowrap + shrink-0 which otherwise clip the footer).
+ */
+export const compactActionDialogFooterClassName =
+  "grid w-full grid-cols-1 gap-2 min-[22rem]:grid-cols-2 [&>*]:min-w-0 [&>button]:h-auto [&>button]:min-h-9 [&>button]:shrink [&>button]:whitespace-normal [&>button]:text-center [&>*:only-child]:min-[22rem]:col-start-2";
 
 type CompactActionDialogContentProps = React.ComponentProps<typeof DialogContent>;
 
@@ -120,6 +125,11 @@ export function CompactActionDialogBody({ children, className }: CompactActionDi
 
 type CompactActionDialogFooterProps = {
   className?: string;
+  /**
+   * Replaces the default two-column actions grid (e.g. a single-row flex toolbar).
+   * Only applies when `children` are provided.
+   */
+  actionsClassName?: string;
   children?: React.ReactNode;
   /** Left-aligned error notice (catalog create/edit). */
   error?: string | null;
@@ -145,6 +155,7 @@ type CompactActionDialogFooterProps = {
  */
 export function CompactActionDialogFooter({
   className,
+  actionsClassName,
   children,
   error = null,
   warning = null,
@@ -175,7 +186,12 @@ export function CompactActionDialogFooter({
   if (children) {
     return (
       <div className={shellClassName}>
-        <DialogFooter className={cn(compactActionDialogFooterClassName, "bg-transparent p-0")}>
+        <DialogFooter
+          className={cn(
+            actionsClassName ?? compactActionDialogFooterClassName,
+            "bg-transparent p-0",
+          )}
+        >
           {children}
         </DialogFooter>
       </div>

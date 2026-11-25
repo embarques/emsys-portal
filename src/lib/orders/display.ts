@@ -146,6 +146,36 @@ export function formatOrderCommentsSummary(order: Order): string {
   return order.comments.map(formatPickupCommentSummary).filter((text) => text !== "—").join(" ") || "—";
 }
 
+/** Localize order-level purpose tokens (e.g. `PICKUP TAKE`) for compact summaries. */
+export function formatOrderPurposeLabel(purpose: string, t: TranslateFn): string {
+  const trimmed = purpose.trim();
+  if (!trimmed) return t("common.empty.dash");
+
+  const tokens = trimmed
+    .split(/[\s,|/]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+  if (tokens.length === 0) return t("common.empty.dash");
+
+  return tokens
+    .map((token) => {
+      const key = `orders.comments.purposes.${token.toUpperCase()}`;
+      const localized = t(key);
+      return localized === key ? token : localized;
+    })
+    .join(" · ");
+}
+
+/** Address 1 + apt/suite only — compact confirm/list summaries. */
+export function formatOrderSenderStreetLine(order: Order, emptyLabel = "—"): string {
+  const address = getCustomerPrimaryCoreAddress(order.sender);
+  const line = [address.address1, address.apartment]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+  return line || emptyLabel;
+}
+
 export function getOrderCreatedByDisplayName(user: Order["createdBy"]): string {
   if (!user) return "";
   return user.name.trim();

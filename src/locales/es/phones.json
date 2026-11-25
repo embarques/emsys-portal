@@ -21,6 +21,8 @@
   "countBadgeOne": "1 teléfono",
   "viewMore": "Ver más",
   "viewMoreAria": "Ver más teléfonos",
+  "moreCount": "+{{count}}",
+  "moreCountAria": "Ver {{count}} teléfonos más",
   "sheetTitle": "Teléfonos del cliente",
   "loading": "Cargando teléfonos…",
   "aria": {

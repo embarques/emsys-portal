@@ -10,6 +10,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
 import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
+import { canOpenEmployeesDirectory } from "@/components/accounting/open-employees-recovery-action";
 import { normalizeApiError } from "@/lib/api/axios";
 import {
   useAccountingPaymentMethods,
@@ -133,7 +134,11 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
       }
     } catch (error) {
       if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
-      setFormError(normalizeDailyIncomeJournalError(error));
+      setFormError(
+        normalizeDailyIncomeJournalError(error, {
+          canManageEmployees: canOpenEmployeesDirectory(hasPermission),
+        }),
+      );
       return Promise.reject(error);
     }
   }

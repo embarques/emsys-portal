@@ -10,15 +10,15 @@ type TableStreetAddressProps = {
   address?: CustomerCoreAddress | null;
   /** Shown when there is no address content at all. */
   emptyLabel?: string;
-  /** Optional action rendered on the address1/apartment row (e.g. unverified badge). */
+  /** Optional action rendered beside the street line (e.g. unverified badge). */
   action?: ReactNode;
   className?: string;
 };
 
 /**
- * Directory-table street address layout:
- * row 1 — address1 + apartment (+ optional action)
- * row 2 — address2 in muted text
+ * Directory-table street address layout on one line:
+ * address1 + apartment, then address2 in muted text so columns can auto-fit
+ * to the full street width.
  */
 export function TableStreetAddress({
   address,
@@ -46,16 +46,19 @@ export function TableStreetAddress({
   }
 
   return (
-    <div className={cn("max-w-full", className)} title={addressTitle}>
-      <div className="inline-flex max-w-full items-center gap-1.5">
-        {primaryStreetLine ? (
-          <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")}>{primaryStreetLine}</p>
+    <div
+      className={cn("inline-flex max-w-full items-center gap-1.5", className)}
+      title={addressTitle}
+    >
+      <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")}>
+        {primaryStreetLine ? <span>{primaryStreetLine}</span> : null}
+        {address2 ? (
+          <span className="text-muted-foreground">
+            {primaryStreetLine ? `, ${address2}` : address2}
+          </span>
         ) : null}
-        {action}
-      </div>
-      {address2 ? (
-        <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug text-muted-foreground")}>{address2}</p>
-      ) : null}
+      </p>
+      {action}
     </div>
   );
 }

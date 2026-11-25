@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Route as RouteIcon } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -26,7 +26,7 @@ import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { formatRouteDate } from "@/lib/route-manager/display";
-import { todayDateInputValue } from "@/lib/route-manager/types";
+import { isAssignableRouteDate } from "@/lib/pickup-delivery-routes/assignment-policy";
 import { useAssignmentBusinessDate } from "@/lib/pickup-delivery-routes/hooks/use-assignment-today";
 
 export type AssignableAppointment = Pick<Order, "id" | "date" | "completed" | "branch">;
@@ -41,30 +41,19 @@ function uniqueValues(values: string[]): string[] {
   return [...new Set(values.filter(Boolean))];
 }
 
-/** The API only accepts active pickup daily routes on the appointment's date and branch. */
+/** Active pickup daily routes for the appointment branch, dated today or later. */
 function isRouteAssignableTo(
   route: ActiveRoute,
-  date: string,
+  today: string,
   branch: AssignableAppointment["branch"],
 ): boolean {
   if (!route.active || route.routeType !== "pickup") return false;
-  if (route.date.slice(0, 10) !== date) return false;
+  if (!today || !isAssignableRouteDate(route.date, today)) return false;
 
   const routeCode = route.branch?.code?.trim().toUpperCase() ?? "";
   const appointmentCode = branch.code.trim().toUpperCase();
   if (routeCode && appointmentCode) return routeCode === appointmentCode;
   return route.branch?.id === branch.id;
-}
-
-export function sharedAppointmentDate(dates: Array<string | undefined | null>): string {
-  const unique = [
-    ...new Set(
-      dates
-        .map((value) => value?.trim().slice(0, 10) ?? "")
-        .filter(Boolean),
-    ),
-  ];
-  return unique.length === 1 ? unique[0] : todayDateInputValue();
 }
 
 export function AssignAppointmentRouteDialog({
@@ -77,6 +66,8 @@ export function AssignAppointmentRouteDialog({
   const { openFormTab } = useWorkspaceTabs();
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  /** Ignore the first outside pointer after open (DropdownMenu select race). */
+  const ignoreOutsideCloseRef = useRef(false);
 
   const incompleteAppointments = useMemo(
     () => appointments.filter((appointment) => appointment.id > 0 && !appointment.completed),
@@ -94,25 +85,21 @@ export function AssignAppointmentRouteDialog({
     appointmentBranchCodes.length === 1 ? incompleteAppointments[0]?.branch ?? null : null;
   const routeBranchCode = appointmentBranchCodes[0] ?? "";
   const businessDate = useAssignmentBusinessDate(open, routeBranch?.id);
-  const routeDate = businessDate.today;
-  const hasFutureAppointment = Boolean(routeDate) && incompleteAppointments.some(
-    appointment => appointment.date.trim().slice(0, 10) > routeDate,
-  );
+  const today = businessDate.today;
 
   const scopeError =
     incompleteAppointments.length === 0
       ? t("orders.dialogs.assignRouteAllCompleted")
-      : hasFutureAppointment
-        ? t("orders.dialogs.assignRouteFutureAppointment")
-        : !routeBranch
-          ? t("orders.dialogs.assignRouteMixedBranch")
-          : null;
+      : !routeBranch
+        ? t("orders.dialogs.assignRouteMixedBranch")
+        : null;
 
   const dailyRoutesQuery = useDailyRoutePicker(200, {
-    enabled: open && !scopeError && Boolean(routeDate),
+    enabled: open && !scopeError,
     routeType: "pickup",
     branchCode: routeBranchCode,
-    date: routeDate,
+    branchId: routeBranch?.id,
+    assignable: true,
   });
   const assignPickupsMutation = useAssignPickupsToRoute();
 
@@ -120,10 +107,10 @@ export function AssignAppointmentRouteDialog({
     () =>
       routeBranch
         ? (dailyRoutesQuery.data?.items ?? []).filter((route) =>
-            isRouteAssignableTo(route, routeDate, routeBranch),
+            isRouteAssignableTo(route, today, routeBranch),
           )
         : [],
-    [dailyRoutesQuery.data, routeDate, routeBranch],
+    [dailyRoutesQuery.data, today, routeBranch],
   );
   const routeOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(dailyRoutes, t),
@@ -135,11 +122,19 @@ export function AssignAppointmentRouteDialog({
     if (!open) {
       setRouteId("");
       setFormError(null);
+      ignoreOutsideCloseRef.current = false;
+      return;
     }
+
+    ignoreOutsideCloseRef.current = true;
+    const timer = window.setTimeout(() => {
+      ignoreOutsideCloseRef.current = false;
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [open]);
 
   const isSaving = assignPickupsMutation.isPending;
-  const canSubmit = Boolean(routeDate) && !scopeError && pickupIds.length > 0 && Boolean(selectedRoute) && !isSaving;
+  const canSubmit = Boolean(today) && !scopeError && pickupIds.length > 0 && Boolean(selectedRoute) && !isSaving;
 
   function handleOpenChange(nextOpen: boolean) {
     if (isSaving) return;
@@ -187,9 +182,9 @@ export function AssignAppointmentRouteDialog({
       ? t("orders.dialogs.assignRouteDescription", { count: appointments.length })
       : t("orders.dialogs.assignRouteDescription_plural", { count: appointments.length });
   const scopeHint =
-    !scopeError && routeDate
+    !scopeError && today
       ? t("orders.dialogs.assignRouteScope", {
-          date: formatRouteDate(routeDate),
+          date: formatRouteDate(today),
           branch: routeBranchCode,
         })
       : null;
@@ -202,7 +197,14 @@ export function AssignAppointmentRouteDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <CompactActionDialogContent>
+      <CompactActionDialogContent
+        onPointerDownOutside={(event) => {
+          if (ignoreOutsideCloseRef.current) event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          if (ignoreOutsideCloseRef.current) event.preventDefault();
+        }}
+      >
         <CompactActionDialogHeader
           icon={RouteIcon}
           title={t("orders.dialogs.assignRouteTitle")}

@@ -17,7 +17,7 @@ type PhoneActionRowProps = {
   label: string;
   number: string;
   displayNumber?: string;
-  /** When true, show a star instead of a "(primary)" text suffix. */
+  /** When true, show a star to the left of the phone number. */
   isPrimary?: boolean;
   className?: string;
 };
@@ -63,78 +63,80 @@ export function PhoneActionRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
+        "grid grid-cols-[minmax(6.5rem,38%)_1fr] items-center gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
         className,
       )}
     >
-      <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1 text-xs font-medium leading-snug text-muted-foreground">
-          {isPrimary ? (
-            <Star
-              className="size-3.5 shrink-0 fill-current text-amber-500"
-              aria-label={t("phones.primary")}
-            />
-          ) : null}
-          <span>{label}</span>
-        </p>
-        <p className="text-sm font-medium leading-snug text-foreground">{display}</p>
-      </div>
+      <p className="min-w-0 text-xs font-medium leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+        {label}
+      </p>
 
-      <div className="flex shrink-0 items-center gap-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              aria-label={t("phones.actions.copyAria", { label: actionLabel })}
-              onClick={handleCopy}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t("phones.actions.copyTooltip")}</TooltipContent>
-        </Tooltip>
-        {telHref ? (
+      <div className="flex min-w-0 items-center justify-end gap-1.5">
+        {isPrimary ? (
+          <Star
+            className="size-3.5 shrink-0 fill-current text-amber-500"
+            aria-label={t("phones.primary")}
+          />
+        ) : null}
+        <p className="min-w-0 text-right text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
+          {display}
+        </p>
+        <div className="flex shrink-0 items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                asChild
+                type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                aria-label={t("phones.actions.copyAria", { label: actionLabel })}
+                onClick={handleCopy}
               >
-                <a href={telHref} aria-label={t("phones.actions.callAria", { label: actionLabel })}>
-                  <Phone className="h-4 w-4" />
-                </a>
+                <Copy className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t("phones.actions.call")}</TooltipContent>
+            <TooltipContent>{t("phones.actions.copyTooltip")}</TooltipContent>
           </Tooltip>
-        ) : null}
-        {whatsAppHref ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                asChild
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-[#25D366] hover:text-[#1da851]"
-              >
-                <a
-                  href={whatsAppHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t("phones.actions.whatsAppAria", { label: actionLabel })}
+          {telHref ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
                 >
-                  <WhatsAppIcon />
-                </a>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("phones.actions.whatsApp")}</TooltipContent>
-          </Tooltip>
-        ) : null}
+                  <a href={telHref} aria-label={t("phones.actions.callAria", { label: actionLabel })}>
+                    <Phone className="h-4 w-4" />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("phones.actions.call")}</TooltipContent>
+            </Tooltip>
+          ) : null}
+          {whatsAppHref ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-[#25D366] hover:text-[#1da851]"
+                >
+                  <a
+                    href={whatsAppHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("phones.actions.whatsAppAria", { label: actionLabel })}
+                  >
+                    <WhatsAppIcon />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("phones.actions.whatsApp")}</TooltipContent>
+            </Tooltip>
+          ) : null}
+        </div>
       </div>
     </div>
   );

@@ -36,10 +36,15 @@ function AppointmentFixture() {
             const created = await duplicateConfirmation.submit(values, async (draft, options) => {
               setAttempts((count) => count + 1);
               if (!options?.allowDuplicatePendingAppointment) {
+                // Mirror POST /v1/pickups 409 contract from API_PAYLOADS.md.
                 throw { isAxiosError: true, response: { status: 409, data: {
-                  code: "DUPLICATE_PENDING_APPOINTMENT",
+                  success: false,
                   message: "Duplicate pending appointment warning",
-                  data: { existingAppointments: [{ id: 24, date: "2026-11-18", purpose: "PICKUP" }] },
+                  error: "An incomplete appointment already exists for this sender and selected address.",
+                  data: {
+                    code: "DUPLICATE_PENDING_APPOINTMENT",
+                    existingAppointments: [{ id: 24, date: "2026-11-18", purpose: "PICKUP" }],
+                  },
                 } } };
               }
               setSaved(draft);

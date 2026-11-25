@@ -198,6 +198,7 @@
     "errors": {
       "appointmentRequired": "Invoices can only be created from an appointment.",
       "employeeNotLinked": "Your user is not linked to an employee. Ask an administrator to link your employee record before creating invoices.",
+      "employeeNotLinkedOpenEmployees": "Your user is not linked to an employee. Open Employees to link your employee record before creating invoices.",
       "noAssignment": "You are not on today's pickup route and are not an office or warehouse employee. Ask an administrator to assign you before creating invoices.",
       "noContainer": "No container is available yet. Ask an administrator to create one before creating invoices."
     }
@@ -226,13 +227,15 @@
       "pickupReference": "Pickup Reference",
       "pickupReceiver": "Receiver from this pickup",
       "pickupSource": "Received via",
-      "pickupSourceCreator": "Me (linked employee)",
-      "pickupSourceRoute": "Route",
+      "pickupSourceCreator": "Me",
+      "pickupSourceSupervisor": "Supervisor",
+      "pickupSourceRoute": "Daily route",
       "pickupSourceWarehouse": "Warehouse",
       "pickupSourceOffice": "Office",
-      "pickupRoute": "Appointment route",
+      "pickupRoute": "Daily route",
       "warehouseEmployee": "Warehouse employee",
-      "officeEmployee": "Office employee"
+      "officeEmployee": "Office employee",
+      "supervisorEmployee": "Supervisor"
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
@@ -247,13 +250,14 @@
       "selectPickupReceiver": "Choose who this invoice is for",
       "searchPickupReceivers": "Search pickup receivers…",
       "pickupReceiverSuggestions": "Receivers from this pickup",
-      "selectPickupRoute": "Select appointment route",
-      "noPickupRoute": "No appointment route",
-      "searchPickupRoutes": "Search appointment routes…",
+      "selectPickupRoute": "Select daily route",
+      "noPickupRoute": "No daily route",
+      "searchPickupRoutes": "Search daily routes…",
       "selectPaymentLocation": "Select branch",
       "searchPaymentLocations": "Search branches…",
       "selectWarehouseEmployee": "Select warehouse employee",
       "selectOfficeEmployee": "Select office employee",
+      "selectSupervisor": "Select supervisor",
       "searchEmployees": "Search employees…"
     },
     "partyActions": {
@@ -367,9 +371,10 @@
       "invoiceNumberRequired": "Invoice number is required.",
       "containerRequired": "Container is required.",
       "paymentLocationRequired": "Select where this invoice will be paid.",
-      "pickupRouteRequired": "Appointment route is required.",
+      "pickupRouteRequired": "Daily route is required.",
       "warehouseEmployeeRequired": "Warehouse employee is required.",
       "officeEmployeeRequired": "Office employee is required.",
+      "supervisorEmployeeRequired": "Supervisor is required.",
       "senderRequired": "Sender is required.",
       "unverifiedSenderAddress": "The sender's address is unverified. You can continue and save the invoice; we recommend updating it with a Google-suggested address.",
       "lineItemRequired": "Add at least one line item.",

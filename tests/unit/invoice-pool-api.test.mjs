@@ -151,3 +151,17 @@ test("reserved reservedAt accepts pending API fields without substituting anothe
  const body = buildInvoicePoolSearchBody([{id:"date",join:"and",field:"reservedAt",operator:"gte",value:"2026-11-07"}]);
  assert.deepEqual(body,{operator:"and",filters:[{field:"reservedAt",operator:"gte",value:"2026-11-07"}]});
 });
+
+test("reserved invoices preserve the nullable device claim time separately from reservation time", () => {
+  const { reservedInvoiceSchema } = loadFeature("src/lib/invoices/schemas/invoice-pool.schema.ts", {});
+  const reservedAt = "2026-11-07T13:30:00Z";
+  const reservation = { ...item, reservedAt };
+  assert.equal(reservedInvoiceSchema.parse(reservation).receivedAt, undefined);
+  assert.equal(reservedInvoiceSchema.parse({ ...reservation, receivedAt: null }).receivedAt, null);
+  for (const receivedAt of ["2026-11-08T12:00:00Z", "2026-11-08T07:00:00-05:00"]) {
+    const parsed = reservedInvoiceSchema.parse({ ...reservation, receivedAt });
+    assert.equal(parsed.receivedAt, receivedAt);
+    assert.equal(parsed.reservedAt, reservedAt);
+  }
+  assert.equal(reservedInvoiceSchema.safeParse({ ...reservation, receivedAt: "2026-11-08" }).success, false);
+});

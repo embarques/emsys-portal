@@ -622,7 +622,7 @@ export function OrderForm({
             showAddressLabels={false}
           />
           {values.sender && isOrderPartyAddressChosen(values.sender, values.senderAddressIndex) ? (
-            <>
+            <div className={cn("min-w-0 space-y-2", fill && "flex min-h-0 flex-1 flex-col")}>
               <CustomerContactSummary
                 customer={values.sender}
                 addressIndex={values.senderAddressIndex}
@@ -635,7 +635,7 @@ export function OrderForm({
                 addressIndex={values.senderAddressIndex}
                 onUpdateAddress={() => openEditCustomer("sender", values.senderAddressIndex)}
               />
-            </>
+            </div>
           ) : fill ? (
             <p className="rounded-lg border border-dashed border-input px-3 py-4 text-sm text-foreground/75">
               {t("orders.form.workflow.senderEmptyHint")}

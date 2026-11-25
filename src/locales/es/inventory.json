@@ -470,7 +470,8 @@
     "dispatchHistory": "Historial de despachos",
     "audit": "Auditoría",
     "details": "Detalles",
-    "stockByHolder": "Inventario por custodio"
+    "stockByHolder": "Inventario por custodio",
+    "tabs": "Detalles del artículo de inventario"
   },
   "delete": {
     "itemsTitle": "¿Eliminar artículos de inventario?",

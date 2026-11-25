@@ -36,6 +36,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { RecordViewSheetTabs } from "@/components/app-shell/record-view-sheet-tabs";
 import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -208,65 +209,34 @@ export function OrderViewSheet({
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
-      <RecordViewSheetContent
-        className={activeTab === "history" ? "sm:max-w-6xl" : undefined}
-      >
+      <RecordViewSheetContent>
         <RecordViewSheetHeader
           icon={CalendarDays}
           eyebrow={t("orders.entity")}
           title={order.sender.name.trim() || t("orders.history.defaultSenderName")}
         />
 
-        <div
-          role="tablist"
+        <RecordViewSheetTabs
+          idPrefix="order"
           aria-label={t("orders.view.tabs")}
-          className="flex gap-6 border-b px-6"
-        >
-          {viewTabs.map((tab) => (
-            <button
-              key={tab}
-              id={`order-tab-${tab}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab}
-              tabIndex={activeTab === tab ? 0 : -1}
-              onKeyDown={(event) => {
-                let next: ViewSheetTab | undefined;
-                if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-                  next = tab === "overview" ? "history" : "overview";
-                }
-                if (event.key === "Home") next = "overview";
-                if (event.key === "End") next = "history";
-                if (next) {
-                  event.preventDefault();
-                  setActiveTab(next);
-                  document.getElementById(`order-tab-${next}`)?.focus();
-                }
-              }}
-              aria-controls={`order-panel-${tab}`}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "border-b-2 px-1 py-3 text-sm font-medium",
-                activeTab === tab
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground",
-              )}
-            >
-              {t(
-                tab === "overview"
-                  ? "orders.view.overview"
-                  : "orders.history.sectionTitle",
-              )}
-            </button>
-          ))}
-        </div>
+          value={activeTab}
+          onValueChange={setActiveTab}
+          tabs={viewTabs.map((tab) => ({
+            id: tab,
+            label: t(
+              tab === "overview"
+                ? "orders.view.overview"
+                : "orders.history.sectionTitle",
+            ),
+          }))}
+        />
 
         {activeTab === "history" ? (
           <RecordViewSheetBody
             role="tabpanel"
             id="order-panel-history"
             aria-labelledby="order-tab-history"
-            className="flex flex-col overflow-hidden bg-card p-0"
+            className="flex flex-col overflow-hidden bg-muted/30 px-5 py-0"
           >
             <SenderOrderHistorySection
               key={order.id}
@@ -286,16 +256,14 @@ export function OrderViewSheet({
               label={t("orders.columns.date")}
               value={formatOrderDateWithWeekday(order.date, locale)}
             />
-            <div className="border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
-              <p className="text-xs font-medium leading-snug text-muted-foreground">
-                {t("orders.columns.purpose")}
-              </p>
-              <p className="text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
-                {order.comments.length > 0
+            <RecordViewSheetDetailRow
+              label={t("orders.columns.purpose")}
+              value={
+                order.comments.length > 0
                   ? formatOrderCommentsSummary(order)
-                  : t("common.empty.dash")}
-              </p>
-            </div>
+                  : t("common.empty.dash")
+              }
+            />
             <RecordViewSheetDetailRow
               label={t("orders.tableColumns.completed")}
               value={

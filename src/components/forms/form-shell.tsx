@@ -172,6 +172,8 @@ type FormFooterProps = {
   error?: string | null;
   /** Soft warning shown when there is no error (e.g. a block reason). */
   warning?: string | null;
+  /** Optional control under an error notice (e.g. open another workspace). */
+  errorAction?: React.ReactNode;
   submitLabel: string;
   isSubmitting?: boolean;
   /** Disable submission without surfacing an error (e.g. validation gate). */
@@ -184,6 +186,7 @@ type FormFooterProps = {
 export function FormFooter({
   error = null,
   warning = null,
+  errorAction,
   submitLabel,
   isSubmitting = false,
   submitDisabled = false,
@@ -217,7 +220,13 @@ export function FormFooter({
   if (inDialog) {
     return (
       <div className="sticky bottom-0 z-10 flex shrink-0 flex-col gap-3 border-t border-border bg-card px-5 py-3 max-md:px-4">
-        {notice ? <FormFooterNoticeMessage tone={notice.tone} message={notice.message} /> : null}
+        {notice ? (
+          <FormFooterNoticeMessage
+            tone={notice.tone}
+            message={notice.message}
+            action={notice.tone === "error" ? errorAction : undefined}
+          />
+        ) : null}
         <div className="flex flex-col-reverse gap-2 max-md:grid max-md:grid-cols-2 sm:flex-row sm:justify-end">
           {actions}
         </div>
@@ -229,7 +238,11 @@ export function FormFooter({
     <div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card px-5 py-3">
       <div className="flex items-center justify-between gap-3">
         {notice ? (
-          <FormFooterNoticeMessage tone={notice.tone} message={notice.message} />
+          <FormFooterNoticeMessage
+            tone={notice.tone}
+            message={notice.message}
+            action={notice.tone === "error" ? errorAction : undefined}
+          />
         ) : (
           <span className="flex-1" aria-hidden />
         )}

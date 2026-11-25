@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Check,
   CheckCircle2,
-  Clock,
   Edit,
   Eye,
   FileText,
@@ -97,6 +96,8 @@ import {
   formatOrderDate,
   formatOrderCalendarDate,
   formatOrderId,
+  formatOrderPurposeLabel,
+  formatOrderSenderStreetLine,
   getOrderFeedbackName,
   formatOrderRouteName,
   formatUserSummary,
@@ -748,7 +749,13 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     const targets = orders ?? selectedOrders;
     if (targets.length === 0) return;
     setBulkActionOrders(orders ?? null);
-    setAssignRouteOpen(true);
+    // Close the view sheet first — nested Sheet + Dialog both use dismiss layers,
+    // and opening Assign route from the sheet Actions menu otherwise flashes closed.
+    setViewOrder(null);
+    // Defer past the DropdownMenu pointer-up / focus-restore so that event does not
+    // light-dismiss the dialog the same tick it mounts (CompactActionDialog also
+    // skips open autofocus, which makes the race easier to hit).
+    window.setTimeout(() => setAssignRouteOpen(true), 0);
   }
 
   function openMapView(orders?: Order[]) {
@@ -914,21 +921,17 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       id: "completed",
       label: t("orders.tableColumns.completed"),
       truncateCell: false,
-      cellClassName: "overflow-visible",
-      defaultWidth: 132,
+      defaultWidth: 88,
       renderCell: (order) => (
-        <div className="flex h-5 items-center">
-          <Badge
-            variant="outline"
-            className={cn(
-              "shrink-0 gap-1.5 rounded-full border-transparent px-2.5 py-1 text-xs font-semibold",
-              order.completed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
-            )}
-          >
-            {order.completed ? <CheckCircle2 className="size-3.5" /> : <Clock className="size-3.5" />}
-            {getOrderCompletedLabel(order.completed, t)}
-          </Badge>
-        </div>
+        <span
+          className={cn(
+            // Flat status label — bold color text (no pill chrome / icon).
+            "font-semibold",
+            order.completed ? "text-emerald-700" : "text-amber-700",
+          )}
+        >
+          {getOrderCompletedLabel(order.completed, t)}
+        </span>
       ),
     },
     {
@@ -959,9 +962,21 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       id: "sender.address",
       label: t("orders.tableColumns.senderAddress"),
       sortField: "sender.address.address1",
-      defaultWidth: 240,
+      defaultWidth: 320,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      copyValue: (order) => {
+        const primary = getPrimaryAddress(order.sender);
+        if (!primary) return undefined;
+        const line = [
+          [primary.address1, primary.apartment].filter((part) => part?.trim()).join(" "),
+          primary.address2,
+        ]
+          .map((part) => part?.trim())
+          .filter(Boolean)
+          .join(", ");
+        return line || undefined;
+      },
       renderCell: (order) => <OrderTableAddressCell customer={order.sender} />,
     },
     {
@@ -1010,12 +1025,28 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       renderCell: (order) => formatPickupTableDate(order.updatedAt),
     },
     {
+      id: "purpose",
+      label: t("orders.columns.purpose"),
+      sortField: "purpose",
+      defaultVisible: false,
+      defaultWidth: 160,
+      copyValue: (order) => {
+        const label = formatOrderPurposeLabel(order.purpose, t);
+        return label === t("common.empty.dash") ? undefined : label;
+      },
+      renderCell: (order) => formatOrderPurposeLabel(order.purpose, t),
+    },
+    {
       id: "comments",
       label: t("orders.tableColumns.comments"),
       sortField: "comments.description",
       defaultWidth: 360,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      copyValue: (order) => {
+        const summary = formatOrderCommentsSummary(order);
+        return summary === "—" ? undefined : summary;
+      },
       renderCell: (order) => <PickupCommentsCell order={order} />,
     },
     {
@@ -1039,7 +1070,12 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       label: t("orders.columns.route"),
       sortField: "route.name",
       defaultVisible: false,
+      defaultWidth: 220,
       cellClassName: "text-muted-foreground",
+      copyValue: (order) => {
+        const label = formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t);
+        return label === "—" ? undefined : label;
+      },
       renderCell: (order) =>
         formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t),
     },
@@ -1047,7 +1083,8 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     [pickupRouteLookup, t],
   );
 
-  const columnVisibility = useApiTableColumns("orders-v10", tableColumns, ORDER_API_TABLE_FIELDS);
+  // Bump storage key so prior 520px-capped widths are not reused after compact fit.
+  const columnVisibility = useApiTableColumns("orders-v12-compact-fit", tableColumns, ORDER_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
@@ -1473,6 +1510,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             rowKey={(order) => getOrderRecordId(order)}
             rowLabel={(order) => formatOrderId(order)}
             columnLayout={columnVisibility}
+            density="compact"
             minWidth={1500}
             sort={sort}
             onSortChange={onSortChange}
@@ -1567,12 +1605,25 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       <Dialog
         open={formMode !== null}
         onOpenChange={(open) => {
-          if (!open) {
+          // Keep the appointment draft mounted while the duplicate confirmation
+          // dialog is open (nested dismiss layers would otherwise wipe the form).
+          if (!open && !duplicateConfirmation.isConfirming) {
             setFormMode(null);
           }
         }}
       >
-        <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-6xl sm:rounded-xl">
+        <DialogContent
+          className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-6xl sm:rounded-xl"
+          onPointerDownOutside={(event) => {
+            if (duplicateConfirmation.isConfirming) event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            if (duplicateConfirmation.isConfirming) event.preventDefault();
+          }}
+          onEscapeKeyDown={(event) => {
+            if (duplicateConfirmation.isConfirming) event.preventDefault();
+          }}
+        >
           <DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-border sm:bg-background sm:px-6 sm:py-4 sm:text-foreground">
             <div className="flex items-center justify-between gap-4">
               <DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">
@@ -1581,7 +1632,9 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
               <button
                 type="button"
                 className="font-semibold text-primary-foreground sm:hidden"
+                disabled={duplicateConfirmation.isConfirming}
                 onClick={() => {
+                  if (duplicateConfirmation.isConfirming) return;
                   setFormMode(null);
                 }}
               >
@@ -1605,6 +1658,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             isSubmitting={isSaving}
             onSubmit={saveOrder}
             onCancel={() => {
+              if (duplicateConfirmation.isConfirming) return;
               setFormMode(null);
             }}
           />
@@ -1659,6 +1713,32 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                   )}
             </DialogDescription>
           </DialogHeader>
+          {actionOrders.length > 0 ? (
+            <ul
+              role="list"
+              className="max-h-56 divide-y divide-border overflow-y-auto overscroll-contain rounded-lg border border-border text-sm"
+              aria-label={t("orders.dialogs.completionSummaryLabel")}
+            >
+              {actionOrders.map((order) => {
+                const dash = t("common.empty.dash");
+                const senderName = order.sender.name.trim() || dash;
+                const streetLine = formatOrderSenderStreetLine(order, dash);
+                const purpose = formatOrderPurposeLabel(order.purpose, t);
+                return (
+                  <li key={getOrderRecordId(order)} className="bg-muted/40 px-3 py-2.5">
+                    <p className="truncate font-medium text-foreground">{senderName}</p>
+                    <p className="mt-0.5 truncate text-muted-foreground">
+                      <span className="sr-only">{t("orders.tableColumns.senderAddress")}: </span>
+                      {streetLine}
+                      <span aria-hidden="true"> · </span>
+                      <span className="sr-only">{t("orders.columns.purpose")}: </span>
+                      {purpose}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
           <DialogFooter>
             <Button
               variant="outline"

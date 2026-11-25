@@ -470,7 +470,8 @@
     "dispatchHistory": "Dispatch history",
     "audit": "Audit",
     "details": "Details",
-    "stockByHolder": "Stock by holder"
+    "stockByHolder": "Stock by holder",
+    "tabs": "Inventory item details"
   },
   "delete": {
     "itemsTitle": "Delete inventory items?",

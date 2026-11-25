@@ -2,7 +2,6 @@ import type { ColumnVisibilityDefinition } from "@/lib/table/types";
 
 export const DEFAULT_COLUMN_WIDTH = 160;
 export const MIN_COLUMN_WIDTH = 48;
-export const MAX_COLUMN_WIDTH = 520;
 
 export type TableColumnPreferences = {
   visibility: Record<string, boolean>;
@@ -51,12 +50,13 @@ export function reorderColumnIds(order: string[], sourceId: string, targetId: st
   return next;
 }
 
+/** No upper bound — columns may grow to fit full content (address, route, purpose). */
 export function clampColumnWidth(width: number): number {
   if (!Number.isFinite(width)) {
     return DEFAULT_COLUMN_WIDTH;
   }
 
-  return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, Math.round(width)));
+  return Math.max(MIN_COLUMN_WIDTH, Math.round(width));
 }
 
 function sanitizeColumnWidths(widths: Record<string, number>): Record<string, number> {

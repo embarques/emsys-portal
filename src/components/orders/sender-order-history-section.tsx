@@ -179,7 +179,10 @@ export function SenderOrderHistorySection({
 
   if (isEmbedded) {
     return (
-      <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", compactTableShellClassName)}>
+      <div
+        // Square corners + no top border so the table sits flush under view-sheet tabs.
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-none border border-t-0 border-border bg-card"
+      >
         <div id={`${sectionId}-panel`} className="min-h-0 flex-1 min-w-0">
           <CompactTableScroll aria-labelledby={sectionId} className="h-full min-h-0">
           {statusMessage ? (

@@ -50,6 +50,7 @@ import {
 import { formatAccountingDate } from "@/lib/accounting/display";
 import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
 import { normalizeDailyIncomeJournalError } from "@/lib/accounting/daily-income/journal-api-error";
+import { canOpenEmployeesDirectory } from "@/components/accounting/open-employees-recovery-action";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -415,7 +416,11 @@ export function DailyIncomeWorkspace() {
       })
       .catch((error) => {
         if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
-        setFormError(normalizeDailyIncomeJournalError(error));
+        setFormError(
+          normalizeDailyIncomeJournalError(error, {
+            canManageEmployees: canOpenEmployeesDirectory(hasPermission),
+          }),
+        );
         return Promise.reject(error);
       });
   }

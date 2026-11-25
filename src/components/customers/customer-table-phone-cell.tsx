@@ -28,7 +28,8 @@ import {
 } from "@/lib/phones/phones";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 
-const PHONE_COUNT_LINK_MIN = 3;
+/** Open the phones sheet when at least one extra number is hidden behind +N. */
+const PHONE_COUNT_LINK_MIN = 2;
 
 type CustomerTablePhoneCellProps = {
   customer: Customer;

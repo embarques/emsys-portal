@@ -25,16 +25,24 @@ function readConflictPayload(error: unknown): Record<string, unknown> | null {
   return data as Record<string, unknown>;
 }
 
+function conflictCode(payload: Record<string, unknown>): string | null {
+  if (payload.code === DUPLICATE_CODE) return DUPLICATE_CODE;
+  const nested = payload.data;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    const code = (nested as Record<string, unknown>).code;
+    return typeof code === "string" ? code : null;
+  }
+  return null;
+}
+
 /** Only the verified pending-appointment conflict is eligible for override. */
 export function isDuplicatePendingAppointmentWarning(error: unknown): boolean {
   const payload = readConflictPayload(error);
   if (!payload) return false;
+  // API contract: message "Duplicate pending appointment warning" and/or
+  // data.code "DUPLICATE_PENDING_APPOINTMENT" on HTTP 409 (create only).
   if (payload.message === DUPLICATE_MESSAGE) return true;
-  const nested = payload.data;
-  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
-    return (nested as Record<string, unknown>).code === DUPLICATE_CODE;
-  }
-  return false;
+  return conflictCode(payload) === DUPLICATE_CODE;
 }
 
 export function getExistingPendingAppointmentsFromError(error: unknown): ExistingPendingAppointment[] {
