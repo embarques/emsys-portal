@@ -8,7 +8,7 @@ import {
   Save,
 } from "lucide-react";
 
-import { VehicleComplianceBanner, VehicleComplianceDateCell } from "@/components/vehicles/vehicle-compliance";
+import { VehicleComplianceDateCell } from "@/components/vehicles/vehicle-compliance";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { VehicleViewSheet } from "@/components/vehicles/vehicle-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -62,12 +62,15 @@ import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
+  vehicleComplianceToday,
+  vehicleHasComplianceDue,
+} from "@/lib/vehicles/compliance-due";
+import {
   computeVehicleKpis,
   getBranchBadgeClass,
   getFuelTypeBadgeClass,
   getVehicleActiveBadgeClass,
 } from "@/lib/vehicles/display";
-import { useVehicleComplianceDue } from "@/lib/vehicles/hooks/use-vehicle-compliance-due";
 import { useVehicleFilterFields } from "@/lib/vehicles/hooks/use-vehicle-filter-fields";
 import { useVehicleLabels } from "@/lib/vehicles/hooks/use-vehicle-labels";
 import {
@@ -151,8 +154,7 @@ export function VehiclesWorkspace() {
 
   const branchKpis = useVehicleKpis();
   const branchCounts = computeVehicleKpis(branchKpis.items);
-  const compliance = useVehicleComplianceDue();
-  const complianceToday = compliance.today;
+  const complianceToday = vehicleComplianceToday();
 
   const statCards = [
     {
@@ -412,13 +414,6 @@ export function VehiclesWorkspace() {
         }
       />
 
-      <VehicleComplianceBanner
-        items={compliance.items}
-        isPartial={compliance.isPartial}
-        onOpenVehicle={setViewVehicle}
-        className="mt-6"
-      />
-
       <DirectoryInsightsFlip
         open={insightsOpen}
         onOpenChange={setInsightsOpen}
@@ -491,7 +486,7 @@ export function VehiclesWorkspace() {
         />
 
         {isError ? (
-          <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(error).message}</div>
+          <div className="border-b px-6 py-3 text-sm text-destructive">{normalizeApiError(error).message}</div>
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -500,6 +495,11 @@ export function VehiclesWorkspace() {
             isPageDataPending={isFetching || isSearchPending}
             rowKey={(vehicle) => vehicle.id}
             rowLabel={(vehicle) => vehicle.name}
+            getRowClassName={(vehicle) =>
+              vehicleHasComplianceDue(vehicle, complianceToday)
+                ? "bg-destructive/10 hover:bg-destructive/15"
+                : undefined
+            }
             columnLayout={columnVisibility}
             minWidth={1200}
             sort={sort}

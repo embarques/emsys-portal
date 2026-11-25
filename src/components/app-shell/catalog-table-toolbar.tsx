@@ -82,7 +82,11 @@ export function CatalogDataTable<T>({
   const { t } = useTranslation();
 
   if (state.isLoading) {
-    return <p className="px-6 py-6 text-sm text-muted-foreground">{t("common.loading")}</p>;
+    return (
+      <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+      </div>
+    );
   }
 
   if (state.isError) {
@@ -102,6 +106,7 @@ export function CatalogDataTable<T>({
       rows={state.items}
       rowKey={rowKey}
       rowLabel={rowLabel}
+      density="compact"
       isPageDataPending={state.isSearching}
       columnLayout={columnLayout}
       page={state.pagination.page}

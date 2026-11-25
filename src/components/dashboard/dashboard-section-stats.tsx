@@ -15,6 +15,11 @@ import {
   DirectoryInsightsShell,
   type DirectoryInsightMetric,
 } from "@/components/app-shell/directory-insights-flip";
+import {
+  AppointmentHistogramCharts,
+  ClientHistogramCharts,
+  InvoiceHistogramCharts,
+} from "@/components/dashboard/dashboard-histogram-charts";
 import { NewCustomersStatCard } from "@/components/customers/new-customers-stat-card";
 import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
 import { AppointmentDirectoryInsights } from "@/components/orders/appointment-directory-insights";
@@ -36,7 +41,9 @@ export function DashboardAppointmentsStats() {
       pendingEstimates={stats.pendingEstimates}
       pendingPayments={stats.pendingPayments}
       isLoading={stats.isLoading}
-    />
+    >
+      <AppointmentHistogramCharts />
+    </AppointmentDirectoryInsights>
   );
 }
 
@@ -89,6 +96,7 @@ export function DashboardInvoicesStats() {
       <div className="space-y-5">
         <NewInvoicesStatCard />
         <DirectoryInsightsMetricsGrid metrics={metrics} />
+        <InvoiceHistogramCharts />
       </div>
     </DirectoryInsightsShell>
   );
@@ -130,6 +138,7 @@ export function DashboardCustomersStats() {
       <div className="space-y-5">
         <NewCustomersStatCard />
         <DirectoryInsightsMetricsGrid metrics={metrics} />
+        <ClientHistogramCharts />
       </div>
     </DirectoryInsightsShell>
   );

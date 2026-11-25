@@ -14,7 +14,6 @@
   "editNamed": "Editar {{name}}",
   "deleteNamed": "Eliminar {{name}}",
   "empty": "Aún no hay rutas predefinidas.",
-  "confirmDelete": "¿Eliminar la ruta predefinida {{name}}?",
   "retry": "Reintentar",
   "searchPlaceholder": "Buscar por nombre de ruta, ciudad o código postal…",
   "fields": {
@@ -59,5 +58,12 @@
   "routeLabel": "RUTA",
   "showMore": "+{{count}} más",
   "showLess": "Mostrar menos",
-  "entities": "rutas predefinidas"
+  "entities": "rutas predefinidas",
+  "view": {
+    "edit": "Editar ruta predefinida",
+    "recordId": "ID",
+    "sections": {
+      "details": "Datos de la ruta"
+    }
+  }
 }

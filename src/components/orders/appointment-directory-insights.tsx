@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import {
   DirectoryInsightsShell,
@@ -29,6 +29,8 @@ type AppointmentDirectoryInsightsProps = {
   isLoading?: boolean;
   /** When set, shows the directory flip back-to-table control. */
   onBack?: () => void;
+  /** Optional extra content (e.g. dashboard charts) below the pending breakdown. */
+  children?: ReactNode;
   className?: string;
 };
 
@@ -278,6 +280,7 @@ export function AppointmentDirectoryInsights({
   pendingPayments,
   isLoading = false,
   onBack,
+  children,
   className,
 }: AppointmentDirectoryInsightsProps) {
   const { t } = useTranslation();
@@ -378,6 +381,8 @@ export function AppointmentDirectoryInsights({
             />
           )}
         </section>
+
+        {children}
       </div>
     </DirectoryInsightsShell>
   );

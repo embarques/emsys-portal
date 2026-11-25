@@ -1,30 +1,28 @@
 import * as React from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-/**
- * Keep only text-color utility classes from a badge/pill className,
- * dropping pill surfaces (background, border, ring, rounded, padding, shadow).
- * Variant prefixes like `dark:` are preserved.
- */
-export function pillTextClass(className?: string): string {
-  if (!className) return "";
-  return className
-    .split(/\s+/)
-    .filter((token) => token && token.replace(/^[\w-]+:/, "").startsWith("text-"))
-    .join(" ");
-}
-
 type TableTagTextProps = {
-  /** A badge className whose text color is reused (surfaces are stripped). */
+  /** Badge/pill color classes (background + text). */
   className?: string;
   children: React.ReactNode;
 };
 
 /**
- * Renders a table cell value as bold, colored text instead of a pill/badge —
- * keeps the font weight and color, removes the pill background and border.
+ * Table status/tag cell: colored pill with text centered vertically and
+ * horizontally. No icons — pass label text only.
  */
 export function TableTagText({ className, children }: TableTagTextProps) {
-  return <span className={cn("font-semibold", pillTextClass(className))}>{children}</span>;
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "inline-flex items-center justify-center rounded-full px-2.5 py-1 text-center font-semibold leading-none",
+        className ?? "border-transparent bg-muted text-muted-foreground",
+      )}
+    >
+      {children}
+    </Badge>
+  );
 }

@@ -673,7 +673,8 @@ export function OrdersMapView({
     );
   }
 
-  const routeOrderingEnabled = allowRouteManagement && Boolean(dailyRouteId);
+  /** Stop ordering is available whenever the map was opened for a daily route (including Route Appointments). */
+  const routeOrderingEnabled = Boolean(dailyRouteId);
   const routeStops = mappedStops.filter((stop) => stop.routeId?.trim() === dailyRouteId);
   const everyRouteStopNumbered =
     routeStops.length > 0 && routeStops.every((stop) => stopNumbers.has(stop.orderRecordId));

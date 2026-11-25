@@ -16,7 +16,10 @@ import {
 } from "lucide-react";
 
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import { InvoiceLineItemsCell } from "@/components/invoices/invoice-line-items-cell";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -24,6 +27,7 @@ import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
 } from "@/components/app-shell/directory-insights-flip";
+import { InvoiceHistogramCharts } from "@/components/dashboard/dashboard-histogram-charts";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -42,7 +46,7 @@ import {
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -362,22 +366,18 @@ function MobileInvoiceRow({
           onOpen(invoice);
         }}
       >
-        <span
-          className={cn(
-            "text-lg font-bold leading-none",
-            isClosed ? "text-emerald-600" : "text-rose-600",
-          )}
-        >
+        <TableTagText className={cn("text-base", getInvoiceBalanceMoneyClass(balance))}>
           {formatInvoiceMoney(balance)}
-        </span>
-        <span
-          className={cn(
-            "text-sm font-semibold",
-            isClosed ? "text-emerald-600" : "text-rose-600",
-          )}
+        </TableTagText>
+        <TableTagText
+          className={
+            isClosed
+              ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+              : "border-transparent bg-rose-500/15 text-rose-700 dark:text-rose-300"
+          }
         >
           {getInvoicePaidStatusLabel(status, t)}
-        </span>
+        </TableTagText>
       </button>
     </div>
   );
@@ -585,7 +585,7 @@ export function InvoicesWorkspace() {
   const canViewInvoices = hasPermission(PERMISSIONS.invoicesView.name, PERMISSIONS.invoicesView.resourceType);
   const documentsSelectionAction = canViewInvoices ? (
     <TableSelectionActionsMenu>
-      <DropdownMenuItem
+      <TableSelectionActionItem
         disabled={selectedCount !== 1 || !selectedInvoices[0]}
         onSelect={() => {
           const invoice = selectedInvoices[0];
@@ -596,7 +596,7 @@ export function InvoicesWorkspace() {
       >
         <FileText className="size-4" />
         {t("invoices.documents.title")}
-      </DropdownMenuItem>
+      </TableSelectionActionItem>
     </TableSelectionActionsMenu>
   ) : null;
 
@@ -933,7 +933,11 @@ export function InvoicesWorkspace() {
       defaultWidth: 120,
       renderCell: (invoice) => {
         const amount = getInvoiceBalance(invoice);
-        return <span className={getInvoiceBalanceMoneyClass(amount)}>{formatInvoiceMoney(amount)}</span>;
+        return (
+          <TableTagText className={getInvoiceBalanceMoneyClass(amount)}>
+            {formatInvoiceMoney(amount)}
+          </TableTagText>
+        );
       },
     },
     {
@@ -1194,6 +1198,7 @@ export function InvoicesWorkspace() {
         open={insightsOpen}
         onOpenChange={setInsightsOpen}
         metrics={insightMetrics}
+        insightsExtra={<InvoiceHistogramCharts />}
         title={t("invoices.title")}
         className="mt-6"
       >
@@ -1274,7 +1279,7 @@ export function InvoicesWorkspace() {
         />
 
         {isError ? (
-          <div role="alert" className="space-y-3 px-6 py-8 text-sm text-destructive">
+          <div role="alert" className="space-y-3 border-b px-6 py-3 text-sm text-destructive">
             <p>{normalizeApiError(error).message}</p>
             <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
               <RefreshCw className="h-4 w-4" />

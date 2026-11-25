@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { TableSelectionActionItem } from "@/components/app-shell/table-selection-actions-menu";
 import { useId, useRef, useState } from "react";
 import { FilePenLine, NotebookPen } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +11,7 @@ import { useForm } from "react-hook-form";
 
 import { RequestChangeButton } from "@/components/change-requests/request-change-button";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { Label } from "@/components/ui/label";
 import {
   CompactActionDialogBody,
@@ -183,27 +184,27 @@ export function JournalLifecycleActions({
     return (
       <>
         {canRequest ? (
-          <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+          <TableSelectionActionItem asChild className={tableSelectionActionMenuStyles.request}>
             <Link href={changeRequestHref("journal", journal.id)}>
               <FilePenLine className="size-4" />
               {text("request")}
             </Link>
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
         {showLifecycle && deleteOperation ? (
-          <DropdownMenuItem onSelect={() => open(deleteOperation)} className={tableSelectionActionMenuStyles.delete}>
+          <TableSelectionActionItem onSelect={() => open(deleteOperation)} className={tableSelectionActionMenuStyles.delete}>
             {t("common.actions.delete")}
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
         {showLifecycle && actions?.correct && !hasEditAction ? (
-          <DropdownMenuItem onSelect={edit} className={tableSelectionActionMenuStyles.request}>
+          <TableSelectionActionItem onSelect={edit} className={tableSelectionActionMenuStyles.request}>
             {t("common.actions.edit")}
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
         {showLifecycle && actions?.note ? (
-          <DropdownMenuItem onSelect={() => open("note")} className={tableSelectionActionMenuStyles.note}>
+          <TableSelectionActionItem onSelect={() => open("note")} className={tableSelectionActionMenuStyles.note}>
             {text("note")}
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
         {dialog}
       </>

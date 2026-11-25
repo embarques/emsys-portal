@@ -2,8 +2,6 @@
 
 import {
   Banknote,
-  ChevronLeft,
-  ChevronRight,
   CreditCard,
   FileText,
   Plus,
@@ -19,6 +17,7 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
@@ -28,6 +27,7 @@ import {
   DirectoryInsightsToggle,
 } from "@/components/app-shell/directory-insights-flip";
 import type { LoanRecordAction } from "@/components/accounting/loan-record-actions";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -66,12 +66,12 @@ import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useLocalizedFilterFields } from "@/lib/table/hooks/use-localized-filter-fields";
 import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 20;
 const LOANS_TABLE_COLUMN_STORAGE_KEY = "accounting-loans-v1";
 
 type LoanFilterState = {
@@ -132,12 +132,16 @@ function LoanMobileCard({
             {loan.description || t("accounting.loans.fallbackDescription")}
           </p>
         </div>
-        <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status, t)}</Badge>
+        <Badge className={cn("rounded-full px-2.5 py-1", loanStatusClassName(loan.status))}>
+          {loanStatusLabel(loan.status, t)}
+        </Badge>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div>
           <p className="text-xs text-muted-foreground">{t("accounting.loans.details.balance")}</p>
-          <p className={getLoanBalanceMoneyClass(loan.balance)}>{formatLoanMoney(loan.balance)}</p>
+          <TableTagText className={getLoanBalanceMoneyClass(loan.balance)}>
+            {formatLoanMoney(loan.balance)}
+          </TableTagText>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">{t("accounting.loans.details.principal")}</p>
@@ -164,7 +168,7 @@ export function LoansWorkspace() {
   const [filters, setFilters] = useState<LoanFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [viewLoan, setViewLoan] = useState<Loan | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [workflowOpen, setWorkflowOpen] = useState(false);
@@ -183,12 +187,12 @@ export function LoansWorkspace() {
   const listParams = useMemo(
     () => ({
       page,
-      limit: PAGE_SIZE,
+      limit: pageLimit,
       sort,
       search,
       filterRows: filters.rows,
     }),
-    [filters.rows, page, search, sort],
+    [filters.rows, page, pageLimit, search, sort],
   );
   const loansQuery = useLoans(listParams);
   const loanTransactionsQuery = useLoanTransactions(viewLoan?.id ?? null, Boolean(viewLoan));
@@ -198,7 +202,8 @@ export function LoansWorkspace() {
   const loans = useMemo(() => loansQuery.data?.items ?? [], [loansQuery.data?.items]);
   const summary = loansQuery.data?.summary ?? EMPTY_LOAN_SUMMARY;
   const totalLoans = loansQuery.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalLoans / PAGE_SIZE));
+  rememberTotal(totalLoans);
+  const totalPages = Math.max(1, Math.ceil(totalLoans / Math.max(pageLimit, 1)));
   const pageRowIds = useMemo(() => loans.map((loan) => loan.id), [loans]);
   const allPageSelected = pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds.includes(id));
   useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, filters.rows, sort), setSelectedIds);
@@ -228,7 +233,7 @@ export function LoansWorkspace() {
     {
       itemCountOnPage: loans.length,
       page,
-      pageSize: PAGE_SIZE,
+      pageSize: pageLimit,
       total: totalLoans,
       noun: t("accounting.loans.noun"),
       isFiltered: hasActiveFilters,
@@ -301,14 +306,18 @@ export function LoansWorkspace() {
         id: "balance",
         label: t("accounting.loans.columns.balance"),
         renderCell: (loan) => (
-          <span className={getLoanBalanceMoneyClass(loan.balance)}>{formatLoanMoney(loan.balance)}</span>
+          <TableTagText className={getLoanBalanceMoneyClass(loan.balance)}>
+            {formatLoanMoney(loan.balance)}
+          </TableTagText>
         ),
       },
       {
         id: "status",
         label: t("accounting.loans.columns.status"),
         renderCell: (loan) => (
-          <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status, t)}</Badge>
+          <Badge className={cn("rounded-full px-2.5 py-1", loanStatusClassName(loan.status))}>
+            {loanStatusLabel(loan.status, t)}
+          </Badge>
         ),
       },
       {
@@ -545,29 +554,14 @@ export function LoansWorkspace() {
 
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">{listSummary}</p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                {t("common.actions.previous")}
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {t("common.pagination.pageOf", { current: page, total: totalPages })}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-              >
-                {t("common.actions.next")}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            <TablePaginationControls
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+              disabled={loansQuery.isFetching}
+            />
           </div>
         </Card>
         </DirectoryInsightsFlip>
@@ -644,28 +638,16 @@ export function LoansWorkspace() {
           ))}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-4">
-          <Button
-            variant="outline"
-            className="h-11 rounded-xl"
-            disabled={page <= 1}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {t("common.actions.previous")}
-          </Button>
-          <span className="text-sm font-medium text-muted-foreground">
-            {t("common.pagination.pageOf", { current: page, total: totalPages })}
-          </span>
-          <Button
-            variant="outline"
-            className="h-11 rounded-xl"
-            disabled={page >= totalPages}
-            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-          >
-            {t("common.actions.next")}
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="px-4">
+          <TablePaginationControls
+            layout="mobile"
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={loansQuery.isFetching}
+          />
         </div>
 
         <div className="space-y-3 px-4 pb-8">

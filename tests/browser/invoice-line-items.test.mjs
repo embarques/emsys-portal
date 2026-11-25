@@ -53,15 +53,16 @@ test("line items load on demand, show details/barcodes and reuse the cache witho
   try {
     assert.equal(await page.evaluate(() => window.invoiceLineItemsFixture.requests), 0);
     await trigger(page).click();
-    const dialog = page.getByRole("dialog", { name: "Line items", exact: true });
+    const dialog = page.getByRole("dialog", { name: "INV-123", exact: true });
     await dialog.getByText("Kitchen supplies and clothing", { exact: true }).waitFor();
     assert.equal(await dialog.getByText("Small parcel", { exact: true }).count(), 1);
     assert.equal(await dialog.getByText("$25.00", { exact: true }).count(), 1);
     assert.equal(await dialog.getByText("$50.00", { exact: true }).count(), 1);
-    await dialog.getByText("Small parcel", { exact: true }).dblclick();
-    await dialog.getByRole("button", { name: "View 1 barcode", exact: true }).click();
+    await dialog.getByRole("heading", { name: "Barcode status (1)", exact: true }).waitFor();
     await dialog.getByText("INV-123-1", { exact: true }).waitFor();
     assert.equal(await dialog.getByText("EN TRANSITO", { exact: true }).count(), 1);
+    await dialog.getByRole("heading", { name: "Package tracker (1)", exact: true }).waitFor();
+    await dialog.getByText("Barcode INV-123-1 status: EN TRANSITO.", { exact: true }).waitFor();
     await page.screenshot({ path: path.join(tmpdir(), "emsys-invoice-line-items-desktop.png"), fullPage: true });
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });

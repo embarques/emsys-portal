@@ -1,0 +1,74 @@
+---
+description: All portal directory/data tables must follow the Appointments template
+globs: src/components/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Directory Table Standard
+
+All **existing and future** directory/data tables must follow the Appointments
+design (`src/components/orders/orders-workspace.tsx`, route `/appointments`).
+
+New tables ship with this chrome. When you touch a legacy directory that does
+not match, align it to this template in the same change — do not invent or
+extend a second visual system.
+
+Catalog tables use `CatalogTableToolbar` / `CatalogDataTable` /
+`CatalogTablePagination` — those wrappers must still produce this same chrome
+and compact density.
+
+## Shell
+
+```tsx
+<PageHeader … />
+{/* optional DirectoryInsightsFlip with className="mt-6" */}
+<Card className="gap-0"> {/* mt-6 on Card OR on insights wrapper — not both */}
+  <CardHeader className="gap-3 border-b py-4 pb-3">
+    <TableDirectoryToolbar /* or CatalogTableToolbar */ … />
+  </CardHeader>
+  {/* errors: border-b px-6 py-3 */}
+  <TableSelectionToolbar /* no View; selection parity */ … />
+  <DirectoryTableLoader … /> {/* initial load */}
+  <DataTable density="compact" /* default is compact */ … onRowClick={view} />
+  <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+    {/* listSummary + TablePaginationControls */}
+  </div>
+</Card>
+```
+
+## Required look and behavior
+
+- **Density:** `DataTable` uses **compact** (portal default). Do not pass
+  `density="default"` on directory tables.
+- **Card / header / footer:** See `table-header-divider-spacing.mdc`.
+- **Sizing:** Content-first height; no viewport `min-h` stretch — see
+  `table-directory-sizing.mdc`.
+- **Loading:** Prefer `DirectoryTableLoader` for initial load; empty/pending
+  use `DataTable`’s `px-6 py-12` empty slot.
+- **Inline errors:** `border-b px-6 py-3` (destructive text) between header and
+  body — not `py-8` or ungapped banners.
+- **Selection:** `TableSelectionToolbar` under the divider. No View on the bar
+  (row click opens view). Non-view row actions need selection parity — see
+  `table-selection-action-parity.mdc`.
+- **Pagination:** Footer uses `TablePaginationControls` + list summary inside
+  `border-t px-6 py-4` (catalogs: `CatalogTablePagination`).
+
+## Exceptions (do not force-fit)
+
+- **Change Requests** — form + card list, not a directory table
+- **Maps / label updater / full-screen form tabs** — non-directory shells
+- **User Activities** — read-only audit; still use compact table chrome; may
+  omit destructive actions
+- **Reserved invoices** — may keep cursor pagination / assign workflow; card
+  chrome and compact table must still match
+
+## Checklist
+
+- [ ] `Card` has `gap-0`; `CardHeader` is `gap-3 border-b py-4 pb-3`
+- [ ] Compact `DataTable` (default or explicit)
+- [ ] Error banners use `border-b px-6 py-3`
+- [ ] Footer is `border-t px-6 py-4` + `TablePaginationControls` (or catalog
+      equivalent)
+- [ ] Selection bar has no View; non-view actions have parity
+- [ ] No directory viewport `min-h` stretch
+- [ ] Touched legacy directories migrated to this shell, not left diverged

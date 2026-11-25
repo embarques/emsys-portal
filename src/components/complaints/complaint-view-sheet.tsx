@@ -21,7 +21,10 @@ import {
 
 import { ComplaintActionDialog } from "@/components/complaints/complaint-action-dialog";
 import { ComplaintAttachmentDialog, ComplaintTargetsDialog } from "@/components/complaints/complaint-edit-dialogs";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -33,7 +36,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
@@ -83,7 +86,10 @@ const TRANSITION_ICONS: Record<ComplaintStatus, typeof Play> = {
 export function ComplaintStatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
   return (
-    <Badge variant="outline" className={complaintStatusBadgeClassName(status)}>
+    <Badge
+      variant="outline"
+      className={cn("rounded-full px-2.5 py-1", complaintStatusBadgeClassName(status))}
+    >
       {complaintStatusLabel(t, status)}
     </Badge>
   );
@@ -93,7 +99,10 @@ export function ComplaintSeverityBadge({ severity }: { severity: string }) {
   const { t } = useTranslation();
   if (!severity) return <span>{t("common.empty.dash")}</span>;
   return (
-    <Badge variant="outline" className={complaintSeverityBadgeClassName(severity)}>
+    <Badge
+      variant="outline"
+      className={cn("rounded-full px-2.5 py-1", complaintSeverityBadgeClassName(severity))}
+    >
       {complaintSeverityLabel(t, severity)}
     </Badge>
   );
@@ -167,7 +176,7 @@ function WorkflowActions({
           const label = t(`complaints.workflow.actions.${status}.${next}`);
           const isPrimary = next === "resolved" || (status === "open" && next === "in_progress");
           return (
-            <DropdownMenuItem
+            <TableSelectionActionItem
               key={next}
               disabled={workflow.busy}
               onSelect={() =>
@@ -181,28 +190,28 @@ function WorkflowActions({
             >
               <Icon className="size-4" />
               {label}
-            </DropdownMenuItem>
+            </TableSelectionActionItem>
           );
         })}
         {status === "closed" && canReopen ? (
-          <DropdownMenuItem
+          <TableSelectionActionItem
             disabled={workflow.busy}
             onSelect={() => workflow.openDialog("reopen")}
             className={tableSelectionActionMenuStyles.caution}
           >
             <RotateCcw className="size-4" />
             {t("complaints.workflow.reopen")}
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
         {status !== "closed" ? (
-          <DropdownMenuItem
+          <TableSelectionActionItem
             disabled={workflow.busy}
             onSelect={() => workflow.openDialog("note")}
             className={tableSelectionActionMenuStyles.note}
           >
             <MessageSquarePlus className="size-4" />
             {t("complaints.workflow.addNote")}
-          </DropdownMenuItem>
+          </TableSelectionActionItem>
         ) : null}
       </>
     );

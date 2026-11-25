@@ -1,8 +1,11 @@
 "use client";
 
-import { MapPin, PackageCheck, Phone as PhoneIcon, Printer, ScanBarcode, Send, UserRound } from "lucide-react";
+import { PackageCheck, Printer, ScanBarcode, Send, UserRound, type LucideIcon } from "lucide-react";
 
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -17,12 +20,14 @@ import { DeliveryActionNotice } from "@/components/deliveries/delivery-action-no
 import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { formatBarcodeDeliveryRoute } from "@/lib/barcodes/display";
 import {
   toDeliveryReceiverCoreAddress,
   toDeliveryRecordPhones,
   type AssignedDeliveryBarcode,
+  type DeliveryReceiver,
+  type DeliverySender,
 } from "@/lib/deliveries/types";
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
@@ -39,6 +44,58 @@ type DeliveryViewSheetProps = {
   onPrint: (row: AssignedDeliveryBarcode) => void;
 };
 
+function DeliveryPartySection({
+  title,
+  icon,
+  name,
+  phones,
+  address,
+}: {
+  title: string;
+  icon: LucideIcon;
+  name: string;
+  phones: DeliveryReceiver["phones"] | DeliverySender["phones"];
+  address?: DeliveryReceiver | null;
+}) {
+  const { t } = useTranslation();
+  const dash = t("common.empty.dash");
+  const trimmedName = name.trim();
+  const orderedPhones = getOrderedRecordPhones(toDeliveryRecordPhones(phones));
+  const coreAddress = address ? toDeliveryReceiverCoreAddress(address) : null;
+  const showAddress = address !== undefined;
+
+  if (!trimmedName && orderedPhones.length === 0 && !coreAddress) return null;
+
+  return (
+    <RecordViewSheetSection icon={icon} title={title}>
+      <RecordViewSheetDetailRow
+        label={t("deliveries.view.fields.name")}
+        value={trimmedName || dash}
+      />
+      {showAddress ? (
+        coreAddress ? (
+          <AddressActionRow label={t("deliveries.view.fields.address")} address={coreAddress} />
+        ) : (
+          <RecordViewSheetDetailRow label={t("deliveries.view.fields.address")} value={dash} />
+        )
+      ) : null}
+      {orderedPhones.length === 0 ? (
+        <RecordViewSheetDetailRow label={t("deliveries.view.fields.phones")} value={dash} />
+      ) : (
+        orderedPhones.map((phone, index) => (
+          <PhoneActionRow
+            key={`${title}-phone-${index}`}
+            label={t(`phones.types.${phone.type}`)}
+            number={phone.number}
+            displayNumber={phone.displayNumber}
+            isPrimary={phone.isPrimary}
+          />
+        ))
+      )}
+    </RecordViewSheetSection>
+  );
+}
+
 export function DeliveryViewSheet({
   row,
   open,
@@ -54,9 +111,6 @@ export function DeliveryViewSheet({
 
   const dash = t("common.empty.dash");
   const actionDisabled = !row.invoiceId || !row.delivery?.id;
-  const receiverPhones = getOrderedRecordPhones(toDeliveryRecordPhones(row.receiver?.phones));
-  const senderPhones = getOrderedRecordPhones(toDeliveryRecordPhones(row.sender?.phones));
-  const receiverAddress = toDeliveryReceiverCoreAddress(row.receiver);
   const showFooter = canDeliver || canPrint;
 
   return (
@@ -88,59 +142,20 @@ export function DeliveryViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection icon={UserRound} title={t("deliveries.view.sections.receiver")}>
-            <RecordViewSheetDetailRow
-              label={t("deliveries.columns.receiverName")}
-              value={row.receiver?.name || dash}
-            />
-          </RecordViewSheetSection>
+          <DeliveryPartySection
+            title={t("deliveries.view.sections.receiver")}
+            icon={UserRound}
+            name={row.receiver?.name ?? ""}
+            phones={row.receiver?.phones ?? []}
+            address={row.receiver}
+          />
 
-          <RecordViewSheetSection icon={PhoneIcon} title={t("deliveries.columns.phones")}>
-            {receiverPhones.length === 0 ? (
-              <RecordViewSheetDetailRow label={t("deliveries.columns.phones")} value={dash} />
-            ) : (
-              receiverPhones.map((phone, index) => (
-                <PhoneActionRow
-                  key={`receiver-phone-${index}`}
-                  label={t(`phones.types.${phone.type}`)}
-                  number={phone.number}
-                  displayNumber={phone.displayNumber}
-                  isPrimary={phone.isPrimary}
-                />
-              ))
-            )}
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection icon={MapPin} title={t("deliveries.columns.address")}>
-            {receiverAddress ? (
-              <AddressActionRow label="" address={receiverAddress} isPrimary />
-            ) : (
-              <RecordViewSheetDetailRow label={t("deliveries.columns.address")} value={dash} />
-            )}
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection icon={Send} title={t("deliveries.view.sections.sender")}>
-            <RecordViewSheetDetailRow
-              label={t("deliveries.columns.senderName")}
-              value={row.sender?.name || dash}
-            />
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection icon={PhoneIcon} title={t("deliveries.columns.senderPhones")}>
-            {senderPhones.length === 0 ? (
-              <RecordViewSheetDetailRow label={t("deliveries.columns.senderPhones")} value={dash} />
-            ) : (
-              senderPhones.map((phone, index) => (
-                <PhoneActionRow
-                  key={`sender-phone-${index}`}
-                  label={t(`phones.types.${phone.type}`)}
-                  number={phone.number}
-                  displayNumber={phone.displayNumber}
-                  isPrimary={phone.isPrimary}
-                />
-              ))
-            )}
-          </RecordViewSheetSection>
+          <DeliveryPartySection
+            title={t("deliveries.view.sections.sender")}
+            icon={Send}
+            name={row.sender?.name ?? ""}
+            phones={row.sender?.phones ?? []}
+          />
         </RecordViewSheetBody>
 
         {showFooter ? (
@@ -148,14 +163,14 @@ export function DeliveryViewSheet({
             leading={
               <>
                 <TableSelectionActionsMenu hidden={!canDeliver}>
-                  <DropdownMenuItem
+                  <TableSelectionActionItem
                     disabled={actionDisabled}
                     onSelect={() => onDeliver(row)}
                     className={tableSelectionActionMenuStyles.deliver}
                   >
                     <PackageCheck className="size-4" />
                     {t("deliveries.deliver.action")}
-                  </DropdownMenuItem>
+                  </TableSelectionActionItem>
                 </TableSelectionActionsMenu>
                 {canPrint ? (
                   <Button

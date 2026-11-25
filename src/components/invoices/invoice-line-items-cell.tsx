@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Loader2, RefreshCw, Tags } from "lucide-react";
 import { RecordViewSheet, RecordViewSheetBody, RecordViewSheetContent, RecordViewSheetHeader } from "@/components/app-shell/record-view-sheet";
+import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barcode-status-section";
 import { InvoiceLineItemsSection } from "@/components/invoices/invoice-line-items-section";
+import { InvoicePackageTrackerSection } from "@/components/invoices/invoice-package-tracker-section";
 import { Button } from "@/components/ui/button";
 import { SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -22,8 +24,7 @@ function InvoiceLineItemsSheet({ invoice }: { invoice: Invoice }) {
       <RecordViewSheetHeader
         icon={Tags}
         eyebrow={t("invoices.entity")}
-        title={t("invoices.view.lineItems.title")}
-        description={t("invoices.view.lineItems.invoice", { number: invoice.invoiceNumber || t("common.empty.dash") })}
+        title={invoice.invoiceNumber.trim() || t("common.empty.dash")}
       />
       <RecordViewSheetBody>
         {query.isError ? (
@@ -36,7 +37,11 @@ function InvoiceLineItemsSheet({ invoice }: { invoice: Invoice }) {
           </div>
         ) : null}
         {query.data ? (
-          <InvoiceLineItemsSection lineItems={query.data.lineItems} />
+          <>
+            <InvoiceLineItemsSection lineItems={query.data.lineItems} />
+            <InvoiceBarcodeStatusSection invoice={query.data} />
+            <InvoicePackageTrackerSection invoice={query.data} />
+          </>
         ) : !query.isError ? (
           <div role="status" className="flex items-center gap-2 px-4 py-5 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />

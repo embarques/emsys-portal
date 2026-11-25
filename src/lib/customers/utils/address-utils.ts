@@ -226,8 +226,7 @@ export const formatAddress = formatAddressLine;
 
 export function getAddressCountLabel(additionalCount: number): string {
   if (additionalCount <= 0) return "";
-  if (additionalCount === 1) return "+1 more address";
-  return `+${additionalCount} more addresses`;
+  return `+${additionalCount} more`;
 }
 
 export function getAddressCountBadgeLabel(count: number): string {

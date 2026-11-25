@@ -1,9 +1,10 @@
 "use client";
 
 import { CircleMinus, CirclePlus, HandCoins, type LucideIcon } from "lucide-react";
+import { TableSelectionActionItem } from "@/components/app-shell/table-selection-actions-menu";
 
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { useTranslation } from "@/lib/i18n";
 import {
   tableSelectionActionMenuStyles,
@@ -90,7 +91,7 @@ export function LoanRecordActions({
         {actions.map(({ action, label }) => {
           const Icon = ACTION_ICONS[action];
           return (
-            <DropdownMenuItem
+            <TableSelectionActionItem
               key={action}
               disabled={disabled}
               onSelect={() => onAction(action)}
@@ -98,7 +99,7 @@ export function LoanRecordActions({
             >
               <Icon className="size-4" aria-hidden />
               {label}
-            </DropdownMenuItem>
+            </TableSelectionActionItem>
           );
         })}
       </>

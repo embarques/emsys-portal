@@ -23,10 +23,7 @@ import { SenderOrderHistorySection } from "@/components/orders/sender-order-hist
 import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -37,7 +34,11 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { RecordViewSheetTabs } from "@/components/app-shell/record-view-sheet-tabs";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem,
+  TableSelectionActionSeparator
+} from "@/components/app-shell/table-selection-actions-menu";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { getOrderedRecordPhones } from "@/lib/phones/phones";
@@ -380,70 +381,70 @@ export function OrderViewSheet({
                   triggerClassName="w-full justify-between sm:w-auto"
                 >
                   {onCreateInvoice ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled}
                       onSelect={() => onCreateInvoice(order)}
                       className={tableSelectionActionMenuStyles.create}
                     >
                       <Receipt className="size-4" />
                       {t("orders.actions.createInvoice")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showMarkComplete && onMarkComplete ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled}
                       onSelect={() => onMarkComplete(order)}
                       className={tableSelectionActionMenuStyles.complete}
                     >
                       <CheckCircle2 className="size-4" />
                       {t("orders.actions.markComplete")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showMarkIncomplete && onMarkIncomplete ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled}
                       onSelect={() => onMarkIncomplete(order)}
                       className={tableSelectionActionMenuStyles.caution}
                     >
                       <XCircle className="size-4" />
                       {t("orders.actions.markIncomplete")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
 
                   {showRouteActions &&
                   (onCreateInvoice || showMarkComplete || showMarkIncomplete) ? (
-                    <DropdownMenuSeparator />
+                    <TableSelectionActionSeparator />
                   ) : null}
 
                   {showAssignRoute && onAssignRoute ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled}
                       onSelect={() => onAssignRoute(order)}
                       className={tableSelectionActionMenuStyles.assign}
                     >
                       <RouteIcon className="size-4" />
                       {t("orders.actions.assignRoute")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showViewRoute && onViewRoute ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={!hasRoute}
                       onSelect={() => onViewRoute(order)}
                       className={tableSelectionActionMenuStyles.view}
                     >
                       <Eye className="size-4" />
                       {t("orders.actions.viewRoute")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showClearRoute && onClearRoute ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled || !canClearRoute}
                       onSelect={() => onClearRoute(order)}
                       className={tableSelectionActionMenuStyles.caution}
                     >
                       <RouteOff className="size-4" />
                       {t("orders.actions.clearRoute")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
 
                   {(onMap || allowRequestChange) &&
@@ -451,26 +452,26 @@ export function OrderViewSheet({
                     showMarkComplete ||
                     showMarkIncomplete ||
                     showRouteActions) ? (
-                    <DropdownMenuSeparator />
+                    <TableSelectionActionSeparator />
                   ) : null}
 
                   {onMap ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled}
                       onSelect={() => onMap(order)}
                       className={tableSelectionActionMenuStyles.map}
                     >
                       <MapIcon className="size-4" />
-                      {t("orders.actions.map")}
-                    </DropdownMenuItem>
+                      {t(canManageRoutes === false ? "orders.actions.viewInMap" : "orders.actions.map")}
+                    </TableSelectionActionItem>
                   ) : null}
                   {allowRequestChange ? (
-                    <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+                    <TableSelectionActionItem asChild className={tableSelectionActionMenuStyles.request}>
                       <Link href={changeRequestHref("pickup", String(order.id))}>
                         <FilePenLine className="size-4" />
                         {t("accounting.journalLifecycle.request")}
                       </Link>
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                 </TableSelectionActionsMenu>
               </>

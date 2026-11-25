@@ -10,6 +10,8 @@ import {
   Eye,
   FileText,
   Filter,
+  ListOrdered,
+  Loader2,
   Map as MapIcon,
   PackageOpen,
   Plus,
@@ -18,6 +20,7 @@ import {
   RefreshCw,
   Route as RouteIcon,
   RouteOff,
+  Sparkles,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -51,12 +54,18 @@ import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
 } from "@/components/app-shell/directory-insights-flip";
+import { AppointmentHistogramCharts } from "@/components/dashboard/dashboard-histogram-charts";
 import { AppointmentDirectoryInsights } from "@/components/orders/appointment-directory-insights";
 
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem,
+  TableSelectionActionSeparator
+} from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
 import { ORDER_API_TABLE_FIELDS } from "@/lib/orders/table-fields";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -68,10 +77,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -120,8 +126,10 @@ import {
   useSetOrdersCompleted,
   useUpdateOrder,
 } from "@/lib/orders/hooks/use-orders";
+import { fetchAllPickupsByRoutes } from "@/lib/orders/api/orders-api";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
+  DEFAULT_ORDER_LIST_SORT,
   buildOrderListParams,
   createEmptyOrderForm,
   getOrderRecordId,
@@ -370,6 +378,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
+  const [isOpeningReorderMap, setIsOpeningReorderMap] = useState(false);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const emptyOrderFormValues = useMemo(() => createEmptyOrderForm(), []);
@@ -771,8 +780,57 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       filters,
       sort,
       selectedIds: mappableSelected.map((order) => getOrderRecordId(order)),
+      stopOrder: null,
+      dailyRouteId: null,
     });
     openTab(routeMode ? "/route-appointments/map" : "/appointments/map", t("orders.map.title"));
+  }
+
+  /** Opens the map with manual stop ordering (and optimize) for one scheduled route. */
+  async function openReorderViaMap() {
+    if (!routeMode || isOpeningReorderMap) return;
+
+    const targets = selectedOrdersWithRoute;
+    const routeIds = new Set(targets.map((entry) => entry.routeId!.trim()));
+    if (routeIds.size === 0) {
+      notifyError(
+        selectedCount === 0
+          ? t("orders.actions.selectToReorder")
+          : t("orders.actions.noAssignedRoute"),
+      );
+      return;
+    }
+    if (routeIds.size > 1) {
+      notifyError(t("orders.actions.reorderViaMapMultiple"));
+      return;
+    }
+
+    const dailyRouteId = [...routeIds][0];
+    setIsOpeningReorderMap(true);
+    try {
+      const pickups = await fetchAllPickupsByRoutes([dailyRouteId]);
+      if (pickups.length === 0) {
+        notifyError(t("orders.actions.noPickupsOnRoute"));
+        return;
+      }
+      if (!pickups.some(isOrderMappable)) {
+        notifyError(t("orders.map.noMappableStops"));
+        return;
+      }
+
+      writeOrdersMapContext({
+        filters: { query: "", rows: buildPickupRouteFilterRows(dailyRouteId) },
+        sort: DEFAULT_ORDER_LIST_SORT,
+        selectedIds: pickups.map((order) => getOrderRecordId(order)),
+        stopOrder: null,
+        dailyRouteId,
+      });
+      openTab("/route-appointments/map", t("orders.map.dailyRouteTitle"));
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    } finally {
+      setIsOpeningReorderMap(false);
+    }
   }
 
   function viewSelectedRoute(order?: Order) {
@@ -924,15 +982,15 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       truncateCell: false,
       defaultWidth: 88,
       renderCell: (order) => (
-        <span
-          className={cn(
-            // Flat status label — bold color text (no pill chrome / icon).
-            "font-semibold",
-            order.completed ? "text-emerald-700" : "text-amber-700",
-          )}
+        <TableTagText
+          className={
+            order.completed
+              ? "border-transparent bg-emerald-100 text-emerald-700"
+              : "border-transparent bg-amber-100 text-amber-700"
+          }
         >
           {getOrderCompletedLabel(order.completed, t)}
-        </span>
+        </TableTagText>
       ),
     },
     {
@@ -1117,79 +1175,76 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     </Button>
   );
 
-  const selectionSecondaryActions = (
-    <TableSelectionActionsMenu disabled={isSaving}>
-      {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
-        <DropdownMenuItem
-          onSelect={() => createInvoiceFromOrder(selectedOrders[0])}
-          className={tableSelectionActionMenuStyles.create}
-        >
-          <Receipt className="size-4" />
-          {t("orders.actions.createInvoice")}
-        </DropdownMenuItem>
-      ) : null}
-      <DropdownMenuItem onSelect={() => openMapView()} className={tableSelectionActionMenuStyles.map}>
-        <MapIcon className="size-4" />
-        {t("orders.actions.map")}
-      </DropdownMenuItem>
-      {selectedCompletionState === "incomplete" || selectedCompletionState === "mixed" ? (
-        <DropdownMenuItem
-          disabled={routeMode && !routeAccess.canUpdate}
-          onSelect={() => openCompletionConfirm(true)}
-          className={tableSelectionActionMenuStyles.complete}
-        >
-          <CheckCircle2 className="size-4" />
-          {t("orders.actions.markComplete")}
-        </DropdownMenuItem>
-      ) : null}
-      {selectedCompletionState === "complete" || selectedCompletionState === "mixed" ? (
-        <DropdownMenuItem
-          disabled={routeMode && !routeAccess.canUpdate}
-          onSelect={() => openCompletionConfirm(false)}
-          className={tableSelectionActionMenuStyles.caution}
-        >
-          <XCircle className="size-4" />
-          {t("orders.actions.markIncomplete")}
-        </DropdownMenuItem>
-      ) : null}
-      {!routeMode ? (
-        <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            disabled={routeMode && !routeAccess.canUpdate}
-            onSelect={() => openAssignRoute()}
-            className={tableSelectionActionMenuStyles.assign}
-          >
-            <RouteIcon className="size-4" />
-            {t("orders.actions.assignRoute")}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={selectedOrdersWithRoute.length === 0}
-            onSelect={() => viewSelectedRoute()}
-            className={tableSelectionActionMenuStyles.view}
-          >
-            <Eye className="size-4" />
-            {t("orders.actions.viewRoute")}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={selectedOrdersToUnassign.length === 0}
-            onSelect={() => openClearRoute()}
-            className={tableSelectionActionMenuStyles.caution}
-          >
-            <RouteOff className="size-4" />
-            {clearRouteMutation.isPending
-              ? t("orders.actions.clearingRoute")
-              : t("orders.actions.clearRoute")}
-          </DropdownMenuItem>
-        </>
-      ) : null}
-    </TableSelectionActionsMenu>
-  );
-
-  const selectionToolbarActions = (
+  /** Fresh element tree per toolbar so mobile + desktop never share one menu instance. */
+  const renderSelectionToolbarActions = () => (
     <>
       {selectionPrintButton}
-      {selectionSecondaryActions}
+      <TableSelectionActionsMenu disabled={isSaving}>
+        {selectedCount === 1 && appointmentInvoice.canCreateInvoice ? (
+          <TableSelectionActionItem
+            onSelect={() => createInvoiceFromOrder(selectedOrders[0])}
+            className={tableSelectionActionMenuStyles.create}
+          >
+            <Receipt className="size-4" />
+            {t("orders.actions.createInvoice")}
+          </TableSelectionActionItem>
+        ) : null}
+        <TableSelectionActionItem onSelect={() => openMapView()} className={tableSelectionActionMenuStyles.map}>
+          <MapIcon className="size-4" />
+          {t(routeMode ? "orders.actions.viewInMap" : "orders.actions.map")}
+        </TableSelectionActionItem>
+        {selectedCompletionState === "incomplete" || selectedCompletionState === "mixed" ? (
+          <TableSelectionActionItem
+            disabled={routeMode && !routeAccess.canUpdate}
+            onSelect={() => openCompletionConfirm(true)}
+            className={tableSelectionActionMenuStyles.complete}
+          >
+            <CheckCircle2 className="size-4" />
+            {t("orders.actions.markComplete")}
+          </TableSelectionActionItem>
+        ) : null}
+        {selectedCompletionState === "complete" || selectedCompletionState === "mixed" ? (
+          <TableSelectionActionItem
+            disabled={routeMode && !routeAccess.canUpdate}
+            onSelect={() => openCompletionConfirm(false)}
+            className={tableSelectionActionMenuStyles.caution}
+          >
+            <XCircle className="size-4" />
+            {t("orders.actions.markIncomplete")}
+          </TableSelectionActionItem>
+        ) : null}
+        {!routeMode ? (
+          <>
+            <TableSelectionActionSeparator />
+            <TableSelectionActionItem
+              disabled={routeMode && !routeAccess.canUpdate}
+              onSelect={() => openAssignRoute()}
+              className={tableSelectionActionMenuStyles.assign}
+            >
+              <RouteIcon className="size-4" />
+              {t("orders.actions.assignRoute")}
+            </TableSelectionActionItem>
+            <TableSelectionActionItem
+              disabled={selectedOrdersWithRoute.length === 0}
+              onSelect={() => viewSelectedRoute()}
+              className={tableSelectionActionMenuStyles.view}
+            >
+              <Eye className="size-4" />
+              {t("orders.actions.viewRoute")}
+            </TableSelectionActionItem>
+            <TableSelectionActionItem
+              disabled={selectedOrdersToUnassign.length === 0}
+              onSelect={() => openClearRoute()}
+              className={tableSelectionActionMenuStyles.caution}
+            >
+              <RouteOff className="size-4" />
+              {clearRouteMutation.isPending
+                ? t("orders.actions.clearingRoute")
+                : t("orders.actions.clearRoute")}
+            </TableSelectionActionItem>
+          </>
+        ) : null}
+      </TableSelectionActionsMenu>
     </>
   );
 
@@ -1204,18 +1259,52 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             <h1 className="text-4xl font-bold tracking-normal">{t(routeMode ? "navigation.items.routeAppointments" : "orders.title")}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
             </div>
-            {!routeMode ? <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                size="icon"
-                className="mt-1 size-12 rounded-full"
-                onClick={openAddForm}
-                disabled={isSaving || (routeMode && !routeAccess.canUpdate)}
-                aria-label={t("orders.actions.add")}
-              >
-                <Plus className="size-6" />
-              </Button>
-            </div> : null}
+            {routeMode ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="mt-1 size-12 rounded-full"
+                  onClick={() => void openReorderViaMap()}
+                  disabled={isOpeningReorderMap}
+                  aria-label={t("orders.actions.reorderRouteManually")}
+                >
+                  {isOpeningReorderMap ? (
+                    <Loader2 className="size-6 animate-spin" />
+                  ) : (
+                    <ListOrdered className="size-6" />
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="mt-1 size-12 rounded-full"
+                  onClick={() => void openReorderViaMap()}
+                  disabled={isOpeningReorderMap}
+                  aria-label={t("orders.actions.optimizeRoute")}
+                >
+                  {isOpeningReorderMap ? (
+                    <Loader2 className="size-6 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-6" />
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  size="icon"
+                  className="mt-1 size-12 rounded-full"
+                  onClick={openAddForm}
+                  disabled={isSaving}
+                  aria-label={t("orders.actions.add")}
+                >
+                  <Plus className="size-6" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1311,7 +1400,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
             canDelete={!routeMode}
             canEdit={!routeMode || routeAccess.canUpdate}
             deleteDisabled={isSaving}
-            actions={selectionToolbarActions}
+            actions={renderSelectionToolbarActions()}
           />
         ) : null}
 
@@ -1381,15 +1470,47 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         description={t(routeMode ? "orders.pages.routeAppointments" : "orders.pages.description")}
         actions={
           <div className="flex items-center gap-2">
-            {!routeMode ? (
-              <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
-            ) : null}
-            {!routeMode ? (
-              <Button onClick={openAddForm} disabled={isSaving || (routeMode && !routeAccess.canUpdate)}>
-                <Plus className="h-4 w-4" />
-                {t("orders.actions.add")}
-              </Button>
-            ) : null}
+            {routeMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => void openReorderViaMap()}
+                  disabled={isOpeningReorderMap}
+                >
+                  {isOpeningReorderMap ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ListOrdered className="h-4 w-4" />
+                  )}
+                  {isOpeningReorderMap
+                    ? t("orders.actions.loadingMap")
+                    : t("orders.actions.reorderRouteManually")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => void openReorderViaMap()}
+                  disabled={isOpeningReorderMap}
+                  className={tableSelectionActionStyles.optimize}
+                >
+                  {isOpeningReorderMap ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {isOpeningReorderMap
+                    ? t("orders.actions.loadingMap")
+                    : t("orders.actions.optimizeRoute")}
+                </Button>
+              </>
+            ) : (
+              <>
+                <DirectoryInsightsToggle open={insightsOpen} onOpenChange={setInsightsOpen} />
+                <Button onClick={openAddForm} disabled={isSaving}>
+                  <Plus className="h-4 w-4" />
+                  {t("orders.actions.add")}
+                </Button>
+              </>
+            )}
           </div>
         }
       />
@@ -1408,7 +1529,9 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
                 pendingPayments={stats.pendingPayments}
                 isLoading={stats.isLoading}
                 onBack={() => setInsightsOpen(false)}
-              />
+              >
+                <AppointmentHistogramCharts />
+              </AppointmentDirectoryInsights>
             )
           }
         >
@@ -1492,7 +1615,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
           canDelete={!routeMode}
           canEdit={!routeMode || routeAccess.canUpdate}
           deleteDisabled={isSaving}
-          actions={selectionToolbarActions}
+          actions={renderSelectionToolbarActions()}
         />
 
         {isLoading ? (

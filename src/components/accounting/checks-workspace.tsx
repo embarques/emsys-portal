@@ -8,7 +8,10 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
@@ -17,7 +20,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { CHECK_API_TABLE_FIELDS } from "@/lib/accounting/checks/table-fields";
 import { CHECK_TABLE_FILTER_FIELDS } from "@/lib/accounting/checks/filter-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -285,14 +288,14 @@ export function ChecksWorkspace() {
               disabled={isSaving}
               hidden={!(canUpdateChecks && selectedOutstandingChecks.length > 0)}
             >
-              <DropdownMenuItem
+              <TableSelectionActionItem
                 disabled={isSaving}
                 onSelect={() => markChecksCleared(selectedOutstandingChecks)}
                 className={tableSelectionActionMenuStyles.complete}
               >
                 <CheckCircle2 className="size-4" />
                 {t("accounting.checks.actions.markCleared")}
-              </DropdownMenuItem>
+              </TableSelectionActionItem>
             </TableSelectionActionsMenu>
           }
         />

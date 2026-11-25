@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -26,7 +29,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import {
   formatBarcodeContainer,
   formatBarcodeDeliveryRoute,
@@ -230,57 +233,57 @@ export function BarcodeViewSheet({
                   disabled={actionsDisabled}
                 >
                   {showDeliver ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled || deliverDisabled}
                       onSelect={() => onDeliver?.(barcode)}
                       className={tableSelectionActionMenuStyles.deliver}
                     >
                       <PackageCheck className="size-4" />
                       {t("deliveries.deliver.action")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showOpenInvoice ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled || openInvoiceDisabled}
                       onSelect={() => onOpenInvoice?.(barcode)}
                       className={tableSelectionActionMenuStyles.view}
                     >
                       <FileText className="size-4" />
                       {t("barcodes.bulk.openInvoice")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showChangeStatus ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled || changeStatusDisabled}
                       onSelect={() => onChangeStatus?.(barcode)}
                       className={tableSelectionActionMenuStyles.status}
                     >
                       <Tag className="size-4" />
                       {t("barcodes.bulk.changeStatus")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showTransferContainer ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled || transferContainerDisabled}
                       onSelect={() => onTransferContainer?.(barcode)}
                       className={tableSelectionActionMenuStyles.transfer}
                     >
                       <ContainerIcon className="size-4" />
                       {t("barcodes.bulk.changeContainer")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {showAssignRoute ? (
-                    <DropdownMenuItem
+                    <TableSelectionActionItem
                       disabled={actionsDisabled || assignRouteDisabled}
                       onSelect={() => onAssignRoute?.(barcode)}
                       className={tableSelectionActionMenuStyles.assign}
                     >
                       <RouteIcon className="size-4" />
                       {t("barcodes.bulk.assignRoute")}
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                   {allowRequestChange ? (
-                    <DropdownMenuItem asChild className={tableSelectionActionMenuStyles.request}>
+                    <TableSelectionActionItem asChild className={tableSelectionActionMenuStyles.request}>
                       <Link
                         href={changeRequestHref(
                           "labels",
@@ -290,7 +293,7 @@ export function BarcodeViewSheet({
                         <FilePenLine className="size-4" />
                         {t("accounting.journalLifecycle.request")}
                       </Link>
-                    </DropdownMenuItem>
+                    </TableSelectionActionItem>
                   ) : null}
                 </TableSelectionActionsMenu>
                 {showPrint ? (

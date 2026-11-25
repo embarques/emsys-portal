@@ -31,7 +31,10 @@ import {
   DirectoryInsightsFlip,
   DirectoryInsightsToggle,
 } from "@/components/app-shell/directory-insights-flip";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -44,7 +47,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   CompactActionDialogBody,
@@ -713,7 +716,7 @@ export function BarcodesWorkspace() {
                 }
               >
                 {deliveryAccess.canDeliver ? (
-                  <DropdownMenuItem
+                  <TableSelectionActionItem
                     disabled={
                       selectedBarcodes.length !== 1 ||
                       !canStartBarcodeDelivery(selectedBarcodes[0]) ||
@@ -730,19 +733,19 @@ export function BarcodesWorkspace() {
                   >
                     <PackageCheck className="size-4" />
                     {t("deliveries.deliver.action")}
-                  </DropdownMenuItem>
+                  </TableSelectionActionItem>
                 ) : null}
                 {canUpdateInvoices ? (
-                  <DropdownMenuItem
+                  <TableSelectionActionItem
                     disabled={!selectedInvoiceTarget || isUpdating}
                     onSelect={() => openSelectedInvoice()}
                     className={tableSelectionActionMenuStyles.view}
                   >
                     <FileText className="size-4" />
                     {t("barcodes.bulk.openInvoice")}
-                  </DropdownMenuItem>
+                  </TableSelectionActionItem>
                 ) : null}
-                <DropdownMenuItem
+                <TableSelectionActionItem
                   disabled={selectedIds.length === 0 || isUpdating}
                   onSelect={() => {
                     setBulkError(null);
@@ -757,8 +760,8 @@ export function BarcodesWorkspace() {
                 >
                   <Tag className="size-4" />
                   {t("barcodes.bulk.changeStatus")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
+                </TableSelectionActionItem>
+                <TableSelectionActionItem
                   disabled={selectedIds.length === 0 || isUpdating}
                   onSelect={() => {
                     setBulkError(null);
@@ -769,15 +772,15 @@ export function BarcodesWorkspace() {
                 >
                   <ContainerIcon className="size-4" />
                   {t("barcodes.bulk.changeContainer")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
+                </TableSelectionActionItem>
+                <TableSelectionActionItem
                   disabled={assignRouteBarcodes.length === 0 || isUpdating}
                   onSelect={() => setRouteDialogOpen(true)}
                   className={tableSelectionActionMenuStyles.assign}
                 >
                   <RouteIcon className="size-4" />
                   {t("barcodes.bulk.assignRoute")}
-                </DropdownMenuItem>
+                </TableSelectionActionItem>
               </TableSelectionActionsMenu>
             </>
           }

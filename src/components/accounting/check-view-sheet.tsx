@@ -3,7 +3,10 @@
 import { Banknote, CheckCircle2, Info } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -13,7 +16,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getCheckStatusBadgeClass } from "@/lib/accounting/checks/display";
@@ -114,14 +117,14 @@ export function CheckViewSheet({
           <RecordViewSheetActions
             leading={
               <TableSelectionActionsMenu>
-                <DropdownMenuItem
+                <TableSelectionActionItem
                   disabled={isMarkingCleared}
                   onSelect={() => onMarkCleared(check)}
                   className={tableSelectionActionMenuStyles.complete}
                 >
                   <CheckCircle2 className="size-4" />
                   {t("accounting.checks.actions.markCleared")}
-                </DropdownMenuItem>
+                </TableSelectionActionItem>
               </TableSelectionActionsMenu>
             }
           />

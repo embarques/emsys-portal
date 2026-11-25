@@ -224,7 +224,7 @@ export function UserActivitiesWorkspace() {
           description={t("userActivities.description")}
         />
         <Card className="mt-6 gap-0">
-          <div className="px-6 py-8 text-sm text-muted-foreground">
+          <div className="border-b px-6 py-3 text-sm text-muted-foreground">
             {t("common.errors.api.forbidden")}
           </div>
         </Card>

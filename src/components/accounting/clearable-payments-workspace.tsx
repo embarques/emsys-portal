@@ -8,7 +8,10 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
@@ -17,7 +20,7 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { CLEARABLE_PAYMENT_API_TABLE_FIELDS } from "@/lib/accounting/clearable-payments/table-fields";
 import { CLEARABLE_PAYMENT_TABLE_FILTER_FIELDS } from "@/lib/accounting/clearable-payments/filter-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -301,14 +304,14 @@ export function ClearablePaymentsWorkspace({ config }: ClearablePaymentsWorkspac
               disabled={isSaving}
               hidden={!(canUpdate && selectedOutstanding.length > 0)}
             >
-              <DropdownMenuItem
+              <TableSelectionActionItem
                 disabled={isSaving}
                 onSelect={() => markPaymentsCleared(selectedOutstanding)}
                 className={tableSelectionActionMenuStyles.complete}
               >
                 <CheckCircle2 className="size-4" />
                 {t(`${i18n}.actions.markCleared`)}
-              </DropdownMenuItem>
+              </TableSelectionActionItem>
             </TableSelectionActionsMenu>
           }
         />

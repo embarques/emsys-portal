@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronsUpDown, ChevronUp, PackageCheck, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
+import { PackageCheck, Printer } from "lucide-react";
 
-import { CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
-import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
+import {
+  CatalogDataTable,
+  CatalogTablePagination,
+  CatalogTableToolbar,
+} from "@/components/app-shell/catalog-table-toolbar";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { TableSelectionActionsMenu } from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem,
+} from "@/components/app-shell/table-selection-actions-menu";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
+import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
 import { DeliveryRowBalance } from "@/components/deliveries/delivery-balance-amount";
@@ -15,10 +22,8 @@ import { DeliveryMobileRow } from "@/components/deliveries/delivery-mobile-row";
 import { DeliveryViewSheet } from "@/components/deliveries/delivery-view-sheet";
 import { TablePhoneCell } from "@/components/phones/table-phone-cell";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader } from "@/components/ui/card";
 import { normalizeApiError } from "@/lib/api/axios";
-import { getPrimarySortSpec } from "@/lib/api/list-query";
 import { formatBarcodeDeliveryRoute } from "@/lib/barcodes/display";
 import { fetchAssignedDeliveryBarcodesPage } from "@/lib/deliveries/api/assigned-deliveries-api";
 import { ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS } from "@/lib/deliveries/filter-fields";
@@ -33,46 +38,8 @@ import { useTranslation } from "@/lib/i18n";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useCatalogTable } from "@/lib/table/hooks/use-catalog-table";
 import { tableSelectionActionMenuStyles, tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
-
-function SortableHeader({
-  label,
-  field,
-  sort,
-  onSort,
-}: {
-  label: string;
-  field: string;
-  sort: string;
-  onSort: (field: string) => void;
-}) {
-  const { t } = useTranslation();
-  const active = getPrimarySortSpec(sort);
-  const direction = active?.field === field ? active.direction : undefined;
-
-  return (
-    <th
-      className="whitespace-nowrap px-4 py-3 font-medium"
-      aria-sort={direction === "desc" ? "descending" : direction === "asc" ? "ascending" : "none"}
-    >
-      <button
-        type="button"
-        onClick={() => onSort(field)}
-        aria-label={t("common.table.sortBy", { column: label })}
-        className="group/sort flex items-center gap-0.5 text-left"
-      >
-        {label}
-        {direction === "desc" ? (
-          <ChevronDown className="size-3.5 shrink-0 text-foreground/80" />
-        ) : direction === "asc" ? (
-          <ChevronUp className="size-3.5 shrink-0 text-foreground/80" />
-        ) : (
-          <ChevronsUpDown className="size-3.5 shrink-0 text-foreground/30 opacity-0 transition-opacity group-hover/sort:opacity-100" />
-        )}
-      </button>
-    </th>
-  );
-}
 
 function rowKey(row: AssignedDeliveryBarcode) {
   return row.barcodeId || (row.id > 0 ? String(row.id) : `${row.invoiceId}:${row.number}`);
@@ -85,6 +52,7 @@ export function DeliveriesWorkspace() {
 
 function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliveryAccess> }) {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [deliverRow, setDeliverRow] = useState<AssignedDeliveryBarcode | null>(null);
   const [viewKey, setViewKey] = useState<string | null>(null);
@@ -102,26 +70,97 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
   const { sort } = table;
   const { selectedIds, selectedRows } = table.selection;
 
-  const headers: { key: string; sortField?: string }[] = [
-    { key: "barcode", sortField: "number" },
-    { key: "invoice", sortField: "invoice.number" },
-    { key: "invoiceBalance", sortField: "invoice.balance" },
-    { key: "rate", sortField: "route.rate" },
-    { key: "name", sortField: "name" },
-    { key: "container", sortField: "container.name" },
-    { key: "route", sortField: "route.name" },
-    { key: "senderName", sortField: "sender.name" },
-    { key: "senderPhones", sortField: "sender.phones.number" },
-    { key: "receiverName", sortField: "receiver.name" },
-    { key: "address", sortField: "receiver.address.address1" },
-    { key: "city", sortField: "receiver.address.city" },
-    { key: "phones", sortField: "receiver.phones.number" },
-  ];
-
-  function toggleSort(field: string) {
-    const active = getPrimarySortSpec(sort);
-    table.onSortChange(field, active?.field === field && active.direction === "asc" ? "desc" : "asc");
-  }
+  const columns = useMemo<DataTableColumn<AssignedDeliveryBarcode>[]>(
+    () => [
+      {
+        id: "barcode",
+        label: t("deliveries.columns.barcode"),
+        sortField: "number",
+        cellClassName: "font-medium tabular-nums",
+        renderCell: (row) => row.number || dash,
+      },
+      {
+        id: "invoice",
+        label: t("deliveries.columns.invoice"),
+        sortField: "invoice.number",
+        renderCell: (row) => row.invoiceNumber || dash,
+      },
+      {
+        id: "invoiceBalance",
+        label: t("deliveries.columns.invoiceBalance"),
+        sortField: "invoice.balance",
+        renderCell: (row) => <DeliveryRowBalance row={row} />,
+      },
+      {
+        id: "rate",
+        label: t("deliveries.columns.rate"),
+        sortField: "route.rate",
+        cellClassName: "tabular-nums",
+        renderCell: (row) => formatDeliveryRate(row.routeRate),
+      },
+      {
+        id: "name",
+        label: t("deliveries.columns.name"),
+        sortField: "name",
+        renderCell: (row) => row.description || dash,
+      },
+      {
+        id: "container",
+        label: t("deliveries.columns.container"),
+        sortField: "container.name",
+        renderCell: (row) => row.container?.name || dash,
+      },
+      {
+        id: "route",
+        label: t("deliveries.columns.route"),
+        sortField: "route.name",
+        renderCell: (row) => formatBarcodeDeliveryRoute(row.route, t),
+      },
+      {
+        id: "senderName",
+        label: t("deliveries.columns.senderName"),
+        sortField: "sender.name",
+        renderCell: (row) => row.sender?.name || dash,
+      },
+      {
+        id: "senderPhones",
+        label: t("deliveries.columns.senderPhones"),
+        sortField: "sender.phones.number",
+        cellClassName: "min-w-[260px]",
+        truncateCell: false,
+        renderCell: (row) => <TablePhoneCell phones={row.sender?.phones ?? []} callable />,
+      },
+      {
+        id: "receiverName",
+        label: t("deliveries.columns.receiverName"),
+        sortField: "receiver.name",
+        renderCell: (row) => row.receiver?.name || dash,
+      },
+      {
+        id: "address",
+        label: t("deliveries.columns.address"),
+        sortField: "receiver.address.address1",
+        truncateCell: false,
+        renderCell: (row) => formatDeliveryAddress(row.receiver) || dash,
+      },
+      {
+        id: "city",
+        label: t("deliveries.columns.city"),
+        sortField: "receiver.address.city",
+        renderCell: (row) => row.receiver?.city || dash,
+      },
+      {
+        id: "phones",
+        label: t("deliveries.columns.phones"),
+        sortField: "receiver.phones.number",
+        cellClassName: "min-w-[260px]",
+        truncateCell: false,
+        renderCell: (row) => <TablePhoneCell phones={row.receiver?.phones ?? []} callable />,
+      },
+    ],
+    [dash, t],
+  );
+  const columnLayout = useColumnVisibility("deliveries-assigned-v1", columns);
 
   const viewRow = viewKey ? table.items.find((row) => rowKey(row) === viewKey) ?? null : null;
   const selectedRow = selectedRows.length === 1 ? selectedRows[0]! : null;
@@ -147,153 +186,112 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
             state={table}
             presetScope="deliveries"
             searchPlaceholder={t("deliveries.searchPlaceholder")}
+            columnLayout={columnLayout}
           />
         </CardHeader>
 
         {!access.canList ? (
-          <p role="alert" className="px-6 py-6 text-sm text-muted-foreground">{t("deliveries.noAccess")}</p>
-        ) : table.isLoading ? (
-          <p className="px-6 py-6 text-sm text-muted-foreground">{t("common.loading")}</p>
-        ) : table.isError ? (
-          <div className="space-y-3 border-b px-6 py-3">
-            <p role="alert" className="text-sm text-destructive">
-              {normalizeApiError(table.error).message}
-            </p>
-            <Button variant="outline" onClick={() => void table.refetch()}>
-              {t("deliveries.retry")}
-            </Button>
-          </div>
-        ) : !table.items.length ? (
-          <p className="px-6 py-6 text-sm text-muted-foreground">
-            {table.hasActiveFilters ? t("common.table.noMatches") : t("deliveries.empty")}
+          <p role="alert" className="border-b px-6 py-3 text-sm text-muted-foreground">
+            {t("deliveries.noAccess")}
           </p>
-        ) : (<>
-          <ul className="md:hidden" aria-label={t("deliveries.title")}>
-            {table.items.map((row, index) => {
-              const city = row.receiver?.city || t("deliveries.noCity");
-              const previous = index > 0 ? table.items[index - 1]!.receiver?.city || t("deliveries.noCity") : null;
-              return (
-                <li key={rowKey(row)}>
-                  {sort.startsWith("receiver.address.city:") && city !== previous ? (
-                    <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{city}</h3>
-                  ) : null}
-                  <DeliveryMobileRow row={row} canDeliver={access.canDeliver} onDeliver={setDeliverRow} canPrint={access.canPrint} onPrint={setPrintRow} />
-                </li>
-              );
-            })}
-          </ul>
-          <TableSelectionToolbar
-            className="hidden md:flex"
-            selectedIds={selectedIds}
-            pageRowIds={table.selection.pageRowIds}
-            totalCount={table.total}
-            onSelectedIdsChange={table.selection.setSelectedIds}
-            actions={access.canDeliver || access.canPrint ? (
-              <>
-                {access.canPrint ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={!selectedRow?.invoiceId}
-                    onClick={() => { if (selectedRow) setPrintRow(selectedRow); }}
-                  >
-                    <Printer className="h-4 w-4" />
-                    {t("invoices.printSignatures.action")}
+        ) : (
+          <>
+            <ul className="md:hidden" aria-label={t("deliveries.title")}>
+              {table.isLoading ? (
+                <li className="px-6 py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</li>
+              ) : table.isError ? (
+                <li className="space-y-3 border-b px-6 py-3">
+                  <p role="alert" className="text-sm text-destructive">
+                    {normalizeApiError(table.error).message}
+                  </p>
+                  <Button variant="outline" onClick={() => void table.refetch()}>
+                    {t("deliveries.retry")}
                   </Button>
-                ) : null}
-                <TableSelectionActionsMenu hidden={!access.canDeliver}>
-                  <DropdownMenuItem
-                    disabled={selectedActionDisabled}
-                    onSelect={() => { if (selectedRow) setDeliverRow(selectedRow); }}
-                    className={tableSelectionActionMenuStyles.deliver}
-                  >
-                    <PackageCheck className="size-4" />
-                    {t("deliveries.deliver.action")}
-                  </DropdownMenuItem>
-                </TableSelectionActionsMenu>
-              </>
-            ) : undefined}
-          />
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-sm">
-              <thead className="border-b bg-muted/40 text-left">
-                <tr>
-                  <th className="w-px whitespace-nowrap py-3 pl-4 pr-1">
-                    <input
-                      type="checkbox"
-                      aria-label={t("tableFields.table.selectAllOnPage")}
-                      checked={table.selection.allPageSelected}
-                      ref={(element) => {
-                        if (element) element.indeterminate = !table.selection.allPageSelected && selectedRows.length > 0;
-                      }}
-                      onChange={(event) => table.selection.toggleAll(event.target.checked)}
-                      className="size-4 shrink-0 rounded border-input"
-                    />
-                  </th>
-                  {headers.map(({ key, sortField }) => {
-                    const label = t(`deliveries.columns.${key}`);
-                    return sortField ? (
-                      <SortableHeader key={key} label={label} field={sortField} sort={sort} onSort={toggleSort} />
-                    ) : (
-                      <th key={key} className="whitespace-nowrap px-4 py-3 font-medium">{label}</th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {table.items.map((row) => {
-                  const key = rowKey(row);
+                </li>
+              ) : !table.items.length ? (
+                <li className="px-6 py-12 text-center text-sm text-muted-foreground">
+                  {table.hasActiveFilters ? t("common.table.noMatches") : t("deliveries.empty")}
+                </li>
+              ) : (
+                table.items.map((row, index) => {
+                  const city = row.receiver?.city || t("deliveries.noCity");
+                  const previous =
+                    index > 0 ? table.items[index - 1]!.receiver?.city || t("deliveries.noCity") : null;
                   return (
-                    <InteractiveTableRow
-                      key={key}
-                      className="align-top"
-                      active={key === viewKey || selectedIds.includes(key)}
-                      aria-selected={selectedIds.includes(key)}
-                      tabIndex={0}
-                      onRowClick={() => openRow(row)}
-                      onKeyDown={(event) => {
-                        if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
-                        event.preventDefault();
-                        openRow(row);
-                      }}
-                    >
-                      <td className="w-px whitespace-nowrap py-3 pl-4 pr-1" onClick={(event) => event.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          aria-label={t("tableFields.table.selectRow", { row: row.number || key })}
-                          checked={selectedIds.includes(key)}
-                          onChange={(event) => table.selection.toggle(key, event.target.checked)}
-                          className="size-4 shrink-0 rounded border-input"
-                        />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums">{row.number}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{row.invoiceNumber}</td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <DeliveryRowBalance row={row} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDeliveryRate(row.routeRate)}</td>
-                      <td className="px-4 py-3">{row.description}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{row.container?.name}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{formatBarcodeDeliveryRoute(row.route, t)}</td>
-                      <td className="px-4 py-3">{row.sender?.name}</td>
-                      <td className="min-w-[260px] px-4 py-3">
-                        <TablePhoneCell phones={row.sender?.phones ?? []} callable />
-                      </td>
-                      <td className="px-4 py-3">{row.receiver?.name}</td>
-                      <td className="px-4 py-3">{formatDeliveryAddress(row.receiver)}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{row.receiver?.city}</td>
-                      <td className="min-w-[260px] px-4 py-3">
-                        <TablePhoneCell phones={row.receiver?.phones ?? []} callable />
-                      </td>
-                    </InteractiveTableRow>
+                    <li key={rowKey(row)}>
+                      {sort.startsWith("receiver.address.city:") && city !== previous ? (
+                        <h3 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {city}
+                        </h3>
+                      ) : null}
+                      <DeliveryMobileRow
+                        row={row}
+                        canDeliver={access.canDeliver}
+                        onDeliver={setDeliverRow}
+                        canPrint={access.canPrint}
+                        onPrint={setPrintRow}
+                      />
+                    </li>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>)}
+                })
+              )}
+            </ul>
+
+            <div className="hidden md:block">
+              <TableSelectionToolbar
+                selectedIds={selectedIds}
+                pageRowIds={table.selection.pageRowIds}
+                totalCount={table.total}
+                onSelectedIdsChange={table.selection.setSelectedIds}
+                actions={
+                  access.canDeliver || access.canPrint ? (
+                    <>
+                      {access.canPrint ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                          disabled={!selectedRow?.invoiceId}
+                          onClick={() => {
+                            if (selectedRow) setPrintRow(selectedRow);
+                          }}
+                        >
+                          <Printer className="h-4 w-4" />
+                          {t("invoices.printSignatures.action")}
+                        </Button>
+                      ) : null}
+                      <TableSelectionActionsMenu hidden={!access.canDeliver}>
+                        <TableSelectionActionItem
+                          disabled={selectedActionDisabled}
+                          onSelect={() => {
+                            if (selectedRow) setDeliverRow(selectedRow);
+                          }}
+                          className={tableSelectionActionMenuStyles.deliver}
+                        >
+                          <PackageCheck className="size-4" />
+                          {t("deliveries.deliver.action")}
+                        </TableSelectionActionItem>
+                      </TableSelectionActionsMenu>
+                    </>
+                  ) : undefined
+                }
+              />
+              <CatalogDataTable
+                state={table}
+                columns={columnLayout.columns}
+                columnLayout={columnLayout}
+                rowKey={rowKey}
+                rowLabel={(row) => row.number || rowKey(row)}
+                emptyMessage={t("deliveries.empty")}
+                retryLabel={t("deliveries.retry")}
+                minWidth={1400}
+                onRowClick={openRow}
+                activeRowId={viewKey ?? undefined}
+              />
+            </div>
+          </>
+        )}
         {access.canList && !table.isLoading && !table.isError ? <CatalogTablePagination state={table} /> : null}
       </Card>
 
@@ -306,17 +304,26 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
         onDeliver={(row) => openFromView(setDeliverRow, row)}
         onPrint={(row) => openFromView(setPrintRow, row)}
       />
-      {printRow?.invoiceId && access.canPrint && <InvoicePrintSignaturesDialog key={`${access.companyId}:${printRow.invoiceId}:${printRow.delivery?.id}`} invoiceIds={[printRow.invoiceId]} trip={printRow.delivery?.id ? { deliveryId: String(printRow.delivery.id) } : undefined} onClose={() => setPrintRow(null)} />}
-      {deliverRow && access.canDeliver && <DeliverDialog
-        key={`${access.companyId}:${access.actorId}:${deliverRow.invoiceId}:${deliverRow.route?.id}:${deliverRow.delivery?.id}`}
-        target={deliverRow}
-        onClose={() => setDeliverRow(null)}
-        onDelivered={() => {
-          setDeliverRow(null);
-          setViewKey(null);
-          table.selection.setSelectedIds([]);
-        }}
-      />}
+      {printRow?.invoiceId && access.canPrint && (
+        <InvoicePrintSignaturesDialog
+          key={`${access.companyId}:${printRow.invoiceId}:${printRow.delivery?.id}`}
+          invoiceIds={[printRow.invoiceId]}
+          trip={printRow.delivery?.id ? { deliveryId: String(printRow.delivery.id) } : undefined}
+          onClose={() => setPrintRow(null)}
+        />
+      )}
+      {deliverRow && access.canDeliver && (
+        <DeliverDialog
+          key={`${access.companyId}:${access.actorId}:${deliverRow.invoiceId}:${deliverRow.route?.id}:${deliverRow.delivery?.id}`}
+          target={deliverRow}
+          onClose={() => setDeliverRow(null)}
+          onDelivered={() => {
+            setDeliverRow(null);
+            setViewKey(null);
+            table.selection.setSelectedIds([]);
+          }}
+        />
+      )}
     </div>
   );
 }

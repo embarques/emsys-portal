@@ -1,16 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { CatalogBulkDeleteDialog } from "@/components/app-shell/catalog-bulk-delete-dialog";
 import { CatalogDataTable, CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
-import { DirectoryTableRowActions } from "@/components/app-shell/directory-table-row-actions";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { PredefinedRouteDialog } from "@/components/predefined-routes/predefined-route-dialog";
 import { PredefinedRouteCoverageCell } from "@/components/predefined-routes/predefined-route-coverage-cell";
+import { PredefinedRouteViewSheet } from "@/components/predefined-routes/predefined-route-view-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
@@ -36,6 +36,7 @@ export function PredefinedRoutesWorkspace() {
   const canCreate = hasPermission(PERMISSIONS.predefinedRoutesCreate.name, PERMISSIONS.predefinedRoutesCreate.resourceType);
   const canUpdate = hasPermission(PERMISSIONS.predefinedRoutesUpdate.name, PERMISSIONS.predefinedRoutesUpdate.resourceType);
   const canDelete = hasPermission(PERMISSIONS.predefinedRoutesDelete.name, PERMISSIONS.predefinedRoutesDelete.resourceType);
+  const [viewRoute, setViewRoute] = useState<PredefinedRoute | null>(null);
   const table = useCatalogTable({
     fields: PREDEFINED_ROUTE_TABLE_FILTER_FIELDS,
     keepPrevious: false,
@@ -52,6 +53,11 @@ export function PredefinedRoutesWorkspace() {
     entityLabel: t("predefinedRoutes.entity"),
     onDeleted: (ids) => table.selection.setSelectedIds((current) => current.filter((id) => !ids.includes(id))),
   });
+
+  function openEdit(route: PredefinedRoute) {
+    setViewRoute(null);
+    state.edit(route);
+  }
 
   const columns = useMemo<DataTableColumn<PredefinedRoute>[]>(() => [
     { id: "id", label: t("common.apiColumns.id"), defaultWidth: 96, cellClassName: "tabular-nums", renderCell: (item) => item.id },
@@ -108,7 +114,7 @@ export function PredefinedRoutesWorkspace() {
           canDelete={canDelete}
           editDisabled={state.busy}
           deleteDisabled={state.busy || bulkDelete.isPending}
-          onEdit={() => { if (selectedRows[0]) state.edit(selectedRows[0]); }}
+          onEdit={() => { if (selectedRows[0]) openEdit(selectedRows[0]); }}
           onDelete={() => bulkDelete.request(selectedRows)}
         />
 
@@ -120,19 +126,29 @@ export function PredefinedRoutesWorkspace() {
           rowLabel={(item) => item.name}
           emptyMessage={t("predefinedRoutes.empty")}
           retryLabel={t("predefinedRoutes.retry")}
-          onRowDoubleClick={canUpdate ? (item) => state.edit(item) : undefined}
-          renderSelectCellActions={(item) => (
-            <DirectoryTableRowActions
-              row={item}
-              onEdit={(row) => state.edit(row)}
-              onDelete={(row) => void state.remove(row)}
-              editDisabled={state.busy || !canUpdate}
-              deleteDisabled={state.busy || !canDelete}
-            />
-          )}
+          onRowClick={setViewRoute}
+          onRowDoubleClick={canUpdate ? openEdit : undefined}
+          activeRowId={viewRoute ? routeRowId(viewRoute) : undefined}
         />
         <CatalogTablePagination state={table} />
       </Card>
+
+      <PredefinedRouteViewSheet
+        route={viewRoute}
+        open={Boolean(viewRoute)}
+        onOpenChange={(open) => {
+          if (!open) setViewRoute(null);
+        }}
+        onEdit={openEdit}
+        onDelete={(route) => {
+          setViewRoute(null);
+          bulkDelete.request([route]);
+        }}
+        canEdit={canUpdate}
+        canDelete={canDelete}
+        editDisabled={state.busy}
+        deleteDisabled={state.busy || bulkDelete.isPending}
+      />
 
       <PredefinedRouteDialog state={state} />
       <CatalogBulkDeleteDialog state={bulkDelete} entity={t("predefinedRoutes.entity")} entities={t("predefinedRoutes.entities")} getName={(item) => item.name} />

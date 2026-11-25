@@ -54,6 +54,11 @@ export function getVehicleComplianceDue(
   return { vehicle, kind, date, daysRemaining };
 }
 
+/** True when any compliance date on the vehicle needs attention. */
+export function vehicleHasComplianceDue(vehicle: Vehicle, today: string): boolean {
+  return VEHICLE_COMPLIANCE_KINDS.some((kind) => getVehicleComplianceDue(vehicle, kind, today) !== null);
+}
+
 /** Most urgent first (overdue before upcoming), then by vehicle name. */
 export function collectVehicleComplianceDue(vehicles: readonly Vehicle[], today: string): VehicleComplianceDue[] {
   return vehicles

@@ -18,5 +18,7 @@ export const InvoicePackageTrackerSection = Empty;
 export const InvoicePaymentsSection = Empty;
 export const AddressActionRow = Empty;
 export const PhoneActionRow = Empty;
-// Its children are DropdownMenuItem elements that need the Radix menu context.
+// Menu items register into the real menu; stub both so the sheet mounts without Radix.
 export const TableSelectionActionsMenu = Empty;
+export const TableSelectionActionItem = Empty;
+export const TableSelectionActionSeparator = Empty;

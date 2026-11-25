@@ -4,6 +4,7 @@ import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
 import { formatDailyIncomeMoney } from "@/lib/accounting/daily-income/display";
 import { transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { getJournalTransactionTypeBadgeClass } from "@/lib/accounting/daily-income/journal-status-display";
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { readApiUserUsername } from "@/lib/table/api-table-fields";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -22,7 +23,17 @@ export function dailyIncomeTransactionColumns(t: Translate, displayCurrency: str
     { id: "reference", label: t("accounting.dailyIncome.columns.reference"), renderCell: (row) => row.refNumber || t("common.empty.dash") },
     { id: "employee", label: t("accounting.dailyIncome.columns.employee"), renderCell: (row) => getTransactionAssigneeDisplayName(row.employee, row.route, row.employeeGroup) || t("common.empty.dash") },
     { id: "createdBy", label: t("accounting.dailyIncome.columns.user"), renderCell: (row) => readApiUserUsername(row.apiTableValues?.createdBy) || t("common.empty.dash") },
-    { id: "type", defaultVisible: false, label: t("accounting.dailyIncome.columns.type"), truncateCell: false, renderCell: (row) => <TableTagText>{transactionTypeLabel(row.transactionType, t)}</TableTagText> },
+    {
+      id: "type",
+      defaultVisible: false,
+      label: t("accounting.dailyIncome.columns.type"),
+      truncateCell: false,
+      renderCell: (row) => (
+        <TableTagText className={getJournalTransactionTypeBadgeClass(row.transactionType)}>
+          {transactionTypeLabel(row.transactionType, t)}
+        </TableTagText>
+      ),
+    },
     { id: "paymentMethod", defaultVisible: false, label: t("accounting.dailyIncome.columns.paymentMethod"), renderCell: (row) => row.paymentMethod?.name ?? t("common.empty.dash") },
   ];
 }

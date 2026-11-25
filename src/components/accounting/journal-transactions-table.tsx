@@ -10,13 +10,16 @@ import {TableDirectoryToolbar} from "@/components/app-shell/table-directory-tool
 import {TableAdvancedFilterPanel} from "@/components/app-shell/table-advanced-filter-panel";
 import {TableSearchInput} from "@/components/app-shell/table-search-input";
 import {TablePaginationControls} from "@/components/app-shell/table-pagination-controls";
-import {TableSelectionActionsMenu} from "@/components/app-shell/table-selection-actions-menu";
+import {
+  TableSelectionActionsMenu,
+  TableSelectionActionItem
+} from "@/components/app-shell/table-selection-actions-menu";
 import {TableSelectionToolbar} from "@/components/app-shell/table-selection-toolbar";
 import {JournalLifecycleActions} from "@/components/accounting/journal-lifecycle-actions";
 import {JournalTotals} from "@/components/accounting/journal-totals";
 import {Card, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import {DropdownMenuItem} from "@/components/ui/dropdown-menu";
+
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useLocalizedFilterFields} from "@/lib/table/hooks/use-localized-filter-fields";
 import {createRandomId} from "@/lib/utils/id";
@@ -252,10 +255,10 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
         {canProcess || ids.length === 1 ? (
           <TableSelectionActionsMenu>
             {canProcess ? (
-              <DropdownMenuItem disabled={!ready} onSelect={openConfirm} className={tableSelectionActionMenuStyles.complete}>
+              <TableSelectionActionItem disabled={!ready} onSelect={openConfirm} className={tableSelectionActionMenuStyles.complete}>
                 <CheckCircle2 className="size-4" aria-hidden="true"/>
                 {actionLabel}
-              </DropdownMenuItem>
+              </TableSelectionActionItem>
             ) : null}
             {ids.length === 1 ? (
               <JournalLifecycleActions
@@ -271,7 +274,7 @@ function JournalTable({incomeStatementId = 0, pending = false, clearance = false
       </>}
     />
     {canProcess ? <p className="border-b px-6 py-3 text-sm text-muted-foreground">{text("sameMethod")}</p> : null}
-    {rowsQuery.isError ? <p role="alert" className="px-6 py-3 text-sm text-destructive">{normalizeApiError(rowsQuery.error).message}</p> : <DataTable
+    {rowsQuery.isError ? <p role="alert" className="border-b px-6 py-3 text-sm text-destructive">{normalizeApiError(rowsQuery.error).message}</p> : <DataTable
       columns={layout.columns} columnLayout={layout} rows={rows} rowKey={row => row.id} rowLabel={row => row.refNumber || row.id}
       page={page} isPageDataPending={rowsQuery.isFetching || query.trim() !== debouncedQuery.trim()} selectable selectedIds={ids}
       isRowSelectable={row => canSelect(row)}
