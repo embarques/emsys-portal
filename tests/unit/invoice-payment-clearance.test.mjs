@@ -31,10 +31,11 @@ const CHECK_PENDING = {
   paymentSummary: {
     invoiceTotal: 1000,
     discount: 0,
-    totalPaid: 550,
+    totalPaid: 300,
+    outstandingBalance: 700,
     pendingClearance: 250,
-    outstandingBalance: 450,
-    receivableBalance: 700,
+    pendingClearanceCount: 2,
+    balanceAfterClearance: 450,
     customerStatus: "PARTIALLY_PAID",
     clearanceStatus: "PARTIALLY_CLEARED",
   },
@@ -45,30 +46,33 @@ test("the API payment summary is what the view reports, not a recomputed balance
   const invoice = await api.fetchInvoiceById(CHECK_PENDING.id);
   const summary = types.resolveInvoicePaymentSummary(invoice);
 
-  assert.equal(summary.totalPaid, 550);
+  // Total paid and outstanding balance are the posted figures and match the
+  // stored invoice totals.
+  assert.equal(summary.totalPaid, 300);
+  assert.equal(summary.outstandingBalance, 700);
+  assert.equal(summary.totalPaid, invoice.amountPaid);
+  assert.equal(summary.outstandingBalance, invoice.balance);
+  // Two pending receipts are totalled into one amount, with the balance they
+  // settle the invoice to.
   assert.equal(summary.pendingClearance, 250);
-  // The balance before clearance is 700; once the pending 250 clears it is 450.
-  assert.equal(summary.receivableBalance, 700);
-  assert.equal(summary.outstandingBalance, 450);
+  assert.equal(summary.pendingClearanceCount, 2);
+  assert.equal(summary.balanceAfterClearance, 450);
   assert.equal(summary.customerStatus, "PARTIALLY_PAID");
   assert.equal(summary.clearanceStatus, "PARTIALLY_CLEARED");
-  // The accounting balance still drives the existing balance column.
-  assert.equal(invoice.balance, 700);
-  assert.equal(invoice.amountPaid, 300);
 });
 
-test("a client whose only payment awaits clearance owes nothing while the receivable stays open", async () => {
+test("a client whose only payment awaits clearance keeps the posted balance and clears to zero", async () => {
   const { api, types } = portal({
     ...CHECK_PENDING,
     payment: 0,
     balance: 1000,
     paymentSummary: {
       ...CHECK_PENDING.paymentSummary,
-      totalPaid: 1000,
-      clearedAmount: 0,
+      totalPaid: 0,
+      outstandingBalance: 1000,
       pendingClearance: 1000,
-      outstandingBalance: 0,
-      receivableBalance: 1000,
+      pendingClearanceCount: 1,
+      balanceAfterClearance: 0,
       customerStatus: "PAID",
       clearanceStatus: "OUTSTANDING",
     },
@@ -76,10 +80,10 @@ test("a client whose only payment awaits clearance owes nothing while the receiv
   const invoice = await api.fetchInvoiceById(CHECK_PENDING.id);
   const summary = types.resolveInvoicePaymentSummary(invoice);
 
-  assert.equal(summary.outstandingBalance, 0, "collections must not chase money already received");
-  assert.equal(summary.customerStatus, "PAID");
+  assert.equal(summary.outstandingBalance, 1000, "the posted balance stays open until the check clears");
+  assert.equal(summary.balanceAfterClearance, 0, "nothing is left to collect once it clears");
+  assert.equal(summary.customerStatus, "PAID", "collections must not chase money already received");
   assert.equal(summary.clearanceStatus, "OUTSTANDING");
-  assert.equal(summary.receivableBalance, 1000, "accounting keeps the open receivable");
 });
 
 test("an API without the summary reports no pending clearance instead of guessing one", async () => {
@@ -97,9 +101,10 @@ test("an API without the summary reports no pending clearance instead of guessin
 
   const summary = types.resolveInvoicePaymentSummary(invoice);
   assert.equal(summary.pendingClearance, 0);
+  assert.equal(summary.pendingClearanceCount, 0);
   assert.equal(summary.totalPaid, 200);
   assert.equal(summary.outstandingBalance, 300, "falls back to the stored balance");
-  assert.equal(summary.receivableBalance, 300);
+  assert.equal(summary.balanceAfterClearance, 300);
   assert.equal(summary.customerStatus, "PARTIALLY_PAID");
   assert.equal(summary.clearanceStatus, "CLEARED");
 });
@@ -113,7 +118,10 @@ test("incomplete or unknown summary payloads are rejected rather than partially 
     null,
     {},
     { ...complete, pendingClearance: undefined },
-    { ...complete, receivableBalance: null },
+    { ...complete, balanceAfterClearance: null },
+    { ...complete, pendingClearanceCount: undefined },
+    { ...complete, pendingClearanceCount: 1.5 },
+    { ...complete, pendingClearanceCount: -1 },
     { ...complete, totalPaid: "not-a-number" },
     { ...complete, outstandingBalance: Number.NaN },
     { ...complete, customerStatus: "SETTLED" },
@@ -151,7 +159,8 @@ test("every payment clearance string is translated in English and Spanish", asyn
     "view.payment.outstandingBalance",
     "view.payment.clearanceBreakdown",
     "view.payment.pendingClearance",
-    "view.payment.currentBalance",
+    "view.payment.pendingPaymentCount_one",
+    "view.payment.pendingPaymentCount_other",
     "view.payment.balanceAfterClearance",
     "view.payment.pendingClearanceHint",
   ]);
@@ -174,4 +183,16 @@ test("every payment clearance string is translated in English and Spanish", asyn
     catalogs.es.view.payment.pendingClearanceHint,
     "Spanish copy must be translated, not English left in place",
   );
+});
+
+test("only an explicit API flag marks an invoice as holding accounting entries", async () => {
+  const withEntries = await portal({ ...CHECK_PENDING, hasAccountingEntries: true }).api.fetchInvoiceById(CHECK_PENDING.id);
+  assert.equal(withEntries.hasAccountingEntries, true);
+
+  const without = await portal({ ...CHECK_PENDING, hasAccountingEntries: false }).api.fetchInvoiceById(CHECK_PENDING.id);
+  assert.equal(without.hasAccountingEntries, false);
+
+  // An older API omits the flag; the API delete check still refuses.
+  const legacy = await portal({ ...CHECK_PENDING, hasAccountingEntries: undefined }).api.fetchInvoiceById(CHECK_PENDING.id);
+  assert.equal(legacy.hasAccountingEntries, false);
 });

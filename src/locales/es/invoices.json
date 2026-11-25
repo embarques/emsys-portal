@@ -179,7 +179,10 @@
       "titleOne": "¿Eliminar factura?",
       "titleMany": "¿Eliminar facturas?",
       "descriptionOne": "Esto eliminará permanentemente la factura {{number}}. {{cannotBeUndone}}",
-      "descriptionMany": "Esto eliminará permanentemente {{count}} facturas seleccionadas. {{cannotBeUndone}}"
+      "descriptionMany": "Esto eliminará permanentemente {{count}} facturas seleccionadas. {{cannotBeUndone}}",
+      "blockedOne": "Esta factura tiene pagos u otros movimientos contables, por lo que no se puede eliminar. Anule la factura en su lugar.",
+      "blockedSelection_one": "{{count}} factura seleccionada tiene pagos u otros movimientos contables y no se puede eliminar. Anúlela en su lugar.",
+      "blockedSelection_other": "{{count}} facturas seleccionadas tienen pagos u otros movimientos contables y no se pueden eliminar. Anúlelas en su lugar."
     }
   },
   "print": {
@@ -577,11 +580,12 @@
     "payment": {
       "totalPaid": "Total pagado",
       "outstandingBalance": "Saldo pendiente",
-      "clearanceBreakdown": "Desglose de compensación",
-      "pendingClearance": "Pendiente de compensar",
-      "currentBalance": "Saldo antes de compensar",
-      "balanceAfterClearance": "Saldo al compensarse",
-      "pendingClearanceHint": "Este pago ya se recibió del cliente, por eso no se adeuda. El saldo baja al monto indicado cuando el pago se compense.",
+      "clearanceBreakdown": "Pagos por compensar",
+      "pendingClearance": "Total por compensar",
+      "pendingPaymentCount_one": "{{count}} pago",
+      "pendingPaymentCount_other": "{{count}} pagos",
+      "balanceAfterClearance": "Saldo después de compensar",
+      "pendingClearanceHint": "Estos pagos se recibieron del cliente pero aún no se han compensado. El saldo pendiente de arriba es el saldo contabilizado; bajará al saldo después de compensar cuando se compensen.",
       "clientUnpaid": "Sin pagar",
       "clientPartiallyPaid": "Pago parcial",
       "clientPaid": "Pagado",

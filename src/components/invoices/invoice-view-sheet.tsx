@@ -67,6 +67,7 @@ import {
   type Invoice,
   type InvoicePaymentSummary,
 } from "@/lib/invoices/types";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +80,8 @@ type InvoiceViewSheetProps = {
   onDelete: (invoice: Invoice) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  /** The invoice has accounting entries, so the API refuses to delete it. */
+  deleteBlocked?: boolean;
   onManageItems: (invoice: Invoice) => void;
   manageItemsDisabled?: boolean;
   onPrint: (invoice: Invoice) => void;
@@ -199,19 +202,24 @@ function InvoiceTotalCell({
 }
 
 /**
- * Receipts awaiting clearance are money the client already handed over, so the
- * outstanding balance above excludes them. This breaks that amount out so
- * accounting keeps the receivable balance in view, and only renders when the
- * invoice actually holds an unsettled receipt.
+ * The totals above are posted figures. Receipts the client already handed over
+ * but that have not cleared are totalled here, however many there are, with the
+ * balance the invoice settles to once they clear. Renders only when the invoice
+ * actually holds an unsettled receipt.
  */
 function InvoiceClearanceBreakdown({
   summary,
   t,
 }: {
   summary: InvoicePaymentSummary;
-  t: (key: string) => string;
+  t: TranslateFn;
 }) {
   if (summary.pendingClearance <= 0) return null;
+
+  const countKey =
+    summary.pendingClearanceCount === 1
+      ? "invoices.view.payment.pendingPaymentCount_one"
+      : "invoices.view.payment.pendingPaymentCount_other";
 
   return (
     <div className="mt-2.5 rounded-lg border border-sky-500/40 bg-sky-500/5 px-3 py-2.5">
@@ -222,18 +230,30 @@ function InvoiceClearanceBreakdown({
         </p>
       </div>
       <dl className="mt-2 space-y-1">
-        {[
-          { label: t("invoices.view.payment.pendingClearance"), value: summary.pendingClearance },
-          { label: t("invoices.view.payment.currentBalance"), value: summary.receivableBalance },
-          { label: t("invoices.view.payment.balanceAfterClearance"), value: summary.outstandingBalance },
-        ].map((row) => (
-          <div key={row.label} className="flex items-baseline justify-between gap-3">
-            <dt className="text-xs text-muted-foreground">{row.label}</dt>
-            <dd className="text-sm font-semibold tabular-nums text-foreground">
-              {formatInvoiceMoney(row.value)}
-            </dd>
-          </div>
-        ))}
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-xs text-muted-foreground">
+            {t("invoices.view.payment.pendingClearance")}
+            {summary.pendingClearanceCount > 0 ? (
+              <>
+                {" "}
+                <span className="text-muted-foreground/80">
+                  · {t(countKey, { count: summary.pendingClearanceCount })}
+                </span>
+              </>
+            ) : null}
+          </dt>
+          <dd className="text-sm font-semibold tabular-nums text-foreground">
+            {formatInvoiceMoney(summary.pendingClearance)}
+          </dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-xs text-muted-foreground">
+            {t("invoices.view.payment.balanceAfterClearance")}
+          </dt>
+          <dd className="text-sm font-semibold tabular-nums text-foreground">
+            {formatInvoiceMoney(summary.balanceAfterClearance)}
+          </dd>
+        </div>
       </dl>
       <p className="mt-2 text-xs text-muted-foreground">
         {t("invoices.view.payment.pendingClearanceHint")}
@@ -279,6 +299,7 @@ export function InvoiceViewSheet({
   onDelete,
   canEdit = true,
   canDelete = true,
+  deleteBlocked = false,
   onManageItems,
   manageItemsDisabled = false,
   onPrint,
@@ -555,7 +576,14 @@ export function InvoiceViewSheet({
           }
           onEdit={canEdit ? () => onEdit(invoice) : undefined}
           onDelete={canDelete ? () => onDelete(invoice) : undefined}
-        />
+          deleteDisabled={deleteBlocked}
+        >
+          {canDelete && deleteBlocked ? (
+            <p className="text-right text-xs text-muted-foreground">
+              {t("invoices.workspace.delete.blockedOne")}
+            </p>
+          ) : null}
+        </RecordViewSheetActions>
       </RecordViewSheetContent>
     </RecordViewSheet>
   );
