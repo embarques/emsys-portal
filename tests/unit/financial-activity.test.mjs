@@ -81,17 +81,31 @@ test("invoice list requests have a deadline and propagate cancellation on both e
  for(const args of calls){const config=args.at(-1);assert.equal(config.timeout,60000);assert.equal(config.signal,controller.signal);}
 });
 
-test("accounting and inventory pending transactions open separate desktop workspace tabs", () => {
+function loadWorkspaceRegistry(inventoryEnabled){
  const filename=path.join(root,"src/lib/layout/workspace-registry.ts");
  const source=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
  const components=new Map();
  function boundary(specifier){
+   if(specifier==="@/lib/inventory/feature") return {isInventoryEnabled:()=>inventoryEnabled};
    if(specifier.includes("-workspace")){if(!components.has(specifier)) components.set(specifier,new Proxy({}, {get:(target,name)=>target[name]??(target[name]=function Workspace(){return String(name);})}));return components.get(specifier);}
    return {};
  }
  const loaded={exports:{}};
  new Function("require","module","exports",source)(boundary,loaded,loaded.exports);
- const registry=loaded.exports;
+ return {registry:loaded.exports,components};
+}
+
+test("inventory workspace tabs are unregistered while inventory is hidden", () => {
+ const {registry}=loadWorkspaceRegistry(false);
+ for(const href of ["/inventory/items","/inventory/receipts","/inventory/dispatches","/inventory/pending-transactions","/inventory/suppliers","/inventory/workflow"]){
+   assert.equal(registry.isWorkspaceRoute(href),false);
+   assert.equal(registry.resolveWorkspaceComponent(href),null);
+ }
+ assert.equal(registry.isWorkspaceRoute("/accounting/pending-financial-activity"),true);
+});
+
+test("accounting and inventory pending transactions open separate desktop workspace tabs", () => {
+ const {registry,components}=loadWorkspaceRegistry(true);
  assert.equal(registry.isWorkspaceRoute("/accounting/pending-financial-activity"),true);
  assert.equal(registry.isWorkspaceRoute("/inventory/pending-transactions"),true);
  assert.equal(registry.resolveWorkspaceComponent("/inventory/pending-transactions?tab=9"),components.get("@/components/inventory/pending-inventory-workspace").PendingInventoryWorkspace);
