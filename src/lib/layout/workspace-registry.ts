@@ -44,15 +44,27 @@ import { UserActivitiesWorkspace } from "@/components/user-activities/user-activ
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
 import { accountingClearingNavigationItems, barcodeNavigationItems, employeeNavigationItems, invoiceNavigationItems, navigation, routeNavigationItems, topNavigationItems } from "@/config/navigation";
+import { isInventoryEnabled } from "@/lib/inventory/feature";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 import { findNavigationItemByHref, flattenAllNavigationItems } from "@/lib/navigation/nav-utils";
 import { translate, type Locale } from "@/lib/i18n/catalog";
+
+const inventoryWorkspaces: Record<string, ComponentType> = isInventoryEnabled()
+  ? {
+      "/inventory/workflow": InventoryWorkflowWorkspace,
+      "/inventory/items": InventoryItemsWorkspace,
+      "/inventory/receipts": InventoryReceiptsWorkspace,
+      "/inventory/dispatches": InventoryDispatchesWorkspace,
+      "/inventory/pending-transactions": PendingInventoryWorkspace,
+      "/inventory/suppliers": InventorySuppliersWorkspace,
+    }
+  : {};
 
 /** Maps dashboard routes to the client workspace component rendered inside a tab. */
 export const workspaceRegistry: Record<string, ComponentType> = {
   "/route-appointments": RouteAppointmentsWorkspace,
   "/route-appointments/map": RouteAppointmentsMapWorkspace,
-  "/inventory/workflow": InventoryWorkflowWorkspace,
+  ...inventoryWorkspaces,
   "/": DashboardWorkspace,
   "/customers": CustomersWorkspace,
   "/appointments": OrdersWorkspace,
@@ -63,11 +75,6 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/barcodes": BarcodesWorkspace,
   "/barcode-statuses": BarcodeStatusesWorkspace,
   "/label-updater": LabelUpdaterWorkspace,
-  "/inventory/items": InventoryItemsWorkspace,
-  "/inventory/receipts": InventoryReceiptsWorkspace,
-  "/inventory/dispatches": InventoryDispatchesWorkspace,
-  "/inventory/pending-transactions": PendingInventoryWorkspace,
-  "/inventory/suppliers": InventorySuppliersWorkspace,
   "/items": ItemsWorkspace,
   "/containers": ContainersWorkspace,
   "/complaints": ComplaintsWorkspace,

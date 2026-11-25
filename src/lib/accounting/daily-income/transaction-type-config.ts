@@ -18,6 +18,7 @@ import {
 import type { JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { isLoanIncreaseEnabled } from "@/lib/accounting/loans/loan-increase";
 import type { TranslateFn } from "@/lib/feedback/messages";
+import { isInventoryEnabled } from "@/lib/inventory/feature";
 
 export type TransactionTypeOption = {
   value: JournalTransactionType;
@@ -106,7 +107,9 @@ const ENTRY_CHOOSER_TREE: EntryChooserNode[] = [
     ],
   },
   { id: "expenses", icon: Wallet, categories: ["EXPENSE"] },
-  { id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"] },
+  ...(isInventoryEnabled()
+    ? [{ id: "inventory", icon: Package, categories: ["INVENTORY", "INVENTORY-PAYMENT"] } satisfies EntryChooserNode]
+    : []),
   {
     id: "loans",
     icon: Landmark,

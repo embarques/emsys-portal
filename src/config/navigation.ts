@@ -41,6 +41,7 @@ import {
 
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import type { Permission } from "@/lib/auth/types/permission";
+import { isInventoryEnabled } from "@/lib/inventory/feature";
 
 export type NavigationItem = {
   labelKey: string;
@@ -384,7 +385,7 @@ export const navigationSections: NavigationSection[] = [
     id: "operations",
     groups: [
       reportsItem,
-      inventoryItem,
+      ...(isInventoryEnabled() ? [inventoryItem] : []),
       containersItem,
       complaintsItem,
     ].map(navigationItemToGroup),
