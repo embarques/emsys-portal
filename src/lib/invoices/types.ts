@@ -190,6 +190,8 @@ export type Invoice = ApiTableRecord & {
   cost?: number;
   /** Read-only quantity total returned by the API. */
   itemCount?: number;
+  /** Read-only payment position returned by the API; see `resolveInvoicePaymentSummary`. */
+  paymentSummary?: InvoicePaymentSummary;
   branch?: InvoiceBranch;
   sender: OrderParty;
   receiver: OrderParty | null;
@@ -431,6 +433,89 @@ export function getInvoiceBalanceAmount(invoice: Pick<Invoice, "cost" | "balance
     return Math.max(0, Math.round(invoice.balance * 100) / 100);
   }
   return Math.max(0, computeInvoiceBalance(getInvoiceTotal(invoice), invoice.discount, invoice.amountPaid));
+}
+
+/** Did the client pay? Independent of whether the money settled. */
+export type InvoiceCustomerPaymentStatus = "UNPAID" | "PARTIALLY_PAID" | "PAID" | "VOID";
+
+/** Did the money settle? Independent of what the client owes. */
+export type InvoiceClearanceStatus = "NOT_REQUIRED" | "OUTSTANDING" | "PARTIALLY_CLEARED" | "CLEARED";
+
+/**
+ * Read-only `paymentSummary` from the API. Bank receipts reach `amountPaid`
+ * only once their settlement clears, so `outstandingBalance` (what the client
+ * owes) and `balance` (the accounting receivable) differ while clearance is
+ * pending.
+ */
+export type InvoicePaymentSummary = {
+  invoiceTotal: number;
+  discount: number;
+  totalPaid: number;
+  clearedAmount: number;
+  pendingClearance: number;
+  outstandingBalance: number;
+  receivableBalance: number;
+  customerStatus: InvoiceCustomerPaymentStatus;
+  clearanceStatus: InvoiceClearanceStatus;
+};
+
+const INVOICE_CUSTOMER_PAYMENT_STATUSES: InvoiceCustomerPaymentStatus[] = ["UNPAID", "PARTIALLY_PAID", "PAID", "VOID"];
+const INVOICE_CLEARANCE_STATUSES: InvoiceClearanceStatus[] = ["NOT_REQUIRED", "OUTSTANDING", "PARTIALLY_CLEARED", "CLEARED"];
+
+/** Maps the API `paymentSummary` object, rejecting partial or unknown payloads. */
+export function normalizeApiInvoicePaymentSummary(input: unknown): InvoicePaymentSummary | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = input as Record<string, unknown>;
+
+  const amounts = ["invoiceTotal", "discount", "totalPaid", "clearedAmount", "pendingClearance", "outstandingBalance", "receivableBalance"] as const;
+  const values = {} as Record<(typeof amounts)[number], number>;
+  for (const key of amounts) {
+    const amount = readApiMoney(raw[key]);
+    if (amount == null) return undefined;
+    values[key] = amount;
+  }
+
+  const customerStatus = String(raw.customerStatus ?? "") as InvoiceCustomerPaymentStatus;
+  const clearanceStatus = String(raw.clearanceStatus ?? "") as InvoiceClearanceStatus;
+  if (!INVOICE_CUSTOMER_PAYMENT_STATUSES.includes(customerStatus) || !INVOICE_CLEARANCE_STATUSES.includes(clearanceStatus)) {
+    return undefined;
+  }
+
+  return { ...values, customerStatus, clearanceStatus };
+}
+
+/**
+ * Returns the API summary when present. An API without the field predates this
+ * contract, so the fallback reports no pending clearance rather than guessing:
+ * every received amount is treated as cleared, matching the stored totals.
+ */
+export function resolveInvoicePaymentSummary(
+  invoice: Pick<Invoice, "cost" | "balance" | "discount" | "amountPaid" | "paidStatus" | "paymentSummary"> & Partial<Pick<Invoice, "lineItems">>,
+): InvoicePaymentSummary {
+  if (invoice.paymentSummary) return invoice.paymentSummary;
+
+  const invoiceTotal = getInvoiceTotal(invoice);
+  const discount = Math.round(invoice.discount * 100) / 100;
+  const cleared = Math.round(invoice.amountPaid * 100) / 100;
+  const balance = getInvoiceBalanceAmount(invoice);
+  const charged = Math.round((invoiceTotal - discount) * 100) / 100;
+
+  let customerStatus: InvoiceCustomerPaymentStatus = "PARTIALLY_PAID";
+  if (invoice.paidStatus?.trim().toUpperCase() === "VOID") customerStatus = "VOID";
+  else if (charged <= 0 || cleared >= charged) customerStatus = "PAID";
+  else if (cleared <= 0) customerStatus = "UNPAID";
+
+  return {
+    invoiceTotal,
+    discount,
+    totalPaid: cleared,
+    clearedAmount: cleared,
+    pendingClearance: 0,
+    outstandingBalance: balance,
+    receivableBalance: balance,
+    customerStatus,
+    clearanceStatus: cleared > 0 ? "CLEARED" : "NOT_REQUIRED",
+  };
 }
 
 export const INVOICE_PAYMENT_LOCATIONS: { value: InvoicePaymentLocation; label: string }[] = [
