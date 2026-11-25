@@ -211,6 +211,7 @@ type ApiInvoice = {
   balance?: number;
   discount?: number;
   paymentSummary?: unknown;
+  hasAccountingEntries?: boolean;
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
   employee?: ApiInvoiceUser;
@@ -663,6 +664,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     paidStatus: String(item.paidStatus ?? "").trim() || undefined,
     cost: cost || undefined,
     paymentSummary: normalizeApiInvoicePaymentSummary(item.paymentSummary),
+    hasAccountingEntries: item.hasAccountingEntries === true,
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
     pickupSource: receivedBy.pickupSource,

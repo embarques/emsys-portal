@@ -179,7 +179,10 @@
       "titleOne": "Delete invoice?",
       "titleMany": "Delete invoices?",
       "descriptionOne": "This will permanently remove invoice {{number}}. {{cannotBeUndone}}",
-      "descriptionMany": "This will permanently remove {{count}} selected invoices. {{cannotBeUndone}}"
+      "descriptionMany": "This will permanently remove {{count}} selected invoices. {{cannotBeUndone}}",
+      "blockedOne": "This invoice has payments or other accounting entries, so it can't be deleted. Void the invoice instead.",
+      "blockedSelection_one": "{{count}} selected invoice has payments or other accounting entries and can't be deleted. Void it instead.",
+      "blockedSelection_other": "{{count}} selected invoices have payments or other accounting entries and can't be deleted. Void them instead."
     }
   },
   "print": {
@@ -577,11 +580,12 @@
     "payment": {
       "totalPaid": "Total Paid",
       "outstandingBalance": "Outstanding Balance",
-      "clearanceBreakdown": "Clearance breakdown",
-      "pendingClearance": "Pending clearance",
-      "currentBalance": "Balance before clearance",
-      "balanceAfterClearance": "Balance once it clears",
-      "pendingClearanceHint": "This payment was already received from the client, so it is not owed. The balance drops to the amount shown once the payment clears.",
+      "clearanceBreakdown": "Payments waiting to clear",
+      "pendingClearance": "Total waiting to clear",
+      "pendingPaymentCount_one": "{{count}} payment",
+      "pendingPaymentCount_other": "{{count}} payments",
+      "balanceAfterClearance": "Balance after clearing",
+      "pendingClearanceHint": "These payments were received from the client but have not cleared yet. The outstanding balance above is the posted balance; it drops to the balance after clearing once they clear.",
       "clientUnpaid": "Unpaid",
       "clientPartiallyPaid": "Partially paid",
       "clientPaid": "Paid",

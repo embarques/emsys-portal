@@ -192,6 +192,11 @@ export type Invoice = ApiTableRecord & {
   itemCount?: number;
   /** Read-only payment position returned by the API; see `resolveInvoicePaymentSummary`. */
   paymentSummary?: InvoicePaymentSummary;
+  /**
+   * Read-only: a journal (payment, discount, refund…) has referenced this
+   * invoice, even if later reversed or voided. The API refuses to delete it.
+   */
+  hasAccountingEntries?: boolean;
   branch?: InvoiceBranch;
   sender: OrderParty;
   receiver: OrderParty | null;
@@ -442,18 +447,19 @@ export type InvoiceCustomerPaymentStatus = "UNPAID" | "PARTIALLY_PAID" | "PAID" 
 export type InvoiceClearanceStatus = "NOT_REQUIRED" | "OUTSTANDING" | "PARTIALLY_CLEARED" | "CLEARED";
 
 /**
- * Read-only `paymentSummary` from the API. Bank receipts reach `amountPaid`
- * only once their settlement clears, so `receivableBalance` (the balance
- * before clearance) and `outstandingBalance` (the balance once the pending
- * receipts clear) differ while clearance is pending.
+ * Read-only `paymentSummary` from the API. `totalPaid` and `outstandingBalance`
+ * are the posted figures (cleared payments and the stored balance). Receipts
+ * the client handed over that have not cleared are totalled in
+ * `pendingClearance` and subtracted only in `balanceAfterClearance`.
  */
 export type InvoicePaymentSummary = {
   invoiceTotal: number;
   discount: number;
   totalPaid: number;
-  pendingClearance: number;
   outstandingBalance: number;
-  receivableBalance: number;
+  pendingClearance: number;
+  pendingClearanceCount: number;
+  balanceAfterClearance: number;
   customerStatus: InvoiceCustomerPaymentStatus;
   clearanceStatus: InvoiceClearanceStatus;
 };
@@ -466,12 +472,17 @@ export function normalizeApiInvoicePaymentSummary(input: unknown): InvoicePaymen
   if (!input || typeof input !== "object") return undefined;
   const raw = input as Record<string, unknown>;
 
-  const amounts = ["invoiceTotal", "discount", "totalPaid", "pendingClearance", "outstandingBalance", "receivableBalance"] as const;
+  const amounts = ["invoiceTotal", "discount", "totalPaid", "outstandingBalance", "pendingClearance", "balanceAfterClearance"] as const;
   const values = {} as Record<(typeof amounts)[number], number>;
   for (const key of amounts) {
     const amount = readApiMoney(raw[key]);
     if (amount == null) return undefined;
     values[key] = amount;
+  }
+
+  const pendingClearanceCount = raw.pendingClearanceCount;
+  if (typeof pendingClearanceCount !== "number" || !Number.isInteger(pendingClearanceCount) || pendingClearanceCount < 0) {
+    return undefined;
   }
 
   const customerStatus = String(raw.customerStatus ?? "") as InvoiceCustomerPaymentStatus;
@@ -480,7 +491,7 @@ export function normalizeApiInvoicePaymentSummary(input: unknown): InvoicePaymen
     return undefined;
   }
 
-  return { ...values, customerStatus, clearanceStatus };
+  return { ...values, pendingClearanceCount, customerStatus, clearanceStatus };
 }
 
 /**
@@ -508,9 +519,10 @@ export function resolveInvoicePaymentSummary(
     invoiceTotal,
     discount,
     totalPaid: cleared,
-    pendingClearance: 0,
     outstandingBalance: balance,
-    receivableBalance: balance,
+    pendingClearance: 0,
+    pendingClearanceCount: 0,
+    balanceAfterClearance: balance,
     customerStatus,
     clearanceStatus: cleared > 0 ? "CLEARED" : "NOT_REQUIRED",
   };

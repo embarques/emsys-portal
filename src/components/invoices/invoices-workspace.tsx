@@ -535,6 +535,18 @@ export function InvoicesWorkspace() {
     [invoices, selectedIds],
   );
   const selectedCount = selectedInvoices.length;
+  const deleteBlockedCount = selectedInvoices.filter((invoice) => invoice.hasAccountingEntries).length;
+  const deleteBlockedNote =
+    canDeleteInvoices && deleteBlockedCount > 0 ? (
+      <p className="text-xs text-muted-foreground">
+        {t(
+          deleteBlockedCount === 1
+            ? "invoices.workspace.delete.blockedSelection_one"
+            : "invoices.workspace.delete.blockedSelection_other",
+          { count: deleteBlockedCount },
+        )}
+      </p>
+    ) : null;
   const mobileInvoiceGroups = useMemo(() => groupInvoicesByMonth(invoices), [invoices]);
 
   const userFilterOptions = useMemo(
@@ -1108,7 +1120,8 @@ export function InvoicesWorkspace() {
             onDelete={() => setDeleteTarget(selectedInvoices)}
             canEdit={canUpdateInvoices}
             canDelete={canDeleteInvoices}
-            deleteDisabled={isDeleting}
+            deleteDisabled={isDeleting || deleteBlockedCount > 0}
+            meta={deleteBlockedNote}
             actions={documentsSelectionAction}
           />
         ) : null}
@@ -1255,7 +1268,8 @@ export function InvoicesWorkspace() {
           }
           canEdit={canUpdateInvoices}
           canDelete={canDeleteInvoices}
-          deleteDisabled={isDeleting}
+          deleteDisabled={isDeleting || deleteBlockedCount > 0}
+          meta={deleteBlockedNote}
           actions={documentsSelectionAction}
         />
 
@@ -1339,6 +1353,7 @@ export function InvoicesWorkspace() {
         onDelete={(invoice) => openDeleteInvoice(invoice)}
         canEdit={canUpdateInvoices}
         canDelete={canDeleteInvoices}
+        deleteBlocked={Boolean(viewInvoice?.hasAccountingEntries)}
         onManageItems={(invoice) => openManageItemsFor([invoice])}
         manageItemsDisabled={!canViewBarcodes}
         onPrint={(invoice) => {

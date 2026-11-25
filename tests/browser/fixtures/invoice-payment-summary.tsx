@@ -11,6 +11,8 @@ declare global {
       payment: number;
       balance: number;
       paidStatus: string;
+      hasAccountingEntries?: boolean;
+      canDelete?: boolean;
     };
   }
 }
@@ -30,6 +32,7 @@ function Fixture() {
     amountPaid: state.payment,
     balance: state.balance,
     paymentSummary: state.paymentSummary,
+    hasAccountingEntries: state.hasAccountingEntries,
     sender: { id: "1", name: "Sender Co", phones: [], addresses: [], orderAddressId: "" },
     receiver: null,
     lineItems: [],
@@ -50,6 +53,8 @@ function Fixture() {
       onOpenChange={noop}
       onEdit={noop}
       onDelete={noop}
+      canDelete={state.canDelete ?? true}
+      deleteBlocked={Boolean(state.hasAccountingEntries)}
       onManageItems={noop}
       onPrint={noop}
       onAddComment={noop}
